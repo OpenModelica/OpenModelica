@@ -70,10 +70,10 @@ protected
 public
   function main
     "Main function that resolves cyclic alias sets using Bareiss elimination."
-    input list<Pointer<Equation>> eqns;
+    input list<PointerCyclic<Equation>> eqns;
     input list<ComponentRef> vars;
     input Pointer<Integer> index;
-    output list<Pointer<Equation>> resolved_eqns = {};
+    output list<PointerCyclic<Equation>> resolved_eqns = {};
   protected
     array<list<Integer>> indices, values;
     Integer num_crefs, num_eqns, num_nonzero_val;
@@ -100,7 +100,7 @@ public
 
   function buildSparseRepresentation
     "Builds the sparse matrix representation from the equation system."
-    input list<Pointer<Equation>> eqns;
+    input list<PointerCyclic<Equation>> eqns;
     input list<ComponentRef> vars;
     output array<list<Integer>> indices, values;
     output Integer num_crefs, num_eqns, num_nonzero_val;
@@ -125,8 +125,8 @@ public
   algorithm
     for eq_ptr in eqns loop
       // find all crefs of vars in eqn
-      cref_lst := Equation.collectCrefs(Pointer.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(vars, vars, ComponentRef.hash, ComponentRef.isEqual)));
-      res := Equation.getResidualExp(Pointer.access(eq_ptr));
+      cref_lst := Equation.collectCrefs(PointerCyclic.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(vars, vars, ComponentRef.hash, ComponentRef.isEqual)));
+      res := Equation.getResidualExp(PointerCyclic.access(eq_ptr));
       args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
       for cr in cref_lst loop
         args.diffCref := cr;
@@ -149,7 +149,7 @@ public
         UnorderedSet.add(eq_ptr, int_eqns);
         for cr in cref_lst loop
           UnorderedSet.add(cr, int_crefs);
-          UnorderedMap.add(cr, Expression.makeZero(Equation.getType(Pointer.access(eq_ptr))), replacements);
+          UnorderedMap.add(cr, Expression.makeZero(Equation.getType(PointerCyclic.access(eq_ptr))), replacements);
         end for;
         UnorderedMap.add(eq_ptr, cref_lst, rows);
         expr := SimplifyExp.simplify(Expression.map(res, function Replacements.applySimpleExp(replacements = replacements)));
@@ -329,7 +329,7 @@ public
 
   function tracebackZeroRows
     "Reconstructs the symbolic expression of each zero row and generates a detailed error message for singular systems."
-    input list<Pointer<Equation>> eqns;
+    input list<PointerCyclic<Equation>> eqns;
     input Integer num_eqns, count_zero_row, num_op;
     input array<Integer> op_modes, op_val1, op_val2, op_val3, op_val4;
   protected
@@ -350,7 +350,7 @@ public
       end if;
       // collect equation information for the error message.
       for eq in 1:num_eqns loop
-        eq_str :=  eq_str + "("+intString(eq-1)+"): " + Expression.toString(Util.getOption(Equation.getLHS(Pointer.access(listGet(eqns, eq))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(Pointer.access(listGet(eqns, eq))))) + "\n";
+        eq_str :=  eq_str + "("+intString(eq-1)+"): " + Expression.toString(Util.getOption(Equation.getLHS(PointerCyclic.access(listGet(eqns, eq))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(PointerCyclic.access(listGet(eqns, eq))))) + "\n";
       end for;
       str_all := str_all + "The zero row in ("+ intString(current_zero_row) +") was produced by the following calculation: " + ExpressionBasics.printExpStr(exp_dae) + " with \n" + eq_str + "\n";
     end for;
@@ -476,9 +476,9 @@ public
     input array<list<Integer>> indices, values;
     input Integer num_eqns;
     input array<Expression> lhs_array;
-    output list<Pointer<Equation>> resolved_eqns = {};
+    output list<PointerCyclic<Equation>> resolved_eqns = {};
   protected
-    Pointer<Equation> new_eq;
+    PointerCyclic<Equation> new_eq;
     Expression cref_exp, sub_exp, rhs, lhs;
     list<Integer> indices_list, values_list;
     Status status;
@@ -507,19 +507,19 @@ public
       end if;
       new_eq := Equation.makeAssignment(rhs, lhs_array[i], index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
       if Flags.isSet(Flags.DUMP_ASSC) then
-        print("new_eq: "+Equation.toString(Pointer.access(new_eq))+"\n");
+        print("new_eq: "+Equation.toString(PointerCyclic.access(new_eq))+"\n");
       end if;
       // solve equation for variable to eliminate cyclic dependencies
-      (solved_eq,status, _) := Solve.solveBody(Pointer.access(new_eq), listGet(vars,i), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
+      (solved_eq,status, _) := Solve.solveBody(PointerCyclic.access(new_eq), listGet(vars,i), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
       if Flags.isSet(Flags.DUMP_ASSC) then
         print("solved_eq: "+Equation.toString(solved_eq)+"\n");
       end if;
-      resolved_eqns := Pointer.create(solved_eq) :: resolved_eqns;
+      resolved_eqns := PointerCyclic.create(solved_eq) :: resolved_eqns;
     end for;
     if Flags.isSet(Flags.DUMP_ASSC) then
       print("Number of equations: "+intString(listLength(resolved_eqns))+"\n");
       for eq_ptr in resolved_eqns loop
-        print("eq_ptr: "+Equation.toString(Pointer.access(eq_ptr))+"\n");
+        print("eq_ptr: "+Equation.toString(PointerCyclic.access(eq_ptr))+"\n");
       end for;
     end if;
   end createEquations;
@@ -572,7 +572,7 @@ protected
   uniontype Tuple_Id
     "tuple as key for UnorderedMap"
     record TUPLE_ID
-      Pointer<Equation> eq_ptr;
+      PointerCyclic<Equation> eq_ptr;
       ComponentRef cref;
     end TUPLE_ID;
 
@@ -580,7 +580,7 @@ protected
       input Tuple_Id id;
       output String str;
     algorithm
-      str := Equation.toString(Pointer.access(id.eq_ptr));
+      str := Equation.toString(PointerCyclic.access(id.eq_ptr));
       str := BVariable.toString(BVariable.getVar(id.cref, sourceInfo())) + str;
     end toString;
 

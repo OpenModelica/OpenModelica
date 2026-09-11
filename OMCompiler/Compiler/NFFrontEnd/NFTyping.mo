@@ -1452,9 +1452,9 @@ algorithm
 
     case Expression.MUTABLE()
       algorithm
-        e1 := Mutable.access(exp.exp);
+        e1 := MutableCyclic.access(exp.exp);
         (e1, ty, variability, purity) := typeExp(e1, context, info, retype);
-        exp.exp := Mutable.create(e1);
+        exp.exp := MutableCyclic.create(e1);
       then
         (exp, ty, variability, purity);
 

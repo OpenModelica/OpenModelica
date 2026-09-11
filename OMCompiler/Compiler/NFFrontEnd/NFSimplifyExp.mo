@@ -128,7 +128,7 @@ algorithm
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
     case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
-    case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
+    case Expression.MUTABLE()           then simplify(MutableCyclic.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
   end match;
@@ -1855,7 +1855,7 @@ algorithm
     then addArgument(result, exp, inverse);
 
     case (_, Expression.MUTABLE()) algorithm
-      Mutable.update(exp.exp, combineBinariesExp(Mutable.access(exp.exp)));
+      MutableCyclic.update(exp.exp, combineBinariesExp(MutableCyclic.access(exp.exp)));
     then addArgument(result, exp, inverse);
 
     case (_, Expression.PARTIAL_FUNCTION_APPLICATION()) algorithm

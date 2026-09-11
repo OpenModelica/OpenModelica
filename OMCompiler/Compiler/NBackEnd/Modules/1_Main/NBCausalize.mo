@@ -186,8 +186,8 @@ public
             TypeCheck.MatchKind kind;
 
           case StrongComponent.SINGLE_COMPONENT() algorithm
-            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
-            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
+            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(PointerCyclic.access(scc.var)));
+            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(PointerCyclic.access(scc.eqn)));
             (_, _, kind) := TypeCheck.matchTypes(ty1, ty2, Expression.fromCref(BVariable.getVarName(scc.var)));
 
             if kind <> NFTypeCheck.MatchKind.EXACT then
@@ -265,8 +265,8 @@ protected
   algorithm
     (variables, equations, full, matching, comps) := match kind
       local
-        list<Pointer<Variable>> fixable, unfixable;
-        list<Pointer<Equation>> initials, simulation;
+        list<PointerCyclic<Variable>> fixable, unfixable;
+        list<PointerCyclic<Equation>> initials, simulation;
         UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
       case kind guard(Partition.kindIsInitial(kind)) algorithm

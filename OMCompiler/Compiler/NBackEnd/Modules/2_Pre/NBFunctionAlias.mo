@@ -130,8 +130,8 @@ public
     extends Module.functionAliasInterface;
   protected
     UnorderedMap<Call_Id, Call_Aux> aux_map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
-    list<Pointer<Variable>> new_vars_cont = {}, new_vars_recd = {};
-    list<Pointer<Equation>> new_eqns_cont = {};
+    list<PointerCyclic<Variable>> new_vars_cont = {}, new_vars_recd = {};
+    list<PointerCyclic<Equation>> new_eqns_cont = {};
   algorithm
     () := match (eqData, varData)
       local
@@ -228,11 +228,11 @@ public
 
     function getVars
       input Call_Aux aux;
-      output list<Pointer<Variable>> vars = getVarsExp(aux.replacer);
+      output list<PointerCyclic<Variable>> vars = getVarsExp(aux.replacer);
     protected
       function getVarsExp
         input Expression exp;
-        output list<Pointer<Variable>> vars;
+        output list<PointerCyclic<Variable>> vars;
       algorithm
         vars := match exp
           case Expression.CREF(cref = ComponentRef.WILD()) then {};
@@ -287,8 +287,8 @@ protected
     UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName) "new iterators";
     UnorderedMap<BClock, ComponentRef> clock_map = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual), infer_map = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual);
     Pointer<Integer> aux_index = Pointer.create(1);
-    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck = {}, new_vars_infr = {};
-    list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck = {}, new_eqns_infr = {};
+    list<PointerCyclic<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck = {}, new_vars_infr = {};
+    list<PointerCyclic<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck = {}, new_eqns_infr = {};
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim = {}, debug_lst_ini;
   algorithm
     () := match (eqData, varData)
@@ -394,19 +394,19 @@ protected
     input UnorderedMap<Call_Id, Call_Aux> map;
     input Pointer<Integer> eq_index;
     input Boolean init;
-    input output list<Pointer<Variable>> new_vars_disc;
-    input output list<Pointer<Variable>> new_vars_cont;
-    input output list<Pointer<Variable>> new_vars_init;
-    input output list<Pointer<Variable>> new_vars_recd;
-    input output list<Pointer<Equation>> new_eqns_disc;
-    input output list<Pointer<Equation>> new_eqns_cont;
-    input output list<Pointer<Equation>> new_eqns_init;
+    input output list<PointerCyclic<Variable>> new_vars_disc;
+    input output list<PointerCyclic<Variable>> new_vars_cont;
+    input output list<PointerCyclic<Variable>> new_vars_init;
+    input output list<PointerCyclic<Variable>> new_vars_recd;
+    input output list<PointerCyclic<Equation>> new_eqns_disc;
+    input output list<PointerCyclic<Equation>> new_eqns_cont;
+    input output list<PointerCyclic<Equation>> new_eqns_init;
   protected
     Call_Id id;
     Call_Aux aux;
     Boolean disc;
-    Pointer<Equation> new_eqn;
-    list<Pointer<Variable>> new_vars;
+    PointerCyclic<Equation> new_eqn;
+    list<PointerCyclic<Variable>> new_vars;
   algorithm
     // create new simulation variables and corresponding equations for the function alias
     for tpl in listReverse(UnorderedMap.toList(map)) loop
@@ -458,8 +458,8 @@ protected
     (iter, depth) := match eqn
       local
         Equation body;
-      case Equation.FOR_EQUATION(body = {body}) then (eqn.iter, if Equation.isWhenEquation(Pointer.create(body))
-                                                                or Equation.isIfEquation(Pointer.create(body))
+      case Equation.FOR_EQUATION(body = {body}) then (eqn.iter, if Equation.isWhenEquation(PointerCyclic.create(body))
+                                                                or Equation.isIfEquation(PointerCyclic.create(body))
                                                                 then Depth.CONDITION else Depth.FULL);
       case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), Depth.CONDITION);
       case Equation.IF_EQUATION()               then (Iterator.EMPTY(), Depth.CONDITION);
@@ -799,12 +799,12 @@ protected
 
   function addAuxVar
     "add the aux var to the correct list and potentially resolve records properly"
-    input Pointer<Variable> new_var;
+    input PointerCyclic<Variable> new_var;
     input output Boolean disc;
-    input output list<Pointer<Variable>> new_vars_disc;
-    input output list<Pointer<Variable>> new_vars_cont;
-    input output list<Pointer<Variable>> new_vars_init;
-    input output list<Pointer<Variable>> new_vars_recd;
+    input output list<PointerCyclic<Variable>> new_vars_disc;
+    input output list<PointerCyclic<Variable>> new_vars_cont;
+    input output list<PointerCyclic<Variable>> new_vars_init;
+    input output list<PointerCyclic<Variable>> new_vars_recd;
     input Boolean init;
   protected
     list<Variable> children;
@@ -812,7 +812,7 @@ protected
     if BVariable.isRecord(new_var) then
       new_vars_recd := new_var :: new_vars_recd;
       // create record element variables (ignore first output since its the variable itself)
-      _ :: children := Variable.expandChildren(Pointer.access(new_var), addDimensions = false);
+      _ :: children := Variable.expandChildren(PointerCyclic.access(new_var), addDimensions = false);
       for child in children loop
         (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(BVariable.makeVarPtrCyclic(child, child.name), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
       end for;
@@ -831,15 +831,15 @@ protected
     Note: inferred clocks are handled as unknowns for partitioning"
     input EquationPointers equations;
     input Pointer<Integer> eqn_idx;
-    output list<Pointer<Equation>> clock_eqns = {};
-    output list<Pointer<Equation>> infer_eqns = {};
-    output list<Pointer<Variable>> clock_vars;
-    output list<Pointer<Variable>> infer_vars;
+    output list<PointerCyclic<Equation>> clock_eqns = {};
+    output list<PointerCyclic<Equation>> infer_eqns = {};
+    output list<PointerCyclic<Variable>> clock_vars;
+    output list<PointerCyclic<Variable>> infer_vars;
     output UnorderedMap<BClock, ComponentRef> clck_coll = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual);
     output UnorderedMap<BClock, ComponentRef> infr_coll = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual);
   protected
-    Pointer<list<Pointer<Variable>>> new_clocks = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> new_infers = Pointer.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> new_clocks = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> new_infers = PointerCyclic.create({});
     Pointer<Integer> idx = Pointer.create(0);
     BClock clock;
     ComponentRef clock_name;
@@ -848,14 +848,14 @@ protected
       clck_coll = clck_coll, infr_coll = infr_coll, new_clocks = new_clocks, new_infers = new_infers, idx = idx));
 
     // create clocks
-    clock_vars := Pointer.access(new_clocks);
+    clock_vars := PointerCyclic.access(new_clocks);
     for tpl in UnorderedMap.toList(clck_coll) loop
       (clock, clock_name) := tpl;
       clock_eqns := Equation.makeAssignment(Expression.fromCref(clock_name), BClock.toExp(clock), eqn_idx, "AUX", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CLOCKED, false)) :: clock_eqns;
     end for;
 
     // create inferred clocks
-    infer_vars := Pointer.access(new_infers);
+    infer_vars := PointerCyclic.access(new_infers);
     for tpl in UnorderedMap.toList(infr_coll) loop
       (clock, clock_name) := tpl;
       infer_eqns := Equation.makeAssignment(Expression.fromCref(clock_name), BClock.toExp(clock), eqn_idx, "AUX", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CLOCKED, false)) :: infer_eqns;

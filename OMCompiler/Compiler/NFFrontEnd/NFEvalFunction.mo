@@ -781,12 +781,12 @@ algorithm
     local
       Expression var, val;
       list<Expression> vals;
-      Mutable<Expression> var_ptr;
+      MutableCyclic<Expression> var_ptr;
 
     // variable := value
     case (Expression.MUTABLE(exp = var_ptr), _)
       algorithm
-        Mutable.update(var_ptr, assignExp(Mutable.access(var_ptr), value));
+        MutableCyclic.update(var_ptr, assignExp(MutableCyclic.access(var_ptr), value));
       then
         ();
 
@@ -823,14 +823,14 @@ end assignVariable;
 
 protected
 function assignSubscriptedVariable
-  input Mutable<Expression> variable;
+  input MutableCyclic<Expression> variable;
   input list<Subscript> subscripts;
   input Expression value;
 protected
   list<Subscript> subs;
 algorithm
   subs := list(Subscript.eval(s) for s in subscripts);
-  Mutable.update(variable, assignArrayElement(Mutable.access(variable), subs, value));
+  MutableCyclic.update(variable, assignArrayElement(MutableCyclic.access(variable), subs, value));
 end assignSubscriptedVariable;
 
 function assignArrayElement
@@ -977,7 +977,7 @@ function evaluateFor
   output FlowControl ctrl = FlowControl.NEXT;
 protected
   RangeIterator range_iter;
-  Mutable<Expression> iter_exp;
+  MutableCyclic<Expression> iter_exp;
   Expression range_exp, value;
   list<Statement> body = forBody;
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
@@ -993,7 +993,7 @@ algorithm
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, value) := RangeIterator.next(range_iter);
       // Update the mutable expression with the iteration value and evaluate the statement.
-      Mutable.update(iter_exp, value);
+      MutableCyclic.update(iter_exp, value);
       ctrl := evaluateStatements(body, context);
 
       if ctrl <> FlowControl.NEXT then

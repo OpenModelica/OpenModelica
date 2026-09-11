@@ -2123,6 +2123,11 @@ pub fn infer_exp<'a>(
             };
             let typed_cases: Vec<TypedCase> = (&**cases).into_iter()
                 .map(|c| infer_case(c, &case_env, top_level, pkg_prefix, &match_locals, type_vars, scrutinee_for_arm, &tuple_scrutinees))
+                // An arm matching a retired variant is dead in the Rust port:
+                // the variant is never constructed, and its fields no longer
+                // exist for the pattern to bind. Dropping it here keeps every
+                // downstream consumer of `cases` unaware of retirement.
+                .filter(|c| !pat_mentions_retired(&c.pattern))
                 .collect();
             // Promote each arm's type from a narrowed variant struct to its
             // parent uniontype enum: an arm that returned the scrutinee under a
@@ -2189,6 +2194,32 @@ fn extract_call_args<'a>(
             (pos, named)
         }
         _ => (vec![], vec![]),
+    }
+}
+
+/// True if `pat` (or a sub-pattern) names a class annotated
+/// `__OpenModelica_Retired`. See `MM::strip_retired`.
+fn pat_mentions_retired(pat: &TypedPat) -> bool {
+    match pat {
+        TypedPat::Constructor { name, ty, fields, named_fields } => {
+            let by_ty = match ty {
+                Ty::UnionTypeVariant(parent, variant) => {
+                    crate::MM::is_retired_qname(&format!("{parent}.{variant}"))
+                }
+                Ty::RustStruct(qname) => crate::MM::is_retired_qname(qname),
+                _ => false,
+            };
+            by_ty
+                || crate::MM::is_retired_simple_name(name)
+                || fields.iter().any(pat_mentions_retired)
+                || named_fields.iter().any(|(_, p)| pat_mentions_retired(p))
+        }
+        TypedPat::Tuple(ps) => ps.iter().any(pat_mentions_retired),
+        TypedPat::Some_(p) | TypedPat::As { pat: p, .. } => pat_mentions_retired(p),
+        TypedPat::Cons { head, tail } => {
+            pat_mentions_retired(head) || pat_mentions_retired(tail)
+        }
+        _ => false,
     }
 }
 
@@ -2321,8 +2352,8 @@ fn infer_case<'a>(
         pkg_prefix: &str,
         type_vars: &[String],
     ) -> Option<TypedStmt> {
-        let eq = match item {
-            Absyn::EquationItem::EQUATIONITEM { equation_, .. } => equation_,
+        let (eq, info) = match item {
+            Absyn::EquationItem::EQUATIONITEM { equation_, info, .. } => (equation_, info.clone()),
             Absyn::EquationItem::EQUATIONITEMCOMMENT { .. } => return None,
         };
         Some(match eq.as_ref() {
@@ -2332,7 +2363,7 @@ fn infer_case<'a>(
                 for (name, _ty) in pat_bindings(&lhs) {
                     env.insert(name, rhs.ty());
                 }
-                TypedStmt::Assign { lhs, rhs }
+                TypedStmt::Assign { lhs, rhs, info }
             }
             Absyn::Equation::EQ_NORETCALL { functionName, functionArgs } => {
                 let func = cref_to_dotted(functionName);
@@ -2368,7 +2399,7 @@ fn infer_case<'a>(
                     let ty = call_ty(&func, &args, top_level, pkg_prefix);
                     TypedExp::Call { func, args, named_args, ty, sig_ty }
                 };
-                TypedStmt::NoRetCall { call }
+                TypedStmt::NoRetCall { call, info }
             }
             Absyn::Equation::EQ_IF { ifExp, equationTrueItems, elseIfBranches, equationElseItems } => {
                 let cond = infer_exp(ifExp, env, top_level, pkg_prefix, type_vars);
@@ -3330,9 +3361,11 @@ fn collect_bindings(pat: &TypedPat, out: &mut Vec<(String, Ty)>) {
 #[derive(Debug, Clone)]
 pub enum TypedStmt {
     /// `lhs := rhs;` — `lhs` may be any pattern (`x`, `(a,b)`, `SOME(x)`, `true`, …).
-    Assign { lhs: TypedPat, rhs: TypedExp },
+    /// `info` is the statement's source span; source-rewriting passes need it
+    /// because expressions carry no position of their own.
+    Assign { lhs: TypedPat, rhs: TypedExp, info: Absyn::Info },
     /// A call statement with no return value (or value discarded).
-    NoRetCall { call: TypedExp },
+    NoRetCall { call: TypedExp, info: Absyn::Info },
     If {
         cond: TypedExp,
         then_: Vec<TypedStmt>,
@@ -3434,8 +3467,10 @@ fn infer_stmt<'a>(
     pkg_prefix: &str,
     type_vars: &[String],
 ) -> Option<TypedStmt> {
-    let alg = match item {
-        Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, .. } => algorithm_.as_ref(),
+    let (alg, info) = match item {
+        Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } => {
+            (algorithm_.as_ref(), info.clone())
+        }
         Absyn::AlgorithmItem::ALGORITHMITEMCOMMENT { .. } => return None,
     };
     Some(match alg {
@@ -3459,7 +3494,7 @@ fn infer_stmt<'a>(
             for (name, _ty) in pat_bindings(&lhs) {
                 env.entry(name).or_insert(Ty::Unknown);
             }
-            TypedStmt::Assign { lhs, rhs }
+            TypedStmt::Assign { lhs, rhs, info }
         }
         Absyn::Algorithm::ALG_NORETCALL { functionCall, functionArgs } => {
             let func = cref_to_dotted(functionCall);
@@ -3495,7 +3530,7 @@ fn infer_stmt<'a>(
                 let ty = call_ty(&func, &args, top_level, pkg_prefix);
                 TypedExp::Call { func, args, named_args, ty, sig_ty }
             };
-            TypedStmt::NoRetCall { call }
+            TypedStmt::NoRetCall { call, info }
         }
         Absyn::Algorithm::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => {
             let cond = infer_exp(ifExp, env, top_level, pkg_prefix, type_vars);

@@ -239,7 +239,7 @@ public
   end RECORD_ELEMENT;
 
   record MUTABLE
-    Mutable<Expression> exp;
+    MutableCyclic<Expression> exp;
   end MUTABLE;
 
   record EMPTY
@@ -641,7 +641,7 @@ public
           hash := stringHashDjb2Continue(exp.fieldName, hash);
         then hash;
 
-      case MUTABLE() then hashContinue(Mutable.access(exp.exp), hash);
+      case MUTABLE() then hashContinue(MutableCyclic.access(exp.exp), hash);
       case EMPTY() then stringHashDjb2Continue("#EMPTY#", hash);
 
       case PARTIAL_FUNCTION_APPLICATION()
@@ -723,7 +723,7 @@ public
         Call c;
         list<Subscript> subs;
         ClockKind clk;
-        Mutable<Expression> me;
+        MutableCyclic<Expression> me;
         list<list<Expression>> mat;
         array<Expression> arr;
         InstNode node;
@@ -972,7 +972,7 @@ public
         algorithm
           MUTABLE(exp = me) := exp2;
         then
-          compare(Mutable.access(exp1.exp), Mutable.access(me));
+          compare(MutableCyclic.access(exp1.exp), MutableCyclic.access(me));
 
       case SHARED_LITERAL()
         algorithm
@@ -1073,7 +1073,7 @@ public
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
       case RECORD_ELEMENT()  then exp.ty;
-      case MUTABLE()         then typeOf(Mutable.access(exp.exp));
+      case MUTABLE()         then typeOf(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL()  then typeOf(exp.exp);
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
@@ -1162,7 +1162,7 @@ public
       case SUBSCRIPTED_EXP()      algorithm exp.ty := func(exp.ty); then exp;
       case TUPLE_ELEMENT()        algorithm exp.ty := func(exp.ty); then exp;
       case RECORD_ELEMENT()       algorithm exp.ty := func(exp.ty); then exp;
-      case MUTABLE()              algorithm Mutable.update(exp.exp, applyToType(Mutable.access(exp.exp), func)); then exp;
+      case MUTABLE()              algorithm MutableCyclic.update(exp.exp, applyToType(MutableCyclic.access(exp.exp), func)); then exp;
       case SHARED_LITERAL()       algorithm exp.exp := applyToType(exp.exp, func); then exp;
       case EMPTY()                algorithm exp.ty := func(exp.ty); then exp;
       case PARTIAL_FUNCTION_APPLICATION()  algorithm exp.ty := func(exp.ty); then exp;
@@ -2260,7 +2260,7 @@ public
       case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then "(" + toString(exp.recordExp) + ")." + exp.fieldName;
-      case MUTABLE() then toString(Mutable.access(exp.exp));
+      case MUTABLE() then toString(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL() then "LITERAL(" + intString(exp.index) + ", " + toString(exp.exp) + ")";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
@@ -2361,7 +2361,7 @@ public
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format, escapeQuotes = false);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
       case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
-      case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
+      case MUTABLE() then toFlatString(MutableCyclic.access(exp.exp), format);
       case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
@@ -2521,7 +2521,7 @@ public
       case CAST() then getName(exp.exp);
       case BOX() then getName(exp.exp);
       case UNBOX() then getName(exp.exp);
-      case MUTABLE() then getName(Mutable.access(exp.exp));
+      case MUTABLE() then getName(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL() then getName(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then ComponentRef.toString(exp.fn);
       case INSTANCE_NAME() then "getInstanceName";
@@ -2554,14 +2554,14 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> varPointer;
+        PointerCyclic<Variable> varPointer;
         Option<Expression> nominal;
         Operator operator;
         Operator.SizeClassification sizeClass;
 
       // replace variables with their nominal values
       case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
-        nominal := Variable.getNominal(Pointer.access(varPointer));
+        nominal := Variable.getNominal(PointerCyclic.access(varPointer));
       then Util.getOptionOrDefault(nominal, exp);
 
       // remove negation
@@ -2620,7 +2620,7 @@ public
       case CAST() then toAbsyn(exp.exp);
       case BOX() then toAbsyn(exp.exp);
       case UNBOX() then toAbsyn(exp.exp);
-      case MUTABLE() then toAbsyn(Mutable.access(exp.exp));
+      case MUTABLE() then toAbsyn(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL() then toAbsyn(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION()
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
@@ -2729,7 +2729,7 @@ public
                                Type.toDAE(exp.ty),
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
-      case MUTABLE() then toDAE(Mutable.access(exp.exp));
+      case MUTABLE() then toDAE(MutableCyclic.access(exp.exp));
 
       // EMPTY expressions can be a sign of something having gone wrong, but we want to allow them in
       // some cases such as in records, so only allow them if the caller requests it.
@@ -3031,7 +3031,7 @@ public
 
       case MUTABLE()
         algorithm
-          Mutable.update(exp.exp, map(Mutable.access(exp.exp), func));
+          MutableCyclic.update(exp.exp, map(MutableCyclic.access(exp.exp), func));
         then
           exp;
 
@@ -3229,7 +3229,7 @@ public
 
       case MUTABLE()
         algorithm
-          Mutable.update(exp.exp, mapReverse(Mutable.access(exp.exp), func));
+          MutableCyclic.update(exp.exp, mapReverse(MutableCyclic.access(exp.exp), func));
         then
           exp;
 
@@ -3396,7 +3396,7 @@ public
 
       case MUTABLE()
         algorithm
-          Mutable.update(exp.exp, func(Mutable.access(exp.exp)));
+          MutableCyclic.update(exp.exp, func(MutableCyclic.access(exp.exp)));
         then
           exp;
 
@@ -3607,7 +3607,7 @@ public
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
       case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
-      case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
+      case MUTABLE() then fold(MutableCyclic.access(exp.exp), func, arg);
       case SHARED_LITERAL() then fold(exp.exp, func, arg);
       case PARTIAL_FUNCTION_APPLICATION() then foldList(exp.args, func, arg);
       else arg;
@@ -3759,7 +3759,7 @@ public
 
       case TUPLE_ELEMENT() algorithm apply(exp.tupleExp, func); then ();
       case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
-      case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
+      case MUTABLE() algorithm apply(MutableCyclic.access(exp.exp), func); then ();
       case SHARED_LITERAL() algorithm apply(exp.exp, func); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyList(exp.args, func); then ();
       else ();
@@ -3895,7 +3895,7 @@ public
 
       case TUPLE_ELEMENT() algorithm func(exp.tupleExp); then ();
       case RECORD_ELEMENT() algorithm func(exp.recordExp); then ();
-      case MUTABLE() algorithm func(Mutable.access(exp.exp)); then ();
+      case MUTABLE() algorithm func(MutableCyclic.access(exp.exp)); then ();
       case SHARED_LITERAL() algorithm func(exp.exp); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyListShallow(exp.args, func); then ();
       else ();
@@ -4113,8 +4113,8 @@ public
 
       case MUTABLE()
         algorithm
-          (e1, arg) := mapFold(Mutable.access(exp.exp), func, arg);
-          Mutable.update(exp.exp, e1);
+          (e1, arg) := mapFold(MutableCyclic.access(exp.exp), func, arg);
+          MutableCyclic.update(exp.exp, e1);
         then
           exp;
 
@@ -4345,8 +4345,8 @@ public
 
       case MUTABLE()
         algorithm
-          (e1, arg) := func(Mutable.access(exp.exp), arg);
-          Mutable.update(exp.exp, e1);
+          (e1, arg) := func(MutableCyclic.access(exp.exp), arg);
+          MutableCyclic.update(exp.exp, e1);
         then
           exp;
 
@@ -4490,7 +4490,7 @@ public
 
       case TUPLE_ELEMENT() then contains(exp.tupleExp, func);
       case RECORD_ELEMENT() then contains(exp.recordExp, func);
-      case MUTABLE() then contains(Mutable.access(exp.exp), func);
+      case MUTABLE() then contains(MutableCyclic.access(exp.exp), func);
       case SHARED_LITERAL() then contains(exp.exp, func);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       else false;
@@ -4605,7 +4605,7 @@ public
 
       case TUPLE_ELEMENT() then func(exp.tupleExp);
       case RECORD_ELEMENT() then func(exp.recordExp);
-      case MUTABLE() then func(Mutable.access(exp.exp));
+      case MUTABLE() then func(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL() then func(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       else false;
@@ -5706,7 +5706,7 @@ public
         then Prefixes.variabilityMax(variability(exp.exp), Subscript.variabilityList(exp.subscripts));
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
       case RECORD_ELEMENT() then variability(exp.recordExp);
-      case MUTABLE() then variability(Mutable.access(exp.exp));
+      case MUTABLE() then variability(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL() then variability(exp.exp);
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
@@ -5787,7 +5787,7 @@ public
         then Prefixes.purityMin(purity(exp.exp), Subscript.purityList(exp.subscripts));
       case TUPLE_ELEMENT() then purity(exp.tupleExp);
       case RECORD_ELEMENT() then purity(exp.recordExp);
-      case MUTABLE() then purity(Mutable.access(exp.exp));
+      case MUTABLE() then purity(MutableCyclic.access(exp.exp));
       case SHARED_LITERAL() then purity(exp.exp);
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
@@ -5823,7 +5823,7 @@ public
     input Expression exp;
     output Expression outExp;
   algorithm
-    outExp := MUTABLE(Mutable.create(exp));
+    outExp := MUTABLE(MutableCyclic.create(exp));
   end makeMutable;
 
   function makeImmutable
@@ -5831,7 +5831,7 @@ public
     output Expression outExp;
   algorithm
     outExp := match exp
-      case MUTABLE() then Mutable.access(exp.exp);
+      case MUTABLE() then MutableCyclic.access(exp.exp);
       else exp;
     end match;
   end makeImmutable;
@@ -5850,10 +5850,10 @@ public
     input Expression mutableExp;
     input Expression value;
   protected
-    Mutable<Expression> exp_ptr;
+    MutableCyclic<Expression> exp_ptr;
   algorithm
     MUTABLE(exp = exp_ptr) := mutableExp;
-    Mutable.update(exp_ptr, value);
+    MutableCyclic.update(exp_ptr, value);
   end updateMutable;
 
   function applyMutable
@@ -5864,10 +5864,10 @@ public
       input output Expression exp;
     end FuncType;
   protected
-    Mutable<Expression> exp_ptr;
+    MutableCyclic<Expression> exp_ptr;
   algorithm
     MUTABLE(exp = exp_ptr) := mutableExp;
-    Mutable.update(exp_ptr, func(Mutable.access(exp_ptr)));
+    MutableCyclic.update(exp_ptr, func(MutableCyclic.access(exp_ptr)));
   end applyMutable;
 
   function isEmpty
@@ -6148,15 +6148,15 @@ public
     input output Expression exp;
     input list<tuple<InstNode, Expression>> iterators;
           output list<Expression> ranges = {};
-          output list<Mutable<Expression>> iters = {};
+          output list<MutableCyclic<Expression>> iters = {};
   protected
     InstNode node;
     Expression range;
-    Mutable<Expression> iter;
+    MutableCyclic<Expression> iter;
   algorithm
     for i in iterators loop
       (node, range) := i;
-      iter := Mutable.create(INTEGER(0));
+      iter := MutableCyclic.create(INTEGER(0));
       ranges := list(replaceIterator(r, node, MUTABLE(iter)) for r in ranges);
       exp := replaceIterator(exp, node, MUTABLE(iter));
       iters := iter :: iters;
@@ -6184,7 +6184,7 @@ public
   protected
     Expression e;
     list<Expression> ranges = {};
-    list<Mutable<Expression>> iters = {};
+    list<MutableCyclic<Expression>> iters = {};
   algorithm
     (e, ranges, iters) := createIterationRanges(exp, iterators);
     result := foldReduction2(e, ranges, iters, foldExp, mapFn, foldFn);
@@ -6193,7 +6193,7 @@ public
   function foldReduction2
     input Expression exp;
     input list<Expression> ranges;
-    input list<Mutable<Expression>> iterators;
+    input list<MutableCyclic<Expression>> iterators;
     input Expression foldExp;
     input MapFn mapFn;
     input FoldFn foldFn;
@@ -6211,8 +6211,8 @@ public
   protected
     Expression range, value;
     list<Expression> ranges_rest;
-    Mutable<Expression> iter;
-    list<Mutable<Expression>> iters_rest;
+    MutableCyclic<Expression> iter;
+    list<MutableCyclic<Expression>> iters_rest;
     ExpressionIterator range_iter;
   algorithm
     if listEmpty(ranges) then
@@ -6226,7 +6226,7 @@ public
 
       while ExpressionIterator.hasNext(range_iter) loop
         (range_iter, value) := ExpressionIterator.next(range_iter);
-        Mutable.update(iter, value);
+        MutableCyclic.update(iter, value);
         result := foldReduction2(exp, ranges_rest, iters_rest, result, mapFn, foldFn);
       end while;
     end if;
@@ -6483,7 +6483,7 @@ public
     list<Subscript> subs;
   algorithm
     exp := match exp
-      case MUTABLE() then Mutable.access(exp.exp);
+      case MUTABLE() then MutableCyclic.access(exp.exp);
 
       case SUBSCRIPTED_EXP(subscripts = subs)
         then applySubscripts(subs, exp.exp);
@@ -6986,12 +6986,12 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> var;
+        PointerCyclic<Variable> var;
         Integer v;
 
       // backend replacement
       case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
-      then match Pointer.access(var)
+      then match PointerCyclic.access(var)
           // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);

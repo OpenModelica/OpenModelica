@@ -47,6 +47,7 @@ import Flags;
 import HashTableCrefSimVar;
 import List;
 import Pointer;
+import PointerCyclic;
 import UnorderedMap;
 import Util;
 import ProgramUtil;
@@ -149,7 +150,7 @@ public
 
   uniontype Identifier
     record IDENTIFIER
-      Pointer<Equation> eqn;
+      PointerCyclic<Equation> eqn;
       ComponentRef var_cref;
       Boolean resizable;
     end IDENTIFIER;
@@ -316,7 +317,7 @@ public
           SimCodeIndices simCodeIndices;
           UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
           list<SimPartition> clockedPartitions;
-          Pointer<Integer> literals_idx = Pointer.create(0);
+          Pointer<Integer> literals_idx;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimGenericCall> generic_loop_calls;
@@ -341,6 +342,11 @@ public
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
+            // Not a default on the declaration above: the bootstrap compiler
+            // does not record a package dependency for a call that only appears
+            // in a local's default, and this is NSimCode's sole use of Pointer,
+            // so the generated C would lose its #include.
+            literals_idx := Pointer.create(0);
             collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
             UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
@@ -894,7 +900,7 @@ public
     protected
       ComponentRef seedCref, cref;
     algorithm
-      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", PointerCyclic.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");

@@ -126,10 +126,10 @@ protected
           (new_eqns, new_vars) := match part.strongComponents
             local
               array<StrongComponent> new_c;
-              list<Pointer<Equation>> eqns;
-              list<Pointer<Variable>> vars;
-              UnorderedSet<Pointer<Equation>> new_eqns_set;
-              UnorderedSet<Pointer<Variable>> new_vars_set;
+              list<PointerCyclic<Equation>> eqns;
+              list<PointerCyclic<Variable>> vars;
+              UnorderedSet<PointerCyclic<Equation>> new_eqns_set;
+              UnorderedSet<PointerCyclic<Variable>> new_vars_set;
 
             case SOME(new_c) algorithm
               new_eqns_set := UnorderedSet.new(Equation.hash, Equation.equalName);

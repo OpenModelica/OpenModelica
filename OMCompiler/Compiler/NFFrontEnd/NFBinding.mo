@@ -51,6 +51,7 @@ protected
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Pointer;
+import PointerCyclic;
   import Variable = NFVariable;
   import DAE;
   import Dump;
@@ -1114,7 +1115,7 @@ public
               // crefs lowered by the new backend point to variables, not components
               case InstNode.VAR_NODE()
                 algorithm
-                  var := Pointer.access(node.varPointer);
+                  var := PointerCyclic.access(node.varPointer);
 
                   if Variable.variability(var) < Variability.DISCRETE then
                     b := var.binding;

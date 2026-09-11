@@ -76,6 +76,7 @@ protected
 
   // Util imports
   import Pointer;
+import PointerCyclic;
   import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
@@ -109,8 +110,8 @@ public
   record SINGLE_COMPONENT
     "component for all equations that solve for a single (possibly multidimensional) variable
     SCALAR_EQUATION, ARRAY_EQUATION, RECORD_EQUATION."
-    Pointer<Variable> var;
-    Pointer<Equation> eqn;
+    PointerCyclic<Variable> var;
+    PointerCyclic<Equation> eqn;
     Solve.Status status;
   end SINGLE_COMPONENT;
 
@@ -152,7 +153,7 @@ public
     but do not form an algebraic loop. Slices can be SLICED_COMPONENT, GENERIC_COMPONENT,
     RESIZABLE_COMPONENT, SINGLE_COMPONENT or MULTI_COMPONENT."
     list<StrongComponent> entwined_slices                     "one entry per distinct equation (for-loop or scalar)";
-    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
+    list<tuple<PointerCyclic<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
   end ENTWINED_COMPONENT;
 
   record ALGEBRAIC_LOOP
@@ -191,8 +192,8 @@ public
 
       case SINGLE_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Strong Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
-        str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
-        str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+        str := str + "### Variable:\n" + Variable.toString(PointerCyclic.access(comp.var), "\t") + "\n";
+        str := str + "### Equation:\n" + Equation.toString(PointerCyclic.access(comp.eqn), "\t") + "\n";
       then str;
 
       case MULTI_COMPONENT() algorithm
@@ -269,7 +270,7 @@ public
   algorithm
     () := match comp
       case SINGLE_COMPONENT() algorithm
-        () := match Pointer.access(comp.eqn)
+        () := match PointerCyclic.access(comp.eqn)
           case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
           case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
@@ -278,7 +279,7 @@ public
       then ();
 
       case MULTI_COMPONENT() algorithm
-        () := match Pointer.access(Slice.getT(comp.eqn))
+        () := match PointerCyclic.access(Slice.getT(comp.eqn))
           case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
           case Equation.IF_EQUATION()     algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
@@ -288,7 +289,7 @@ public
       then ();
 
       case SLICED_COMPONENT() algorithm
-        () := match Pointer.access(Slice.getT(comp.eqn))
+        () := match PointerCyclic.access(Slice.getT(comp.eqn))
           case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
           case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
@@ -384,8 +385,8 @@ public
     input Boolean independent = false   "true if scalar equations can be solved in any order";
     output StrongComponent comp;
   protected
-    Pointer<Variable> var_ptr;
-    Pointer<Equation> eqn_ptr;
+    PointerCyclic<Variable> var_ptr;
+    PointerCyclic<Equation> eqn_ptr;
     Integer first_var, var_size, first_eqn, eqn_size;
     Slice<VariablePointer>var_slice;
     Slice<EquationPointer>eqn_slice;
@@ -409,7 +410,7 @@ public
     end if;
 
     // check if it is a resizable component
-    order := Resizable.detect(Pointer.access(eqn_ptr), cref_to_solve);
+    order := Resizable.detect(PointerCyclic.access(eqn_ptr), cref_to_solve);
     if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size then
       comp := RESIZABLE_COMPONENT(
         var_cref  = cref_to_solve,
@@ -436,7 +437,7 @@ public
     Integer eqn_arr_idx, var_arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
-    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
+    list<tuple<PointerCyclic<Equation>, Integer>> entwined_tpl_lst;
   algorithm
     // collect individual buckets again
     for idx in eqn_indices loop
@@ -484,7 +485,7 @@ public
     input array<list<Integer>> entwined_indices;
     input EquationPointers eqns;
     input Adjacency.Mapping mapping;
-    output list<tuple<Pointer<Equation>, Integer>> flat_tpl_indices = {};
+    output list<tuple<PointerCyclic<Equation>, Integer>> flat_tpl_indices = {};
   protected
     Integer arr_idx, first_idx;
     array<Integer> eqn_StA        "safe access with iterated integer (void pointer)";
@@ -580,15 +581,15 @@ public
   end sortDAEModeComponent;
 
   function slicedDAEModeComponent
-    input list<Slice<Pointer<Variable>>> var_slices;
-    input list<Slice<Pointer<Equation>>> eqn_slices;
+    input list<Slice<PointerCyclic<Variable>>> var_slices;
+    input list<Slice<PointerCyclic<Equation>>> eqn_slices;
     input VariablePointers variables;
     input Pointer<Integer> uniqueIndex;
     input UnorderedSet<ComponentRef> slice_set;
     output list<StrongComponent> new_residuals;
     output DAEType dae_type = DAEType.RESIDUAL;
   protected
-    Pointer<Equation> eqn;
+    PointerCyclic<Equation> eqn;
     ComponentRef eqn_name;
     list<list<StrongComponent>> acc_new_residuals = {};
   algorithm
@@ -627,32 +628,32 @@ public
   end slicedDAEModeComponent;
 
   function singleDAEModeComponent
-    input Pointer<Equation> eqn_ptr;
+    input PointerCyclic<Equation> eqn_ptr;
     input VariablePointers variables;
     input Pointer<Integer> uniqueIndex;
     output list<StrongComponent> new_residuals;
     output DAEType dae_type = DAEType.RESIDUAL;
   protected
-    Pointer<list<Pointer<Equation>>> new_eqns;
+    PointerCyclic<list<PointerCyclic<Equation>>> new_eqns;
     UnorderedSet<VariablePointer> dummy_set;
     Equation eqn;
-    list<Pointer<Equation>> eqns;
+    list<PointerCyclic<Equation>> eqns;
   algorithm
-    new_eqns  := Pointer.create({});
+    new_eqns  := PointerCyclic.create({});
     dummy_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    eqn       := Inline.inlineRecordTupleArrayEquation(Pointer.access(eqn_ptr), Iterator.EMPTY(), variables, new_eqns, dummy_set, uniqueIndex, true);
-    eqns      := Pointer.access(new_eqns);
+    eqn       := Inline.inlineRecordTupleArrayEquation(PointerCyclic.access(eqn_ptr), Iterator.EMPTY(), variables, new_eqns, dummy_set, uniqueIndex, true);
+    eqns      := PointerCyclic.access(new_eqns);
     // create equation, deliberately use new pointer. allow creating residual to fail and add original strong component to inners
-    eqns := if listEmpty(eqns) then {Pointer.create(eqn)} else eqns;
+    eqns := if listEmpty(eqns) then {PointerCyclic.create(eqn)} else eqns;
     (new_residuals, dae_type) := inlinedDAEModeComponent(eqns);
   end singleDAEModeComponent;
 
   function inlinedDAEModeComponent
-    input list<Pointer<Equation>> eqns;
+    input list<PointerCyclic<Equation>> eqns;
     output list<StrongComponent> comps = {};
     output DAEType dae_type = DAEType.UNPROCESSED;
   protected
-    Pointer<Equation> new_eqn;
+    PointerCyclic<Equation> new_eqn;
     StrongComponent new_comp;
   algorithm
     for eqn in eqns loop
@@ -683,12 +684,12 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   protected
-    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
-    Equation eqn = Pointer.access(eqn_ptr);
+    PointerCyclic<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    Equation eqn = PointerCyclic.access(eqn_ptr);
     IfEquationBody body;
     function simpleSolvedEquation
       input Equation eqn;
-      input Pointer<Equation> eqn_ptr;
+      input PointerCyclic<Equation> eqn_ptr;
       output StrongComponent comp;
     algorithm
       comp := match Equation.getLHS(eqn)
@@ -710,7 +711,7 @@ public
           comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
         end if;
       then comp;
-      case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
+      case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(PointerCyclic.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
@@ -722,7 +723,7 @@ public
     "creates a solved equation for an explicitly solved strong component.
     fails if it is not solved explicitly."
     input StrongComponent comp;
-    output Pointer<Equation> eqn;
+    output PointerCyclic<Equation> eqn;
   algorithm
     eqn := match comp
       case SINGLE_COMPONENT(status = NBSolve.Status.EXPLICIT) then comp.eqn;
@@ -750,7 +751,7 @@ public
   algorithm
     () := match comp
       local
-        Pointer<Equation> eqn_ptr;
+        PointerCyclic<Equation> eqn_ptr;
         ComponentRef cref;
         list<ComponentRef> dependencies, loop_vars, tmp;
         list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
@@ -761,20 +762,20 @@ public
 
       // sliced array equations - create all the single entries
       case SINGLE_COMPONENT() guard(Equation.isArrayEquation(comp.eqn)) algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
+        dependencies := Equation.collectCrefs(PointerCyclic.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(BVariable.getVarName(comp.var), dependencies);
         addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       case SINGLE_COMPONENT() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
+        dependencies := Equation.collectCrefs(PointerCyclic.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         updateDependencyMap(BVariable.getVarName(comp.var), deps_set, map);
       then ();
 
       case MULTI_COMPONENT() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
+        dependencies := Equation.collectCrefs(PointerCyclic.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
         dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
@@ -787,17 +788,17 @@ public
 
       // resizable for equations - create all the single entries
       case RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        addForLoopDependencies(Pointer.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
+        addForLoopDependencies(PointerCyclic.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       // sliced for equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        addForLoopDependencies(Pointer.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
+        addForLoopDependencies(PointerCyclic.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       // sliced array equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
-        eqn := Pointer.access(Slice.getT(comp.eqn));
+        eqn := PointerCyclic.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
         addScalarizedDependencies(scalarized_dependencies, map, jacType);
@@ -805,7 +806,7 @@ public
 
       // sliced regular equation.
       case SLICED_COMPONENT() algorithm
-        eqn := Pointer.access(Slice.getT(comp.eqn));
+        eqn := PointerCyclic.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
@@ -814,7 +815,7 @@ public
 
       // sliced for equations - create all the single entries
       case GENERIC_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        addForLoopDependencies(Pointer.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
+        addForLoopDependencies(PointerCyclic.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       case ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -822,12 +823,12 @@ public
         deps_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
-          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
+          tmp := Equation.collectCrefs(PointerCyclic.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
           eqn_ptr := Slice.getT(slice);
           if Equation.isForEquation(eqn_ptr) then
             // if its a for equation get all dependencies corresponding to their residual.
             // we do not really care for order and assume full dependency anyway
-            Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(eqn_ptr);
+            Equation.FOR_EQUATION(iter = iter, body = {body}) := PointerCyclic.access(eqn_ptr);
             cref := Equation.getEqnName(eqn_ptr);
             scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
               cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
@@ -920,7 +921,7 @@ public
     end if;
     scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
       cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
-      iter, Equation.size(Pointer.create(eqn)), indices, false);
+      iter, Equation.size(PointerCyclic.create(eqn)), indices, false);
     addScalarizedDependencies(scalarized_dependencies, map, jacType);
   end addForLoopDependencies;
 
@@ -946,7 +947,7 @@ public
 
   function getLoopResiduals
     input StrongComponent comp;
-    output list<Pointer<Variable>> residuals;
+    output list<PointerCyclic<Variable>> residuals;
   algorithm
     residuals := match comp
       case ALGEBRAIC_LOOP() then Tearing.getResidualVars(comp.strict);
@@ -956,7 +957,7 @@ public
 
   function getVariables
     input StrongComponent comp;
-    output list<Pointer<Variable>> vars;
+    output list<PointerCyclic<Variable>> vars;
   algorithm
     vars := match comp
       case SINGLE_COMPONENT()     then {comp.var};
@@ -1020,7 +1021,7 @@ public
 
   function getEquations
     input StrongComponent comp;
-    output list<Pointer<Equation>> eqns;
+    output list<PointerCyclic<Equation>> eqns;
   algorithm
     eqns := match comp
       case SINGLE_COMPONENT()     then {comp.eqn};
@@ -1084,8 +1085,8 @@ public
     output Boolean b;
   algorithm
     b := match comp
-      case SINGLE_COMPONENT() then Equation.isDummy(Pointer.access(comp.eqn));
-      case MULTI_COMPONENT()  then Equation.isDummy(Pointer.access(Slice.getT(comp.eqn)));
+      case SINGLE_COMPONENT() then Equation.isDummy(PointerCyclic.access(comp.eqn));
+      case MULTI_COMPONENT()  then Equation.isDummy(PointerCyclic.access(Slice.getT(comp.eqn)));
       else false;
     end match;
   end isDummy;
@@ -1143,8 +1144,8 @@ public
     comp := match comp_indices
       local
         Integer i, var_scal_idx, var_arr_idx;
-        Pointer<Variable> var;
-        Pointer<Equation> eqn;
+        PointerCyclic<Variable> var;
+        PointerCyclic<Equation> eqn;
         list<Slice<VariablePointer>> comp_vars;
         list<Slice<EquationPointer>> comp_eqns;
         Tearing tearingSet;
@@ -1209,7 +1210,7 @@ public
               innerEquations  = listArray({}),
               jac             = NONE());
             for eqn in comp_eqns loop
-              Equation.map(Pointer.access(Slice.getT(eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+              Equation.map(PointerCyclic.access(Slice.getT(eqn)), function Initialization.containsHomotopyCall(b = homotopy));
             end for;
           then ALGEBRAIC_LOOP(
             idx     = -1,
@@ -1268,8 +1269,8 @@ protected
   protected
     Integer var_idx, var_arr_idx, var_scal_idx, eqn_arr_idx, eqn_scal_idx;
     list<Integer> idx_lst;
-    Pointer<Variable> var;
-    Pointer<Equation> eqn;
+    PointerCyclic<Variable> var;
+    PointerCyclic<Equation> eqn;
     Integer len_comps = listLength(comp_indices);
     UnorderedMap<Integer, Slice.IntLst> var_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
     UnorderedMap<Integer, Slice.IntLst> eqn_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);

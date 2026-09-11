@@ -126,7 +126,7 @@ public
       case StrongComponent.SINGLE_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName);
+        (solvedEq, status, _) := Solve.solveBody(PointerCyclic.access(comp.eqn), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           SOME(replace_exp) := Equation.getRHS(solvedEq);
@@ -143,7 +143,7 @@ public
       case StrongComponent.SLICED_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(Slice.getT(comp.var));
-        (solvedEq, status, _) := Solve.solveBody(Pointer.access(Slice.getT(comp.eqn)), varName);
+        (solvedEq, status, _) := Solve.solveBody(PointerCyclic.access(Slice.getT(comp.eqn)), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           SOME(replace_exp) := Equation.getRHS(solvedEq);
@@ -175,7 +175,7 @@ public
     list<tuple<ComponentRef, Expression>> entries;
     ComponentRef aliasCref;
     Expression replacement;
-    Pointer<Variable> var_ptr;
+    PointerCyclic<Variable> var_ptr;
     Variable var;
   algorithm
     // do nothing if replacements are empty
@@ -201,9 +201,9 @@ public
     for entry in entries loop
       (aliasCref, replacement) := entry;
       var_ptr := BVariable.getVarPointer(aliasCref, sourceInfo());
-      var := Pointer.access(var_ptr);
+      var := PointerCyclic.access(var_ptr);
       var.binding := Binding.update(var.binding, replacement);
-      Pointer.update(var_ptr, var);
+      PointerCyclic.update(var_ptr, var);
     end for;
   end applySimple;
 
@@ -274,7 +274,7 @@ public
 
   function replaceVarPtr
     "replaces a pointer if there is a name replacement in the map"
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input UnorderedMap<ComponentRef, ComponentRef> replacements;
   protected
     Option<ComponentRef> cref;

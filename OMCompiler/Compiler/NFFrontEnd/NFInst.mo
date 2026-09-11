@@ -1477,11 +1477,11 @@ algorithm
         // if they've already been protected by an extends higher up.
         if vis == ExtendsVisibility.PROTECTED and visibility <> ExtendsVisibility.PROTECTED then
           for c in cls_tree.classes loop
-            Mutable.update(c, InstNode.protectClass(Mutable.access(c)));
+            MutableCyclic.update(c, InstNode.protectClass(MutableCyclic.access(c)));
           end for;
 
           for c in cls_tree.components loop
-            Mutable.update(c, InstNode.protectComponent(Mutable.access(c)));
+            MutableCyclic.update(c, InstNode.protectComponent(MutableCyclic.access(c)));
           end for;
         end if;
 
@@ -1557,7 +1557,7 @@ function applyModifier
   input InstContext.Type context;
 protected
   list<Modifier> mods;
-  list<Mutable<InstNode>> node_ptrs;
+  list<MutableCyclic<InstNode>> node_ptrs;
   InstNode node;
   Boolean found;
 algorithm
@@ -1601,7 +1601,7 @@ algorithm
 
           // Apply the modifier to each found node.
           for node_ptr in node_ptrs loop
-            node := Mutable.access(node_ptr);
+            node := MutableCyclic.access(node_ptr);
 
             if InstNode.isEmpty(node) then
               // Component removed by 'break'.
@@ -1640,7 +1640,7 @@ algorithm
               partialInstClass(node);
               node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
               node := InstNode.clearPackageCache(node);
-              Mutable.update(node_ptr, node);
+              MutableCyclic.update(node_ptr, node);
             end if;
           end for;
 
@@ -1670,7 +1670,7 @@ algorithm
     case ClassTree.INSTANTIATED_TREE()
       algorithm
         for cls_ptr in tree.classes loop
-          cls_node := Mutable.access(cls_ptr);
+          cls_node := MutableCyclic.access(cls_ptr);
           cls := InstNode.getClass(InstNode.resolveOuter(cls_node));
           mod := Class.getModifier(cls);
 
@@ -1678,7 +1678,7 @@ algorithm
             Modifier.REDECLARE(element = redecl_node, outerMod = mod, constrainingMod = cc_mod) := mod;
             cc_mod := getConstrainingMod(InstNode.definition(cls_node), parent, cc_mod, instLevel);
             cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod, instLevel, context);
-            Mutable.update(cls_ptr, cls_node);
+            MutableCyclic.update(cls_ptr, cls_node);
           end if;
         end for;
       then
@@ -1689,62 +1689,62 @@ algorithm
 end redeclareClasses;
 
 function redeclareElements
-  input list<Mutable<InstNode>> chain;
+  input list<MutableCyclic<InstNode>> chain;
   input Integer instLevel;
   input InstContext.Type context;
 protected
   InstNode node;
-  Mutable<InstNode> node_ptr;
+  MutableCyclic<InstNode> node_ptr;
 algorithm
-  node := Mutable.access(listHead(chain));
+  node := MutableCyclic.access(listHead(chain));
   node_ptr := listHead(chain);
 
   if InstNode.isClass(node) then
     for cls_ptr in listRest(chain) loop
       node_ptr := redeclareClassElement(cls_ptr, node_ptr, instLevel, context);
     end for;
-    node := Mutable.access(node_ptr);
+    node := MutableCyclic.access(node_ptr);
   else
     for comp_ptr in listRest(chain) loop
       node_ptr := redeclareComponentElement(comp_ptr, node_ptr, instLevel, context);
     end for;
-    node := Mutable.access(node_ptr);
+    node := MutableCyclic.access(node_ptr);
   end if;
 
   for cls_ptr in chain loop
-    Mutable.update(cls_ptr, node);
+    MutableCyclic.update(cls_ptr, node);
   end for;
 end redeclareElements;
 
 function redeclareClassElement
-  input Mutable<InstNode> redeclareCls;
-  input Mutable<InstNode> replaceableCls;
+  input MutableCyclic<InstNode> redeclareCls;
+  input MutableCyclic<InstNode> replaceableCls;
   input Integer instLevel;
   input InstContext.Type context;
-  output Mutable<InstNode> outCls;
+  output MutableCyclic<InstNode> outCls;
 protected
   InstNode rdcl_node, repl_node;
 algorithm
-  rdcl_node := Mutable.access(redeclareCls);
-  repl_node := Mutable.access(replaceableCls);
+  rdcl_node := MutableCyclic.access(redeclareCls);
+  repl_node := MutableCyclic.access(replaceableCls);
   rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), instLevel, context);
-  outCls := Mutable.create(rdcl_node);
+  outCls := MutableCyclic.create(rdcl_node);
 end redeclareClassElement;
 
 function redeclareComponentElement
-  input Mutable<InstNode> redeclareComp;
-  input Mutable<InstNode> replaceableComp;
+  input MutableCyclic<InstNode> redeclareComp;
+  input MutableCyclic<InstNode> replaceableComp;
   input Integer instLevel;
   input InstContext.Type context;
-  output Mutable<InstNode> outComp;
+  output MutableCyclic<InstNode> outComp;
 protected
   InstNode rdcl_node, repl_node;
 algorithm
-  rdcl_node := Mutable.access(redeclareComp);
-  repl_node := Mutable.access(replaceableComp);
+  rdcl_node := MutableCyclic.access(redeclareComp);
+  repl_node := MutableCyclic.access(replaceableComp);
   instComponent(repl_node, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, context);
   redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), {}, NFAttributes.DEFAULT_ATTR, rdcl_node, instLevel, context);
-  outComp := Mutable.create(rdcl_node);
+  outComp := MutableCyclic.create(rdcl_node);
 end redeclareComponentElement;
 
 function redeclareClass
@@ -2546,14 +2546,14 @@ algorithm
       Attributes attr;
 
     case Expression.CREF(cref = ComponentRef.CREF(node = node as InstNode.COMPONENT_NODE()))
-      guard(Component.variability(Pointer.access(node.component)) == Variability.PARAMETER) algorithm
-        comp := Pointer.access(node.component);
+      guard(Component.variability(PointerCyclic.access(node.component)) == Variability.PARAMETER) algorithm
+        comp := PointerCyclic.access(node.component);
         () :=match comp
           case Component.COMPONENT(attributes = attr) algorithm
             attr.variability := Variability.NON_STRUCTURAL_PARAMETER;
             attr.isResizable := true;
             comp.attributes := attr;
-            Pointer.update(node.component, comp);
+            PointerCyclic.update(node.component, comp);
           then ();
           else ();
         end match;
@@ -2578,7 +2578,7 @@ protected
   Type ty;
   InstContext.Type next_context;
   ConnectBreakTree.Tree connect_breaks;
-  list<Mutable<ConnectBreakTree.Entry>> local_connect_breaks;
+  list<MutableCyclic<ConnectBreakTree.Entry>> local_connect_breaks;
 algorithm
   () := match cls
     // Long class declaration of a type.
@@ -3883,7 +3883,7 @@ function insertGeneratedInners
   input InstContext.Type context;
 protected
   UnorderedMap<String, InstNode> generated_inners;
-  list<Mutable<InstNode>> inner_comps;
+  list<MutableCyclic<InstNode>> inner_comps;
   InstNode n;
   String name, str;
   Class cls;
@@ -3928,7 +3928,7 @@ algorithm
       end if;
 
       // Add the instantiated component to the list.
-      inner_comps := Mutable.create(n) :: inner_comps;
+      inner_comps := MutableCyclic.create(n) :: inner_comps;
     end if;
   end for;
 

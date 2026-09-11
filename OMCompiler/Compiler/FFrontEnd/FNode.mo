@@ -49,6 +49,8 @@ import AbsynUtil;
 import DAE;
 import SCode;
 import FCore;
+import Mutable;
+import MutableCyclic;
 
 // protected imports
 protected
@@ -120,7 +122,7 @@ public function toRef
   input Node inNode;
   output Ref outRef;
 algorithm
-  outRef := arrayCreate(1, inNode);
+  outRef := MutableCyclic.create(inNode);
 end toRef;
 
 public function fromRef
@@ -129,7 +131,7 @@ public function fromRef
   input Ref inRef;
   output Node outNode;
 algorithm
-  outNode := arrayGet(inRef, 1);
+  outNode := MutableCyclic.access(inRef);
 end fromRef;
 
 public function updateRef
@@ -139,7 +141,8 @@ public function updateRef
   input Node inNode;
   output Ref outRef;
 algorithm
-  outRef := arrayUpdate(inRef, 1, inNode);
+  MutableCyclic.update(inRef, inNode);
+  outRef := inRef;
 end updateRef;
 
 public function id

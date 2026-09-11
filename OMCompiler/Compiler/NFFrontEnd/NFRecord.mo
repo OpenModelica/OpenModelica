@@ -224,7 +224,7 @@ function collectRecordParams
 protected
   InstNode comp;
   array<InstNode> comps;
-  array<Mutable<InstNode>> pcomps;
+  array<MutableCyclic<InstNode>> pcomps;
   ClassTree tree;
 algorithm
   tree := Class.classTree(InstNode.getClass(recNode));
@@ -243,7 +243,7 @@ algorithm
     case ClassTree.INSTANTIATED_TREE(components = pcomps)
       algorithm
         for i in arrayLength(pcomps):-1:1 loop
-          comp := Mutable.access(pcomps[i]);
+          comp := MutableCyclic.access(pcomps[i]);
           (inputs, locals) := collectRecordParam(comp, inputs, locals);
           allParams := comp :: allParams;
         end for;

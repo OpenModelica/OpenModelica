@@ -564,7 +564,7 @@ public
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          eqn := Pointer.access(ExpandableArray.get(i, equations.eqArr));
+          eqn := PointerCyclic.access(ExpandableArray.get(i, equations.eqArr));
           (tmp, simCodeIndices) := match eqn
             local
               ComponentRef cref;
@@ -716,28 +716,28 @@ public
           list<SimIterator> iters;
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(PointerCyclic.access(comp.var), PointerCyclic.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, kind, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, PointerCyclic.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-          (tmp, simCodeIndices) := createAlgorithm(Pointer.access(Slice.getT(comp.eqn)), simCodeIndices, equation_map);
+          (tmp, simCodeIndices) := createAlgorithm(PointerCyclic.access(Slice.getT(comp.eqn)), simCodeIndices, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
-          eqn := Pointer.access(Slice.getT(comp.eqn));
+          eqn := PointerCyclic.access(Slice.getT(comp.eqn));
           (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
           // create a resizable equation
           eqn_ptr := Slice.getT(comp.eqn);
-          eqn     := Pointer.access(eqn_ptr);
+          eqn     := PointerCyclic.access(eqn_ptr);
           ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
           iters   := SimIterator.fromIterator(Equation.getForIterator(eqn));
           generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
@@ -749,7 +749,7 @@ public
         case StrongComponent.GENERIC_COMPONENT() algorithm
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
-          eqn     := Pointer.access(eqn_ptr);
+          eqn     := PointerCyclic.access(eqn_ptr);
           ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, false);
           generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
           tmp     := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
@@ -788,7 +788,7 @@ public
           end for;
           allLinVarsFound := true;
           for slice in strict.iteration_vars loop
-            var := Pointer.access(Slice.getT(slice));
+            var := PointerCyclic.access(Slice.getT(slice));
             if Variable.size(var) > 1 then
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
                 crefs := scal_var.name :: crefs;
@@ -852,7 +852,7 @@ public
               crefs         = listReverse(crefs),
               indexSystem   = simCodeIndices.nonlinearSystemIndex,
               size          = listLength(crefs),
-              jacobian      = Pointer.create(jacobian),
+              jacobian      = PointerCyclic.create(jacobian),
               homotopy      = comp.homotopy,
               mixed         = comp.mixed,
               torn          = true
@@ -889,7 +889,7 @@ public
       input output Integer res_idx;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
-      Equation eqn = Pointer.access(Slice.getT(slice));
+      Equation eqn = PointerCyclic.access(Slice.getT(slice));
     algorithm
       blck := match (eqn, slice.indices)
         local
@@ -904,7 +904,7 @@ public
         then tmp;
 
         case (BEquation.IF_EQUATION(), _) algorithm
-          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(PointerCyclic.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
         then tmp;
 
         // unsliced array equation
@@ -960,7 +960,7 @@ public
         then fail();
 
       end match;
-      UnorderedMap.add(Equation.getEqnName(Pointer.create(eqn)), blck, equation_map);
+      UnorderedMap.add(Equation.getEqnName(PointerCyclic.create(eqn)), blck, equation_map);
     end createResidual;
 
     function createEquation
@@ -1024,7 +1024,7 @@ public
         then fail();
 
       end match;
-      UnorderedMap.add(Equation.getEqnName(Pointer.create(eqn)), blck, equation_map);
+      UnorderedMap.add(Equation.getEqnName(PointerCyclic.create(eqn)), blck, equation_map);
     end createEquation;
 
     function createImplicitEquation
@@ -1041,7 +1041,7 @@ public
       Integer index;
     algorithm
       (comp, index) := Tearing.implicit(
-        comp    = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
+        comp    = StrongComponent.SINGLE_COMPONENT(PointerCyclic.create(var), PointerCyclic.create(eqn), NBSolve.Status.IMPLICIT),
         funcMap = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual),
         index   = simCodeIndices.implicitIndex,
         kind    = kind
@@ -1115,7 +1115,7 @@ public
 
       blck := ALGORITHM(indices.equationIndex, stmts, Equation.getAttributes(eqn));
       indices.equationIndex := indices.equationIndex + 1;
-      UnorderedMap.add(Equation.getEqnName(Pointer.create(eqn)), blck, equation_map);
+      UnorderedMap.add(Equation.getEqnName(PointerCyclic.create(eqn)), blck, equation_map);
     end createAlgorithm;
 
     function createAssignment
@@ -1519,7 +1519,7 @@ public
       list<ComponentRef> crefs  "iteration variables";
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
-      Pointer<Option<SimJacobian>> jacobian;
+      PointerCyclic<Option<SimJacobian>> jacobian;
       Boolean homotopy;
       Boolean mixed;
       Boolean torn;
@@ -1527,14 +1527,14 @@ public
 
     function getJacobian
       input NonlinearSystem syst;
-      output Option<SimJacobian> jacobian = Pointer.access(syst.jacobian);
+      output Option<SimJacobian> jacobian = PointerCyclic.access(syst.jacobian);
     end getJacobian;
 
     function setJacobian
       input output NonlinearSystem syst;
       input Option<SimJacobian> jacobian;
     algorithm
-      Pointer.update(syst.jacobian, jacobian);
+      PointerCyclic.update(syst.jacobian, jacobian);
     end setJacobian;
 
     function toString
@@ -1562,7 +1562,7 @@ public
         crefs                 = listReverse(crefs),
         indexNonLinearSystem  = system.indexSystem,
         nUnknowns             = system.size,
-        jacobianMatrix        = Util.applyOption(Pointer.access(system.jacobian), SimJacobian.convert), // ToDo update this!
+        jacobianMatrix        = Util.applyOption(PointerCyclic.access(system.jacobian), SimJacobian.convert), // ToDo update this!
         homotopySupport       = system.homotopy,
         mixedSystem           = system.mixed,
         tornSystem            = system.torn,

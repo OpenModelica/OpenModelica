@@ -234,7 +234,7 @@ public
     protected
       BClock clock;
       Option<ComponentRef> baseClock;
-      Pointer<Variable> clock_var;
+      PointerCyclic<Variable> clock_var;
     algorithm
       try
         // parse the clock and see if it depends on another clock
@@ -589,8 +589,8 @@ public
     input output Equation eqn;
     input UnorderedMap<BClock, ComponentRef> clck_coll;
     input UnorderedMap<BClock, ComponentRef> infr_coll;
-    input Pointer<list<Pointer<Variable>>> new_clocks;
-    input Pointer<list<Pointer<Variable>>> new_infers;
+    input PointerCyclic<list<PointerCyclic<Variable>>> new_clocks;
+    input PointerCyclic<list<PointerCyclic<Variable>>> new_infers;
     input Pointer<Integer> idx;
   algorithm
     eqn := match eqn
@@ -606,8 +606,8 @@ public
     input output Option<WhenEquationBody> body_opt;
     input UnorderedMap<BClock, ComponentRef> clck_coll;
     input UnorderedMap<BClock, ComponentRef> infr_coll;
-    input Pointer<list<Pointer<Variable>>> new_clocks;
-    input Pointer<list<Pointer<Variable>>> new_infers;
+    input PointerCyclic<list<PointerCyclic<Variable>>> new_clocks;
+    input PointerCyclic<list<PointerCyclic<Variable>>> new_infers;
     input Pointer<Integer> idx;
   algorithm
     body_opt := match body_opt
@@ -626,15 +626,15 @@ public
     input output Expression exp;
     input UnorderedMap<BClock, ComponentRef> clck_coll;
     input UnorderedMap<BClock, ComponentRef> infr_coll;
-    input Pointer<list<Pointer<Variable>>> new_clocks;
-    input Pointer<list<Pointer<Variable>>> new_infers;
+    input PointerCyclic<list<PointerCyclic<Variable>>> new_clocks;
+    input PointerCyclic<list<PointerCyclic<Variable>>> new_infers;
     input Pointer<Integer> idx;
     input Boolean when_cond;
   algorithm
     exp := match exp
       local
         BClock clock;
-        Pointer<Variable> clock_var;
+        PointerCyclic<Variable> clock_var;
         ComponentRef clock_name;
 
       case Expression.CLKCONST() guard(when_cond or not ClockKind.isInferred(exp.clk)) algorithm
@@ -649,10 +649,10 @@ public
           (clock_var, clock_name) := BVariable.makeClockVar(Pointer.access(idx), Expression.typeOf(exp));
           if BClock.isInferredClock(clock) then
             UnorderedMap.add(clock, clock_name, infr_coll);
-            Pointer.update(new_infers, clock_var :: Pointer.access(new_infers));
+            PointerCyclic.update(new_infers, clock_var :: PointerCyclic.access(new_infers));
           else
             UnorderedMap.add(clock, clock_name, clck_coll);
-            Pointer.update(new_clocks, clock_var :: Pointer.access(new_clocks));
+            PointerCyclic.update(new_clocks, clock_var :: PointerCyclic.access(new_clocks));
           end if;
           Pointer.update(idx, Pointer.access(idx) + 1);
         end if;
@@ -718,9 +718,9 @@ protected
         "finds the first clock/clocked signal and skips everything afterwards"
         input output Expression exp;
         input ClockedInfo info;
-        input Pointer<Option<ComponentRef>> clock_ptr;
+        input PointerCyclic<Option<ComponentRef>> clock_ptr;
       protected
-        Option<ComponentRef> clock_opt = Pointer.access(clock_ptr);
+        Option<ComponentRef> clock_opt = PointerCyclic.access(clock_ptr);
       algorithm
         exp := match (exp, clock_opt)
           // already found clock, do nothing
@@ -728,7 +728,7 @@ protected
 
           case (Expression.CREF(), NONE()) guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
             // add the clock cref
-            Pointer.update(clock_ptr, SOME(exp.cref));
+            PointerCyclic.update(clock_ptr, SOME(exp.cref));
           then exp;
 
           // do nothing on clock sampling functions as they do not imply a clock for this cluster
@@ -738,14 +738,14 @@ protected
           else Expression.mapShallow(exp, function findClock(info = info, clock_ptr = clock_ptr));
         end match;
       end findClock;
-      Pointer<Option<ComponentRef>> clock_ptr = Pointer.create(NONE());
+      PointerCyclic<Option<ComponentRef>> clock_ptr = PointerCyclic.create(NONE());
       Option<ComponentRef> clock_opt = NONE();
       ComponentRef clock;
     algorithm
       // search all equations until first clock/clocked signal is found
       for eqn_name in UnorderedSet.toList(cluster.eqn_idnts) loop
-        Equation.map(Pointer.access(EquationPointers.getEqnByName(equations, eqn_name)), function findClock(info = info, clock_ptr = clock_ptr), NONE(), Expression.fakeMap);
-        clock_opt := Pointer.access(clock_ptr);
+        Equation.map(PointerCyclic.access(EquationPointers.getEqnByName(equations, eqn_name)), function findClock(info = info, clock_ptr = clock_ptr), NONE(), Expression.fakeMap);
+        clock_opt := PointerCyclic.access(clock_ptr);
         if isSome(clock_opt) then break; end if;
       end for;
 
@@ -771,8 +771,8 @@ protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
       list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
       Partition.Association association;
-      list<Pointer<Variable>> var_lst, filtered_vars;
-      list<Pointer<Equation>> eqn_lst;
+      list<PointerCyclic<Variable>> var_lst, filtered_vars;
+      list<PointerCyclic<Equation>> eqn_lst;
       VariablePointers partVariables;
       EquationPointers partEquations;
       UnorderedSet<ComponentRef> inferred_clocks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -819,7 +819,7 @@ protected
 
   protected
     function collectInferredClock
-      input Pointer<Variable> var;
+      input PointerCyclic<Variable> var;
       input UnorderedSet<ComponentRef> inferred_clocks;
       output Boolean delete = BVariable.isClock(var);
     algorithm
@@ -829,11 +829,11 @@ protected
     end collectInferredClock;
 
     function removeInferredClock
-      input Pointer<Equation> eqn;
+      input PointerCyclic<Equation> eqn;
       input UnorderedSet<ComponentRef> inferred_clocks;
       output Boolean delete;
     algorithm
-      delete := match Pointer.access(eqn)
+      delete := match PointerCyclic.access(eqn)
         local
           ComponentRef lhs;
         case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = lhs)) then UnorderedSet.contains(lhs, inferred_clocks);
@@ -940,15 +940,15 @@ protected
   protected
     DisjointSetForest eqn_dsf = DisjointSetForest.new(ExpandableArray.getLastUsedIndex(equations.eqArr));
     array<Integer> var_map = arrayCreate(ExpandableArray.getLastUsedIndex(variables.varArr), -1);
-    Pointer<Equation> eqn;
-    Pointer<Variable> var;
+    PointerCyclic<Equation> eqn;
+    PointerCyclic<Variable> var;
     UnorderedSet<ComponentRef> var_crefs;
     list<Integer> var_indices;
     Integer part_idx;
     UnorderedMap<Integer, Cluster> cluster_map = UnorderedMap.new<Cluster>(Util.id, intEq);
     ComponentRef name_cref;
     array<Boolean> marked_vars;
-    list<Pointer<Variable>> single_vars;
+    list<PointerCyclic<Variable>> single_vars;
     UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     // maps each cref to the clock it is listening to
     UnorderedMap<ComponentRef, ComponentRef> clock_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -959,7 +959,7 @@ protected
     for eq_idx in UnorderedMap.valueList(clocked.map) loop
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(clocked, eq_idx);
-        BClock.add(Pointer.access(eqn), info);
+        BClock.add(PointerCyclic.access(eqn), info);
       end if;
     end for;
 
@@ -967,11 +967,11 @@ protected
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(equations, eq_idx);
-        BClock.add(Pointer.access(eqn), info);
+        BClock.add(PointerCyclic.access(eqn), info);
 
         // collect all crefs in equation
         var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.fakeMap);
+        Equation.map(PointerCyclic.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.fakeMap);
 
         // find all indices of connected variables
         var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
@@ -995,7 +995,7 @@ protected
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + Partition.Partition.kindToString(kind)
         + ") failed because the following variables could not be assigned to a partition:\n  {"
-        + stringDelimitList(list(BVariable.toString(Pointer.access(var_ptr)) for var_ptr in single_vars), "\n") + "}"});
+        + stringDelimitList(list(BVariable.toString(PointerCyclic.access(var_ptr)) for var_ptr in single_vars), "\n") + "}"});
       fail();
     end if;
 
@@ -1154,14 +1154,14 @@ protected
           UnorderedMap<VariablePointer, BClock> var_clock_map;
           Partition.Partition part;
           list<StrongComponent> sub_comps;
-          list<Pointer<Variable>> sub_comp_vars;
-          list<Pointer<Equation>> sub_comp_eqns;
-          Option<tuple<list<Pointer<Variable>>, list<Pointer<Equation>>, BClock>> collector;
+          list<PointerCyclic<Variable>> sub_comp_vars;
+          list<PointerCyclic<Equation>> sub_comp_eqns;
+          Option<tuple<list<PointerCyclic<Variable>>, list<PointerCyclic<Equation>>, BClock>> collector;
           UnorderedSet<BClock> var_clocks;
           Option<BClock> baseClock;
 
-          list<Pointer<Variable>> vars;
-          list<Pointer<Equation>> eqns;
+          list<PointerCyclic<Variable>> vars;
+          list<PointerCyclic<Equation>> eqns;
           BClock clock, new_clock;
 
         // standard non loop partition
@@ -1287,7 +1287,7 @@ protected
         // extract potential record children
         children := match BVariable.getVar(exp.cref, sourceInfo())
           local
-            list<Pointer<Variable>> children_vars;
+            list<PointerCyclic<Variable>> children_vars;
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
           then list(BVariable.getVarName(var) for var in children_vars);
           else {exp.cref};
@@ -1310,7 +1310,7 @@ protected
     input ComponentRef cref;
     input UnorderedSet<ComponentRef> set;
   protected
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref, sourceInfo());
+    PointerCyclic<Variable> var_ptr = BVariable.getVarPointer(cref, sourceInfo());
   algorithm
     // states and there derivatives belong to one partition
     // discrete states and there pre value also

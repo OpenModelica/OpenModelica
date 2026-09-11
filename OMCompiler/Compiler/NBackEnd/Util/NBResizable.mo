@@ -150,7 +150,7 @@ public
     input ComponentRef cref_to_solve;
     output UnorderedMap<ComponentRef, EvalOrder> order = UnorderedMap.new<EvalOrder>(ComponentRef.hash, ComponentRef.isEqual);
   protected
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve, sourceInfo());
+    PointerCyclic<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve, sourceInfo());
     UnorderedSet<ComponentRef> var_occurences = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> ite_occurences;
     list<ComponentRef> occ_lst, iterators;
@@ -612,7 +612,7 @@ protected
     input Option<UnorderedMap<ComponentRef, Expression>> replacements;
     input output UnorderedMap<Expression, ParameterList> c2pi;
   protected
-    Variable var = Pointer.access(BVariable.getVarPointer(cref, sourceInfo()));
+    Variable var = PointerCyclic.access(BVariable.getVarPointer(cref, sourceInfo()));
     list<Dimension> dims = Type.arrayDims(var.ty);
     list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref); // needs list reverse?
     Dimension dim;
@@ -628,7 +628,7 @@ protected
         addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= " + Subscript.toString(sub)
-          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
+          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(PointerCyclic.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
         fail();
       end try;
       const   := Expression.MULTARY({Expression.INTEGER(1)}, {Dimension.sizeExp(dim)}, op);
@@ -636,7 +636,7 @@ protected
         addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= 1"
-          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
+          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(PointerCyclic.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
         fail();
       end try;
     end for;
@@ -752,7 +752,7 @@ protected
       // use max value as initial guess
     else
       // cannot be determined -> use actual binding value
-      var := Pointer.access(BVariable.getVarPointer(cref, sourceInfo()));
+      var := PointerCyclic.access(BVariable.getVarPointer(cref, sourceInfo()));
       binding := Binding.getExp(var.binding);
       UnorderedMap.add(cref, binding, optimal_values);
     end if;
@@ -768,7 +768,7 @@ protected
     Expression value;
   algorithm
     if not UnorderedMap.contains(cref, optimal_values) then
-      var := Pointer.access(BVariable.getVarPointer(cref, sourceInfo()));
+      var := PointerCyclic.access(BVariable.getVarPointer(cref, sourceInfo()));
       value := match var
         case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes as VariableAttributes.VAR_ATTR_INT())) algorithm
           if UnorderedSet.contains(cref, min_parameters) then
@@ -972,7 +972,7 @@ protected
   algorithm
     for tpl in UnorderedMap.toList(optimal_values) loop
       (param, value)  := tpl;
-      var             := Pointer.access(BVariable.getVarPointer(param, sourceInfo()));
+      var             := PointerCyclic.access(BVariable.getVarPointer(param, sourceInfo()));
       names           := ComponentRef.toString(param) :: names;
       new_vals        := Expression.toString(value) :: new_vals;
       old_vals        := Binding.toString(var.binding) :: old_vals;
