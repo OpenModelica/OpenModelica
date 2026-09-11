@@ -318,7 +318,16 @@ endif()
 omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_OMSIMULATOR)
+  # A cross toolchain re-roots DCPLib's find_path for asio into its sysroot.
+  if(CMAKE_CROSSCOMPILING)
+    set(ASIO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator/3rdParty/asio"
+        CACHE PATH "asio for OMSimulator/3rdParty/DCPLib")
+  endif()
   omc_add_subdirectory(OMSimulator)
+  # ezxml.c skips <unistd.h> on _WIN32 and calls read(); clang-cl rejects that.
+  if(MSVC AND CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(fmi4c PRIVATE -Wno-implicit-function-declaration)
+  endif()
 endif()
 
 # OMPlot provides OMPlotLib and the omqwt target, needed by OMEdit, OMNotebook

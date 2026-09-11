@@ -78,7 +78,7 @@ thread_local! {
 /// `libc::free`).
 unsafe fn dup_cstr(s: &str) -> *mut c_char {
     let c = CString::new(s).unwrap_or_default();
-    unsafe { libc::strdup(c.as_ptr()) }
+    unsafe { crate::malloc_dup(c.as_ptr()) }
 }
 
 /// Open a MATLAB v4 result file. Returns null on success (populating `reader`),
