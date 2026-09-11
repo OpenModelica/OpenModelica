@@ -175,6 +175,7 @@ fn set_revision() {
 pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int {
     use std::io::Write;
     set_revision();
+    metamodelica::mmval::init_collect_condition();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
     // and stop. For the build; not a user-facing flag.
     #[cfg(not(target_arch = "wasm32"))]

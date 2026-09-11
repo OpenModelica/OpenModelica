@@ -731,6 +731,16 @@ pub enum ClassBodyItem {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SectionKind { Public, Protected }
 
+macro_rules! parser_leaf {
+    ($($t:ty),*) => {$(
+        impl MmVal for $t {
+            type Traced = metamodelica::mmval::No;
+            fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> Result<(), ()> { Ok(()) }
+        }
+    )*};
+}
+parser_leaf!(ClassBodyItem, SectionKind);
+
 #[derive(Debug, Clone)]
 pub enum ClassSpecifier {
     Normal  { name: Ident, body: metamodelica::Ref<ClassDef> },

@@ -38,14 +38,14 @@ pub fn free<T>(data: T) {}
 
 // MetaModelica `GCExt.gcollect` maps to one run of the cycle collector: the
 // refcounted heap frees acyclic garbage eagerly on its own, so an explicit
-// collection only needs to reclaim cycles closed through mutable cells.
+// collection only needs to reclaim cycles closed through cyclic cells.
 pub fn gcollect() {
-    metamodelica::gc::collect();
+    metamodelica::mmval::collect();
 }
 
 pub fn gcollectAndUnmap() {
     // No unmapping concept on the refcounted heap; same as `gcollect`.
-    metamodelica::gc::collect();
+    metamodelica::mmval::collect();
 }
 
 pub fn getForceUnmapOnGcollect() -> bool {

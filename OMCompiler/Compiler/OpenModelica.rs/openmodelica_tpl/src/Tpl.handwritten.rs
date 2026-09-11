@@ -269,6 +269,18 @@ impl Toks {
     }
 }
 
+// Template text holds `StringToken`/`BlockType`, neither of which can reach a
+// cyclic cell, so these are leaves for the cycle collector.
+macro_rules! tpl_leaf {
+    ($($t:ty),*) => {$(
+        impl metamodelica::mmval::MmVal for $t {
+            type Traced = metamodelica::mmval::No;
+            fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> std::result::Result<(), ()> { Ok(()) }
+        }
+    )*};
+}
+tpl_leaf!(Toks, MemText, FileText, Text);
+
 impl MMTrace for Toks {
     fn mm_accept(&self, v: &mut dyn MMVisitor) -> std::result::Result<(), ()> {
         let Some(buf) = &self.buf else { return Ok(()) };

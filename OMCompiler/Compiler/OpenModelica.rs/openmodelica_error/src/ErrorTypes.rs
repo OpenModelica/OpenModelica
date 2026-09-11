@@ -66,6 +66,14 @@ impl metamodelica::gc::MMTrace for Severity {
         }
     }
 }
+impl metamodelica::mmval::MmVal for Severity {
+    // ErrorTypes.Severity
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {
+        let _ = __mmv;
+        Ok(())
+    }
+}
 impl Default for Severity {
     fn default() -> Self { Self::INTERNAL }
 }
@@ -101,6 +109,14 @@ impl metamodelica::gc::MMTrace for MessageType {
         }
     }
 }
+impl metamodelica::mmval::MmVal for MessageType {
+    // ErrorTypes.MessageType
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {
+        let _ = __mmv;
+        Ok(())
+    }
+}
 impl Default for MessageType {
     fn default() -> Self { Self::SYNTAX }
 }
@@ -124,6 +140,14 @@ impl metamodelica::gc::MMTrace for Message {
         metamodelica::gc::MMTrace::mm_accept(&self.ty, __mmv)?;
         metamodelica::gc::MMTrace::mm_accept(&self.severity, __mmv)?;
         metamodelica::gc::MMTrace::mm_accept(&self.message, __mmv)?;
+        Ok(())
+    }
+}
+impl metamodelica::mmval::MmVal for Message {
+    // ErrorTypes.Message
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {
+        let _ = __mmv;
         Ok(())
     }
 }
@@ -151,6 +175,14 @@ impl metamodelica::gc::MMTrace for TotalMessage {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         metamodelica::gc::MMTrace::mm_accept(&self.msg, __mmv)?;
         metamodelica::gc::MMTrace::mm_accept(&self.info, __mmv)?;
+        Ok(())
+    }
+}
+impl metamodelica::mmval::MmVal for TotalMessage {
+    // ErrorTypes.TotalMessage
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {
+        let _ = __mmv;
         Ok(())
     }
 }

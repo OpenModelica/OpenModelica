@@ -479,7 +479,7 @@ fn parse_default_experiment(root: &roxmltree::Node<'_, '_>, version: u32) -> Opt
 
 /// Prepend `items` (already in fmilib order) onto a list, so the result is
 /// reversed exactly like the C `mmc_mk_cons` loops produce.
-fn prepended_list<T: Clone>(items: impl IntoIterator<Item = T>) -> List<T> {
+fn prepended_list<T: Clone + metamodelica::mmval::MmVal>(items: impl IntoIterator<Item = T>) -> List<T> {
     let mut list: List<T> = metamodelica::nil();
     for item in items {
         list = metamodelica::cons(item, list);

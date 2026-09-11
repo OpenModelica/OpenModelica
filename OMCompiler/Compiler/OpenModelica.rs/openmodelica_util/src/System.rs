@@ -111,7 +111,7 @@ fn with<R>(f: impl FnOnce(&mut SysState) -> R) -> R {
 /// Build a `List` (MetaModelica cons-list) from a `Vec`, preserving order
 /// — the rightmost element ends up at the tail. Mirrors `list![..]` for
 /// the dynamic case.
-fn list_from_vec<T: Clone>(xs: Vec<T>) -> List<T> {
+fn list_from_vec<T: Clone + metamodelica::mmval::MmVal>(xs: Vec<T>) -> List<T> {
     let mut acc = metamodelica::nil::<T>();
     for x in xs.into_iter().rev() {
         acc = metamodelica::cons(x, acc);
@@ -2242,7 +2242,7 @@ pub fn numProcessors() -> i32 {
     std::thread::available_parallelism().map(|n| n.get() as i32).unwrap_or(1)
 }
 
-pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static>(
+pub fn launchParallelTasks<AnyInput: Clone + metamodelica::mmval::MmVal + 'static, AnyOutput: Clone + metamodelica::mmval::MmVal + 'static>(
     _numThreads: i32,
     inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
@@ -2281,7 +2281,7 @@ fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
 // Real-threaded map, opted into per call site. The `Send` bounds reject the
 // non-`Send` payloads the other `launchParallelTasks` sites carry.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
+pub fn launchParallelTasksThreaded<AnyInput: Clone + metamodelica::mmval::MmVal + Send + 'static, AnyOutput: Clone + metamodelica::mmval::MmVal + Send + 'static>(
     numThreads: i32,
     inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
@@ -2328,7 +2328,7 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
+pub fn launchParallelTasksThreaded<AnyInput: Clone + metamodelica::mmval::MmVal + Send + 'static, AnyOutput: Clone + metamodelica::mmval::MmVal + Send + 'static>(
     _numThreads: i32,
     inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,

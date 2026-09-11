@@ -31,6 +31,18 @@ use std::sync::Arc;
 pub use dumpster::unsync::{collect, Gc};
 pub use dumpster::Visitor;
 
+/// Turn automatic collection off for this thread when `OPENMODELICA_GC_DISABLE`
+/// is set, so the collector's cost can be measured against the same binary
+/// rather than against a differently-built one.
+pub fn init_collect_condition() {
+    if std::env::var_os("OPENMODELICA_GC_DISABLE").is_some() {
+        fn never(_: &dumpster::unsync::CollectInfo) -> bool {
+            false
+        }
+        dumpster::unsync::set_collect_condition(never);
+    }
+}
+
 // ── type-level booleans ──────────────────────────────────────────────────────
 
 /// Whether a value can reach a traced allocation. See the module docs.
@@ -144,6 +156,10 @@ pub trait SpinePtr<U: ?Sized>: Clone + std::ops::Deref<Target = U> {
     fn spine_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()>;
     fn same(a: &Self, b: &Self) -> bool;
     fn addr(this: &Self) -> *const ();
+    /// The payload itself, for the `Dangerous` in-place cons-cell writes.
+    /// Distinct from [`Self::addr`], which is the allocation's identity and on
+    /// the traced arm points at the `Gc` box rather than at `U`.
+    fn payload_ptr(this: &Self) -> *const U;
     /// Unique access, for the in-place list optimisations. The traced arm has
     /// no equivalent and always declines, so those paths fall back to copying.
     fn get_mut(this: &mut Self) -> Option<&mut U>
@@ -166,6 +182,9 @@ impl<U: MmVal> SpinePtr<U> for GcRef<U> {
     }
     fn addr(this: &Self) -> *const () {
         Gc::as_ptr(&this.0) as *const ()
+    }
+    fn payload_ptr(this: &Self) -> *const U {
+        &**this as *const U
     }
     fn get_mut(_: &mut Self) -> Option<&mut U> {
         None
@@ -193,6 +212,9 @@ impl<U: ?Sized> SpinePtr<U> for Rc<U> {
     }
     fn addr(this: &Self) -> *const () {
         Rc::as_ptr(this) as *const ()
+    }
+    fn payload_ptr(this: &Self) -> *const U {
+        Rc::as_ptr(this)
     }
     fn get_mut(this: &mut Self) -> Option<&mut U>
     where
@@ -223,6 +245,9 @@ impl<U: ?Sized> SpinePtr<U> for Arc<U> {
     }
     fn addr(this: &Self) -> *const () {
         Arc::as_ptr(this) as *const ()
+    }
+    fn payload_ptr(this: &Self) -> *const U {
+        Arc::as_ptr(this)
     }
     fn get_mut(this: &mut Self) -> Option<&mut U>
     where
@@ -356,20 +381,32 @@ impl<T: MmVal> MmVal for RefCell<T> {
     }
 }
 
-/// The persistent list. Its spine is shared, so tracing *through* it would
-/// count the handles a shared tail owns once per path that reaches it. That is
-/// safe only while the spine cannot hold a traced allocation; when the payload
-/// can, the spine itself has to become one (see [`Spine`]).
+/// The persistent list. Its cons cells are shared, so the walk reports the
+/// spine and stops: dumpster visits each cell once and counts the sharing
+/// itself. Walking *through* the cells instead would report a shared tail's
+/// contents once per path reaching it, and an over-count frees live data.
+/// On the untraced arm the spine is an `Arc` and reports nothing.
 impl<T: MmVal + Clone> MmVal for crate::List<T> {
     type Traced = T::Traced;
     fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
-        // Iterative: lists run to tens of thousands of elements.
-        let mut cur = self;
-        loop {
-            let Some(node) = &cur.0 else { return Ok(()) };
-            let crate::ListNode::Cons { head, tail } = &**node else { return Ok(()) };
-            head.mm_accept(visitor)?;
-            cur = tail;
+        match &self.0 {
+            Some(node) => node.spine_accept(visitor),
+            None => Ok(()),
+        }
+    }
+}
+
+/// One cons cell: its head and the handle to the next cell. Reached only
+/// through the traced arm, where dumpster walks the allocation for us.
+impl<T: MmVal + Clone> MmVal for crate::ListNode<T> {
+    type Traced = T::Traced;
+    fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
+        match self {
+            crate::ListNode::Cons { head, tail } => {
+                head.mm_accept(visitor)?;
+                tail.mm_accept(visitor)
+            }
+            crate::ListNode::Nil => Ok(()),
         }
     }
 }

@@ -237,22 +237,22 @@ impl<T: MMTrace + ?Sized> MMTrace for RefCell<T> {
 /// elements long and a recursive traversal would overflow the stack. Every
 /// spine cell is itself a shared allocation (tail sharing is pervasive), so
 /// each cell is reported like any other `Arc`.
-impl<T: MMTrace + Clone> MMTrace for List<T> {
+impl<T: MMTrace + Clone + crate::mmval::MmVal> MMTrace for List<T> {
     fn mm_accept(&self, visitor: &mut dyn MMVisitor) -> Result<(), ()> {
         let mut depth = 0usize;
         let mut cur = self;
         let r = loop {
             let Some(cell) = &cur.0 else { break Ok(()) };
             if !visitor.visit_shared(
-                Arc::as_ptr(cell) as *const (),
-                Arc::strong_count(cell),
+                crate::mmval::SpinePtr::addr(cell),
+                crate::mmval::SpinePtr::strong_count(cell),
                 std::any::type_name::<crate::ListNode<T>>(),
             ) {
                 break Ok(());
             }
             depth += 1;
             let crate::ListNode::Cons { head, tail } = &**cell else { break Ok(()) };
-            if let e @ Err(()) = head.mm_accept(visitor) {
+            if let e @ Err(()) = MMTrace::mm_accept(head, visitor) {
                 break e;
             }
             cur = tail;

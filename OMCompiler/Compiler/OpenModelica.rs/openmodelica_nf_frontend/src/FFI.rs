@@ -140,7 +140,7 @@ fn round_up(n: usize, align: usize) -> usize {
     n.div_ceil(align) * align
 }
 
-fn list_len<T: Clone>(list: &metamodelica::List<T>) -> usize {
+fn list_len<T: Clone + metamodelica::mmval::MmVal>(list: &metamodelica::List<T>) -> usize {
     list.iter().count()
 }
 

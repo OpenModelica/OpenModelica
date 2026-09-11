@@ -5,7 +5,7 @@ use super::*;
 
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
-pub(crate) fn lst<T: Clone>(l: &List<T>) -> impl Iterator<Item = &T> {
+pub(crate) fn lst<T: Clone + metamodelica::mmval::MmVal>(l: &List<T>) -> impl Iterator<Item = &T> {
     l.iter()
 }
 
@@ -90,6 +90,6 @@ pub(crate) fn t_real() -> metamodelica::Ref<DAE::Type> {
     metamodelica::Ref::new(DAE::Type::T_REAL { varLst: metamodelica::nil() })
 }
 
-pub(crate) fn count<T: Clone>(list: &List<T>) -> usize {
+pub(crate) fn count<T: Clone + metamodelica::mmval::MmVal>(list: &List<T>) -> usize {
     lst(list).count()
 }

@@ -141,11 +141,11 @@ impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7);
 impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7, I: 8);
 impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7, I: 8, J: 9);
 /// Lists: cell identity. Two empty lists are identical, like `mmc_nil` in MMC.
-impl<T: Clone> ReferenceEq for List<T> {
+impl<T: Clone + crate::mmval::MmVal> ReferenceEq for List<T> {
     fn reference_eq(&self, other: &Self) -> bool {
         match (&self.0, &other.0) {
             (None, None) => true,
-            (Some(l), Some(r)) => Arc::ptr_eq(l, r),
+            (Some(l), Some(r)) => crate::mmval::SpinePtr::same(l, r),
             _ => false,
         }
     }

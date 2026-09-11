@@ -1,8 +1,8 @@
 //! The persistent singly-linked `List<T>` and its builtins.
 //! Construction/field macros live in [`macros`].
 
-use std::sync::Arc;
 use std::hash::{Hash, Hasher};
+use crate::mmval::{MmVal, Spine, SpinePtr};
 use std::cmp::Ordering;
 use crate::Result;
 
@@ -12,21 +12,25 @@ mod macros;
 /// Heap cell of a [`List`]. `Nil` is never allocated: the empty list is
 /// `List(None)`, and `Deref` hands out a static `Nil` for it.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ListNode<T: Clone> {
+pub enum ListNode<T: Clone + MmVal> {
     Cons{head: T, tail: List<T>},
     Nil,
 }
 
-pub struct List<T: Clone>(pub(crate) Option<Arc<ListNode<T>>>);
+/// The spine follows the payload, like [`crate::Array`]'s. A cons cell is
+/// shared, so walking *through* it would report a shared tail's contents once
+/// per path reaching it; when the payload can hold a traced allocation the cell
+/// has to be one itself, and the collector accounts for the sharing.
+pub struct List<T: Clone + MmVal>(pub(crate) Option<Spine<T, ListNode<T>>>);
 
 // What the auto traits derive, stated explicitly so the solver need not
 // recurse through the cell type (it hit the recursion limit downstream).
-unsafe impl<T: Clone + Send + Sync> Send for List<T> {}
-unsafe impl<T: Clone + Send + Sync> Sync for List<T> {}
+unsafe impl<T: Clone + MmVal + MmVal + Send + Sync> Send for List<T> {}
+unsafe impl<T: Clone + MmVal + MmVal + Send + Sync> Sync for List<T> {}
 
 use ListNode::{Cons, Nil};
 
-impl<T: Clone> List<T> {
+impl<T: Clone + MmVal> List<T> {
     #[inline]
     pub fn iter(&self) -> ListRefIterator<'_, T> {
         ListRefIterator { curr: self.0.as_deref() }
@@ -37,11 +41,11 @@ impl<T: Clone> List<T> {
     }
 }
 
-impl<T: Clone + 'static> List<T> {
+impl<T: Clone + MmVal + 'static> List<T> {
     const NIL: &'static ListNode<T> = &Nil;
 }
 
-impl<T: Clone + 'static> std::ops::Deref for List<T> {
+impl<T: Clone + MmVal + 'static> std::ops::Deref for List<T> {
     type Target = ListNode<T>;
     #[inline]
     fn deref(&self) -> &ListNode<T> {
@@ -52,35 +56,35 @@ impl<T: Clone + 'static> std::ops::Deref for List<T> {
     }
 }
 
-impl<T: Clone + 'static> AsRef<ListNode<T>> for List<T> {
+impl<T: Clone + MmVal + 'static> AsRef<ListNode<T>> for List<T> {
     #[inline]
     fn as_ref(&self) -> &ListNode<T> { self }
 }
 
-impl<T: Clone> Clone for List<T> {
+impl<T: Clone + MmVal> Clone for List<T> {
     #[inline]
     fn clone(&self) -> Self { List(self.0.clone()) }
 }
 
-impl<T: Clone> Default for List<T> {
+impl<T: Clone + MmVal> Default for List<T> {
     #[inline]
     fn default() -> Self { List(None) }
 }
 
-impl<T: Clone + std::fmt::Debug> std::fmt::Debug for List<T> {
+impl<T: Clone + MmVal + std::fmt::Debug> std::fmt::Debug for List<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self).finish()
     }
 }
 
-impl<T: Clone + PartialEq> PartialEq for List<T> {
+impl<T: Clone + MmVal + PartialEq> PartialEq for List<T> {
     fn eq(&self, other: &Self) -> bool {
         let (mut a, mut b) = (self, other);
         loop {
             match (&a.0, &b.0) {
                 (None, None) => return true,
                 (Some(x), Some(y)) => {
-                    if Arc::ptr_eq(x, y) { return true; }
+                    if SpinePtr::same(x, y) { return true; }
                     match (&**x, &**y) {
                         (Cons{head: h1, tail: t1}, Cons{head: h2, tail: t2}) => {
                             if h1 != h2 { return false; }
@@ -94,10 +98,10 @@ impl<T: Clone + PartialEq> PartialEq for List<T> {
         }
     }
 }
-impl<T: Clone + Eq> Eq for List<T> {}
+impl<T: Clone + MmVal + Eq> Eq for List<T> {}
 
 // Nil sorts after Cons, as the derived enum ordering did.
-impl<T: Clone + Ord> Ord for List<T> {
+impl<T: Clone + MmVal + Ord> Ord for List<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         let (mut a, mut b) = (self, other);
         loop {
@@ -106,7 +110,7 @@ impl<T: Clone + Ord> Ord for List<T> {
                 (None, Some(_)) => return Ordering::Greater,
                 (Some(_), None) => return Ordering::Less,
                 (Some(x), Some(y)) => {
-                    if Arc::ptr_eq(x, y) { return Ordering::Equal; }
+                    if SpinePtr::same(x, y) { return Ordering::Equal; }
                     match (&**x, &**y) {
                         (Cons{head: h1, tail: t1}, Cons{head: h2, tail: t2}) => {
                             match h1.cmp(h2) {
@@ -123,7 +127,7 @@ impl<T: Clone + Ord> Ord for List<T> {
         }
     }
 }
-impl<T: Clone + PartialOrd> PartialOrd for List<T> {
+impl<T: Clone + MmVal + PartialOrd> PartialOrd for List<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let (mut a, mut b) = (self, other);
         loop {
@@ -132,7 +136,7 @@ impl<T: Clone + PartialOrd> PartialOrd for List<T> {
                 (None, Some(_)) => return Some(Ordering::Greater),
                 (Some(_), None) => return Some(Ordering::Less),
                 (Some(x), Some(y)) => {
-                    if Arc::ptr_eq(x, y) { return Some(Ordering::Equal); }
+                    if SpinePtr::same(x, y) { return Some(Ordering::Equal); }
                     match (&**x, &**y) {
                         (Cons{head: h1, tail: t1}, Cons{head: h2, tail: t2}) => {
                             match h1.partial_cmp(h2) {
@@ -150,7 +154,7 @@ impl<T: Clone + PartialOrd> PartialOrd for List<T> {
     }
 }
 
-impl<T: Clone + Hash> Hash for List<T> {
+impl<T: Clone + MmVal + Hash> Hash for List<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let mut n = 0usize;
         for e in self {
@@ -163,21 +167,21 @@ impl<T: Clone + Hash> Hash for List<T> {
 
 // Iterative: a recursive drop is one stack frame per element. Only the
 // uniquely owned prefix is unlinked; a shared suffix just loses a reference.
-impl<T: Clone> Drop for List<T> {
+impl<T: Clone + MmVal> Drop for List<T> {
     #[inline]
     fn drop(&mut self) {
-        if let Some(node) = &self.0 && Arc::strong_count(node) == 1 {
+        if let Some(node) = &self.0 && SpinePtr::is_unique(node) {
             self.unlink();
         }
     }
 }
 
-impl<T: Clone> List<T> {
+impl<T: Clone + MmVal> List<T> {
     #[inline(never)]
     fn unlink(&mut self) {
         let mut cur = self.0.take();
         while let Some(mut node) = cur {
-            match Arc::get_mut(&mut node) {
+            match SpinePtr::get_mut(&mut node) {
                 Some(Cons { tail, .. }) => cur = tail.0.take(),
                 _ => break,
             }
@@ -186,20 +190,20 @@ impl<T: Clone> List<T> {
 }
 
 #[inline]
-pub fn nil<T: Clone>() -> List<T> {
+pub fn nil<T: Clone + MmVal>() -> List<T> {
     List(None)
 }
 
 #[inline]
-pub fn cons<T: Clone>(head: T, tail: List<T>) -> List<T> {
-    List(Some(Arc::new(Cons{head, tail})))
+pub fn cons<T: Clone + MmVal>(head: T, tail: List<T>) -> List<T> {
+    List(Some(SpinePtr::alloc(Cons{head, tail})))
 }
 
-pub struct ListRefIterator<'a, T: Clone> {
+pub struct ListRefIterator<'a, T: Clone + MmVal> {
     curr: Option<&'a ListNode<T>>,
 }
 
-impl<T: Clone> FromIterator<T> for List<T> {
+impl<T: Clone + MmVal> FromIterator<T> for List<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> List<T> {
         let mut buf = nil();
         for item in iter {
@@ -209,7 +213,7 @@ impl<T: Clone> FromIterator<T> for List<T> {
     }
 }
 
-impl<'a, T: Clone> IntoIterator for &'a List<T> {
+impl<'a, T: Clone + MmVal> IntoIterator for &'a List<T> {
     type Item = &'a T;
     type IntoIter = ListRefIterator<'a, T>;
 
@@ -219,7 +223,7 @@ impl<'a, T: Clone> IntoIterator for &'a List<T> {
     }
 }
 
-impl<'a, T: Clone> IntoIterator for &'a ListNode<T> {
+impl<'a, T: Clone + MmVal> IntoIterator for &'a ListNode<T> {
     type Item = &'a T;
     type IntoIter = ListRefIterator<'a, T>;
 
@@ -229,7 +233,7 @@ impl<'a, T: Clone> IntoIterator for &'a ListNode<T> {
     }
 }
 
-impl<'a, T: Clone> Iterator for ListRefIterator<'a, T> {
+impl<'a, T: Clone + MmVal> Iterator for ListRefIterator<'a, T> {
     type Item = &'a T;
 
     #[inline]
@@ -244,7 +248,7 @@ impl<'a, T: Clone> Iterator for ListRefIterator<'a, T> {
     }
 }
 
-impl<T: Clone> List<T> {
+impl<T: Clone + MmVal> List<T> {
     /// Appends lst2 to lst1. O(length(lst1)), O(1) if either list is empty.
     pub fn append(&self, lst2: &List<T>) -> List<T> {
         if self.is_empty() {
@@ -270,14 +274,14 @@ impl<T: Clone> List<T> {
         let mut acc = List(None);
         let mut cur = self.0.take();
         while let Some(mut node) = cur {
-            match Arc::get_mut(&mut node) {
+            match SpinePtr::get_mut(&mut node) {
                 Some(Cons { tail, .. }) => {
                     cur = tail.0.take();
                     tail.0 = acc.0.take();
                     acc = List(Some(node));
                 }
                 _ => {
-                    let shared = List(Some(node));
+                    let shared: List<T> = List(Some(node));
                     for e in &shared {
                         acc = cons(e.clone(), acc);
                     }
@@ -353,7 +357,7 @@ impl<T: Clone> List<T> {
     }
 }
 
-impl<T: PartialEq + Clone> List<T> {
+impl<T: PartialEq + Clone + MmVal> List<T> {
     /// Checks if an element is a member of the list. O(n).
     /// Uses PartialEq for comparison.
     pub fn contains(&self, element: &T) -> bool {
@@ -366,7 +370,7 @@ impl<T: PartialEq + Clone> List<T> {
 
 /// Relinks the last node of a uniquely owned `lst1` onto `lst2` without
 /// allocating; from the first shared node on, the suffix is copied.
-pub fn listAppend<T: Clone>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
+pub fn listAppend<T: Clone + MmVal>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
     if lst2.is_empty() {
         return lst1;
     }
@@ -378,7 +382,7 @@ pub fn listAppend<T: Clone>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
                 return lst1;
             }
             Some(node) => {
-                Arc::strong_count(node) == 1 && Arc::weak_count(node) == 0 && matches!(&**node, Cons { .. })
+                SpinePtr::is_unique(node) && matches!(&**node, Cons { .. })
             }
         };
         if !unique_cons {
@@ -386,7 +390,7 @@ pub fn listAppend<T: Clone>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
             *cur = suffix.append(&lst2);
             return lst1;
         }
-        let Some(Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else { unreachable!() };
+        let Some(Cons { tail, .. }) = cur.0.as_mut().and_then(SpinePtr::get_mut) else { unreachable!() };
         cur = tail;
     }
 }
@@ -396,35 +400,35 @@ pub fn listAppend<T: Clone>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
 /// first-class value (e.g. `Array.map(arr, listReverse)`) there must be a real
 /// function path to reference — methods cannot be named as `fn` items. Codegen
 /// emits `fnptr!(metamodelica::listReverse, _)` for that case.
-pub fn listReverse<T: Clone>(lst: List<T>) -> List<T> {
+pub fn listReverse<T: Clone + MmVal>(lst: List<T>) -> List<T> {
     lst.reverse()
 }
 
-pub fn listMember<T: Clone+PartialEq>(element: T, lst: List<T>) -> bool {
+pub fn listMember<T: Clone + MmVal + PartialEq>(element: T, lst: List<T>) -> bool {
     lst.contains(&element)
 }
 
-pub fn listHead<T: Clone>(lst: List<T>) -> Result<T> {
+pub fn listHead<T: Clone + MmVal>(lst: List<T>) -> Result<T> {
     lst.head().cloned()
 }
 
-pub fn listGet<T: Clone>(lst: List<T>, i: i32) -> Result<T> {
+pub fn listGet<T: Clone + MmVal>(lst: List<T>, i: i32) -> Result<T> {
     lst.get(i)
 }
 
-pub fn listEmpty<T: Clone>(lst: List<T>) -> bool {
+pub fn listEmpty<T: Clone + MmVal>(lst: List<T>) -> bool {
     lst.is_empty()
 }
 
-pub fn listDelete<T: Clone>(lst: List<T>, index: i32) -> Result<List<T>> {
+pub fn listDelete<T: Clone + MmVal>(lst: List<T>, index: i32) -> Result<List<T>> {
     lst.delete(index)
 }
 
-pub fn listRest<T: Clone>(lst: List<T>) -> Result<List<T>> {
+pub fn listRest<T: Clone + MmVal>(lst: List<T>) -> Result<List<T>> {
     lst.rest()
 }
 
-pub fn listLength<T: Clone>(lst: List<T>) -> i32 {
+pub fn listLength<T: Clone + MmVal>(lst: List<T>) -> i32 {
     lst.len()
 }
 
