@@ -75,6 +75,15 @@ impl MMTrace for Node {
     }
 }
 
+/// A plain `Mutable` is not a cyclic cell, so this stand-in is untraced and
+/// its `Ref` is an `Arc` — which is what the old collector walks.
+impl metamodelica::mmval::MmVal for Node {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> Result<(), ()> {
+        Ok(())
+    }
+}
+
 // ── harness sanity: refcounting alone frees acyclic structure ───────────
 
 // No cycle: a cell points at a Link whose `next` is a *different* cell

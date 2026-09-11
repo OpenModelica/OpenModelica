@@ -458,6 +458,7 @@ openmodelica_util_datatypes_basic/src/MutableCyclic.rs
 openmodelica_util_datatypes_basic/src/Pointer.rs
 openmodelica_util_datatypes_basic/src/PointerCyclic.rs
 openmodelica_util_datatypes_basic/src/unittests/array_tests.rs
+openmodelica_util_datatypes_basic/src/unittests/cyclic_cell_drop_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/double_ended_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/list_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mod.rs
