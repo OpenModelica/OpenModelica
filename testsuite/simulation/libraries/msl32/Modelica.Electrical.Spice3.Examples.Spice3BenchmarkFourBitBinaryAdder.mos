@@ -83,10 +83,9 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Notification: Tearing is skipped for linear strong component 128: solving it torn to 30 iteration variables is estimated at 22757 flops against 10665 for the untorn system of size 126.
-// Notification: Tearing is skipped for linear strong component 149: solving it torn to 30 iteration variables is estimated at 23794 flops against 10665 for the untorn system of size 126.
-// Notification: Tearing is skipped for linear strong component 175: solving it torn to 28 iteration variables is estimated at 20190 flops against 9517 for the untorn system of size 113.
+// Notification: Tearing is skipped for linear strong component 22: solving it torn to 24 iteration variables is estimated at 24592 flops against 9517 for the untorn system of size 113.
+// Notification: Tearing is skipped for linear strong component 128: solving it torn to 30 iteration variables is estimated at 23630 flops against 10665 for the untorn system of size 126.
+// Notification: Tearing is skipped for linear strong component 175: solving it torn to 28 iteration variables is estimated at 19232 flops against 9517 for the untorn system of size 113.
 //
 // "true
 // "

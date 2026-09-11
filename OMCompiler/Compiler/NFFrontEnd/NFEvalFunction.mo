@@ -678,17 +678,19 @@ protected
   list<Expression> expl;
   list<Type> types;
   Expression e;
+  InstNode node;
 algorithm
   if listLength(outputs) == 1 then
     exp := Ceval.evalExp(UnorderedMap.getOrFail(listHead(outputs), map));
-    assertAssignedOutput(listHead(outputs), exp);
+    node := listHead(outputs);
+    exp := assertAssignedOutput({InstNode.name(node)}, exp, InstNode.info(node));
   else
     expl := {};
     types := {};
 
     for o in outputs loop
       e := Ceval.evalExp(UnorderedMap.getOrFail(o, map));
-      assertAssignedOutput(o, e);
+      e := assertAssignedOutput({InstNode.name(o)}, e, InstNode.info(o));
       expl := e :: expl;
     end for;
 
@@ -699,18 +701,46 @@ algorithm
 end createResult;
 
 function assertAssignedOutput
-  input InstNode outputNode;
-  input Expression value;
+  input list<String> name;
+  input output Expression value;
+  input SourceInfo info;
+  input Boolean error = true;
+protected
+  list<Record.Field> fields;
+  list<Expression> expl;
 algorithm
-  () := match value
+  value := match value
     case Expression.EMPTY()
       algorithm
-        Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
-          {InstNode.name(outputNode)}, InstNode.info(outputNode));
+        if error then
+          Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {stringDelimitList(listReverse(name), ".")}, info);
+          fail();
+        else
+          Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {stringDelimitList(listReverse(name), ".")}, info);
+        end if;
       then
-        fail();
+        // This will fail if the type is one that makeZero doesn't handle,
+        // but this should really be an error anyway so that's fine.
+        Expression.makeZero(value.ty);
 
-    else ();
+    case Expression.RECORD()
+      algorithm
+        fields := Type.recordFields(value.ty);
+        expl := {};
+
+        for e in value.elements loop
+          e := assertAssignedOutput(Record.Field.name(listHead(fields)) :: name, e, info, error = false);
+          expl := e :: expl;
+          fields := listRest(fields);
+        end for;
+
+        value.elements := listReverseInPlace(expl);
+      then
+        value;
+
+    else value;
   end match;
 end assertAssignedOutput;
 
