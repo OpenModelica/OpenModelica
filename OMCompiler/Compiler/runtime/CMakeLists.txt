@@ -182,9 +182,6 @@ target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # for the configure_file inside it.
 include(${CMAKE_CURRENT_SOURCE_DIR}/omc_config_unix.cmake)
 
-configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
-
-
 # Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
 
 
