@@ -155,7 +155,10 @@ end id;
 public function parents
   "The parents as owning references. They are stored weakly (see FCore.Node.N),
    so this upgrades; it fails if a parent is already gone, which would mean the
-   node outlived the graph that owns it."
+   node outlived the graph that owns it.
+
+   Rebuilds the list, so prefer originalParent/contextualParent — every caller
+   so far wants only one end of it."
   input Node inNode;
   output Parents p;
 protected
@@ -164,6 +167,35 @@ algorithm
   FCore.N(parents = w) := inNode;
   p := list(MutableWeak.upgrade(r) for r in w);
 end parents;
+
+public function originalParent
+  "The original parent (the last one), without rebuilding the parent list."
+  input Node inNode;
+  output Ref r;
+protected
+  FCore.WeakParents w;
+algorithm
+  FCore.N(parents = w) := inNode;
+  r := MutableWeak.upgrade(List.last(w));
+end originalParent;
+
+public function refOriginalParent
+  input Ref inRef;
+  output Ref r;
+algorithm
+  r := originalParent(fromRef(inRef));
+end refOriginalParent;
+
+public function contextualParent
+  "The contextual parent (the first one), without rebuilding the parent list."
+  input Node inNode;
+  output Ref r;
+protected
+  FCore.WeakParents w;
+algorithm
+  FCore.N(parents = w) := inNode;
+  r := MutableWeak.upgrade(listHead(w));
+end contextualParent;
 
 public function hasParents
   input Node inNode;
@@ -548,7 +580,7 @@ public function top
 algorithm
   outTop := inRef;
   while hasParents(fromRef(outTop)) loop
-    outTop := original(parents(fromRef(outTop)));
+    outTop := refOriginalParent(outTop);
   end while;
 end top;
 
@@ -838,8 +870,7 @@ algorithm
     // any parent is userdefined?
     case _ guard hasParents(inNode)
       algorithm
-        p::_ := parents(inNode);
-        b := isRefUserDefined(p);
+        b := isRefUserDefined(contextualParent(inNode));
       then
         b;
     else false;
@@ -1159,7 +1190,7 @@ algorithm
     // up the parent
     case (r, name)
       then
-        namesUpToParentName_dispatch(original(refParents(r)), name, refName(r) :: acc);
+        namesUpToParentName_dispatch(refOriginalParent(r), name, refName(r) :: acc);
 
   end match;
 end namesUpToParentName_dispatch;
@@ -1183,13 +1214,13 @@ algorithm
     case r guard isRefModHolder(r)
       algorithm
         // get his parent
-        r := original(refParents(r));
+        r := refOriginalParent(r);
         r::_ := refRefTargetScope(r);
       then
         r;
 
     // up the parent
-    else getModifierTarget(original(refParents(inRef)));
+    else getModifierTarget(refOriginalParent(inRef));
 
   end matchcontinue;
 end getModifierTarget;
@@ -1231,7 +1262,7 @@ algorithm
     // not top
     case acc
       algorithm
-        r := original(parents(fromRef(inRef)));
+        r := refOriginalParent(inRef);
       then
         originalScope_dispatch(r, inRef::acc);
 
@@ -1284,7 +1315,7 @@ algorithm
     // not top
     case acc
       algorithm
-        r := contextual(parents(fromRef(inRef)));
+        r := contextualParent(fromRef(inRef));
       then
         contextualScope_dispatch(r, inRef::acc);
 
