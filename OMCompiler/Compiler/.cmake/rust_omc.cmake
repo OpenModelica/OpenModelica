@@ -1833,6 +1833,16 @@ function(omc_rust_omedit_qt_web_page)
     return()
   endif()
 
+  # Without the typed C ABI every OMEdit call fails and it spins until it traps,
+  # with nothing in the log. The option is cached, so a build dir first configured
+  # without the GUI clients keeps OFF.
+  if(NOT RUST_OMC_SCRIPTING_API)
+    message(FATAL_ERROR
+            "The OMEdit web page needs the omc scripting API: configure with "
+            "-DRUST_OMC_SCRIPTING_API=ON (it defaults to OM_ENABLE_GUI_CLIENTS, "
+            "so a build dir first configured without the GUI clients keeps OFF).")
+  endif()
+
   set(_qt_src ${CMAKE_SOURCE_DIR}/OMEdit/OMEditGUI/wasm)
   set(_qt_bld ${CMAKE_CURRENT_BINARY_DIR}/omedit-qt-wasm)
   set(_qt_pkgdir ${_web_dir}/OMEdit-qt)

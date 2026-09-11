@@ -14,8 +14,5 @@ workspace = "../../../Compiler/OpenModelica.rs"
 openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi", optional = true }
 
 [features]
-# The in-memory filesystem the wasm targets need; see src/fs.rs. On by default so
-# every OpenModelica consumer keeps it, and a native-only one can opt out with
-# `default-features = false`.
-default = ["vfs"]
+# openmodelica_wasi's in-memory store instead of `std::fs`; see src/fs.rs.
 vfs = ["dep:openmodelica_wasi"]

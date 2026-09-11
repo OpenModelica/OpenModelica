@@ -114,9 +114,9 @@ openmodelica_hdf5_result = {path = "../../SimulationRuntime/rust/openmodelica_hd
 arrow-array = { version = "59", default-features = false }
 arrow-schema = { version = "59", default-features = false }
 arrow-ipc = { version = "59", default-features = false }
-openmodelica_mat_reader = {path = "../../SimulationRuntime/rust/openmodelica_mat_reader"}
+openmodelica_mat_reader = {path = "../../SimulationRuntime/rust/openmodelica_mat_reader", features = ["vfs"]}
 openmodelica_result_diff = {path = "../../SimulationRuntime/rust/openmodelica_result_diff"}
-openmodelica_result_files = {path = "../../SimulationRuntime/rust/openmodelica_result_files"}
+openmodelica_result_files = {path = "../../SimulationRuntime/rust/openmodelica_result_files", features = ["vfs"]}
 openmodelica_plt_writer = {path = "../../SimulationRuntime/rust/openmodelica_plt_writer"}
 openmodelica_sim_meta = {path = "../../SimulationRuntime/rust/openmodelica_sim_meta"}
 openmodelica_backend = {path = "openmodelica_backend"}

@@ -272,8 +272,10 @@ checked, like `RUST_OMC_WASM_RUNTIME`. This is what
 cd ../../..
 cmake -S . -B build-web -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_WASM=ON -DRUST_OMC_WASM_MODE=web-release -DRUST_OMC_CI=ON
 cmake --build build-web --target install
-# To test locally
-python3 -m http.server -d build-web/install_cmake/share/omc/web/ 8000
+# To test locally. Not `python3 -m http.server`: without the COOP/COEP headers
+# there is no SharedArrayBuffer, and the features below silently stop working.
+python3 OMCompiler/Compiler/OpenModelica.rs/wasm/coi_server.py 8000 \
+  build-web/install_cmake/share/omc/web
 # Then open a browser at http://localhost:8000
 ```
 
@@ -284,7 +286,7 @@ exported component for a native platform (the browser omc cannot do it in
 process — cranelift's pass timing calls `Instant::now()`, which panics on
 wasm32-unknown-unknown). It is fetched only when such an export runs, and it
 answers over a `SharedArrayBuffer`, so serve the bundle with the cross-origin
-isolation headers (`scripts/coi_server.py`) or the platform list stays empty.
+isolation headers (`wasm/coi_server.py`) or the platform list stays empty.
 The FMI simulator page uses the same compiler to add native binaries to an FMU
 someone else produced.
 

@@ -6,7 +6,11 @@
 use std::io::{self, Read, Seek, SeekFrom};
 use std::time::SystemTime;
 
-pub const IN_MEMORY: bool = cfg!(all(target_arch = "wasm32", not(target_os = "wasi")));
+/// True where there is no OS filesystem: wasm32-unknown-unknown. Emscripten has
+/// MEMFS behind `std::fs`, and its store belongs to the omc worker, not to the
+/// GUI page modules that link this.
+pub const IN_MEMORY: bool =
+    cfg!(all(target_arch = "wasm32", not(target_os = "wasi"), not(target_os = "emscripten")));
 
 fn not_found(path: &str) -> io::Error {
     io::Error::new(io::ErrorKind::NotFound, format!("no such file: {path}"))
