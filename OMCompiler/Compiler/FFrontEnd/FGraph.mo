@@ -50,7 +50,6 @@ import DAE;
 import ClassInf;
 import FCore;
 import Mutable;
-import MutableCyclic;
 import FNode;
 import InnerOuter;
 import FCore.RefTree;
@@ -170,7 +169,7 @@ public function topScope
 algorithm
   // leave only the top scope
   outGraph := match inGraph
-    case FCore.G() then MutableCyclic.access(inGraph.top.graph);
+    case FCore.G() then FCore.G(inGraph.top, {inGraph.top.node});
   end match;
 end topScope;
 
@@ -191,19 +190,14 @@ protected
   Scope s;
   Ref nr;
   Id id;
-  MutableCyclic<Graph> ag;
   Top top;
 algorithm
   id := System.tmpTickIndex(Global.fgraph_nextId);
   n := FNode.new(FNode.topNodeName, id, {}, FCore.TOP());
   nr := FNode.toRef(n);
   s := {nr};
-  ag := MutableCyclic.create(emptyGraph);
-  top := FCore.GTOP(ag,inGraphName,nr,FCore.EXTRA(inPath));
+  top := FCore.GTOP(inGraphName,nr,FCore.EXTRA(inPath));
   outGraph := FCore.G(top,s);
-  // Creates a cycle, but faster to get the initial environment. The cell is
-  // registered with the collector, so the cycle is reclaimable.
-  MutableCyclic.update(ag, FCore.G(top, {nr}));
 end new;
 
 public function node
@@ -249,8 +243,6 @@ algorithm
       Top t;
       Ref nt;
       Scope s;
-      MutableCyclic<Graph> ag;
-
     case FCore.G(t, s)
       algorithm
         // make a new top
@@ -261,10 +253,8 @@ algorithm
         (g, nt) := FNode.copyRef(nt, inGraph);
         // update scope references
         s := List.map1r(s, FNode.lookupRefFromRef, nt);
-        ag := MutableCyclic.create(emptyGraph);
-        t := FCore.GTOP(ag, t.name, nt, t.extra);
+        t := FCore.GTOP(t.name, nt, t.extra);
         g := FCore.G(t, s);
-        MutableCyclic.update(ag, g);
       then g;
 
   end match;

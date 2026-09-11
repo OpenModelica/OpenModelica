@@ -404,7 +404,6 @@ end Graph;
 
 uniontype Top
   record GTOP
-    MutableCyclic<Graph> graph;
     Name name "name of the graph";
     Ref node "the top node";
     Extra extra "extra information";
