@@ -35,7 +35,7 @@ else()
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
 endif()
 
-set(host_short ${CMAKE_LIBRARY_ARCHITECTURE})
+set(host_short ${OM_LIBRARY_ARCH})
 
 get_filename_component(RUNTIMECC ${CMAKE_C_COMPILER} NAME)
 get_filename_component(CC ${CMAKE_C_COMPILER} NAME)

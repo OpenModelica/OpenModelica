@@ -147,12 +147,12 @@ fn fmu_component_links_without_a_host() {
     let all: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
     let mut cases: Vec<(&str, &[u8], Option<&[&str]>)> = Vec::new();
     if sundials_available() {
-        for (label, adapter) in [("ME", FMI3_ME_ADAPTER), ("me_cs", FMI3_MECS_ADAPTER)] {
+        for (label, adapter) in [("ME", FMI3_ME_ADAPTER()), ("me_cs", FMI3_MECS_ADAPTER())] {
             cases.push((label, adapter, Some(&all)));
             cases.push((label, adapter, Some(&[])));
         }
     } else {
-        cases.push(("ME", FMI3_ME_ADAPTER, None));
+        cases.push(("ME", FMI3_ME_ADAPTER(), None));
     }
     for (label, adapter, solvers) in cases {
         if adapter.is_empty() {

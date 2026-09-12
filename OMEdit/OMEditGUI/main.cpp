@@ -252,7 +252,13 @@ int main(int argc, char *argv[])
   // Qt WebEngine (DocumentationWidget) needs shared OpenGL contexts; must be set
   // before the QApplication. Without it WebEngine logs "Using Shared GL: no" and
   // crashes during GL init on Windows.
+  //
+  // Not on macOS, where it would composite through OpenGL (a 2.1 context, below
+  // the GLSL 130 Quick3D's shaders need) instead of Metal. WebEngine only reads
+  // QQuickWindow::graphicsApi(), so it follows whatever the application picks.
+#ifndef Q_OS_MACOS
   QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#endif // #ifndef Q_OS_MACOS
 #if defined(__EMSCRIPTEN__)
   // Before anything can queue a native event: works around a re-entrancy bug in
   // Qt's event replay that hangs startup at random. See OMCProxy.cpp.

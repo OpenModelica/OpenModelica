@@ -16,7 +16,7 @@ if(NOT OMC_WASI_SYSROOT AND DEFINED ENV{OMC_WASI_SYSROOT})
   set(OMC_WASI_SYSROOT "$ENV{OMC_WASI_SYSROOT}")
 endif()
 if(NOT OMC_WASI_SYSROOT)
-  set(OMC_WASI_SYSROOT "${_omc_home}/lib/wasm32-wasi/omc")
+  set(OMC_WASI_SYSROOT "${_omc_home}/lib/wasm32-wasip1/omc/sysroot")
 endif()
 set(CMAKE_SYSROOT "${OMC_WASI_SYSROOT}")
 

@@ -256,7 +256,10 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              // -rust-qt-mac, not plain -rust: this stage builds the app bundle,
+              // which deploys Qt out of the macOS kit, and the .dmg, whose
+              // xorriso + libdmg-hfsplus live on that image too.
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
               label 'linux'
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
