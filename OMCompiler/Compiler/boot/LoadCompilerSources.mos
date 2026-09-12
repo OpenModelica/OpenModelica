@@ -486,6 +486,7 @@ if true then /* Suppress output */
     "../Template/AbsynJLDumpTpl.mo",
     "../Template/CodegenC.mo",
     "../Template/CodegenEmbeddedC.mo",
+    "../Template/CodegenESP32.mo",
     "../Template/CodegenCppCommon.mo",
     "../Template/CodegenCppOMSI.mo",
     "../Template/CodegenCpp.mo",
