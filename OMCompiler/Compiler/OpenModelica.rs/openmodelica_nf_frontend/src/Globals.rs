@@ -16,4 +16,15 @@ thread_local! {
     // Written by NFInst.makeTopNode, which replaces the previous run's scope.
     pub static nfTopScope: RefCell<metamodelica::List<metamodelica::Ref<crate::NFInstNode::InstNode::InstNode>>> =
         RefCell::new(metamodelica::nil());
+
+    // Index 39 — nfIdentityCells
+    //
+    // Every identity cell made during the current frontend run. A node's
+    // children hold the cell weakly and a cref outlives the node value that
+    // owns it, so the run owns the cells; NFInst.makeTopNode drops the
+    // previous run's.
+    pub static nfIdentityCells: RefCell<metamodelica::List<
+        openmodelica_util_datatypes_basic::Mutable::Mutable<
+            metamodelica::Ref<crate::NFInstNode::InstNode::InstNode>>>> =
+        RefCell::new(metamodelica::nil());
 }

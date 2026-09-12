@@ -722,8 +722,13 @@ uniontype InstNode
     output Option<MutableWeak<InstNode>> identity;
   protected
     Mutable<InstNode> cell;
+    list<Mutable<InstNode>> cells;
   algorithm
     cell := Mutable.create(EMPTY_NODE());
+    // The run owns the cell. A node value is not a long enough owner: a cref
+    // outlives the value it was made from and still walks up through it.
+    cells := getGlobalRoot(Global.nfIdentityCells);
+    setGlobalRoot(Global.nfIdentityCells, cell :: cells);
     owner := SOME(cell);
     identity := SOME(MutableWeak.downgrade(cell));
   end newIdentity;
@@ -769,7 +774,9 @@ uniontype InstNode
 
   function disown
     "The copy that goes into the cell must not own the cell back."
-    input output InstNode node = setOwner(node, NONE());
+    input output InstNode node;
+  algorithm
+    node := setOwner(node, NONE());
   end disown;
 
   function identityCell

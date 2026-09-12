@@ -100,6 +100,11 @@ constant Integer adjacencyIfCondCache = 37;
 // weakly, so without this root the top scope has no owner at all.
 constant Integer nfTopScope = 38;
 
+// Every NF identity cell of the current frontend run. A node's children refer
+// to it weakly, and a cref can outlive the node value that owns it, so the run
+// owns the cells instead. Reset by NFInst.makeTopNode.
+constant Integer nfIdentityCells = 39;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -141,6 +146,7 @@ algorithm
   setGlobalRoot(extLibraryBuildIndex, {});
   setGlobalRoot(adjacencyIfCondCache, NONE());
   setGlobalRoot(nfTopScope, {});
+  setGlobalRoot(nfIdentityCells, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");
