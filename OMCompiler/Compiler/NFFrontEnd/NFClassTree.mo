@@ -502,7 +502,8 @@ public
               // Update the parent of the extends to be the new instance.
               node := exts[i];
               InstNodeType.BASE_CLASS(definition = ext_def, ty = inst_ty) := InstNode.nodeType(node);
-              node := InstNode.setNodeType(InstNodeType.BASE_CLASS(instance, ext_def, inst_ty), node);
+              node := InstNode.setNodeType(
+                InstNodeType.BASE_CLASS(InstNode.identityCell(instance), ext_def, inst_ty), node);
               // Instantiate the class tree of the extends.
               (node, _, cls_count, comp_count) := instantiate(node, InstNode.EMPTY_NODE(), inst_scope);
               exts[i] := node;
@@ -621,7 +622,8 @@ public
         case Class.EXPANDED_DERIVED(baseClass = node)
           algorithm
             node := InstNode.setNodeType(
-              InstNodeType.BASE_CLASS(clsNode, InstNode.definition(node), InstNode.nodeType(node)), node);
+              InstNodeType.BASE_CLASS(InstNode.identityCell(clsNode),
+                InstNode.definition(node), InstNode.nodeType(node)), node);
             (node, instance, classCount, compCount) := instantiate(node, instance, scope);
             cls.baseClass := node;
           then

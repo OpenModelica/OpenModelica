@@ -821,7 +821,8 @@ algorithm
 
         base_node := expand(base_node, context);
 
-        ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def, InstNode.nodeType(base_node)), base_node);
+        ext := InstNode.setNodeType(
+          InstNodeType.BASE_CLASS(InstNode.identityCell(scope), def, InstNode.nodeType(base_node)), base_node);
 
         // If the extended class is a builtin class, like Real or any type derived
         // from Real, then return it so we can handle it properly in expandClass.
@@ -1811,7 +1812,8 @@ algorithm
       // Class extends of a normal class.
       case Class.PARTIAL_CLASS()
         algorithm
-          node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node), InstNode.nodeType(orig_node));
+          node_ty := InstNodeType.BASE_CLASS(InstNode.identityCell(InstNode.parent(orig_node)),
+            InstNode.definition(orig_node), InstNode.nodeType(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
           cls_tree := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
         then
@@ -2355,7 +2357,9 @@ function instanceScope
   output InstNode scope;
 algorithm
   scope := match node
-    case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = scope)) then scope;
+    local Option<MutableWeak<InstNode>> ext_scope;
+    case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = ext_scope))
+      then InstNode.fromCell(ext_scope);
     case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope)) then scope;
     else InstNode.parent(node);
   end match;

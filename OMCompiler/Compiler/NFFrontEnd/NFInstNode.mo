@@ -77,7 +77,8 @@ uniontype InstNodeType
 
   record BASE_CLASS
     "A base class extended by another class."
-    InstNode parent;
+    Option<MutableWeak<InstNode>> parent "The extending class, weakly; see
+      InstNode.CLASS_NODE.parentScope.";
     SCode.Element definition "The extends clause definition.";
     InstNodeType ty "The original node type before the class was extended.";
   end BASE_CLASS;
@@ -377,7 +378,7 @@ uniontype InstNode
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
       PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
       owner, identity, identityCell(parent),
-      InstNodeType.BASE_CLASS(parent, definition, nodeType(parent)));
+      InstNodeType.BASE_CLASS(identityCell(parent), definition, nodeType(parent)));
   end newExtends;
 
   function newIterator
@@ -1127,7 +1128,8 @@ uniontype InstNode
     output InstNode derived;
   algorithm
     derived := match ty
-      case InstNodeType.BASE_CLASS() then if recursive then getDerivedNode(ty.parent) else ty.parent;
+      case InstNodeType.BASE_CLASS()
+        then if recursive then getDerivedNode(fromCell(ty.parent)) else fromCell(ty.parent);
       case InstNodeType.DERIVED_CLASS() then getDerivedNode2(node, ty.ty, recursive);
       else node;
     end match;
@@ -1416,7 +1418,7 @@ uniontype InstNode
       case InstNodeType.NORMAL_CLASS()
         then scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes);
       case InstNodeType.BASE_CLASS()
-        then scopeList(ty.parent, includeRoot, accumScopes);
+        then scopeList(fromCell(ty.parent), includeRoot, accumScopes);
       case InstNodeType.DERIVED_CLASS()
         then scopeListClass(clsNode, ty.ty, includeRoot, accumScopes);
       case InstNodeType.BUILTIN_CLASS()
@@ -1497,7 +1499,8 @@ uniontype InstNode
       case CLASS_NODE(nodeType = it)
         then
           match it
-            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, scopeType);
+            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass
+              then scopePath(fromCell(it.parent), scopeType);
             else scopePath2(fromCell(node.parentScope), scopeType, Absyn.IDENT(node.name));
           end match;
 
@@ -1533,7 +1536,7 @@ uniontype InstNode
       case InstNodeType.NORMAL_CLASS()
         then scopePath2(classParent(node), scopeType, Absyn.QUALIFIED(className(node), accumPath));
       case InstNodeType.BASE_CLASS()
-        then scopePath2(ty.parent, scopeType, accumPath);
+        then scopePath2(fromCell(ty.parent), scopeType, accumPath);
       case InstNodeType.DERIVED_CLASS()
         then scopePathClass(node, ty.ty, scopeType, accumPath);
       case InstNodeType.BUILTIN_CLASS()
