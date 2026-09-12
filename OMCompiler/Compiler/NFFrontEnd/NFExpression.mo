@@ -2554,14 +2554,14 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> varPointer;
+        PointerWeak<Variable> varPointer;
         Option<Expression> nominal;
         Operator operator;
         Operator.SizeClassification sizeClass;
 
       // replace variables with their nominal values
       case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
-        nominal := Variable.getNominal(Pointer.access(varPointer));
+        nominal := Variable.getNominal(Pointer.access(PointerWeak.upgrade(varPointer)));
       then Util.getOptionOrDefault(nominal, exp);
 
       // remove negation
@@ -6991,12 +6991,12 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> var;
+        PointerWeak<Variable> var;
         Integer v;
 
       // backend replacement
       case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
-      then match Pointer.access(var)
+      then match Pointer.access(PointerWeak.upgrade(var))
           // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);

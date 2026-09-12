@@ -588,6 +588,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         // Fails when the referent is already gone. Identity in the C runtime,
         // where Boehm keeps the cell alive and it can never fail.
         m.insert("mutableWeakUpgrade", Fallible);
+        m.insert("pointerWeakUpgrade", Fallible);
         m.insert("mutableUpdate", Infallible);
         m.insert("mutableAccess", Infallible);
         m.insert("pointerCreate", Infallible);

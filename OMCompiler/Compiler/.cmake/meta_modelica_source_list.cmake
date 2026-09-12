@@ -188,6 +188,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/MutableCyclic.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/MutableWeak.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/PointerWeak.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PointerCyclic.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo

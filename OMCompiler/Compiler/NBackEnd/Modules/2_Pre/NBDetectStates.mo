@@ -685,7 +685,7 @@ protected
           // this variable has StateSelect.prefer but is not inside any der() call;
           // create its derivative and promote it to a state
           (der_cref, der_var) := BVariable.makeDerVar(BVariable.getVarName(alg_ptr), variables.scalarized);
-          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(der_var), false));
+          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(PointerWeak.downgrade(der_var)), false));
           acc_prefer_states := alg_ptr :: acc_prefer_states;
           acc_prefer_ders := der_var :: acc_prefer_ders;
         end if;
@@ -716,16 +716,16 @@ protected
     input ComponentRef rhs;
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
   protected
-    Pointer<Variable> state;
+    PointerWeak<Variable> state;
   algorithm
     () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
       case (_, VariableKind.STATE_DER(state = state)) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(lhs), state_order);
+        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(lhs), state_order);
       then ();
       // der(b) = a
       case (VariableKind.STATE_DER(state = state), _) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(rhs), state_order);
+        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(rhs), state_order);
       then ();
       else ();
     end match;

@@ -105,6 +105,11 @@ constant Integer nfTopScope = 38;
 // owns the cells instead. Reset by NFInst.makeTopNode.
 constant Integer nfIdentityCells = 39;
 
+// Every backend variable made by NBVariable.makeVarPtrCyclic. A variable and
+// its own cref refer to each other, so the cref's side is weak and the run
+// owns the variables until they reach `VariablePointers`.
+constant Integer nbCreatedVars = 40;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -147,6 +152,7 @@ algorithm
   setGlobalRoot(adjacencyIfCondCache, NONE());
   setGlobalRoot(nfTopScope, {});
   setGlobalRoot(nfIdentityCells, {});
+  setGlobalRoot(nbCreatedVars, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

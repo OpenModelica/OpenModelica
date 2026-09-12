@@ -80,6 +80,8 @@ public
   import ExpandableArray;
   import Slice = NBSlice;
   import StringUtil;
+  import Global;
+  import PointerWeak;
   import UnorderedMap;
   import Util;
 
@@ -206,13 +208,19 @@ public
   end fromCref;
 
   function makeVarPtrCyclic
-    "Needs a prepared variable and name cref and creates a cyclic dependency between
-    a pointer to the variable and its component reference."
+    "Needs a prepared variable and name cref and links a pointer to the variable
+    with its component reference. The cref's side is weak, so this is no longer
+    a cycle; the run owns the variable until it reaches `VariablePointers`,
+    which is not immediate -- NBFunctionAlias reads the cref back first."
     input Variable var;
     output Pointer<Variable> var_ptr;
     input output ComponentRef name;
+  protected
+    list<Pointer<Variable>> created;
   algorithm
     var_ptr := Pointer.create(var);
+    created := getGlobalRoot(Global.nbCreatedVars);
+    setGlobalRoot(Global.nbCreatedVars, var_ptr :: created);
     name := BackendDAE.lowerComponentReferenceInstNode(name, var_ptr);
     var.name := name;
     Pointer.update(var_ptr, var);
@@ -260,8 +268,9 @@ public
   algorithm
     var := match cref
       local
-        Pointer<Variable> varPointer;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
+        PointerWeak<Variable> varPointer;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))
+        then PointerWeak.upgrade(varPointer);
       case ComponentRef.CREF(node = InstNode.NAME_NODE())                       then Pointer.create(DUMMY_VARIABLE);
       case ComponentRef.WILD()                                                  then Pointer.create(DUMMY_VARIABLE);
       else algorithm
@@ -566,7 +575,7 @@ public
     extends getVarPartner;
   algorithm
     partnerName := "pre variable";
-    partner := var.backendinfo.var_pre;
+    partner := BackendInfo.strengthen(var.backendinfo.var_pre);
   end getVarPre;
 
   function getVarSeed
@@ -574,7 +583,7 @@ public
     extends getVarPartner;
   algorithm
     partnerName := "seed variable";
-    partner := var.backendinfo.var_seed;
+    partner := BackendInfo.strengthen(var.backendinfo.var_seed);
   end getVarSeed;
 
   function getVarPDer
@@ -584,10 +593,10 @@ public
   algorithm
     if isTmp then
       partnerName := "partial derivative (temp)";
-      partner := var.backendinfo.var_pder_tmp;
+      partner := BackendInfo.strengthen(var.backendinfo.var_pder_tmp);
     else
       partnerName := "partial derivative (result)";
-      partner := var.backendinfo.var_pder_res;
+      partner := BackendInfo.strengthen(var.backendinfo.var_pder_res);
     end if;
   end getVarPDer;
 
@@ -598,7 +607,9 @@ public
   algorithm
     partnerName := "derivative";
     partner := match var.backendinfo.varKind
-      case VariableKind.STATE(derivative = partner) then partner;
+      local Option<PointerWeak<Variable>> partner_weak;
+      case VariableKind.STATE(derivative = partner_weak)
+        then BackendInfo.strengthen(partner_weak);
       else NONE();
     end match;
   end getVarDer;
@@ -609,8 +620,8 @@ public
     partnerName := "state";
     partner := match var.backendinfo.varKind
       local
-        Pointer<Variable> p;
-      case VariableKind.STATE_DER(state = p) then SOME(p);
+        PointerWeak<Variable> p;
+      case VariableKind.STATE_DER(state = p) then SOME(PointerWeak.upgrade(p));
       else NONE();
     end match;
   end getVarState;
@@ -623,8 +634,8 @@ public
     partnerName := "dummy derivative";
     partner := match var.backendinfo.varKind
       local
-        Pointer<Variable> p;
-      case VariableKind.DUMMY_STATE(dummy_der = p) then SOME(p);
+        PointerWeak<Variable> p;
+      case VariableKind.DUMMY_STATE(dummy_der = p) then SOME(PointerWeak.upgrade(p));
       else NONE();
     end match;
   end getVarDummyDer;
@@ -633,7 +644,7 @@ public
     extends getVarPartner;
   algorithm
     partnerName := "start";
-    partner := var.backendinfo.var_start;
+    partner := BackendInfo.strengthen(var.backendinfo.var_start);
   end getVarStart;
 
   function getPartnerCref
@@ -1167,7 +1178,7 @@ function isJacobianResultVar
   protected
     Variable var = Pointer.access(varPointer);
   algorithm
-    parent := var.backendinfo.parent;
+    parent := BackendInfo.strengthen(var.backendinfo.parent);
   end getParent;
 
   function isDummyVariable
@@ -1216,7 +1227,7 @@ function isJacobianResultVar
     Variable var;
   algorithm
     var := Pointer.access(varPointer);
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, SOME(derivative), true));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, BackendInfo.weaken(SOME(derivative)), true));
     Pointer.update(varPointer, var);
   end setStateDerivativeVar;
 
@@ -1229,7 +1240,7 @@ function isJacobianResultVar
     Variable var;
   algorithm
     var := Pointer.access(varPointer);
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(statePointer, NONE()));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(PointerWeak.downgrade(statePointer), NONE()));
     Pointer.update(varPointer, var);
   end setStateDerKind;
 
@@ -1260,7 +1271,9 @@ function isJacobianResultVar
     () := match ComponentRef.node(state_cref)
       local
         InstNode derNode;
-        Pointer<Variable> state, dummy_ptr = Pointer.create(DUMMY_VARIABLE);
+        Pointer<Variable> state;
+        PointerWeak<Variable> dummy_ptr =
+          PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE));
         Variable var;
       case InstNode.VAR_NODE()
         algorithm
@@ -1270,7 +1283,7 @@ function isJacobianResultVar
           der_cref := ComponentRef.append(state_cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(state_cref)));
           // make the actual derivative variable and make cref and the variable cyclic
           var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(Pointer.access(state)));
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(state, NONE()));
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(PointerWeak.downgrade(state), NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
           if not scalarized then
             der_cref := ComponentRef.copySubscripts(cref, der_cref);
@@ -1304,7 +1317,7 @@ function isJacobianResultVar
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := child :: varKind.children;
+        varKind.children := PointerWeak.downgrade(child) :: varKind.children;
         var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
       then var;
       else algorithm
@@ -1326,7 +1339,7 @@ function isJacobianResultVar
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := children;
+        varKind.children := list(PointerWeak.downgrade(c) for c in children);
         var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
       then var;
       else algorithm
@@ -1346,7 +1359,7 @@ function isJacobianResultVar
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD()))
-      then varKind.children;
+      then list(PointerWeak.upgrade(c) for c in varKind.children);
       else {};
     end match;
   end getRecordChildren;
@@ -1405,17 +1418,21 @@ function isJacobianResultVar
     var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
         Variable der_var;
+        PointerWeak<Variable> derivative_weak;
 
-      case VariableKind.STATE(derivative = SOME(derivative)) algorithm
+      case VariableKind.STATE(derivative = SOME(derivative_weak)) algorithm
         // also update the derivative to be a dummy derivative
+        derivative := PointerWeak.upgrade(derivative_weak);
         der_var := Pointer.access(derivative);
-        der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));
+        der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(PointerWeak.downgrade(varPointer)));
         der_var.backendinfo := BackendInfo.setStateSelect(der_var.backendinfo, NFBackendExtension.StateSelect.AVOID);
         Pointer.update(derivative, der_var);
-      then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
+      then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(PointerWeak.downgrade(derivative)));
 
       // do nothing if its already a dummy state
-      case VariableKind.DUMMY_STATE(dummy_der = derivative) then var.backendinfo;
+      case VariableKind.DUMMY_STATE(dummy_der = derivative_weak) algorithm
+        derivative := PointerWeak.upgrade(derivative_weak);
+      then var.backendinfo;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(getVarName(varPointer)) + "."});
@@ -1661,7 +1678,7 @@ function isJacobianResultVar
               if BVariable.isRecord(old_var_ptr) then
                 var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.RECORD({}, NFPrefixes.Variability.PARAMETER, NFPrefixes.Variability.CONTINUOUS));
               else
-                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(PointerWeak.downgrade(old_var_ptr)));
               end if;
               var.backendinfo := BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
               // create the new variable pointer and safe it to the component reference
@@ -1696,7 +1713,7 @@ function isJacobianResultVar
     Variable var;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     // Type for residuals is always REAL() !
     cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
@@ -1731,7 +1748,8 @@ function isJacobianResultVar
       ty := Type.liftArrayLeftList(var_ty, Iterator.dimensions(iterator));
     end if;
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex),
+      PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable
@@ -1765,7 +1783,8 @@ function isJacobianResultVar
     end updateBackendInfo;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex),
+      PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     cref  := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var   := fromCref(cref);
 
@@ -1791,7 +1810,8 @@ function isJacobianResultVar
     Expression bnd;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex),
+      PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and add optional binding
     if isSome(binding) then
@@ -1853,7 +1873,8 @@ function isJacobianResultVar
     Variable var;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex),
+      PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     // Type for residuals is always REAL() !
     cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)

@@ -556,6 +556,7 @@ algorithm
   // weakly, so nothing else keeps it alive.
   setGlobalRoot(Global.nfTopScope, {topNode});
   setGlobalRoot(Global.nfIdentityCells, {});
+  setGlobalRoot(Global.nbCreatedVars, {});
 end makeTopNode;
 
 function markBuiltinTypeNodes

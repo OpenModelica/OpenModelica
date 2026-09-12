@@ -92,6 +92,7 @@ protected
 
   // Util imports
   import StringUtil;
+  import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
   import Util;
@@ -1811,7 +1812,7 @@ protected
     // initially a dummy and becomes cyclic via makeVarPtrCyclic below.
     newNode := InstNode.VAR_NODE(
       ComponentRef.firstName(baseCref) + "_" + intString(idx),
-      Pointer.create(NBVariable.DUMMY_VARIABLE));
+      PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
     ssaCref := ComponentRef.CREF(newNode, {}, ty,
       NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
 

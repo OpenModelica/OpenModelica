@@ -27,4 +27,14 @@ thread_local! {
         openmodelica_util_datatypes_basic::Mutable::Mutable<
             metamodelica::Ref<crate::NFInstNode::InstNode::InstNode>>>> =
         RefCell::new(metamodelica::nil());
+
+    // Index 40 — nbCreatedVars
+    //
+    // Every backend variable from NBVariable.makeVarPtrCyclic. Its cref holds
+    // it weakly, and NBFunctionAlias reads the cref back before the variable
+    // reaches `VariablePointers`, so the run owns it in between.
+    pub static nbCreatedVars: RefCell<metamodelica::List<
+        openmodelica_util_datatypes_basic::Pointer::Pointer<
+            metamodelica::Ref<crate::NFVariable::NFVariable>>>> =
+        RefCell::new(metamodelica::nil());
 }

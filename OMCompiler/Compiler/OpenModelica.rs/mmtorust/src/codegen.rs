@@ -123,6 +123,7 @@ pub(crate) fn is_cell_ctor(name: &str) -> bool {
 
 const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     "Mutable", "MutableCyclic", "MutableWeak", "GCExt", "Pointer", "PointerCyclic",
+    "PointerWeak",
     "File", "Global", "Vector",
     "ErrorExt", "Print", "ParserExt", "System", "Settings",
     "StackOverflow", "BackendDAEEXT",
@@ -12826,7 +12827,7 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // openmodelica_nf_frontend — the NF top scope root holds an
         // NFInstNode.InstNode and is written by NFInst.makeTopNode, both in
         // that crate.
-        "nfTopScope" | "nfIdentityCells" => Some("openmodelica_nf_frontend"),
+        "nfTopScope" | "nfIdentityCells" | "nbCreatedVars" => Some("openmodelica_nf_frontend"),
         // openmodelica_frontend_dump — backendInterface root holds the
         // function table populated by the frontend_dump-side interface
         // (see FrontEnd/BackendInterface.mo and its `__OpenModelica_Interface`).

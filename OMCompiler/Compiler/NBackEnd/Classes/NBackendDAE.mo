@@ -55,6 +55,7 @@ public
   import NBPartition.Partition;
 
 protected
+  import PointerWeak;
   // Old Frontend imports
   import Absyn.Path;
 
@@ -902,9 +903,12 @@ protected
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())) for child in var.children);
+        varKind.children := list(PointerWeak.downgrade(
+          VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())))
+          for child in var.children);
         // set parent for all children
-        varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
+        varKind.children := list(PointerWeak.downgrade(
+          BVariable.setParent(PointerWeak.upgrade(child), var_ptr)) for child in varKind.children);
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
@@ -1642,7 +1646,7 @@ protected
   algorithm
     try
       var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
-      node := InstNode.VAR_NODE(InstNode.name(node), var);
+      node := InstNode.VAR_NODE(InstNode.name(node), PointerWeak.downgrade(var));
     else
     end try;
   end lowerInstNode;
@@ -1661,7 +1665,7 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), var);
+          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), PointerWeak.downgrade(var));
       then qual;
 
       else cref;

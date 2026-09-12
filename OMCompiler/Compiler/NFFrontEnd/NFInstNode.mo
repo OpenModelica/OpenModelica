@@ -48,6 +48,7 @@ import Sections = NFSections;
 import Pointer;
 import Mutable;
 import MutableWeak;
+import PointerWeak;
 import Error;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
@@ -309,7 +310,9 @@ uniontype InstNode
     NOTE: Map and traversal functions are not allowed to follow the variable
     pointer, it would create cyclic behaviour! Var->cref->pointer->Var"
     String name;
-    Pointer<Variable> varPointer;
+    PointerWeak<Variable> varPointer "Weak, which is what stops the
+      `Var -> cref -> pointer -> Var` loop the note above warns about. The
+      backend's `VariablePointers` owns every variable.";
   end VAR_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
@@ -1364,7 +1367,7 @@ uniontype InstNode
       case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
       case VAR_NODE() algorithm
-        var := Pointer.access(node.varPointer);
+        var := Pointer.access(PointerWeak.upgrade(node.varPointer));
       then var.ty;
       case NAME_NODE()      then Type.UNKNOWN();
     end match;
@@ -1807,7 +1810,7 @@ uniontype InstNode
       case (COMPONENT_NODE(), COMPONENT_NODE())
         then referenceEq(Pointer.access(node1.component), Pointer.access(node2.component));
       case (VAR_NODE(), VAR_NODE())
-        then referenceEq(Pointer.access(node1.varPointer), Pointer.access(node2.varPointer));
+        then referenceEq(Pointer.access(PointerWeak.upgrade(node1.varPointer)), Pointer.access(PointerWeak.upgrade(node2.varPointer)));
       // Other nodes like ref nodes might be equal, but we neither know nor care.
       else false;
     end match;
@@ -2376,7 +2379,7 @@ uniontype InstNode
         end try;
       then binding_exp;
       case VAR_NODE() algorithm
-          var := Pointer.access(node.varPointer);
+          var := Pointer.access(PointerWeak.upgrade(node.varPointer));
         then Binding.getExpOpt(var.binding);
       else NONE();
     end match;
