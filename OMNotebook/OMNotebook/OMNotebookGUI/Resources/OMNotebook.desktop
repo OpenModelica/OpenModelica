@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=OMNotebook
+Comment=Modelica-based modeling and simulation environment
+Exec=OMNotebook
+Terminal=false
+Type=Application
+Icon=OMNotebook
+Categories=Qt;Science;Development
