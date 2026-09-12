@@ -6623,44 +6623,6 @@ end System2;
 //   end if;
 // end Buildings.Utilities.Math.Functions.spliceFunction;
 //
-// function Modelica.Blocks.Continuous.Internal.Filter.Utilities.toHighestPowerOne
-//   input Real[:] den1;
-//   input Real[:, 2] den2;
-//   output Real[size(den1, 1)] cr;
-//   output Real[size(den2, 1)] c0;
-//   output Real[size(den2, 1)] c1;
-// algorithm
-//   for i in 1:size(den1, 1) loop
-//     cr[i] := 1.0 / den1[i];
-//   end for;
-//   for i in 1:size(den2, 1) loop
-//     c1[i] := den2[i,2] / den2[i,1];
-//     c0[i] := 1.0 / den2[i,1];
-//   end for;
-// end Modelica.Blocks.Continuous.Internal.Filter.Utilities.toHighestPowerOne;
-//
-// function Modelica.Blocks.Continuous.Internal.Filter.base.CriticalDamping
-//   input Integer order(min = 1);
-//   input Boolean normalized = true;
-//   output Real[order] cr;
-//   protected Real alpha = 1.0;
-//   protected Real alpha2;
-//   protected Real[order] den1;
-//   protected Real[0, 2] den2;
-//   protected Real[0] c0;
-//   protected Real[0] c1;
-// algorithm
-//   if normalized then
-//     alpha := sqrt(10.0 ^ (0.3 / /*Real*/(order)) - 1.0);
-//   else
-//     alpha := 1.0;
-//   end if;
-//   for i in 1:order loop
-//     den1[i] := alpha;
-//   end for;
-//   (cr, _, _) := Modelica.Blocks.Continuous.Internal.Filter.Utilities.toHighestPowerOne(den1, {});
-// end Modelica.Blocks.Continuous.Internal.Filter.base.CriticalDamping;
-//
 // function Modelica.Blocks.Continuous.Internal.Filter.coefficients.lowPass
 //   input Real[:] cr_in;
 //   input Real[:] c0_in;
@@ -6840,15 +6802,6 @@ end System2;
 //   d := 995.586;
 // end System2.pumRad.Medium.density;
 //
-// function System2.pumRad.Medium.setState_pTX
-//   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
-//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0);
-//   input Real[:] X(quantity = fill("MassFraction", size(X, 1)), unit = fill("kg/kg", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0};
-//   output System2.pumRad.Medium.ThermodynamicState state;
-// algorithm
-//   state := System2.pumRad.Medium.ThermodynamicState(p, T);
-// end System2.pumRad.Medium.setState_pTX;
-//
 // function System2.pumRad.Medium.setState_phX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
 //   input Real h(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, nominal = 1e6);
@@ -6857,13 +6810,6 @@ end System2;
 // algorithm
 //   state := System2.pumRad.Medium.ThermodynamicState(p, System2.pumRad.Medium.temperature_phX(p, h, X));
 // end System2.pumRad.Medium.setState_phX;
-//
-// function System2.pumRad.Medium.specificEnthalpy
-//   input System2.pumRad.Medium.ThermodynamicState state;
-//   output Real h(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, nominal = 1e6);
-// algorithm
-//   h := 4184.0 * (state.T - 273.15);
-// end System2.pumRad.Medium.specificEnthalpy;
 //
 // function System2.pumRad.Medium.temperature_phX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
@@ -6897,19 +6843,6 @@ end System2;
 // algorithm
 //   T := 273.15 + h / 4184.0;
 // end System2.pumRad.preSou.Medium.temperature_phX;
-//
-// function System2.pumRad.vol.Medium.ThermodynamicState "Automatically generated record constructor for System2.pumRad.vol.Medium.ThermodynamicState"
-//   input Real p;
-//   input Real T;
-//   output ThermodynamicState res;
-// end System2.pumRad.vol.Medium.ThermodynamicState;
-//
-// function System2.pumRad.vol.Medium.specificInternalEnergy
-//   input System2.pumRad.vol.Medium.ThermodynamicState state;
-//   output Real u(quantity = "SpecificEnergy", unit = "J/kg", min = -1e8, max = 1e8, nominal = 1e6);
-// algorithm
-//   u := 4184.0 * (state.T - 273.15);
-// end System2.pumRad.vol.Medium.specificInternalEnergy;
 //
 // function System2.pumRad.vol.Medium.temperature_phX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
@@ -6968,19 +6901,6 @@ end System2;
 // algorithm
 //   T := 273.15 + h / 4184.0;
 // end System2.rad.Medium.temperature_phX;
-//
-// function System2.rad.vol.Medium.ThermodynamicState "Automatically generated record constructor for System2.rad.vol.Medium.ThermodynamicState"
-//   input Real p;
-//   input Real T;
-//   output ThermodynamicState res;
-// end System2.rad.vol.Medium.ThermodynamicState;
-//
-// function System2.rad.vol.Medium.specificInternalEnergy
-//   input System2.rad.vol.Medium.ThermodynamicState state;
-//   output Real u(quantity = "SpecificEnergy", unit = "J/kg", min = -1e8, max = 1e8, nominal = 1e6);
-// algorithm
-//   u := 4184.0 * (state.T - 273.15);
-// end System2.rad.vol.Medium.specificInternalEnergy;
 //
 // function System2.rad.vol.Medium.temperature_phX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
@@ -7141,13 +7061,6 @@ end System2;
 // algorithm
 //   state := if size(X, 1) == 2 then System2.vol.Medium.ThermodynamicState(p, System2.vol.Medium.T_phX(p, h, X), X) else System2.vol.Medium.ThermodynamicState(p, System2.vol.Medium.T_phX(p, h, cat(1, X, {1.0 - sum(X)})), cat(1, X, {1.0 - sum(X)}));
 // end System2.vol.Medium.setState_phX;
-//
-// function System2.vol.Medium.specificInternalEnergy
-//   input System2.vol.Medium.ThermodynamicState state;
-//   output Real u(quantity = "SpecificEnergy", unit = "J/kg", min = -1e8, max = 1e8, nominal = 1e6);
-// algorithm
-//   u := Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.h_pTX(state.p, state.T, state.X) - 84437.5;
-// end System2.vol.Medium.specificInternalEnergy;
 //
 // function System2.vol.Medium.sublimationPressureIce
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
@@ -7313,7 +7226,7 @@ end System2;
 //   protected Real vol.dynBal.medium.X_sat(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   protected Real vol.dynBal.medium.x_sat(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   protected Real vol.dynBal.medium.p_steam_sat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
-//   protected Real vol.dynBal.U(quantity = "Energy", unit = "J", start = vol.V * 1.2 * System2.vol.Medium.specificInternalEnergy(vol.state_start));
+//   protected Real vol.dynBal.U(quantity = "Energy", unit = "J", start = vol.V * 1.2 * (-39136.555));
 //   protected Real vol.dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = vol.V * 1.2);
 //   protected Real vol.dynBal.mXi[1](quantity = "Mass", unit = "kg", min = 0.0);
 //   protected Real vol.dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
@@ -7324,7 +7237,7 @@ end System2;
 //   protected Real vol.dynBal.mXi_flow[1](unit = "kg/s");
 //   protected Real vol.dynBal.hOut(unit = "J/kg");
 //   protected Real vol.dynBal.XiOut[1](unit = "1", min = 0.0, max = 1.0);
-//   protected parameter Boolean vol.dynBal.initialize_p = true;
+//   protected final parameter Boolean vol.dynBal.initialize_p = true;
 //   protected final parameter Real vol.dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 1.2;
 //   protected parameter Real vol.state_start.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = 101325.0;
 //   protected parameter Real vol.state_start.T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = 293.15;
@@ -7335,7 +7248,7 @@ end System2;
 //   protected Real vol.Q_flow(quantity = "Power", unit = "W");
 //   protected Real vol.hOut_internal(unit = "J/kg");
 //   protected Real vol.XiOut_internal[1](unit = "1");
-//   protected parameter Real vol.masExc[1].k(start = 1.0) = 0.0;
+//   protected final parameter Real vol.masExc[1].k(start = 1.0) = 0.0;
 //   protected Real vol.masExc[1].y;
 //   protected Real vol.heaInp.y = vol.heatPort.Q_flow;
 //   Real theCon.Q_flow(quantity = "Power", unit = "W");
@@ -7397,9 +7310,9 @@ end System2;
 //   Real rad.port_b.m_flow(quantity = "MassFlowRate.SimpleLiquidWater", unit = "kg/s", min = -1e5, max = 1e60);
 //   Real rad.port_b.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 3e5, nominal = 3e5);
 //   Real rad.port_b.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, nominal = 1e6);
-//   protected parameter Boolean rad.port_a_exposesState = false;
-//   protected parameter Boolean rad.port_b_exposesState = false;
-//   protected parameter Boolean rad.showDesignFlowDirection = false;
+//   protected final parameter Boolean rad.port_a_exposesState = false;
+//   protected final parameter Boolean rad.port_b_exposesState = false;
+//   protected final parameter Boolean rad.showDesignFlowDirection = false;
 //   parameter Real rad.m_flow_nominal(quantity = "MassFlowRate", unit = "kg/s") = abs(2e4 / rad.cp_nominal / (rad.T_a_nominal - 313.15));
 //   parameter Real rad.m_flow_small(quantity = "MassFlowRate", unit = "kg/s", min = 0.0) = 1e-4 * abs(rad.m_flow_nominal);
 //   final parameter Boolean rad.homotopyInitialization = true;
@@ -7542,14 +7455,14 @@ end System2;
 //   protected final parameter Boolean rad.vol[1].dynBal.medium.standardOrderComponents = true;
 //   protected Real rad.vol[1].dynBal.medium.T_degC(quantity = "ThermodynamicTemperature", unit = "degC") = Modelica.SIunits.Conversions.to_degC(rad.vol[1].dynBal.medium.T);
 //   protected Real rad.vol[1].dynBal.medium.p_bar(quantity = "Pressure", unit = "bar") = Modelica.SIunits.Conversions.to_bar(rad.vol[1].dynBal.medium.p);
-//   protected Real rad.vol[1].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[1].V * 995.586 * System2.rad.vol.Medium.specificInternalEnergy(rad.vol[1].state_start));
+//   protected Real rad.vol[1].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[1].V * 995.586 * 83680.0);
 //   protected Real rad.vol[1].dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = rad.vol[1].V * 995.586);
 //   protected Real rad.vol[1].dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
 //   protected Real rad.vol[1].dynBal.Hb_flow(quantity = "EnthalpyFlowRate", unit = "W");
 //   protected final Real rad.vol[1].dynBal.fluidVolume(quantity = "Volume", unit = "m3") = rad.vol[1].V;
 //   protected Real rad.vol[1].dynBal.Q_flow(unit = "W");
 //   protected Real rad.vol[1].dynBal.hOut(unit = "J/kg");
-//   protected parameter Boolean rad.vol[1].dynBal.initialize_p = false;
+//   protected final parameter Boolean rad.vol[1].dynBal.initialize_p = false;
 //   protected Real rad.vol[1].dynBal.ports_H_flow[1](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected Real rad.vol[1].dynBal.ports_H_flow[2](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected final parameter Real rad.vol[1].dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
@@ -7612,14 +7525,14 @@ end System2;
 //   protected final parameter Boolean rad.vol[2].dynBal.medium.standardOrderComponents = true;
 //   protected Real rad.vol[2].dynBal.medium.T_degC(quantity = "ThermodynamicTemperature", unit = "degC") = Modelica.SIunits.Conversions.to_degC(rad.vol[2].dynBal.medium.T);
 //   protected Real rad.vol[2].dynBal.medium.p_bar(quantity = "Pressure", unit = "bar") = Modelica.SIunits.Conversions.to_bar(rad.vol[2].dynBal.medium.p);
-//   protected Real rad.vol[2].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[2].V * 995.586 * System2.rad.vol.Medium.specificInternalEnergy(rad.vol[2].state_start));
+//   protected Real rad.vol[2].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[2].V * 995.586 * 83680.0);
 //   protected Real rad.vol[2].dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = rad.vol[2].V * 995.586);
 //   protected Real rad.vol[2].dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
 //   protected Real rad.vol[2].dynBal.Hb_flow(quantity = "EnthalpyFlowRate", unit = "W");
 //   protected final Real rad.vol[2].dynBal.fluidVolume(quantity = "Volume", unit = "m3") = rad.vol[2].V;
 //   protected Real rad.vol[2].dynBal.Q_flow(unit = "W");
 //   protected Real rad.vol[2].dynBal.hOut(unit = "J/kg");
-//   protected parameter Boolean rad.vol[2].dynBal.initialize_p = false;
+//   protected final parameter Boolean rad.vol[2].dynBal.initialize_p = false;
 //   protected Real rad.vol[2].dynBal.ports_H_flow[1](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected Real rad.vol[2].dynBal.ports_H_flow[2](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected final parameter Real rad.vol[2].dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
@@ -7682,14 +7595,14 @@ end System2;
 //   protected final parameter Boolean rad.vol[3].dynBal.medium.standardOrderComponents = true;
 //   protected Real rad.vol[3].dynBal.medium.T_degC(quantity = "ThermodynamicTemperature", unit = "degC") = Modelica.SIunits.Conversions.to_degC(rad.vol[3].dynBal.medium.T);
 //   protected Real rad.vol[3].dynBal.medium.p_bar(quantity = "Pressure", unit = "bar") = Modelica.SIunits.Conversions.to_bar(rad.vol[3].dynBal.medium.p);
-//   protected Real rad.vol[3].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[3].V * 995.586 * System2.rad.vol.Medium.specificInternalEnergy(rad.vol[3].state_start));
+//   protected Real rad.vol[3].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[3].V * 995.586 * 83680.0);
 //   protected Real rad.vol[3].dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = rad.vol[3].V * 995.586);
 //   protected Real rad.vol[3].dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
 //   protected Real rad.vol[3].dynBal.Hb_flow(quantity = "EnthalpyFlowRate", unit = "W");
 //   protected final Real rad.vol[3].dynBal.fluidVolume(quantity = "Volume", unit = "m3") = rad.vol[3].V;
 //   protected Real rad.vol[3].dynBal.Q_flow(unit = "W");
 //   protected Real rad.vol[3].dynBal.hOut(unit = "J/kg");
-//   protected parameter Boolean rad.vol[3].dynBal.initialize_p = false;
+//   protected final parameter Boolean rad.vol[3].dynBal.initialize_p = false;
 //   protected Real rad.vol[3].dynBal.ports_H_flow[1](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected Real rad.vol[3].dynBal.ports_H_flow[2](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected final parameter Real rad.vol[3].dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
@@ -7752,14 +7665,14 @@ end System2;
 //   protected final parameter Boolean rad.vol[4].dynBal.medium.standardOrderComponents = true;
 //   protected Real rad.vol[4].dynBal.medium.T_degC(quantity = "ThermodynamicTemperature", unit = "degC") = Modelica.SIunits.Conversions.to_degC(rad.vol[4].dynBal.medium.T);
 //   protected Real rad.vol[4].dynBal.medium.p_bar(quantity = "Pressure", unit = "bar") = Modelica.SIunits.Conversions.to_bar(rad.vol[4].dynBal.medium.p);
-//   protected Real rad.vol[4].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[4].V * 995.586 * System2.rad.vol.Medium.specificInternalEnergy(rad.vol[4].state_start));
+//   protected Real rad.vol[4].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[4].V * 995.586 * 83680.0);
 //   protected Real rad.vol[4].dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = rad.vol[4].V * 995.586);
 //   protected Real rad.vol[4].dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
 //   protected Real rad.vol[4].dynBal.Hb_flow(quantity = "EnthalpyFlowRate", unit = "W");
 //   protected final Real rad.vol[4].dynBal.fluidVolume(quantity = "Volume", unit = "m3") = rad.vol[4].V;
 //   protected Real rad.vol[4].dynBal.Q_flow(unit = "W");
 //   protected Real rad.vol[4].dynBal.hOut(unit = "J/kg");
-//   protected parameter Boolean rad.vol[4].dynBal.initialize_p = false;
+//   protected final parameter Boolean rad.vol[4].dynBal.initialize_p = false;
 //   protected Real rad.vol[4].dynBal.ports_H_flow[1](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected Real rad.vol[4].dynBal.ports_H_flow[2](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected final parameter Real rad.vol[4].dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
@@ -7822,14 +7735,14 @@ end System2;
 //   protected final parameter Boolean rad.vol[5].dynBal.medium.standardOrderComponents = true;
 //   protected Real rad.vol[5].dynBal.medium.T_degC(quantity = "ThermodynamicTemperature", unit = "degC") = Modelica.SIunits.Conversions.to_degC(rad.vol[5].dynBal.medium.T);
 //   protected Real rad.vol[5].dynBal.medium.p_bar(quantity = "Pressure", unit = "bar") = Modelica.SIunits.Conversions.to_bar(rad.vol[5].dynBal.medium.p);
-//   protected Real rad.vol[5].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[5].V * 995.586 * System2.rad.vol.Medium.specificInternalEnergy(rad.vol[5].state_start));
+//   protected Real rad.vol[5].dynBal.U(quantity = "Energy", unit = "J", start = rad.vol[5].V * 995.586 * 83680.0);
 //   protected Real rad.vol[5].dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = rad.vol[5].V * 995.586);
 //   protected Real rad.vol[5].dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
 //   protected Real rad.vol[5].dynBal.Hb_flow(quantity = "EnthalpyFlowRate", unit = "W");
 //   protected final Real rad.vol[5].dynBal.fluidVolume(quantity = "Volume", unit = "m3") = rad.vol[5].V;
 //   protected Real rad.vol[5].dynBal.Q_flow(unit = "W");
 //   protected Real rad.vol[5].dynBal.hOut(unit = "J/kg");
-//   protected parameter Boolean rad.vol[5].dynBal.initialize_p = false;
+//   protected final parameter Boolean rad.vol[5].dynBal.initialize_p = false;
 //   protected Real rad.vol[5].dynBal.ports_H_flow[1](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected Real rad.vol[5].dynBal.ports_H_flow[2](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected final parameter Real rad.vol[5].dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
@@ -7906,9 +7819,9 @@ end System2;
 //   Real temSup.port_b.m_flow(quantity = "MassFlowRate.SimpleLiquidWater", unit = "kg/s", min = -1e5, max = 1e60);
 //   Real temSup.port_b.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5);
 //   Real temSup.port_b.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, nominal = 1e6);
-//   protected parameter Boolean temSup.port_a_exposesState = false;
-//   protected parameter Boolean temSup.port_b_exposesState = false;
-//   protected parameter Boolean temSup.showDesignFlowDirection = true;
+//   protected final parameter Boolean temSup.port_a_exposesState = false;
+//   protected final parameter Boolean temSup.port_b_exposesState = false;
+//   protected final parameter Boolean temSup.showDesignFlowDirection = true;
 //   parameter Real temSup.m_flow_nominal(quantity = "MassFlowRate", unit = "kg/s", min = 0.0) = mRad_flow_nominal;
 //   parameter Real temSup.m_flow_small(quantity = "MassFlowRate", unit = "kg/s", min = 0.0) = 1e-4 * temSup.m_flow_nominal;
 //   final parameter Real temSup.tau(quantity = "Time", unit = "s", min = 0.0) = 1.0;
@@ -7934,12 +7847,12 @@ end System2;
 //   final parameter Boolean pumRad.allowFlowReversal = true;
 //   Real pumRad.port_a.m_flow(quantity = "MassFlowRate.SimpleLiquidWater", unit = "kg/s", min = -1e60, max = 1e5);
 //   Real pumRad.port_a.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 3e5, nominal = 3e5);
-//   Real pumRad.port_a.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, start = pumRad.h_outflow_start, nominal = 1e6);
+//   Real pumRad.port_a.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, start = 83680.0, nominal = 1e6);
 //   Real pumRad.port_b.m_flow(quantity = "MassFlowRate.SimpleLiquidWater", unit = "kg/s", min = -1e5, max = 1e60);
 //   Real pumRad.port_b.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 3e5, nominal = 3e5);
-//   Real pumRad.port_b.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, start = pumRad.h_outflow_start, nominal = 1e6);
-//   protected parameter Boolean pumRad.port_a_exposesState = false;
-//   protected parameter Boolean pumRad.port_b_exposesState = false;
+//   Real pumRad.port_b.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, start = 83680.0, nominal = 1e6);
+//   protected final parameter Boolean pumRad.port_a_exposesState = false;
+//   protected final parameter Boolean pumRad.port_b_exposesState = false;
 //   protected final parameter Boolean pumRad.showDesignFlowDirection = false;
 //   parameter Real pumRad.m_flow_nominal(quantity = "MassFlowRate", unit = "kg/s") = mRad_flow_nominal;
 //   parameter Real pumRad.m_flow_small(quantity = "MassFlowRate", unit = "kg/s", min = 0.0) = 1e-4 * abs(pumRad.m_flow_nominal);
@@ -8000,14 +7913,14 @@ end System2;
 //   protected final parameter Boolean pumRad.vol.dynBal.medium.standardOrderComponents = true;
 //   protected Real pumRad.vol.dynBal.medium.T_degC(quantity = "ThermodynamicTemperature", unit = "degC") = Modelica.SIunits.Conversions.to_degC(pumRad.vol.dynBal.medium.T);
 //   protected Real pumRad.vol.dynBal.medium.p_bar(quantity = "Pressure", unit = "bar") = Modelica.SIunits.Conversions.to_bar(pumRad.vol.dynBal.medium.p);
-//   protected Real pumRad.vol.dynBal.U(quantity = "Energy", unit = "J", start = pumRad.vol.V * 995.586 * System2.pumRad.vol.Medium.specificInternalEnergy(pumRad.vol.state_start));
+//   protected Real pumRad.vol.dynBal.U(quantity = "Energy", unit = "J", start = pumRad.vol.V * 995.586 * 83680.0);
 //   protected Real pumRad.vol.dynBal.m(quantity = "Mass", unit = "kg", min = 0.0, start = pumRad.vol.V * 995.586);
 //   protected Real pumRad.vol.dynBal.mb_flow(quantity = "MassFlowRate", unit = "kg/s");
 //   protected Real pumRad.vol.dynBal.Hb_flow(quantity = "EnthalpyFlowRate", unit = "W");
 //   protected final Real pumRad.vol.dynBal.fluidVolume(quantity = "Volume", unit = "m3") = pumRad.vol.V;
 //   protected Real pumRad.vol.dynBal.Q_flow(unit = "W");
 //   protected Real pumRad.vol.dynBal.hOut(unit = "J/kg");
-//   protected parameter Boolean pumRad.vol.dynBal.initialize_p = false;
+//   protected final parameter Boolean pumRad.vol.dynBal.initialize_p = false;
 //   protected Real pumRad.vol.dynBal.ports_H_flow[1](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected Real pumRad.vol.dynBal.ports_H_flow[2](quantity = "EnthalpyFlowRate", unit = "W", min = -1e8, max = 1e8, nominal = 1000.0);
 //   protected final parameter Real pumRad.vol.dynBal.rho_nominal(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
@@ -8035,7 +7948,7 @@ end System2;
 //   protected Real pumRad.preSou.port_b.h_outflow(quantity = "SpecificEnergy", unit = "J/kg", min = -1e10, max = 1e10, nominal = 1e6);
 //   protected final parameter Boolean pumRad.preSou.port_a_exposesState = false;
 //   protected final parameter Boolean pumRad.preSou.port_b_exposesState = false;
-//   protected parameter Boolean pumRad.preSou.showDesignFlowDirection = true;
+//   protected final parameter Boolean pumRad.preSou.showDesignFlowDirection = true;
 //   protected parameter Real pumRad.preSou.dp_start(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = 0.01 * system.p_start;
 //   protected parameter Real pumRad.preSou.m_flow_start(quantity = "MassFlowRate.SimpleLiquidWater", unit = "kg/s", min = -1e5, max = 1e5) = pumRad.m_flow_start;
 //   protected parameter Real pumRad.preSou.m_flow_small(quantity = "MassFlowRate.SimpleLiquidWater", unit = "kg/s", min = -1e5, max = 1e5) = pumRad.m_flow_small;
@@ -8056,14 +7969,14 @@ end System2;
 //   protected Real pumRad.prePow.port.Q_flow(quantity = "Power", unit = "W");
 //   protected parameter Real pumRad.sta_start.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = 3e5;
 //   protected parameter Real pumRad.sta_start.T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = 293.15;
-//   protected parameter Real pumRad.h_outflow_start(quantity = "SpecificEnergy", unit = "J/kg") = System2.pumRad.Medium.specificEnthalpy(pumRad.sta_start);
+//   protected final parameter Real pumRad.h_outflow_start(quantity = "SpecificEnergy", unit = "J/kg") = 83680.0;
 //   final parameter Boolean pumRad.use_powerCharacteristic = false;
 //   parameter Boolean pumRad.motorCooledByFluid = true;
 //   parameter Real pumRad.motorEfficiency.r_V[1](displayUnit = "1", min = 0.0, max = 1.0) = 1.0;
 //   parameter Real pumRad.motorEfficiency.eta[1](displayUnit = "1", min = 0.0, max = 1.0) = 0.7;
 //   parameter Real pumRad.hydraulicEfficiency.r_V[1](displayUnit = "1", min = 0.0, max = 1.0) = 1.0;
 //   parameter Real pumRad.hydraulicEfficiency.eta[1](displayUnit = "1", min = 0.0, max = 1.0) = 0.7;
-//   final parameter Real pumRad.rho_default(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = System2.pumRad.Medium.density(pumRad.sta_default);
+//   final parameter Real pumRad.rho_default(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 995.586;
 //   Real pumRad.P(quantity = "Modelica.SIunits.Power", unit = "W");
 //   Real pumRad.WHyd(quantity = "Power", unit = "W");
 //   Real pumRad.WFlo(quantity = "Power", unit = "W");
@@ -8081,8 +7994,8 @@ end System2;
 //   final constant Boolean pumRad.control_m_flow = true;
 //   Real pumRad.r_V(start = 1.0);
 //   protected final parameter Real pumRad.p_a_default(quantity = "Pressure", unit = "Pa", displayUnit = "Pa", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = 3e5;
-//   protected parameter Real pumRad.sta_default.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, fixed = false, nominal = 1e5);
-//   protected parameter Real pumRad.sta_default.T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 1e4, start = 300.0, fixed = false, nominal = 300.0);
+//   protected parameter Real pumRad.sta_default.p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = 3e5;
+//   protected parameter Real pumRad.sta_default.T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = 293.15;
 //   protected Real pumRad.PToMedium_flow.y = pumRad.Q_flow + pumRad.WFlo;
 //   Real pumRad.m_flow_in(unit = "kg/s", nominal = pumRad.m_flow_nominal);
 //   final parameter Boolean pumRad.filteredSpeed = true;
@@ -8096,14 +8009,14 @@ end System2;
 //   protected final parameter enumeration(LowPass, HighPass, BandPass, BandStop) pumRad.filter.filterType = Modelica.Blocks.Types.FilterType.LowPass;
 //   protected final parameter Integer pumRad.filter.order(min = 1) = 2;
 //   protected parameter Real pumRad.filter.f_cut(quantity = "Frequency", unit = "Hz") = 5.0 / (6.283185307179586 * pumRad.riseTime);
-//   protected parameter Real pumRad.filter.gain = 1.0;
-//   protected parameter Real pumRad.filter.A_ripple(unit = "dB") = 0.5;
-//   protected parameter Real pumRad.filter.f_min(quantity = "Frequency", unit = "Hz") = 0.0;
-//   protected parameter Boolean pumRad.filter.normalized = true;
+//   protected final parameter Real pumRad.filter.gain = 1.0;
+//   protected final parameter Real pumRad.filter.A_ripple(unit = "dB") = 0.5;
+//   protected final parameter Real pumRad.filter.f_min(quantity = "Frequency", unit = "Hz") = 0.0;
+//   protected final parameter Boolean pumRad.filter.normalized = true;
 //   protected final parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput) pumRad.filter.init = Modelica.Blocks.Types.Init.InitialOutput;
 //   protected final parameter Integer pumRad.filter.nx = 2;
-//   protected parameter Real pumRad.filter.x_start[1] = 0.0;
-//   protected parameter Real pumRad.filter.x_start[2] = 0.0;
+//   protected final parameter Real pumRad.filter.x_start[1] = 0.0;
+//   protected final parameter Real pumRad.filter.x_start[2] = 0.0;
 //   protected final parameter Real pumRad.filter.y_start = pumRad.m_flow_start;
 //   protected parameter Real pumRad.filter.u_nominal = pumRad.m_flow_nominal;
 //   protected Real pumRad.filter.x[1](stateSelect = StateSelect.always);
@@ -8181,8 +8094,8 @@ end System2;
 //   rad.QEle_flow_nominal[4] = rad.k * rad.UAEle * ((1.0 - rad.fraRad) * Buildings.Utilities.Math.Functions.powerLinearized(rad.k * rad.dTRad_nominal[4], rad.n, 0.1 * rad.k * (313.15 - rad.TRad_nominal)) + rad.fraRad * Buildings.Utilities.Math.Functions.powerLinearized(rad.k * rad.dTCon_nominal[4], rad.n, 0.1 * rad.k * 20.0));
 //   rad.QEle_flow_nominal[5] = rad.k * rad.UAEle * ((1.0 - rad.fraRad) * Buildings.Utilities.Math.Functions.powerLinearized(rad.k * rad.dTRad_nominal[5], rad.n, 0.1 * rad.k * (313.15 - rad.TRad_nominal)) + rad.fraRad * Buildings.Utilities.Math.Functions.powerLinearized(rad.k * rad.dTCon_nominal[5], rad.n, 0.1 * rad.k * 20.0));
 //   temSup.T = temSup.T_start;
-//   pumRad.sta_default = System2.pumRad.Medium.setState_pTX(pumRad.p_a_default, 293.15, {});
-//   pumRad.filter.cr = Modelica.Blocks.Continuous.Internal.Filter.base.CriticalDamping(2, pumRad.filter.normalized);
+//   pumRad.filter.cr[1] = 1.556927036313096;
+//   pumRad.filter.cr[2] = 1.556927036313096;
 //   (pumRad.filter.r, _, _, _) = Modelica.Blocks.Continuous.Internal.Filter.roots.lowPass(pumRad.filter.cr, {}, {}, pumRad.filter.f_cut);
 //   pumRad.filter.y = pumRad.filter.y_start;
 //   der(pumRad.filter.x[1]) = 0.0;
@@ -8361,7 +8274,7 @@ end System2;
 //   der(vol.dynBal.U) = vol.dynBal.Hb_flow + vol.dynBal.Q_flow;
 //   der(vol.dynBal.m) = vol.dynBal.mb_flow + vol.dynBal.mXi_flow[1];
 //   der(vol.dynBal.mXi[1]) = vol.dynBal.mbXi_flow[1] + vol.dynBal.mXi_flow[1];
-//   vol.masExc[1].y = vol.masExc[1].k;
+//   vol.masExc[1].y = 0.0;
 //   vol.p = 101325.0;
 //   vol.T = System2.vol.Medium.temperature_phX(vol.p, vol.hOut_internal, {vol.Xi[1], 1.0 - vol.Xi[1]});
 //   vol.Xi[1] = vol.XiOut_internal[1];
@@ -8674,14 +8587,13 @@ end System2;
 //   pumRad.preSou.port_a.m_flow + pumRad.preSou.port_b.m_flow = 0.0;
 //   pumRad.prePow.port.Q_flow = -pumRad.prePow.Q_flow;
 //   assert(pumRad.filter.u_nominal > 0.0, "u_nominal > 0 required");
-//   assert(pumRad.filter.A_ripple > 0.0, "A_ripple > 0 required");
 //   assert(pumRad.filter.f_cut > 0.0, "f_cut > 0 required");
 //   pumRad.filter.uu[1] = pumRad.filter.u / pumRad.filter.u_nominal;
 //   der(pumRad.filter.x[1]) = pumRad.filter.r[1] * (pumRad.filter.x[1] - pumRad.filter.uu[1]);
 //   der(pumRad.filter.x[2]) = pumRad.filter.r[2] * (pumRad.filter.x[2] - pumRad.filter.uu[2]);
 //   pumRad.filter.uu[2] = pumRad.filter.x[1];
 //   pumRad.filter.uu[3] = pumRad.filter.x[2];
-//   pumRad.filter.y = pumRad.filter.gain * pumRad.filter.u_nominal * pumRad.filter.uu[3];
+//   pumRad.filter.y = pumRad.filter.u_nominal * pumRad.filter.uu[3];
 //   pumRad.r_V = pumRad.VMachine_flow / pumRad.V_flow_max;
 //   pumRad.etaHyd = Buildings.Fluid.Movers.BaseClasses.Characteristics.efficiency(pumRad.hydraulicEfficiency, pumRad.r_V, pumRad.hydDer);
 //   pumRad.etaMot = Buildings.Fluid.Movers.BaseClasses.Characteristics.efficiency(pumRad.motorEfficiency, pumRad.r_V, pumRad.motDer);
