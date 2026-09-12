@@ -1016,10 +1016,20 @@ pub(super) fn build_sim_model(
                 .copied();
             let (res_fn, load_fn, jac_fn, strict_fn) = build_nls_fns(
                 sys, &var_map, &eq_index, &by_name, &mut literals,
-                nls_jac_infos.get(&sys.index), strict,
+                nls_jac_infos.get(&sys.index), strict, &mut pool,
+                nls_types.map(|(residual, _, _)| residual).unwrap_or_default(),
             )?;
             let res_idx = import_base + bodies.len() as u32;
-            bodies.push(res_fn);
+            match res_fn {
+                NlsResidualFn::Whole(f) => bodies.push(f),
+                // A split residual keeps this index: its body is the thunk calling
+                // the chunks, filled in once the chunk base is known.
+                NlsResidualFn::Chunked(chunks) => {
+                    let slot = bodies.len();
+                    bodies.push(empty_eqfn());
+                    splits.push(SplitFn { slot, chunks, n_params: 3, pre_calls: Vec::new() });
+                }
+            }
             let load_idx = import_base + bodies.len() as u32;
             bodies.push(load_fn);
             callback_indices.push(res_idx);
