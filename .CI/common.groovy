@@ -495,6 +495,15 @@ def withSccache(List extraEnv = [], Closure body) {
   }
 }
 
+// The release profile ships LTO at -O3. A lane that builds an omc to test rather
+// than to distribute wants none of it: the link is serial and nothing before it
+// is reusable.
+List cheapReleaseProfile() {
+  return ['CARGO_PROFILE_RELEASE_OPT_LEVEL=2',
+          'CARGO_PROFILE_RELEASE_LTO=false',
+          'CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16']
+}
+
 void buildRustOMC() {
   standardSetup()
   // RUST_OMC_THREADS=4 parallelises the rustc front-end on the (near-serial)
@@ -522,8 +531,7 @@ void buildRustOMC() {
       -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
       -DRUST_OMC_WASM_RUNTIME_OUT=${env.WORKSPACE}/runtime.wasm
   """
-  // O3 is the default release opt-level; CI uses O2 to cut build time.
-  withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
+  withSccache(cheapReleaseProfile()) {
     // install builds the whole tree (incl. rust_omc + the cdylib) and installs in
     // one pass. Don't also pass rust_omc as a goal: recursive sub-makes would re-run
     // the always-run cdylib custom target a second time (a redundant cargo pass).
@@ -851,7 +859,7 @@ void buildRustNightlyShared() {
       -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DRUST_OMC_WASM_ARTIFACTS_OUT=${d}/wasm
   """
-  withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
+  withSccache {
     // rust_codegen is susan + mmtorust + the Qt scripting API sources;
     // rust_wasm_runtime and rust_wasm_artifacts are the wasm blobs and the FMU
     // loaders. The compiler itself is deliberately not built here: every byte of
@@ -932,7 +940,7 @@ void buildRustNightlyOMC(String name) {
   List flags = nightlyCommonFlags(t) + nightlyHandoverFlags() +
                ['-DOM_ENABLE_GUI_CLIENTS=OFF', '-DRUST_OMC_SCRIPTING_API=ON']
   sh "cmake -S . -B build_cmake ${flags.join(' ')}"
-  withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
+  withSccache {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
   }
   nightlyCheckArtifacts(t)

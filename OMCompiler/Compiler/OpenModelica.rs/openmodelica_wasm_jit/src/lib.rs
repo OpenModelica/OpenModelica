@@ -1,83 +1,10 @@
 //! Host-side wasm-jit execution engine for OpenModelica.
 
-// Embedded wasm artifacts built by `build.rs`, used by this crate's engines and
-// the codegen crate (standalone/FMU emission).
-pub static RUNTIME_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime.wasm"));
-pub static RUNTIME_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1.wasm"));
-/// The interactive `wasm32-wasip1` (std) runtime: exports `rt_*`+`memory`+table
-/// like `RUNTIME_WASM`, but built with std so the sparse solver (`rsparse`) links
-/// in; imports `wasi_snapshot_preview1` (satisfied by `wasi_shim`). Empty when the
-/// wasip1 target was unavailable at build time (host then uses `RUNTIME_WASM`).
-pub static RUNTIME_WASM_INTERACTIVE_WASIP1: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1_interactive.wasm"));
-pub static EXTERNAL_C_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modelicaexternalc.wasm"));
-pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_me_adapter.wasm"));
-/// Both interfaces in one component, and what a Co-Simulation FMU carries too: its
-/// imports are a `co-simulation-fmu`'s exactly and its exports a superset, so it
-/// substitutes for one — cheaper than a fourth adapter blob in every omc.
-/// The SUNDIALS-backed solvers come with it, as imports [`SOLVER_LIBRARIES`] resolves.
-pub static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
+pub mod blobs;
+pub use blobs::*;
 
-/// One solver library an exported FMU can be given, as a PIC dylink side module: the
-/// same wasm archives the wasip1 runtimes link statically, re-linked `--shared` and
-/// reduced to the entry points [`FMI3_MECS_ADAPTER`] imports from it.
-pub struct SolverLibrary {
-    /// The dylink library name, and the `om_have_<name>` marker the FMU's runtime
-    /// reads to report what it was given.
-    pub name: &'static str,
-    /// Linked when the FMU's flags can reach this solver.
-    pub module: &'static [u8],
-    /// Linked instead when they cannot: the same entry points, each a trap, and
-    /// `om_have_<name>` answering 0 so `simflags::check` rejects the solver first.
-    pub stub: &'static [u8],
-}
-
-macro_rules! solver_library {
-    ($name:literal) => {
-        SolverLibrary {
-            name: $name,
-            module: include_bytes!(concat!(env!("OUT_DIR"), "/solver_", $name, ".wasm")),
-            stub: include_bytes!(concat!(env!("OUT_DIR"), "/solver_", $name, "_stub.wasm")),
-        }
-    };
-}
-
-/// The solver libraries, `klu` first: it is the shared SUNDIALS core, vectors,
-/// matrices and dense/Krylov/nonlinear solvers the others call into, so it is linked
-/// whenever any of them is. Every blob is empty when this omc was built without the
-/// wasm solver archives.
-pub static SOLVER_LIBRARIES: &[SolverLibrary] = &[
-    solver_library!("klu"),
-    solver_library!("sundials_driver"),
-    solver_library!("kinsol"),
-    solver_library!("umfpack"),
-    solver_library!("lis"),
-];
-
-/// Whether an exported wasm FMU can be given the SUNDIALS-backed solvers.
-pub fn sundials_dylink_available() -> bool {
-    !SOLVER_LIBRARIES[0].module.is_empty()
-}
-
-/// The me_cs adapter as a plain dylink library exporting the FMI 3.0 C API
-/// (`om_fmi3*`), for the artifact form a host links itself: being fixed, it is
-/// compiled once into the on-disk AOT cache instead of into every component.
-pub static FMI3_MECS_CAPI_ADAPTER: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_capi_adapter.wasm"));
-
-/// The **fused** artifact runtime: the FMI 3.0 adapter, the in-wasm driver and the
-/// simulation runtime in one non-PIC `wasm32-wasip1` module, with the SUNDIALS
-/// archives linked in (the dylink adapter cannot have them — see
-/// `build_wasip1_fused_adapter`). Empty when the wasip1 target was unavailable at
-/// build time, in which case the dylink adapter serves the artifact instead.
-pub static FMI3_FUSED_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_fused_wasip1.wasm"));
-
-/// `openmodelica_lapack` as a PIC dylink side module, linked into an FMU only when
-/// the model's `external "FORTRAN 77"` calls need it.
-pub static LAPACK_DYLINK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/liblapack.wasm"));
-
-/// Whether the wasip1 runtimes above have the real SUNDIALS/KLU linked in (the
-/// build script cross-compiled the archives), so a `-lss=klu` run can be served.
+/// Whether the wasip1 runtimes in [`blobs`] have the real SUNDIALS/KLU linked in
+/// (the build script cross-compiled the archives), so `-lss=klu` can be served.
 pub const SUNDIALS: bool = cfg!(sundials);
 
 pub mod sig;

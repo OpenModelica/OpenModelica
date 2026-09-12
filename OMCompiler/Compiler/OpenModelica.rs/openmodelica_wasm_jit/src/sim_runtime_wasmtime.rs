@@ -41,10 +41,10 @@ use openmodelica_wasi::wasi::WasiCtx;
 /// the wasip1 one additionally imports `wasi_snapshot_preview1` (served by the
 /// `wasi_shim`).
 fn runtime_blob() -> &'static [u8] {
-    if RUNTIME_WASM_INTERACTIVE_WASIP1.is_empty() {
-        RUNTIME_WASM
+    if RUNTIME_WASM_INTERACTIVE_WASIP1().is_empty() {
+        RUNTIME_WASM()
     } else {
-        RUNTIME_WASM_INTERACTIVE_WASIP1
+        RUNTIME_WASM_INTERACTIVE_WASIP1()
     }
 }
 
@@ -267,6 +267,7 @@ fn aot_installed_path(tag: &str, key: u64) -> Option<std::path::PathBuf> {
     let root = openmodelica_util::Settings::getInstallationDirectoryPath().ok()?;
     let p = std::path::Path::new(&*root)
         .join("lib")
+        .join(openmodelica_util::Autoconf::triple)
         .join("omc")
         .join("cache")
         .join(aot_cache_name(tag, key));
@@ -342,12 +343,12 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     let engine = sim_engine();
     let mut blobs: Vec<(String, &[u8])> = vec![
         ("runtime".to_string(), runtime_blob()),
-        ("fused".to_string(), crate::FMI3_FUSED_WASIP1),
-        ("lib-fmi3adapter".to_string(), crate::FMI3_MECS_CAPI_ADAPTER),
-        ("lib-lapack".to_string(), crate::LAPACK_DYLINK),
-        ("lib-libc.so".to_string(), openmodelica_wasi_libc::LIBC_PIC),
-        ("lib-modelicaexternalc".to_string(), openmodelica_wasi_libc::EXTERNAL_C_DYLINK),
-        ("lib-usertab".to_string(), openmodelica_wasi_libc::USERTAB_DYLINK),
+        ("fused".to_string(), crate::FMI3_FUSED_WASIP1()),
+        ("lib-fmi3adapter".to_string(), crate::FMI3_MECS_CAPI_ADAPTER()),
+        ("lib-lapack".to_string(), crate::LAPACK_DYLINK()),
+        ("lib-libc.so".to_string(), crate::LIBC_PIC()),
+        ("lib-modelicaexternalc".to_string(), crate::EXTERNAL_C_DYLINK()),
+        ("lib-usertab".to_string(), crate::USERTAB_DYLINK()),
     ];
     blobs.retain(|(_, b)| !b.is_empty());
     let current: Vec<String> =
@@ -2381,7 +2382,7 @@ impl DylinkFmu {
         // adapter imports the model, so the three go in that order.
         let mut ext_libs: Vec<Library> = Vec::new();
         if external_c {
-            let libc = openmodelica_wasi_libc::LIBC_PIC;
+            let libc = crate::LIBC_PIC();
             if libc.is_empty() {
                 return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it \
                             cannot load an artifact whose model uses external \"C\""
@@ -2393,13 +2394,13 @@ impl DylinkFmu {
             ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
         }
         if external_c {
-            ext_libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
-            if !openmodelica_wasi_libc::USERTAB_DYLINK.is_empty() {
-                ext_libs.push(Library::builtin("usertab", openmodelica_wasi_libc::USERTAB_DYLINK));
+            ext_libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+            if !crate::USERTAB_DYLINK().is_empty() {
+                ext_libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
             }
         }
-        if lapack && !crate::LAPACK_DYLINK.is_empty() {
-            ext_libs.push(Library::builtin("lapack", crate::LAPACK_DYLINK));
+        if lapack && !crate::LAPACK_DYLINK().is_empty() {
+            ext_libs.push(Library::builtin("lapack", crate::LAPACK_DYLINK()));
         }
         let model_module = wts(wasmtime::Module::new(engine, model))?;
         if !ext_libs.is_empty() {
@@ -2486,7 +2487,7 @@ impl DylinkFmu {
         lapack: bool,
         resources: &str,
     ) -> std::result::Result<DylinkFmu, String> {
-        let fused_bytes = crate::FMI3_FUSED_WASIP1;
+        let fused_bytes = crate::FMI3_FUSED_WASIP1();
         if fused_bytes.is_empty() {
             return Err("CodegenWasmJit: this omc has no fused wasip1 artifact runtime".to_string());
         }
@@ -2574,7 +2575,7 @@ impl DylinkFmu {
         let model_module = wts(wasmtime::Module::new(engine, model))?;
         // The model's `external "C"`: PIC side libraries relocated into this
         // module's memory, the same set and order the dylink path loads.
-        if external_c || !ext.is_empty() || (lapack && !crate::LAPACK_DYLINK.is_empty()) {
+        if external_c || !ext.is_empty() || (lapack && !crate::LAPACK_DYLINK().is_empty()) {
             use crate::dylink_engine::Library;
             let table = fused_inst
                 .get_table(&mut store, "__indirect_function_table")
@@ -2593,7 +2594,7 @@ impl DylinkFmu {
             };
             let mut ext_libs: Vec<Library> = Vec::new();
             if external_c {
-                let libc = openmodelica_wasi_libc::LIBC_PIC;
+                let libc = crate::LIBC_PIC();
                 if libc.is_empty() {
                     return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it \
                                 cannot load an artifact whose model uses external \"C\""
@@ -2605,13 +2606,13 @@ impl DylinkFmu {
                 ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
             }
             if external_c {
-                ext_libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
-                if !openmodelica_wasi_libc::USERTAB_DYLINK.is_empty() {
-                    ext_libs.push(Library::builtin("usertab", openmodelica_wasi_libc::USERTAB_DYLINK));
+                ext_libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+                if !crate::USERTAB_DYLINK().is_empty() {
+                    ext_libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
                 }
             }
-            if lapack && !crate::LAPACK_DYLINK.is_empty() {
-                ext_libs.push(Library::builtin("lapack", crate::LAPACK_DYLINK));
+            if lapack && !crate::LAPACK_DYLINK().is_empty() {
+                ext_libs.push(Library::builtin("lapack", crate::LAPACK_DYLINK()));
             }
             let mut utilities = crate::dylink_engine::modelica_utilities_imports(&mut store, &ext_rt);
             if ext.iter().any(|l| l.name == NATIVE_STUB) {

@@ -60,6 +60,42 @@ omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_Fortran_COMPILER_ID)
 omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
+# `lib/<OM_LIBRARY_ARCH>/omc` holds what omc installs for one target. CMake fills
+# CMAKE_LIBRARY_ARCHITECTURE only where GNU multiarch applies, so Windows and macOS
+# used to flatten into lib/omc with nowhere to put another target's libraries; keep
+# the same <cpu>-<os>-<env> scheme for them.
+if(CMAKE_LIBRARY_ARCHITECTURE)
+  set(OM_LIBRARY_ARCH "${CMAKE_LIBRARY_ARCHITECTURE}")
+else()
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
+    set(_om_arch x86_64)
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+    set(_om_arch aarch64)
+  else()
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _om_arch)
+  endif()
+  if(APPLE)
+    # `universal`, not the CPU: mac-universal.sh lipos the two per-architecture
+    # trees, which only merge where their paths coincide.
+    set(OM_LIBRARY_ARCH "universal-apple-darwin")
+  elseif(WIN32 AND (MINGW OR CYGWIN))
+    set(OM_LIBRARY_ARCH "${_om_arch}-windows-gnu")
+  elseif(WIN32)
+    set(OM_LIBRARY_ARCH "${_om_arch}-windows-msvc")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Arch and friends leave CMAKE_LIBRARY_ARCHITECTURE empty; Autoconf.rs still
+    # computes <cpu>-linux-gnu, so the install has to write there.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "musl")
+      set(OM_LIBRARY_ARCH "${_om_arch}-linux-musl")
+    else()
+      set(OM_LIBRARY_ARCH "${_om_arch}-linux-gnu")
+    endif()
+  else()
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}" _om_os)
+    set(OM_LIBRARY_ARCH "${_om_arch}-${_om_os}")
+  endif()
+endif()
+omc_add_to_report(OM_LIBRARY_ARCH)
 
 ## OPTIONS #################################################################################################
 
@@ -203,9 +239,9 @@ endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
-  cmake_path(APPEND CMAKE_INSTALL_LIBDIR "${CMAKE_LIBRARY_ARCHITECTURE}" "omc")
+  cmake_path(APPEND CMAKE_INSTALL_LIBDIR "${OM_LIBRARY_ARCH}" "omc")
 else()
-  set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/")
+  set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${OM_LIBRARY_ARCH}/omc/")
 endif()
 message(STATUS "CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
 
@@ -227,7 +263,9 @@ endif()
 if(APPLE)
   ## MacOS Bundles end up in bin/<BundleName>.app/Contents/MacOS/
   ## So make sure that the lib dir is referenced from that location as well
-  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR}")
+  # The last two are for the app bundle mac-app-bundle.sh builds; they resolve
+  # nothing in a plain unix prefix.
+  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR};@loader_path/../Frameworks;@loader_path/../Resources/${CMAKE_INSTALL_LIBDIR}")
 else()
   set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 endif()

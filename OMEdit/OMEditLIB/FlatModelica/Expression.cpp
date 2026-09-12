@@ -829,6 +829,32 @@ namespace FlatModelica
       Expression _e;
   };
 
+  /*!
+   * A subscripted expression, `exp[sub1, sub2, ...]`, 1-based as in Modelica.
+   * getModelInstance emits it for a MultiBody shape's geometry, e.g.
+   * `$array(to_unit1((body.r - body.r_shape)[$i]) for $i in 1:3)`.
+   */
+  class Subscripted : public ExpressionBase
+  {
+    public:
+      Subscripted(Expression exp, std::vector<Expression> subscripts)
+        : _exp(std::move(exp)), _subscripts(std::move(subscripts)) {}
+
+      Subscripted(const QJsonObject &value);
+
+      std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Subscripted>(*this); }
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
+
+      bool isLiteral() const override { return false; }
+
+      void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
+
+    private:
+      Expression _exp;
+      std::vector<Expression> _subscripts;
+  };
+
   class IfExp : public ExpressionBase
   {
     public:
@@ -1372,7 +1398,7 @@ namespace FlatModelica
         case djb2_hash("binary_op"):         return std::make_unique<Binary>(value);
         case djb2_hash("unary_op"):          return std::make_unique<Unary>(value);
         case djb2_hash("if"):                return std::make_unique<IfExp>(value);
-        //case djb2_hash("sub"):               return std::make_unique<Subscripted>(value);
+        case djb2_hash("sub"):               return std::make_unique<Subscripted>(value);
         //case djb2_hash("tuple_element"):     return std::make_unique<TupleElement>(value);
         //case djb2_hash("record_element"):    return std::make_unique<RecordElement>(value);
         //case djb2_hash("function"):          return std::make_unique<Function>(value);
@@ -1381,13 +1407,8 @@ namespace FlatModelica
     }
 
 #if defined(__EMSCRIPTEN__)
-    // Web uses the getModelInstance JSON path (native walks references) and can
-    // carry expression kinds fromJson doesn't model yet, e.g. "sub". Fall back
-    // instead of aborting the whole diagram: best-effort for "sub" is its base
-    // expression; anything else becomes an opaque string.
-    if (kind.toString() == QLatin1String("sub") && value.contains("exp")) {
-      return ExpressionBase::deserialize(value["exp"]);
-    }
+    // Losing one expression beats aborting the whole diagram. Native throws, so a
+    // gap is reported rather than papered over.
     return std::make_unique<String>(QJsonDocument(value).toJson(QJsonDocument::Compact).toStdString());
 #else
     throw json_error("Expression: unsupported JSON object ", value);
@@ -2122,6 +2143,77 @@ namespace FlatModelica
       {"$kind", "unary_op"},
       {   "op", _op.serialize()},
       {  "exp", _e.serialize()}
+    };
+  }
+
+  Subscripted::Subscripted(const QJsonObject &value)
+  {
+    _exp.deserialize(value["exp"]);
+
+    auto subs = value["subscripts"];
+
+    if (!subs.isArray()) {
+      throw json_error("Expression: invalid JSON subscripts: ", subs);
+    }
+
+    for (const auto &sub: subs.toArray()) {
+      _subscripts.emplace_back(ExpressionBase::deserialize(sub));
+    }
+  }
+
+  Expression Subscripted::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
+  {
+    auto exp = _exp.evaluate(var_eval, recursion_level);
+
+    for (auto &sub: _subscripts) {
+      auto index = sub.evaluate(var_eval, recursion_level);
+
+      // Nothing we can index with (`:`, an unresolved cref) or into. Leave it
+      // unevaluated: the caller draws nothing rather than the wrong thing.
+      if (!index.isInteger() || !exp.isArray()) {
+        return Expression(clone());
+      }
+
+      auto i = index.intValue();
+      const auto &elements = exp.elements();
+
+      if (i < 1 || static_cast<size_t>(i) > elements.size()) {
+        throw std::runtime_error("Subscripted::eval: subscript out of bounds");
+      }
+
+      exp = elements[i - 1];
+    }
+
+    return exp;
+  }
+
+  void Subscripted::print(std::ostream &os) const
+  {
+    print_operand(os, _exp, *this, true);
+    os << "[";
+
+    for (size_t i = 0; i < _subscripts.size(); ++i) {
+      if (i > 0) {
+        os << ", ";
+      }
+      os << _subscripts[i];
+    }
+
+    os << "]";
+  }
+
+  QJsonValue Subscripted::serialize() const
+  {
+    QJsonArray subs;
+
+    for (auto &sub: _subscripts) {
+      subs.append(sub.serialize());
+    }
+
+    return QJsonObject{
+      {     "$kind", "sub"},
+      {       "exp", _exp.serialize()},
+      {"subscripts", subs}
     };
   }
 

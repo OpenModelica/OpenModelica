@@ -253,19 +253,19 @@ pub(super) fn first_external_import(model_wasm: &[u8]) -> Option<String> {
 /// it defines. A model whose own `Library` resolved to a `liblapack.wasm` brings
 /// its own, and then that one is linked instead of this 1.3 MB.
 pub(super) fn needs_lapack(model_wasm: &[u8], ext_libs: &[ExtLibrary]) -> bool {
-    if LAPACK_DYLINK.is_empty() {
+    if LAPACK_DYLINK().is_empty() {
         return false;
     }
     let mut wanted: HashSet<String> = external_imports(model_wasm).into_iter().collect();
     if wanted.is_empty() {
         return false;
     }
-    for bytes in ext_libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
+    for bytes in ext_libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC(), EXTERNAL_C_DYLINK()]) {
         for name in wasm_exports(bytes) {
             wanted.remove(name);
         }
     }
-    wasm_exports(LAPACK_DYLINK).any(|name| wanted.contains(name))
+    wasm_exports(LAPACK_DYLINK()).any(|name| wanted.contains(name))
 }
 
 /// The names a wasm module exports.

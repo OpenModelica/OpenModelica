@@ -875,6 +875,12 @@ if(RUST_OMC_WASM_ARTIFACTS_OUT)
   list(APPEND CARGO_ENV "OMC_WASM_PREBUILT_OUT=${RUST_OMC_WASM_ARTIFACTS_OUT}/blobs")
 endif()
 
+# Where the build scripts leave the blobs omc loads at run time rather than links
+# in -- 30 MB, identical on every platform. Installed below; an omc run out of the
+# build tree finds this path compiled in (see openmodelica_wasm_jit::blobs).
+set(RUST_OMC_WASM_BLOB_DIR ${CMAKE_CURRENT_BINARY_DIR}/wasm-blobs)
+list(APPEND CARGO_ENV "OMC_WASM_BLOB_OUT=${RUST_OMC_WASM_BLOB_DIR}")
+
 # Source paths (fallback for raw cargo builds without CMake).
 if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
@@ -1388,8 +1394,11 @@ function(omc_rust_setup_codegen)
 
   # The FMI 3.0 loader libraries an exported wasm FMU is given for a native
   # platform. Read at export time, not linked into omc.
+  # Staged as `<libdir>/omc/fmu-loader<ext>`, so each lands on the shelf of the
+  # platform it serves. index.json is for the browser, which cannot list a directory.
   install(DIRECTORY ${RUST_FMU_LOADERS_DIR}/
-          DESTINATION lib/omc/fmu-loaders COMPONENT omc)
+          DESTINATION lib COMPONENT omc
+          PATTERN "index.json" EXCLUDE)
 
   # The wasm-jit runtime, the FMI adapter and the external "C" side libraries,
   # compiled here rather than by whoever runs omc first: the per-user cache is
@@ -1400,11 +1409,12 @@ function(omc_rust_setup_codegen)
   # meant to spare compiles instead. omc skips a blob whose artifact is current,
   # so a build that changed none of them costs the process start.
   #
-  # Cross builds skip the precompile: the omc that would fill the cache is for
-  # another platform, and a `.cwasm` is machine code for the host that produced
-  # it, so even running it under an emulator would cache the wrong thing. The
-  # directory is still created, for the install rule below and so the shipped
-  # layout matches; the target machine fills it on first use.
+  # Cross builds ship no cache. wasmtime can compile for another target, but that
+  # turns off host CPU detection, and `aot_module` prefers the installed artifact
+  # over everything -- so shipping one would hold every user on that platform to
+  # baseline codegen for ever, for 140 MB. An installer is the place to fill it:
+  # run the installed omc with OMC_WASM_PRECOMPILE_CACHE. The directory is still
+  # created so the shipped layout matches.
   set(RUST_WASMJIT_CACHE_DIR ${CMAKE_CURRENT_BINARY_DIR}/wasmjit-cache)
   if(RUST_OMC_TARGET STREQUAL "")
     set(_rust_wasmjit_precompile COMMAND ${CMAKE_COMMAND} -E env
@@ -1421,18 +1431,21 @@ function(omc_rust_setup_codegen)
     VERBATIM)
   add_dependencies(rust_wasmjit_cache rust_omc)
   install(DIRECTORY ${RUST_WASMJIT_CACHE_DIR}/
-          DESTINATION lib/omc/cache COMPONENT omc
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}/cache COMPONENT omc
           FILES_MATCHING PATTERN "*.cwasm")
 
   # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
-  # against. Under the wasm triple with an `omc` subdirectory so it cannot be
-  # confused with a distribution's /usr/lib/wasm32-wasi, and with the compiler-rt
-  # builtins so it matches the libc.so omc resolves imports against.
+  # against, with the compiler-rt builtins so it matches the libc.so omc resolves
+  # imports against.
+  install(DIRECTORY ${RUST_OMC_WASM_BLOB_DIR}/
+          DESTINATION lib/wasm32-wasip1/omc COMPONENT omc
+          FILES_MATCHING PATTERN "*.wasm")
+
   install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
-          DESTINATION lib/wasm32-wasi/omc COMPONENT omc)
+          DESTINATION lib/wasm32-wasip1/omc/sysroot COMPONENT omc)
   if(_wasi_builtins)
     install(FILES ${_wasi_builtins}
-            DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
+            DESTINATION lib/wasm32-wasip1/omc/sysroot/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
   # The toolchain omc hands a library's CMake build project when it has to build

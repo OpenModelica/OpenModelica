@@ -110,6 +110,9 @@ fn main() {
     });
 
     publish_prebuilt(&out_dir);
+
+    // openmodelica_wasi_libc's OUT_DIR, handed over by its `links` metadata.
+    println!("cargo::rustc-env=OMC_WASI_BLOB_DIR={}", env("DEP_OMC_WASI_BLOBS_DIR"));
 }
 
 /// Build the **fused** artifact runtime: the FMI 3.0 adapter, the in-wasm driver
@@ -281,6 +284,8 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         requested: bool,
         platform: String,
         artifact: String,
+        /// Install-relative path: `<libdir>/omc/fmu-loader<ext>`.
+        rel: String,
         ext: String,
         dest: PathBuf,
         stamp: PathBuf,
@@ -289,7 +294,7 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     }
     let mut loaders = Vec::new();
     for (target, requested) in &targets {
-        let Some((platform, artifact)) = loader_artifact_name(target) else {
+        let Some((platform, artifact, libdir)) = loader_artifact_name(target) else {
             let msg = format!(
                 "{target} cannot be an FMU platform: the component is compiled by cranelift, \
                  which only has x86-64 and aarch64 backends among the platforms FMI names"
@@ -309,10 +314,17 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
             && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash);
         let ext =
             Path::new(&artifact).extension().and_then(|e| e.to_str()).unwrap_or("so").to_owned();
-        let handed_over = prebuilt
-            .as_ref()
-            .map(|d| d.join(format!("{platform}.{ext}")))
-            .filter(|f| f.is_file());
+        let rel = format!("{libdir}/omc/fmu-loader.{ext}");
+        let handed_over = prebuilt.as_ref().map(|d| d.join(&rel)).filter(|f| f.is_file());
+        // A hand-over missing a loader is a stale one. Cross-building instead is no
+        // recovery: it needs a toolchain such a build is assumed not to have.
+        assert!(
+            handed_over.is_some() || prebuilt.is_none() || cached || !*requested || optional,
+            "{} has no {rel}: it was produced by an incompatible build. Rebuild the \
+             hand-over (the `rust_wasm_artifacts` target) or unset OMC_FMU_LOADERS_IN \
+             to cross-build the loaders here instead.",
+            prebuilt.as_ref().expect("checked above").display()
+        );
         if let (false, Some(f)) = (cached, &handed_over) {
             copy(f, &dest);
             std::fs::write(&stamp, &hash).ok();
@@ -322,6 +334,7 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
             requested: *requested,
             platform,
             artifact,
+            rel,
             ext,
             dest,
             stamp,
@@ -364,7 +377,7 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     let mut index = String::new();
     let mut xwin_results_iter = xwin_results.into_iter();
     for (l, outcome) in loaders.iter().zip(built) {
-        let Loader { target, platform, ext, .. } = l;
+        let Loader { target, platform, ext, rel, .. } = l;
         // MSVC targets were built sequentially (not through par_map)
         let outcome = if l.target.ends_with("-msvc") && l.build {
             xwin_results_iter.next().unwrap()
@@ -384,17 +397,21 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
             println!("cargo:warning={msg}");
             continue;
         }
-        copy(&l.dest, &staging.join(format!("{platform}.{ext}")));
+        let dest = staging.join(rel);
+        std::fs::create_dir_all(dest.parent().expect("a loader path has a parent"))
+            .expect("create the FMU loader directory");
+        copy(&l.dest, &dest);
         index.push_str(&format!(
-            "{}{{\"platform\":{platform:?},\"triple\":{target:?},\"file\":\"{platform}.{ext}\",\"ext\":\".{ext}\"}}",
+            "{}{{\"platform\":{platform:?},\"triple\":{target:?},\"file\":{rel:?},\"ext\":\".{ext}\"}}",
             if index.is_empty() { "" } else { "," }
         ));
     }
     std::fs::write(staging.join("index.json"), format!("[{index}]\n")).expect("write the loader index");
 }
 
-/// `(FMI platform tuple, artifact file name)` for a rustc target triple.
-fn loader_artifact_name(target: &str) -> Option<(String, String)> {
+/// `(FMI platform tuple, library file name, `lib/<libdir>/omc` component)`. The
+/// libdir must agree with the `PLATFORMS` table in `CodegenWasmJit/native_fmu.rs`.
+fn loader_artifact_name(target: &str) -> Option<(String, String, String)> {
     let arch = target.split('-').next()?;
     let arch = match arch {
         "x86_64" => "x86_64",
@@ -402,16 +419,23 @@ fn loader_artifact_name(target: &str) -> Option<(String, String)> {
         _ => return None,
     };
     let stem = "openmodelica_fmi_ls_wasm_to_native";
-    let (os, artifact) = if target.contains("windows") {
-        ("windows", format!("{stem}.dll"))
+    let (os, env, artifact) = if target.contains("windows") {
+        let env = if target.ends_with("-gnu") { "gnu" } else { "msvc" };
+        ("windows", env, format!("{stem}.dll"))
     } else if target.contains("darwin") || target.contains("apple") {
-        ("darwin", format!("lib{stem}.dylib"))
+        ("darwin", "", format!("lib{stem}.dylib"))
     } else if target.contains("linux") {
-        ("linux", format!("lib{stem}.so"))
+        let env = if target.ends_with("-musl") { "musl" } else { "gnu" };
+        ("linux", env, format!("lib{stem}.so"))
     } else {
         return None;
     };
-    Some((format!("{arch}-{os}"), artifact))
+    let libdir = if os == "darwin" {
+        format!("{arch}-apple-darwin")
+    } else {
+        format!("{arch}-{os}-{env}")
+    };
+    Some((format!("{arch}-{os}"), artifact, libdir))
 }
 
 /// The cargo subcommand that can *link* for `target`: the loader is an ordinary
@@ -2003,20 +2027,22 @@ fn prebuilt_in(dest: &Path, stamp: &Path) -> bool {
     true
 }
 
-/// Copy every blob in `out_dir` to `OMC_WASM_PREBUILT_OUT`, for a later build's
-/// `OMC_WASM_PREBUILT_IN`. Called once, after everything has been produced.
+/// Copy every blob in `out_dir` to `OMC_WASM_PREBUILT_OUT` (a later build's
+/// `OMC_WASM_PREBUILT_IN`) and to `OMC_WASM_BLOB_OUT`, which the install rule ships.
 fn publish_prebuilt(out_dir: &Path) {
-    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_OUT");
-    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_OUT") else { return };
-    let dir = PathBuf::from(dir);
-    std::fs::create_dir_all(&dir).expect("create the wasm hand-over directory");
-    for e in std::fs::read_dir(out_dir).expect("read OUT_DIR").flatten() {
-        let p = e.path();
-        // The blobs only: not the nested cargo target directories, and not the
-        // FMU loaders (OMC_FMU_LOADERS_OUT's job).
-        let take = p.extension().is_some_and(|x| x == "wasm");
-        if take && p.is_file() {
-            copy(&p, &dir.join(p.file_name().expect("a blob has a file name")));
+    for var in ["OMC_WASM_PREBUILT_OUT", "OMC_WASM_BLOB_OUT"] {
+        println!("cargo:rerun-if-env-changed={var}");
+        let Some(dir) = std::env::var_os(var) else { continue };
+        let dir = PathBuf::from(dir);
+        std::fs::create_dir_all(&dir).expect("create the wasm blob directory");
+        for e in std::fs::read_dir(out_dir).expect("read OUT_DIR").flatten() {
+            let p = e.path();
+            // The blobs only: not the nested cargo target directories, and not the
+            // FMU loaders (OMC_FMU_LOADERS_OUT's job).
+            let take = p.extension().is_some_and(|x| x == "wasm");
+            if take && p.is_file() {
+                copy(&p, &dir.join(p.file_name().expect("a blob has a file name")));
+            }
         }
     }
 }

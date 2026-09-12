@@ -56,7 +56,7 @@ fn jit_cache() -> &'static JitCache {
     static CACHE: OnceLock<JitCache> = OnceLock::new();
     CACHE.get_or_init(|| {
         let engine = wasmer::Engine::default();
-        let runtime_module = wasmer::Module::from_binary(&engine, RUNTIME_WASM).expect("compile wasm-jit runtime");
+        let runtime_module = wasmer::Module::from_binary(&engine, RUNTIME_WASM()).expect("compile wasm-jit runtime");
         JitCache { engine, runtime_module, modules: Mutex::new(HashMap::new()) }
     })
 }
@@ -565,7 +565,7 @@ mod tests {
     /// production import object provides.
     fn runtime_instance() -> (wasmer::Store, wasmer::Instance) {
         let engine = wasmer::Engine::default();
-        let module = wasmer::Module::from_binary(&engine, RUNTIME_WASM).unwrap();
+        let module = wasmer::Module::from_binary(&engine, RUNTIME_WASM()).unwrap();
         let mut store = wasmer::Store::new(engine);
         let mut imports = wasmer::Imports::new();
         openmodelica_wasm_jit::host::add_host_builtins(&mut store, &mut imports).unwrap();

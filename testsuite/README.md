@@ -26,7 +26,7 @@ rtest special directives added to help creating testcases:
 
   | Variable | Default | wasm-jit |
   | --- | --- | --- |
-  | `OMC_CC` | `gcc` | `clang --target=wasm32-wasip1 --sysroot=$OPENMODELICAHOME/lib/wasm32-wasi/omc` |
+  | `OMC_CC` | `gcc` | `clang --target=wasm32-wasip1 --sysroot=$OPENMODELICAHOME/lib/wasm32-wasip1/omc/sysroot` |
   | `OMC_CFLAGS` | `-fPIC` | `-fPIC` |
   | `OMC_EXTLIB_FLAGS` | `-c` | `-shared -nodefaultlibs -Wl,--export-all -Wl,--allow-undefined` |
   | `OMC_EXTLIB_LIBS` | (empty) | the wasm32 compiler-rt builtins archive |

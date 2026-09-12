@@ -51,10 +51,10 @@ use crate::{RUNTIME_WASM, RUNTIME_WASM_INTERACTIVE_WASIP1};
 /// the no_std `RUNTIME_WASM` fallback (densifies). The interactive blob additionally
 /// imports `wasi_snapshot_preview1`, served by `wasi_shim`.
 fn runtime_blob() -> &'static [u8] {
-    if RUNTIME_WASM_INTERACTIVE_WASIP1.is_empty() {
-        RUNTIME_WASM
+    if RUNTIME_WASM_INTERACTIVE_WASIP1().is_empty() {
+        RUNTIME_WASM()
     } else {
-        RUNTIME_WASM_INTERACTIVE_WASIP1
+        RUNTIME_WASM_INTERACTIVE_WASIP1()
     }
 }
 
@@ -343,7 +343,7 @@ fn define_external_imports(
 ) -> Result<()> {
     use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, Value};
 
-    if EXTERNAL_C_WASM.is_empty() {
+    if EXTERNAL_C_WASM().is_empty() {
         return Err("error");
     }
 
@@ -351,7 +351,7 @@ fn define_external_imports(
     // `ModelicaAllocateString` imports. The `Modelica*` entry points themselves
     // are inside it (`external_c_callbacks.c`), so what arrives here has already
     // been through `vsnprintf`.
-    let side_module = wasmer::Module::from_binary(store.engine(), EXTERNAL_C_WASM).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+    let side_module = wasmer::Module::from_binary(store.engine(), EXTERNAL_C_WASM()).map_err(|_| "CodegenWasmJit: wasm engine error")?;
     let err_env = FunctionEnv::new(&mut *store, SideErrEnv { mem: None });
     let side_msg = |env: &FunctionEnvMut<SideErrEnv>, ptr: i32| -> String {
         let mem = env.data().mem.clone();

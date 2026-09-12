@@ -45,7 +45,12 @@ fn main() {
         "linux" => {
             (format!("lib/{target_arch}-linux-gnu/omc"), "$ORIGIN", "libOpenModelicaCompiler.so")
         }
-        "macos" => ("lib/omc".to_owned(), "@loader_path", "libOpenModelicaCompiler.dylib"),
+        // Must match Autoconf::triple and OM_LIBRARY_ARCH.
+        "macos" => (
+            "lib/universal-apple-darwin/omc".to_owned(),
+            "@loader_path",
+            "libOpenModelicaCompiler.dylib",
+        ),
         _ => return,
     };
     // Thin-launcher linkage. This binary contains no compiler code; it calls
@@ -59,6 +64,13 @@ fn main() {
     // falls through to the absolute profile dir (the just-built copy), and
     // finally $ORIGIN.
     println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{origin}/../{libdir}");
+    // Inside an app bundle this launcher is `Contents/MacOS/omc` and the cdylib is
+    // `Contents/Frameworks/`, where the loader and `codesign` expect Mach-O; the
+    // data it then finds through `Settings::bundle_home` is `Contents/Resources`.
+    // Harmless in a plain unix prefix, where no such directory exists.
+    if target_os == "macos" {
+        println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{origin}/../Frameworks");
+    }
     println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{dir}");
     // Link `-lOpenModelicaCompiler` as a *trailing* link-arg rather than a
     // plain `cargo:rustc-link-lib`: rustc emits build-script link libs ahead
