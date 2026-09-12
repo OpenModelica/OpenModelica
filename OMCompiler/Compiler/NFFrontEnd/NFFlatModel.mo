@@ -475,13 +475,13 @@ public
 
       case Type.COMPLEX(complexTy = ComplexType.RECORD())
         algorithm
-          UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
+          UnorderedMap.tryAdd(InstNode.scopePath(Type.complexNode(ty)), ty, types);
         then
           ();
 
       case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
         algorithm
-          UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
+          UnorderedMap.tryAdd(InstNode.scopePath(Type.complexNode(ty)), ty, types);
         then
           ();
 
@@ -796,7 +796,7 @@ public
     () := match ty
       case Type.COMPLEX(complexTy = ComplexType.RECORD())
         algorithm
-          Typing.typeBindings(ty.cls, NFInstContext.CLASS);
+          Typing.typeBindings(Type.complexNode(ty), NFInstContext.CLASS);
         then
           ();
 

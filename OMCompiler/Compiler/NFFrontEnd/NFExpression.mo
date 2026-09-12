@@ -5128,7 +5128,7 @@ public
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
-      case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
+      case Type.COMPLEX() then makeOperatorRecordZero(Type.complexNode(ty));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
       then fail();

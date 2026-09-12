@@ -260,7 +260,7 @@ algorithm
   ty := match cls
     case Class.INSTANCED_CLASS(restriction = Restriction.CONNECTOR(isExpandable = is_expandable))
       algorithm
-        ty := Type.COMPLEX(clsNode, makeConnectorType(cls.elements, is_expandable));
+        ty := Type.COMPLEX(InstNode.identityCell(clsNode), makeConnectorType(cls.elements, is_expandable));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -269,7 +269,7 @@ algorithm
     case Class.INSTANCED_CLASS(ty = cls_ty as Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = node)))
       algorithm
         ty_node := Type.complexNode(cls_ty);
-        ty := Type.COMPLEX(ty_node, makeRecordType(node));
+        ty := Type.COMPLEX(InstNode.identityCell(ty_node), makeRecordType(node));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then

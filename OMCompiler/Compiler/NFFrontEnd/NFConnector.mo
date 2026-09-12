@@ -354,7 +354,7 @@ protected
       // A record, split into record elements.
       case Type.COMPLEX()
         algorithm
-          tree := Class.classTree(InstNode.getClass(ty.cls));
+          tree := Class.classTree(InstNode.getClass(Type.complexNode(ty)));
           conns := splitImpl2(name, face, source, arrayList(ClassTree.getComponents(tree)), dims, conns);
         then
           conns;

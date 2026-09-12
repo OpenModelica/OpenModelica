@@ -800,6 +800,21 @@ uniontype InstNode
     end match;
   end identityCell;
 
+  function borrow
+    "The node a cell holds, without taking ownership of it. For an edge that is
+     not a parent edge and whose target is owned elsewhere: `fromCell` copies
+     the record to re-own it, which is more than a type should pay to name a
+     class."
+    input Option<MutableWeak<InstNode>> cell;
+    output InstNode node;
+  algorithm
+    node := matchcontinue cell
+      local MutableWeak<InstNode> w;
+      case SOME(w) then Mutable.access(MutableWeak.upgrade(w));
+      else EMPTY_NODE();
+    end matchcontinue;
+  end borrow;
+
   function fromCell
     "The node a parent cell holds, or an empty node if the parent is gone. The
      result owns the cell, so a node reached through its parent is as usable as

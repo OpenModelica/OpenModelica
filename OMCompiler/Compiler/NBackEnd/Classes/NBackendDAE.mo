@@ -840,9 +840,9 @@ protected
 
       // get external object class
       case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(ty)));
       case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(elemTy)));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX()) algorithm

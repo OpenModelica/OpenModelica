@@ -175,8 +175,10 @@ algorithm
 
   // Make a record constructor class and create a node for the constructor.
   ctor_cls := Class.makeRecordConstructor(all_params, out_rec);
-  ctor_node := InstNode.replaceClass(ctor_cls, ctor_node);
-  InstNode.classApply(ctor_node, Class.setType, Type.COMPLEX(ctor_node, ComplexType.CLASS()));
+  // A new entity, not an update of the record: it must not publish itself
+  // into the record's identity cell, or the record's own type resolves here.
+  ctor_node := InstNode.reidentify(InstNode.replaceClass(ctor_cls, ctor_node));
+  InstNode.classApply(ctor_node, Class.setType, Type.COMPLEX(InstNode.identityCell(ctor_node), ComplexType.CLASS()));
 
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;

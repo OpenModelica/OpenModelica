@@ -414,7 +414,7 @@ algorithm
 
   // Create a normal non-expandable complex type for the augmented expandable connector.
   complex_ty := Typing.makeConnectorType(cls_tree, isExpandable = false);
-  ty := Type.COMPLEX(cls_node, complex_ty);
+  ty := Type.COMPLEX(InstNode.identityCell(cls_node), complex_ty);
   ty := Type.liftArrayLeftList(ty, Type.arrayDims(InstNode.getType(exp_node)));
   cls := Class.setType(ty, cls);
   InstNode.updateClass(cls, cls_node);

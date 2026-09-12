@@ -2626,7 +2626,8 @@ protected
       ty := match range
         case Expression.CREF(cref = ComponentRef.CREF(node = range_node))
           guard InstNode.isComponent(range_node)
-          then Type.COMPLEX(Component.classInstance(InstNode.component(range_node)), ComplexType.CLASS());
+          then Type.COMPLEX(InstNode.identityCell(
+          Component.classInstance(InstNode.component(range_node))), ComplexType.CLASS());
         else Type.UNKNOWN();
       end match;
 

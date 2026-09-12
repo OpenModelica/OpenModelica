@@ -2687,7 +2687,7 @@ protected
       case Type.ENUMERATION() then true;
       case Type.POLYMORPHIC() then true;
       case Type.ARRAY() then isValidParamType(ty.elementType);
-      case Type.COMPLEX() then isValidParamState(ty.cls);
+      case Type.COMPLEX() then isValidParamState(Type.complexNode(ty));
       case Type.FUNCTION() then true;
       case Type.METABOXED() then isValidParamType(ty.ty);
       else false;

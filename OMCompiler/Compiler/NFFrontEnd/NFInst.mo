@@ -934,7 +934,7 @@ algorithm
   // tree here, since the constructor and destructor is embedded in the
   // ComplexType instead. Using an empty class tree makes sure it's not
   // possible to call the constructor or destructor explicitly.
-  c := Class.PARTIAL_BUILTIN(Type.COMPLEX(node, eo_ty), NFClassTree.EMPTY_FLAT,
+  c := Class.PARTIAL_BUILTIN(Type.COMPLEX(InstNode.identityCell(node), eo_ty), NFClassTree.EMPTY_FLAT,
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.EXTERNAL_OBJECT());
   node := InstNode.updateClass(c, node);
 end expandExternalObject;
@@ -2601,9 +2601,9 @@ algorithm
 
         // A type must extend a basic type.
         if arrayLength(exts) == 1 then
-          ty := Type.COMPLEX(node, ComplexType.EXTENDS_TYPE(exts[1]));
+          ty := Type.COMPLEX(InstNode.identityCell(node), ComplexType.EXTENDS_TYPE(exts[1]));
         elseif SCodeUtil.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtinType") then
-          ty := Type.COMPLEX(node, ComplexType.CLASS());
+          ty := Type.COMPLEX(InstNode.identityCell(node), ComplexType.CLASS());
         else
           Error.addSourceMessage(Error.MISSING_TYPE_BASETYPE,
             {InstNode.name(node)}, InstNode.info(node));
@@ -2704,7 +2704,7 @@ algorithm
     else ComplexType.CLASS();
   end match;
 
-  ty := Type.COMPLEX(node, cty);
+  ty := Type.COMPLEX(InstNode.identityCell(node), cty);
 end makeComplexType;
 
 function makeRecordComplexType
