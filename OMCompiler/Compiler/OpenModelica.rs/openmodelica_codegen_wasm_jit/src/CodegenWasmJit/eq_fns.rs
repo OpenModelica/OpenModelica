@@ -86,6 +86,17 @@ fn chunk_instrs() -> usize {
     })
 }
 
+/// [`chunk_instrs`] for a nonlinear system's residual, which `OMC_WASM_NLS_CHUNK_INSTRS`
+/// overrides separately; 0 never splits.
+pub(super) fn nls_chunk_instrs() -> usize {
+    static N: OnceLock<usize> = OnceLock::new();
+    *N.get_or_init(|| match std::env::var("OMC_WASM_NLS_CHUNK_INSTRS").ok().and_then(|v| v.parse().ok()) {
+        Some(0) => usize::MAX,
+        Some(n) => n,
+        None => chunk_instrs(),
+    })
+}
+
 /// An equation entry point lowered into chunk functions. The entry points sit at
 /// fixed function indices (`simulate` and the host driver call them by index), so
 /// the chunks go after every fixed-index body and their indices are only known at
@@ -134,10 +145,10 @@ pub(super) struct ChunkPool {
 }
 
 impl ChunkPool {
-    fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.fns.len()
     }
-    fn push(&mut self, f: we::Function, ty: u32, name: String) {
+    pub(super) fn push(&mut self, f: we::Function, ty: u32, name: String) {
         self.fns.push(f);
         self.meta.push((ty, name));
     }

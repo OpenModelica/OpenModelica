@@ -156,9 +156,29 @@ pub(crate) fn emit_nls_residual_body(
     residuals: &NlsResiduals,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
+    emit_nls_residual_prologue(ctx, eq_index, slots)?;
+    let residuals = match residuals {
+        NlsResiduals::Explicit(r) => r,
+        NlsResiduals::InverseAlgorithm(known) => {
+            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner)
+        }
+    };
+    lower_inner(ctx)?;
+    for i in 0..residuals.len() {
+        emit_nls_residual_store(ctx, residuals, i)?;
+    }
+    emit_nls_residual_epilogue(ctx, eq_index)
+}
+
+/// The head of a residual body: C's `residualFunc` profiling
+/// (`SIM_PROF_ADD_NCALL_EQ(block, 1)` under `blocks`, the block's own tick under
+/// `all`) and the copy of the `n` unknowns from `x` into their `slots`.
+pub(crate) fn emit_nls_residual_prologue(
+    ctx: &mut FnCtx,
+    eq_index: i32,
+    slots: &[IterSlot],
+) -> Result<()> {
     use we::Instruction as I;
-    // C's `residualFunc`: `SIM_PROF_ADD_NCALL_EQ(block, 1)` under `blocks`, the
-    // block's own tick/acc under `all`.
     let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
     let clock = prof.as_ref().and_then(|p| p.block_clock(eq_index));
     if let Some(c) = clock {
@@ -173,53 +193,61 @@ pub(crate) fn emit_nls_residual_body(
     for (j, &slot) in slots.iter().enumerate() {
         emit_x_to_slot(ctx, 1, j, slot);
     }
-    let residuals = match residuals {
-        NlsResiduals::Explicit(r) => r,
-        NlsResiduals::InverseAlgorithm(known) => {
-            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner)
-        }
-    };
-    lower_inner(ctx)?;
-    // All-scalar systems keep sequential `r[i]` addressing; a for- or generic
-    // residual forces `res_index`-based addressing throughout.
-    let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
-    for (i, res) in residuals.iter().enumerate() {
-        match res {
-            NlsResidual::Scalar { exp, res_index } => {
-                let dest = if all_scalar { i as u32 } else { *res_index as u32 };
-                ctx.emit(I::LocalGet(2)); // r
-                let w = compile_exp(ctx, exp)?;
-                coerce(ctx, w, WTy::F64);
-                ctx.emit(I::F64Store(mem_arg(dest * 8, 3)));
-            }
-            NlsResidual::Array { exp, res_index, rows } => {
-                let w = compile_exp(ctx, exp)?;
-                if w != WTy::I32 {
-                    return Err("CodegenWasmJit: array residual did not evaluate to an array");
-                }
-                let arr = ctx.alloc_temp(WTy::I32);
-                ctx.emit(I::LocalTee(arr));
-                ctx.emit(I::Call(rt_index("rt_array_data")?));
-                let data = ctx.alloc_temp(WTy::I32);
-                ctx.emit(I::LocalSet(data));
-                for k in 0..*rows as u32 {
-                    ctx.emit(I::LocalGet(2)); // r
-                    ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
-                    ctx.emit(I::F64Store(mem_arg((*res_index as u32 + k) * 8, 3)));
-                }
-                release_temp_array(ctx, arr)?;
-            }
-            NlsResidual::For { iterators, exp, res_index } => {
-                emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
-            }
-            NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
-                emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
-            }
-        }
-    }
+    Ok(())
+}
+
+/// The `all`-profiling accumulate that closes [`emit_nls_residual_prologue`].
+pub(crate) fn emit_nls_residual_epilogue(ctx: &mut FnCtx, eq_index: i32) -> Result<()> {
+    let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
     if prof.as_ref().is_some_and(|p| p.all()) {
+        let clock = prof.as_ref().and_then(|p| p.block_clock(eq_index));
         super::emit_prof(ctx, clock, "rt_prof_acc")?;
+    }
+    Ok(())
+}
+
+/// Store the `i`-th residual into `r` (wasm local 2). All-scalar systems keep
+/// sequential `r[i]` addressing; a for- or generic residual forces
+/// `res_index`-based addressing throughout.
+pub(crate) fn emit_nls_residual_store(
+    ctx: &mut FnCtx,
+    residuals: &[NlsResidual],
+    i: usize,
+) -> Result<()> {
+    use we::Instruction as I;
+    let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
+    match &residuals[i] {
+        NlsResidual::Scalar { exp, res_index } => {
+            let dest = if all_scalar { i as u32 } else { *res_index as u32 };
+            ctx.emit(I::LocalGet(2)); // r
+            let w = compile_exp(ctx, exp)?;
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(I::F64Store(mem_arg(dest * 8, 3)));
+        }
+        NlsResidual::Array { exp, res_index, rows } => {
+            let w = compile_exp(ctx, exp)?;
+            if w != WTy::I32 {
+                return Err("CodegenWasmJit: array residual did not evaluate to an array");
+            }
+            let arr = ctx.alloc_temp(WTy::I32);
+            ctx.emit(I::LocalTee(arr));
+            ctx.emit(I::Call(rt_index("rt_array_data")?));
+            let data = ctx.alloc_temp(WTy::I32);
+            ctx.emit(I::LocalSet(data));
+            for k in 0..*rows as u32 {
+                ctx.emit(I::LocalGet(2)); // r
+                ctx.emit(I::LocalGet(data));
+                ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
+                ctx.emit(I::F64Store(mem_arg((*res_index as u32 + k) * 8, 3)));
+            }
+            release_temp_array(ctx, arr)?;
+        }
+        NlsResidual::For { iterators, exp, res_index } => {
+            emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
+        }
+        NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
+            emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
+        }
     }
     Ok(())
 }

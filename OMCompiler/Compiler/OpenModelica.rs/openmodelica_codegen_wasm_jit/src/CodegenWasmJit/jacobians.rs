@@ -602,7 +602,9 @@ pub(super) fn build_nls_fns(
     literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
     strict: Option<NlsJob>,
-) -> Result<(we::Function, we::Function, Option<we::Function>, Option<we::Function>)> {
+    pool: &mut ChunkPool,
+    residual_ty: u32,
+) -> Result<(NlsResidualFn, we::Function, Option<we::Function>, Option<we::Function>)> {
     let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(&format!(
         "nonlinear system {}",
         nlsystem.index
@@ -629,20 +631,10 @@ pub(super) fn build_nls_fns(
     };
 
     // residual(sim_data, x, r): 3 params.
-    let residual = {
-        let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 3);
-        // C's `residualFuncConstraints` for a casual set: each inner equation's
-        // `localCon` constraints are checked before it runs.
-        ctx.set_dt_local_cons(strict.is_some());
-        let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
-            for eq in &inner {
-                lower_equation(c, eq, eq_index)?;
-            }
-            Ok(())
-        };
-        emit_nls_residual_body(&mut ctx, nlsystem.index, &slots, &residuals, &mut lower_inner)?;
-        finish(ctx)
-    };
+    let residual = build_residual_fn(
+        nlsystem.index, &slots, &residuals, &inner, strict.is_some(), var_map, eq_index, by_name,
+        literals, pool, residual_ty,
+    )?;
     // load(sim_data, x): 2 params.
     let load = {
         let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 2);
@@ -713,4 +705,93 @@ pub(super) fn build_nls_fns(
         })
         .transpose()?;
     Ok((residual, load, jac, strict_fn))
+}
+
+/// A residual callback: one function, or [`ChunkPool`] positions a thunk calls in
+/// order from the callback's own function index.
+pub(super) enum NlsResidualFn {
+    Whole(we::Function),
+    Chunked(Vec<usize>),
+}
+
+/// Lower the `residual(sim_data, x, r)` callback, split past [`nls_chunk_instrs`]
+/// as the equation entry points are, and for the same reason. A cut carries nothing
+/// across: the pieces communicate through `SimData` and the `x`/`r` pointers.
+///
+/// Two shapes stay whole: an inverse-algorithm residual, whose saved outputs live in
+/// locals across the inner equations, and a dynamic-tearing casual set, whose
+/// local-constraint checks leave by `return` — which from a chunk would skip only the
+/// rest of that chunk.
+#[allow(clippy::too_many_arguments)]
+fn build_residual_fn(
+    index: i32,
+    slots: &[IterSlot],
+    residuals: &NlsResiduals,
+    inner: &[Arc<SimCode::SimEqSystem>],
+    strict: bool,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+    residual_ty: u32,
+) -> Result<NlsResidualFn> {
+    let explicit = match residuals {
+        NlsResiduals::Explicit(r) if !strict => r,
+        _ => {
+            let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 3);
+            // C's `residualFuncConstraints` for a casual set: each inner equation's
+            // `localCon` constraints are checked before it runs.
+            ctx.set_dt_local_cons(strict);
+            let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
+                for eq in inner {
+                    lower_equation(c, eq, eq_index)?;
+                }
+                Ok(())
+            };
+            emit_nls_residual_body(&mut ctx, index, slots, residuals, &mut lower_inner)?;
+            return Ok(NlsResidualFn::Whole(finish_fn(ctx)));
+        }
+    };
+    let budget = nls_chunk_instrs();
+    let mut fns: Vec<we::Function> = Vec::new();
+    let (mut eq, mut store) = (0usize, 0usize);
+    loop {
+        let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, 3);
+        if fns.is_empty() {
+            emit_nls_residual_prologue(&mut ctx, index, slots)?;
+        }
+        while eq < inner.len() {
+            lower_equation(&mut ctx, &inner[eq], eq_index)?;
+            eq += 1;
+            if ctx.instr_len() >= budget {
+                break;
+            }
+        }
+        if eq == inner.len() {
+            while store < explicit.len() {
+                emit_nls_residual_store(&mut ctx, explicit, store)?;
+                store += 1;
+                if ctx.instr_len() >= budget {
+                    break;
+                }
+            }
+            if store == explicit.len() {
+                emit_nls_residual_epilogue(&mut ctx, index)?;
+            }
+        }
+        let done = eq == inner.len() && store == explicit.len();
+        fns.push(finish_fn(ctx));
+        if done {
+            break;
+        }
+    }
+    if fns.len() == 1 {
+        return Ok(NlsResidualFn::Whole(fns.remove(0)));
+    }
+    let first = pool.len();
+    for (n, f) in fns.into_iter().enumerate() {
+        pool.push(f, residual_ty, format!("nonlinearSystem{index}_residual${n}"));
+    }
+    Ok(NlsResidualFn::Chunked((first..pool.len()).collect()))
 }
