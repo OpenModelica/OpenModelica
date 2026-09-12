@@ -229,7 +229,7 @@ algorithm
 
   // Use the node of the return type to determine the order of the variables,
   // since they might be reordered in the record constructor.
-  Type.COMPLEX(cls = out_ty) := fn.returnType;
+  out_ty := Type.complexNode(fn.returnType);
 
   // Fetch the new binding expressions for all the variables, both inputs and locals.
   for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(out_ty))) loop

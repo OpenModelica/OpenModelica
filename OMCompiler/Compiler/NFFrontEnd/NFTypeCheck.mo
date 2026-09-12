@@ -1842,8 +1842,8 @@ protected
   MatchOptions opt = options;
   list<Dimension> dims;
 algorithm
-  Type.COMPLEX(cls = anode) := actualType;
-  Type.COMPLEX(cls = enode) := expectedType;
+  anode := Type.complexNode(actualType);
+  enode := Type.complexNode(expectedType);
 
   if InstNode.isSame(anode, enode) then
     matchKind := MatchKind.EXACT;
@@ -3187,7 +3187,7 @@ protected
   InstNode cls_node;
   Class cls;
 algorithm
-  Type.COMPLEX(cls = cls_node) := ty;
+  cls_node := Type.complexNode(ty);
   cls := InstNode.getClass(cls_node);
 
   for op in {"'+'", "'0'"} loop

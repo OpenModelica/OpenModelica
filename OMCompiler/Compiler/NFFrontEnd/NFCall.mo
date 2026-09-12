@@ -2825,7 +2825,7 @@ protected
       foldExp := match AbsynUtil.pathFirstIdent(Function.name(reductionFn))
         case "sum"
           algorithm
-            Type.COMPLEX(cls = op_node) := reductionType;
+            op_node := Type.complexNode(reductionType);
             op_node := Class.lookupElement("'+'", InstNode.getClass(op_node));
             Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, info);
             {fn} := Function.typeNodeCache(op_node);

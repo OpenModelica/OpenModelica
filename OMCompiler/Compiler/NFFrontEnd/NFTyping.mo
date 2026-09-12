@@ -251,6 +251,7 @@ function typeClassType
 protected
   Class cls, ty_cls;
   InstNode node, ty_node;
+  Type cls_ty;
   Function fn;
   Boolean is_expandable;
 algorithm
@@ -265,8 +266,9 @@ algorithm
       then
         ty;
 
-    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(cls = ty_node, complexTy = ComplexType.RECORD(constructor = node)))
+    case Class.INSTANCED_CLASS(ty = cls_ty as Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = node)))
       algorithm
+        ty_node := Type.complexNode(cls_ty);
         ty := Type.COMPLEX(ty_node, makeRecordType(node));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);

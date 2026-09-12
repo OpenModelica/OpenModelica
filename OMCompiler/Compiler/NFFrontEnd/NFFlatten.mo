@@ -1036,13 +1036,15 @@ protected
   ComponentRef cr, field_cr;
   Type ty;
   list<Expression> fields;
+  Type cls_ty;
   Expression cond;
 algorithm
   outExp := ExpandExp.expand(exp);
 
   outExp := match outExp
-    case Expression.CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
+    case Expression.CREF(ty = cls_ty as Type.COMPLEX(), cref = cr)
       algorithm
+        cls := Type.complexNode(cls_ty);
         comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
         fields := {};
 

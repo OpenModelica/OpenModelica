@@ -409,7 +409,7 @@ protected
     MatchedFunction matchedFunc;
     list<MatchedFunction> matchedFunctions, exactMatches;
   algorithm
-    Type.COMPLEX(cls=recopnode) := overloadedType;
+    recopnode := Type.complexNode(overloadedType);
 
     try
       fn_ref := Function.lookupFunctionSimple("'String'", recopnode, context);

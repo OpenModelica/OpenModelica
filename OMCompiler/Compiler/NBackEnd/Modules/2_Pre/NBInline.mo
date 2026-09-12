@@ -562,10 +562,11 @@ protected
     input InstNode node;
     output list<InstNode> children;
   protected
-    InstNode cls_node;
+    Type elem_ty;
   algorithm
     children := match Type.arrayElementType(InstNode.getType(node))
-      case Type.COMPLEX(cls = cls_node) then arrayList(Class.getComponents(InstNode.getClass(cls_node)));
+      case elem_ty as Type.COMPLEX()
+        then arrayList(Class.getComponents(InstNode.getClass(Type.complexNode(elem_ty))));
       else {};
     end match;
   end nodeRecordChildren;

@@ -140,12 +140,15 @@ public
     output list<Function> functions;
   protected
     InstNode node;
+    Type elem_ty;
     ComponentRef fn_ref = ComponentRef.EMPTY();
     Boolean is_defined;
   algorithm
     functions := match Type.arrayElementType(ty)
-      case Type.COMPLEX(cls = node)
+      case elem_ty as Type.COMPLEX()
         algorithm
+          node := Type.complexNode(elem_ty);
+
           try
             fn_ref := Function.lookupFunctionSimple(operatorName, node, NFInstContext.NO_CONTEXT);
             is_defined := true;

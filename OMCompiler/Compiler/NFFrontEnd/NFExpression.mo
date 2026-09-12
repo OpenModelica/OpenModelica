@@ -5957,8 +5957,9 @@ public
         ComponentRef cref;
         array<Expression> arr;
 
-      case RECORD(ty = Type.COMPLEX(cls = node))
+      case RECORD(ty = Type.COMPLEX())
         algorithm
+          node := Type.complexNode(recordExp.ty);
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
         then
@@ -5966,7 +5967,7 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -5975,9 +5976,10 @@ public
         then
           CREF(ty, cref);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
@@ -5985,8 +5987,9 @@ public
         then
           makeEmptyArray(ty);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
           arr := Array.map(recordExp.elements, function nthRecordElement(index = index));
           ty := Type.liftArrayLeft(typeOf(arrayGet(arr, 1)),
@@ -6006,7 +6009,7 @@ public
       else
         algorithm
           ty := typeOf(recordExp);
-          Type.COMPLEX(cls = node) := Type.arrayElementType(ty);
+          node := Type.complexNode(Type.arrayElementType(ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := Type.liftArrayLeftList(
@@ -6036,14 +6039,15 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(typeOf(recordExp));
+          node := Type.complexNode(Type.arrayElementType(typeOf(recordExp)));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
-        then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
+        then makeEmptyArray(InstNode.getType(Class.nthComponent(index,
+          InstNode.getClass(Type.complexNode(Type.arrayElementType(recordExp.ty))))));
 
       case ARRAY()
         algorithm
@@ -6052,8 +6056,9 @@ public
         then
           makeArray(ty, arr);
 
-      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node),
@@ -6075,7 +6080,7 @@ public
 
       else
         algorithm
-          Type.COMPLEX(cls = node) := typeOf(recordExp);
+          node := Type.complexNode(typeOf(recordExp));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));

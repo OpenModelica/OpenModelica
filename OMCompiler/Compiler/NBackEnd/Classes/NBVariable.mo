@@ -181,7 +181,7 @@ public
   protected
     InstNode node, class_node;
     array<InstNode> child_nodes;
-    Type ty;
+    Type ty, elem_ty;
     Prefixes.Visibility vis;
     SourceInfo info;
     list<Variable> children = {};
@@ -193,7 +193,8 @@ public
     // get the record children if the variable is a record (and not an external object)
     if not Type.isExternalObject(ty) then
       children := match Type.arrayElementType(ty)
-        case Type.COMPLEX(cls = class_node) algorithm
+        case elem_ty as Type.COMPLEX() algorithm
+          class_node := Type.complexNode(elem_ty);
           child_nodes := Class.getComponents(InstNode.getClass(class_node));
           children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
         then children;
