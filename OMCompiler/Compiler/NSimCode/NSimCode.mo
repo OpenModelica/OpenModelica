@@ -47,7 +47,6 @@ import Flags;
 import HashTableCrefSimVar;
 import List;
 import Pointer;
-import PointerCyclic;
 import UnorderedMap;
 import Util;
 import ProgramUtil;
@@ -150,7 +149,7 @@ public
 
   uniontype Identifier
     record IDENTIFIER
-      PointerCyclic<Equation> eqn;
+      Pointer<Equation> eqn;
       ComponentRef var_cref;
       Boolean resizable;
     end IDENTIFIER;
@@ -900,7 +899,7 @@ public
     protected
       ComponentRef seedCref, cref;
     algorithm
-      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", PointerCyclic.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");

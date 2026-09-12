@@ -25,6 +25,14 @@ impl Drop for DropProbe {
     }
 }
 
+/// The cells compare their contents; a probe is identified by the counter it
+/// reports to.
+impl PartialEq for DropProbe {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.drops, &other.drops)
+    }
+}
+
 impl Clone for DropProbe {
     fn clone(&self) -> Self {
         DropProbe { drops: self.drops.clone() }
@@ -35,14 +43,14 @@ impl Clone for DropProbe {
 /// `NFInst` builds when it updates a class pointer with an `InstNode` whose
 /// class points back through that same pointer. The array of children lives on
 /// a second type, as `ClassTree` does, so the two recur through each other.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 struct Node {
     probe: DropProbe,
     back: Option<MutableCyclic::MutableCyclic<metamodelica::Ref<Node>>>,
     kids: Option<metamodelica::Ref<Kids>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 struct Kids {
     nodes: metamodelica::Array<metamodelica::Ref<Node>>,
 }
@@ -71,15 +79,19 @@ impl MmVal for Kids {
     }
 }
 
+// These were opaque while the cells were `Gc`s and only `mmval` could see
+// them. The cells are `Arc`s now, so the cell collector is what has to reach
+// the back-edge.
 impl metamodelica::gc::MMTrace for Kids {
-    fn mm_accept(&self, _: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
-        Ok(())
+    fn mm_accept(&self, v: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
+        metamodelica::gc::MMTrace::mm_accept(&self.nodes, v)
     }
 }
 
 impl metamodelica::gc::MMTrace for Node {
-    fn mm_accept(&self, _: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
-        Ok(())
+    fn mm_accept(&self, v: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
+        metamodelica::gc::MMTrace::mm_accept(&self.back, v)?;
+        metamodelica::gc::MMTrace::mm_accept(&self.kids, v)
     }
 }
 
@@ -133,6 +145,7 @@ fn self_cycle_through_a_cyclic_cell_is_reclaimed() {
     }
     let before = drops.get();
     collect();
+    metamodelica::gc::collect();
     assert!(
         drops.get() > before,
         "collect() reclaimed nothing: {} drops before, {} after",
@@ -167,6 +180,7 @@ fn cycle_through_an_array_is_reclaimed() {
     }
     let before = drops.get();
     collect();
+    metamodelica::gc::collect();
     assert!(
         drops.get() > before,
         "collect() reclaimed nothing through the array: {} drops before, {} after",
@@ -201,6 +215,7 @@ fn pointer_cyclic_cycle_is_reclaimed() {
     }
     let before = drops.get();
     collect();
+    metamodelica::gc::collect();
     assert!(drops.get() >= before);
 }
 

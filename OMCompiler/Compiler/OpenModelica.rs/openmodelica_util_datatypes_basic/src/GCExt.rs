@@ -47,11 +47,18 @@ pub fn free<T>(data: T) {}
 fn collect_reporting() {
     if std::env::var_os("OPENMODELICA_GC_CYCLE_LOG").is_none() {
         metamodelica::mmval::collect();
+        metamodelica::gc::collect();
         return;
     }
     metamodelica::mmval::log_cycles();
+    metamodelica::gc::log_cycles();
     metamodelica::mmval::collect();
-    let log = metamodelica::mmval::take_cycle_log();
+    // Report only: nothing should be cyclic any more, so a collector bug here
+    // would free live data rather than reclaim garbage.
+    metamodelica::gc::report_only();
+    let mut log = metamodelica::mmval::take_cycle_log();
+    log.extend(metamodelica::gc::take_cycle_log());
+    log.sort_by(|a, b| b.1.cmp(&a.1));
     let total: usize = log.iter().map(|(_, n)| n).sum();
     eprintln!("gc-cycle-log: reclaimed {total} allocations across {} types", log.len());
     for (ty, n) in log.iter().take(40) {

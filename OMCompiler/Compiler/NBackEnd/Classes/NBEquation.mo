@@ -98,8 +98,8 @@ public
   constant String TMP_STR         = "TMP";
 
   // mainly used for mapping purposes
-  type EquationPointer = PointerCyclic<Equation>;
-  type EqnSlice = Slice<PointerCyclic<Equation>>;
+  type EquationPointer = Pointer<Equation>;
+  type EqnSlice = Slice<Pointer<Equation>>;
 
   // used to process different outcomes of slicing from Util/Slice.mo
   // have to be defined here and not in Util/Slice.mo because it is a uniontype and not a package
@@ -116,7 +116,7 @@ public
   end MapFuncEqn;
 
   partial function MapFuncEqnPtr
-    input output PointerCyclic<Equation> e;
+    input output Pointer<Equation> e;
   end MapFuncEqnPtr;
 
   partial function MapFuncExp
@@ -133,7 +133,7 @@ public
   end MapFuncCref;
 
   partial function checkEqn
-    input PointerCyclic<Equation> eqn_ptr;
+    input Pointer<Equation> eqn_ptr;
     output Boolean b;
   end checkEqn;
 
@@ -168,7 +168,7 @@ public
           Expression range, range2;
           Iterator map;
           ComponentRef iter_cref;
-          PointerCyclic<Variable> iter_var;
+          Pointer<Variable> iter_var;
 
         // it already is a proper range, use it for the for loop
         case (node, range as Expression.RANGE()) then (ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE());
@@ -866,7 +866,7 @@ public
           end for;
 
           // create temp equation and collect all occuring iterator crefs
-          tmpEqn  := PointerCyclic.access(Equation.makeAssignment(condition.exp1, condition.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
+          tmpEqn  := Pointer.access(Equation.makeAssignment(condition.exp1, condition.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
           occs    := Equation.collectCrefs(tmpEqn, function Equation.collectFromMap(check_map = iter_map));
 
 
@@ -1205,7 +1205,7 @@ public
       that are known to always be solved in this specific equation. E.G. $CSE
       The variable binding contains the equation, but this equation is also
       allowed to have a body for special cases."
-      PointerCyclic<Variable> auxiliary     "Corresponding auxiliary variable";
+      Pointer<Variable> auxiliary     "Corresponding auxiliary variable";
       Option<Equation> body           "Optional body equation"; // -> Expression
     end AUX_EQUATION;
 
@@ -1216,7 +1216,7 @@ public
       input Equation eq;
       input output String str = "";
     protected
-      String s = "(" + intString(Equation.size(PointerCyclic.create(eq), true)) + ")";
+      String s = "(" + intString(Equation.size(Pointer.create(eq), true)) + ")";
       String tupl_recd_str;
     algorithm
       str := match eq
@@ -1229,17 +1229,17 @@ public
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
         case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
         case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
-        case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(PointerCyclic.access(eq.auxiliary));
+        case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
         case DUMMY_EQUATION()  then str + "[DUMY] (0) Dummy equation.";
         else                        str + "[FAIL] (0) " + getInstanceName() + " failed!";
       end match;
     end toString;
 
     function pointerToString
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input output String str = "";
     algorithm
-      str := toString(PointerCyclic.access(eqn_ptr), str);
+      str := toString(Pointer.access(eqn_ptr), str);
     end pointerToString;
 
     function source
@@ -1266,13 +1266,13 @@ public
     end info;
 
     function size
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input Boolean resize = false;
       output Integer s;
     protected
       Equation eqn;
     algorithm
-      eqn := PointerCyclic.access(eqn_ptr);
+      eqn := Pointer.access(eqn_ptr);
       s := match eqn
         local
           Equation body;
@@ -1281,9 +1281,9 @@ public
         case RECORD_EQUATION()            then Type.sizeOf(eqn.ty, resize);
         case ALGORITHM()                  then eqn.size;
         case IF_EQUATION()                then if resize then IfEquationBody.size(eqn.body, resize) else eqn.size;
-        case FOR_EQUATION(body = {body})  then if resize then Iterator.size(eqn.iter, resize) * Equation.size(PointerCyclic.create(body), resize) else eqn.size;
+        case FOR_EQUATION(body = {body})  then if resize then Iterator.size(eqn.iter, resize) * Equation.size(Pointer.create(body), resize) else eqn.size;
         case WHEN_EQUATION()              then if resize then WhenEquationBody.size(eqn.body, resize) else eqn.size;
-        case AUX_EQUATION()               then Variable.size(PointerCyclic.access(eqn.auxiliary), resize);
+        case AUX_EQUATION()               then Variable.size(Pointer.access(eqn.auxiliary), resize);
         case DUMMY_EQUATION()             then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
@@ -1292,13 +1292,13 @@ public
     end size;
 
     function sizes
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input Boolean resize = false;
       output list<Integer> size_lst;
     protected
       Equation eqn;
     algorithm
-      eqn := PointerCyclic.access(eqn_ptr);
+      eqn := Pointer.access(eqn_ptr);
       size_lst := match eqn
         case SCALAR_EQUATION() then {1};
         case ARRAY_EQUATION()  then list(Dimension.size(dim, resize) for dim in Type.arrayDims(eqn.ty));
@@ -1307,7 +1307,7 @@ public
         case IF_EQUATION()     then {eqn.size};
         case FOR_EQUATION()    then listReverse(Iterator.sizes(eqn.iter, resize)); // does only consider frames and not conditions
         case WHEN_EQUATION()   then {eqn.size};
-        case AUX_EQUATION()    then {Variable.size(PointerCyclic.access(eqn.auxiliary), resize)};
+        case AUX_EQUATION()    then {Variable.size(Pointer.access(eqn.auxiliary), resize)};
         case DUMMY_EQUATION()  then {};
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
@@ -1316,13 +1316,13 @@ public
     end sizes;
 
     function applyToType
-      input output PointerCyclic<Equation> eqn_ptr;
+      input output Pointer<Equation> eqn_ptr;
       input typeFunc func;
       partial function typeFunc
         input output Type ty;
       end typeFunc;
     protected
-      Equation new, eqn = PointerCyclic.access(eqn_ptr);
+      Equation new, eqn = Pointer.access(eqn_ptr);
     algorithm
       new := match eqn
         case new as ARRAY_EQUATION()  algorithm new.ty := func(new.ty); then new;
@@ -1330,19 +1330,19 @@ public
         else eqn;
       end match;
       if not referenceEq(eqn, new) then
-        PointerCyclic.update(eqn_ptr, new);
+        Pointer.update(eqn_ptr, new);
       end if;
     end applyToType;
 
     function hash
       "only hashes the name"
-      input PointerCyclic<Equation> eqn;
-      output Integer i = if isDummy(PointerCyclic.access(eqn)) then 0 else ComponentRef.hash(getEqnName(eqn));
+      input Pointer<Equation> eqn;
+      output Integer i = if isDummy(Pointer.access(eqn)) then 0 else ComponentRef.hash(getEqnName(eqn));
     end hash;
 
     function equalName
-      input PointerCyclic<Equation> eqn1;
-      input PointerCyclic<Equation> eqn2;
+      input Pointer<Equation> eqn1;
+      input Pointer<Equation> eqn2;
       output Boolean b = ComponentRef.isEqual(getEqnName(eqn1), getEqnName(eqn2));
     end equalName;
 
@@ -1357,9 +1357,9 @@ public
     end isEqualPtrTpl;
 
     function isEqualPtr
-      input PointerCyclic<Equation> eqn1;
-      input PointerCyclic<Equation> eqn2;
-      output Boolean b = isEqual(PointerCyclic.access(eqn1), PointerCyclic.access(eqn2));
+      input Pointer<Equation> eqn1;
+      input Pointer<Equation> eqn2;
+      output Boolean b = isEqual(Pointer.access(eqn1), Pointer.access(eqn2));
     end isEqualPtr;
 
     function isEqualTpl
@@ -1392,12 +1392,12 @@ public
     end isEqual;
 
     function getEqnName
-      input PointerCyclic<Equation> eqn;
+      input Pointer<Equation> eqn;
       output ComponentRef name;
     protected
-      PointerCyclic<Variable> residualVar;
+      Pointer<Variable> residualVar;
     algorithm
-      if isDummy(PointerCyclic.access(eqn)) then
+      if isDummy(Pointer.access(eqn)) then
         name := ComponentRef.EMPTY();
       else
         residualVar := getResidualVar(eqn);
@@ -1406,11 +1406,11 @@ public
     end getEqnName;
 
     function getResidualVar
-      input PointerCyclic<Equation> eqn;
-      output PointerCyclic<Variable> residualVar;
+      input Pointer<Equation> eqn;
+      output Pointer<Variable> residualVar;
     algorithm
       try
-        residualVar := EquationAttributes.getResidualVar(getAttributes(PointerCyclic.access(eqn)));
+        residualVar := EquationAttributes.getResidualVar(getAttributes(Pointer.access(eqn)));
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing residual variable."});
         fail();
@@ -1438,12 +1438,12 @@ public
       input String str;
       input Iterator iter;
       input EquationAttributes attr;
-      output PointerCyclic<Equation> eq;
+      output Pointer<Equation> eq;
     protected
       Equation e;
     algorithm
       e := makeAssignmentEqn(lhs, rhs, iter, attr);
-      eq := PointerCyclic.create(e);
+      eq := Pointer.create(e);
       createName(eq, idx, str);
     end makeAssignment;
 
@@ -1454,7 +1454,7 @@ public
       input Iterator iter;
       input EquationAttributes attr;
     protected
-      PointerCyclic<Variable> res_var = Equation.getResidualVar(PointerCyclic.create(eq));
+      Pointer<Variable> res_var = Equation.getResidualVar(Pointer.create(eq));
     algorithm
       eq := makeAssignmentEqn(lhs, rhs, iter, attr);
       eq := Equation.setResidualVar(eq, res_var);
@@ -1521,7 +1521,7 @@ public
     function makeAlgorithm
       input list<Statement> stmts;
       input Boolean init;
-      output PointerCyclic<Equation> eqn;
+      output Pointer<Equation> eqn;
     protected
       Algorithm alg;
     algorithm
@@ -1624,7 +1624,7 @@ public
 
     function setDerivative
       input output Equation eq;
-      input PointerCyclic<Equation> derivative;
+      input Pointer<Equation> derivative;
     protected
       EquationAttributes attr;
     algorithm
@@ -1963,7 +1963,7 @@ public
         case ARRAY_EQUATION()   then getLHSVarsExp(eqn.lhs);
         case RECORD_EQUATION()  then getLHSVarsExp(eqn.lhs);
         case FOR_EQUATION()     then List.flatten(list(getLHSVars(b) for b in eqn.body));
-        case IF_EQUATION()      then List.flatten(list(getLHSVars(PointerCyclic.access(b)) for b in eqn.body.then_eqns));
+        case IF_EQUATION()      then List.flatten(list(getLHSVars(Pointer.access(b)) for b in eqn.body.then_eqns));
         else {};
       end match;
     end getLHSVars;
@@ -1972,8 +1972,8 @@ public
       input output Equation eq;
       input String name = "";
       input String indent = "";
-      input PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states = PointerCyclic.create({});
-      input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous = PointerCyclic.create({});
+      input Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+      input Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
       input SimplifyFunc simplifyExp = function SimplifyExp.simplifyDump(includeScope = true, name = name, indent = indent);
 
       partial function SimplifyFunc
@@ -2046,7 +2046,7 @@ public
               if isNone(if_body.else_if) and not List.hasSeveralElements(if_body.then_eqns) then
                 // first if-branch is true and has only one equation
                 // just replace if-equation with body
-                new_eq := PointerCyclic.access(listHead(if_body.then_eqns));
+                new_eq := Pointer.access(listHead(if_body.then_eqns));
               else
                 eq.body := if_body;
                 try
@@ -2066,8 +2066,8 @@ public
           (iter, status) := Iterator.simplifyRangeCondition(eq.iter, if_body.condition);
           if status == NBSolve.Status.EXPLICIT then
             eq.iter := iter;
-            eq.body := list(PointerCyclic.access(be) for be in if_body.then_eqns);
-            eq.size := Equation.size(PointerCyclic.create(eq), true);
+            eq.body := list(Pointer.access(be) for be in if_body.then_eqns);
+            eq.size := Equation.size(Pointer.create(eq), true);
           end if;
         then Inline.inlineForEquation(eq);
 
@@ -2086,13 +2086,13 @@ public
     end simplify;
 
     function createName
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input Pointer<Integer> idx;
       input String context;
     protected
-      Equation eqn = PointerCyclic.access(eqn_ptr);
-      PointerCyclic<Variable> residualVar;
-      list<PointerCyclic<Equation>> dummy_eqns;
+      Equation eqn = Pointer.access(eqn_ptr);
+      Pointer<Variable> residualVar;
+      list<Pointer<Equation>> dummy_eqns;
     algorithm
       // create residual var as name
       (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx), getType(eqn));
@@ -2104,18 +2104,18 @@ public
         then eqn;
         case FOR_EQUATION() algorithm
           // ToDo: multiple body equations require sub indexing - should not happen!
-          dummy_eqns := list(PointerCyclic.create(body_eqn) for body_eqn in eqn.body);
+          dummy_eqns := list(Pointer.create(body_eqn) for body_eqn in eqn.body);
           for body_eqn in dummy_eqns loop createName(body_eqn, idx, context); end for;
-          eqn.body := list(PointerCyclic.access(body_eqn) for body_eqn in dummy_eqns);
+          eqn.body := list(Pointer.access(body_eqn) for body_eqn in dummy_eqns);
         then eqn;
         else eqn;
       end match;
-      PointerCyclic.update(eqn_ptr, eqn);
+      Pointer.update(eqn_ptr, eqn);
     end createName;
 
     function setResidualVar
       input output Equation eqn;
-      input PointerCyclic<Variable> residualVar;
+      input Pointer<Variable> residualVar;
     algorithm
        // update equation attributes
       eqn := match eqn
@@ -2154,11 +2154,11 @@ public
     end setResidualVar;
 
     function subIdxName
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input Pointer<Integer> idx;
     protected
-      Equation eqn = PointerCyclic.access(eqn_ptr);
-      PointerCyclic<Variable> residualVar;
+      Equation eqn = Pointer.access(eqn_ptr);
+      Pointer<Variable> residualVar;
     algorithm
       // update equation attributes
       eqn := match eqn
@@ -2210,18 +2210,18 @@ public
 
       end match;
       Pointer.update(idx, Pointer.access(idx) + 1);
-      PointerCyclic.update(eqn_ptr, eqn);
+      Pointer.update(eqn_ptr, eqn);
     end subIdxName;
 
     function createResidual
       "Creates a residual equation from a regular equation.
       Example (for DAEMode): $RES_DAE_idx := rhs."
-      input output PointerCyclic<Equation> eqn_ptr;
+      input output Pointer<Equation> eqn_ptr;
       input Option<ComponentRef> residualCref_opt = NONE();
       input Boolean new = false               "set to true if the resulting pointer should be a new one";
       input Boolean allowFail = false;
     protected
-      Equation eqn = PointerCyclic.access(eqn_ptr);
+      Equation eqn = Pointer.access(eqn_ptr);
       EquationAttributes attr;
       ComponentRef residualCref;
       Expression lhs, rhs;
@@ -2256,7 +2256,7 @@ public
           eqn.body := IfEquationBody.createResidual(eqn.body, residualCref, new, allowFail);
         then (IfEquationBody.inline(eqn.body, eqn), false);
         case FOR_EQUATION() algorithm
-          eqn.body := list(PointerCyclic.access(createResidual(PointerCyclic.create(body_eqn), SOME(residualCref), new, allowFail)) for body_eqn in eqn.body);
+          eqn.body := list(Pointer.access(createResidual(Pointer.create(body_eqn), SOME(residualCref), new, allowFail)) for body_eqn in eqn.body);
         then (eqn, false);
         else algorithm
           // update RHS and LHS
@@ -2281,7 +2281,7 @@ public
       end if;
 
       // update pointer or create new
-      if new then eqn_ptr := PointerCyclic.create(eqn); else PointerCyclic.update(eqn_ptr, eqn); end if;
+      if new then eqn_ptr := Pointer.create(eqn); else Pointer.update(eqn_ptr, eqn); end if;
     end createResidual;
 
     function getResidualExp
@@ -2406,7 +2406,7 @@ public
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(PointerCyclic.access(eqn_ptr));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.residual;
     end isResidual;
 
@@ -2414,7 +2414,7 @@ public
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(PointerCyclic.access(eqn_ptr));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.kind == EquationKind.DISCRETE;
     end isDiscrete;
 
@@ -2422,7 +2422,7 @@ public
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(PointerCyclic.access(eqn_ptr));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.kind == EquationKind.CONTINUOUS;
     end isContinuous;
 
@@ -2437,7 +2437,7 @@ public
       "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
       extends checkEqn;
     protected
-      Equation eqn = PointerCyclic.access(eqn_ptr);
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
       b := match eqn
         case RECORD_EQUATION() then Type.isContinuous(eqn.ty);
@@ -2449,24 +2449,24 @@ public
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(PointerCyclic.access(eqn_ptr));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.exclusively_initial;
     end isInitial;
 
     function isWhenEquation extends checkEqn;
     protected
-      Equation eqn = PointerCyclic.access(eqn_ptr);
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
       b := match eqn
         case WHEN_EQUATION() then true;
-        case FOR_EQUATION() then List.any(list(PointerCyclic.create(e) for e in eqn.body), isWhenEquation);
+        case FOR_EQUATION() then List.any(list(Pointer.create(e) for e in eqn.body), isWhenEquation);
         else false;
       end match;
     end isWhenEquation;
 
     function isIfEquation extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         case IF_EQUATION() then true;
         else false;
       end match;
@@ -2474,7 +2474,7 @@ public
 
     function isForEquation extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         case FOR_EQUATION() then true;
         else false;
       end match;
@@ -2482,7 +2482,7 @@ public
 
     function isArrayEquation extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         case ARRAY_EQUATION() then true;
         else false;
       end match;
@@ -2490,7 +2490,7 @@ public
 
     function isRecordOrTupleEquation extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         local
           WhenEquationBody when_body;
           IfEquationBody if_body;
@@ -2507,7 +2507,7 @@ public
 
     function isRecordEquation extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         local
           Equation e;
         case e as RECORD_EQUATION() then not Type.isTuple(e.ty);
@@ -2518,7 +2518,7 @@ public
 
     function isTupleEquation extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         local
           Equation e;
         case e as RECORD_EQUATION() then Type.isTuple(e.ty);
@@ -2528,7 +2528,7 @@ public
 
     function isAlgorithm extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         case ALGORITHM() then true;
         else false;
       end match;
@@ -2546,7 +2546,7 @@ public
 
     function isClocked extends checkEqn;
     algorithm
-      b := match getAttributes(PointerCyclic.access(eqn_ptr))
+      b := match getAttributes(Pointer.access(eqn_ptr))
         case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED) then true;
         else false;
       end match;
@@ -2554,7 +2554,7 @@ public
 
     function isTypeClock extends checkEqn;
     protected
-      Equation eq = PointerCyclic.access(eqn_ptr);
+      Equation eq = Pointer.access(eqn_ptr);
     algorithm
       // only check scalar equations as clocks have to be scalar
       // ToDo: for-equations?
@@ -2566,7 +2566,7 @@ public
 
     function isCompound extends checkEqn;
     algorithm
-      b := match PointerCyclic.access(eqn_ptr)
+      b := match Pointer.access(eqn_ptr)
         case ALGORITHM()      then true;
         case IF_EQUATION()    then true;
         case WHEN_EQUATION()  then true;
@@ -2576,12 +2576,12 @@ public
 
     function isResizable extends checkEqn;
     algorithm
-      b := Type.isResizable(getType(PointerCyclic.access(eqn_ptr)));
+      b := Type.isResizable(getType(Pointer.access(eqn_ptr)));
     end isResizable;
 
     function hasDerivative extends checkEqn;
     algorithm
-      b := match getAttributes(PointerCyclic.access(eqn_ptr))
+      b := match getAttributes(Pointer.access(eqn_ptr))
         case EQUATION_ATTRIBUTES(derivative = SOME(_)) then true;
         else false;
       end match;
@@ -2615,11 +2615,11 @@ public
     end crefIsParamOrConst;
 
     function generateBindingEquation
-      input PointerCyclic<Variable> var_ptr;
+      input Pointer<Variable> var_ptr;
       input Pointer<Integer> idx;
       input Boolean initial_;
       input UnorderedSet<VariablePointer> new_iters;
-      output PointerCyclic<Equation> eqn;
+      output Pointer<Equation> eqn;
     protected
       String context = "BND";
       Variable var;
@@ -2631,7 +2631,7 @@ public
       UnorderedMap<list<Dimension>, CrefLst> dims_map = UnorderedMap.new<CrefLst>(Dimension.hashList, function List.isEqualOnTrue(inCompFunc = Dimension.isEqual));
       UnorderedMap<ComponentRef, Subscript> iter_map = UnorderedMap.new<Subscript>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      var := PointerCyclic.access(var_ptr);
+      var := Pointer.access(var_ptr);
       rhs := match var.binding
         local
           Binding qual;
@@ -2648,7 +2648,7 @@ public
           else Expression.makeZero(ComponentRef.getSubscriptedType(var.name, true)); // only making the zero when absolutely neccessary
         end match;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toDebugString(var.binding) + " for variable " + Variable.toString(PointerCyclic.access(var_ptr))});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toDebugString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
 
@@ -2718,10 +2718,10 @@ public
     end splitIterators;
 
     function renameIterators
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input String newBaseName;
     protected
-      Equation eqn = PointerCyclic.access(eqn_ptr);
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
       () := match eqn
         local
@@ -2731,7 +2731,7 @@ public
           replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
           eqn.iter := Iterator.rename(eqn.iter, newBaseName, replacements);
           eqn.body := list(map(body_eqn, function Replacements.applySimpleExp(replacements = replacements)) for body_eqn in eqn.body);
-          PointerCyclic.update(eqn_ptr, eqn);
+          Pointer.update(eqn_ptr, eqn);
         then ();
 
         else ();
@@ -2808,29 +2808,29 @@ public
     function slice
       "performs a single slice based on the given indices and the cref to solve for
       does not work for entwined for loops!"
-      input PointerCyclic<Equation> eqn_ptr         "equation to slice";
+      input Pointer<Equation> eqn_ptr         "equation to slice";
       input list<Integer> indices             "zero based indices of the eqn";
-      output list<PointerCyclic<Equation>> sliced_eqn;
+      output list<Pointer<Equation>> sliced_eqn;
       output SlicingStatus slicing_status     "unchanged, trivial (only rearranged) or nontrivial";
     protected
       Equation eqn;
       list<Dimension> dims;
       list<Integer> sizes;
     algorithm
-      eqn := PointerCyclic.access(eqn_ptr);
+      eqn := Pointer.access(eqn_ptr);
       (sliced_eqn, slicing_status) := match eqn
         local
 
         // empty index list indicates no slicing and no rearranging
-        case _ guard(listEmpty(indices)) then ({PointerCyclic.create(eqn)}, SlicingStatus.UNCHANGED);
+        case _ guard(listEmpty(indices)) then ({Pointer.create(eqn)}, SlicingStatus.UNCHANGED);
 
         case RECORD_EQUATION() algorithm
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
-        then ({PointerCyclic.create(eqn)}, slicing_status);
+        then ({Pointer.create(eqn)}, slicing_status);
 
         case ARRAY_EQUATION() algorithm
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
-        then ({PointerCyclic.create(eqn)}, slicing_status);
+        then ({Pointer.create(eqn)}, slicing_status);
 
         case FOR_EQUATION() algorithm
           // trivial slices replace the original equation entirely
@@ -2840,7 +2840,7 @@ public
           if slicing_status == SlicingStatus.NONTRIVIAL then
             sliced_eqn := sliceFor(listHead(eqn.body), getForIterator(eqn), sizes, listReverse(getForFrames(eqn)), indices);
           else
-            sliced_eqn := {PointerCyclic.create(eqn)};
+            sliced_eqn := {Pointer.create(eqn)};
           end if;
         then (sliced_eqn, slicing_status);
 
@@ -2857,7 +2857,7 @@ public
       input list<Frame> frames;
       input list<Integer> indices;
       input Boolean naive = false;
-      output list<PointerCyclic<Equation>> result;
+      output list<Pointer<Equation>> result;
     protected
       list<Integer> location;
       list<Frame> new_frames;
@@ -2879,7 +2879,7 @@ public
         replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         Iterator.createLocationReplacements(iter, listArray(location), replacements);
         tmp           := map(body, function Replacements.applySimpleExp(replacements = replacements));
-        result        := {PointerCyclic.create(tmp)};
+        result        := {Pointer.create(tmp)};
       else
         // create the frame locations
         locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
@@ -2909,21 +2909,21 @@ public
             tmp := map(body, function Replacements.applySimpleExp(replacements = replacements));
 
             new_iter  := Iterator.fromFrames(new_frames);
-            size      := Iterator.size(new_iter) * Equation.size(PointerCyclic.create(tmp));
+            size      := Iterator.size(new_iter) * Equation.size(Pointer.create(tmp));
             tmp       := FOR_EQUATION(
               size    = size,
               iter    = new_iter,
               body    = {tmp},
               source  = getSource(body),
               attr    = getAttributes(body));
-            result    := {PointerCyclic.create(tmp)};
+            result    := {Pointer.create(tmp)};
           end if;
         end if;
       end if;
     end sliceFor;
 
     function singleSlice
-      input PointerCyclic<Equation> eqn_ptr                             "equation to slice";
+      input Pointer<Equation> eqn_ptr                             "equation to slice";
       input Integer scal_idx                                      "zero based scalar index";
       input list<Integer> sizes                                   "frame sizes (innermost first)";
       input ComponentRef cref_to_solve                            "the cref to solve the body for (EMPTY() for already solved)";
@@ -2935,7 +2935,7 @@ public
       Equation eqn;
       list<Integer> location;
     algorithm
-      eqn := PointerCyclic.access(eqn_ptr);
+      eqn := Pointer.access(eqn_ptr);
       (sliced_eqn, solve_status) := match eqn
 
         // slice the equation
@@ -2991,8 +2991,8 @@ public
           Expression range, lhs_exp, rhs_exp;
           array<Expression> iter_elems;
           list<Statement> body;
-          PointerCyclic<Variable> lhs, rhs;
-          list<PointerCyclic<Variable>> lhs_lst, rhs_lst;
+          Pointer<Variable> lhs, rhs;
+          list<Pointer<Variable>> lhs_lst, rhs_lst;
           list<Subscript> lhs_subs, rhs_subs;
 
         case SCALAR_EQUATION()
@@ -3058,7 +3058,7 @@ public
   uniontype IfEquationBody
     record IF_EQUATION_BODY
       Expression condition                  "the if-condition";
-      list<PointerCyclic<Equation>> then_eqns     "body equations";
+      list<Pointer<Equation>> then_eqns     "body equations";
       Option<IfEquationBody> else_if        "optional elseif equation";
     end IF_EQUATION_BODY;
 
@@ -3067,7 +3067,7 @@ public
       input IfEquationBody body;
       input DAE.ElementSource source;
       input Boolean init;
-      output PointerCyclic<Equation> eqn;
+      output Pointer<Equation> eqn;
     protected
       EquationAttributes attr;
       Boolean isAlgorithm;
@@ -3077,7 +3077,7 @@ public
     algorithm
       (attr, isAlgorithm) := match body.then_eqns
         local
-          PointerCyclic<Equation> then_eqn;
+          Pointer<Equation> then_eqn;
         case {then_eqn} then (if Equation.isDiscrete(then_eqn)
           then EquationAttributes.default(EquationKind.DISCRETE, init)
           else EquationAttributes.default(EquationKind.CONTINUOUS, init), Equation.isAlgorithm(then_eqn));
@@ -3095,9 +3095,9 @@ public
         alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), InstNode.EMPTY_NODE(), source);
         alg   := Algorithm.setInputsOutputs(alg);
         size  := sum(ComponentRef.size(out, false) for out in alg.outputs);
-        eqn   := PointerCyclic.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
+        eqn   := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
       else
-        eqn   := PointerCyclic.create(e);
+        eqn   := Pointer.create(e);
       end if;
     end toEquation;
 
@@ -3109,12 +3109,12 @@ public
       input Iterator iter;
       input DAE.ElementSource source;
       input EquationAttributes attr;
-      output PointerCyclic<Equation> eq;
+      output Pointer<Equation> eq;
     protected
       Equation e;
     algorithm
       e := makeIfEquationEqn(body, iter, source, attr);
-      eq := PointerCyclic.create(e);
+      eq := Pointer.create(e);
       Equation.createName(eq, idx, str);
     end makeIfEquation;
 
@@ -3164,7 +3164,7 @@ public
         str := str + "\n";
       end if;
       for eqn in body.then_eqns loop
-        str := str + Equation.toString(PointerCyclic.access(eqn), indent + "  ") + "\n";
+        str := str + Equation.toString(Pointer.access(eqn), indent + "  ") + "\n";
       end for;
       if isSome(body.else_if) then
         str := str + toString(Util.getOption(body.else_if), indent, indent + "else", true);
@@ -3182,7 +3182,7 @@ public
     algorithm
       ifBody := mapEqnExpCref(
         ifBody      = ifBody,
-        func        = function PointerCyclic.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)),
+        func        = function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)),
         funcExp     = funcExp,
         funcCrefOpt = funcCrefOpt,
         mapFunc     = mapFunc);
@@ -3269,7 +3269,7 @@ public
       tuple<Expression, list<Statement>> stmt;
       Expression condition = if Expression.isEnd(body.condition) then Expression.BOOLEAN(true) else body.condition;
     algorithm
-      stmt := (condition, List.flatten(list(Equation.toStatement(PointerCyclic.access(eqn)) for eqn in body.then_eqns)));
+      stmt := (condition, List.flatten(list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns)));
       if isSome(body.else_if) then
         stmts := stmt :: toStatement(Util.getOption(body.else_if));
       else
@@ -3285,7 +3285,7 @@ public
       input Boolean allowFail = false;
       output IfEquationBody body_res;
     protected
-      PointerCyclic<Equation> eqn_ptr;
+      Pointer<Equation> eqn_ptr;
     algorithm
       body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res, new = new, allowFail = allowFail)));
       body_res := match body.then_eqns
@@ -3319,12 +3319,12 @@ public
       input output Expression exp = Expression.END();
       output Boolean success = true;
     protected
-      PointerCyclic<Equation> eqn_ptr;
+      Pointer<Equation> eqn_ptr;
       Expression new_exp;
     algorithm
       exp := match body.then_eqns
         case {eqn_ptr} algorithm
-          SOME(new_exp) := Equation.getLHS(PointerCyclic.access(eqn_ptr));
+          SOME(new_exp) := Equation.getLHS(Pointer.access(eqn_ptr));
           if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
             if isSome(body.else_if) then
               (new_exp, success) := getLHS(Util.getOption(body.else_if), new_exp);
@@ -3351,12 +3351,12 @@ public
       output Expression exp = Expression.END();
       output Boolean success;
     protected
-      PointerCyclic<Equation> eqn_ptr;
+      Pointer<Equation> eqn_ptr;
       Expression new_exp, new_exp2;
     algorithm
       exp := match body.then_eqns
         case {eqn_ptr} algorithm
-          SOME(new_exp) := Equation.getRHS(PointerCyclic.access(eqn_ptr));
+          SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if isSome(body.else_if) then
             (new_exp2, success) := getRHS(Util.getOption(body.else_if));
             if success then
@@ -3384,9 +3384,9 @@ public
     protected
       list<Expression> conditions = {};
       Integer s = listLength(body.then_eqns);
-      array<list<PointerCyclic<Equation>>> then_eqns;
+      array<list<Pointer<Equation>>> then_eqns;
       Expression condition;
-      PointerCyclic<Equation> eqn;
+      Pointer<Equation> eqn;
       Option<IfEquationBody> tmp;
     algorithm
       if isSplittable(body, s) then
@@ -3458,7 +3458,7 @@ public
     algorithm
       b := match body.then_eqns
         local
-          PointerCyclic<Equation> eqn_ptr;
+          Pointer<Equation> eqn_ptr;
          // just a tuple itself
         case {eqn_ptr} then Equation.isRecordOrTupleEquation(eqn_ptr);
         // at least 2 body equations -> tuple return
@@ -3474,7 +3474,7 @@ public
     protected
       list<Type> body_types;
     algorithm
-      body_types := list(Equation.getType(PointerCyclic.access(b)) for b in body.then_eqns);
+      body_types := list(Equation.getType(Pointer.access(b)) for b in body.then_eqns);
       ty := if listLength(body_types) == 1 then listHead(body_types) else Type.TUPLE(body_types, NONE());
     end getType;
 
@@ -3484,16 +3484,16 @@ public
       ToDo: make it full type safe sorting"
       input output IfEquationBody body;
     protected
-      list<PointerCyclic<Equation>> discretes, continuous;
+      list<Pointer<Equation>> discretes, continuous;
 
       function compareLHS
         "Heuristic: often the lhs is a cref. If all branches are solved for the lhs,
          sorting them in the same way makes the split nice without algebraic loops."
-        input PointerCyclic<Equation> eqn1;
-        input PointerCyclic<Equation> eqn2;
+        input Pointer<Equation> eqn1;
+        input Pointer<Equation> eqn2;
         output Boolean b = 0 < Expression.compare(
-          Util.getOption(Equation.getLHS(PointerCyclic.access(eqn1))),
-          Util.getOption(Equation.getLHS(PointerCyclic.access(eqn2))));
+          Util.getOption(Equation.getLHS(Pointer.access(eqn1))),
+          Util.getOption(Equation.getLHS(Pointer.access(eqn2))));
       end compareLHS;
     algorithm
       (discretes, continuous) := List.splitOnTrue(body.then_eqns, Equation.isDiscrete);
@@ -3507,7 +3507,7 @@ public
       "collects the equations of each branch to create single branch equation bodies afterwards."
       input IfEquationBody body;
       input output list<Expression> conditions;
-      input output array<list<PointerCyclic<Equation>>> then_eqns;
+      input output array<list<Pointer<Equation>>> then_eqns;
     protected
       Integer i = 1;
     algorithm
@@ -4092,7 +4092,7 @@ public
     algorithm
       eqn := match stmt
         case ASSIGN() then Equation.makeAssignmentEqn(stmt.lhs, stmt.rhs, Iterator.EMPTY(), attr);
-                      else Equation.setAttributes(PointerCyclic.access(Equation.makeAlgorithm({toStatement(stmt)}, init)), attr);
+                      else Equation.setAttributes(Pointer.access(Equation.makeAlgorithm({toStatement(stmt)}, init)), attr);
       end match;
     end toEquation;
 
@@ -4246,8 +4246,8 @@ public
 
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES
-      Option<PointerCyclic<Equation>> derivative            "if the equation has been differentiated w.r.t time already";
-      Option<PointerCyclic<Variable>> residualVar           "also used to represent the equation itself";
+      Option<Pointer<Equation>> derivative            "if the equation has been differentiated w.r.t time already";
+      Option<Pointer<Variable>> residualVar           "also used to represent the equation itself";
       Option<Integer> clock_idx                       "only set if clocked eq";
       Boolean residual                                "true if in residual form";
       Boolean exclusively_initial                     "true if in initial equation block";
@@ -4263,7 +4263,7 @@ public
     algorithm
       str := match attr
         local
-          PointerCyclic<Variable> residualVar;
+          Pointer<Variable> residualVar;
         case EQUATION_ATTRIBUTES(residualVar = SOME(residualVar))
         then indent + "(" + ComponentRef.toString(BVariable.getVarName(residualVar)) + ")";
         else "";
@@ -4281,14 +4281,14 @@ public
 
     function setResidualVar
       input output EquationAttributes attr;
-      input PointerCyclic<Variable> residualVar;
+      input Pointer<Variable> residualVar;
     algorithm
       attr.residualVar := SOME(residualVar);
     end setResidualVar;
 
     function getResidualVar
       input EquationAttributes attr;
-      output PointerCyclic<Variable> residualVar;
+      output Pointer<Variable> residualVar;
     algorithm
       try
         SOME(residualVar) := attr.residualVar;
@@ -4381,7 +4381,7 @@ public
   uniontype EquationPointers
     record EQUATION_POINTERS
       UnorderedMap<ComponentRef, Integer> map   "Map for cref->index";
-      ExpandableArray<PointerCyclic<Equation>> eqArr;
+      ExpandableArray<Pointer<Equation>> eqArr;
     end EQUATION_POINTERS;
 
     function toString
@@ -4398,7 +4398,7 @@ public
       Boolean filterEqs = isSome(filter_opt);
       array<tuple<Integer,Integer>> mapping = listArray({});
       UnorderedSet<String> filter = UnorderedSet.new(stringHashDjb2, stringEq);
-      PointerCyclic<Equation> eqn;
+      Pointer<Equation> eqn;
     algorithm
       // check if mapping is used
       if useMapping then
@@ -4427,7 +4427,7 @@ public
                 index := "(" + intString(current_index) + ")";
               end if;
               index := index + StringUtil.repeat(" ", length - stringLength(index));
-              str := str + Equation.toString(PointerCyclic.access(eqn), index) + "\n";
+              str := str + Equation.toString(Pointer.access(eqn), index) + "\n";
             end if;
             current_index := current_index + 1;
           end if;
@@ -4447,7 +4447,7 @@ public
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
       bucketSize := Util.nextPrime(arr_size);
-      equationPointers := EQUATION_POINTERS(UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, bucketSize), ExpandableArray.new(arr_size, PointerCyclic.create(DUMMY_EQUATION())));
+      equationPointers := EQUATION_POINTERS(UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
 
     function clone
@@ -4458,7 +4458,7 @@ public
       if shallow then
         new := fromList(toList(equations));
       else
-        new := fromList(list(PointerCyclic.create(PointerCyclic.access(eqn)) for eqn in toList(equations)));
+        new := fromList(list(Pointer.create(Pointer.access(eqn)) for eqn in toList(equations)));
       end if;
     end clone;
 
@@ -4488,13 +4488,13 @@ public
     function toList
       "Creates a EquationPointer list from EquationPointers."
       input EquationPointers equations;
-      output list<PointerCyclic<Equation>> eqn_lst;
+      output list<Pointer<Equation>> eqn_lst;
     algorithm
       eqn_lst := ExpandableArray.toList(equations.eqArr);
     end toList;
 
     function fromList
-      input list<PointerCyclic<Equation>> eq_lst;
+      input list<Pointer<Equation>> eq_lst;
       output EquationPointers equations;
     algorithm
       equations := empty(listLength(eq_lst));
@@ -4502,7 +4502,7 @@ public
     end fromList;
 
     function addList
-      input list<PointerCyclic<Equation>> eq_lst;
+      input list<Pointer<Equation>> eq_lst;
       input output EquationPointers equations;
     algorithm
       equations := List.fold(eq_lst, function add(), equations);
@@ -4510,7 +4510,7 @@ public
 
     function removeList
       "Removes a list of equations from the EquationPointers structure."
-      input list<PointerCyclic<Equation>> eq_lst;
+      input list<Pointer<Equation>> eq_lst;
       input output EquationPointers equations;
     algorithm
       equations := List.fold(eq_lst, function remove(), equations);
@@ -4521,14 +4521,14 @@ public
       input output EquationPointers equations;
       input checkEqn func;
     protected
-      list<PointerCyclic<Equation>> eqns;
+      list<Pointer<Equation>> eqns;
     algorithm
       eqns := list(eqn for eqn guard(not func(eqn)) in toList(equations));
       equations := fromList(eqns);
     end removeCheck;
 
     function add
-      input PointerCyclic<Equation> eqn;
+      input Pointer<Equation> eqn;
       input output EquationPointers equations;
     protected
       ComponentRef name;
@@ -4548,7 +4548,7 @@ public
 
     function remove
       "Removes an equation pointer identified by its (residual var) name from the set."
-      input PointerCyclic<Equation> eqn;
+      input Pointer<Equation> eqn;
       input output EquationPointers equations "only an output for mapping";
     protected
       ComponentRef name;
@@ -4570,7 +4570,7 @@ public
       input output EquationPointers equations;
       input MapFuncEqn func;
     protected
-      PointerCyclic<Equation> eq_ptr;
+      Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
       list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
       Boolean debug = not listEmpty(followEquations);
@@ -4580,16 +4580,16 @@ public
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eq_ptr := ExpandableArray.get(i, equations.eqArr);
-          eq := PointerCyclic.access(eq_ptr);
+          eq := Pointer.access(eq_ptr);
           new_eq := func(eq);
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
             if debug and (UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eq_ptr)), debug_eqns)
-              or UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(PointerCyclic.create(new_eq))), debug_eqns))
-              and not Equation.equalName(PointerCyclic.create(eq), PointerCyclic.create(new_eq)) then
+              or UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(Pointer.create(new_eq))), debug_eqns))
+              and not Equation.equalName(Pointer.create(eq), Pointer.create(new_eq)) then
               print("[debugFollowEquations] The equation:\n" + Equation.toString(eq) + "\nGets replaced by:\n"  + Equation.toString(new_eq) + "\n");
             end if;
-            PointerCyclic.update(eq_ptr, new_eq);
+            Pointer.update(eq_ptr, new_eq);
           end if;
         end if;
       end for;
@@ -4617,17 +4617,17 @@ public
       input Option<MapFuncCref> funcCrefOpt = NONE();
       input MapFuncExpWrapper mapFunc = Expression.map;
     protected
-      PointerCyclic<Equation> eq_ptr;
+      Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eq_ptr := ExpandableArray.get(i, equations.eqArr);
-          eq := PointerCyclic.access(eq_ptr);
+          eq := Pointer.access(eq_ptr);
           new_eq := Equation.map(eq, funcExp, funcCrefOpt, mapFunc);
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
-            PointerCyclic.update(eq_ptr, new_eq);
+            Pointer.update(eq_ptr, new_eq);
           end if;
         end if;
       end for;
@@ -4639,7 +4639,7 @@ public
       input output EquationPointers equations;
       input checkEqn func;
     protected
-      PointerCyclic<Equation> eq_ptr;
+      Pointer<Equation> eq_ptr;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
@@ -4657,7 +4657,7 @@ public
       input EquationPointers equations;
       input mapFunc func;
       partial function mapFunc
-        input PointerCyclic<Variable> var;
+        input Pointer<Variable> var;
       end mapFunc;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
@@ -4680,7 +4680,7 @@ public
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          extArg := func(PointerCyclic.access(ExpandableArray.get(i, equations.eqArr)), extArg);
+          extArg := func(Pointer.access(ExpandableArray.get(i, equations.eqArr)), extArg);
         end if;
       end for;
     end fold;
@@ -4692,7 +4692,7 @@ public
       input MapFunc func;
       input output T extArg;
       partial function MapFunc
-        input PointerCyclic<Equation> e;
+        input Pointer<Equation> e;
         input output T extArg;
       end MapFunc;
     algorithm
@@ -4711,12 +4711,12 @@ public
       input MapFunc func;
       input output T extArg;
       partial function MapFunc
-        input PointerCyclic<Equation> e;
+        input Pointer<Equation> e;
         input output T extArg;
         output Boolean delete;
       end MapFunc;
     protected
-      PointerCyclic<Equation> eq_ptr;
+      Pointer<Equation> eq_ptr;
       Boolean delete;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
@@ -4725,7 +4725,7 @@ public
           (extArg, delete) := func(eq_ptr, extArg);
           if delete then
             // change the pointer to point to an empty equation
-            PointerCyclic.update(eq_ptr, DUMMY_EQUATION());
+            Pointer.update(eq_ptr, DUMMY_EQUATION());
             // delete this pointer instance
             equations.eqArr := ExpandableArray.delete(i, equations.eqArr);
           end if;
@@ -4737,7 +4737,7 @@ public
       Returns the equation pointer at given index. If there is none it fails."
       input EquationPointers equations;
       input Integer index;
-      output PointerCyclic<Equation> eqn;
+      output Pointer<Equation> eqn;
     algorithm
       eqn := ExpandableArray.get(index, equations.eqArr);
     end getEqnAt;
@@ -4746,7 +4746,7 @@ public
       Returns the equation with specified name, fails if it does not exist."
       input EquationPointers equations;
       input ComponentRef name;
-      output PointerCyclic<Equation> eqn;
+      output Pointer<Equation> eqn;
     algorithm
       eqn := match UnorderedMap.get(name, equations.map)
         local
@@ -4776,14 +4776,14 @@ public
       Be careful: This changes the indices of the elements."
       input output EquationPointers equations;
     protected
-      PointerCyclic<Equation> eqn;
-      list<PointerCyclic<Equation>> eqns = {};
+      Pointer<Equation> eqn;
+      list<Pointer<Equation>> eqns = {};
     algorithm
       // collect non-empty equations
       for i in ExpandableArray.getLastUsedIndex(equations.eqArr):-1:1 loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eqn := ExpandableArray.get(i, equations.eqArr);
-          () := match PointerCyclic.access(eqn)
+          () := match Pointer.access(eqn)
             local
               list<Equation> body;
             // todo: add for IF and WHEN
@@ -4805,15 +4805,15 @@ public
       input output EquationPointers equations;
     protected
       Integer size;
-      list<tuple<Integer, PointerCyclic<Equation>>> hash_lst;
-      PointerCyclic<list<tuple<Integer, PointerCyclic<Equation>>>> hash_lst_ptr = PointerCyclic.create({});
-      PointerCyclic<Equation> eqn_ptr;
+      list<tuple<Integer, Pointer<Equation>>> hash_lst;
+      Pointer<list<tuple<Integer, Pointer<Equation>>>> hash_lst_ptr = Pointer.create({});
+      Pointer<Equation> eqn_ptr;
     algorithm
       // use number of elements
       size := ExpandableArray.getNumberOfElements(equations.eqArr);
       // hash all equations and create hash - equation tpl list
       mapPtr(equations, function createSortHashTpl(mod = realInt(size * log(size)), hash_lst_ptr = hash_lst_ptr));
-      hash_lst := List.sort(PointerCyclic.access(hash_lst_ptr), BackendUtil.indexTplGt);
+      hash_lst := List.sort(Pointer.access(hash_lst_ptr), BackendUtil.indexTplGt);
       // add the equations one by one in sorted order
       equations := empty(size);
       for tpl in hash_lst loop
@@ -4833,17 +4833,17 @@ public
     function createSortHashTpl
       "Helper function for sort(). Creates the hash value without considering the names and
       adds it as a tuple to the list in pointer."
-      input output PointerCyclic<Equation> eqn_ptr;
+      input output Pointer<Equation> eqn_ptr;
       input Integer mod;
-      input PointerCyclic<list<tuple<Integer, PointerCyclic<Equation>>>> hash_lst_ptr;
+      input Pointer<list<tuple<Integer, Pointer<Equation>>>> hash_lst_ptr;
     protected
       Equation eqn;
       Integer hash;
     algorithm
-      eqn := PointerCyclic.access(eqn_ptr);
+      eqn := Pointer.access(eqn_ptr);
       // create hash only from attributes
       hash := BackendUtil.noNameHashEq(eqn, mod);
-      PointerCyclic.update(hash_lst_ptr, (hash, eqn_ptr) :: PointerCyclic.access(hash_lst_ptr));
+      Pointer.update(hash_lst_ptr, (hash, eqn_ptr) :: Pointer.access(hash_lst_ptr));
     end createSortHashTpl;
   end EquationPointers;
 
@@ -4872,7 +4872,7 @@ public
     record EQ_DATA_HES
       Pointer<Integer> uniqueIndex  "current index to be used for new identifier";
       EquationPointers equations    "All equations";
-      PointerCyclic<Equation> result      "Result equation";
+      Pointer<Equation> result      "Result equation";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";
       EquationPointers removed      "Removed equations (alias and no return value)";
@@ -4925,7 +4925,7 @@ public
         then eqData;
 
         case EqData.EQ_DATA_HES() algorithm
-          PointerCyclic.update(eqData.result, func(PointerCyclic.access(eqData.result)));
+          Pointer.update(eqData.result, func(Pointer.access(eqData.result)));
           eqData.temporary    := EquationPointers.map(eqData.temporary, func);
           eqData.auxiliaries  := EquationPointers.map(eqData.auxiliaries, func);
         then eqData;
@@ -4957,7 +4957,7 @@ public
         then eqData;
 
         case EqData.EQ_DATA_HES() algorithm
-          PointerCyclic.update(eqData.result, Equation.map(PointerCyclic.access(eqData.result), func, funcCrefOpt));
+          Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func, funcCrefOpt));
           eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
           eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
@@ -5008,7 +5008,7 @@ public
               tmp :=  EquationPointers.toString(eqData.equations, "Hessian", NONE(), false, filter_opt);
             else
               tmp :=  StringUtil.headline_4("Result Equation") + "\n" +
-                      Equation.toString(PointerCyclic.access(eqData.result)) + "\n" +
+                      Equation.toString(Pointer.access(eqData.result)) + "\n" +
                       EquationPointers.toString(eqData.temporary, "Temporary Inner", NONE(), false, filter_opt) +
                       EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false, filter_opt);
             end if;
@@ -5063,7 +5063,7 @@ public
 
     function addTypedList
       input output EqData eqData;
-      input list<PointerCyclic<Equation>> eq_lst;
+      input list<Pointer<Equation>> eq_lst;
       input EqType eqType;
       input Boolean newName = true;
     algorithm
@@ -5120,10 +5120,10 @@ public
 
     function addUntypedList
       input output EqData eqData;
-      input list<PointerCyclic<Equation>> eq_lst;
+      input list<Pointer<Equation>> eq_lst;
       input Boolean newName = true;
     protected
-      list<PointerCyclic<Equation>> continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+      list<Pointer<Equation>> continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     algorithm
 
       eqData := match eqData
@@ -5153,7 +5153,7 @@ public
     end addUntypedList;
 
     function removeList
-      input list<PointerCyclic<Equation>> eq_lst;
+      input list<Pointer<Equation>> eq_lst;
       input output EqData eqData;
     algorithm
       eqData := match eqData
@@ -5261,17 +5261,17 @@ public
   end EqData;
 
   function typeList
-    input list<PointerCyclic<Equation>> equations;
-    output list<PointerCyclic<Equation>> simulation_lst = {};
-    output list<PointerCyclic<Equation>> continuous_lst = {};
-    output list<PointerCyclic<Equation>> clocked_lst = {};
-    output list<PointerCyclic<Equation>> discretes_lst = {};
-    output list<PointerCyclic<Equation>> initials_lst = {};
-    output list<PointerCyclic<Equation>> auxiliaries_lst = {};
-    output list<PointerCyclic<Equation>> removed_lst = {};
+    input list<Pointer<Equation>> equations;
+    output list<Pointer<Equation>> simulation_lst = {};
+    output list<Pointer<Equation>> continuous_lst = {};
+    output list<Pointer<Equation>> clocked_lst = {};
+    output list<Pointer<Equation>> discretes_lst = {};
+    output list<Pointer<Equation>> initials_lst = {};
+    output list<Pointer<Equation>> auxiliaries_lst = {};
+    output list<Pointer<Equation>> removed_lst = {};
   algorithm
     for eq in equations loop
-      () := match Equation.getAttributes(PointerCyclic.access(eq))
+      () := match Equation.getAttributes(Pointer.access(eq))
         case EQUATION_ATTRIBUTES(exclusively_initial = true)
           algorithm
             initials_lst := eq :: initials_lst;
@@ -5301,7 +5301,7 @@ public
 
         else
           algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(PointerCyclic.access(eq))});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(Pointer.access(eq))});
         then fail();
       end match;
     end for;

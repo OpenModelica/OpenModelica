@@ -60,7 +60,6 @@ import NFModifier.Modifier;
 import Type = NFType;
 import BuiltinFuncs = NFBuiltinFuncs;
 import Pointer;
-import PointerCyclic;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import ComponentRef = NFComponentRef;
@@ -133,7 +132,7 @@ constant array<NFInstNode.CachedData> EMPTY_NODE_CACHE = listArrayLiteral({
 // modifiers and illegal in other cases).
 constant InstNode POLYMORPHIC_NODE = InstNode.CLASS_NODE("polymorphic",
   Elements.ANY, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(Class.PARTIAL_BUILTIN(Type.POLYMORPHIC(""), ClassTree.EMPTY_TREE(),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.POLYMORPHIC(""), ClassTree.EMPTY_TREE(),
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
 
@@ -170,37 +169,37 @@ constant ClassTree REAL_CLASS_TREE = ClassTree.FLAT_TREE(
   listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("unit", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("displayUnit", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("min", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("max", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("nominal", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("unbounded", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("stateSelect", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(STATESELECT_TYPE,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(STATESELECT_TYPE,
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("uncertain", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(UNCERTAINTY_TYPE,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(UNCERTAINTY_TYPE,
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
@@ -208,7 +207,7 @@ constant ClassTree REAL_CLASS_TREE = ClassTree.FLAT_TREE(
 
 constant InstNode REAL_NODE = InstNode.CLASS_NODE("Real",
   Elements.REAL, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(
+  Pointer.createImmutable(
     Class.PARTIAL_BUILTIN(Type.REAL(), REAL_CLASS_TREE, Modifier.NOMOD(),
       NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
@@ -232,19 +231,19 @@ constant ClassTree INTEGER_CLASS_TREE = ClassTree.FLAT_TREE(
   listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("min", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("max", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
@@ -252,7 +251,7 @@ constant ClassTree INTEGER_CLASS_TREE = ClassTree.FLAT_TREE(
 
 constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(
+  Pointer.createImmutable(
     Class.PARTIAL_BUILTIN(Type.INTEGER(), INTEGER_CLASS_TREE, Modifier.NOMOD(),
       NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
@@ -270,13 +269,13 @@ constant ClassTree BOOLEAN_CLASS_TREE = ClassTree.FLAT_TREE(
   listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
@@ -284,7 +283,7 @@ constant ClassTree BOOLEAN_CLASS_TREE = ClassTree.FLAT_TREE(
 
 constant InstNode BOOLEAN_NODE = InstNode.CLASS_NODE("Boolean",
   Elements.BOOLEAN, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(
+  Pointer.createImmutable(
     Class.PARTIAL_BUILTIN(Type.BOOLEAN(), BOOLEAN_CLASS_TREE, Modifier.NOMOD(),
       NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
@@ -305,13 +304,13 @@ constant ClassTree STRING_CLASS_TREE = ClassTree.FLAT_TREE(
   listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
@@ -319,7 +318,7 @@ constant ClassTree STRING_CLASS_TREE = ClassTree.FLAT_TREE(
 
 constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   Elements.STRING, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(
+  Pointer.createImmutable(
     Class.PARTIAL_BUILTIN(Type.STRING(), STRING_CLASS_TREE, Modifier.NOMOD(),
       NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
@@ -342,7 +341,7 @@ constant LookupTree.Tree ENUM_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant InstNode ENUM_NODE = InstNode.CLASS_NODE("enumeration",
   Elements.ENUMERATION, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFClassTree.EMPTY_TREE(),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFClassTree.EMPTY_TREE(),
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.ENUMERATION())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
 
@@ -374,13 +373,13 @@ constant ClassTree CLOCK_CLASS_TREE = ClassTree.FLAT_TREE(
   listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", NONE(), Visibility.PUBLIC,
-      PointerCyclic.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
       Modifier.NOMOD())), NONE(), NONE(), NONE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
@@ -388,7 +387,7 @@ constant ClassTree CLOCK_CLASS_TREE = ClassTree.FLAT_TREE(
 
 constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   Elements.CLOCK, Visibility.PUBLIC,
-  PointerCyclic.createImmutable(
+  Pointer.createImmutable(
     Class.PARTIAL_BUILTIN(Type.CLOCK(), CLOCK_CLASS_TREE, Modifier.NOMOD(),
       NFClass.DEFAULT_PREFIXES, Restriction.CLOCK())),
   listArrayLiteral({
@@ -412,7 +411,7 @@ constant InstNode TIME =
   InstNode.COMPONENT_NODE("time",
     NONE(),
     Visibility.PUBLIC,
-    PointerCyclic.createImmutable(Component.COMPONENT(
+    Pointer.createImmutable(Component.COMPONENT(
       REAL_NODE,
       Type.REAL(),
       NFBinding.EMPTY_BINDING,
@@ -430,7 +429,7 @@ constant InstNode SUBST_NODE =
   InstNode.COMPONENT_NODE("$SUBST_CREF",
     NONE(),
     Visibility.PUBLIC,
-    PointerCyclic.createImmutable(Component.COMPONENT(
+    Pointer.createImmutable(Component.COMPONENT(
       REAL_NODE, // TODO: make this generic integer / real
       Type.ANY(),
       NFBinding.EMPTY_BINDING,
