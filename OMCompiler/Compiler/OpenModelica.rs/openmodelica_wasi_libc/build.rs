@@ -20,7 +20,12 @@ fn main() {
     let crate_dir = PathBuf::from(env("CARGO_MANIFEST_DIR"));
     let out_dir = PathBuf::from(env("OUT_DIR"));
 
-    provide_preview1_adapter(&out_dir.join("wasi_snapshot_preview1.reactor.wasm"));
+    // Where openmodelica_wasm_jit::blobs reads these from. `links` in Cargo.toml is
+    // what makes cargo pass it on, as DEP_OMC_WASI_BLOBS_DIR.
+    println!("cargo::metadata=dir={}", out_dir.display());
+
+    let adapter_dest = out_dir.join("wasi_snapshot_preview1.reactor.wasm");
+    provide_preview1_adapter(&adapter_dest);
 
     let mec_dest = out_dir.join("modelicaexternalc_dylink.wasm");
     let libc_dest = out_dir.join("libc_pic.wasm");
@@ -28,30 +33,28 @@ fn main() {
 
     // The CI hand-over: with all three side modules already built there is
     // nothing here that needs a wasm toolchain or the sysroot.
-    if [&mec_dest, &libc_dest, &usertab_dest].iter().all(|d| prebuilt_in(d)) {
-        return;
+    if ![&mec_dest, &libc_dest, &usertab_dest].iter().all(|d| prebuilt_in(d)) {
+        // PIC wasi sysroot: provided by CMake's rust_wasi_pic_sysroot target.
+        let sysroot = ensure_pic_wasi_sysroot();
+        let triple = "wasm32-wasip1";
+        let libc_so = sysroot.join("lib").join(triple).join("libc.so");
+        if !libc_so.exists() {
+            panic!("PIC wasi sysroot {} has no {}; external \"C\" in wasm FMUs requires libc.so",
+                   sysroot.display(), libc_so.display());
+        }
+        copy(&libc_so, &libc_dest);
+
+        // ModelicaExternalC dylink: mandatory for FMI wasm FMU export.
+        let module = build_external_c_dylink(&crate_dir, &out_dir, &sysroot, triple)
+            .unwrap_or_else(|e| panic!("failed to build the PIC ModelicaExternalC dylink module: {e}"));
+        copy(&module, &mec_dest);
+
+        let usertab = build_usertab_dylink(&out_dir, &sysroot, triple)
+            .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
+        copy(&usertab, &usertab_dest);
     }
 
-    // PIC wasi sysroot: provided by CMake's rust_wasi_pic_sysroot target.
-    let sysroot = ensure_pic_wasi_sysroot();
-    let triple = "wasm32-wasip1";
-    let libc_so = sysroot.join("lib").join(triple).join("libc.so");
-    if !libc_so.exists() {
-        panic!("PIC wasi sysroot {} has no {}; external \"C\" in wasm FMUs requires libc.so",
-               sysroot.display(), libc_so.display());
-    }
-    copy(&libc_so, &libc_dest);
-
-    // ModelicaExternalC dylink: mandatory for FMI wasm FMU export.
-    let module = build_external_c_dylink(&crate_dir, &out_dir, &sysroot, triple)
-        .unwrap_or_else(|e| panic!("failed to build the PIC ModelicaExternalC dylink module: {e}"));
-    copy(&module, &mec_dest);
-
-    let usertab = build_usertab_dylink(&out_dir, &sysroot, triple)
-        .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
-    copy(&usertab, &usertab_dest);
-
-    publish_prebuilt(&[&mec_dest, &libc_dest, &usertab_dest]);
+    publish(&[&mec_dest, &libc_dest, &usertab_dest, &adapter_dest]);
 }
 
 /// The side modules this script builds are wasm whatever platform omc is being
@@ -71,13 +74,18 @@ fn prebuilt_in(dest: &Path) -> bool {
     true
 }
 
-fn publish_prebuilt(blobs: &[&PathBuf]) {
-    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_OUT");
-    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_OUT") else { return };
-    let dir = PathBuf::from(dir);
-    std::fs::create_dir_all(&dir).expect("create the wasm hand-over directory");
-    for b in blobs {
-        copy(b, &dir.join(b.file_name().expect("a blob has a file name")));
+/// Copy the finished blobs out of `OUT_DIR`: to `OMC_WASM_PREBUILT_OUT` for a later
+/// build's `OMC_WASM_PREBUILT_IN`, and to `OMC_WASM_BLOB_OUT`, which is what the
+/// install rule ships (omc reads them from there at run time, not from its binary).
+fn publish(blobs: &[&PathBuf]) {
+    for var in ["OMC_WASM_PREBUILT_OUT", "OMC_WASM_BLOB_OUT"] {
+        println!("cargo:rerun-if-env-changed={var}");
+        let Some(dir) = std::env::var_os(var) else { continue };
+        let dir = PathBuf::from(dir);
+        std::fs::create_dir_all(&dir).expect("create the wasm blob directory");
+        for b in blobs {
+            copy(b, &dir.join(b.file_name().expect("a blob has a file name")));
+        }
     }
 }
 

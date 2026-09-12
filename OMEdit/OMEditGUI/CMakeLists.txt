@@ -135,23 +135,82 @@ elseif(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MSVC AND CMAKE_CROSSCOMPILING)
     endif()
   endforeach()
 
-  # QML modules, loaded at runtime by Quick3D and WebEngine; the tree is small.
-  if(EXISTS "${_qt_root}/qml")
+  # QML modules, from qmlimportscanner over wasm/qml/AnimImports.qml (the
+  # animation scene is built from C++ and has no scannable imports of its own).
+  # Installed per module and non-recursively -- the scan names every nested module
+  # it needs, and the rest is three quarters of the 37 MB qml/ tree.
+  find_program(OM_QMLIMPORTSCANNER_EXECUTABLE qmlimportscanner
+               HINTS "${QT_HOST_PATH}/libexec" "${QT_HOST_PATH}/bin"
+                     "$ENV{QT_HOST_PATH}/libexec" "$ENV{QT_HOST_PATH}/bin"
+                     "${_qt_root}/libexec" "${_qt_root}/bin")
+  if(EXISTS "${_qt_root}/qml" AND OM_QMLIMPORTSCANNER_EXECUTABLE)
+    execute_process(
+      COMMAND "${OM_QMLIMPORTSCANNER_EXECUTABLE}"
+              -rootPath "${CMAKE_CURRENT_SOURCE_DIR}/wasm/qml"
+              -importPath "${_qt_root}/qml"
+      OUTPUT_VARIABLE _om_qml_scan OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE _om_qml_scan_err RESULT_VARIABLE _om_qml_scan_rc)
+    if(NOT _om_qml_scan_rc EQUAL 0)
+      message(FATAL_ERROR "qmlimportscanner failed:\n${_om_qml_scan_err}")
+    endif()
+    set(_om_qml_modules "")
+    string(JSON _om_qml_count LENGTH "${_om_qml_scan}")
+    if(_om_qml_count GREATER 0)
+      math(EXPR _om_qml_last "${_om_qml_count} - 1")
+      foreach(_i RANGE ${_om_qml_last})
+        string(JSON _rp ERROR_VARIABLE _e GET "${_om_qml_scan}" ${_i} relativePath)
+        if(_e STREQUAL "NOTFOUND")
+          list(APPEND _om_qml_modules "${_rp}")
+        endif()
+      endforeach()
+    endif()
+    list(REMOVE_DUPLICATES _om_qml_modules)
+    foreach(_m IN LISTS _om_qml_modules)
+      file(GLOB _om_qml_files LIST_DIRECTORIES false "${_qt_root}/qml/${_m}/*")
+      set(_om_qml_keep "")
+      foreach(_f IN LISTS _om_qml_files)
+        # Qt ships each plugin's debug build beside the release one.
+        string(REGEX REPLACE "d\\.dll$" ".dll" _release_name "${_f}")
+        if(NOT _release_name STREQUAL _f AND EXISTS "${_release_name}")
+          continue()
+        endif()
+        list(APPEND _om_qml_keep "${_f}")
+      endforeach()
+      if(_om_qml_keep)
+        install(FILES ${_om_qml_keep}
+                DESTINATION "${CMAKE_INSTALL_BINDIR}/qml/${_m}")
+      endif()
+    endforeach()
+  elseif(EXISTS "${_qt_root}/qml")
+    message(WARNING "No qmlimportscanner (set QT_HOST_PATH): shipping the whole qml/ tree.")
     install(DIRECTORY "${_qt_root}/qml/" DESTINATION "${CMAKE_INSTALL_BINDIR}/qml")
   endif()
 
   # Chromium's runtime assets, under bin/ where OMEditApplication points
-  # QTWEBENGINE_RESOURCES_PATH and QTWEBENGINE_LOCALES_PATH.
+  # QTWEBENGINE_RESOURCES_PATH and QTWEBENGINE_LOCALES_PATH. Minus the 11 MB
+  # DevTools pak, and only the locales OMEdit itself is translated to (830 kB each).
   if(DEFINED _qtx_root)
     if(EXISTS "${_qtx_root}/resources")
       install(DIRECTORY "${_qtx_root}/resources/"
               DESTINATION "${CMAKE_INSTALL_BINDIR}/resources"
-              REGEX "\\.debug\\." EXCLUDE)
+              REGEX "\\.debug\\." EXCLUDE
+              PATTERN "qtwebengine_devtools_resources.pak" EXCLUDE)
     endif()
-    if(EXISTS "${_qtx_root}/translations/qtwebengine_locales")
-      install(DIRECTORY "${_qtx_root}/translations/qtwebengine_locales"
-              DESTINATION "${CMAKE_INSTALL_BINDIR}/translations")
-    endif()
+    set(_om_webengine_locales en-US)
+    file(GLOB _om_nls "${CMAKE_CURRENT_SOURCE_DIR}/../OMEditLIB/Resources/nls/OMEdit_*.qm")
+    foreach(_qm IN LISTS _om_nls)
+      get_filename_component(_qm "${_qm}" NAME_WE)
+      string(REPLACE "OMEdit_" "" _qm "${_qm}")
+      string(REPLACE "_" "-" _qm "${_qm}")
+      list(APPEND _om_webengine_locales "${_qm}")
+    endforeach()
+    foreach(_loc IN LISTS _om_webengine_locales)
+      set(_pak "${_qtx_root}/translations/qtwebengine_locales/${_loc}.pak")
+      if(EXISTS "${_pak}")
+        install(FILES "${_pak}"
+                DESTINATION "${CMAKE_INSTALL_BINDIR}/translations/qtwebengine_locales")
+      endif()
+    endforeach()
   endif()
 
   install(CODE "file(WRITE \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/qt.conf\" \"[Paths]\\nPrefix = .\\nPlugins = .\\nQml = qml\\n\")")

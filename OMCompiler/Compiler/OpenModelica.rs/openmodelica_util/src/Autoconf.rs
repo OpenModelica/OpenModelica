@@ -262,22 +262,23 @@ pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
     "unknown"
 };
 
-/// `-$host_os` for the compilation target (Unix only; Windows uses "").
-const os_triple_suffix: &str = if cfg!(target_os = "macos") {
-    "-apple-darwin"
+/// `-$host_os` for the compilation target.
+const os_triple_suffix: &str = if cfg!(all(windows, target_env = "gnu")) {
+    "-windows-gnu"
+} else if cfg!(windows) {
+    "-windows-msvc"
 } else if cfg!(all(target_os = "linux", target_env = "musl")) {
     "-linux-musl"
 } else {
     "-linux-gnu"
 };
 
-/// `@host_short@` = `$host_cpu-$host_os`: the multiarch-style directory
-/// component under `lib/` where the omc runtime libraries are installed
-/// (e.g. `/usr/lib/x86_64-linux-gnu/omc`). It mirrors CMake's
-/// `CMAKE_LIBRARY_ARCHITECTURE`, which is a GNU multiarch notion and empty on
-/// Windows and on macOS -- both install straight into `lib/omc`.
-pub const triple: &str = if cfg!(any(windows, target_vendor = "apple")) {
-    ""
+/// `@host_short@`: the directory under `lib/` holding what omc installs for one
+/// target, e.g. `/usr/lib/x86_64-linux-gnu/omc`. Must match `OM_LIBRARY_ARCH` in
+/// the top-level CMakeLists.txt. macOS is `universal` rather than the CPU: the
+/// shipped tree is lipo'd from both architectures into one shelf.
+pub const triple: &str = if cfg!(target_vendor = "apple") {
+    "universal-apple-darwin"
 } else {
     const_str::concat!(target_arch_str, os_triple_suffix)
 };

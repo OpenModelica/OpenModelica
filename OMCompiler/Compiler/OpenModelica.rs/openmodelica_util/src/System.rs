@@ -396,10 +396,25 @@ const DEFAULT_LINKER: &str = if cfg!(windows) {
 // DEFAULT_CFLAGS = "-DOM_HAVE_PTHREADS @RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
 // on Unix; the MinGW section adds -mstackrealign and drops -fPIC (meaningless
 // on Windows, gcc ignores it / clang warns).
+/// x86-only tuning for the generated simulation code. Passing it anywhere else
+/// fails the build: clang answers `-mfpmath=sse` with "unknown FP unit 'sse'",
+/// which is every C-target simulation on Apple Silicon and on aarch64 Linux.
+const X86_CFLAGS: &str = if cfg!(target_arch = "x86_64") { " -mfpmath=sse" } else { "" };
+const X86_CFLAGS_WINDOWS: &str =
+    if cfg!(target_arch = "x86_64") { " -mstackrealign -msse2 -mfpmath=sse" } else { "" };
+
 const DEFAULT_CFLAGS: &str = if cfg!(windows) {
-    "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+    const_str::concat!(
+        "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions",
+        X86_CFLAGS_WINDOWS,
+        " ${MODELICAUSERCFLAGS}"
+    )
 } else {
-    "-DOM_HAVE_PTHREADS -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -Wno-parentheses-equality ${MODELICAUSERCFLAGS}"
+    const_str::concat!(
+        "-DOM_HAVE_PTHREADS -fPIC -falign-functions",
+        X86_CFLAGS,
+        " -fno-dollars-in-identifiers -Wno-parentheses-equality ${MODELICAUSERCFLAGS}"
+    )
 };
 const DEFAULT_LDFLAGS: &str = if cfg!(windows) {
     "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"

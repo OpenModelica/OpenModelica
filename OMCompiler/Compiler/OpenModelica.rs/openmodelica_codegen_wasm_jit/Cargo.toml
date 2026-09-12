@@ -9,8 +9,6 @@ openmodelica_wasi.workspace = true
 openmodelica_modelica_utilities.workspace = true
 # Host-side wasm execution engine (drivers, sim runtime, model, wasm artifacts).
 openmodelica_wasm_jit.workspace = true
-# External-"C" wasm-FMU artifacts, consumed by the FMU linker.
-openmodelica_wasi_libc.workspace = true
 openmodelica_mat_writer.workspace = true
 openmodelica_plt_writer.workspace = true
 # `-iif=<file>`: C's `importStartValues` reads the initialization file with the
