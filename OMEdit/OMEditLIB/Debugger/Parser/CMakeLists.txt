@@ -18,6 +18,11 @@ add_custom_command(
 ## This generated C files include Parser/GDBMIParser.h. Which is a C++ header. Therefore we need to
 ## compile them as C++ files.
 ## antlr3 did not get a C++ support until 3.4. We are using antlr 3.2
+## CMP0119 makes CMake pass `-x c++`, which `zig c++` needs: it infers the
+## language from the .c extension, where clang++ and clang-cl force C++.
+if(POLICY CMP0119)
+  cmake_policy(SET CMP0119 NEW)
+endif()
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/GDBMIOutputLexer.c PROPERTIES LANGUAGE CXX)
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/GDBMIOutputParser.c PROPERTIES LANGUAGE CXX)
 

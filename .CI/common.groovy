@@ -764,6 +764,10 @@ Map nightlyTarget(String name) {
   List noFortran = ['-DOM_OMC_ENABLE_FORTRAN=OFF',
                     '-DOM_OMC_ENABLE_MOO=OFF',
                     '-DOM_OMC_ENABLE_OPTIMIZATION=OFF']
+  // Qt's one macOS desktop kit is universal, so both targets share it.
+  List qtMac = ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/macos',
+                '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64',
+                '-DOM_OMEDIT_ANIMATION_QUICK3D=ON']
   Map all = [
     'win64': [
       triple: 'x86_64-pc-windows-msvc',
@@ -786,7 +790,7 @@ Map nightlyTarget(String name) {
       configure: noFortran + ['-DDARWIN_ARCH=x86_64',
                               "-DDARWIN_SDK=${fmuMacosSdk()}",
                               '-DOM_OMC_ENABLE_COLPACK=OFF'],
-      qt: [],
+      qt: qtMac,
       // `zig cc` reaches the compiler through a generated shell wrapper, which
       // sccache does not recognise as a compiler.
       sccache: false,
@@ -798,7 +802,7 @@ Map nightlyTarget(String name) {
       configure: noFortran + ['-DDARWIN_ARCH=arm64',
                               "-DDARWIN_SDK=${fmuMacosSdk()}",
                               '-DOM_OMC_ENABLE_COLPACK=OFF'],
-      qt: [],
+      qt: qtMac,
       sccache: false,
       cdylib: 'libOpenModelicaCompiler.dylib',
     ],
