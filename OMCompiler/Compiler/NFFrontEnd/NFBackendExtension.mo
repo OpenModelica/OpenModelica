@@ -1557,7 +1557,7 @@ public
     algorithm
       name := match exp
         case Expression.ENUM_LITERAL() then exp.name;
-        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+        case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
         case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
           guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")

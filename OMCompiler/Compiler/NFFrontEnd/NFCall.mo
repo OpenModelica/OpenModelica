@@ -2625,10 +2625,10 @@ protected
       // If the range is a cref, use it as the iterator type to allow lookup in
       // the iterator.
       ty := match range
-        case Expression.CREF(cref = ComponentRef.CREF(node = range_node))
-          guard InstNode.isComponent(range_node)
-          then Type.COMPLEX(InstNode.identityCell(
-          Component.classInstance(InstNode.component(range_node))), ComplexType.CLASS());
+        case Expression.CREF(cref = ComponentRef.CREF())
+          guard InstNode.isComponent(ComponentRef.node(range.cref))
+          then Type.COMPLEX(InstNode.identityCell(Component.classInstance(
+          InstNode.component(ComponentRef.node(range.cref)))), ComplexType.CLASS());
         else Type.UNKNOWN();
       end match;
 
@@ -2931,8 +2931,9 @@ protected
     ErrorExt.setCheckpoint("NFCall:checkMatchingFunctions");
 
     matchedFunctions := match call
-      case ARG_TYPED_CALL(ref = ComponentRef.CREF(node = fn_node))
+      case ARG_TYPED_CALL(ref = ComponentRef.CREF())
         algorithm
+          fn_node := ComponentRef.node(call.ref);
           allfuncs := Function.getCachedFuncs(fn_node);
 
           if listLength(allfuncs) > 1 then

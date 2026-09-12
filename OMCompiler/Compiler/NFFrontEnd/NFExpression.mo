@@ -2031,9 +2031,9 @@ public
         list<String> fields;
 
       // Cref is simple identifier, i
-      case CREF(cref = ComponentRef.CREF(node = node))
+      case CREF(cref = ComponentRef.CREF())
         guard ComponentRef.isSimple(exp.cref)
-        then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
+        then if InstNode.refEqual(iterator, ComponentRef.node(exp.cref)) then iteratorValue else exp;
 
       // Cref is qualified identifier, i.x
       case CREF(cref = ComponentRef.CREF())
@@ -2560,7 +2560,10 @@ public
         Operator.SizeClassification sizeClass;
 
       // replace variables with their nominal values
-      case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
+      case CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref))
+      algorithm
+        InstNode.VAR_NODE(varPointer = varPointer) := ComponentRef.node(exp.cref);
         nominal := Variable.getNominal(Pointer.access(PointerWeak.upgrade(varPointer)));
       then Util.getOptionOrDefault(nominal, exp);
 
@@ -6995,8 +6998,10 @@ public
         Integer v;
 
       // backend replacement
-      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
-      then match Pointer.access(PointerWeak.upgrade(var))
+      case Expression.CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref)) and ComponentRef.isResizable(exp.cref)
+      then match Pointer.access(PointerWeak.upgrade(
+          InstNode.varPointer(ComponentRef.node(exp.cref))))
           // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);

@@ -872,14 +872,15 @@ public
           // record field names need to be kept to keep them consistent with the
           // record constructors.
           if not insideRecord then
-            name := UnorderedMap.get(cref.node, obfuscationMap);
+            name := UnorderedMap.get(ComponentRef.node(cref), obfuscationMap);
 
             if isSome(name) then
-              cref.node := InstNode.rename(Util.getOption(name), cref.node);
+              cref.node := InstNode.handle(InstNode.reidentify(
+                InstNode.rename(Util.getOption(name), ComponentRef.node(cref))));
             end if;
           end if;
 
-          insideRecord := InstNode.isRecord(cref.node);
+          insideRecord := InstNode.isRecord(ComponentRef.node(cref));
 
           cref.subscripts := list(Subscript.mapShallowExp(s,
             function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);

@@ -2509,9 +2509,10 @@ public
     cref := ComponentRef.fromNode(node, InstNode.getType(node));
       diff_cref := UnorderedMap.getSafe(cref, diff_map, sourceInfo());
       diff_cref := match diff_cref
-        case ComponentRef.CREF(node = d_node as InstNode.COMPONENT_NODE()) algorithm
+        case ComponentRef.CREF() guard InstNode.isComponent(ComponentRef.node(diff_cref)) algorithm
+          d_node := ComponentRef.node(diff_cref);
           // differentiate bindings
-          comp := Pointer.access(d_node.component);
+          comp := InstNode.component(d_node);
           comp := match comp
             case comp as Component.COMPONENT() algorithm
               (binding, diffArgs) := differentiateBinding(comp.binding, diffArgs);
@@ -2519,8 +2520,9 @@ public
             then comp;
             else comp;
           end match;
-          d_node.component := Pointer.create(comp);
-          diff_cref.node := d_node;
+          d_node := InstNode.replaceComponent(comp, d_node);
+          // an update of this node, not a copy: the snapshot must be replaced
+          diff_cref.node := InstNode.republish(d_node);
         then diff_cref;
         else diff_cref;
       end match;

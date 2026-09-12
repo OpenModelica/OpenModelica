@@ -1666,7 +1666,8 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), PointerWeak.downgrade(var));
+          qual.node := InstNode.handle(InstNode.VAR_NODE(
+            InstNode.name(ComponentRef.node(qual)), PointerWeak.downgrade(var)));
       then qual;
 
       else cref;
@@ -1904,8 +1905,8 @@ public
     input UnorderedSet<ComponentRef> set;
   algorithm
     () := match cref
-      case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
-      case ComponentRef.CREF(node = InstNode.NAME_NODE()) then ();
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) then ();
+      case ComponentRef.CREF() guard InstNode.isName(ComponentRef.node(cref)) then ();
       case ComponentRef.CREF() algorithm
         UnorderedSet.add(cref, set);
       then ();

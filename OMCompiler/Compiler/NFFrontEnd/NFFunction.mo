@@ -1617,7 +1617,7 @@ uniontype Function
     output list<Function> functions;
   algorithm
     functions := match functionRef
-      case ComponentRef.CREF() then typeNodeCache(functionRef.node, context);
+      case ComponentRef.CREF() then typeNodeCache(ComponentRef.node(functionRef), context);
       else
         algorithm
           Error.terminate(getInstanceName() + " got invalid function call reference", sourceInfo());

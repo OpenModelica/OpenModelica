@@ -356,12 +356,12 @@ function getOutputExp
 algorithm
   exp := match stmt
     local
-      InstNode cr_node;
-      ComponentRef rest_cr;
+      ComponentRef cr, rest_cr;
 
     case Statement.ASSIGNMENT(lhs = Expression.CREF(
-        cref = ComponentRef.CREF(node = cr_node, subscripts = {}, restCref = rest_cr)))
-      guard InstNode.refEqual(outputNode, cr_node) and not ComponentRef.isFromCref(rest_cr)
+        cref = cr as ComponentRef.CREF(subscripts = {}, restCref = rest_cr)))
+      guard InstNode.refEqual(outputNode, ComponentRef.node(cr)) and
+            not ComponentRef.isFromCref(rest_cr)
       then stmt.rhs;
 
     else Expression.CALL(call);

@@ -216,7 +216,7 @@ algorithm
   source := match cref
     case ComponentRef.CREF()
       algorithm
-        source := addComponentLevelTypeToSource(InstNode.parent(cref.node), source);
+        source := addComponentLevelTypeToSource(InstNode.parent(ComponentRef.node(cref)), source);
       then
         addComponentTypeToSource(cref.restCref, source);
 
@@ -581,7 +581,7 @@ protected
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+    case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
     else
       algorithm
         Error.terminate(getInstanceName() +
@@ -1287,7 +1287,7 @@ algorithm
 
     case Expression.CREF(cref = cref as ComponentRef.CREF())
       algorithm
-        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(cref.node)));
+        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(ComponentRef.node(cref))));
       then
         DAE.ExtArg.EXTARG(ComponentRef.toDAE(cref), dir, Type.toDAE(exp.ty));
 
@@ -1309,7 +1309,7 @@ algorithm
 
     case ComponentRef.CREF()
       algorithm
-        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(cref.node)));
+        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(ComponentRef.node(cref))));
       then
         DAE.ExtArg.EXTARG(ComponentRef.toDAE(cref), dir, Type.toDAE(cref.ty));
 

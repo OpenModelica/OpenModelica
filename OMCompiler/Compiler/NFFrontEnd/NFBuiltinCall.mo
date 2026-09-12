@@ -657,6 +657,7 @@ protected
     list<TypedArg> args;
     TypedArg arg;
     InstNode fn_node;
+    ComponentRef fn_ref;
   algorithm
     // edge may not be used in a function context.
     if InstContext.inFunction(context) then
@@ -664,7 +665,8 @@ protected
       fail();
     end if;
 
-    argtycall as Call.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := Call.typeNormalCall(call, context, info);
+    argtycall as Call.ARG_TYPED_CALL(fn_ref as ComponentRef.CREF(), args, _) := Call.typeNormalCall(call, context, info);
+    fn_node := ComponentRef.node(fn_ref);
     argtycall := Call.matchTypedNormalCall(argtycall, context, info);
     ty := Call.typeOf(argtycall);
     purity := Call.purity(argtycall);
@@ -1767,9 +1769,10 @@ protected
         algorithm
           (valid_cref, isConnector) := match arg.cref
             // check form A.R
-            case ComponentRef.CREF(node = node, origin = NFComponentRef.Origin.CREF,
+            case ComponentRef.CREF(origin = NFComponentRef.Origin.CREF,
                 restCref = ComponentRef.CREF(ty = ty2, origin = NFComponentRef.Origin.CREF))
               algorithm
+                node := ComponentRef.node(arg.cref);
                 ty2 := match ty2
                   case Type.ARRAY()
                     guard listLength(ComponentRef.subscriptsAllFlat(arg.cref)) == listLength(ty2.dimensions)
@@ -1779,8 +1782,9 @@ protected
               then (Class.isOverdetermined(InstNode.getClass(node)), Type.isConnector(ty2));
 
             // adrpo #5821, allow for R only instead of A.R and issue a warning
-            case ComponentRef.CREF(node = node, ty = ty2)
+            case ComponentRef.CREF(ty = ty2)
               algorithm
+                node := ComponentRef.node(arg.cref);
                 ty2 := match ty2
                   case Type.ARRAY()
                     guard listLength(ComponentRef.subscriptsAllFlat(arg.cref)) == listLength(ty2.dimensions)

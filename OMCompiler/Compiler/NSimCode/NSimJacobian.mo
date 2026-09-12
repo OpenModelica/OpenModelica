@@ -789,12 +789,12 @@ public
         Type node_ty;
         ComponentRef rest;
         list<tuple<Integer, Integer>> rest_pairs, node_pairs;
-      case ComponentRef.CREF(node = _, subscripts = subs, restCref = rest)
+      case ComponentRef.CREF(subscripts = subs, restCref = rest)
         algorithm
           rest_pairs := crefSubDimPairsLeafToRoot(rest);
           // Use the node's own declared type (before applying these subscripts)
           // so record-valued fields also expose their array dimensions.
-          node_ty := InstNode.getType(cref.node);
+          node_ty := InstNode.getType(ComponentRef.node(cref));
           // Collect this node's pairs outer-first, then reverse to get inner-first.
           // Append rest_pairs (which are from the outer/restCref direction) after.
           node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, Type.arrayDims(node_ty)));

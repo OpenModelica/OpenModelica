@@ -357,8 +357,8 @@ protected
   ComponentRef rest;
 algorithm
     b := match cref
-      case ComponentRef.CREF(node = node, origin = NFComponentRef.Origin.CREF, restCref = rest)
-        then Class.isOverdetermined(InstNode.getClass(node)) or isOverconstrainedCref(rest);
+      case ComponentRef.CREF(origin = NFComponentRef.Origin.CREF, restCref = rest)
+        then Class.isOverdetermined(InstNode.getClass(ComponentRef.node(cref))) or isOverconstrainedCref(rest);
       else false;
     end match;
 end isOverconstrainedCref;
@@ -371,9 +371,9 @@ protected
   ComponentRef rest;
 algorithm
     c := match cref
-      case ComponentRef.CREF(node = node, origin = NFComponentRef.Origin.CREF, restCref = rest)
+      case ComponentRef.CREF(origin = NFComponentRef.Origin.CREF, restCref = rest)
         then
-          if Class.isOverdetermined(InstNode.getClass(node)) then cref else getOverconstrainedCref(rest);
+          if Class.isOverdetermined(InstNode.getClass(ComponentRef.node(cref))) then cref else getOverconstrainedCref(rest);
     end match;
 end getOverconstrainedCref;
 

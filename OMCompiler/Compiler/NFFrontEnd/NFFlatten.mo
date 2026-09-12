@@ -2614,7 +2614,7 @@ algorithm
         while UnorderedMap.contains(tlio_var.name, variables) loop
           tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
           tlio_var.name := match cref case ComponentRef.CREF() then
-            ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+            ComponentRef.CREF(InstNode.handle(tlio_node), cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
           end match;
           name := name + "_" "append underscore until name is unique";
         end while;

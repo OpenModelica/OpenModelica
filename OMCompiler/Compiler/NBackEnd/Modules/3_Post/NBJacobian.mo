@@ -1813,7 +1813,7 @@ protected
     newNode := InstNode.VAR_NODE(
       ComponentRef.firstName(baseCref) + "_" + intString(idx),
       PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
-    ssaCref := ComponentRef.CREF(newNode, {}, ty,
+    ssaCref := ComponentRef.CREF(InstNode.handle(newNode), {}, ty,
       NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
 
     // Clear any inherited partner pointers (pDer, seed) so that a fresh pDer

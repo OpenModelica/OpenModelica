@@ -122,7 +122,7 @@ end TypingError;
 
 // Used by typeDimension for catching cyclic dimension involving :
 constant Expression WHOLEDIM_CREF = Expression.CREF(Type.UNKNOWN(),
-  ComponentRef.CREF(InstNode.NAME_NODE(":"), {}, Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY()));
+  ComponentRef.CREF(NFInstNode.NodeHandle.VALUE(InstNode.NAME_NODE(":")), {}, Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY()));
 
 public
 function typeClass
@@ -1872,9 +1872,10 @@ algorithm
 
   for cr in crl loop
     () := match cr
-      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = _)
+      case ComponentRef.CREF(subscripts = _)
+          guard InstNode.isComponent(ComponentRef.node(cr))
         algorithm
-          node := InstNode.resolveOuter(cr.node);
+          node := InstNode.resolveOuter(ComponentRef.node(cr));
           c := InstNode.component(node);
 
           // If the component is untyped it might have an array type whose dimensions
@@ -2029,6 +2030,8 @@ function typeCref2
         output Variability subsVariability;
 
   import NFComponentRef.Origin;
+protected
+  InstNode cr_node;
 algorithm
   (cref, subsVariability) := match cref
     local
@@ -2040,17 +2043,18 @@ algorithm
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
-        cref.ty := InstNode.getType(cref.node);
+        cref.ty := InstNode.getType(ComponentRef.node(cref));
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
         (cref, Variability.CONSTANT);
 
-    case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
+    case ComponentRef.CREF() guard InstNode.isComponent(ComponentRef.node(cref))
       algorithm
+        cr_node := ComponentRef.node(cref);
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_ty := typeComponent(cref.node, InstContext.nodeContext(cref.node, context), typeChildren = firstPart or not InstContext.inDimension(context));
+        node_ty := typeComponent(cr_node, InstContext.nodeContext(cr_node, context), typeChildren = firstPart or not InstContext.inDimension(context));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, Expression.CREF(node_ty, cref), context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
@@ -2058,22 +2062,23 @@ algorithm
       then
         (ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr), subsVariability);
 
-    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
-      guard firstPart and InstNode.isFunction(cref.node)
+    case ComponentRef.CREF()
+      guard InstNode.isClass(ComponentRef.node(cref)) and firstPart and
+            InstNode.isFunction(ComponentRef.node(cref))
       algorithm
-        fn :: _ := Function.typeNodeCache(cref.node);
+        fn :: _ := Function.typeNodeCache(ComponentRef.node(cref));
         cref.ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTION_REFERENCE);
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
         (cref, Variability.CONSTANT);
 
-    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
+    case ComponentRef.CREF() guard InstNode.isClass(ComponentRef.node(cref))
       algorithm
-        cref.ty := InstNode.getType(cref.node);
+        cref.ty := InstNode.getType(ComponentRef.node(cref));
       then
         (cref, Variability.CONSTANT);
 
-    case ComponentRef.CREF(node = InstNode.NAME_NODE())
+    case ComponentRef.CREF() guard InstNode.isName(ComponentRef.node(cref))
       algorithm
         (_, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
           Expression.CREF(cref.ty, cref), context, info, checkSubscripts = false);
@@ -3173,7 +3178,7 @@ algorithm
   () := match connExp
     case Expression.CREF(cref = cr as ComponentRef.CREF(origin = Origin.CREF))
       algorithm
-        if not InstNode.isConnector(cr.node) then
+        if not InstNode.isConnector(ComponentRef.node(cr)) then
           Error.addSourceMessageAndFail(Error.INVALID_CONNECTOR_TYPE,
             {ComponentRef.toString(cr)}, info);
         end if;
@@ -3219,7 +3224,7 @@ algorithm
     // non-connector is the very last part.
     case ComponentRef.CREF(origin = Origin.CREF)
       then if isConnector then
-        checkConnectorForm(cref.restCref, InstNode.isConnector(cref.node)) else false;
+        checkConnectorForm(cref.restCref, InstNode.isConnector(ComponentRef.node(cref))) else false;
 
     else true;
   end match;

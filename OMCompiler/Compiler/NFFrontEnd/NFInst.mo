@@ -2557,15 +2557,18 @@ algorithm
       Component comp;
       Attributes attr;
 
-    case Expression.CREF(cref = ComponentRef.CREF(node = node as InstNode.COMPONENT_NODE()))
-      guard(Component.variability(Pointer.access(node.component)) == Variability.PARAMETER) algorithm
-        comp := Pointer.access(node.component);
+    case Expression.CREF(cref = ComponentRef.CREF())
+      guard InstNode.isComponent(ComponentRef.node(exp.cref)) and
+            Component.variability(InstNode.component(ComponentRef.node(exp.cref))) == Variability.PARAMETER
+      algorithm
+        node := ComponentRef.node(exp.cref);
+        comp := InstNode.component(node);
         () :=match comp
           case Component.COMPONENT(attributes = attr) algorithm
             attr.variability := Variability.NON_STRUCTURAL_PARAMETER;
             attr.isResizable := true;
             comp.attributes := attr;
-            Pointer.update(node.component, comp);
+            InstNode.updateComponent(comp, node);
           then ();
           else ();
         end match;
@@ -3067,14 +3070,14 @@ algorithm
   crefExp := match cref
     case ComponentRef.CREF()
       then
-        match cref.node
+        match ComponentRef.node(cref)
           case InstNode.COMPONENT_NODE()
-            then instCrefComponent(cref, cref.node, found_scope, info);
+            then instCrefComponent(cref, ComponentRef.node(cref), found_scope, info);
           case InstNode.CLASS_NODE()
-            then if Class.isFunction(InstNode.getClass(cref.node)) then
+            then if Class.isFunction(InstNode.getClass(ComponentRef.node(cref))) then
                    instCrefFunction(cref, found_scope, context, info)
                  else
-                   instCrefTypename(cref, cref.node, info);
+                   instCrefTypename(cref, ComponentRef.node(cref), info);
           else
             algorithm
               Error.terminate(getInstanceName() + " got invalid instance node", sourceInfo());
@@ -4263,8 +4266,10 @@ algorithm
       InstNode node;
       Component comp;
 
-    case Expression.CREF(cref = ComponentRef.CREF(node = node))
+    case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
+        node := ComponentRef.node(exp.cref);
+
         if InstNode.isComponent(node) then
           comp := InstNode.component(node);
 

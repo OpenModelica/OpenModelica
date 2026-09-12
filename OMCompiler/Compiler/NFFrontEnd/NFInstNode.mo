@@ -559,6 +559,24 @@ uniontype InstNode
     end match;
   end isRef;
 
+  function isVar
+    "True for a backend VAR_NODE, which names a variable by pointer."
+    input InstNode node;
+    output Boolean isVar;
+  algorithm
+    isVar := match node
+      case VAR_NODE() then true;
+      else false;
+    end match;
+  end isVar;
+
+  function varPointer
+    input InstNode node;
+    output PointerWeak<Variable> varPointer;
+  algorithm
+    VAR_NODE(varPointer = varPointer) := node;
+  end varPointer;
+
   function isEmpty
     input InstNode node;
     output Boolean isEmpty;
@@ -856,6 +874,30 @@ uniontype InstNode
       else NodeHandle.VALUE(node);
     end match;
   end handle;
+
+  function republish
+    "A weak handle that *replaces* the published snapshot. For an update of the
+     same entity, where `handle`'s publish-once would hand back the node as it
+     was before the update. A copy needs `reidentify`, not this."
+    input InstNode node;
+    output NodeHandle hnd;
+  algorithm
+    hnd := match node
+      local Mutable<InstNode> cell;
+
+      case CLASS_NODE(owner = SOME(cell))
+        algorithm
+          Mutable.update(cell, disown(node));
+        then fromIdentity(node.identity, node);
+
+      case COMPONENT_NODE(owner = SOME(cell))
+        algorithm
+          Mutable.update(cell, disown(node));
+        then fromIdentity(node.identity, node);
+
+      else handle(node);
+    end match;
+  end republish;
 
   function fromIdentity
     input Option<MutableWeak<InstNode>> identity;

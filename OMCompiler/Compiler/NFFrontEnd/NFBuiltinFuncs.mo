@@ -158,7 +158,7 @@ constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("IntegerFunc",
   NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
 
 constant ComponentRef INTEGER_CREF =
-  ComponentRef.CREF(INTEGER_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+  ComponentRef.CREF(NFInstNode.NodeHandle.VALUE(INTEGER_NODE), {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
 
 constant InstNode STRING_DUMMY_NODE = NFInstNode.CLASS_NODE("String",
   DUMMY_ELEMENT, Visibility.PUBLIC, Pointer.createImmutable(Class.NOT_INSTANTIATED()),
@@ -244,7 +244,7 @@ constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
 
 constant ComponentRef STRING_CREF =
-  ComponentRef.CREF(STRING_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+  ComponentRef.CREF(NFInstNode.NodeHandle.VALUE(STRING_NODE), {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
 
 // TODO: Sort these functions ...
 constant Function COS_REAL = Function.FUNCTION(Path.IDENT("cos"),
@@ -561,7 +561,7 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   NONE(), NONE(), NONE(), InstNodeType.BUILTIN_CLASS());
 
 constant ComponentRef CLOCK_CREF =
-  ComponentRef.CREF(CLOCK_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+  ComponentRef.CREF(NFInstNode.NodeHandle.VALUE(CLOCK_NODE), {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
 
 constant Function GET_PART_REAL = Function.FUNCTION(Path.IDENT("$getPart"),
   NFInstNode.NodeHandle.VALUE(InstNode.EMPTY_NODE()), {REAL_PARAM}, {NFInstNode.NodeHandle.VALUE(REAL_PARAM)}, {}, NONE(), {},

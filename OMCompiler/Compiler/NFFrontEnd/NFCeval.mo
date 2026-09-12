@@ -343,10 +343,12 @@ protected
   InstNode c;
 algorithm
   exp := match cref
-    case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
-      guard not ComponentRef.isIterator(cref) and
+    case ComponentRef.CREF()
+      guard InstNode.isComponent(ComponentRef.node(cref)) and
+            not ComponentRef.isIterator(cref) and
             ComponentRef.nodeVariability(cref) <= Variability.NON_STRUCTURAL_PARAMETER
-      then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts, liftExp);
+      then evalComponentBinding(ComponentRef.node(cref), cref, defaultExp, target,
+                                evalSubscripts, liftExp);
 
     else defaultExp;
   end match;
@@ -773,7 +775,7 @@ algorithm
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
-    cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
+    cr := ComponentRef.CREF(InstNode.handle(c), {}, ty, NFComponentRef.Origin.CREF, cref);
     arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
