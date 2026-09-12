@@ -41,6 +41,7 @@ import Error;
 import Component = NFComponent;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+import MutableWeak;
 import Operator = NFOperator;
 import NFOperator.Op;
 import Typing = NFTyping;
@@ -662,7 +663,7 @@ function makeComponentBinding
   output Binding binding;
 protected
   Type ty;
-  InstNode rec_node;
+  Option<MutableWeak<InstNode>> rec_node;
   Expression exp;
 algorithm
   binding := matchcontinue component
@@ -677,7 +678,7 @@ algorithm
     // A record component without an explicit binding, create one from its children.
     case Component.COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))
       algorithm
-        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref, target);
+        exp := makeRecordBindingExp(component.classInst, InstNode.borrow(rec_node), component.ty, cref, target);
         binding := Binding.CEVAL_BINDING(exp);
 
         if not ComponentRef.hasSubscripts(cref) then
@@ -692,7 +693,7 @@ algorithm
       algorithm
         exp := Expression.mapCrefScalars(Expression.fromCref(cref),
           function makeRecordBindingExp(typeNode = component.classInst,
-            recordNode = rec_node, recordType = ty, target = target));
+            recordNode = InstNode.borrow(rec_node), recordType = ty, target = target));
 
         binding := Binding.CEVAL_BINDING(exp);
 

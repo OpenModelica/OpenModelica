@@ -44,6 +44,7 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFClassTree.ClassTree;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFModifier.Modifier;
 import NFSections.Sections;
 import NFStatement.Statement;
@@ -860,12 +861,14 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     Class cls;
     Type ty;
     InstNode ty_node;
+    Option<MutableWeak<InstNode>> ty_cell;
     list<Record.Field> fields;
     array<InstNode> comps;
     list<Expression> args;
   algorithm
     cls := InstNode.getClass(clsNode);
-    ty as Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = ty_node)) := getType(cls, clsNode);
+    ty as Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = ty_cell)) := getType(cls, clsNode);
+    ty_node := InstNode.borrow(ty_cell);
     comps := ClassTree.getComponents(classTree(cls));
 
     if typed then

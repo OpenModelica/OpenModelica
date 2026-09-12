@@ -19,6 +19,14 @@ impl<T: Clone> Clone for MutableWeak<T> {
     }
 }
 
+/// A dangling reference, for a record field that has not been assigned yet.
+/// Upgrading it fails the same way any dead referent does.
+impl<T: Clone> Default for MutableWeak<T> {
+    fn default() -> Self {
+        MutableWeak(Weak::new())
+    }
+}
+
 /// A reference that does not keep the cell alive. Never fails.
 pub fn downgrade<T: Clone>(mutable: Mutable<T>) -> MutableWeak<T> {
     MutableWeak(Arc::downgrade(&mutable.0))

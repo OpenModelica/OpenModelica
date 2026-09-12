@@ -130,6 +130,21 @@ uniontype InstNodeType
   end IMPLICIT_SCOPE;
 end InstNodeType;
 
+uniontype NodeHandle
+  "A stored reference to a node. `CELL` is the weak edge; `VALUE` is for a node
+   that has no identity cell -- the builtin constants, which are immutable
+   globals and so cannot be on a cycle, and which a constant's serialized form
+   in a .interface.mo can express while a weak reference cannot."
+
+  record CELL
+    MutableWeak<InstNode> cell;
+  end CELL;
+
+  record VALUE
+    InstNode node;
+  end VALUE;
+end NodeHandle;
+
 constant Integer NUMBER_OF_CACHES = 3;
 
 type PackageCacheState = enumeration(
@@ -808,6 +823,61 @@ uniontype InstNode
       else NONE();
     end match;
   end identityCell;
+
+  function handle
+    "A weak handle for an edge that is not a parent edge. Unlike `identityCell`
+     it publishes only into a cell nobody has published into yet: a non-parent
+     edge has no business replacing the snapshot the node's children see, and
+     overwriting it is how a copied node ends up answering for its original.
+     A node with no cell is kept by value, which is also the only form a
+     constant can take."
+    input InstNode node;
+    output NodeHandle hnd;
+  algorithm
+    hnd := match node
+      local Mutable<InstNode> cell;
+
+      case CLASS_NODE(owner = SOME(cell))
+        algorithm
+          if isEmpty(Mutable.access(cell)) then
+            Mutable.update(cell, disown(node));
+          end if;
+        then fromIdentity(node.identity, node);
+
+      case COMPONENT_NODE(owner = SOME(cell))
+        algorithm
+          if isEmpty(Mutable.access(cell)) then
+            Mutable.update(cell, disown(node));
+          end if;
+        then fromIdentity(node.identity, node);
+
+      case CLASS_NODE() then fromIdentity(node.identity, node);
+      case COMPONENT_NODE() then fromIdentity(node.identity, node);
+      else NodeHandle.VALUE(node);
+    end match;
+  end handle;
+
+  function fromIdentity
+    input Option<MutableWeak<InstNode>> identity;
+    input InstNode node;
+    output NodeHandle hnd;
+  algorithm
+    hnd := match identity
+      local MutableWeak<InstNode> w;
+      case SOME(w) then NodeHandle.CELL(w);
+      else NodeHandle.VALUE(node);
+    end match;
+  end fromIdentity;
+
+  function fromHandle
+    input NodeHandle hnd;
+    output InstNode node;
+  algorithm
+    node := match hnd
+      case NodeHandle.CELL() then borrow(SOME(hnd.cell));
+      case NodeHandle.VALUE() then hnd.node;
+    end match;
+  end fromHandle;
 
   function borrow
     "The node a cell holds, without taking ownership of it. For an edge that is

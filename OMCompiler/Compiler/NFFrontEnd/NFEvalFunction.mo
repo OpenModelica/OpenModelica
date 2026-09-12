@@ -46,6 +46,7 @@ import NFCeval.EvalTarget;
 import NFClassTree.ClassTree;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFInstNode.CachedData;
 import Record = NFRecord;
 import Sections = NFSections;
@@ -83,6 +84,13 @@ constant InstContext.Type STATEMENT_CONTEXT = intBitOr(NFInstContext.FUNCTION, N
 constant InstContext.Type IF_COND_CONTEXT = intBitOr(STATEMENT_CONTEXT, intBitOr(NFInstContext.IF, NFInstContext.CONDITION));
 
 public
+function outputNodes
+  "A function's output parameters as nodes; the mixed-parameter helpers below
+   take all three lists, so the outputs are materialised here."
+  input Function fn;
+  output list<InstNode> nodes = list(InstNode.fromHandle(o) for o in Function.outputHandles(fn));
+end outputNodes;
+
 function evaluate
   input Function fn;
   input list<Expression> args;
@@ -122,7 +130,7 @@ algorithm
   if call_count > limit then
     Pointer.update(call_counter, 0);
     Error.addSourceMessage(Error.EVAL_RECURSION_LIMIT_REACHED,
-      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(fn.node));
+      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(InstNode.fromHandle(fn.node)));
     fail();
   end if;
 
@@ -132,7 +140,7 @@ algorithm
 
   try
     fn_body := Function.getBody(fn);
-    arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
+    arg_map := createArgumentMap(fn.inputs, outputNodes(fn), fn.locals, args, mutableParams = true);
     // TODO: Also apply replacements to the replacements themselves, i.e. the
     //       bindings of the function parameters. But they probably need to be
     //       sorted by dependencies first.
@@ -141,7 +149,7 @@ algorithm
     ctrl := evaluateStatements(fn_body, body_context);
 
     if ctrl <> FlowControl.ASSERTION then
-      result := createResult(arg_map, fn.outputs);
+      result := createResult(arg_map, outputNodes(fn));
     else
       fail();
     end if;
@@ -174,7 +182,7 @@ protected
   list<Expression> ext_args;
 algorithm
   Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
-    Class.getSections(InstNode.getClass(fn.node));
+    Class.getSections(InstNode.getClass(InstNode.fromHandle(fn.node)));
 
   result := matchcontinue lang
     case "builtin"
@@ -271,7 +279,7 @@ algorithm
     // node to the map so we can replace calls to it with the correct function.
     if Expression.isFunctionPointer(arg) then
       for fn in Function.getCachedFuncs(i) loop
-        UnorderedMap.add(fn.node, arg, map);
+        UnorderedMap.add(InstNode.fromHandle(fn.node), arg, map);
       end for;
     end if;
   end for;
@@ -526,7 +534,7 @@ algorithm
   outExp := match call
     case Call.TYPED_CALL()
       algorithm
-        repl_oexp := UnorderedMap.get(call.fn.node, map);
+        repl_oexp := UnorderedMap.get(InstNode.fromHandle(call.fn.node), map);
 
         if isSome(repl_oexp) then
           SOME(repl_exp) := repl_oexp;
@@ -1160,10 +1168,10 @@ protected
   ArgumentMap map;
   list<Expression> ext_args;
 algorithm
-  map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
+  map := createArgumentMap(fn.inputs, outputNodes(fn), fn.locals, args, mutableParams = true);
   ext_args := list(Expression.map(e, function applyReplacements2(map = map)) for e in extArgs);
   evaluateExternal3(name, ext_args);
-  result := createResult(map, fn.outputs);
+  result := createResult(map, outputNodes(fn));
 end evaluateExternal2;
 
 function evaluateExternal3
@@ -1211,10 +1219,10 @@ protected
   list<Expression> output_vals;
   Integer fn_handle;
 algorithm
-  info := InstNode.info(fn.node);
+  info := InstNode.info(InstNode.fromHandle(fn.node));
   checkExtReturnValue(outputRef, info);
 
-  pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
+  pkg_name := InstNode.name(InstNode.libraryScope(InstNode.fromHandle(fn.node)));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
   try
@@ -1232,7 +1240,7 @@ algorithm
     result := res;
   else
     // Some output parameters, might require constructing a tuple.
-    result := makeExternalResult(res :: output_vals, outputRef, extArgs, fn.outputs);
+    result := makeExternalResult(res :: output_vals, outputRef, extArgs, outputNodes(fn));
   end if;
 end callExternalFunction;
 
@@ -1534,7 +1542,7 @@ protected
   list<Expression> input_args;
 algorithm
   input_args := list(makeExternalArg(arg) for arg in inputArgs);
-  arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, input_args,
+  arg_map := createArgumentMap(fn.inputs, outputNodes(fn), fn.locals, input_args,
     mutableParams = false, buildArrayBinding = false);
 
   args_len := listLength(extArgs);

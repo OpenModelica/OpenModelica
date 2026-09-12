@@ -37,6 +37,7 @@ encapsulated package NFOperatorOverloading
   import Absyn;
   import AbsynUtil;
   import NFInstNode.InstNode;
+  import MutableWeak;
   import NFFunction.Function;
   import Type = NFType;
 
@@ -190,7 +191,7 @@ public
       return;
     end if;
 
-    output_node := listHead(fn.outputs);
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
     output_comp := InstNode.component(output_node);
     output_binding := Component.getBinding(output_comp);
 
@@ -219,7 +220,7 @@ protected
       fail();
     end if;
 
-    output_node := listHead(fn.outputs);
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
     output_ty := InstNode.classScope(output_node);
     if not InstNode.isSame(output_ty, recordNode) then
       Error.addSourceMessage(Error.OPERATOR_OVERLOADING_INVALID_OUTPUT_TYPE,
@@ -240,7 +241,7 @@ protected
   algorithm
     outExp := match exp
       case Expression.CALL(call = Call.TYPED_CALL(fn = fn, ty = ty, arguments = args))
-        guard referenceEq(constructorFn.node, fn.node)
+        guard referenceEq(InstNode.fromHandle(constructorFn.node), InstNode.fromHandle(fn.node))
         then Expression.makeRecord(Function.name(constructorFn), ty, args);
 
       else exp;

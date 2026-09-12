@@ -56,6 +56,7 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import Class = NFClass;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import NFModifier.ModifierScope;
@@ -2603,7 +2604,7 @@ algorithm
 
         // A type must extend a basic type.
         if arrayLength(exts) == 1 then
-          ty := Type.COMPLEX(InstNode.identityCell(node), ComplexType.EXTENDS_TYPE(exts[1]));
+          ty := Type.COMPLEX(InstNode.identityCell(node), ComplexType.EXTENDS_TYPE(InstNode.identityCell(exts[1])));
         elseif SCodeUtil.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtinType") then
           ty := Type.COMPLEX(InstNode.identityCell(node), ComplexType.CLASS());
         else
@@ -2719,7 +2720,7 @@ protected
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  ty := ComplexType.RECORD(cls_node, listArray({}), indexMap);
+  ty := ComplexType.RECORD(InstNode.identityCell(cls_node), listArray({}), indexMap);
 end makeRecordComplexType;
 
 function instComplexType
@@ -2729,14 +2730,15 @@ algorithm
   () := match ty
     local
       InstNode node;
+      Option<MutableWeak<InstNode>> cell;
 
-    case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(cell))
       // Make sure it's really a record, and not e.g. a record inherited by a model.
       // TODO: This check should really be InstNode.isRecord(node), but that
       //       causes issues with e.g. ComplexInput/ComplexOutput.
-      guard not InstNode.isModel(node)
+      guard not InstNode.isModel(InstNode.borrow(cell))
       algorithm
-        instRecordConstructor(node, context);
+        instRecordConstructor(InstNode.borrow(cell), context);
       then
         ();
 
@@ -3622,7 +3624,7 @@ protected
 algorithm
   // collect inputs and outputs later when types are computed properly
   statements := instStatements(algorithmSection.statements, scope, context);
-  alg := Algorithm.ALGORITHM(statements, {}, {}, NONE(), scope, DAE.emptyElementSource);
+  alg := Algorithm.ALGORITHM(statements, {}, {}, NONE(), InstNode.identityCell(scope), DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

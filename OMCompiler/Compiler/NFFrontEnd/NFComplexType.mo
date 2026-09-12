@@ -35,6 +35,7 @@
 
 encapsulated uniontype NFComplexType
   import NFInstNode.InstNode;
+  import MutableWeak;
   import Record = NFRecord;
   import UnorderedMap;
 
@@ -49,7 +50,7 @@ public
        type SomeType
          extends Real;
        end SomeType;"
-    InstNode baseClass;
+    Option<MutableWeak<InstNode>> baseClass "Weakly: the class tree owns it.";
   end EXTENDS_TYPE;
 
   record CONNECTOR
@@ -64,12 +65,14 @@ public
   end EXPANDABLE_CONNECTOR;
 
   record RECORD
-    InstNode constructor;
+    Option<MutableWeak<InstNode>> constructor "Weakly: the class tree owns it.";
     array<Record.Field> fields;
     UnorderedMap<String, Integer> indexMap;
   end RECORD;
 
   record EXTERNAL_OBJECT
+    "Strong: a structor is stored here instead of in the class tree, so this
+     field is its only owner."
     InstNode constructor;
     InstNode destructor;
   end EXTERNAL_OBJECT;

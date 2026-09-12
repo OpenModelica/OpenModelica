@@ -61,6 +61,7 @@ protected
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
+  import MutableWeak;
   import NFModifier.Modifier;
   import Operator = NFOperator;
   import Statement = NFStatement;
@@ -427,7 +428,7 @@ protected
     fn := UnorderedMap.getOrFail(fn.path, replacements);
     // only single-output functions have a well defined result variable
     if listLength(fn.outputs) == 1 then
-      mergeNodeOntoArg(listHead(fn.outputs), cref_exp, variables, alias_map);
+      mergeNodeOntoArg(InstNode.fromHandle(listHead(fn.outputs)), cref_exp, variables, alias_map);
     end if;
   end propagateOutput;
 

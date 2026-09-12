@@ -65,6 +65,7 @@ protected
   import NFComponentRef.ComponentRef;
   import NFFunction.Function;
   import NFInstNode.InstNode;
+  import MutableWeak;
   import NFPrefixes.Visibility;
   import NFSubscript.Subscript;
   import Prefixes = NFPrefixes;
@@ -487,7 +488,7 @@ public
 
       case Type.FUNCTION(fnType = NFType.FunctionType.FUNCTIONAL_PARAMETER)
         algorithm
-          UnorderedMap.tryAdd(InstNode.scopePath(ty.fn.node), ty, types);
+          UnorderedMap.tryAdd(InstNode.scopePath(InstNode.fromHandle(ty.fn.node)), ty, types);
         then
           ();
 
@@ -697,7 +698,7 @@ public
     input Function fn;
     input TypeMap types;
   algorithm
-    ClassTree.applyComponents(Class.classTree(InstNode.getClass(fn.node)),
+    ClassTree.applyComponents(Class.classTree(InstNode.getClass(InstNode.fromHandle(fn.node))),
       function collectComponentFlatTypes(types = types));
 
     if not Function.isExternal(fn) then
@@ -932,11 +933,11 @@ public
     input output Algorithm alg;
     input ObfuscationMap obfuscationMap;
   algorithm
-    alg.source := obfuscateSource(alg.source, alg.scope, obfuscationMap);
+    alg.source := obfuscateSource(alg.source, InstNode.fromCell(alg.scope), obfuscationMap);
     alg.inputs := list(obfuscateCref(e, obfuscationMap) for e in alg.inputs);
     alg.outputs := list(obfuscateCref(e, obfuscationMap) for e in alg.outputs);
     alg.statements := list(Statement.map(s,
-      function obfuscateStatement(scope = alg.scope, obfuscationMap = obfuscationMap)) for s in alg.statements);
+      function obfuscateStatement(scope = InstNode.fromCell(alg.scope), obfuscationMap = obfuscationMap)) for s in alg.statements);
   end obfuscateAlgorithm;
 
   function obfuscateStatement

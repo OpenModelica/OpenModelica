@@ -42,6 +42,7 @@ import DAE;
 import Expression = NFExpression;
 import NFCallAttributes;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFPrefixes.{Variability, Purity};
 import Type = NFType;
 import Record = NFRecord;
@@ -621,8 +622,8 @@ public
     isConstructor := match call
       case UNTYPED_CALL()
         then SCodeUtil.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
-      case TYPED_CALL() guard(not InstNode.isEmpty(call.fn.node))
-        then SCodeUtil.isRecord(InstNode.definition(call.fn.node));
+      case TYPED_CALL() guard(not InstNode.isEmpty(InstNode.fromHandle(call.fn.node)))
+        then SCodeUtil.isRecord(InstNode.definition(InstNode.fromHandle(call.fn.node)));
       else false;
     end match;
   end isRecordConstructor;
@@ -3141,7 +3142,7 @@ protected
       case Type.COMPLEX()
         guard Type.isRecord(ty) and not Function.isNonDefaultRecordConstructor(fn)
         algorithm
-          binding := Component.getBinding(InstNode.component(listGet(fn.outputs, outputIndex)));
+          binding := Component.getBinding(InstNode.component(InstNode.fromHandle(listGet(fn.outputs, outputIndex))));
 
           if Binding.isBound(binding) then
             // If the output has a binding, replace inputs in it and update the type of the output.

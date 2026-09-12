@@ -149,6 +149,7 @@ protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
   InstNode con, de;
+  Option<MutableWeak<InstNode>> rec_con;
 algorithm
   () := match c
     case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
@@ -166,9 +167,9 @@ algorithm
         end if;
 
         () := match c.ty
-          case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+          case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_con))
             algorithm
-              typeStructor(con);
+              typeStructor(InstNode.borrow(rec_con));
             then
               ();
 
@@ -251,7 +252,8 @@ function typeClassType
   output Type ty;
 protected
   Class cls, ty_cls;
-  InstNode node, ty_node;
+  InstNode ty_node;
+  Option<MutableWeak<InstNode>> node;
   Type cls_ty;
   Function fn;
   Boolean is_expandable;
@@ -279,7 +281,7 @@ algorithm
     // A long class declaration of a type extending from a type has the type of the base class.
     case Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = ComplexType.EXTENDS_TYPE(node)))
       algorithm
-        ty := typeClassType(node, componentBinding, context, instanceNode);
+        ty := typeClassType(InstNode.borrow(node), componentBinding, context, instanceNode);
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -409,7 +411,7 @@ algorithm
 end checkConnectorTypeBalance;
 
 function makeRecordType
-  input InstNode constructor;
+  input Option<MutableWeak<InstNode>> constructor;
   output ComplexType recordTy;
 protected
   CachedData cache;
@@ -417,13 +419,13 @@ protected
   array<Record.Field> fields;
   UnorderedMap<String, Integer> indexMap;
 algorithm
-  cache := InstNode.getFuncCache(constructor);
+  cache := InstNode.getFuncCache(InstNode.borrow(constructor));
 
   recordTy := matchcontinue cache
     case CachedData.FUNCTION()
       algorithm
         fn := List.find(cache.funcs, Function.isDefaultRecordConstructor);
-        (fields, indexMap) := Record.collectRecordFields(fn.node);
+        (fields, indexMap) := Record.collectRecordFields(InstNode.fromHandle(fn.node));
       then
         ComplexType.RECORD(constructor, fields, indexMap);
 
@@ -2932,6 +2934,7 @@ algorithm
       Component comp;
       Type ty;
       InstNode node;
+      NFInstNode.NodeHandle out_cell;
       Expression exp;
 
     case Sections.EXTERNAL()
@@ -2958,13 +2961,14 @@ algorithm
         // If we have a single output, set the external declaration's output to
         // be a reference to the function's output. Otherwise leave it as empty.
         if single_output then
-          {node} := fn.outputs;
+          {out_cell} := fn.outputs;
+          node := InstNode.fromHandle(out_cell);
           ty := InstNode.getType(node);
           extDecl.outputRef := ComponentRef.fromNode(node, ty);
         end if;
 
         // Generate function arguments from the function's components.
-        comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(fn.node)));
+        comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(InstNode.fromHandle(fn.node))));
         if arrayLength(comps) > 0 then
           args := {};
           for c in comps loop

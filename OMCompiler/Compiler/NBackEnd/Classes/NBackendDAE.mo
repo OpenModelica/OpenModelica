@@ -74,6 +74,7 @@ protected
   import FlatModel = NFFlatModel;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
+  import MutableWeak;
   import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
@@ -1047,7 +1048,7 @@ protected
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
         stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
-        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), NONE(), frontend_equation.source);
         alg  := Algorithm.setInputsOutputs(alg);
       then {lowerAlgorithm(alg, init)};
 
@@ -1119,7 +1120,7 @@ protected
 
             // if the body was an algorithm (asserts) merge it back to an algorithm
             if isAlgorithm then
-              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), NONE(), frontend_equation.source);
               alg       := Algorithm.setInputsOutputs(alg);
               size      := sum(ComponentRef.size(out, false) for out in alg.outputs);
               body_elem := Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), Equation.getAttributes(body_elem));
@@ -1285,7 +1286,7 @@ protected
           variability = Expression.variability(frontend_eq.condition),
           purity      = NFPrefixes.Purity.PURE));
         alg := Algorithm.ALGORITHM({Statement.ASSERT(cond, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
-          {}, {}, NONE(), InstNode.fromCell(frontend_eq.scope), frontend_eq.source);
+          {}, {}, NONE(), frontend_eq.scope, frontend_eq.source);
       then {lowerAlgorithm(alg, init)};
 
       else algorithm

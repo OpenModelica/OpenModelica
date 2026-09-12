@@ -619,7 +619,7 @@ algorithm
     Function.markSimplified(func);
     Function.mapExp(func, function SimplifyExp.simplify(includeScope = false), mapBody = false);
 
-    cls := InstNode.getClass(func.node);
+    cls := InstNode.getClass(InstNode.fromHandle(func.node));
     () := match cls
       case Class.INSTANCED_CLASS(sections = sections)
         algorithm
@@ -629,7 +629,7 @@ algorithm
                 fn_body.statements := simplifyStatements(fn_body.statements);
                 sections.algorithms := {fn_body};
                 cls.sections := sections;
-                InstNode.updateClass(cls, func.node);
+                InstNode.updateClass(cls, InstNode.fromHandle(func.node));
               then
                 ();
 

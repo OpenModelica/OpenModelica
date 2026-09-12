@@ -46,6 +46,7 @@ import Absyn;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+import MutableWeak;
 import Binding = NFBinding;
 import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;
@@ -2076,7 +2077,8 @@ function matchFunctionTypes
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
-  list<InstNode> inputs1, inputs2, outputs1, outputs2;
+  list<InstNode> inputs1, inputs2;
+  list<NFInstNode.NodeHandle> outputs1, outputs2;
   list<Slot> slots1, slots2;
   Slot slot1, slot2;
 algorithm
@@ -2091,7 +2093,8 @@ algorithm
     return;
   end if;
 
-  if not matchFunctionParameters(outputs1, outputs2, options) then
+  if not matchFunctionParameters(list(InstNode.fromHandle(o) for o in outputs1),
+                                 list(InstNode.fromHandle(o) for o in outputs2), options) then
     matchKind := MatchKind.NOT_COMPATIBLE;
     return;
   end if;

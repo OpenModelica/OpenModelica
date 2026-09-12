@@ -223,7 +223,7 @@ public
     array<InstNode> comps;
     Sections sections;
   algorithm
-    cls := InstNode.getClass(func.node);
+    cls := InstNode.getClass(InstNode.fromHandle(func.node));
 
     () := match cls
       case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps),
@@ -313,7 +313,7 @@ public
     Component comp;
     Binding binding, eval_binding;
   algorithm
-    cls := InstNode.getClass(func.node);
+    cls := InstNode.getClass(InstNode.fromHandle(func.node));
 
     () := match cls
       case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps),
@@ -335,7 +335,7 @@ public
               algorithm
                 sections.algorithms := list(Algorithm.mapExp(a, replaceExpConstants) for a in sections.algorithms);
                 cls.sections := sections;
-                InstNode.updateClass(cls, func.node);
+                InstNode.updateClass(cls, InstNode.fromHandle(func.node));
               then
                 ();
 
@@ -343,7 +343,7 @@ public
               algorithm
                 sections.args := list(replaceExpConstants(arg) for arg in sections.args);
                 cls.sections := sections;
-                InstNode.updateClass(cls, func.node);
+                InstNode.updateClass(cls, InstNode.fromHandle(func.node));
               then
                 ();
 

@@ -2857,6 +2857,7 @@ algorithm
   () := match ty
     local
       InstNode con, de;
+      Option<MutableWeak<InstNode>> rec_con;
       Function fn;
 
     case Type.ARRAY()
@@ -2881,9 +2882,9 @@ algorithm
         ();
 
     // Collect record constructors.
-    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_con))
       algorithm
-        funcs := collectStructor(con, funcs);
+        funcs := collectStructor(InstNode.borrow(rec_con), funcs);
       then
         ();
 
@@ -3134,9 +3135,9 @@ algorithm
     SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);
 
-    if not InstNode.isPartial(fn.node) then
+    if not InstNode.isPartial(InstNode.fromHandle(fn.node)) then
       funcs := FunctionTree.add(funcs, Function.name(fn), fn);
-      funcs := collectClassFunctions(fn.node, funcs);
+      funcs := collectClassFunctions(InstNode.fromHandle(fn.node), funcs);
 
       for fn_der in fn.derivatives loop
         for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
@@ -3149,7 +3150,7 @@ algorithm
       end for;
 
       if Function.isPartialDerivative(fn) then
-        for f in Function.getCachedFuncs(Class.lastBaseClass(fn.node)) loop
+        for f in Function.getCachedFuncs(Class.lastBaseClass(InstNode.fromHandle(fn.node))) loop
           flattenFunction(f, funcs);
         end for;
       end if;

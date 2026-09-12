@@ -1099,7 +1099,7 @@ public
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(complexNode(ty))));
-      case Type.FUNCTION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.fn.node)));
+      case Type.FUNCTION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(InstNode.fromHandle(ty.fn.node))));
       case Type.METABOXED() then toFlatString(ty.ty, format);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
@@ -1174,7 +1174,7 @@ public
 
       case FUNCTION()
         then Function.toFlatStream(ty.fn, format, indent, s,
-          overrideName = Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.fn.node))));
+          overrideName = Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(InstNode.fromHandle(ty.fn.node)))));
 
       else s;
     end match;
@@ -1481,7 +1481,7 @@ public
   algorithm
     recordType := match recordType
       local
-        InstNode rec_node;
+        Option<MutableWeak<InstNode>> rec_node;
         UnorderedMap<String, Integer> indexMap;
         array<Record.Field> fields = listArray(field_lst);
 

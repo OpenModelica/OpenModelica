@@ -51,6 +51,7 @@ import NFComponent.ComponentState;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFInstNode.InstNodeType;
 import Type = NFType;
 import Subscript = NFSubscript;
@@ -183,7 +184,7 @@ algorithm
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   status := Pointer.create(FunctionStatus.INITIAL);
-  InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs, {out_rec}, locals,
+  InstNode.cacheAddFunc(node, Function.FUNCTION(path, InstNode.handle(ctor_node), inputs, {InstNode.handle(out_rec)}, locals,
   NONE(), {}, Type.UNKNOWN(), attr, {}, {}, listArray({}), status, Pointer.create(0)), false);
 end instDefaultConstructor;
 

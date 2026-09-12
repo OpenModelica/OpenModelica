@@ -2295,7 +2295,7 @@ public
     for node in func.locals loop
       UnorderedSet.add(node, diffInfo);
     end for;
-    for node in func.outputs loop
+    for node in list(InstNode.fromHandle(o) for o in func.outputs) loop
       UnorderedSet.add(node, diffInfo);
     end for;
 
@@ -2327,11 +2327,13 @@ public
         list<InstNode> inputs, locals, outputs, local_outputs, uninitialized;
         list<Slot> slots;
 
-      case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
+      case der_func as Function.FUNCTION() algorithm
+        node := InstNode.fromHandle(der_func.node);
+        InstNode.CLASS_NODE(cls = cls) := node;
         new_cls := match Pointer.access(cls)
           case new_cls as Class.INSTANCED_CLASS() algorithm
             // prepare outputs that become locals
-            local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, lout) for lout in der_func.outputs);
+            local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, InstNode.fromHandle(lout)) for lout in der_func.outputs);
             local_outputs     := list(InstNode.protect(lout) for lout in local_outputs);
 
             // prepare differentiation arguments
@@ -2346,18 +2348,18 @@ public
 
             createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
             createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-            createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+            createInterfaceDerivatives(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map);
             funcDiffArgs.diff_map := SOME(diff_map);
 
             // differentiate interface arguments
             (inputs, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, funcDiffArgs, diffInfo, true);
             (locals, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, diffInfo, false);
-            (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, funcDiffArgs, diffInfo, false);
+            (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map, funcDiffArgs, diffInfo, false);
 
             // update inputs, outputs and locals, add old outputs to locals as they might still be used as temporary variables
             der_func.inputs   := inputs;
             der_func.locals   := List.flatten({der_func.locals, locals, local_outputs});
-            der_func.outputs  := outputs;
+            der_func.outputs  := list(NFInstNode.NodeHandle.VALUE(o) for o in outputs);
             // also add the new locals to the class
             new_cls.elements := ClassTree.appendComponentsToFlatTree(locals, new_cls.elements);
 
@@ -2368,22 +2370,23 @@ public
             // create "fake" function with correct interface to have the interface
             // in the case of recursive differentiation (e.g. function calls itself)
             dummy_func      := func;
-            node.cls        := Pointer.create(new_cls);
+            node            := InstNode.replaceClass(new_cls, node);
             der_func_name   := NBVariable.FUNCTION_DERIVATIVE_STR + intString(listLength(func.derivatives));
-            node.name       := der_func_name + "." + node.name;
-            node.definition := SCodeUtil.setElementName(node.definition, node.name);
+            node            := InstNode.rename(der_func_name + "." + InstNode.name(node), node);
+            node            := InstNode.setDefinition(
+              SCodeUtil.setElementName(InstNode.definition(node), InstNode.name(node)), node);
             // create "fake" function from new node, update cache to get correct derivative name
             der_func.path               := AbsynUtil.prefixPath(der_func_name, der_func.path);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
             cachedData                  := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node               := InstNode.newFuncCache(node, cachedData);
+            der_func.node               := NFInstNode.NodeHandle.VALUE(InstNode.newFuncCache(node, cachedData));
 
             // create fake derivative
             funcDer := FunctionDerivative.FUNCTION_DER(
-              derivativeFn          = der_func.node,
-              derivedFn             = dummy_func.node,
+              derivativeFn          = InstNode.fromHandle(der_func.node),
+              derivedFn             = InstNode.fromHandle(dummy_func.node),
               order                 = Expression.INTEGER(1),
               conditions            = FunctionDerivative.conditionsFromMap(interface_map),
               lowerOrderDerivatives = {}  // possibly needs updating
@@ -2409,19 +2412,21 @@ public
 
             // update the class pointer in place; the fake node created above for
             // recursive differentiation shares it and reaches codegen via the cache
-            Pointer.update(node.cls, new_cls);
+            InstNode.CLASS_NODE(cls = cls) := node;
+            Pointer.update(cls, new_cls);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
             cachedData                  := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node               := InstNode.newFuncCache(node, cachedData);
+            der_func.node               := NFInstNode.NodeHandle.VALUE(InstNode.newFuncCache(node, cachedData));
 
             // check the generated body for use-before-assign and initialize
             // variables not provably assigned (the frontend check is skipped here)
             uninitialized := Function.checkUseBeforeAssignGenerated(der_func);
             if not listEmpty(uninitialized) then
               new_cls.sections := Function.initializeUninitialized(new_cls.sections, uninitialized, AbsynUtil.pathString(der_func.path));
-              Pointer.update(node.cls, new_cls);
+              InstNode.CLASS_NODE(cls = cls) := node;
+              Pointer.update(cls, new_cls);
             end if;
 
             // save the function tree
@@ -2429,7 +2434,7 @@ public
           then new_cls;
 
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), func.node) + "."});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), InstNode.fromHandle(func.node)) + "."});
           then fail();
         end match;
 
@@ -2437,8 +2442,8 @@ public
         UnorderedMap.add(der_func.path, der_func, diffArguments.funcMap);
         // add new function as derivative to original function
         funcDer := FunctionDerivative.FUNCTION_DER(
-          derivativeFn          = der_func.node,
-          derivedFn             = func.node,
+          derivativeFn          = InstNode.fromHandle(der_func.node),
+          derivedFn             = InstNode.fromHandle(func.node),
           order                 = Expression.INTEGER(1),
           conditions            = FunctionDerivative.conditionsFromMap(interface_map),
           lowerOrderDerivatives = {}  // possibly needs updating
@@ -2603,7 +2608,8 @@ public
 
   algorithm
     func := match func
-      case der_func as Function.FUNCTION(node = InstNode.CLASS_NODE(cls = cls)) algorithm
+      case der_func as Function.FUNCTION() algorithm
+        InstNode.CLASS_NODE(cls = cls) := InstNode.fromHandle(der_func.node);
         wrap_cls := Pointer.access(cls);
         new_cls := match wrap_cls
           case wrap_cls as Class.TYPED_DERIVED(baseClass = node as InstNode.CLASS_NODE(cls = tmp_cls)) algorithm
@@ -2625,21 +2631,21 @@ public
                   UnorderedMap.remove(InstNode.name(var), interface_map);
 
                   // prepare outputs that become locals
-                  local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs);
+                  local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, InstNode.fromHandle(node)) for node in der_func.outputs);
                   local_outputs     := list(InstNode.protect(node) for node in local_outputs);
 
                   // differentiate interface arguments
                   createInterfaceDerivatives({var}, interface_map, diff_map);
                   createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-                  createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+                  createInterfaceDerivatives(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map);
                   diffArgs.diff_map   := SOME(diff_map);
 
                   (locals, diffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, diffInfo, true);
-                  (outputs, diffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, diffInfo, false);
+                  (outputs, diffArgs) := differentiateFunctionInterfaceNodes(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map, diffArgs, diffInfo, false);
 
                   diffCref                    := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
                   der_func.locals             := listAppend(locals, local_outputs);
-                  der_func.outputs            := outputs;
+                  der_func.outputs            := list(NFInstNode.NodeHandle.VALUE(o) for o in outputs);
                   der_func.interfaceDiffInfo  := SOME(diffInfo);
 
                   // differentiate function statements
@@ -2659,7 +2665,7 @@ public
                 der_func.derivedInputs      := {};
                 der_func.interfaceDiffInfo  := SOME(diffInfo);
                 cachedData                  := CachedData.FUNCTION({der_func}, true, false);
-                der_func.node               := InstNode.newFuncCache(node, cachedData);
+                der_func.node               := NFInstNode.NodeHandle.VALUE(InstNode.newFuncCache(node, cachedData));
 
 
                 changed := true;

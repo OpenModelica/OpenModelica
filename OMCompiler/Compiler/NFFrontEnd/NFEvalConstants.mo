@@ -560,11 +560,11 @@ algorithm
     is_con := Function.isDefaultRecordConstructor(func);
 
     func := Function.mapExp(func,
-      function evaluateFuncExp(fnNode = func.node, evaluateAll = is_con),
-      function evaluateFuncExp(fnNode = func.node, evaluateAll = true));
+      function evaluateFuncExp(fnNode = InstNode.fromHandle(func.node), evaluateAll = is_con),
+      function evaluateFuncExp(fnNode = InstNode.fromHandle(func.node), evaluateAll = true));
 
     if is_con then
-      Record.checkLocalFieldOrder(func.locals, func.node, InstNode.info(func.node));
+      Record.checkLocalFieldOrder(func.locals, InstNode.fromHandle(func.node), InstNode.info(InstNode.fromHandle(func.node)));
     end if;
 
     for fn_der in func.derivatives loop
@@ -645,7 +645,7 @@ algorithm
         res := false;
       else
         fn := listHead(fnl);
-        res := InstNode.refEqual(fnNode, fn.node);
+        res := InstNode.refEqual(fnNode, InstNode.fromHandle(fn.node));
       end if;
     else
       res := false;

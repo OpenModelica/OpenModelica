@@ -41,6 +41,7 @@ import Equation = NFEquation;
 import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 import NFInstNode.InstNode;
+import MutableWeak;
 import Statement = NFStatement;
 import Restriction = NFRestriction;
 
@@ -1173,7 +1174,7 @@ algorithm
     case Class.INSTANCED_CLASS(sections = sections, restriction = Restriction.FUNCTION())
       algorithm
         elems := convertFunctionParams(func.inputs, {});
-        elems := convertFunctionParams(func.outputs, elems);
+        elems := convertFunctionParams(list(InstNode.fromHandle(o) for o in func.outputs), elems);
         elems := convertFunctionParams(func.locals, elems);
 
         def := match sections

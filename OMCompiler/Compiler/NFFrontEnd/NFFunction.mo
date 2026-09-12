@@ -40,6 +40,7 @@ import AbsynUtil;
 import Expression = NFExpression;
 import Pointer;
 import NFInstNode.InstNode;
+import MutableWeak;
 import Type = NFType;
 import NFPrefixes.*;
 import List;
@@ -271,9 +272,11 @@ type FunctionStatus = enumeration(
 uniontype Function
   record FUNCTION
     Absyn.Path path;
-    InstNode node;
+    NFInstNode.NodeHandle node "Weakly: the function's scope owns it, and its
+      cache holds this function.";
     list<InstNode> inputs;
-    list<InstNode> outputs;
+    list<NFInstNode.NodeHandle> outputs "Weakly: a record constructor's output
+      is typed by the constructor node, whose cache holds this function.";
     list<InstNode> locals;
     Option<UnorderedSet<InstNode>> interfaceDiffInfo;
     list<Slot> slots;
@@ -300,7 +303,8 @@ uniontype Function
     attr := makeAttributes(node, inputs, outputs, comments);
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
-    fn := FUNCTION(path, node, inputs, outputs, locals, NONE(), {}, Type.UNKNOWN(),
+    fn := FUNCTION(path, InstNode.handle(node), inputs,
+      list(InstNode.handle(o) for o in outputs), locals, NONE(), {}, Type.UNKNOWN(),
       attr, {}, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
@@ -871,9 +875,14 @@ uniontype Function
       input InstNode p;
       output String s = Type.toString(InstNode.getType(p)) + " " + InstNode.name(p);
     end param_str;
+
+    function param_cell_str
+      input NFInstNode.NodeHandle p;
+      output String s = param_str(InstNode.fromHandle(p));
+    end param_cell_str;
   algorithm
     inputs := List.toString(fn.inputs, param_str, List.Style.FLAT);
-    outputs := List.toString(fn.outputs, param_str, List.Style.FLAT);
+    outputs := List.toString(fn.outputs, param_cell_str, List.Style.FLAT);
 
     if listEmpty(fn.outputs) or listLength(fn.outputs) > 1 then
       outputs := "(" + outputs + ")";
@@ -891,10 +900,10 @@ uniontype Function
     Option<SCode.Comment> cmt;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := Record.toDeclarationStream(fn.node, indent, s);
+      s := Record.toDeclarationStream(InstNode.fromHandle(fn.node), indent, s);
     elseif isPartialDerivative(fn) then
       fn_name := AbsynUtil.pathString(fn.path);
-      cmt := SCodeUtil.getElementComment(InstNode.definition(fn.node));
+      cmt := SCodeUtil.getElementComment(InstNode.definition(InstNode.fromHandle(fn.node)));
 
       s := IOStream.append(s, indent);
       s := IOStream.append(s, "function ");
@@ -907,10 +916,10 @@ uniontype Function
       s := IOStream.append(s, ")");
     else
       fn_name := AbsynUtil.pathString(fn.path);
-      cmt := SCodeUtil.getElementComment(InstNode.definition(fn.node));
+      cmt := SCodeUtil.getElementComment(InstNode.definition(InstNode.fromHandle(fn.node)));
       s := IOStream.append(s, indent);
 
-      if InstNode.isPartial(fn.node) then
+      if InstNode.isPartial(InstNode.fromHandle(fn.node)) then
         s := IOStream.append(s, "partial ");
       end if;
 
@@ -927,7 +936,7 @@ uniontype Function
 
       for o in fn.outputs loop
         s := IOStream.append(s, indent + "  ");
-        s := IOStream.append(s, InstNode.toString(o));
+        s := IOStream.append(s, InstNode.toString(InstNode.fromHandle(o)));
         s := IOStream.append(s, ";\n");
       end for;
 
@@ -942,7 +951,7 @@ uniontype Function
         end for;
       end if;
 
-      s := Sections.toStream(InstNode.getSections(fn.node), indent, s);
+      s := Sections.toStream(InstNode.getSections(InstNode.fromHandle(fn.node)), indent, s);
       s := IOStream.append(s, DAEDumpTypes.dumpClassAnnotationStr(cmt));
       s := IOStream.append(s, indent);
       s := IOStream.append(s, "end ");
@@ -962,7 +971,7 @@ uniontype Function
     SCode.Mod annMod;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := Record.toFlatDeclarationStream(fn.node, format, indent, s);
+      s := Record.toFlatDeclarationStream(InstNode.fromHandle(fn.node), format, indent, s);
     elseif isPartialDerivative(fn) then
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
@@ -973,16 +982,16 @@ uniontype Function
       s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(getDerivedFunctionName(fn))));
       s := IOStream.append(s, ", ");
       s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
-      s := FlatModelicaUtil.appendCommentOpt(SCodeUtil.getElementComment(InstNode.definition(fn.node)),
+      s := FlatModelicaUtil.appendCommentOpt(SCodeUtil.getElementComment(InstNode.definition(InstNode.fromHandle(fn.node))),
         NFFlatModelicaUtil.ElementType.FUNCTION, s);
       s := IOStream.append(s, ")");
     else
-      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
+      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(InstNode.fromHandle(fn.node))), SCode.COMMENT(NONE(), NONE()));
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
       s := IOStream.append(s, indent);
 
-      if InstNode.isPartial(fn.node) then
+      if InstNode.isPartial(InstNode.fromHandle(fn.node)) then
         s := IOStream.append(s, "partial ");
       end if;
 
@@ -997,7 +1006,7 @@ uniontype Function
       end for;
 
       for o in fn.outputs loop
-        s := IOStream.append(s, InstNode.toFlatString(o, format, indent + "  "));
+        s := IOStream.append(s, InstNode.toFlatString(InstNode.fromHandle(o), format, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
@@ -1008,7 +1017,7 @@ uniontype Function
         end for;
       end if;
 
-      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, format, indent, s);
+      s := Sections.toFlatStream(InstNode.getSections(InstNode.fromHandle(fn.node)), fn.path, format, indent, s);
 
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
@@ -1055,8 +1064,19 @@ uniontype Function
 
   function instance
     input Function fn;
-    output InstNode node = fn.node;
+    output InstNode node = InstNode.fromHandle(fn.node);
   end instance;
+
+  function outputHandles
+    input Function fn;
+    output list<NFInstNode.NodeHandle> outputs = fn.outputs;
+  end outputHandles;
+
+  function instanceHandle
+    "The node as stored. Pass this on when building a function from another."
+    input Function fn;
+    output NFInstNode.NodeHandle node = fn.node;
+  end instanceHandle;
 
   function returnType
     input Function fn;
@@ -1662,7 +1682,7 @@ uniontype Function
     input output Function fn;
     input InstContext.Type context;
   protected
-    InstNode node = fn.node;
+    InstNode node = InstNode.fromHandle(fn.node);
     InstContext.Type fn_context;
   algorithm
     if not isTyped(fn) then
@@ -1701,7 +1721,7 @@ uniontype Function
     end for;
 
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c, fn_context);
+      Typing.typeComponentBinding(InstNode.fromHandle(c), fn_context);
     end for;
 
     for c in fn.locals loop
@@ -1709,7 +1729,7 @@ uniontype Function
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeFunctionSections(fn.node, fn_context);
+    Typing.typeFunctionSections(InstNode.fromHandle(fn.node), fn_context);
 
     // Type any derivatives of the function.
     for fn_der in fn.derivatives loop
@@ -1736,7 +1756,7 @@ uniontype Function
     end if;
 
     // Sort the local variables based on their dependencies.
-    fn.locals := sortLocals(fn.locals, InstNode.info(fn.node));
+    fn.locals := sortLocals(fn.locals, InstNode.info(InstNode.fromHandle(fn.node)));
   end typeFunctionBody;
 
   function checkPureCall
@@ -1754,7 +1774,7 @@ uniontype Function
       if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
         Error.addSourceMessage(Error.PURE_FUNCTION_WITH_IMPURE_CALLS,
           {AbsynUtil.pathString(Function.name(fn)), Expression.getName(exp)},
-          InstNode.info(fn.node));
+          InstNode.info(InstNode.fromHandle(fn.node)));
       end if;
     end if;
   end checkPureCall;
@@ -2013,8 +2033,8 @@ uniontype Function
 
   function isExternal
     input Function fn;
-    output Boolean isExternal = not InstNode.isEmpty(fn.node) and
-                                Class.isExternalFunction(InstNode.getClass(fn.node));
+    output Boolean isExternal = not InstNode.isEmpty(InstNode.fromHandle(fn.node)) and
+                                Class.isExternalFunction(InstNode.getClass(InstNode.fromHandle(fn.node)));
   end isExternal;
 
   function isExternalObjectConstructorOrDestructor
@@ -2058,7 +2078,7 @@ uniontype Function
   function getDerivedFunctionName
     "Returns the name of the derived function in a partial derivative, df = der(f, x) => f"
     input Function fn;
-    output Absyn.Path name = InstNode.fullPath(Class.lastBaseClass(fn.node), ignoreBaseClass = true);
+    output Absyn.Path name = InstNode.fullPath(Class.lastBaseClass(InstNode.fromHandle(fn.node)), ignoreBaseClass = true);
   end getDerivedFunctionName;
 
   function inlineBuiltin
@@ -2074,7 +2094,7 @@ uniontype Function
 
   function isDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor = Restriction.isRecordConstructor(InstNode.restriction(fn.node));
+    output Boolean isConstructor = Restriction.isRecordConstructor(InstNode.restriction(InstNode.fromHandle(fn.node)));
   end isDefaultRecordConstructor;
 
   function isNonDefaultRecordConstructor
@@ -2114,8 +2134,8 @@ uniontype Function
     defs := listAppend(list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives), defs);
     defs := def :: defs;
     daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, unused_inputs,
-      ElementSource.createElementSource(InstNode.info(fn.node)),
-      SCodeUtil.getElementComment(InstNode.definition(fn.node)));
+      ElementSource.createElementSource(InstNode.info(InstNode.fromHandle(fn.node))),
+      SCodeUtil.getElementComment(InstNode.definition(InstNode.fromHandle(fn.node))));
   end toDAE;
 
   function makeDAEType
@@ -2144,7 +2164,7 @@ uniontype Function
     end for;
 
     params := listReverse(params);
-    ty := if isDefaultRecordConstructor(fn) then InstNode.getType(fn.node) else fn.returnType;
+    ty := if isDefaultRecordConstructor(fn) then InstNode.getType(InstNode.fromHandle(fn.node)) else fn.returnType;
     ty := if boxTypes then Type.box(ty) else ty;
     outType := DAE.T_FUNCTION(params, Type.toDAE(ty), fn.attributes, fn.path);
   end makeDAEType;
@@ -2173,7 +2193,7 @@ uniontype Function
 
   function getBody
     input Function fn;
-    output list<Statement> body = getBody2(fn.node);
+    output list<Statement> body = getBody2(InstNode.fromHandle(fn.node));
   end getBody;
 
   function hasUnboxArgs
@@ -2213,7 +2233,7 @@ uniontype Function
     ClassTree ctree;
     Sections sections;
   algorithm
-    cls := InstNode.getClass(fn.node);
+    cls := InstNode.getClass(InstNode.fromHandle(fn.node));
 
     if mapParameters then
       ctree := Class.classTree(cls);
@@ -2225,7 +2245,7 @@ uniontype Function
     if mapBody then
       sections := Sections.mapExp(Class.getSections(cls), mapFn);
       cls := cls.setSections(sections, cls);
-      InstNode.updateClass(cls, fn.node);
+      InstNode.updateClass(cls, InstNode.fromHandle(fn.node));
     end if;
   end mapExp;
 
@@ -2288,10 +2308,10 @@ uniontype Function
     Class cls;
     Sections sections;
   algorithm
-    cls := InstNode.getClass(fn.node);
+    cls := InstNode.getClass(InstNode.fromHandle(fn.node));
     sections := Sections.map(Class.getSections(cls), algFn = mapFn);
     cls := cls.setSections(sections, cls);
-    InstNode.updateClass(cls, fn.node);
+    InstNode.updateClass(cls, InstNode.fromHandle(fn.node));
   end mapBody;
 
   function foldExp<ArgT>
@@ -2308,7 +2328,7 @@ uniontype Function
   protected
     Class cls;
   algorithm
-    cls := InstNode.getClass(fn.node);
+    cls := InstNode.getClass(InstNode.fromHandle(fn.node));
 
     if mapParameters then
       arg := ClassTree.foldComponents(Class.classTree(cls),
@@ -2352,7 +2372,7 @@ uniontype Function
 
   function isPartial
     input Function fn;
-    output Boolean isPartial = InstNode.isPartial(fn.node);
+    output Boolean isPartial = InstNode.isPartial(InstNode.fromHandle(fn.node));
   end isPartial;
 
   function getLocalArguments
@@ -2654,7 +2674,7 @@ protected
     input Function fn;
   algorithm
     checkParamTypes2(fn.inputs);
-    checkParamTypes2(fn.outputs);
+    checkParamTypes2(list(InstNode.fromHandle(o) for o in fn.outputs));
     checkParamTypes2(fn.locals);
   end checkParamTypes;
 
@@ -2720,7 +2740,7 @@ protected
 
       if not (Type.isReal(ty) and Type.isScalar(ty)) then
         Error.addSourceMessage(Error.PARTIAL_DERIVATIVE_INPUT_INVALID_TYPE,
-          {InstNode.name(node), AbsynUtil.pathString(getDerivedFunctionName(fn))}, InstNode.info(fn.node));
+          {InstNode.name(node), AbsynUtil.pathString(getDerivedFunctionName(fn))}, InstNode.info(InstNode.fromHandle(fn.node)));
         fail();
       end if;
     end for;
@@ -2732,7 +2752,7 @@ protected
   protected
     list<Type> ret_tyl;
   algorithm
-    ret_tyl := list(InstNode.getType(o) for o in fn.outputs);
+    ret_tyl := list(InstNode.getType(InstNode.fromHandle(o)) for o in fn.outputs);
 
     returnType := match ret_tyl
       case {} then Type.NORETCALL();
@@ -2778,7 +2798,7 @@ protected
     try
       // InstNode.getSections can fail
       if isBuiltin(fn) then return; end if;
-      b := match InstNode.getSections(fn.node)
+      b := match InstNode.getSections(InstNode.fromHandle(fn.node))
         case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
         case Sections.EMPTY() then true;
         else false;
@@ -2985,7 +3005,7 @@ protected
 
     // Check if there are variables being used uninitialized.
     unassigned := Vector.new<InstNode>();
-    addUnassignedComponents(unassigned, fn.outputs);
+    addUnassignedComponents(unassigned, list(InstNode.fromHandle(o) for o in fn.outputs));
     addUnassignedComponents(unassigned, fn.locals);
 
     body := getBody(fn);
@@ -3242,7 +3262,7 @@ protected
 
     fn_name := AbsynUtil.pathString(name(fn));
     unassigned := Vector.new<InstNode>();
-    addUnassignedComponents(unassigned, fn.outputs);
+    addUnassignedComponents(unassigned, list(InstNode.fromHandle(o) for o in fn.outputs));
     addUnassignedComponents(unassigned, fn.locals);
     not_proven := Vector.copy(unassigned);
 
