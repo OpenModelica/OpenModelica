@@ -156,10 +156,15 @@ impl Start {
     /// The first element as an `f64`, for the numeric types a master can set
     /// without knowing which one it is.
     pub fn first_f64(&self) -> Option<f64> {
+        self.f64s().and_then(|v| v.first().copied())
+    }
+
+    /// Every element as an `f64`; `None` for the types that have no number.
+    pub fn f64s(&self) -> Option<Vec<f64>> {
         match self {
-            Start::Reals(v) => v.first().copied(),
-            Start::Ints(v) => v.first().map(|&i| i as f64),
-            Start::Bools(v) => v.first().map(|&b| b as u8 as f64),
+            Start::Reals(v) => Some(v.clone()),
+            Start::Ints(v) => Some(v.iter().map(|&i| i as f64).collect()),
+            Start::Bools(v) => Some(v.iter().map(|&b| b as u8 as f64).collect()),
             _ => None,
         }
     }

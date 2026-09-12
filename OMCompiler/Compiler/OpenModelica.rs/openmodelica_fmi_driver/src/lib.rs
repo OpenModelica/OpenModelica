@@ -148,20 +148,22 @@ impl Solver {
     }
 }
 
-/// A value the master feeds an input variable, as a function of time.
+/// A value the master feeds an input variable, as a function of time. An array
+/// variable has one value reference and one expression per element, in the
+/// row-major order FMI flattens them in.
 pub struct Input {
     pub value_reference: u32,
     pub ty: VarType,
-    /// An expression in `t` ([`expr`]).
-    pub value: expr::Expr,
+    /// Expressions in `t` ([`expr`]), one per element.
+    pub values: Vec<expr::Expr>,
 }
 
 /// A value applied once, in Initialization Mode. FMI allows no other time for a
-/// parameter.
+/// parameter; an array takes one value per element, as for [`Input`].
 pub struct Parameter {
     pub value_reference: u32,
     pub ty: VarType,
-    pub value: f64,
+    pub values: Vec<f64>,
 }
 
 pub struct Options<'a> {

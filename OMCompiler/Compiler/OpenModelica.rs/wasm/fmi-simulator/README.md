@@ -117,11 +117,17 @@ name.
 
 Inputs are expressions in `t` (`sin(2*PI*t)`, `t < 1 ? 0 : 1`) evaluated by the
 driver wherever the solver asks for a value; parameters are constants applied
-during initialization, which is the only mode FMI allows them to be set in.
+during initialization, which is the only mode FMI allows them to be set in. An
+array variable is one value reference and is set whole, so its field takes one
+expression or value per element, separated by commas (`0, -9.81, 0`).
 
 ## Gaps
 
 * Scheduled Execution is not driven; such an FMU is reported as unsupported.
+* An FMI 1.0/2.0 FMU is read and shown but not simulated: those versions number
+  value references per base type, and only the FMU's own loader
+  (`openmodelica_fmi_ls_wasm_to_native`) translates that to the FMI 3.0
+  numbering the component uses. Run is disabled and the page says so.
 * String and binary variables are shown but cannot be set.
 * `fmi3GetFMUState`/`fmi3SetFMUState` are unused: no rollback, so a
   Co-Simulation FMU that discards a step fails the run rather than retrying it
