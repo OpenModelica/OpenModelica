@@ -1375,7 +1375,7 @@ algorithm
 
   // Check which state the cached package is in, if any.
   (inst, state) := match cache
-    case CachedData.PACKAGE() then (cache.instance, cache.state);
+    case CachedData.PACKAGE() then (InstNode.fromHandle(cache.instance), cache.state);
     else (node, PackageCacheState.NOT_INITIALIZED);
   end match;
 

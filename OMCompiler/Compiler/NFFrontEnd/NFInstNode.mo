@@ -160,7 +160,8 @@ uniontype CachedData
   record NO_CACHE end NO_CACHE;
 
   record PACKAGE
-    InstNode instance;
+    NodeHandle instance "Weakly: this is a cache of the node it hangs off, so
+      the node's own scope owns it.";
     PackageCacheState state;
   end PACKAGE;
 
@@ -1865,7 +1866,7 @@ uniontype InstNode
     input PackageCacheState state;
   algorithm
     () := match node
-      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(packageNode, state)); then ();
+      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(handle(packageNode), state)); then ();
       else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setPackageCache;
