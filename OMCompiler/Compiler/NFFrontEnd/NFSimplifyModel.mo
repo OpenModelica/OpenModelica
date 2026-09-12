@@ -44,6 +44,7 @@ import ComponentRef = NFComponentRef;
 import NFFlatten.FunctionTree;
 import Class = NFClass;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFFunction.Function;
 import Sections = NFSections;
 import Binding = NFBinding;
@@ -234,7 +235,7 @@ protected
   Expression lhs, rhs;
   Type ty;
   DAE.ElementSource src;
-  InstNode scope;
+  Option<MutableWeak<InstNode>> scope;
   Equation.ScalarizeMode scalarize_mode;
 algorithm
   Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
@@ -252,7 +253,7 @@ algorithm
   equations := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
       then simplifyTupleElement(lhs.elements, rhs.elements, ty, src,
-        function Equation.makeEquality(scope = scope, scalarizeMode = scalarize_mode), equations);
+        function Equation.makeEquality(scope = InstNode.fromCell(scope), scalarizeMode = scalarize_mode), equations);
 
     else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode) :: equations;
   end match;
@@ -497,7 +498,7 @@ end removeEmptyFunctionArguments;
 
 function simplifyIfEqBranches
   input list<Equation.Branch> branches;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource src;
   input output list<Equation> elements;
 protected
@@ -524,7 +525,7 @@ algorithm
               // Otherwise just discard the rest of the branches.
               accum := Equation.makeBranch(cond, simplifyEquations(body)) :: accum;
               accum := List.trim(accum, Equation.Branch.isEmpty);
-              elements := Equation.makeIf(listReverseInPlace(accum), scope, src) :: elements;
+              elements := Equation.makeIf(listReverseInPlace(accum), InstNode.fromCell(scope), src) :: elements;
               return;
             end if;
           elseif not Expression.isFalse(cond) then
@@ -556,7 +557,7 @@ algorithm
   accum := List.trim(accum, Equation.Branch.isEmpty);
 
   if not listEmpty(accum) then
-    elements := Equation.makeIf(listReverseInPlace(accum), scope, src) :: elements;
+    elements := Equation.makeIf(listReverseInPlace(accum), InstNode.fromCell(scope), src) :: elements;
   end if;
 end simplifyIfEqBranches;
 

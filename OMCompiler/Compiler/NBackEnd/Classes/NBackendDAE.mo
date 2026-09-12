@@ -1285,7 +1285,7 @@ protected
           variability = Expression.variability(frontend_eq.condition),
           purity      = NFPrefixes.Purity.PURE));
         alg := Algorithm.ALGORITHM({Statement.ASSERT(cond, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
-          {}, {}, NONE(), frontend_eq.scope, frontend_eq.source);
+          {}, {}, NONE(), InstNode.fromCell(frontend_eq.scope), frontend_eq.source);
       then {lowerAlgorithm(alg, init)};
 
       else algorithm

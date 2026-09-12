@@ -46,6 +46,7 @@ import Binding = NFBinding;
 import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+import MutableWeak;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
 import Algorithm = NFAlgorithm;
@@ -1362,13 +1363,13 @@ protected
   Expression range;
   list<Expression> ranges;
   list<Subscript> subs;
-  InstNode scope;
+  Option<MutableWeak<InstNode>> scope;
   DAE.ElementSource src;
 algorithm
   (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
   subs := listReverseInPlace(subs);
   vectorizedEqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
-  scope := Equation.scope(eqn);
+  scope := Equation.scopeCell(eqn);
   src := Equation.source(eqn);
 
   while not listEmpty(iters) loop
@@ -1993,7 +1994,7 @@ protected
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
-  InstNode scope;
+  Option<MutableWeak<InstNode>> scope;
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
   has_connect := Equation.contains(eq, Equation.isConnection);
@@ -2168,7 +2169,7 @@ protected
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
-  InstNode scope;
+  Option<MutableWeak<InstNode>> scope;
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);

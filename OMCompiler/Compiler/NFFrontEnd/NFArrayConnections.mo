@@ -606,7 +606,7 @@ protected
         // instead of creating an unnecessary for loop here.
         body := Equation.replaceIteratorList(body, iterators[i], ranges[i]);
       else
-        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, InstNode.EMPTY_NODE(), DAE.emptyElementSource)};
+        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, NONE(), DAE.emptyElementSource)};
       end if;
     end for;
 

@@ -372,11 +372,11 @@ algorithm
     exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp, -1);
   end if;
 
-  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
+  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, NONE(), source);
 
   // wrap the equation in for loop if necessary
   while not listEmpty(iterators) loop
-    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, InstNode.EMPTY_NODE(), source);
+    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, NONE(), source);
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;
@@ -441,7 +441,7 @@ algorithm
   equations := {Equation.makeEquality(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), src)};
 
   while not listEmpty(iterators) loop
-    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), src)};
+    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, NONE(), src)};
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;

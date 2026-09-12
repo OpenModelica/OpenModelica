@@ -60,6 +60,7 @@ import List;
 import NFBackendExtension;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFPrefixes.{Variability, Purity, Visibility};
 import SCode;
 import UnorderedMap;
@@ -643,7 +644,7 @@ protected
   list<Equation.Branch> branches, newBranches;
   list<Equation> transformedBody;
   list<Variable> branchVars;
-  InstNode whenScope;
+  Option<MutableWeak<InstNode>> whenScope;
   DAE.ElementSource whenSource;
   Expression branchCond;
   Variability branchCondVar;
@@ -684,7 +685,7 @@ protected
   Expression lhs, rhs;
   ComponentRef lhsCref, perStateVarCref, stateActiveCref;
   Type lhsTy;
-  InstNode eqScope;
+  Option<MutableWeak<InstNode>> eqScope;
   DAE.ElementSource eqSource;
   list<ComponentRef> stateVarCrefs;
   Boolean hasStateVarOnLHS, isOuterOutput;
@@ -707,7 +708,7 @@ algorithm
     // Check if this is an outer-output equation:
     // LHS is NOT state-prefixed but the equation's scope is the state component
     isOuterOutput := not crefHasPrefix(stateCref, lhsCref) and
-                     stringEqual(InstNode.name(eqScope), ComponentRef.firstName(stateCref));
+                     stringEqual(InstNode.name(InstNode.fromCell(eqScope)), ComponentRef.firstName(stateCref));
 
     if isOuterOutput then
       // Outer output: x = rhs from state1 → create state1.x per-state variable
@@ -1441,7 +1442,7 @@ protected
   Expression lhs, rhs, activeRef, expElse;
   ComponentRef lhsCref;
   Type ty;
-  InstNode eqScope;
+  Option<MutableWeak<InstNode>> eqScope;
   DAE.ElementSource eqSource;
 algorithm
   Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = eqScope, source = eqSource) := inEq;
@@ -1729,18 +1730,18 @@ function isEquationOfState
   input ComponentRef stateCref;
   output Boolean res = false;
 protected
-  InstNode eqScope;
+  Option<MutableWeak<InstNode>> eqScope;
   String stateName;
 algorithm
   stateName := ComponentRef.firstName(stateCref);
   () := match eq
     case Equation.EQUALITY(scope = eqScope)
       algorithm
-        res := stringEqual(InstNode.name(eqScope), stateName);
+        res := stringEqual(InstNode.name(InstNode.fromCell(eqScope)), stateName);
       then ();
     case Equation.WHEN(scope = eqScope)
       algorithm
-        res := stringEqual(InstNode.name(eqScope), stateName);
+        res := stringEqual(InstNode.name(InstNode.fromCell(eqScope)), stateName);
       then ();
     else ();
   end match;
@@ -1764,13 +1765,13 @@ function isOuterStateEquation
   input list<ComponentRef> stateCrefs;
   output Boolean res = false;
 protected
-  InstNode eqScope;
+  Option<MutableWeak<InstNode>> eqScope;
   String scopeName;
 algorithm
   () := match eq
     case Equation.EQUALITY(scope = eqScope)
       algorithm
-        scopeName := InstNode.name(eqScope);
+        scopeName := InstNode.name(InstNode.fromCell(eqScope));
         for stateCref in stateCrefs loop
           if stringEqual(scopeName, ComponentRef.firstName(stateCref)) then
             res := true;
@@ -1780,7 +1781,7 @@ algorithm
       then ();
     case Equation.WHEN(scope = eqScope)
       algorithm
-        scopeName := InstNode.name(eqScope);
+        scopeName := InstNode.name(InstNode.fromCell(eqScope));
         for stateCref in stateCrefs loop
           if stringEqual(scopeName, ComponentRef.firstName(stateCref)) then
             res := true;
@@ -1835,7 +1836,7 @@ algorithm
   end for;
 
   src := ElementSource.createElementSource(Absyn.dummyInfo);
-  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, InstNode.EMPTY_NODE(), src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
+  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, NONE(), src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
 end generateMergeEquation;
 
 // ============================================================
@@ -1927,7 +1928,7 @@ function makeEq
   input Type ty;
   output Equation eq;
 algorithm
-  eq := Equation.EQUALITY(lhs, rhs, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE);
+  eq := Equation.EQUALITY(lhs, rhs, ty, NONE(), DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE);
 end makeEq;
 
 // ============================================================

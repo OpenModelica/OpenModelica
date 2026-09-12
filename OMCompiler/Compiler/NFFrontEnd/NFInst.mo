@@ -3476,7 +3476,7 @@ algorithm
           if not (InstNode.isEmpty(ComponentRef.node(lhs_cr)) or InstNode.isEmpty(ComponentRef.node(rhs_cr))) then
             exp1 := Expression.CREF(Type.UNKNOWN(), lhs_cr);
             exp2 := Expression.CREF(Type.UNKNOWN(), rhs_cr);
-            equations := Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info)) :: equations;
+            equations := Equation.CONNECT(exp1, exp2, InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
           end if;
         end if;
       then
@@ -3490,7 +3490,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         eql := instEquations(scodeEq.eEquationLst, for_scope, connectBreaks, next_context);
       then
-        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.FOR(iter, oexp, eql, InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_IF(info = info)
       algorithm
@@ -3513,7 +3513,7 @@ algorithm
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
-        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.IF(listReverse(branches), InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_WHEN(info = info)
       algorithm
@@ -3534,7 +3534,7 @@ algorithm
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.WHEN(listReverse(branches), InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
@@ -3542,13 +3542,13 @@ algorithm
         exp2 := instExp(scodeEq.message, scope, context, info);
         exp3 := instExp(scodeEq.level, scope, context, info);
       then
-        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.ASSERT(exp1, exp2, exp3, InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
-        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.TERMINATE(exp1, InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_REINIT(info = info)
       algorithm
@@ -3560,13 +3560,13 @@ algorithm
         exp1 := instExp(scodeEq.cref, scope, context, info);
         exp2 := instExp(scodeEq.expReinit, scope, context, info);
       then
-        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.REINIT(exp1, exp2, InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
-        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.NORETCALL(exp1, InstNode.identityCell(scope), makeSource(scodeEq.comment, info)) :: equations;
 
     else
       algorithm

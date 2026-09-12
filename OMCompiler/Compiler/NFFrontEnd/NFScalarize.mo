@@ -62,6 +62,7 @@ import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
+import MutableWeak;
 import SCode;
 
 uniontype AttributeIterator
@@ -363,7 +364,7 @@ algorithm
 
             (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
             (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-            equations := Equation.makeEquality(lhs, rhs, ty, src, eq.scope) :: equations;
+            equations := Equation.makeEquality(lhs, rhs, ty, src, InstNode.fromCell(eq.scope)) :: equations;
           end while;
         else
           equations := eq :: equations;
@@ -385,7 +386,7 @@ end scalarizeEquation;
 
 function scalarizeIfEquation
   input list<Equation.Branch> branches;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
@@ -413,7 +414,7 @@ end scalarizeIfEquation;
 
 function scalarizeWhenEquation
   input list<Equation.Branch> branches;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected

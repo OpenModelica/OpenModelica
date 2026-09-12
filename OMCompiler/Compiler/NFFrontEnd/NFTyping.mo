@@ -50,6 +50,7 @@ import Equation = NFEquation;
 import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+import MutableWeak;
 import NFModifier.Modifier;
 import SimplifyExp = NFSimplifyExp;
 import Statement = NFStatement;
@@ -3102,7 +3103,7 @@ function typeConnect
   input Expression lhsConn;
   input Expression rhsConn;
   input InstContext.Type context;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource source;
   output Equation connEq;
 protected
@@ -3484,7 +3485,7 @@ function typeEqualityEquation
   input Expression lhsExp;
   input Expression rhsExp;
   input InstContext.Type context;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource source;
   output Equation eq;
 protected
@@ -3513,7 +3514,7 @@ algorithm
     fail();
   end if;
 
-  eq := Equation.makeEquality(e1, e2, ty, source, scope);
+  eq := Equation.EQUALITY(e1, e2, ty, scope, source, NFEquation.ScalarizeMode.NO_PREFERENCE);
 
   if Expression.isExternalCall(e2) then
     Call.updateExternalRecordArgs(Expression.tupleElements(e1));
@@ -3557,7 +3558,7 @@ protected
   InstNode iterator;
   Option<Expression> range;
   list<Equation> body;
-  InstNode scope;
+  Option<MutableWeak<InstNode>> scope;
   DAE.ElementSource src;
   SourceInfo info;
   Expression range_exp;
@@ -3586,7 +3587,7 @@ end typeForEquation;
 function typeIfEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource source;
   output Equation ifEq;
 protected
@@ -3639,7 +3640,7 @@ end typeIfEquation;
 function typeWhenEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
-  input InstNode scope;
+  input Option<MutableWeak<InstNode>> scope;
   input DAE.ElementSource source;
   output Equation whenEq;
 protected
