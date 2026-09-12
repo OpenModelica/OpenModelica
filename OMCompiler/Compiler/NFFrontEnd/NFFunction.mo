@@ -1067,17 +1067,6 @@ uniontype Function
     output InstNode node = InstNode.fromHandle(fn.node);
   end instance;
 
-  function outputHandles
-    input Function fn;
-    output list<NFInstNode.NodeHandle> outputs = fn.outputs;
-  end outputHandles;
-
-  function instanceHandle
-    "The node as stored. Pass this on when building a function from another."
-    input Function fn;
-    output NFInstNode.NodeHandle node = fn.node;
-  end instanceHandle;
-
   function returnType
     input Function fn;
     output Type ty = fn.returnType;

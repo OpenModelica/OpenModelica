@@ -57,6 +57,7 @@ protected
   import Matching = NBMatching;
   import Variable = NFVariable;
   import BVariable = NBVariable;
+  import PointerWeak;
   import NBVariable.{VarData, VariablePointer, VariablePointers};
 
   // util imports
@@ -639,8 +640,8 @@ protected
   algorithm
     var := BVariable.getVarPointer(cref, sourceInfo());
     if BVariable.isRecord(var) then
-      for child in BVariable.getRecordChildren(var) loop
-        getStateCandidateVar(child, acc);
+      for child in BVariable.getRecordChildrenCells(var) loop
+        getStateCandidateVar(PointerWeak.upgrade(child), acc);
       end for;
     else
       getStateCandidateVar(var, acc);

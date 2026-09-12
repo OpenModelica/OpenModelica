@@ -2295,8 +2295,8 @@ public
     for node in func.locals loop
       UnorderedSet.add(node, diffInfo);
     end for;
-    for node in list(InstNode.fromHandle(o) for o in func.outputs) loop
-      UnorderedSet.add(node, diffInfo);
+    for o in func.outputs loop
+      UnorderedSet.add(InstNode.fromHandle(o), diffInfo);
     end for;
 
     der_func.interfaceDiffInfo  := SOME(diffInfo);

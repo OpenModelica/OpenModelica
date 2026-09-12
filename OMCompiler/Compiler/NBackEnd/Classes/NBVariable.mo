@@ -1364,6 +1364,21 @@ function isJacobianResultVar
     end match;
   end getRecordChildren;
 
+  function getRecordChildrenCells
+    "The children as stored. For a caller that only iterates; `getRecordChildren`
+     has to build a list to hand one back."
+    input Pointer<Variable> var;
+    output list<PointerWeak<Variable>> children;
+  algorithm
+    children := match Pointer.access(var)
+      local
+        VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD()))
+      then varKind.children;
+      else {};
+    end match;
+  end getRecordChildrenCells;
+
   function getRecordChildrenOrSelf
     input Pointer<Variable> var;
     output list<Pointer<Variable>> children = getRecordChildren(var);

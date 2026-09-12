@@ -84,13 +84,6 @@ constant InstContext.Type STATEMENT_CONTEXT = intBitOr(NFInstContext.FUNCTION, N
 constant InstContext.Type IF_COND_CONTEXT = intBitOr(STATEMENT_CONTEXT, intBitOr(NFInstContext.IF, NFInstContext.CONDITION));
 
 public
-function outputNodes
-  "A function's output parameters as nodes; the mixed-parameter helpers below
-   take all three lists, so the outputs are materialised here."
-  input Function fn;
-  output list<InstNode> nodes = list(InstNode.fromHandle(o) for o in Function.outputHandles(fn));
-end outputNodes;
-
 function evaluate
   input Function fn;
   input list<Expression> args;
@@ -140,7 +133,7 @@ algorithm
 
   try
     fn_body := Function.getBody(fn);
-    arg_map := createArgumentMap(fn.inputs, outputNodes(fn), fn.locals, args, mutableParams = true);
+    arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
     // TODO: Also apply replacements to the replacements themselves, i.e. the
     //       bindings of the function parameters. But they probably need to be
     //       sorted by dependencies first.
@@ -149,7 +142,7 @@ algorithm
     ctrl := evaluateStatements(fn_body, body_context);
 
     if ctrl <> FlowControl.ASSERTION then
-      result := createResult(arg_map, outputNodes(fn));
+      result := createResult(arg_map, fn.outputs);
     else
       fail();
     end if;
@@ -257,7 +250,7 @@ protected
 
 function createArgumentMap
   input list<InstNode> inputs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   input list<InstNode> locals;
   input list<Expression> args;
   input Boolean mutableParams;
@@ -287,10 +280,14 @@ algorithm
   // Add outputs and local variables to the argument map.
   // They sometimes need to be mutable and sometimes not.
   if mutableParams then
-    List.fold(outputs, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addMutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
   else
-    List.fold(outputs, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addImmutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
   end if;
 
@@ -680,7 +677,7 @@ end optimizeStatement;
 
 function createResult
   input ArgumentMap map;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression exp;
 protected
   list<Expression> expl;
@@ -689,16 +686,17 @@ protected
   InstNode node;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(UnorderedMap.getOrFail(listHead(outputs), map));
-    node := listHead(outputs);
+    node := InstNode.fromHandle(listHead(outputs));
+    exp := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
     exp := assertAssignedOutput({InstNode.name(node)}, exp, InstNode.info(node));
   else
     expl := {};
     types := {};
 
-    for o in outputs loop
-      e := Ceval.evalExp(UnorderedMap.getOrFail(o, map));
-      e := assertAssignedOutput({InstNode.name(o)}, e, InstNode.info(o));
+    for h in outputs loop
+      node := InstNode.fromHandle(h);
+      e := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
+      e := assertAssignedOutput({InstNode.name(node)}, e, InstNode.info(node));
       expl := e :: expl;
     end for;
 
@@ -1168,10 +1166,10 @@ protected
   ArgumentMap map;
   list<Expression> ext_args;
 algorithm
-  map := createArgumentMap(fn.inputs, outputNodes(fn), fn.locals, args, mutableParams = true);
+  map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
   ext_args := list(Expression.map(e, function applyReplacements2(map = map)) for e in extArgs);
   evaluateExternal3(name, ext_args);
-  result := createResult(map, outputNodes(fn));
+  result := createResult(map, fn.outputs);
 end evaluateExternal2;
 
 function evaluateExternal3
@@ -1240,7 +1238,7 @@ algorithm
     result := res;
   else
     // Some output parameters, might require constructing a tuple.
-    result := makeExternalResult(res :: output_vals, outputRef, extArgs, outputNodes(fn));
+    result := makeExternalResult(res :: output_vals, outputRef, extArgs, fn.outputs);
   end if;
 end callExternalFunction;
 
@@ -1542,7 +1540,7 @@ protected
   list<Expression> input_args;
 algorithm
   input_args := list(makeExternalArg(arg) for arg in inputArgs);
-  arg_map := createArgumentMap(fn.inputs, outputNodes(fn), fn.locals, input_args,
+  arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, input_args,
     mutableParams = false, buildArrayBinding = false);
 
   args_len := listLength(extArgs);
@@ -1606,7 +1604,7 @@ function makeExternalResult
   input list<Expression> values;
   input ComponentRef outputRef;
   input list<Expression> extArgs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression outExp;
 protected
   ArgumentMap arg_map;
@@ -1635,7 +1633,7 @@ algorithm
     end match;
   end for;
 
-  ret_vals := list(getExternalOutputResult(o, arg_map) for o in outputs);
+  ret_vals := list(getExternalOutputResult(InstNode.fromHandle(o), arg_map) for o in outputs);
   outExp := Expression.makeTuple(ret_vals);
 end makeExternalResult;
 

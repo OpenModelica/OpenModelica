@@ -61,6 +61,7 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
   import BVariable = NBVariable;
+  import PointerWeak;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Causalize = NBCausalize;
   import Inline = NBInline;
@@ -413,7 +414,8 @@ public
     input output list<Pointer<Equation>> parameter_eqs;
     input output list<Pointer<Variable>> initial_param_vars;
   protected
-    Pointer<Variable> parent;
+    Pointer<Variable> parent, c_var;
+    PointerWeak<Variable> c_cell;
     Boolean skip;
   algorithm
     if BVariable.isConst(var) then
@@ -439,7 +441,8 @@ public
         initial_param_vars  := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
         parameter_eqs       := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
       else
-        for c_var in BVariable.getRecordChildren(var) loop
+        for c_cell in BVariable.getRecordChildrenCells(var) loop
+          c_var := PointerWeak.upgrade(c_cell);
           if BVariable.isBound(c_var) then
             BVariable.setBindingAsStart(c_var, true);
           end if;
