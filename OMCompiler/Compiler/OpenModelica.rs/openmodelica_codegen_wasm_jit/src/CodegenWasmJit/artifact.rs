@@ -686,16 +686,22 @@ fn run_fmi(
         if matches!(name.as_str(), "startTime" | "stopTime" | "stepSize" | "tolerance") {
             continue;
         }
-        let Some(v) = md.variables.iter().find(|v| v.name == *name) else {
+        let Some((v, vr, len)) = override_target(md, name) else {
             return Err(format!("wasm artifact: -override names no variable `{name}`"));
         };
         let Ok(value) = value.parse::<f64>() else {
             return Err(format!("wasm artifact: -override={name}={value} is not a number"));
         };
+        if len != 1 {
+            return Err(format!(
+                "wasm artifact: -override={name} names an array of {len} elements; \
+                 override them one at a time (`{name}[1]`)"
+            ));
+        }
         opts.parameters.push(openmodelica_fmi_driver::Parameter {
-            value_reference: v.value_reference,
+            value_reference: vr,
             ty: v.ty,
-            value,
+            values: vec![value],
         });
     }
 
@@ -836,6 +842,41 @@ fn mb(bytes: u64) -> String {
         Ok(true) => String::new(),
         _ => format!(", {:.1} MB", bytes as f64 / 1.0e6),
     }
+}
+
+/// The variable `-override` names, its value reference and how many values it
+/// takes. C names an array element (`q[2]`); FMI lists the array under one value
+/// reference, with the element's own following it in the FMU's own order.
+fn override_target<'a>(
+    md: &'a openmodelica_fmi::ModelDescription,
+    name: &str,
+) -> Option<(&'a openmodelica_fmi::Variable, u32, usize)> {
+    if let Some(v) = md.variables.iter().find(|v| v.name == name) {
+        return Some((v, v.value_reference, v.fixed_len().unwrap_or(1) as usize));
+    }
+    let (base, subscripts) = name.strip_suffix(']')?.split_once('[')?;
+    let v = md.variables.iter().find(|v| v.name == base)?;
+    let subscripts: Vec<u64> =
+        subscripts.split(',').map(|s| s.trim().parse().ok()).collect::<Option<_>>()?;
+    let extents: Vec<u64> = v
+        .dimensions
+        .iter()
+        .map(|d| match d {
+            openmodelica_fmi::Dimension::Fixed(k) => Some(*k),
+            openmodelica_fmi::Dimension::ValueReference(_) => None,
+        })
+        .collect::<Option<_>>()?;
+    if subscripts.len() != extents.len() {
+        return None;
+    }
+    let mut index = 0u64;
+    for (s, extent) in subscripts.iter().zip(&extents) {
+        if *s < 1 || s > extent {
+            return None;
+        }
+        index = index * extent + (s - 1);
+    }
+    Some((v, v.value_reference + index as u32, 1))
 }
 
 fn instance_name(md: &openmodelica_fmi::ModelDescription) -> String {

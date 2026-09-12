@@ -340,9 +340,17 @@ async function openFile(file) {
     renderDoc(documentationHtml(probe.documentation));
     renderFields();
     applyDefaults();
-    runBtn.disabled = false;
+    // An FMI 1.0/2.0 FMU numbers its value references per base type, which the
+    // masters do not translate: it is shown, but it cannot be run here.
+    const old = !/^3/.test(String(probe.fmiVersion));
+    runBtn.disabled = old;
     syncNativeDialog();
-    setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.fmiVersion}.`);
+    if (old) {
+      setStatus(`${fmu.md.modelName || file.name}: this FMU is FMI ${probe.fmiVersion}; `
+        + 'the simulator drives FMI 3.0. Export it with version="3.0" to simulate it here.', 'err');
+    } else {
+      setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.fmiVersion}.`);
+    }
   } catch (e) {
     fmu = null; archive = null;
     runBtn.disabled = true;
@@ -462,8 +470,10 @@ function renderFields() {
     const field = { v, input, kind: isInput ? 'input' : 'parameter', base, unit: chosen };
     const shown = (x) => (field.unit === base ? String(x) : toDisplay(x, displayUnitDef(base, field.unit)));
     // An input must be driven; a parameter with no declared start is left unset.
-    input.value = v.start != null ? shown(v.start)
-                : isInput ? (v.type === 'Boolean' ? 'false' : '0') : '';
+    // An array is one field, one element per comma.
+    input.value = v.start != null ? v.start.map(shown).join(', ')
+                : isInput ? Array(v.nValues || 1).fill(v.type === 'Boolean' ? 'false' : '0').join(', ')
+                : '';
     input.placeholder = input.value === '' ? 'unset' : '';
     input.spellcheck = false;
 
@@ -479,12 +489,14 @@ function renderFields() {
         unit.appendChild(o);
       }
       unit.onchange = () => {
-        const was = field.unit, now = unit.value, text = input.value.trim();
+        const was = field.unit, now = unit.value, parts = splitList(input.value);
         field.unit = now;
-        if (text === '' || !isFinite(Number(text))) return;   // an expression: leave it
-        const inBase = was === base ? text : fromDisplay(text, displayUnitDef(base, was));
-        const out = now === base ? inBase : toDisplay(inBase, displayUnitDef(base, now));
-        if (inBase != null && out != null) input.value = out;
+        if (parts.some((p) => p === '' || !isFinite(Number(p)))) return;   // an expression: leave it
+        const out = parts.map((p) => {
+          const inBase = was === base ? p : fromDisplay(p, displayUnitDef(base, was));
+          return inBase == null || now === base ? inBase : toDisplay(inBase, displayUnitDef(base, now));
+        });
+        if (out.every((v) => v != null)) input.value = out.join(', ');
       };
     } else {
       unit = document.createElement('span');
@@ -523,6 +535,21 @@ function compileExpr(src, name) {
   return fn;
 }
 
+// Split an array field into its elements: a comma inside a call — max(t,1) —
+// belongs to the call, not to the list.
+function splitList(text) {
+  const out = [];
+  let depth = 0, from = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (c === ',' && depth === 0) { out.push(text.slice(from, i)); from = i + 1; }
+  }
+  out.push(text.slice(from));
+  return out.map((p) => p.trim());
+}
+
 // The driver evaluates the expressions itself, so they travel as text; they are
 // still compiled here first, to catch a typo before the run starts.
 function collectFields() {
@@ -535,17 +562,25 @@ function collectFields() {
       log('warning', `${f.v.name}: string variables cannot be set yet; ignoring.`);
       continue;
     }
+    const n = f.v.nValues || 1;
     try {
-      const fn = compileExpr(src || '0', f.v.name);
-      const expr = src || '0';
+      const parts = splitList(src === '' ? Array(n).fill('0').join(',') : src);
+      if (parts.length !== n) {
+        throw new Error(`${f.v.name}: ${n} values expected, ${parts.length} given`);
+      }
       const d = displayUnitDef(f.base, f.unit);
-      if (f.kind === 'input') inputs.push({ vr: f.v.vr, expr: d ? backExpr(expr, d) : expr });
-      else {
-        const value = fn(num(startEl.value, 0));
+      const fns = parts.map((p) => compileExpr(p, f.v.name));
+      if (f.kind === 'input') {
+        inputs.push({ vr: f.v.vr, expr: parts.map((p) => (d ? backExpr(p, d) : p)).join(', ') });
+      } else {
+        const t = num(startEl.value, 0);
         // A plain number converts exactly; anything computed falls back to doubles.
-        const exact = d && /^[-+0-9.eE]+$/.test(src) ? fromDisplay(src, d) : null;
-        parameters.push({ vr: f.v.vr, value: exact != null ? Number(exact)
-                                            : d ? Number(fromDisplay(value, d) ?? value) : value });
+        const values = parts.map((p, i) => {
+          const value = fns[i](t);
+          const exact = d && /^[-+0-9.eE]+$/.test(p) ? fromDisplay(p, d) : null;
+          return exact != null ? Number(exact) : d ? Number(fromDisplay(value, d) ?? value) : value;
+        });
+        parameters.push({ vr: f.v.vr, values });
       }
     } catch (e) { f.input.classList.add('bad'); throw e; }
   }

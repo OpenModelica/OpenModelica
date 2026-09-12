@@ -10,7 +10,10 @@
 //! Strings cross as JSON in one buffer ([`om_fmi_out_ptr`]/[`om_fmi_out_len`]);
 //! sample values are read straight out of the recorder's buffer.
 
-use openmodelica_fmi::{Causality, Fmu, Initial, InterfaceKind, ModelDescription, VarType, Variability};
+use openmodelica_fmi::{
+    Causality, Dimension, FmiVersion, Fmu, Initial, InterfaceKind, ModelDescription, VarType,
+    Variability, Variable,
+};
 use openmodelica_fmi_driver::api::{Fmi3CoSimulation, Fmi3ModelExchange};
 use openmodelica_fmi_driver::record::Recorder;
 use openmodelica_fmi_driver::wasm_host::{HostFmu, KIND_CO_SIMULATION, KIND_MODEL_EXCHANGE};
@@ -215,8 +218,10 @@ pub extern "C" fn om_fmi_info() -> i32 {
 /// `{"interface":"me"|"cs", "startTime":…, "stopTime":…, "stepSize":…,
 ///   "tolerance":…, "solver": one of the `solvers` [`om_fmi_info`] lists,
 ///   "eventMode":bool,
-///   "loggingOn":bool, "parameters":[{"vr":…,"value":…}],
+///   "loggingOn":bool, "parameters":[{"vr":…,"values":[…]}],
 ///   "inputs":[{"vr":…,"expr":"sin(t)"}], "resultFile":"…"}`.
+/// An array variable is one value reference: `values` holds one entry per
+/// element, and its input expression is a comma-separated list of them.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn om_fmi_run(ptr: *const u8, len: usize) -> i32 {
     let text = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
@@ -326,6 +331,22 @@ fn causality_name(c: Causality) -> &'static str {
     }
 }
 
+/// How many values a variable takes: the product of its extents, a structural
+/// parameter's start value standing in for the dimension it gives.
+fn n_values(md: &ModelDescription, v: &Variable) -> usize {
+    v.dimensions
+        .iter()
+        .map(|d| match d {
+            Dimension::Fixed(k) => *k as usize,
+            Dimension::ValueReference(vr) => md
+                .variable_by_vr(*vr)
+                .and_then(|s| s.start.as_ref())
+                .and_then(|s| s.first_f64())
+                .unwrap_or(1.0) as usize,
+        })
+        .product()
+}
+
 /// Everything the page shows about an FMU before it is run.
 fn describe(fmu: &Fmu) -> Value {
     let md = &fmu.model_description;
@@ -362,7 +383,8 @@ fn describe(fmu: &Fmu) -> Value {
                 },
                 "unit": v.unit,
                 "displayUnit": v.display_unit,
-                "start": v.start.as_ref().and_then(|s| s.first_f64()),
+                "start": v.start.as_ref().and_then(|s| s.f64s()),
+                "nValues": n_values(md, v),
                 "numeric": v.ty.is_numeric(),
                 "settable": v.is_settable(),
                 // Together these name an editable start value: `derivative` the
@@ -463,6 +485,15 @@ fn figure_json(f: &openmodelica_fmi::Figure) -> Value {
 }
 
 fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Error> {
+    // An FMI 1.0/2.0 FMU numbers its value references per base type, which only
+    // its own loader translates; driving one here would reach other variables.
+    if md.fmi_version != FmiVersion::Fmi3 {
+        return Err(Error::Unsupported(format!(
+            "this FMU is FMI {}; the simulator drives FMI 3.0. Export it with version=\"3.0\" \
+             to simulate it here",
+            md.fmi_version_string
+        )));
+    }
     let mut opts = Options::from_model_description(md);
     let num = |key: &str| o.get(key).and_then(Value::as_f64);
     opts.start_time = num("startTime").unwrap_or(opts.start_time);
@@ -484,16 +515,27 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
     let variable_type = |vr: u64| -> VarType {
         md.variable_by_vr(vr as u32).map(|v| v.ty).unwrap_or(VarType::Float64)
     };
+    // FMI sets an array whole: what the page sends must be as long as the variable.
+    let check = |vr: u64, n: usize| -> Result<(), Error> {
+        let Some(v) = md.variable_by_vr(vr as u32) else { return Ok(()) };
+        let len = n_values(md, v);
+        if n != len {
+            return Err(Error::Unsupported(format!("`{}` takes {len} value(s), not {n}", v.name)));
+        }
+        Ok(())
+    };
     for p in o.get("parameters").and_then(Value::as_array).into_iter().flatten() {
-        let (Some(vr), Some(value)) =
-            (p.get("vr").and_then(Value::as_u64), p.get("value").and_then(Value::as_f64))
+        let (Some(vr), Some(values)) =
+            (p.get("vr").and_then(Value::as_u64), p.get("values").and_then(Value::as_array))
         else {
             continue;
         };
+        let values: Vec<f64> = values.iter().filter_map(Value::as_f64).collect();
+        check(vr, values.len())?;
         opts.parameters.push(Parameter {
             value_reference: vr as u32,
             ty: variable_type(vr),
-            value,
+            values,
         });
     }
     for i in o.get("inputs").and_then(Value::as_array).into_iter().flatten() {
@@ -502,9 +544,10 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
         else {
             continue;
         };
-        let value = expr::Expr::parse(text)
+        let values = expr::Expr::parse_list(text)
             .map_err(|e| Error::Unsupported(format!("the input expression `{text}`: {e}")))?;
-        opts.inputs.push(Input { value_reference: vr as u32, ty: variable_type(vr), value });
+        check(vr, values.len())?;
+        opts.inputs.push(Input { value_reference: vr as u32, ty: variable_type(vr), values });
     }
     Ok(opts)
 }
