@@ -95,6 +95,11 @@ constant Integer extLibraryBuildIndex = 36;
 // SOME(HashTableExpToExp.HashTable). See BackendDAEUtil.simplifyIfCondCached.
 constant Integer adjacencyIfCondCache = 37;
 
+// The NF top scope of the current frontend run: list<NFInstNode.InstNode>,
+// empty or a single node. Every other NF node refers to its enclosing scope
+// weakly, so without this root the top scope has no owner at all.
+constant Integer nfTopScope = 38;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -135,6 +140,7 @@ algorithm
   setGlobalRoot(fmuTranslation, NONE());
   setGlobalRoot(extLibraryBuildIndex, {});
   setGlobalRoot(adjacencyIfCondCache, NONE());
+  setGlobalRoot(nfTopScope, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

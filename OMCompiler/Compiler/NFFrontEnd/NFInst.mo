@@ -76,6 +76,7 @@ import Array;
 import Error;
 import ErrorExt;
 import FlagsUtil;
+import Global;
 import Flatten = NFFlatten;
 import Connections = NFConnections;
 import InstUtil = NFInstUtil;
@@ -550,6 +551,10 @@ algorithm
 
   cls := Class.setClassTree(elems, cls);
   topNode := InstNode.updateClass(cls, topNode);
+
+  // Root the top scope: everything below it refers to its enclosing scope
+  // weakly, so nothing else keeps it alive.
+  setGlobalRoot(Global.nfTopScope, {topNode});
 end makeTopNode;
 
 function markBuiltinTypeNodes

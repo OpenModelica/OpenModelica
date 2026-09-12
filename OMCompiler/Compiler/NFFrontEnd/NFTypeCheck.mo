@@ -3005,7 +3005,7 @@ protected
       case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = p))
         then InstNode.refEqual(parent, n) or isParent(parent, p);
       case InstNode.COMPONENT_NODE()
-        then InstNode.refEqual(parent, n) or isParent(parent, n.parent);
+        then InstNode.refEqual(parent, n) or isParent(parent, InstNode.parent(n));
       else false;
     end match;
   end isParent;

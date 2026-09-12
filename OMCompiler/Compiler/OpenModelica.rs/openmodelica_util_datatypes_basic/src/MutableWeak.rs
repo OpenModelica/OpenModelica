@@ -30,7 +30,15 @@ pub fn downgrade<T: Clone>(mutable: Mutable<T>) -> MutableWeak<T> {
 pub fn upgrade<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T>> {
     match weak.0.upgrade() {
         Some(cell) => Ok(Mutable(cell)),
-        None => Err("MutableWeak.upgrade: the referent is gone"),
+        None => {
+            if std::env::var_os("OPENMODELICA_WEAK_TRACE").is_some() {
+                eprintln!(
+                    "MutableWeak.upgrade: dead referent\n{}",
+                    std::backtrace::Backtrace::force_capture()
+                );
+            }
+            Err("MutableWeak.upgrade: the referent is gone")
+        }
     }
 }
 

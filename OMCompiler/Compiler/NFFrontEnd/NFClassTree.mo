@@ -466,6 +466,9 @@ public
       // Clone the class node by replacing the class in the node with itself.
       cls := InstNode.getClass(clsNode);
       clsNode := InstNode.replaceClass(cls, clsNode);
+      // The clone is a new node, not an update of the one it was made from, so
+      // it needs an identity of its own before any child points at it.
+      clsNode := InstNode.reidentify(clsNode);
 
       () := match cls
         case Class.EXPANDED_CLASS(elements = INSTANTIATED_TREE())

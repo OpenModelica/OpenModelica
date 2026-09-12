@@ -47,6 +47,8 @@ import NFFunction.Function;
 import Sections = NFSections;
 import Pointer;
 import PointerCyclic;
+import Mutable;
+import MutableWeak;
 import Error;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
@@ -258,7 +260,12 @@ uniontype InstNode
     Visibility visibility;
     PointerCyclic<Class> cls;
     array<CachedData> caches;
-    InstNode parentScope;
+    Option<Mutable<InstNode>> owner "The cell this node publishes itself into
+      for its children to read back. NONE() in the published copy, which must
+      not own the cell it lives in.";
+    Option<MutableWeak<InstNode>> identity "The same cell, weakly.";
+    Option<MutableWeak<InstNode>> parentScope "The enclosing scope's identity.
+      Weak: a scope owns the nodes in it.";
     InstNodeType nodeType;
   end CLASS_NODE;
 
@@ -267,7 +274,10 @@ uniontype InstNode
     Option<SCode.Element> definition;
     Visibility visibility;
     PointerCyclic<Component> component;
-    InstNode parent "The instance that this component is part of.";
+    Option<Mutable<InstNode>> owner "See CLASS_NODE.owner.";
+    Option<MutableWeak<InstNode>> identity "See CLASS_NODE.identity.";
+    Option<MutableWeak<InstNode>> parent "The instance that this component is
+      part of; see CLASS_NODE.parentScope.";
     InstNodeType nodeType;
   end COMPONENT_NODE;
 
@@ -323,10 +333,14 @@ uniontype InstNode
   protected
     String name;
     SCode.Visibility vis;
+    Option<Mutable<InstNode>> owner;
+    Option<MutableWeak<InstNode>> identity;
   algorithm
     SCode.CLASS(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
+    (owner, identity) := newIdentity();
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
-      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent, nodeType);
+      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
+      owner, identity, identityCell(parent), nodeType);
   end newClass;
 
   function newComponent
@@ -336,10 +350,14 @@ uniontype InstNode
   protected
     String name;
     SCode.Visibility vis;
+    Option<Mutable<InstNode>> owner;
+    Option<MutableWeak<InstNode>> identity;
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
+    (owner, identity) := newIdentity();
     node := COMPONENT_NODE(name, SOME(definition), Prefixes.visibilityFromSCode(vis),
-      PointerCyclic.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
+      PointerCyclic.create(Component.new(definition)), owner, identity,
+      identityCell(parent), InstNodeType.NORMAL_COMP());
   end newComponent;
 
   function newExtends
@@ -350,11 +368,15 @@ uniontype InstNode
     Absyn.Path base_path;
     String name;
     SCode.Visibility vis;
+    Option<Mutable<InstNode>> owner;
+    Option<MutableWeak<InstNode>> identity;
   algorithm
     SCode.Element.EXTENDS(baseClassPath = base_path, visibility = vis) := definition;
     name := AbsynUtil.pathLastIdent(base_path);
+    (owner, identity) := newIdentity();
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
-      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
+      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
+      owner, identity, identityCell(parent),
       InstNodeType.BASE_CLASS(parent, definition, nodeType(parent)));
   end newExtends;
 
@@ -390,9 +412,13 @@ uniontype InstNode
     input Component component;
     input InstNode parent;
     output InstNode node;
+  protected
+    Option<Mutable<InstNode>> owner;
+    Option<MutableWeak<InstNode>> identity;
   algorithm
+    (owner, identity) := newIdentity();
     node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, PointerCyclic.create(component),
-                           parent, InstNodeType.NORMAL_COMP());
+                           owner, identity, identityCell(parent), InstNodeType.NORMAL_COMP());
   end fromComponent;
 
   function isClass
@@ -690,13 +716,117 @@ uniontype InstNode
     end match;
   end rename;
 
+  function newIdentity
+    "A fresh cell for a node to publish itself into."
+    output Option<Mutable<InstNode>> owner;
+    output Option<MutableWeak<InstNode>> identity;
+  protected
+    Mutable<InstNode> cell;
+  algorithm
+    cell := Mutable.create(EMPTY_NODE());
+    owner := SOME(cell);
+    identity := SOME(MutableWeak.downgrade(cell));
+  end newIdentity;
+
+  function reidentify
+    "A fresh identity, for a node that is a copy of another rather than an
+     update of it. Its children must be made after this, or they refer to the
+     node it was copied from."
+    input output InstNode node;
+  protected
+    Option<Mutable<InstNode>> owner;
+    Option<MutableWeak<InstNode>> identity;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          (owner, identity) := newIdentity();
+          node.owner := owner;
+          node.identity := identity;
+        then ();
+
+      case COMPONENT_NODE()
+        algorithm
+          (owner, identity) := newIdentity();
+          node.owner := owner;
+          node.identity := identity;
+        then ();
+
+      else ();
+    end match;
+  end reidentify;
+
+  function setOwner
+    input output InstNode node;
+    input Option<Mutable<InstNode>> owner;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm node.owner := owner; then ();
+      case COMPONENT_NODE() algorithm node.owner := owner; then ();
+      else ();
+    end match;
+  end setOwner;
+
+  function disown
+    "The copy that goes into the cell must not own the cell back."
+    input output InstNode node = setOwner(node, NONE());
+  end disown;
+
+  function identityCell
+    "Publishes the node into its cell and returns a weak reference for a child
+     to store as its parent. Publishing here rather than on every update gives
+     a child the same snapshot of its parent a strong field would have."
+    input InstNode node;
+    output Option<MutableWeak<InstNode>> identity;
+  algorithm
+    identity := match node
+      local Mutable<InstNode> cell;
+
+      case CLASS_NODE(owner = SOME(cell))
+        algorithm
+          Mutable.update(cell, disown(node));
+        then node.identity;
+
+      case COMPONENT_NODE(owner = SOME(cell))
+        algorithm
+          Mutable.update(cell, disown(node));
+        then node.identity;
+
+      // Already a published copy: it cannot publish, but it can be a parent.
+      case CLASS_NODE() then node.identity;
+      case COMPONENT_NODE() then node.identity;
+      else NONE();
+    end match;
+  end identityCell;
+
+  function fromCell
+    "The node a parent cell holds, or an empty node if the parent is gone. The
+     result owns the cell, so a node reached through its parent is as usable as
+     the original — including as a parent itself."
+    input Option<MutableWeak<InstNode>> cell;
+    output InstNode node;
+  algorithm
+    node := matchcontinue cell
+      local
+        MutableWeak<InstNode> w;
+        Mutable<InstNode> c;
+
+      case SOME(w)
+        algorithm
+          c := MutableWeak.upgrade(w);
+        then setOwner(Mutable.access(c), SOME(c));
+
+      else EMPTY_NODE();
+    end matchcontinue;
+  end fromCell;
+
   function parent
     input InstNode node;
     output InstNode parent;
   algorithm
     parent := match node
-      case CLASS_NODE() then node.parentScope;
-      case COMPONENT_NODE() then node.parent;
+      case CLASS_NODE() then fromCell(node.parentScope);
+      case COMPONENT_NODE() then fromCell(node.parent);
       case IMPLICIT_SCOPE() then node.parentScope;
       else EMPTY_NODE();
     end match;
@@ -710,8 +840,11 @@ uniontype InstNode
   function classParent
     input InstNode node;
     output InstNode parent;
+  protected
+    Option<MutableWeak<InstNode>> p;
   algorithm
-    CLASS_NODE(parentScope = parent) := node;
+    CLASS_NODE(parentScope = p) := node;
+    parent := fromCell(p);
   end classParent;
 
   function instanceParent
@@ -768,11 +901,11 @@ uniontype InstNode
         then
           if isBuiltin(scope) then
             // Builtin types like Real do not have a parent set, go to the top scope instead.
-            topScope(node.parentScope)
+            topScope(fromCell(node.parentScope))
           elseif referenceEq(node, scope) then
             // lastBaseClass above might return the same node if the class has
             // been flattened, go directly to the parent to avoid an infinite loop.
-            node.parentScope
+            fromCell(node.parentScope)
           else
             parentScope(scope);
 
@@ -784,7 +917,7 @@ uniontype InstNode
         guard ignoreRedeclare
         then scope;
 
-      case CLASS_NODE() then node.parentScope;
+      case CLASS_NODE() then fromCell(node.parentScope);
       case COMPONENT_NODE() then parentScope(Component.classInstance(PointerCyclic.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;
     end match;
@@ -839,7 +972,7 @@ uniontype InstNode
         guard ignoreRedeclare
         then scope;
 
-      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(node.parentScope) else node.parentScope;
+      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(fromCell(node.parentScope)) else fromCell(node.parentScope);
       case COMPONENT_NODE() then enclosingScope(classScope(node), ignoreRedeclare, ignoreBaseClass);
       case IMPLICIT_SCOPE() then node.parentScope;
     end match;
@@ -862,7 +995,7 @@ uniontype InstNode
     output InstNode lib;
   algorithm
     lib := match node
-      case CLASS_NODE(parentScope = CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE())) then node;
+      case CLASS_NODE() guard isTopScope(fromCell(node.parentScope)) then node;
       else libraryScope(parentScope(node));
     end match;
   end libraryScope;
@@ -902,8 +1035,8 @@ uniontype InstNode
     output InstNode topComponent;
   algorithm
     topComponent := match node
-      case COMPONENT_NODE(parent = EMPTY_NODE()) then node;
-      case COMPONENT_NODE() then topComponent(node.parent);
+      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent)) then node;
+      case COMPONENT_NODE() then topComponent(fromCell(node.parent));
     end match;
   end topComponent;
 
@@ -914,13 +1047,13 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          node.parentScope := parent;
+          node.parentScope := identityCell(parent);
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          node.parent := parent;
+          node.parent := identityCell(parent);
         then
           ();
 
@@ -938,15 +1071,15 @@ uniontype InstNode
     input output InstNode node;
   algorithm
     () := match node
-      case CLASS_NODE(parentScope = EMPTY_NODE())
+      case CLASS_NODE() guard isEmpty(fromCell(node.parentScope))
         algorithm
-          node.parentScope := parent;
+          node.parentScope := identityCell(parent);
         then
           ();
 
-      case COMPONENT_NODE(parent = EMPTY_NODE())
+      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent))
         algorithm
-          node.parent := parent;
+          node.parent := identityCell(parent);
         then
           ();
 
@@ -1193,7 +1326,7 @@ uniontype InstNode
         then SCodeUtil.elementInfo(ty.definition);
       case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(PointerCyclic.access(node.component));
-      case COMPONENT_NODE() then info(node.parent);
+      case COMPONENT_NODE() then info(fromCell(node.parent));
       else Absyn.dummyInfo;
     end matchcontinue;
   end info;
@@ -1263,10 +1396,10 @@ uniontype InstNode
         InstNode parent;
 
       case CLASS_NODE() then scopeListClass(node, node.nodeType, includeRoot, accumScopes);
-      case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
+      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent)) then accumScopes;
       case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
         then scopeList(parent, includeRoot, node :: accumScopes);
-      case COMPONENT_NODE() then scopeList(node.parent, includeRoot, node :: accumScopes);
+      case COMPONENT_NODE() then scopeList(fromCell(node.parent), includeRoot, node :: accumScopes);
       case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
       else accumScopes;
     end match;
@@ -1365,10 +1498,10 @@ uniontype InstNode
         then
           match it
             case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, scopeType);
-            else scopePath2(node.parentScope, scopeType, Absyn.IDENT(node.name));
+            else scopePath2(fromCell(node.parentScope), scopeType, Absyn.IDENT(node.name));
           end match;
 
-      case COMPONENT_NODE() then scopePath2(node.parent, scopeType, Absyn.IDENT(node.name));
+      case COMPONENT_NODE() then scopePath2(fromCell(node.parent), scopeType, Absyn.IDENT(node.name));
       case IMPLICIT_SCOPE() then scopePath(node.parentScope, scopeType);
 
       // For debugging.
@@ -1384,7 +1517,7 @@ uniontype InstNode
   algorithm
     path := match node
       case CLASS_NODE() then scopePathClass(node, node.nodeType, scopeType, accumPath);
-      case COMPONENT_NODE() then scopePath2(node.parent, scopeType, Absyn.QUALIFIED(node.name, accumPath));
+      case COMPONENT_NODE() then scopePath2(fromCell(node.parent), scopeType, Absyn.QUALIFIED(node.name, accumPath));
       else accumPath;
     end match;
   end scopePath2;
@@ -2102,6 +2235,8 @@ uniontype InstNode
 
       else ();
     end match;
+
+    node := reidentify(node);
   end clone;
 
   function cloneComponent
@@ -2110,9 +2245,17 @@ uniontype InstNode
     output InstNode outComponent;
   algorithm
     outComponent := match component
+      local
+        Option<Mutable<InstNode>> owner;
+        Option<MutableWeak<InstNode>> identity;
+
       case COMPONENT_NODE()
-        then COMPONENT_NODE(component.name, component.definition, component.visibility,
-          PointerCyclic.create(PointerCyclic.access(component.component)), newParent, component.nodeType);
+        algorithm
+          (owner, identity) := newIdentity();
+        then
+          COMPONENT_NODE(component.name, component.definition, component.visibility,
+            PointerCyclic.create(PointerCyclic.access(component.component)),
+            owner, identity, identityCell(newParent), component.nodeType);
     end match;
   end cloneComponent;
 

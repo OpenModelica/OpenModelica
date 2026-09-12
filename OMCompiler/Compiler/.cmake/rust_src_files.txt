@@ -393,6 +393,7 @@ openmodelica_nf_frontend/Cargo.toml
 openmodelica_nf_frontend/build.rs
 openmodelica_nf_frontend/src/FFI.rs
 openmodelica_nf_frontend/src/FFI_wasm.rs
+openmodelica_nf_frontend/src/Globals.rs
 openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs

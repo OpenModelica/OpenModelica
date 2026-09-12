@@ -12823,6 +12823,10 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         "instNFInstCacheIndex"
         | "instNFNodeCacheIndex"
         | "instNFLookupCacheIndex" => Some("openmodelica_backend_main"),
+        // openmodelica_nf_frontend — the NF top scope root holds an
+        // NFInstNode.InstNode and is written by NFInst.makeTopNode, both in
+        // that crate.
+        "nfTopScope" => Some("openmodelica_nf_frontend"),
         // openmodelica_frontend_dump — backendInterface root holds the
         // function table populated by the frontend_dump-side interface
         // (see FrontEnd/BackendInterface.mo and its `__OpenModelica_Interface`).
