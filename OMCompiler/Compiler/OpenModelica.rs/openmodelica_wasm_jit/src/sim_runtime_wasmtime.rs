@@ -584,6 +584,22 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
     s
 }
 
+/// Tell the user what the loader said, since the run carries on regardless.
+fn lazy_binding_warning(detail: &str) {
+    let _ = openmodelica_util::Error::addMessage(
+        openmodelica_error::ErrorTypes::Message {
+            id: -1,
+            ty: openmodelica_error::ErrorTypes::MessageType::TRANSLATION,
+            severity: openmodelica_error::ErrorTypes::Severity::WARNING,
+            message: arcstr::ArcStr::from(
+                "wasm-jit: %s. It is loaded with lazy binding instead; a call that reaches the \
+                 missing symbol ends the simulation.",
+            ),
+        },
+        metamodelica::cons(arcstr::ArcStr::from(detail), metamodelica::nil()),
+    );
+}
+
 /// Load the libraries `sigs` are to be found in, link the model's archives and
 /// build its `Include` sources. Called from `buildModel`'s compile phase; the
 /// builds are cached, so instantiation reuses them.
@@ -655,7 +671,7 @@ impl NativeExternals {
         if let Some(archives) = &model.ext_archives {
             match archives.link() {
                 Ok(path) => {
-                    let (h, errors) = openmodelica_util::dynload::load_external_libraries(std::slice::from_ref(&path));
+                    let (h, errors) = self.load_archives(&path);
                     if errors.is_empty() {
                         self.paths.push(path);
                     }
@@ -665,6 +681,28 @@ impl NativeExternals {
                 Err(e) => self.errors.push(e),
             }
         }
+    }
+
+    /// The model's archives, linked into one shared object. Bound immediately first,
+    /// so an undefined symbol is named here instead of taking the process down with
+    /// `symbol lookup error` and an uncatchable `_exit(127)` on the call that reaches
+    /// it. One a model never calls is legitimate, so that is a warning and a lazy
+    /// retry, not a failure.
+    fn load_archives(&mut self, path: &String) -> (Vec<usize>, Vec<String>) {
+        use openmodelica_util::dynload::{load_external_libraries, load_external_libraries_bound};
+        let one = std::slice::from_ref(path);
+        let (h, errors) = load_external_libraries_bound(one);
+        if errors.is_empty() {
+            return (h, errors);
+        }
+        let (h, lazy_errors) = load_external_libraries(one);
+        if lazy_errors.is_empty() {
+            for e in &errors {
+                lazy_binding_warning(e);
+            }
+            self.errors.extend(errors);
+        }
+        (h, lazy_errors)
     }
 
     fn resolve(&mut self, name: &str, model: &SimModel) -> Option<usize> {
