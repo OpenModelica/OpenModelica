@@ -2385,8 +2385,8 @@ public
 
             // create fake derivative
             funcDer := FunctionDerivative.FUNCTION_DER(
-              derivativeFn          = InstNode.fromHandle(der_func.node),
-              derivedFn             = InstNode.fromHandle(dummy_func.node),
+              derivativeFn          = InstNode.scopeRef(InstNode.fromHandle(der_func.node)),
+              derivedFn             = InstNode.scopeRef(InstNode.fromHandle(dummy_func.node)),
               order                 = Expression.INTEGER(1),
               conditions            = FunctionDerivative.conditionsFromMap(interface_map),
               lowerOrderDerivatives = {}  // possibly needs updating
@@ -2442,8 +2442,8 @@ public
         UnorderedMap.add(der_func.path, der_func, diffArguments.funcMap);
         // add new function as derivative to original function
         funcDer := FunctionDerivative.FUNCTION_DER(
-          derivativeFn          = InstNode.fromHandle(der_func.node),
-          derivedFn             = InstNode.fromHandle(func.node),
+          derivativeFn          = InstNode.scopeRef(InstNode.fromHandle(der_func.node)),
+          derivedFn             = InstNode.scopeRef(InstNode.fromHandle(func.node)),
           order                 = Expression.INTEGER(1),
           conditions            = FunctionDerivative.conditionsFromMap(interface_map),
           lowerOrderDerivatives = {}  // possibly needs updating

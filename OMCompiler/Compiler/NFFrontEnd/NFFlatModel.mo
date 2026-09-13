@@ -414,7 +414,7 @@ public
       UnorderedSet.add(fn, funcs);
 
       for fn_der in fn.derivatives loop
-        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+        for der_fn in Function.getCachedFuncs(InstNode.borrow(fn_der.derivativeFn)) loop
           UnorderedSet.add(der_fn, funcs);
         end for;
       end for;

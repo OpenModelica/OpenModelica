@@ -38,6 +38,7 @@ encapsulated uniontype NFFunctionDerivative
   import AbsynUtil;
   import SCode;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import NFFunction.Function;
   import Expression = NFExpression;
   import Type = NFType;
@@ -63,11 +64,12 @@ public
   type Condition = enumeration(ZERO_DERIVATIVE, NO_DERIVATIVE);
 
   record FUNCTION_DER
-    InstNode derivativeFn;
-    InstNode derivedFn;
+    NFInstNode.ScopeRef derivativeFn "Weakly: the class tree owns the function
+      nodes; their caches hold the functions that name these back.";
+    NFInstNode.ScopeRef derivedFn;
     Expression order "Is evaluated to a literal Integer during typing";
     list<tuple<Integer, String, Condition>> conditions;
-    list<InstNode> lowerOrderDerivatives;
+    list<NFInstNode.ScopeRef> lowerOrderDerivatives;
   end FUNCTION_DER;
 
   function instDerivatives
@@ -95,8 +97,8 @@ public
     Variability var;
     SourceInfo info;
   algorithm
-    Function.typeNodeCache(fnDer.derivativeFn);
-    info := InstNode.info(fnDer.derivedFn);
+    Function.typeNodeCache(InstNode.borrow(fnDer.derivativeFn));
+    info := InstNode.info(InstNode.borrow(fnDer.derivedFn));
 
     (order, order_ty, var) := Typing.typeExp(fnDer.order, NFInstContext.FUNCTION, info);
     (order, _, mk) := TypeCheck.matchTypes(order_ty, Type.INTEGER(), order);
@@ -126,13 +128,13 @@ public
     Expression.INTEGER(order) := fnDer.order;
 
     derDef := DAE.FunctionDefinition.FUNCTION_DER_MAPPER(
-      Function.name(listHead(Function.getCachedFuncs(fnDer.derivedFn))),
-      Function.name(listHead(Function.getCachedFuncs(fnDer.derivativeFn))),
+      Function.name(listHead(Function.getCachedFuncs(InstNode.borrow(fnDer.derivedFn)))),
+      Function.name(listHead(Function.getCachedFuncs(InstNode.borrow(fnDer.derivativeFn)))),
       order,
       list(conditionToDAE(c) for c in fnDer.conditions),
       // TODO: Figure out if the two fields below are needed.
       NONE(),
-      list(Function.name(listHead(Function.getCachedFuncs(fn))) for fn in fnDer.lowerOrderDerivatives)
+      list(Function.name(listHead(Function.getCachedFuncs(InstNode.borrow(fn)))) for fn in fnDer.lowerOrderDerivatives)
     );
   end toDAE;
 
@@ -170,7 +172,7 @@ public
     SourceInfo info;
     Function func;
   algorithm
-    info := InstNode.info(fnDer.derivedFn);
+    info := InstNode.info(InstNode.borrow(fnDer.derivedFn));
     Expression.INTEGER(order) := fnDer.order;
     orderMod := SCode.NAMEMOD("order", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.INTEGER(order)), NONE(), info));
 
@@ -182,7 +184,7 @@ public
     end for;
 
 
-    func := listHead(Function.getCachedFuncs(fnDer.derivativeFn));
+    func := listHead(Function.getCachedFuncs(InstNode.borrow(fnDer.derivativeFn)));
 
     mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods,
              SOME(Absyn.CREF(Absyn.CREF_IDENT(AbsynUtil.pathString(func.path),{}))), NONE(), info);
@@ -279,7 +281,7 @@ protected
           addLowerOrderDerivative(der_node, fnNode);
           (order, conds) := getDerivativeAttributes(attrs, fn, fnNode, mod.info);
         then
-          FUNCTION_DER(der_node, fnNode, order, conds, {}) :: fnDers;
+          FUNCTION_DER(InstNode.scopeRef(der_node), InstNode.scopeRef(fnNode), order, conds, {}) :: fnDers;
 
       // Give a warning if the derivative annotation doesn't specify a function name.
       case SCode.Mod.MOD()
@@ -391,7 +393,7 @@ protected
         match fn_der
           case FUNCTION_DER()
             algorithm
-              fn_der.lowerOrderDerivatives := lowerDerNode :: fn_der.lowerOrderDerivatives;
+              fn_der.lowerOrderDerivatives := InstNode.scopeRef(lowerDerNode) :: fn_der.lowerOrderDerivatives;
             then
               fn_der;
         end match

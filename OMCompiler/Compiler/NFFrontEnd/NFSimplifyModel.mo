@@ -643,7 +643,7 @@ algorithm
     end match;
 
     for fn_der in func.derivatives loop
-      for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+      for der_fn in Function.getCachedFuncs(InstNode.borrow(fn_der.derivativeFn)) loop
         simplifyFunction(der_fn);
       end for;
     end for;

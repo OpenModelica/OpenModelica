@@ -44,6 +44,7 @@ import ComponentRef = NFComponentRef;
 import NFFlatten.FunctionTree;
 import Class = NFClass;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import NFFunction.Function;
 import Sections = NFSections;
 import Binding = NFBinding;
@@ -568,7 +569,7 @@ algorithm
     end if;
 
     for fn_der in func.derivatives loop
-      for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+      for der_fn in Function.getCachedFuncs(InstNode.borrow(fn_der.derivativeFn)) loop
         evaluateFunction(der_fn);
       end for;
     end for;

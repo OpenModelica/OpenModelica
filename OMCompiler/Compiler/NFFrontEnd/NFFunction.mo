@@ -2965,7 +2965,7 @@ protected
   algorithm
     for func in original.derivatives loop
       if FunctionDerivative.perfectFit(func, interface_map) then
-        derivative := SOME(listHead(getCachedFuncs(func.derivativeFn)));
+        derivative := SOME(listHead(getCachedFuncs(InstNode.borrow(func.derivativeFn))));
         return;
       end if;
     end for;
