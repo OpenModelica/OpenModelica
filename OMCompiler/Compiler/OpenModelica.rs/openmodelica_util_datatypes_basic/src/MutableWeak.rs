@@ -19,6 +19,32 @@ impl<T: Clone> Clone for MutableWeak<T> {
     }
 }
 
+/// The Rust port has real weak semantics, so a cell needs an owner.
+pub fn ownership() -> bool {
+    true
+}
+
+thread_local! {
+    /// Cells kept alive for the current frontend run. `Mutable` cells are
+    /// owned by the node values that carry them, but a node whose value has
+    /// died is still reachable weakly, so the run holds those here until
+    /// `clearRoots`.
+    static ROOTED_CELLS: std::cell::RefCell<Vec<Arc<dyn metamodelica::gc::TraceableCell>>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Keep a cell alive for the current run. A no-op in the bootstrapped
+/// compiler, where a weak reference is the strong one.
+pub fn root<T: Clone + metamodelica::gc::MMTrace + 'static>(mutable: Mutable<T>) {
+    let cell: Arc<dyn metamodelica::gc::TraceableCell> = mutable.0;
+    ROOTED_CELLS.with(|r| r.borrow_mut().push(cell));
+}
+
+/// Drop everything [`root`] is holding.
+pub fn clearRoots() {
+    ROOTED_CELLS.with(|r| r.borrow_mut().clear());
+}
+
 /// A dangling reference, for a record field that has not been assigned yet.
 /// Upgrading it fails the same way any dead referent does.
 impl<T: Clone> Default for MutableWeak<T> {

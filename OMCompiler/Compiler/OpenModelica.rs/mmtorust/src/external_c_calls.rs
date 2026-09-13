@@ -585,6 +585,10 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         // ── Mutable.mo / Pointer.mo inline helpers ─────────────────────────
         m.insert("mutableCreate", Infallible);
         m.insert("mutableWeakDowngrade", Infallible);
+        // Root bookkeeping: a no-op in C, a Vec push/clear in the Rust port.
+        m.insert("mutableWeakOwnership", Infallible);
+        m.insert("mutableWeakRoot", Infallible);
+        m.insert("mutableWeakClearRoots", Infallible);
         // Fails when the referent is already gone. Identity in the C runtime,
         // where Boehm keeps the cell alive and it can never fail.
         m.insert("mutableWeakUpgrade", Fallible);

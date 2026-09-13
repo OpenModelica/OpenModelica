@@ -556,7 +556,7 @@ algorithm
   // Root the top scope: everything below it refers to its enclosing scope
   // weakly, so nothing else keeps it alive.
   setGlobalRoot(Global.nfTopScope, {topNode});
-  setGlobalRoot(Global.nfIdentityCells, {});
+  MutableWeak.clearRoots();
   setGlobalRoot(Global.nbCreatedVars, {});
 end makeTopNode;
 

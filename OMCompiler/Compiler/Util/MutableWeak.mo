@@ -76,5 +76,41 @@ static inline void* mutableWeakUpgrade(void *weak)
 ");
 end upgrade;
 
+impure function ownership
+  "True where a cell needs an explicit owner to stay alive, so `InstNode`
+   has to copy a record to set and clear one. False in the bootstrapped
+   compiler: Boehm keeps the cell alive by tracing, and an owner there would
+   only build the very cycle the collector then has to reclaim."
+  output Boolean needed;
+external "C" needed=mutableWeakOwnership() annotation(Include="
+static inline int mutableWeakOwnership(void)
+{
+  return 0;
+}
+");
+end ownership;
+
+impure function root
+  "Keeps a cell alive for the current frontend run, for a cell whose only
+   other references are weak. A no-op in the bootstrapped compiler: there a
+   weak reference *is* the strong one, so nothing can die early and there is
+   nothing to keep."
+  input Mutable<T> mutable;
+external "C" mutableWeakRoot(mutable) annotation(Include="
+static inline void mutableWeakRoot(void *mutable)
+{
+}
+");
+end root;
+
+impure function clearRoots
+  "Drops everything `root` is holding. A no-op in the bootstrapped compiler."
+external "C" mutableWeakClearRoots() annotation(Include="
+static inline void mutableWeakClearRoots(void)
+{
+}
+");
+end clearRoots;
+
 annotation(__OpenModelica_Interface="util_datatypes_basic");
 end MutableWeak;

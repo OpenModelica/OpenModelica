@@ -759,13 +759,11 @@ uniontype InstNode
     output Option<MutableWeak<InstNode>> identity;
   protected
     Mutable<InstNode> cell;
-    list<Mutable<InstNode>> cells;
   algorithm
     cell := Mutable.create(EMPTY_NODE());
     // The run owns the cell. A node value is not a long enough owner: a cref
     // outlives the value it was made from and still walks up through it.
-    cells := getGlobalRoot(Global.nfIdentityCells);
-    setGlobalRoot(Global.nfIdentityCells, cell :: cells);
+    MutableWeak.root(cell);
     owner := SOME(cell);
     identity := SOME(MutableWeak.downgrade(cell));
   end newIdentity;
@@ -810,11 +808,23 @@ uniontype InstNode
   end setOwner;
 
   function disown
-    "The copy that goes into the cell must not own the cell back."
+    "The copy that goes into the cell must not own the cell back. Where a cell
+     needs no owner at all the record copy is pure overhead, so skip it."
     input output InstNode node;
   algorithm
-    node := setOwner(node, NONE());
+    if MutableWeak.ownership() then
+      node := setOwner(node, NONE());
+    end if;
   end disown;
+
+  function reown
+    "The counterpart of `disown`, for a node read back out of its cell."
+    input InstNode node;
+    input Mutable<InstNode> cell;
+    output InstNode outNode;
+  algorithm
+    outNode := if MutableWeak.ownership() then setOwner(node, SOME(cell)) else node;
+  end reown;
 
   function identityCell
     "Publishes the node into its cell and returns a weak reference for a child
@@ -853,6 +863,13 @@ uniontype InstNode
     input InstNode node;
     output NodeHandle hnd;
   algorithm
+    if not MutableWeak.ownership() then
+      // Nothing to break: the node itself is the handle, as it was before
+      // any of this, and no snapshot can go stale.
+      hnd := NodeHandle.VALUE(node);
+      return;
+    end if;
+
     hnd := match node
       local Mutable<InstNode> cell;
 
@@ -887,11 +904,13 @@ uniontype InstNode
       local Mutable<InstNode> cell;
 
       case CLASS_NODE(owner = SOME(cell))
+        guard MutableWeak.ownership()
         algorithm
           Mutable.update(cell, disown(node));
         then fromIdentity(node.identity, node);
 
       case COMPONENT_NODE(owner = SOME(cell))
+        guard MutableWeak.ownership()
         algorithm
           Mutable.update(cell, disown(node));
         then fromIdentity(node.identity, node);
@@ -952,7 +971,7 @@ uniontype InstNode
       case SOME(w)
         algorithm
           c := MutableWeak.upgrade(w);
-        then setOwner(Mutable.access(c), SOME(c));
+        then reown(Mutable.access(c), c);
 
       else EMPTY_NODE();
     end matchcontinue;
