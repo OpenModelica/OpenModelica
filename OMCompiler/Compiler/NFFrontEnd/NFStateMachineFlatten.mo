@@ -60,6 +60,7 @@ import List;
 import NFBackendExtension;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import NFPrefixes.{Variability, Purity, Visibility};
 import SCode;
@@ -644,7 +645,7 @@ protected
   list<Equation.Branch> branches, newBranches;
   list<Equation> transformedBody;
   list<Variable> branchVars;
-  Option<MutableWeak<InstNode>> whenScope;
+  NFInstNode.ScopeRef whenScope;
   DAE.ElementSource whenSource;
   Expression branchCond;
   Variability branchCondVar;
@@ -685,7 +686,7 @@ protected
   Expression lhs, rhs;
   ComponentRef lhsCref, perStateVarCref, stateActiveCref;
   Type lhsTy;
-  Option<MutableWeak<InstNode>> eqScope;
+  NFInstNode.ScopeRef eqScope;
   DAE.ElementSource eqSource;
   list<ComponentRef> stateVarCrefs;
   Boolean hasStateVarOnLHS, isOuterOutput;
@@ -1442,7 +1443,7 @@ protected
   Expression lhs, rhs, activeRef, expElse;
   ComponentRef lhsCref;
   Type ty;
-  Option<MutableWeak<InstNode>> eqScope;
+  NFInstNode.ScopeRef eqScope;
   DAE.ElementSource eqSource;
 algorithm
   Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = eqScope, source = eqSource) := inEq;
@@ -1730,7 +1731,7 @@ function isEquationOfState
   input ComponentRef stateCref;
   output Boolean res = false;
 protected
-  Option<MutableWeak<InstNode>> eqScope;
+  NFInstNode.ScopeRef eqScope;
   String stateName;
 algorithm
   stateName := ComponentRef.firstName(stateCref);
@@ -1765,7 +1766,7 @@ function isOuterStateEquation
   input list<ComponentRef> stateCrefs;
   output Boolean res = false;
 protected
-  Option<MutableWeak<InstNode>> eqScope;
+  NFInstNode.ScopeRef eqScope;
   String scopeName;
 algorithm
   () := match eq
@@ -1836,7 +1837,7 @@ algorithm
   end for;
 
   src := ElementSource.createElementSource(Absyn.dummyInfo);
-  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, NONE(), src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
+  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, NFInstNode.NO_SCOPE, src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
 end generateMergeEquation;
 
 // ============================================================
@@ -1928,7 +1929,7 @@ function makeEq
   input Type ty;
   output Equation eq;
 algorithm
-  eq := Equation.EQUALITY(lhs, rhs, ty, NONE(), DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE);
+  eq := Equation.EQUALITY(lhs, rhs, ty, NFInstNode.NO_SCOPE, DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE);
 end makeEq;
 
 // ============================================================

@@ -62,6 +62,7 @@ import Type = NFType;
 import Call = NFCall;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
+import NFInstNode;
 import Class = NFClass;
 import Binding = NFBinding;
 import NFFunction.Function;
@@ -372,11 +373,11 @@ algorithm
     exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp, -1);
   end if;
 
-  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, NONE(), source);
+  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, NFInstNode.NO_SCOPE, source);
 
   // wrap the equation in for loop if necessary
   while not listEmpty(iterators) loop
-    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, NONE(), source);
+    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, NFInstNode.NO_SCOPE, source);
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;
@@ -441,7 +442,7 @@ algorithm
   equations := {Equation.makeEquality(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), src)};
 
   while not listEmpty(iterators) loop
-    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, NONE(), src)};
+    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, NFInstNode.NO_SCOPE, src)};
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;

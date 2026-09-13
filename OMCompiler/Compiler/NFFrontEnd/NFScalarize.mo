@@ -62,6 +62,7 @@ import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import SCode;
 
@@ -386,7 +387,7 @@ end scalarizeEquation;
 
 function scalarizeIfEquation
   input list<Equation.Branch> branches;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
@@ -414,7 +415,7 @@ end scalarizeIfEquation;
 
 function scalarizeWhenEquation
   input list<Equation.Branch> branches;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected

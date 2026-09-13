@@ -35,6 +35,7 @@
 
 encapsulated uniontype NFComplexType
   import NFInstNode.InstNode;
+  import NFInstNode;
   import MutableWeak;
   import Record = NFRecord;
   import UnorderedMap;
@@ -50,7 +51,7 @@ public
        type SomeType
          extends Real;
        end SomeType;"
-    Option<MutableWeak<InstNode>> baseClass "Weakly: the class tree owns it.";
+    NFInstNode.ScopeRef baseClass "Weakly: the class tree owns it.";
   end EXTENDS_TYPE;
 
   record CONNECTOR
@@ -65,7 +66,7 @@ public
   end EXPANDABLE_CONNECTOR;
 
   record RECORD
-    Option<MutableWeak<InstNode>> constructor "Weakly: the class tree owns it.";
+    NFInstNode.ScopeRef constructor "Weakly: the class tree owns it.";
     array<Record.Field> fields;
     UnorderedMap<String, Integer> indexMap;
   end RECORD;

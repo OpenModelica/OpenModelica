@@ -50,6 +50,7 @@ public
   import BaseModelica;
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import MutableWeak;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
@@ -111,7 +112,7 @@ public
   end UNKNOWN;
 
   record COMPLEX
-    Option<MutableWeak<InstNode>> cls "The class this type names, weakly:
+    NFInstNode.ScopeRef cls "The class this type names, weakly:
       a class's own type names it back, and that is a cycle. Owned by whatever
       the class hangs off -- a component's `classInst`, a `Function`, a cref.";
     ComplexType complexTy;
@@ -610,7 +611,7 @@ public
     input Type ty;
     output InstNode node;
   protected
-    Option<MutableWeak<InstNode>> cell;
+    NFInstNode.ScopeRef cell;
   algorithm
     COMPLEX(cls = cell) := ty;
     node := InstNode.borrow(cell);
@@ -1481,7 +1482,7 @@ public
   algorithm
     recordType := match recordType
       local
-        Option<MutableWeak<InstNode>> rec_node;
+        NFInstNode.ScopeRef rec_node;
         UnorderedMap<String, Integer> indexMap;
         array<Record.Field> fields = listArray(field_lst);
 

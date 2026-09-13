@@ -59,6 +59,7 @@ public
   import Expression = NFExpression;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
+  import NFInstNode;
   import MutableWeak;
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
@@ -1526,7 +1527,7 @@ public
     protected
       Algorithm alg;
     algorithm
-      alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), NONE(), DAE.emptyElementSource);
+      alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), NFInstNode.NO_SCOPE, DAE.emptyElementSource);
       alg := Algorithm.setInputsOutputs(alg);
       eqn := BackendDAE.lowerAlgorithm(alg, init);
     end makeAlgorithm;
@@ -3093,7 +3094,7 @@ public
       e := Equation.IF_EQUATION(IfEquationBody.size(body), body, source, attr);
       // convert to algorithm if the body is an algorithm. mainly used for asserts in if-equations
       if isAlgorithm then
-        alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), NONE(), source);
+        alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), NFInstNode.NO_SCOPE, source);
         alg   := Algorithm.setInputsOutputs(alg);
         size  := sum(ComponentRef.size(out, false) for out in alg.outputs);
         eqn   := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));

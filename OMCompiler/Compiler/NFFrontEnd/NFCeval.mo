@@ -41,6 +41,7 @@ import Error;
 import Component = NFComponent;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import Operator = NFOperator;
 import NFOperator.Op;
@@ -665,7 +666,7 @@ function makeComponentBinding
   output Binding binding;
 protected
   Type ty;
-  Option<MutableWeak<InstNode>> rec_node;
+  NFInstNode.ScopeRef rec_node;
   Expression exp;
 algorithm
   binding := matchcontinue component

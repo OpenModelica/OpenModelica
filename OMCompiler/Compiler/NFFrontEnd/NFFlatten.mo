@@ -46,6 +46,7 @@ import Binding = NFBinding;
 import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
@@ -1363,7 +1364,7 @@ protected
   Expression range;
   list<Expression> ranges;
   list<Subscript> subs;
-  Option<MutableWeak<InstNode>> scope;
+  NFInstNode.ScopeRef scope;
   DAE.ElementSource src;
 algorithm
   (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
@@ -1994,7 +1995,7 @@ protected
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
-  Option<MutableWeak<InstNode>> scope;
+  NFInstNode.ScopeRef scope;
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
   has_connect := Equation.contains(eq, Equation.isConnection);
@@ -2169,7 +2170,7 @@ protected
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
-  Option<MutableWeak<InstNode>> scope;
+  NFInstNode.ScopeRef scope;
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
@@ -2857,7 +2858,7 @@ algorithm
   () := match ty
     local
       InstNode con, de;
-      Option<MutableWeak<InstNode>> rec_con;
+      NFInstNode.ScopeRef rec_con;
       Function fn;
 
     case Type.ARRAY()

@@ -37,6 +37,7 @@ encapsulated uniontype NFEquation
   import Expression = NFExpression;
   import Type = NFType;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import MutableWeak;
   import DAE;
   import ComponentRef = NFComponentRef;
@@ -214,7 +215,7 @@ public
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
     Type ty;
-    Option<MutableWeak<InstNode>> scope "Weakly: that scope's sections hold
+    NFInstNode.ScopeRef scope "Weakly: that scope's sections hold
       the equation.";
     DAE.ElementSource source;
     ScalarizeMode scalarizeMode;
@@ -223,7 +224,7 @@ public
   record CONNECT
     Expression lhs;
     Expression rhs;
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end CONNECT;
 
@@ -231,19 +232,19 @@ public
     InstNode iterator;
     Option<Expression> range;
     list<Equation> body   "The body of the for loop.";
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end FOR;
 
   record IF
     list<Branch> branches;
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end IF;
 
   record WHEN
     list<Branch> branches;
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end WHEN;
 
@@ -251,26 +252,26 @@ public
     Expression condition "The assert condition.";
     Expression message "The message to display if the assert fails.";
     Expression level "Error or warning";
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end ASSERT;
 
   record TERMINATE
     Expression message "The message to display if the terminate triggers.";
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end TERMINATE;
 
   record REINIT
     Expression cref "The variable to reinitialize.";
     Expression reinitExp "The new value of the variable.";
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end REINIT;
 
   record NORETCALL
     Expression exp;
-    Option<MutableWeak<InstNode>> scope;
+    NFInstNode.ScopeRef scope;
     DAE.ElementSource source;
   end NORETCALL;
 
@@ -366,7 +367,7 @@ public
     "The scope as stored. Pass this straight on when building an equation from
      another one; `scope` is for using it as a node."
     input Equation eq;
-    output Option<MutableWeak<InstNode>> scope;
+    output NFInstNode.ScopeRef scope;
   algorithm
     scope := match eq
       case EQUALITY() then eq.scope;

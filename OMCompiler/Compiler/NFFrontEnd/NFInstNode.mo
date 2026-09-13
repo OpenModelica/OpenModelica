@@ -78,7 +78,7 @@ uniontype InstNodeType
 
   record BASE_CLASS
     "A base class extended by another class."
-    Option<MutableWeak<InstNode>> parent "The extending class, weakly; see
+    ScopeRef parent "The extending class, weakly; see
       InstNode.CLASS_NODE.parentScope.";
     SCode.Element definition "The extends clause definition.";
     InstNodeType ty "The original node type before the class was extended.";
@@ -145,6 +145,14 @@ uniontype NodeHandle
     InstNode node;
   end VALUE;
 end NodeHandle;
+
+type ScopeRef = InstNode
+  "How a reference to an enclosing scope is stored. The Rust port stores a weak
+   handle instead -- see NFInstNode.rust.mo -- because a scope owns the nodes in
+   it, so a strong reference back would close the cycle. Read one with
+   `fromCell` or `borrow`, make one with `identityCell`.";
+
+constant ScopeRef NO_SCOPE = InstNode.EMPTY_NODE();
 
 constant Integer NUMBER_OF_CACHES = 3;
 
@@ -282,7 +290,7 @@ uniontype InstNode
       for its children to read back. NONE() in the published copy, which must
       not own the cell it lives in.";
     Option<MutableWeak<InstNode>> identity "The same cell, weakly.";
-    Option<MutableWeak<InstNode>> parentScope "The enclosing scope's identity.
+    ScopeRef parentScope "The enclosing scope's identity.
       Weak: a scope owns the nodes in it.";
     InstNodeType nodeType;
   end CLASS_NODE;
@@ -294,7 +302,7 @@ uniontype InstNode
     Pointer<Component> component;
     Option<Mutable<InstNode>> owner "See CLASS_NODE.owner.";
     Option<MutableWeak<InstNode>> identity "See CLASS_NODE.identity.";
-    Option<MutableWeak<InstNode>> parent "The instance that this component is
+    ScopeRef parent "The instance that this component is
       part of; see CLASS_NODE.parentScope.";
     InstNodeType nodeType;
   end COMPONENT_NODE;
@@ -835,35 +843,11 @@ uniontype InstNode
   end reown;
 
   function identityCell
-    "Publishes the node into its cell and returns a weak reference for a child
-     to store as its parent. Publishing here rather than on every update gives
-     a child the same snapshot of its parent a strong field would have."
+    "The scope reference a child stores to name this node as its parent. The
+     Rust port has to publish the node into its cell here; see
+     NFInstNode.rust.mo."
     input InstNode node;
-    output Option<MutableWeak<InstNode>> identity;
-  algorithm
-    if not GCExt.cellsNeedOwners then
-      identity := SOME(MutableWeak.ofValue(node));
-      return;
-    end if;
-
-    identity := match node
-      local Mutable<InstNode> cell;
-
-      case CLASS_NODE(owner = SOME(cell))
-        algorithm
-          Mutable.update(cell, disown(node));
-        then node.identity;
-
-      case COMPONENT_NODE(owner = SOME(cell))
-        algorithm
-          Mutable.update(cell, disown(node));
-        then node.identity;
-
-      // Already a published copy: it cannot publish, but it can be a parent.
-      case CLASS_NODE() then node.identity;
-      case COMPONENT_NODE() then node.identity;
-      else NONE();
-    end match;
+    output ScopeRef identity = node;
   end identityCell;
 
   function handle
@@ -949,49 +933,22 @@ uniontype InstNode
     output InstNode node;
   algorithm
     node := match hnd
-      case NodeHandle.CELL() then borrow(SOME(hnd.cell));
+      case NodeHandle.CELL() then MutableWeak.value(hnd.cell);
       case NodeHandle.VALUE() then hnd.node;
     end match;
   end fromHandle;
 
   function borrow
-    "The node a cell holds, without taking ownership of it. For an edge that is
-     not a parent edge and whose target is owned elsewhere: `fromCell` copies
-     the record to re-own it, which is more than a type should pay to name a
-     class."
-    input Option<MutableWeak<InstNode>> cell;
-    output InstNode node;
-  algorithm
-    node := matchcontinue cell
-      local MutableWeak<InstNode> w;
-      case SOME(w) guard not GCExt.cellsNeedOwners then MutableWeak.value(w);
-      case SOME(w) then Mutable.access(MutableWeak.upgrade(w));
-      else EMPTY_NODE();
-    end matchcontinue;
+    "The node a scope reference names, without taking ownership of it."
+    input ScopeRef cell;
+    output InstNode node = cell;
   end borrow;
 
   function fromCell
-    "The node a parent cell holds, or an empty node if the parent is gone. The
-     result owns the cell, so a node reached through its parent is as usable as
-     the original — including as a parent itself."
-    input Option<MutableWeak<InstNode>> cell;
-    output InstNode node;
-  algorithm
-    node := matchcontinue cell
-      local
-        MutableWeak<InstNode> w;
-        Mutable<InstNode> c;
-
-      case SOME(w) guard not GCExt.cellsNeedOwners
-        then MutableWeak.value(w);
-
-      case SOME(w)
-        algorithm
-          c := MutableWeak.upgrade(w);
-        then reown(Mutable.access(c), c);
-
-      else EMPTY_NODE();
-    end matchcontinue;
+    "The node a scope reference names. In the Rust port the scope may be gone,
+     and this owns what it hands back; see NFInstNode.rust.mo."
+    input ScopeRef cell;
+    output InstNode node = cell;
   end fromCell;
 
   function parent
@@ -1015,7 +972,7 @@ uniontype InstNode
     input InstNode node;
     output InstNode parent;
   protected
-    Option<MutableWeak<InstNode>> p;
+    ScopeRef p;
   algorithm
     CLASS_NODE(parentScope = p) := node;
     parent := fromCell(p);

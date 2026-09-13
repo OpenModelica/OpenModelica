@@ -44,6 +44,7 @@ import ComponentRef = NFComponentRef;
 import NFFlatten.FunctionTree;
 import Class = NFClass;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import NFFunction.Function;
 import Sections = NFSections;
@@ -235,7 +236,7 @@ protected
   Expression lhs, rhs;
   Type ty;
   DAE.ElementSource src;
-  Option<MutableWeak<InstNode>> scope;
+  NFInstNode.ScopeRef scope;
   Equation.ScalarizeMode scalarize_mode;
 algorithm
   Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
@@ -498,7 +499,7 @@ end removeEmptyFunctionArguments;
 
 function simplifyIfEqBranches
   input list<Equation.Branch> branches;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource src;
   input output list<Equation> elements;
 protected

@@ -44,6 +44,7 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFClassTree.ClassTree;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import NFModifier.Modifier;
 import NFSections.Sections;
@@ -861,7 +862,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     Class cls;
     Type ty;
     InstNode ty_node;
-    Option<MutableWeak<InstNode>> ty_cell;
+    NFInstNode.ScopeRef ty_cell;
     list<Record.Field> fields;
     array<InstNode> comps;
     list<Expression> args;

@@ -50,6 +50,7 @@ import Equation = NFEquation;
 import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import NFModifier.Modifier;
 import SimplifyExp = NFSimplifyExp;
@@ -149,7 +150,7 @@ protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
   InstNode con, de;
-  Option<MutableWeak<InstNode>> rec_con;
+  NFInstNode.ScopeRef rec_con;
 algorithm
   () := match c
     case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
@@ -253,7 +254,7 @@ function typeClassType
 protected
   Class cls, ty_cls;
   InstNode ty_node;
-  Option<MutableWeak<InstNode>> node;
+  NFInstNode.ScopeRef node;
   Type cls_ty;
   Function fn;
   Boolean is_expandable;
@@ -411,7 +412,7 @@ algorithm
 end checkConnectorTypeBalance;
 
 function makeRecordType
-  input Option<MutableWeak<InstNode>> constructor;
+  input NFInstNode.ScopeRef constructor;
   output ComplexType recordTy;
 protected
   CachedData cache;
@@ -3112,7 +3113,7 @@ function typeConnect
   input Expression lhsConn;
   input Expression rhsConn;
   input InstContext.Type context;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation connEq;
 protected
@@ -3494,7 +3495,7 @@ function typeEqualityEquation
   input Expression lhsExp;
   input Expression rhsExp;
   input InstContext.Type context;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation eq;
 protected
@@ -3567,7 +3568,7 @@ protected
   InstNode iterator;
   Option<Expression> range;
   list<Equation> body;
-  Option<MutableWeak<InstNode>> scope;
+  NFInstNode.ScopeRef scope;
   DAE.ElementSource src;
   SourceInfo info;
   Expression range_exp;
@@ -3596,7 +3597,7 @@ end typeForEquation;
 function typeIfEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation ifEq;
 protected
@@ -3649,7 +3650,7 @@ end typeIfEquation;
 function typeWhenEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
-  input Option<MutableWeak<InstNode>> scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation whenEq;
 protected

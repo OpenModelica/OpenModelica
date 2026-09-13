@@ -57,6 +57,7 @@ protected
   import ElementSource;
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import NFPrefixes.Purity;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
@@ -606,7 +607,7 @@ protected
         // instead of creating an unnecessary for loop here.
         body := Equation.replaceIteratorList(body, iterators[i], ranges[i]);
       else
-        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, NONE(), DAE.emptyElementSource)};
+        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, NFInstNode.NO_SCOPE, DAE.emptyElementSource)};
       end if;
     end for;
 

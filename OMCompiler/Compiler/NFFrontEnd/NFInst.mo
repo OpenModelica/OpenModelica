@@ -56,6 +56,7 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import Class = NFClass;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import GCExt;
 import NFInstNode.InstNodeType;
@@ -2363,7 +2364,7 @@ function instanceScope
   output InstNode scope;
 algorithm
   scope := match node
-    local Option<MutableWeak<InstNode>> ext_scope;
+    local NFInstNode.ScopeRef ext_scope;
     case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = ext_scope))
       then InstNode.fromCell(ext_scope);
     case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope)) then scope;
@@ -2736,7 +2737,7 @@ algorithm
   () := match ty
     local
       InstNode node;
-      Option<MutableWeak<InstNode>> cell;
+      NFInstNode.ScopeRef cell;
 
     case Type.COMPLEX(complexTy = ComplexType.RECORD(cell))
       // Make sure it's really a record, and not e.g. a record inherited by a model.
