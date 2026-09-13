@@ -174,7 +174,7 @@ if [ -n "$qt" ]; then
   done
 
   # QML, as the Windows deploy does it. Module directories only.
-  scanner=$(ls "$QT_HOST_PATH/libexec/qmlimportscanner" \
+  scanner=$(ls "${QT_HOST_PATH:-}/libexec/qmlimportscanner" \
                "${qt%/macos}"/gcc_64/libexec/qmlimportscanner 2>/dev/null | head -1)
   animqml=$(dirname "$0")/../../OMEdit/OMEditGUI/wasm/qml
   if [ -n "${scanner:-}" ] && [ -d "$qt/qml" ] && [ -d "$animqml" ]; then
