@@ -376,7 +376,11 @@ ExternalProject_Add(rust_wasi_pic_sysroot
     -DBUILTINS_LIB=${_wasi_builtins}
   BUILD_ALWAYS ON
   BUILD_COMMAND ${CMAKE_COMMAND} --build ${_wasi_libc_ep_build} --parallel
-  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+  # _if_different, not copy_directory: the latter rewrites every file's mtime
+  # on every build, and `libc.so` is a `cargo:rerun-if-changed` of
+  # openmodelica_wasi_libc's build script. That rebuilt it, wasm_jit,
+  # codegen_wasm_jit, backend_main, the cdylib and omc on every no-op build.
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${_wasi_libc_ep_build}/sysroot ${RUST_WASI_PIC_SYSROOT}
   EXCLUDE_FROM_ALL ON)
 endif()
