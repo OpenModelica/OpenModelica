@@ -2521,8 +2521,7 @@ public
             else comp;
           end match;
           d_node := InstNode.replaceComponent(comp, d_node);
-          // an update of this node, not a copy: the snapshot must be replaced
-          diff_cref.node := InstNode.republish(d_node);
+          diff_cref.node := ComponentRef.storeNode(d_node, update = true);
         then diff_cref;
         else diff_cref;
       end match;

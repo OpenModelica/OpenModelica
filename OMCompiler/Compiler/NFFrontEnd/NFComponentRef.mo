@@ -67,9 +67,9 @@ public
   );
 
   record CREF
-    NFInstNode.NodeHandle node "Weakly: a cref names the nodes it is prefixed
-      with; the class tree owns them, and their class holds the equation the
-      cref sits in.";
+    InstNode node "The node this cref names. The Rust port stores a weak
+      handle here instead -- see NFComponentRef.rust.mo -- because the class
+      tree owns the node and its class holds the equation the cref sits in.";
     list<Subscript> subscripts;
     Type ty "The type of the node, without taking subscripts into account.";
     Origin origin;
@@ -84,7 +84,7 @@ public
     input Type ty;
     input list<Subscript> subs = {};
     input Origin origin = Origin.CREF;
-    output ComponentRef cref = CREF(InstNode.handle(node), subs, ty, origin, EMPTY());
+    output ComponentRef cref = CREF(node, subs, ty, origin, EMPTY());
   end fromNode;
 
   function fromOwnedNode
@@ -93,15 +93,22 @@ public
      read back whatever was published for the node it was copied from."
     input InstNode node;
     input Type ty;
-    output ComponentRef cref = CREF(NFInstNode.NodeHandle.VALUE(node), {}, ty, Origin.CREF, EMPTY());
+    output ComponentRef cref = CREF(node, {}, ty, Origin.CREF, EMPTY());
   end fromOwnedNode;
+
+  function storeNode
+    "What CREF stores for a node. Identity here; see NFComponentRef.rust.mo."
+    input InstNode node;
+    input Boolean update = false "The same node again, not a different one.";
+    output InstNode stored = node;
+  end storeNode;
 
   function prefixCref
     input InstNode node;
     input Type ty;
     input list<Subscript> subs;
     input ComponentRef restCref;
-    output ComponentRef cref = CREF(InstNode.handle(node), subs, ty, Origin.CREF, restCref);
+    output ComponentRef cref = CREF(node, subs, ty, Origin.CREF, restCref);
   end prefixCref;
 
   function prefixScope
@@ -109,7 +116,7 @@ public
     input Type ty;
     input list<Subscript> subs;
     input ComponentRef restCref;
-    output ComponentRef cref = CREF(InstNode.handle(node), subs, ty, Origin.SCOPE, restCref);
+    output ComponentRef cref = CREF(node, subs, ty, Origin.SCOPE, restCref);
   end prefixScope;
 
   function fromAbsyn
@@ -122,7 +129,7 @@ public
     list<Subscript> sl;
   algorithm
     sl := list(Subscript.RAW_SUBSCRIPT(s) for s in subs);
-    cref := CREF(InstNode.handle(node), sl, Type.UNKNOWN(), if isIterator then Origin.ITERATOR else Origin.CREF, restCref);
+    cref := CREF(node, sl, Type.UNKNOWN(), if isIterator then Origin.ITERATOR else Origin.CREF, restCref);
   end fromAbsyn;
 
   function fromAbsynCref
@@ -149,13 +156,13 @@ public
   function fromBuiltin
     input InstNode node;
     input Type ty;
-    output ComponentRef cref = CREF(InstNode.handle(node), {}, ty, Origin.SCOPE, EMPTY());
+    output ComponentRef cref = CREF(node, {}, ty, Origin.SCOPE, EMPTY());
   end fromBuiltin;
 
   function makeIterator
     input InstNode node;
     input Type ty = InstNode.getType(node);
-    output ComponentRef cref = CREF(InstNode.handle(node), {}, ty, Origin.ITERATOR, EMPTY());
+    output ComponentRef cref = CREF(node, {}, ty, Origin.ITERATOR, EMPTY());
   end makeIterator;
 
   function isWild
@@ -228,8 +235,8 @@ public
   algorithm
     isFlow := match cref
       case CREF()
-        guard InstNode.isComponent(InstNode.fromHandle(cref.node))
-        then Component.isFlow(InstNode.component(InstNode.resolveInner(InstNode.fromHandle(cref.node))));
+        guard InstNode.isComponent(node(cref))
+        then Component.isFlow(InstNode.component(InstNode.resolveInner(node(cref))));
 
       else false;
     end match;
@@ -260,7 +267,7 @@ public
     output Boolean res;
   algorithm
     res := match cref
-      case CREF() then InstNode.isInput(InstNode.fromHandle(cref.node));
+      case CREF() then InstNode.isInput(node(cref));
       else false;
     end match;
   end isInput;
@@ -270,7 +277,7 @@ public
     output Boolean res;
   algorithm
     res := match cref
-      case CREF() then InstNode.isOutput(InstNode.fromHandle(cref.node));
+      case CREF() then InstNode.isOutput(node(cref));
       else false;
     end match;
   end isOutput;
@@ -280,7 +287,7 @@ public
     output Boolean res;
   algorithm
     res := match cref
-      case CREF() then InstNode.isName(InstNode.fromHandle(cref.node));
+      case CREF() then InstNode.isName(node(cref));
       else false;
     end match;
   end isNameNode;
@@ -311,16 +318,8 @@ public
     input ComponentRef cref;
     output InstNode node;
   algorithm
-    node := InstNode.fromHandle(nodeHandle(cref));
-  end node;
-
-  function nodeHandle
-    "The node as stored. Pass this on when building a cref from another one."
-    input ComponentRef cref;
-    output NFInstNode.NodeHandle node;
-  algorithm
     CREF(node = node) := cref;
-  end nodeHandle;
+  end node;
 
   function nodes
     input ComponentRef cref;
@@ -328,7 +327,7 @@ public
     output list<InstNode> nodes;
   algorithm
     nodes := match cref
-      case CREF() then nodes(cref.restCref, InstNode.fromHandle(cref.node) :: accum);
+      case CREF() then nodes(cref.restCref, node(cref) :: accum);
       else accum;
     end match;
   end nodes;
@@ -350,7 +349,7 @@ public
             end if;
           end for;
         then
-          nodesIncludingSplitSubs(cref.restCref, InstNode.fromHandle(cref.node) :: nodes);
+          nodesIncludingSplitSubs(cref.restCref, node(cref) :: nodes);
 
       else nodes;
     end match;
@@ -363,7 +362,7 @@ public
   algorithm
     res := match cref
       case CREF()
-        then InstNode.refEqual(InstNode.fromHandle(cref.node), node) or containsNode(cref.restCref, node);
+        then InstNode.refEqual(node(cref), node) or containsNode(cref.restCref, node);
       else false;
     end match;
   end containsNode;
@@ -394,9 +393,9 @@ public
     input output ComponentRef cref;
   algorithm
     () := match cref
-      case CREF() guard InstNode.isComponent(InstNode.fromHandle(cref.node))
+      case CREF() guard InstNode.isComponent(node(cref))
         algorithm
-          cref.ty := InstNode.getType(InstNode.fromHandle(cref.node));
+          cref.ty := InstNode.getType(node(cref));
         then
           ();
 
@@ -434,7 +433,7 @@ public
     output String name;
   algorithm
     name := match cref
-      case CREF() then InstNode.name(InstNode.fromHandle(cref.node));
+      case CREF() then InstNode.name(node(cref));
       case WILD() then if baseModelica then "" else "_";
       else "";
     end match;
@@ -582,7 +581,7 @@ public
   algorithm
     attrValue := match cref
       case CREF()
-        then match InstNode.fromHandle(cref.node)
+        then match node(cref)
           local PointerWeak<Variable> v;
           case InstNode.VAR_NODE(varPointer = v)
             then Binding.typedExp(Variable.lookupTypeAttribute(attr_name, Pointer.access(PointerWeak.upgrade(v))));
@@ -599,7 +598,7 @@ public
   algorithm
     var := match cref
       case CREF()
-        then match InstNode.fromHandle(cref.node)
+        then match node(cref)
           local
             InstNode n;
             PointerWeak<Variable> v;
@@ -619,7 +618,7 @@ public
   algorithm
     b := match cref
       case CREF()
-        then match InstNode.fromHandle(cref.node)
+        then match node(cref)
           local
             InstNode n;
             PointerWeak<Variable> v;
@@ -689,7 +688,7 @@ public
   algorithm
     vis := match cref
       case CREF() then
-        if InstNode.isProtected(InstNode.fromHandle(cref.node)) then
+        if InstNode.isProtected(node(cref)) then
           Visibility.PROTECTED else visibility(cref.restCref);
 
       else Visibility.PUBLIC;
@@ -705,8 +704,7 @@ public
         algorithm
           // A rename makes a copy, not an update: it needs its own identity,
           // or it publishes nothing and reads back under the old name.
-          cref.node := InstNode.handle(InstNode.reidentify(
-            InstNode.rename(name, InstNode.fromHandle(cref.node))));
+          cref.node := InstNode.reidentify(InstNode.rename(name, node(cref)));
         then
           cref;
 
@@ -871,7 +869,7 @@ public
     output Boolean hasSubscripts;
   algorithm
     hasSubscripts := match cref
-      case CREF() guard(InstNode.isModel(InstNode.fromHandle(cref.node)))
+      case CREF() guard(InstNode.isModel(node(cref)))
         then hasNonModelSubscripts(cref.restCref);
       case CREF()
         then not listEmpty(cref.subscripts) or hasNonModelSubscripts(cref.restCref);
@@ -1062,7 +1060,7 @@ public
     output list<list<Subscript>> subscripts;
   algorithm
     subscripts := match cref
-      case CREF() guard(InstNode.isModel(InstNode.fromHandle(cref.node)))  then subscriptsExceptModel(cref.restCref, {} :: accumSubs);
+      case CREF() guard(InstNode.isModel(node(cref)))  then subscriptsExceptModel(cref.restCref, {} :: accumSubs);
       case CREF()                                     then subscriptsExceptModel(cref.restCref, cref.subscripts :: accumSubs);
                                                       else accumSubs;
     end match;
@@ -1108,7 +1106,7 @@ public
         then
           dstCref;
 
-      case (CREF(), CREF()) guard InstNode.refEqual(InstNode.fromHandle(srcCref.node), InstNode.fromHandle(dstCref.node))
+      case (CREF(), CREF()) guard InstNode.refEqual(node(srcCref), node(dstCref))
         algorithm
           cref := transferSubscripts(srcCref.restCref, dstCref.restCref);
           // Don't remove subscripts unless there's something to replace them with.
@@ -1293,7 +1291,7 @@ public
     comp := match (cref1, cref2)
       case (CREF(), CREF())
         algorithm
-          comp := stringCompare(InstNode.name(InstNode.fromHandle(cref1.node)), InstNode.name(InstNode.fromHandle(cref2.node)));
+          comp := stringCompare(InstNode.name(node(cref1)), InstNode.name(node(cref2)));
 
           if comp <> 0 then
             return;
@@ -1331,7 +1329,7 @@ public
 
     b := match (cref1, cref2)
       case (CREF(), CREF()) algorithm
-        then InstNode.name(InstNode.fromHandle(cref1.node)) == InstNode.name(InstNode.fromHandle(cref2.node)) and
+        then InstNode.name(node(cref1)) == InstNode.name(node(cref2)) and
           Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
           isEqual(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
@@ -1353,7 +1351,7 @@ public
 
     b := match (cref1, cref2)
       case (CREF(), CREF()) algorithm
-        then InstNode.name(InstNode.fromHandle(cref1.node)) == InstNode.name(InstNode.fromHandle(cref2.node)) and
+        then InstNode.name(node(cref1)) == InstNode.name(node(cref2)) and
           isEqualStrip(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
       case (WILD(), WILD()) then true;
@@ -1386,7 +1384,7 @@ public
     isPrefix := match (cref1, cref2)
       case (CREF(), CREF())
         then
-          if InstNode.name(InstNode.fromHandle(cref1.node)) == InstNode.name(InstNode.fromHandle(cref2.node)) then
+          if InstNode.name(node(cref1)) == InstNode.name(node(cref2)) then
              isEqual(cref1.restCref, cref2.restCref)
           else isEqual(cref1, cref2.restCref);
       else false;
@@ -1400,7 +1398,7 @@ public
     acref := match cref
       case CREF()
         algorithm
-          acref := Absyn.ComponentRef.CREF_IDENT(InstNode.name(InstNode.fromHandle(cref.node)),
+          acref := Absyn.ComponentRef.CREF_IDENT(InstNode.name(node(cref)),
             list(Subscript.toAbsyn(s) for s in cref.subscripts));
         then
           toAbsyn_impl(cref.restCref, acref);
@@ -1419,7 +1417,7 @@ public
 
       case CREF()
         algorithm
-          acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(InstNode.fromHandle(cref.node)),
+          acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(node(cref)),
             list(Subscript.toAbsyn(s) for s in cref.subscripts), accumCref);
         then
           toAbsyn_impl(cref.restCref, acref);
@@ -1434,7 +1432,7 @@ public
     dcref := match cref
       case CREF()
         algorithm
-          dcref := DAE.ComponentRef.CREF_IDENT(InstNode.name(InstNode.fromHandle(cref.node)), Type.toDAE(cref.ty),
+          dcref := DAE.ComponentRef.CREF_IDENT(InstNode.name(node(cref)), Type.toDAE(cref.ty),
             list(Subscript.toDAE(s) for s in cref.subscripts));
         then
           toDAE_impl(cref.restCref, dcref);
@@ -1461,9 +1459,9 @@ public
           // that introduces cycles in the typing. We could patch the crefs
           // after the typing, but the new frontend doesn't use these types anyway.
           // So instead we just fetch the type of the node if the type is unknown.
-          ty := if Type.isUnknown(cref.ty) then InstNode.getType(InstNode.fromHandle(cref.node)) else cref.ty;
+          ty := if Type.isUnknown(cref.ty) then InstNode.getType(node(cref)) else cref.ty;
           dty := Type.toDAE(ty, makeTypeVars = false);
-          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(InstNode.fromHandle(cref.node)), dty,
+          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(node(cref)), dty,
             list(Subscript.toDAE(s) for s in cref.subscripts), accumCref);
         then
           toDAE_impl(cref.restCref, dcref);
@@ -1487,7 +1485,7 @@ public
 
       case CREF()
         algorithm
-          str := InstNode.name(InstNode.fromHandle(cref.node)) + Subscript.toStringList(cref.subscripts);
+          str := InstNode.name(node(cref)) + Subscript.toStringList(cref.subscripts);
         then
           toString_impl(cref.restCref, str :: strl);
 
@@ -1623,13 +1621,13 @@ public
       case CREF()
         algorithm
           obj := JSON.emptyListObject();
-          obj := JSON.addPair("name", JSON.makeString(InstNode.name(InstNode.fromHandle(cref.node))), obj);
+          obj := JSON.addPair("name", JSON.makeString(InstNode.name(node(cref))), obj);
 
           if not listEmpty(cref.subscripts) then
             obj := JSON.addPair("subscripts", Subscript.toJSONList(cref.subscripts), obj);
           end if;
         then
-          if isEmpty(cref.restCref) then toJSON_context(InstNode.fromHandle(cref.node), obj :: accum) else
+          if isEmpty(cref.restCref) then toJSON_context(node(cref), obj :: accum) else
                                          toJSON_impl(cref.restCref, obj :: accum);
 
       else accum;
@@ -1670,7 +1668,7 @@ public
     hash := match cref
       case CREF()
         algorithm
-          hash := stringHashDjb2Continue(InstNode.name(InstNode.fromHandle(cref.node)), hash);
+          hash := stringHashDjb2Continue(InstNode.name(node(cref)), hash);
 
           if not strip then
             for s in cref.subscripts loop
@@ -1691,7 +1689,7 @@ public
   algorithm
     path := match cref
       case CREF()
-        then toPath_impl(cref.restCref, Absyn.IDENT(InstNode.name(InstNode.fromHandle(cref.node))));
+        then toPath_impl(cref.restCref, Absyn.IDENT(InstNode.name(node(cref))));
     end match;
   end toPath;
 
@@ -1703,7 +1701,7 @@ public
     path := match cref
       case CREF()
         then toPath_impl(cref.restCref,
-          Absyn.QUALIFIED(InstNode.name(InstNode.fromHandle(cref.node)), accumPath));
+          Absyn.QUALIFIED(InstNode.name(node(cref)), accumPath));
       else accumPath;
     end match;
   end toPath_impl;
@@ -1713,7 +1711,7 @@ public
     output ComponentRef cref = ComponentRef.EMPTY();
   algorithm
     for n in nodes loop
-      cref := CREF(InstNode.handle(n), {}, InstNode.getType(n), Origin.SCOPE, cref);
+      cref := CREF(n, {}, InstNode.getType(n), Origin.SCOPE, cref);
     end for;
   end fromNodeList;
 
@@ -1824,8 +1822,8 @@ public
     output Boolean isPkgConst;
   algorithm
     isPkgConst := match cref
-      case CREF() guard InstNode.isClass(InstNode.fromHandle(cref.node))
-        then InstNode.isUserdefinedClass(InstNode.fromHandle(cref.node));
+      case CREF() guard InstNode.isClass(node(cref))
+        then InstNode.isUserdefinedClass(node(cref));
       case CREF(origin = Origin.CREF) then isPackageConstant2(cref.restCref);
       else false;
     end match;
@@ -1865,7 +1863,7 @@ public
         InstNode node;
         ComponentRef restCref;
 
-      case CREF(restCref = restCref) guard InstNode.isModel(InstNode.fromHandle(cref.node))
+      case CREF(restCref = restCref) guard InstNode.isModel(node(cref))
       then CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
 
       case CREF(restCref = restCref)
@@ -1955,7 +1953,7 @@ public
 
       case CREF(origin = Origin.CREF)
         algorithm
-          node := InstNode.fromHandle(cref.node);
+          node := node(cref);
         then (InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node))) or
              isDeleted(cref.restCref);
 
@@ -2390,7 +2388,7 @@ public
     () := match cref
       case ComponentRef.CREF()
         algorithm
-          if InstNode.isGeneratedInner(InstNode.fromHandle(cref.node)) then
+          if InstNode.isGeneratedInner(node(cref)) then
             cref.restCref := EMPTY();
           else
             cref.restCref := removeOuterCrefPrefix(cref.restCref);
@@ -2443,10 +2441,10 @@ public
 
       case CREF()
         algorithm
-          node := func(InstNode.fromHandle(cref.node));
+          node := func(node(cref));
           rest := mapNodes(cref.restCref, func);
         then
-          CREF(InstNode.handle(node), cref.subscripts, cref.ty, cref.origin, rest);
+          CREF(node, cref.subscripts, cref.ty, cref.origin, rest);
 
       else cref;
     end match;
@@ -2607,7 +2605,7 @@ public
   algorithm
     if Type.isComplex(ty) then
       children_nodes := match cref
-        case CREF() then ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(InstNode.component(InstNode.fromHandle(cref.node))))));
+        case CREF() then ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(InstNode.component(node(cref))))));
         else listArray({});
       end match;
     end if;

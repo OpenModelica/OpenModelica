@@ -7,9 +7,9 @@
 //! traced types and the generated code all see the Rust view, while the C
 //! compiler only ever reads `X.mo`.
 //!
-//! Matching is by name and recurses through nested classes, so an override
-//! restates one record or one function rather than a whole package. A name
-//! the base does not have is appended.
+//! Matching is by name and recurses through packages and uniontypes, so an
+//! override restates one record or one function rather than a whole file. A
+//! name the base does not have is appended.
 
 use openmodelica_ast::Absyn;
 use metamodelica::{cons, nil, List, Ref};
@@ -83,8 +83,6 @@ fn merge_items(base: &List<Ref<Absyn::ElementItem>>, ovr_items: &[Ref<Absyn::Ele
                 if used[k] || item_name(o).as_ref() != Some(bn) { continue; }
                 used[k] = true;
                 replaced = true;
-                // Two nested classes of the same name merge field by field,
-                // so an override need not restate a whole uniontype.
                 match (as_class(b), as_class(o)) {
                     (Some(bc), Some(oc)) => {
                         let merged = merge_class(bc, oc, applied);
@@ -115,14 +113,23 @@ fn merge_items(base: &List<Ref<Absyn::ElementItem>>, ovr_items: &[Ref<Absyn::Ele
     list
 }
 
+/// Only a container is merged item by item. Anything else -- a function, a
+/// record -- is replaced whole: merging a function would keep the base's
+/// algorithm section under the override's declarations.
+fn is_container(c: &Absyn::Class) -> bool {
+    matches!(&*c.body, Absyn::ClassDef::PARTS { .. })
+        && matches!(c.restriction,
+            Absyn::Restriction::R_PACKAGE | Absyn::Restriction::R_UNIONTYPE | Absyn::Restriction::R_CLASS)
+}
+
 fn merge_class(base: &Absyn::Class, ovr: &Absyn::Class, applied: &mut Vec<String>) -> Absyn::Class {
-    let (Absyn::ClassDef::PARTS { typeVars, classAttrs, classParts: b_parts, ann, comment },
-         Absyn::ClassDef::PARTS { classParts: o_parts, .. }) = (&*base.body, &*ovr.body)
-    else {
-        // Not both composite: the override replaces the class outright.
+    if !is_container(base) || !is_container(ovr) {
         applied.push(base.name.to_string());
         return ovr.clone();
-    };
+    }
+    let (Absyn::ClassDef::PARTS { typeVars, classAttrs, classParts: b_parts, ann, comment },
+         Absyn::ClassDef::PARTS { classParts: o_parts, .. }) = (&*base.body, &*ovr.body)
+    else { unreachable!() };
 
     let o_items: Vec<Ref<Absyn::ElementItem>> = o_parts.iter().flat_map(|p| match &**p {
         Absyn::ClassPart::PUBLIC { contents } | Absyn::ClassPart::PROTECTED { contents } =>

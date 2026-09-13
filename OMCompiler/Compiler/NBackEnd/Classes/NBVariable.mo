@@ -1734,7 +1734,7 @@ function isJacobianResultVar
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     // Type for residuals is always REAL() !
-    cref := ComponentRef.CREF(InstNode.handle(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    cref := ComponentRef.fromNode(node, ty);
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
@@ -1769,8 +1769,8 @@ function isJacobianResultVar
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex),
       PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
-    cref := ComponentRef.CREF(InstNode.handle(node), iter_subs, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
-    var_cref := ComponentRef.CREF(InstNode.handle(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(ComponentRef.storeNode(node), iter_subs, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    var_cref := ComponentRef.CREF(ComponentRef.storeNode(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable
     var := fromCref(var_cref, NFAttributes.IMPL_DISCRETE_ATTR);
     // update the variable to be discrete and pass the pointer to the original variable
@@ -1804,7 +1804,7 @@ function isJacobianResultVar
     // create inst node with dummy variable pointer and create cref from it
     node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex),
       PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
-    cref  := ComponentRef.CREF(InstNode.handle(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    cref  := ComponentRef.CREF(ComponentRef.storeNode(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var   := fromCref(cref);
 
     var := updateBackendInfo(var, makeParam);
@@ -1831,7 +1831,7 @@ function isJacobianResultVar
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex),
       PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
-    cref := ComponentRef.CREF(InstNode.handle(node), {}, Type.REAL(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(ComponentRef.storeNode(node), {}, Type.REAL(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
@@ -1895,7 +1895,7 @@ function isJacobianResultVar
     node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex),
       PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE)));
     // Type for residuals is always REAL() !
-    cref := ComponentRef.CREF(InstNode.handle(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(ComponentRef.storeNode(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable

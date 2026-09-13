@@ -1666,7 +1666,7 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.handle(InstNode.VAR_NODE(
+          qual.node := ComponentRef.storeNode(InstNode.VAR_NODE(
             InstNode.name(ComponentRef.node(qual)), PointerWeak.downgrade(var)));
       then qual;
 

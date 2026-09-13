@@ -775,7 +775,7 @@ algorithm
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
-    cr := ComponentRef.CREF(InstNode.handle(c), {}, ty, NFComponentRef.Origin.CREF, cref);
+    cr := ComponentRef.prefixCref(c, ty, {}, cref);
     arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then

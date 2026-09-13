@@ -875,7 +875,7 @@ public
             name := UnorderedMap.get(ComponentRef.node(cref), obfuscationMap);
 
             if isSome(name) then
-              cref.node := InstNode.handle(InstNode.reidentify(
+              cref.node := ComponentRef.storeNode(InstNode.reidentify(
                 InstNode.rename(Util.getOption(name), ComponentRef.node(cref))));
             end if;
           end if;

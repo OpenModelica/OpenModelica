@@ -122,7 +122,7 @@ end TypingError;
 
 // Used by typeDimension for catching cyclic dimension involving :
 constant Expression WHOLEDIM_CREF = Expression.CREF(Type.UNKNOWN(),
-  ComponentRef.CREF(NFInstNode.NodeHandle.VALUE(InstNode.NAME_NODE(":")), {}, Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY()));
+  ComponentRef.CREF(InstNode.NAME_NODE(":"), {}, Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY()));
 
 public
 function typeClass

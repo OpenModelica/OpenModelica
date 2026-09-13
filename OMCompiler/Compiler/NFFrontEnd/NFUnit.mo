@@ -101,7 +101,7 @@ protected uniontype Token
   record T_RPAREN end T_RPAREN;
 end Token;
 
-public constant ComponentRef UPDATECREF = ComponentRef.CREF(NFInstNode.NodeHandle.VALUE(InstNode.NAME_NODE("jhagemann")), {},
+public constant ComponentRef UPDATECREF = ComponentRef.CREF(InstNode.NAME_NODE("jhagemann"), {},
   Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
 
 /* from https://www.bipm.org/documents/d/guest/si-brochure-9-en-pdf */
