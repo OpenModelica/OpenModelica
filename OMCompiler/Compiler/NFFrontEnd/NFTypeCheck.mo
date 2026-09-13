@@ -3003,11 +3003,11 @@ protected
     output Boolean res;
   protected
     InstNode n = InstNode.getDerivedNode(node);
-    InstNode p;
+    NFInstNode.ScopeRef p;
   algorithm
     res := match n
       case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = p))
-        then InstNode.refEqual(parent, n) or isParent(parent, p);
+        then InstNode.refEqual(parent, n) or isParent(parent, InstNode.borrow(p));
       case InstNode.COMPONENT_NODE()
         then InstNode.refEqual(parent, n) or isParent(parent, InstNode.parent(n));
       else false;
@@ -3025,8 +3025,8 @@ algorithm
           dims := match s
             case Subscript.SPLIT_INDEX()
               algorithm
-                if isParent(s.node, component) then
-                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                if isParent(InstNode.borrow(s.node), component) then
+                  dims := Type.nthDimension(InstNode.getType(InstNode.borrow(s.node)), s.dimIndex) :: dims;
                 end if;
               then
                 dims;
@@ -3049,8 +3049,8 @@ algorithm
           dims := match s
             case Subscript.SPLIT_INDEX()
               algorithm
-                if isParent(s.node, component) then
-                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                if isParent(InstNode.borrow(s.node), component) then
+                  dims := Type.nthDimension(InstNode.getType(InstNode.borrow(s.node)), s.dimIndex) :: dims;
                 end if;
               then
                 dims;

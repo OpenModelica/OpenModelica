@@ -1617,10 +1617,10 @@ algorithm
         algorithm
           // Count the number of dimensions on the parent the subscript came
           // from, and add that many split index subscripts to the list.
-          dim_count := InstNode.dimensionCount(s.parent);
+          dim_count := InstNode.dimensionCount(InstNode.borrow(s.parent));
 
           for i in 1:dim_count loop
-            outSubscripts := Subscript.makeSplitIndex(s.parent, i) :: outSubscripts;
+            outSubscripts := Subscript.makeSplitIndex(InstNode.borrow(s.parent), i) :: outSubscripts;
           end for;
 
           // If the origin and parent of the subscript is not the same it
@@ -1631,14 +1631,14 @@ algorithm
           //   T x[1, 2]
           // we then have origin = T and parent = x and generate
           //   T x[1, 2](start = fill({1, 2, 3}, size(x, 1), size(x, 2))).
-          if not InstNode.refEqual(s.origin, s.parent) then
+          if not InstNode.refEqual(InstNode.borrow(s.origin), InstNode.borrow(s.parent)) then
             // The number of fill dimensions is size(parent) - size(origin).
-            dim_count := dim_count - InstNode.dimensionCount(s.origin);
+            dim_count := dim_count - InstNode.dimensionCount(InstNode.borrow(s.origin));
 
             // Add size expressions to the list of fill dimensions.
             if dim_count > 0 then
-              ty := InstNode.getType(s.parent);
-              cr_exp := Expression.fromCref(ComponentRef.fromNode(s.parent, ty));
+              ty := InstNode.getType(InstNode.borrow(s.parent));
+              cr_exp := Expression.fromCref(ComponentRef.fromNode(InstNode.borrow(s.parent), ty));
               dims := Type.arrayDims(ty);
 
               for i in 1:dim_count loop

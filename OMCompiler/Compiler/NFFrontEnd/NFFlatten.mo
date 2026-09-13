@@ -1677,7 +1677,7 @@ function replaceSplitIndices2
 algorithm
   replace := match sub
     case Subscript.SPLIT_INDEX()
-      then sub.dimIndex == index and InstNode.refEqual(sub.node, node);
+      then sub.dimIndex == index and InstNode.refEqual(InstNode.borrow(sub.node), node);
     else false;
   end match;
 end replaceSplitIndices2;
@@ -1725,7 +1725,7 @@ algorithm
 
     case Subscript.SPLIT_INDEX()
       algorithm
-        subs := UnorderedMap.getOrDefault(sub.node, subMap, {});
+        subs := UnorderedMap.getOrDefault(InstNode.borrow(sub.node), subMap, {});
       then
         if sub.dimIndex > listLength(subs) then Subscript.WHOLE() else listGet(subs, sub.dimIndex);
 

@@ -6324,8 +6324,8 @@ public
     output Boolean matching;
   algorithm
     matching := match sub
-      case Subscript.SPLIT_INDEX() then InstNode.refEqual(sub.node, node);
-      case Subscript.SPLIT_PROXY() then InstNode.refEqual(sub.parent, node);
+      case Subscript.SPLIT_INDEX() then InstNode.refEqual(InstNode.borrow(sub.node), node);
+      case Subscript.SPLIT_PROXY() then InstNode.refEqual(InstNode.borrow(sub.parent), node);
       else false;
     end match;
   end filterSplitIndices2;

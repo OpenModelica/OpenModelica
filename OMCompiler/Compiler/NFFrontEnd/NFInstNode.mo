@@ -101,8 +101,9 @@ uniontype InstNodeType
 
   record ROOT_CLASS
     "The root of the instance tree, i.e. the class that the instantiation starts from."
-    InstNode parent "The parent of the class, e.g. when instantiating a function
-                     in a component where the component is the parent.";
+    ScopeRef parent "The parent of the class, e.g. when instantiating a function
+                     in a component where the component is the parent. Weakly:
+                     the class tree owns it.";
     Option<Absyn.Path> context "Used by getModelInstance to add context to instances.";
   end ROOT_CLASS;
 
@@ -110,11 +111,11 @@ uniontype InstNodeType
   end NORMAL_COMP;
 
   record REDECLARED_COMP
-    InstNode parent "The parent of the replaced component";
+    ScopeRef parent "The parent of the replaced component, weakly.";
   end REDECLARED_COMP;
 
   record REDECLARED_CLASS
-    InstNode parent;
+    ScopeRef parent "Weakly: the class tree owns it.";
     InstNodeType originalType;
     Option<InstNode> originalNode;
     Integer confidence "instance level of the redeclare, see Inst.classConfidence";
@@ -463,7 +464,7 @@ uniontype InstNode
           case InstNodeType.NORMAL_CLASS() then true;
           case InstNodeType.BASE_CLASS() then true;
           case InstNodeType.DERIVED_CLASS() then true;
-          case InstNodeType.REDECLARED_CLASS() then isUserdefinedClass(ty.parent);
+          case InstNodeType.REDECLARED_CLASS() then isUserdefinedClass(borrow(ty.parent));
           else false;
         end match;
       else false;
@@ -485,7 +486,7 @@ uniontype InstNode
     input InstNode parent = EMPTY_NODE();
     input Option<Absyn.Path> context = NONE();
   algorithm
-    node := setNodeType(InstNodeType.ROOT_CLASS(parent, context), node);
+    node := setNodeType(InstNodeType.ROOT_CLASS(scopeRef(parent), context), node);
   end makeRootClass;
 
   function isRootClass
@@ -834,11 +835,13 @@ uniontype InstNode
     "Returns the parent of the node in the instance tree."
     input InstNode node;
     output InstNode parent;
+  protected
+    ScopeRef rdcl_scope;
   algorithm
     parent := match node
       case CLASS_NODE() then getDerivedNode(parent(getDerivedNode(node)));
-      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
-        then getDerivedNode(parent);
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
+        then getDerivedNode(fromCell(rdcl_scope));
       case COMPONENT_NODE() then getDerivedNode(parent(getDerivedNode(node)));
       case IMPLICIT_SCOPE() then getDerivedNode(parent(getDerivedNode(node)));
       else EMPTY_NODE();
@@ -861,7 +864,7 @@ uniontype InstNode
     output InstNode parent;
   algorithm
     parent := match nodeType
-      case InstNodeType.ROOT_CLASS() guard not isEmpty(nodeType.parent) then nodeType.parent;
+      case InstNodeType.ROOT_CLASS() guard not isEmpty(borrow(nodeType.parent)) then borrow(nodeType.parent);
       case InstNodeType.DERIVED_CLASS() then rootTypeParent(nodeType.ty, node);
       else parent(node);
     end match;
@@ -876,6 +879,7 @@ uniontype InstNode
     output InstNode scope;
   protected
     InstNode orig_node;
+    ScopeRef rdcl_scope;
   algorithm
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS())
@@ -896,9 +900,9 @@ uniontype InstNode
         guard ignoreRedeclare
         then parentScope(orig_node);
 
-      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = rdcl_scope))
         guard ignoreRedeclare
-        then scope;
+        then fromCell(rdcl_scope);
 
       case CLASS_NODE() then fromCell(node.parentScope);
       case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
@@ -945,15 +949,16 @@ uniontype InstNode
     output InstNode scope;
   protected
     InstNode orig_node;
+    ScopeRef rdcl_scope;
   algorithm
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
         guard ignoreRedeclare
         then enclosingScope(orig_node, ignoreRedeclare, ignoreBaseClass);
 
-      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = rdcl_scope))
         guard ignoreRedeclare
-        then scope;
+        then fromCell(rdcl_scope);
 
       case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(fromCell(node.parentScope)) else fromCell(node.parentScope);
       case COMPONENT_NODE() then enclosingScope(classScope(node), ignoreRedeclare, ignoreBaseClass);
@@ -1387,11 +1392,12 @@ uniontype InstNode
     scopes := match node
       local
         InstNode parent;
+        ScopeRef rdcl_scope;
 
       case CLASS_NODE() then scopeListClass(node, node.nodeType, includeRoot, accumScopes);
       case COMPONENT_NODE() guard isEmpty(fromCell(node.parent)) then accumScopes;
-      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
-        then scopeList(parent, includeRoot, node :: accumScopes);
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
+        then scopeList(fromCell(rdcl_scope), includeRoot, node :: accumScopes);
       case COMPONENT_NODE() then scopeList(fromCell(node.parent), includeRoot, node :: accumScopes);
       case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
       else accumScopes;
@@ -1422,7 +1428,7 @@ uniontype InstNode
           else
             accumScopes;
       case InstNodeType.REDECLARED_CLASS()
-        then scopeList(ty.parent, includeRoot, getDerivedNode(clsNode) :: accumScopes);
+        then scopeList(fromCell(ty.parent), includeRoot, getDerivedNode(clsNode) :: accumScopes);
       case InstNodeType.IMPLICIT_SCOPE()
         then scopeList(parent(clsNode), includeRoot, accumScopes);
       else
@@ -1542,7 +1548,7 @@ uniontype InstNode
              else
                accumPath;
       case InstNodeType.REDECLARED_CLASS()
-        then scopePath2(ty.parent, scopeType, Absyn.QUALIFIED(className(node), accumPath));
+        then scopePath2(fromCell(ty.parent), scopeType, Absyn.QUALIFIED(className(node), accumPath));
       case InstNodeType.IMPLICIT_SCOPE()
         then scopePath2(classParent(node), scopeType, accumPath);
       else

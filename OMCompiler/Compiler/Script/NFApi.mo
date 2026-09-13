@@ -55,6 +55,7 @@ import Expression = NFExpression;
 import Import = NFImport;
 import NFClass.Class;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import NFInstNode.InstNodeType;
 import NFModifier.ModifierScope;
 import Equation = NFEquation;
@@ -944,7 +945,7 @@ algorithm
   end if;
 
   if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
-    cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
+    cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(NFInstNode.NO_SCOPE, SOME(contextPath)), cls_node);
   end if;
 
   cls_node := Inst.instantiateRootClass(cls_node, context, mod);

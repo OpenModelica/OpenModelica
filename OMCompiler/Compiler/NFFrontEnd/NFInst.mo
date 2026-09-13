@@ -1851,7 +1851,7 @@ algorithm
   orig_opt := if InstContext.inInstanceAPI(context) then SOME(originalNode) else NONE();
 
   redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
-  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode), orig_opt, instLevel);
+  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.scopeRef(InstNode.parent(originalNode)), InstNode.nodeType(originalNode), orig_opt, instLevel);
   redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
 
@@ -2145,11 +2145,12 @@ function propagateRedeclaredMod
   output Modifier outMod;
 protected
   InstNode parent;
+  NFInstNode.ScopeRef rdcl_scope;
 algorithm
   outMod := match component
-    case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+    case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
       algorithm
-        parent := InstNode.getDerivedNode(parent);
+        parent := InstNode.getDerivedNode(InstNode.fromCell(rdcl_scope));
         outMod := propagateRedeclaredMod(mod, parent);
       then
         Modifier.propagateBinding(outMod, parent, parent);
@@ -2236,7 +2237,7 @@ algorithm
 
   orig_node := InstNode.resolveInner(originalNode);
   orig_comp := InstNode.component(orig_node);
-  rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.parent(orig_node));
+  rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.scopeRef(InstNode.parent(orig_node)));
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(orig_node, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
@@ -2367,7 +2368,8 @@ algorithm
     local NFInstNode.ScopeRef ext_scope;
     case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = ext_scope))
       then InstNode.fromCell(ext_scope);
-    case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope)) then scope;
+    case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = ext_scope))
+      then InstNode.fromCell(ext_scope);
     else InstNode.parent(node);
   end match;
 end instanceScope;

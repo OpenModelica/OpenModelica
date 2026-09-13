@@ -43,6 +43,7 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import NFInstNode.InstNodeType;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -337,7 +338,7 @@ public
     input list<InstNode> accum = {};
     output list<InstNode> nodes = accum;
   protected
-    InstNode node;
+    NFInstNode.ScopeRef node;
   algorithm
     nodes := match cref
       case CREF()
@@ -345,7 +346,7 @@ public
           for s in cref.subscripts loop
             if Subscript.isSplitIndex(s) then
               Subscript.SPLIT_INDEX(node = node) := s;
-              nodes := node :: nodes;
+              nodes := InstNode.borrow(node) :: nodes;
             end if;
           end for;
         then

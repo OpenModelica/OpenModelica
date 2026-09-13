@@ -579,7 +579,7 @@ algorithm
   outSubscript := match subscript
     case Subscript.SPLIT_INDEX()
       algorithm
-        osubs := UnorderedMap.get(subscript.node, subMap);
+        osubs := UnorderedMap.get(InstNode.borrow(subscript.node), subMap);
 
         if isSome(osubs) then
           SOME(subs) := osubs;
