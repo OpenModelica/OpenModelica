@@ -761,12 +761,17 @@ uniontype InstNode
   protected
     Mutable<InstNode> cell;
   algorithm
+    if not GCExt.cellsNeedOwners then
+      // No cell is needed: `identityCell` hands back the node itself.
+      owner := NONE();
+      identity := NONE();
+      return;
+    end if;
+
     cell := Mutable.create(EMPTY_NODE());
     // The run owns the cell. A node value is not a long enough owner: a cref
     // outlives the value it was made from and still walks up through it.
-    if GCExt.cellsNeedOwners then
-      MutableWeak.root(cell);
-    end if;
+    MutableWeak.root(cell);
     owner := SOME(cell);
     identity := SOME(MutableWeak.downgrade(cell));
   end newIdentity;
@@ -836,6 +841,11 @@ uniontype InstNode
     input InstNode node;
     output Option<MutableWeak<InstNode>> identity;
   algorithm
+    if not GCExt.cellsNeedOwners then
+      identity := SOME(MutableWeak.ofValue(node));
+      return;
+    end if;
+
     identity := match node
       local Mutable<InstNode> cell;
 
@@ -954,6 +964,7 @@ uniontype InstNode
   algorithm
     node := matchcontinue cell
       local MutableWeak<InstNode> w;
+      case SOME(w) guard not GCExt.cellsNeedOwners then MutableWeak.value(w);
       case SOME(w) then Mutable.access(MutableWeak.upgrade(w));
       else EMPTY_NODE();
     end matchcontinue;
@@ -970,6 +981,9 @@ uniontype InstNode
       local
         MutableWeak<InstNode> w;
         Mutable<InstNode> c;
+
+      case SOME(w) guard not GCExt.cellsNeedOwners
+        then MutableWeak.value(w);
 
       case SOME(w)
         algorithm

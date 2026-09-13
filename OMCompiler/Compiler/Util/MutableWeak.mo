@@ -76,6 +76,33 @@ static inline void* mutableWeakUpgrade(void *weak)
 ");
 end upgrade;
 
+impure function ofValue
+  "A handle that *is* the value. In the C compiler no cell is needed at all --
+   a weak reference there is the strong one -- so the node is stored directly
+   and `value` reads it straight back, which is what the frontend did before
+   any of this. Never reached where `GCExt.cellsNeedOwners` is true."
+  input T val;
+  output MutableWeak<T> weak;
+external "C" weak=mutableWeakOfValue(val) annotation(Include="
+static inline void* mutableWeakOfValue(void *val)
+{
+  return val;
+}
+");
+end ofValue;
+
+impure function value
+  "The value a handle made by `ofValue` holds."
+  input MutableWeak<T> weak;
+  output T val;
+external "C" val=mutableWeakValue(weak) annotation(Include="
+static inline void* mutableWeakValue(void *weak)
+{
+  return weak;
+}
+");
+end value;
+
 function root
   "Keeps a cell alive for the current frontend run. Inlined to nothing in the
    C compiler, so the call does not survive code generation."

@@ -51,6 +51,16 @@ impl<T: Clone> Default for MutableWeak<T> {
     }
 }
 
+/// Only the C compiler stores a value in place of a cell; the Rust port has
+/// real weak semantics and always has a cell.
+pub fn ofValue<T: Clone>(_val: T) -> MutableWeak<T> {
+    unreachable!("MutableWeak.ofValue is for the C compiler only")
+}
+
+pub fn value<T: Clone>(_weak: MutableWeak<T>) -> T {
+    unreachable!("MutableWeak.value is for the C compiler only")
+}
+
 /// A reference that does not keep the cell alive. Never fails.
 pub fn downgrade<T: Clone>(mutable: Mutable<T>) -> MutableWeak<T> {
     MutableWeak(Arc::downgrade(&mutable.0))
