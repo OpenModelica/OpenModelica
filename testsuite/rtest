@@ -161,7 +161,7 @@ sub wasm_builtins
 sub setup_command_toolchain
 {
   my $wasm = sim_code_target() =~ /^wasm/;
-  my $sysroot = $ENV{'OMC_WASI_SYSROOT'} || "$OPENMODELICAHOME/lib/wasm32-wasi/omc";
+  my $sysroot = $ENV{'OMC_WASI_SYSROOT'} || "$OPENMODELICAHOME/lib/wasm32-wasip1/omc/sysroot";
   my %native = (
     CC           => "gcc",
     CFLAGS       => "-fPIC",

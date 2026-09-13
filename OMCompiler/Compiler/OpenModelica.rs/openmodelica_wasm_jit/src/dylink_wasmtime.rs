@@ -518,12 +518,12 @@ mod tests {
     /// `libc.so` under the library: a library's `_initialize` calls its
     /// `__wasi_init_tp`, so it is never absent.
     fn with_libc(name: &str, bytes: Vec<u8>) -> Option<[Library; 2]> {
-        if openmodelica_wasi_libc::LIBC_PIC.is_empty() {
+        if crate::LIBC_PIC().is_empty() {
             eprintln!("no PIC libc; skipping");
             return None;
         }
         Some([
-            Library::builtin("libc.so", openmodelica_wasi_libc::LIBC_PIC),
+            Library::builtin("libc.so", crate::LIBC_PIC()),
             Library::model(name, bytes),
         ])
     }
@@ -531,7 +531,7 @@ mod tests {
     /// The runtime owns the memory, table and allocator the libraries go in.
     fn runtime() -> (wasmtime::Store<HostState>, wasmtime::Engine, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, crate::RUNTIME_WASM).unwrap();
+        let module = wasmtime::Module::new(&engine, crate::RUNTIME_WASM()).unwrap();
         let mut store = wasmtime::Store::new(&engine, HostState::new(openmodelica_wasi::wasi::WasiCtx::new("/", Vec::new())));
         let mut linker = wasmtime::Linker::new(&engine);
         crate::host::add_host_builtins(&mut linker).unwrap();
@@ -802,7 +802,7 @@ pub fn load_ext_libraries(
     if model.ext_libs.is_empty() && !model.ext_builtin {
         return load(store, engine, memory, table, &rt.alloc, &[], &HashMap::new());
     }
-    let libc = openmodelica_wasi_libc::LIBC_PIC;
+    let libc = crate::LIBC_PIC();
     if libc.is_empty() {
         return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
                     load an external \"C\" library"
@@ -817,11 +817,11 @@ pub fn load_ext_libraries(
     // Binding an `external "C"` here makes the call wasm->wasm; the dlopen
     // fallback costs a host trampoline and libffi marshalling per call.
     if model.ext_builtin {
-        libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
+        libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
         // The dummy `usertab` ModelicaExternalC imports; last, so a `usertab` from
         // the model's own libraries wins.
-        if !openmodelica_wasi_libc::USERTAB_DYLINK.is_empty() {
-            libs.push(Library::builtin("usertab", openmodelica_wasi_libc::USERTAB_DYLINK));
+        if !crate::USERTAB_DYLINK().is_empty() {
+            libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
         }
     }
     let host = modelica_utilities_imports(store, rt);

@@ -154,9 +154,12 @@ openmodelica_codegen_cpp_omsi_ext = {path = "openmodelica_codegen_cpp_omsi_ext"}
 openmodelica_backend_main = {path = "openmodelica_backend_main", default-features = false}
 openmodelica_scripting_qt = {path = "openmodelica_scripting_qt"}
 
-#[profile.release]
-#debug = true
-#strip = false
+# Thin, not fat: on the Windows cdylib fat bought 6.6 MB of 305 for a 35-minute
+# serial link. CI lanes that ship nothing override these (see .CI/common.groovy).
+[profile.release]
+lto = "thin"
+codegen-units = 1
+# Add `debug = true` and `strip = false` here for a release build with backtraces.
 
 # libffi-sys fork that assembles win64.S with clang-cl (not ml64) so the
 # windows-msvc cross build works. Pending upstream merge of the same change.

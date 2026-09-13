@@ -169,9 +169,16 @@ MainWindow::MainWindow(QWidget *parent)
   /* TRICK: Forces the top-level window surface to initialize
    * as QSurface::OpenGLSurface immediately, preventing later recreation flicker.
    * See issue #15830.
+   *
+   * Not on macOS: Qt cannot mix a QOpenGLWidget and a QQuickWidget in one window
+   * unless they agree on the graphics API, and there the QQuickWidgets are Metal.
+   * Forcing OpenGL leaves both the Quick3D animation view and the documentation
+   * view (a QQuickWidget underneath) with no QRhi, rendering nothing.
    */
+#ifndef Q_OS_MACOS
   QOpenGLWidget *dummyGL = new QOpenGLWidget(this);
   dummyGL->hide();
+#endif // #ifndef Q_OS_MACOS
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
   // Default system font

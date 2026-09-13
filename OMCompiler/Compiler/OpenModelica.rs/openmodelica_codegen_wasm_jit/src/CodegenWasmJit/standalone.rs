@@ -21,7 +21,7 @@ pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
 #[cfg(not(target_arch = "wasm32"))]
 pub(super) fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
     use std::process::Command;
-    if RUNTIME_WASIP1.is_empty() {
+    if RUNTIME_WASIP1().is_empty() {
         return Err("error");
     }
     let merge = std::env::var("OMC_WASM_MERGE").unwrap_or_else(|_| "wasm-merge".to_owned());
@@ -35,7 +35,7 @@ pub(super) fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
     let rt_path = dir.join("runtime.wasm");
     let model_path = dir.join("model.wasm");
     let out_path = dir.join("standalone.wasm");
-    std::fs::write(&rt_path, RUNTIME_WASIP1).map_err(|_| "CodegenWasmJit: cannot write runtime.wasm")?;
+    std::fs::write(&rt_path, RUNTIME_WASIP1()).map_err(|_| "CodegenWasmJit: cannot write runtime.wasm")?;
     std::fs::write(&model_path, model_wasm).map_err(|_| "CodegenWasmJit: cannot write model.wasm")?;
 
     // `-all` enables every wasm feature so the model's bulk-memory `memory.init`

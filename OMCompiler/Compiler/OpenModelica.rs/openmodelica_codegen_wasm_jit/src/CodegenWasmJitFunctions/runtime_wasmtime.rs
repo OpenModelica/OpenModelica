@@ -67,7 +67,7 @@ fn jit_cache() -> &'static JitCache {
         // The builtin set is fixed and cannot collide; a failure here is a
         // programming error in `add_host_builtins`, not a runtime condition.
         openmodelica_wasm_jit::host::add_host_builtins(&mut env_linker).expect("register wasm-jit host builtins");
-        let runtime_module = wasmtime::Module::new(&engine, RUNTIME_WASM).expect("compile wasm-jit runtime");
+        let runtime_module = wasmtime::Module::new(&engine, RUNTIME_WASM()).expect("compile wasm-jit runtime");
         JitCache { engine, env_linker, runtime_module, modules: Mutex::new(HashMap::new()) }
     })
 }
@@ -134,7 +134,7 @@ fn define_external_imports(
         nls: None,
     };
     let mut libs = Vec::with_capacity(sig.libs.len() + 1);
-    let libc = openmodelica_wasi_libc::LIBC_PIC;
+    let libc = openmodelica_wasm_jit::LIBC_PIC();
     if libc.is_empty() {
         return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
                     load an external \"C\" library");
@@ -716,7 +716,7 @@ mod tests {
     /// production linker provides.
     fn runtime_instance() -> (Store, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
+        let module = wasmtime::Module::new(&engine, RUNTIME_WASM()).unwrap();
         let mut store = wasmtime::Store::new(&engine, HostState::new(WasiCtx::new("/", Vec::new())));
         let mut linker = wasmtime::Linker::new(&engine);
         openmodelica_wasm_jit::host::add_host_builtins(&mut linker).unwrap();

@@ -472,6 +472,7 @@ openmodelica_wasi_libc/src/lib.rs
 openmodelica_wasm_jit/Cargo.toml
 openmodelica_wasm_jit/build.rs
 openmodelica_wasm_jit/external_c_stubs.c
+openmodelica_wasm_jit/src/blobs.rs
 openmodelica_wasm_jit/src/dylink.rs
 openmodelica_wasm_jit/src/dylink_wasmtime.rs
 openmodelica_wasm_jit/src/engine_config.rs

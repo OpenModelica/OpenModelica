@@ -217,12 +217,12 @@ pub(super) fn link_fmu_component(
     if let Some(wanted) = solvers {
         for lib in SOLVER_LIBRARIES {
             let bytes =
-                if wanted.contains(&lib.name) { lib.module } else { lib.stub };
+                if wanted.contains(&lib.name) { lib.module() } else { lib.stub() };
             l = l.library(lib.name, bytes, false).map_err(link_err)?;
         }
     }
     if needs_lapack(model_wasm, ext_libs) {
-        l = l.library("lapack", LAPACK_DYLINK, false).map_err(link_err)?;
+        l = l.library("lapack", LAPACK_DYLINK(), false).map_err(link_err)?;
     }
     let real_solvers = solvers.is_some_and(|w| !w.is_empty());
     if has_ext || real_solvers {
@@ -239,16 +239,16 @@ pub(super) fn link_fmu_component(
             if let Some(stub) = native_stub {
                 l = l.library("native_stub", stub, false).map_err(link_err)?;
             }
-            l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
+            l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK(), false).map_err(link_err)?;
         }
-        l = l.library("libc", LIBC_PIC, false).map_err(link_err)?;
+        l = l.library("libc", LIBC_PIC(), false).map_err(link_err)?;
         if has_ext {
             // Last, so a `usertab` from the model's own libraries wins.
-            l = l.library("usertab", USERTAB_DYLINK, false).map_err(link_err)?;
+            l = l.library("usertab", USERTAB_DYLINK(), false).map_err(link_err)?;
         }
     }
     // Unconditional: the adapter is also what gives the FMU the stdout its
     // simulation log goes to.
-    l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER).map_err(link_err)?;
+    l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER()).map_err(link_err)?;
     l.encode().map_err(link_err)
 }
