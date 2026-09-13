@@ -10,16 +10,20 @@ workspace = "../../../Compiler/OpenModelica.rs"
 [lib]
 
 [dependencies]
-arrow-array = { version = "59", default-features = false }
-arrow-buffer = { version = "59", default-features = false }
-arrow-schema = { version = "59", default-features = false }
-arrow-ipc = { version = "59", default-features = false }
+arrow-array = { version = "59", default-features = false, optional = true }
+arrow-buffer = { version = "59", default-features = false, optional = true }
+arrow-schema = { version = "59", default-features = false, optional = true }
+arrow-ipc = { version = "59", default-features = false, optional = true }
 
 [features]
-default = []
+default = ["ipc"]
+# The writer (`src/writer.rs`) and the Arrow crates it needs. Without it the
+# crate is the format's vocabulary alone -- `VarTy`, `UnitDef`, `ArrowKind` --
+# which `openmodelica_sim_meta` needs whether or not anything writes a file.
+ipc = ["dep:arrow-array", "dep:arrow-buffer", "dep:arrow-schema", "dep:arrow-ipc"]
 # ZSTD-compressed record batches on request (`FileMeta::zstd`); off, the
 # codec stays out of the build and out of the wasm runtime.
-zstd = ["arrow-ipc/zstd"]
+zstd = ["ipc", "arrow-ipc/zstd"]
 # The pre-`arrow.modelica` layout (`json` module), which only the result-format
 # benchmark still writes. Nothing in OpenModelica should enable this.
-json-layout = []
+json-layout = ["ipc"]

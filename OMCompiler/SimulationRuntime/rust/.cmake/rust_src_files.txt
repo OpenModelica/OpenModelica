@@ -24,6 +24,7 @@ openmodelica_arrow_writer/SPECIFICATION.md
 openmodelica_arrow_writer/src/lib.rs
 openmodelica_arrow_writer/src/json.rs
 openmodelica_arrow_writer/src/units.rs
+openmodelica_arrow_writer/src/writer.rs
 openmodelica_hdf5_result/Cargo.toml
 openmodelica_hdf5_result/src/h5.rs
 openmodelica_hdf5_result/src/lib.rs

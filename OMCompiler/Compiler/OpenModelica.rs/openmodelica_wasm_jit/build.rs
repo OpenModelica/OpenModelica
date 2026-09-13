@@ -35,6 +35,28 @@ fn run(cmd: &mut Command, what: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Detach a nested build from this one's cargo environment: the flags, and the
+/// `CARGO_PROFILE_*` overrides that outrank a manifest's own `[profile]`.
+///
+/// Each crate below is a standalone workspace whose release profile sets
+/// `lto = true`. A wasm side module needs that for correctness, not size:
+/// without it every symbol stays exported, and a PIC build then reaches its own
+/// statics through `GOT.mem` globals the component linker fills only after the
+/// instantiation that runs a model module's `start`.
+fn detach_cargo_env(cmd: &mut Command) {
+    for (key, _) in std::env::vars_os() {
+        let key = key.to_string_lossy();
+        // `CARGO_TARGET_<TRIPLE>_RUSTFLAGS` outranks the `RUSTFLAGS` set below it.
+        let flags = key.starts_with("CARGO_TARGET_") && key.ends_with("_RUSTFLAGS");
+        if flags || key.starts_with("CARGO_PROFILE_") {
+            cmd.env_remove(key.as_ref());
+        }
+    }
+    cmd.env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_BUILD_RUSTFLAGS")
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+}
+
 /// `items.iter().map(f)`, one thread each, results in input order; a worker panic
 /// resurfaces here. Spawning all at once does not oversubscribe: the nested
 /// cargos share this build's jobserver through `CARGO_MAKEFLAGS`.
@@ -180,11 +202,8 @@ fn build_wasip1_fused_adapter(
         // runtime's own cdylib artifact (unused) references the sink this crate
         // defines. sccache goes with the outer build's other wrappers.
         .env("RUSTFLAGS", rustflags)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WRAPPER")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER")
-        ;
+        .env_remove("RUSTC_WRAPPER");
+    detach_cargo_env(&mut cmd);
     match sundials_dir {
         Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
         None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
@@ -524,10 +543,8 @@ fn build_native_loader(
         .args(cargo_subcommand(target))
         .args(["--release", "--target", target])
         .arg("--target-dir")
-        .arg(&target_dir)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .arg(&target_dir);
+    detach_cargo_env(&mut cmd);
     run(&mut cmd, &format!("cargo build for {target}"))?;
     let produced = target_dir.join(target).join("release").join(artifact);
     if !produced.exists() {
@@ -598,10 +615,8 @@ fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, Strin
         .args(["--features", "fortran-abi"])
         .arg("--target-dir")
         .arg(&target_dir)
-        .env("RUSTFLAGS", rustflags)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .env("RUSTFLAGS", rustflags);
+    detach_cargo_env(&mut cmd);
     run(&mut cmd, "cargo build (LAPACK dylink)")?;
     let produced = target_dir.join(target).join("release").join("openmodelica_lapack.wasm");
     if !produced.exists() {
@@ -1341,10 +1356,8 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
         .args(v.cargo_args)
         .arg("--target-dir")
         .arg(&target_dir)
-        .env("RUSTFLAGS", rustflags)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .env("RUSTFLAGS", rustflags);
+    detach_cargo_env(&mut cmd);
     run(&mut cmd, &format!("cargo build (dylink, {})", v.label))?;
     let produced = target_dir.join(target).join("release").join("openmodelica_fmi3_wasm.wasm");
     if !produced.exists() {
@@ -1858,10 +1871,8 @@ fn build_runtime_wasm_named(
         .arg("--target-dir")
         .arg(&target_dir)
         // Don't inherit the host build's flags/backend selection.
-        .env_remove("RUSTFLAGS")
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .env_remove("RUSTFLAGS");
+    detach_cargo_env(&mut cmd);
     match sundials_dir {
         Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
         // Cargo's env is inherited; clear a stale outer setting so the nested build
