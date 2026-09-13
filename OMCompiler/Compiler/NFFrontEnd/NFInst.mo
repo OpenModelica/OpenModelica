@@ -1097,7 +1097,7 @@ algorithm
   end if;
 
   attrs := Attributes.fromDerivedSCode(sattrs);
-  dims := list(Dimension.RAW_DIM(d, InstNode.parent(node)) for d in AbsynUtil.typeSpecDimensions(ty));
+  dims := list(Dimension.RAW_DIM(d, InstNode.scopeRef(InstNode.parent(node))) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
   cc_mod := Class.getCCModifier(cls);
 
@@ -2001,7 +2001,7 @@ algorithm
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
 
-        dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
+        dims := list(Dimension.RAW_DIM(d, InstNode.scopeRef(parent)) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
         condition := Binding.fromAbsyn(component.condition, false, parent, instLevel, info);
 
@@ -2536,7 +2536,7 @@ algorithm
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
-              exp := instExp(dim.subscript, dimension.scope, context, info);
+              exp := instExp(dim.subscript, InstNode.fromCell(dimension.scope), context, info);
               if settings.resizableArrays then
                 exp := Expression.map(exp, instResizable);
               end if;
