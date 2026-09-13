@@ -1163,6 +1163,15 @@ uniontype InstNode
   algorithm
     topScope := match node
       case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
+
+      // Walking past the top means a parent cell no longer holds its node.
+      // Without this the tail call is a loop and the compiler simply hangs.
+      case EMPTY_NODE()
+        algorithm
+          Error.addInternalError(getInstanceName() +
+            " walked past the top scope: a parent cell lost its node", sourceInfo());
+        then fail();
+
       else topScope(parent(node));
     end match;
   end topScope;
