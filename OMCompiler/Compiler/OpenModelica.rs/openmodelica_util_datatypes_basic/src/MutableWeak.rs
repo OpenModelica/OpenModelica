@@ -33,7 +33,16 @@ thread_local! {
 
 /// Keep a cell alive for the current run. A no-op in the bootstrapped
 /// compiler, where a weak reference is the strong one.
+thread_local! {
+    /// See `Mutable::stats`.
+    pub static UPGRADED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    pub static ROOTED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
 pub fn root<T: Clone + metamodelica::gc::MMTrace + 'static>(mutable: Mutable<T>) {
+    if crate::Mutable::stats::enabled() {
+        crate::Mutable::stats::bump(&ROOTED);
+    }
     let cell: Arc<dyn metamodelica::gc::TraceableCell> = mutable.0;
     ROOTED_CELLS.with(|r| r.borrow_mut().push(cell));
 }
@@ -96,6 +105,9 @@ pub fn downgrade<T: Clone>(mutable: Mutable<T>) -> MutableWeak<T> {
 /// reference outlived the structure that owned it, so the ownership split is
 /// wrong somewhere. Dereferencing a cell never fails; only this conversion does.
 pub fn upgrade<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T>> {
+    if crate::Mutable::stats::enabled() {
+        crate::Mutable::stats::bump(&UPGRADED);
+    }
     match weak.0.upgrade() {
         Some(cell) => Ok(Mutable(cell)),
         None => {

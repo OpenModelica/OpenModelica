@@ -76,13 +76,27 @@ fn collect_reporting() {
     }
 }
 
+fn report_cell_stats() {
+    if crate::Mutable::stats::enabled() {
+        let (created, updated, accessed) = crate::Mutable::stats::report();
+        let upgraded = crate::MutableWeak::UPGRADED.with(|c| c.get());
+        let rooted = crate::MutableWeak::ROOTED.with(|c| c.get());
+        eprintln!(
+            "cell-stats: {created} cells created, {rooted} rooted, {updated} published \
+             (a record copy each), {upgraded} weak upgrades, {accessed} reads"
+        );
+    }
+}
+
 pub fn gcollect() {
     collect_reporting();
+    report_cell_stats();
 }
 
 pub fn gcollectAndUnmap() {
     // No unmapping concept on the refcounted heap; same as `gcollect`.
     collect_reporting();
+    report_cell_stats();
 }
 
 pub fn getForceUnmapOnGcollect() -> bool {

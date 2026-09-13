@@ -154,15 +154,56 @@ impl<T: Clone + Default + MMTrace + 'static> Default for Mutable<T> {
     }
 }
 
+/// `OPENMODELICA_CELL_STATS=1` counts the identity-cell traffic, reported by
+/// `GCExt.gcollect`. The weak-parent design pays a record copy per publish
+/// (`disown`) and per owning read (`reown`), so these counts are what a
+/// redesign has to move.
+pub mod stats {
+    use std::cell::Cell;
+    thread_local! {
+        pub static CREATED: Cell<u64> = const { Cell::new(0) };
+        pub static UPDATED: Cell<u64> = const { Cell::new(0) };
+        pub static ACCESSED: Cell<u64> = const { Cell::new(0) };
+    }
+    #[inline]
+    pub fn bump(c: &'static std::thread::LocalKey<Cell<u64>>) {
+        c.with(|v| v.set(v.get().wrapping_add(1)));
+    }
+    /// Read once into a `OnceLock`: `access` is on a multi-million-call path
+    /// (5.8M for EngineV6), so the disabled check has to be a plain load and
+    /// not a thread-local with an `Option` in it.
+    #[inline]
+    pub fn enabled() -> bool {
+        static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *ON.get_or_init(|| std::env::var_os("OPENMODELICA_CELL_STATS").is_some())
+    }
+    pub fn report() -> (u64, u64, u64) {
+        (
+            CREATED.with(|c| c.get()),
+            UPDATED.with(|c| c.get()),
+            ACCESSED.with(|c| c.get()),
+        )
+    }
+}
+
 pub fn create<T: Clone + MMTrace + 'static>(data: T) -> Mutable<T> {
+    if stats::enabled() {
+        stats::bump(&stats::CREATED);
+    }
     Mutable(new_cell(data))
 }
 
 pub fn update<T: Clone>(mutable: Mutable<T>, data: T) {
+    if stats::enabled() {
+        stats::bump(&stats::UPDATED);
+    }
     cell_set(&mutable.0, data);
 }
 
 pub fn access<T: Clone>(mutable: Mutable<T>) -> T {
+    if stats::enabled() {
+        stats::bump(&stats::ACCESSED);
+    }
     cell_get(&mutable.0)
 }
 
