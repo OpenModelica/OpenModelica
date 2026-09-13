@@ -20,9 +20,7 @@ impl<T: Clone> Clone for MutableWeak<T> {
 }
 
 /// The Rust port has real weak semantics, so a cell needs an owner.
-pub fn ownership() -> bool {
-    true
-}
+pub const ownership: bool = true;
 
 thread_local! {
     /// Cells kept alive for the current frontend run. `Mutable` cells are

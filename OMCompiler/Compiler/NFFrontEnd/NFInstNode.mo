@@ -48,6 +48,7 @@ import Sections = NFSections;
 import Pointer;
 import Mutable;
 import MutableWeak;
+import GCExt;
 import PointerWeak;
 import Error;
 import Prefixes = NFPrefixes;
@@ -763,7 +764,9 @@ uniontype InstNode
     cell := Mutable.create(EMPTY_NODE());
     // The run owns the cell. A node value is not a long enough owner: a cref
     // outlives the value it was made from and still walks up through it.
-    MutableWeak.root(cell);
+    if GCExt.cellsNeedOwners then
+      MutableWeak.root(cell);
+    end if;
     owner := SOME(cell);
     identity := SOME(MutableWeak.downgrade(cell));
   end newIdentity;
@@ -812,7 +815,7 @@ uniontype InstNode
      needs no owner at all the record copy is pure overhead, so skip it."
     input output InstNode node;
   algorithm
-    if MutableWeak.ownership() then
+    if GCExt.cellsNeedOwners then
       node := setOwner(node, NONE());
     end if;
   end disown;
@@ -823,7 +826,7 @@ uniontype InstNode
     input Mutable<InstNode> cell;
     output InstNode outNode;
   algorithm
-    outNode := if MutableWeak.ownership() then setOwner(node, SOME(cell)) else node;
+    outNode := if GCExt.cellsNeedOwners then setOwner(node, SOME(cell)) else node;
   end reown;
 
   function identityCell
@@ -863,7 +866,7 @@ uniontype InstNode
     input InstNode node;
     output NodeHandle hnd;
   algorithm
-    if not MutableWeak.ownership() then
+    if not GCExt.cellsNeedOwners then
       // Nothing to break: the node itself is the handle, as it was before
       // any of this, and no snapshot can go stale.
       hnd := NodeHandle.VALUE(node);
@@ -904,13 +907,13 @@ uniontype InstNode
       local Mutable<InstNode> cell;
 
       case CLASS_NODE(owner = SOME(cell))
-        guard MutableWeak.ownership()
+        guard GCExt.cellsNeedOwners
         algorithm
           Mutable.update(cell, disown(node));
         then fromIdentity(node.identity, node);
 
       case COMPONENT_NODE(owner = SOME(cell))
-        guard MutableWeak.ownership()
+        guard GCExt.cellsNeedOwners
         algorithm
           Mutable.update(cell, disown(node));
         then fromIdentity(node.identity, node);

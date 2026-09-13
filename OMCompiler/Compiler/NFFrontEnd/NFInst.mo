@@ -57,6 +57,7 @@ import Expression = NFExpression;
 import Class = NFClass;
 import NFInstNode.InstNode;
 import MutableWeak;
+import GCExt;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import NFModifier.ModifierScope;
@@ -556,7 +557,9 @@ algorithm
   // Root the top scope: everything below it refers to its enclosing scope
   // weakly, so nothing else keeps it alive.
   setGlobalRoot(Global.nfTopScope, {topNode});
-  MutableWeak.clearRoots();
+  if GCExt.cellsNeedOwners then
+    MutableWeak.clearRoots();
+  end if;
   setGlobalRoot(Global.nbCreatedVars, {});
 end makeTopNode;
 
