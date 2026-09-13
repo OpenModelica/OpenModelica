@@ -2372,7 +2372,11 @@ public
             dummy_func      := func;
             node            := InstNode.replaceClass(new_cls, node);
             der_func_name   := NBVariable.FUNCTION_DERIVATIVE_STR + intString(listLength(func.derivatives));
-            node            := InstNode.rename(der_func_name + "." + InstNode.name(node), node);
+            // A copy of the differentiated function, not an update of it: it
+            // needs its own identity, or both nodes publish into one cell and
+            // the derivative reads back the function it was derived from.
+            node            := InstNode.reidentify(
+              InstNode.rename(der_func_name + "." + InstNode.name(node), node));
             node            := InstNode.setDefinition(
               SCodeUtil.setElementName(InstNode.definition(node), InstNode.name(node)), node);
             // create "fake" function from new node, update cache to get correct derivative name
@@ -2385,8 +2389,8 @@ public
 
             // create fake derivative
             funcDer := FunctionDerivative.FUNCTION_DER(
-              derivativeFn          = InstNode.scopeRef(InstNode.fromHandle(der_func.node)),
-              derivedFn             = InstNode.scopeRef(InstNode.fromHandle(dummy_func.node)),
+              derivativeFn          = InstNode.identityCell(InstNode.fromHandle(der_func.node)),
+              derivedFn             = InstNode.identityCell(InstNode.fromHandle(dummy_func.node)),
               order                 = Expression.INTEGER(1),
               conditions            = FunctionDerivative.conditionsFromMap(interface_map),
               lowerOrderDerivatives = {}  // possibly needs updating
@@ -2442,8 +2446,8 @@ public
         UnorderedMap.add(der_func.path, der_func, diffArguments.funcMap);
         // add new function as derivative to original function
         funcDer := FunctionDerivative.FUNCTION_DER(
-          derivativeFn          = InstNode.scopeRef(InstNode.fromHandle(der_func.node)),
-          derivedFn             = InstNode.scopeRef(InstNode.fromHandle(func.node)),
+          derivativeFn          = InstNode.identityCell(InstNode.fromHandle(der_func.node)),
+          derivedFn             = InstNode.identityCell(InstNode.fromHandle(func.node)),
           order                 = Expression.INTEGER(1),
           conditions            = FunctionDerivative.conditionsFromMap(interface_map),
           lowerOrderDerivatives = {}  // possibly needs updating

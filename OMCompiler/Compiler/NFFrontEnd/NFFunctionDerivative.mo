@@ -281,7 +281,7 @@ protected
           addLowerOrderDerivative(der_node, fnNode);
           (order, conds) := getDerivativeAttributes(attrs, fn, fnNode, mod.info);
         then
-          FUNCTION_DER(InstNode.scopeRef(der_node), InstNode.scopeRef(fnNode), order, conds, {}) :: fnDers;
+          FUNCTION_DER(InstNode.identityCell(der_node), InstNode.identityCell(fnNode), order, conds, {}) :: fnDers;
 
       // Give a warning if the derivative annotation doesn't specify a function name.
       case SCode.Mod.MOD()
@@ -393,7 +393,7 @@ protected
         match fn_der
           case FUNCTION_DER()
             algorithm
-              fn_der.lowerOrderDerivatives := InstNode.scopeRef(lowerDerNode) :: fn_der.lowerOrderDerivatives;
+              fn_der.lowerOrderDerivatives := InstNode.identityCell(lowerDerNode) :: fn_der.lowerOrderDerivatives;
             then
               fn_der;
         end match
