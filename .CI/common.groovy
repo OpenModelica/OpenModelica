@@ -757,6 +757,10 @@ String nightlySharedDir() { return 'nightly-shared' }
 // gets one merged tree by unstashing both.
 String nightlyInstallDir(String name) { return "install/${name}" }
 
+// The macOS Qt kit in the rust-qt-mac image: the GUI stages configure against it,
+// the packaging stage deploys its frameworks into the bundle.
+String qtMacPrefix() { return '/opt/Qt/6.11.2/macos' }
+
 // One nightly cross target:
 //   triple    the rustc target triple (RUST_OMC_TARGET, and cargo's subdirectory)
 //   toolchain the CMake toolchain file for the C/C++ half of the tree
@@ -773,7 +777,7 @@ Map nightlyTarget(String name) {
                     '-DOM_OMC_ENABLE_MOO=OFF',
                     '-DOM_OMC_ENABLE_OPTIMIZATION=OFF']
   // Qt's one macOS desktop kit is universal, so both targets share it.
-  List qtMac = ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/macos',
+  List qtMac = ["-DCMAKE_PREFIX_PATH=${qtMacPrefix()}",
                 '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64',
                 '-DOM_OMEDIT_ANIMATION_QUICK3D=ON']
   Map all = [
@@ -998,8 +1002,8 @@ void packageRustNightlyWindows(List stashes) {
 }
 
 // Stage 4, macOS: lipo the two per-architecture install trees into one universal
-// tree and ship that. Every Mach-O both trees have becomes a fat binary; see
-// .CI/scripts/mac-universal.sh.
+// tree (.CI/scripts/mac-universal.sh), fold that into OMEdit.app and ship it as a
+// .dmg. The unix tree is not shipped: it only runs from inside the bundle.
 void packageRustNightlyMacUniversal(List stashes) {
   standardSetup()
   for (s in stashes) {
@@ -1018,9 +1022,18 @@ void packageRustNightlyMacUniversal(List stashes) {
       *) echo "ERROR: bin/omc is not universal" >&2; exit 1 ;;
     esac
   """
-  String tgz = "OpenModelica-${tagName()}-macos-universal.tar.gz"
-  sh "rm -f ${tgz} && tar -C ${out} -czf ${tgz} ."
-  uploadRustNightly(tgz)
+  if (!fileExists("${out}/Applications/OMEdit.app")) {
+    // BUILD_GUI_CLIENTS off: no OMEdit.app to wrap.
+    String tgz = "OpenModelica-${tagName()}-macos-universal.tar.gz"
+    sh "rm -f ${tgz} && tar -C ${out} -czf ${tgz} ."
+    sh "ls -l ${tgz}"
+    uploadRustNightly(tgz)
+    return
+  }
+  sh ".CI/scripts/mac-app-bundle.sh ${out} install/OMEdit.app ${qtMacPrefix()}"
+  String dmg = "OpenModelica-${tagName()}-macos-universal.dmg"
+  sh ".CI/scripts/mac-dmg.sh install/OMEdit.app ${dmg} OpenModelica"
+  uploadRustNightly(dmg)
 }
 
 // build.openmodelica.org/omc/rust/latest/, under the artifact's own name
