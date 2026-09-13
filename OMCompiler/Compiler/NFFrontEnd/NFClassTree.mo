@@ -35,6 +35,7 @@
 
 encapsulated package NFClassTree
   import NFInstNode.InstNode;
+  import NFInstNode;
   import SCode;
   import NFType.Type;
   import Mutable;
@@ -208,7 +209,7 @@ public
           // An import, save it as it is and deal with it in initImports later.
           case SCode.IMPORT()
             algorithm
-              imps := Import.UNRESOLVED_IMPORT(e.imp, parent, e.info) :: imps;
+              imps := Import.UNRESOLVED_IMPORT(e.imp, InstNode.scopeRef(parent), e.info) :: imps;
             then
               ();
 

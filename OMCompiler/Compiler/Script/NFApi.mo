@@ -2195,7 +2195,7 @@ algorithm
           case Import.RESOLVED_IMPORT()
             algorithm
               json_imp := JSON.makeNull();
-              json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(imp.node)), json_imp);
+              json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(InstNode.borrow(imp.node))), json_imp);
 
               if not stringEmpty(imp.shortName) then
                 json_imp := JSON.addPair("shortName", JSON.makeString(imp.shortName), json_imp);
