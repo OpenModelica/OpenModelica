@@ -286,10 +286,6 @@ uniontype InstNode
     Visibility visibility;
     Pointer<Class> cls;
     array<CachedData> caches;
-    Option<Mutable<InstNode>> owner "The cell this node publishes itself into
-      for its children to read back. NONE() in the published copy, which must
-      not own the cell it lives in.";
-    Option<MutableWeak<InstNode>> identity "The same cell, weakly.";
     ScopeRef parentScope "The enclosing scope's identity.
       Weak: a scope owns the nodes in it.";
     InstNodeType nodeType;
@@ -300,8 +296,6 @@ uniontype InstNode
     Option<SCode.Element> definition;
     Visibility visibility;
     Pointer<Component> component;
-    Option<Mutable<InstNode>> owner "See CLASS_NODE.owner.";
-    Option<MutableWeak<InstNode>> identity "See CLASS_NODE.identity.";
     ScopeRef parent "The instance that this component is
       part of; see CLASS_NODE.parentScope.";
     InstNodeType nodeType;
@@ -361,14 +355,11 @@ uniontype InstNode
   protected
     String name;
     SCode.Visibility vis;
-    Option<Mutable<InstNode>> owner;
-    Option<MutableWeak<InstNode>> identity;
   algorithm
     SCode.CLASS(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
-    (owner, identity) := newIdentity();
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
       Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
-      owner, identity, identityCell(parent), nodeType);
+      identityCell(parent), nodeType);
   end newClass;
 
   function newComponent
@@ -378,13 +369,10 @@ uniontype InstNode
   protected
     String name;
     SCode.Visibility vis;
-    Option<Mutable<InstNode>> owner;
-    Option<MutableWeak<InstNode>> identity;
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
-    (owner, identity) := newIdentity();
     node := COMPONENT_NODE(name, SOME(definition), Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Component.new(definition)), owner, identity,
+      Pointer.create(Component.new(definition)),
       identityCell(parent), InstNodeType.NORMAL_COMP());
   end newComponent;
 
@@ -396,15 +384,12 @@ uniontype InstNode
     Absyn.Path base_path;
     String name;
     SCode.Visibility vis;
-    Option<Mutable<InstNode>> owner;
-    Option<MutableWeak<InstNode>> identity;
   algorithm
     SCode.Element.EXTENDS(baseClassPath = base_path, visibility = vis) := definition;
     name := AbsynUtil.pathLastIdent(base_path);
-    (owner, identity) := newIdentity();
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
       Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
-      owner, identity, identityCell(parent),
+      identityCell(parent),
       InstNodeType.BASE_CLASS(identityCell(parent), definition, nodeType(parent)));
   end newExtends;
 
@@ -440,13 +425,9 @@ uniontype InstNode
     input Component component;
     input InstNode parent;
     output InstNode node;
-  protected
-    Option<Mutable<InstNode>> owner;
-    Option<MutableWeak<InstNode>> identity;
   algorithm
-    (owner, identity) := newIdentity();
     node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, Pointer.create(component),
-                           owner, identity, identityCell(parent), InstNodeType.NORMAL_COMP());
+                           identityCell(parent), InstNodeType.NORMAL_COMP());
   end fromComponent;
 
   function isClass
@@ -762,85 +743,11 @@ uniontype InstNode
     end match;
   end rename;
 
-  function newIdentity
-    "A fresh cell for a node to publish itself into."
-    output Option<Mutable<InstNode>> owner;
-    output Option<MutableWeak<InstNode>> identity;
-  protected
-    Mutable<InstNode> cell;
-  algorithm
-    if not GCExt.cellsNeedOwners then
-      // No cell is needed: `identityCell` hands back the node itself.
-      owner := NONE();
-      identity := NONE();
-      return;
-    end if;
-
-    cell := Mutable.create(EMPTY_NODE());
-    // The run owns the cell. A node value is not a long enough owner: a cref
-    // outlives the value it was made from and still walks up through it.
-    MutableWeak.root(cell);
-    owner := SOME(cell);
-    identity := SOME(MutableWeak.downgrade(cell));
-  end newIdentity;
-
   function reidentify
     "A fresh identity, for a node that is a copy of another rather than an
-     update of it. Its children must be made after this, or they refer to the
-     node it was copied from."
+     update of it. Nothing to do here; see NFInstNode.rust.mo."
     input output InstNode node;
-  protected
-    Option<Mutable<InstNode>> owner;
-    Option<MutableWeak<InstNode>> identity;
-  algorithm
-    () := match node
-      case CLASS_NODE()
-        algorithm
-          (owner, identity) := newIdentity();
-          node.owner := owner;
-          node.identity := identity;
-        then ();
-
-      case COMPONENT_NODE()
-        algorithm
-          (owner, identity) := newIdentity();
-          node.owner := owner;
-          node.identity := identity;
-        then ();
-
-      else ();
-    end match;
   end reidentify;
-
-  function setOwner
-    input output InstNode node;
-    input Option<Mutable<InstNode>> owner;
-  algorithm
-    () := match node
-      case CLASS_NODE() algorithm node.owner := owner; then ();
-      case COMPONENT_NODE() algorithm node.owner := owner; then ();
-      else ();
-    end match;
-  end setOwner;
-
-  function disown
-    "The copy that goes into the cell must not own the cell back. Where a cell
-     needs no owner at all the record copy is pure overhead, so skip it."
-    input output InstNode node;
-  algorithm
-    if GCExt.cellsNeedOwners then
-      node := setOwner(node, NONE());
-    end if;
-  end disown;
-
-  function reown
-    "The counterpart of `disown`, for a node read back out of its cell."
-    input InstNode node;
-    input Mutable<InstNode> cell;
-    output InstNode outNode;
-  algorithm
-    outNode := if GCExt.cellsNeedOwners then setOwner(node, SOME(cell)) else node;
-  end reown;
 
   function identityCell
     "The scope reference a child stores to name this node as its parent. The
@@ -851,82 +758,19 @@ uniontype InstNode
   end identityCell;
 
   function handle
-    "A weak handle for an edge that is not a parent edge. Unlike `identityCell`
-     it publishes only into a cell nobody has published into yet: a non-parent
-     edge has no business replacing the snapshot the node's children see, and
-     overwriting it is how a copied node ends up answering for its original.
-     A node with no cell is kept by value, which is also the only form a
-     constant can take."
+    "A weak handle for an edge that is not a parent edge. The node itself here;
+     see NFInstNode.rust.mo."
     input InstNode node;
-    output NodeHandle hnd;
-  algorithm
-    if not GCExt.cellsNeedOwners then
-      // Nothing to break: the node itself is the handle, as it was before
-      // any of this, and no snapshot can go stale.
-      hnd := NodeHandle.VALUE(node);
-      return;
-    end if;
-
-    hnd := match node
-      local Mutable<InstNode> cell;
-
-      case CLASS_NODE(owner = SOME(cell))
-        algorithm
-          if isEmpty(Mutable.access(cell)) then
-            Mutable.update(cell, disown(node));
-          end if;
-        then fromIdentity(node.identity, node);
-
-      case COMPONENT_NODE(owner = SOME(cell))
-        algorithm
-          if isEmpty(Mutable.access(cell)) then
-            Mutable.update(cell, disown(node));
-          end if;
-        then fromIdentity(node.identity, node);
-
-      case CLASS_NODE() then fromIdentity(node.identity, node);
-      case COMPONENT_NODE() then fromIdentity(node.identity, node);
-      else NodeHandle.VALUE(node);
-    end match;
+    output NodeHandle hnd = NodeHandle.VALUE(node);
   end handle;
 
   function republish
-    "A weak handle that *replaces* the published snapshot. For an update of the
-     same entity, where `handle`'s publish-once would hand back the node as it
-     was before the update. A copy needs `reidentify`, not this."
+    "As `handle`, where the edge is an update of the same node rather than a
+     different one. Identical here; the Rust port has to replace the published
+     snapshot."
     input InstNode node;
-    output NodeHandle hnd;
-  algorithm
-    hnd := match node
-      local Mutable<InstNode> cell;
-
-      case CLASS_NODE(owner = SOME(cell))
-        guard GCExt.cellsNeedOwners
-        algorithm
-          Mutable.update(cell, disown(node));
-        then fromIdentity(node.identity, node);
-
-      case COMPONENT_NODE(owner = SOME(cell))
-        guard GCExt.cellsNeedOwners
-        algorithm
-          Mutable.update(cell, disown(node));
-        then fromIdentity(node.identity, node);
-
-      else handle(node);
-    end match;
+    output NodeHandle hnd = handle(node);
   end republish;
-
-  function fromIdentity
-    input Option<MutableWeak<InstNode>> identity;
-    input InstNode node;
-    output NodeHandle hnd;
-  algorithm
-    hnd := match identity
-      local MutableWeak<InstNode> w;
-      case SOME(w) then NodeHandle.CELL(w);
-      else NodeHandle.VALUE(node);
-    end match;
-  end fromIdentity;
 
   function fromHandle
     input NodeHandle hnd;
@@ -2387,17 +2231,13 @@ uniontype InstNode
     output InstNode outComponent;
   algorithm
     outComponent := match component
-      local
-        Option<Mutable<InstNode>> owner;
-        Option<MutableWeak<InstNode>> identity;
-
       case COMPONENT_NODE()
-        algorithm
-          (owner, identity) := newIdentity();
         then
           COMPONENT_NODE(component.name, component.definition, component.visibility,
             Pointer.create(Pointer.access(component.component)),
-            owner, identity, identityCell(newParent), component.nodeType);
+            identityCell(newParent), component.nodeType);
+
+      else component;
     end match;
   end cloneComponent;
 
