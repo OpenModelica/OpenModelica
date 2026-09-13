@@ -70,6 +70,7 @@ import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
 import CodegenEmbeddedC;
+import CodegenESP32;
 import CodegenFMU;
 import CodegenFMU2;
 import CodegenFMU3;
@@ -609,6 +610,7 @@ algorithm
       Integer numThreads, n;
       list<tuple<Boolean,list<String>>> res = {};
       list<String> strs, tmp, matches;
+      String esp32Dir;
 
     case "Cpp"
       algorithm
@@ -728,6 +730,32 @@ algorithm
         end for;
         strs := listReverse(strs);
         // write the makefile last!
+      then ();
+
+    case "ESP32"
+      algorithm
+        System.realtimeTick(ClockIndexes.RT_PROFILER0);
+        // The generated project is an ESP-IDF one, which has to be laid out as
+        // a project directory holding a main component.
+        esp32Dir := simCode.fileNamePrefix + "_esp32";
+        if not Util.createDirectoryTree(esp32Dir + "/main") then
+          Error.addInternalError("Failed to create directory " + esp32Dir + "/main", sourceInfo());
+          fail();
+        end if;
+        runTplWriteFile(func = function CodegenESP32.projectCMakeFile(a_simCode=simCode),
+                        file = esp32Dir + "/CMakeLists.txt");
+        runTplWriteFile(func = function CodegenESP32.componentCMakeFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/CMakeLists.txt");
+        runTplWriteFile(func = function CodegenESP32.sdkconfigFile(a_simCode=simCode),
+                        file = esp32Dir + "/sdkconfig.defaults");
+        runTplWriteFile(func = function CodegenESP32.modelHeaderFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/" + simCode.fileNamePrefix + "_model.h");
+        runTplWriteFile(func = function CodegenESP32.modelSourceFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/" + simCode.fileNamePrefix + "_model.c");
+        runTplWriteFile(func = function CodegenESP32.appMainFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/main.c");
+        runTplWriteFile(func = function CodegenESP32.readmeFile(a_simCode=simCode),
+                        file = esp32Dir + "/README.md");
       then ();
 
     case "JavaScript" algorithm

@@ -451,6 +451,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/AbsynJLDumpTpl.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenEmbeddedC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenESP32.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppCommon.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppOMSI.mo
