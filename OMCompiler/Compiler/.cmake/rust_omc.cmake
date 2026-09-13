@@ -1141,6 +1141,17 @@ function(omc_rust_setup_codegen)
       list(APPEND RUST_MO_SOURCES ${_f})
     endif()
   endforeach()
+  # Per-target declarations: `X.rust.mo` beside `X.mo` replaces the items the
+  # Rust port declares differently (see mmtorust/src/overrides.rs). They are not
+  # in the source list -- the C compiler must never see them -- so list them as
+  # dependencies explicitly, or editing one would not re-run codegen.
+  set(RUST_MO_OVERRIDES "")
+  foreach(_mo ${RUST_MO_SOURCES})
+    string(REGEX REPLACE "\\.mo$" ".rust.mo" _ovr "${_mo}")
+    if(EXISTS ${_ovr})
+      list(APPEND RUST_MO_OVERRIDES ${_ovr})
+    endif()
+  endforeach()
   # copy_if_different so the mtime (which rust_codegen DEPENDS on) only moves on
   # a real change — a plain file(WRITE) would rewrite it every reconfigure.
   file(WRITE ${RUST_SOURCES_FILE}.tmp "${_rust_src_content}")
@@ -1214,7 +1225,7 @@ function(omc_rust_setup_codegen)
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
     DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-            ${RUST_MO_SOURCES} ${MMTORUST_SOURCES}
+            ${RUST_MO_SOURCES} ${RUST_MO_OVERRIDES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
   endif()
