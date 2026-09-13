@@ -55,14 +55,14 @@ public
   end EXTENDS_TYPE;
 
   record CONNECTOR
-    list<InstNode> potentials;
-    list<InstNode> flows;
-    list<InstNode> streams;
+    list<NFInstNode.ScopeRef> potentials "Weakly: the class tree owns them.";
+    list<NFInstNode.ScopeRef> flows;
+    list<NFInstNode.ScopeRef> streams;
   end CONNECTOR;
 
   record EXPANDABLE_CONNECTOR
-    list<InstNode> potentiallyPresents;
-    list<InstNode> expandableConnectors;
+    list<NFInstNode.ScopeRef> potentiallyPresents "Weakly: the class tree owns them.";
+    list<NFInstNode.ScopeRef> expandableConnectors;
   end EXPANDABLE_CONNECTOR;
 
   record RECORD
@@ -74,8 +74,8 @@ public
   record EXTERNAL_OBJECT
     "Strong: a structor is stored here instead of in the class tree, so this
      field is its only owner."
-    InstNode constructor;
-    InstNode destructor;
+    NFInstNode.ScopeRef constructor "Weakly: the class tree owns them.";
+    NFInstNode.ScopeRef destructor;
   end EXTERNAL_OBJECT;
 
 annotation(__OpenModelica_Interface="nf_frontend");

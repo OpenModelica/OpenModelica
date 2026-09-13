@@ -1315,14 +1315,15 @@ function associatedFlowCref
 protected
   Type ty;
   ComponentRef rest_cr;
-  InstNode flow_node;
+  NFInstNode.ScopeRef flow_node;
 algorithm
   ComponentRef.CREF(ty = ty, restCref = rest_cr) := streamCref;
 
   flowCref := match Type.arrayElementType(ty)
     // A connector with a single flow, append the flow node to the cref and return it.
     case Type.COMPLEX(complexTy = ComplexType.CONNECTOR(flows = {flow_node}))
-      then ComponentRef.prefixCref(flow_node, InstNode.getType(flow_node), {}, streamCref);
+      then ComponentRef.prefixCref(InstNode.borrow(flow_node),
+        InstNode.getType(InstNode.borrow(flow_node)), {}, streamCref);
 
     // Otherwise, remove the first part of the cref and try again.
     else associatedFlowCref(rest_cr);

@@ -55,6 +55,7 @@ import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import NFPrefixes.ConnectorType;
 import NFPrefixes.Visibility;
 import NFTypeCheck.MatchKind;
@@ -212,7 +213,8 @@ function getExpandableConnectorsInConnector
   input Connector c1;
   output list<Connector> ecl;
 protected
-  list<InstNode> nodes;
+  list<NFInstNode.ScopeRef> nodes;
+  InstNode n;
   ComponentRef par_name, name;
   Type ty;
 algorithm
@@ -222,7 +224,8 @@ algorithm
       algorithm
         ecl := {};
 
-        for n in nodes loop
+        for n_ref in nodes loop
+          n := InstNode.borrow(n_ref);
           ty := InstNode.getType(n);
           name := ComponentRef.prefixCref(n, ty, {}, par_name);
           ecl := Connector.fromCref(name, ty, ElementSource.createElementSource(InstNode.info(n))) :: ecl;

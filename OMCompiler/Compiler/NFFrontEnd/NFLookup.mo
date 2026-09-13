@@ -50,6 +50,7 @@ import NFBuiltin;
 import Inst = NFInst;
 import Class = NFClass;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import NFLookupState.LookupState;
 import Type = NFType;
@@ -246,7 +247,7 @@ function fixExternalObjectCall
   input output LookupState state;
 protected
   Class cls;
-  InstNode constructor;
+  NFInstNode.ScopeRef constructor;
 algorithm
   // If it's not a class it can't be an external object.
   if not LookupState.isClass(state) then
@@ -265,7 +266,7 @@ algorithm
     case Class.PARTIAL_BUILTIN(ty = Type.COMPLEX(complexTy =
         ComplexType.EXTERNAL_OBJECT(constructor = constructor)))
       algorithm
-        cref := ComponentRef.prefixCref(constructor, Type.UNKNOWN(), {}, cref);
+        cref := ComponentRef.prefixCref(InstNode.borrow(constructor), Type.UNKNOWN(), {}, cref);
         state := LookupState.FUNC();
       then
         ();

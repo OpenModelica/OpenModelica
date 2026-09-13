@@ -149,7 +149,7 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
-  InstNode con, de;
+  NFInstNode.ScopeRef con, de;
   NFInstNode.ScopeRef rec_con;
 algorithm
   () := match c
@@ -206,8 +206,8 @@ algorithm
     case Class.INSTANCED_BUILTIN(ty = Type.COMPLEX(complexTy =
         ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de)))
       algorithm
-        typeStructor(con);
-        typeStructor(de);
+        typeStructor(InstNode.borrow(con));
+        typeStructor(InstNode.borrow(de));
       then
         ();
 
@@ -329,7 +329,7 @@ function makeConnectorType
   input Boolean isExpandable;
   output ComplexType connectorTy;
 protected
-  list<InstNode> pots = {}, flows = {}, streams = {}, exps = {};
+  list<NFInstNode.ScopeRef> pots = {}, flows = {}, streams = {}, exps = {};
   ConnectorType.Type cty;
 algorithm
   if isExpandable then
@@ -337,9 +337,9 @@ algorithm
       cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
 
       if intBitAnd(cty, ConnectorType.EXPANDABLE) > 0 then
-        exps := c :: exps;
+        exps := InstNode.scopeRef(c) :: exps;
       else
-        pots := c :: pots;
+        pots := InstNode.scopeRef(c) :: pots;
       end if;
     end for;
 
@@ -349,11 +349,11 @@ algorithm
       cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
 
       if intBitAnd(cty, ConnectorType.FLOW) > 0 then
-        flows := c :: flows;
+        flows := InstNode.scopeRef(c) :: flows;
       elseif intBitAnd(cty, ConnectorType.STREAM) > 0 then
-        streams := c :: streams;
+        streams := InstNode.scopeRef(c) :: streams;
       elseif intBitAnd(cty, ConnectorType.POTENTIAL) > 0 then
-        pots := c :: pots;
+        pots := InstNode.scopeRef(c) :: pots;
       else
         Error.addInternalError("Invalid connector type on component " + InstNode.name(c), InstNode.info(c));
         fail();

@@ -2039,20 +2039,23 @@ algorithm
 end typeCastRecord;
 
 function matchComponentList
-  input list<InstNode> comps1;
-  input list<InstNode> comps2;
+  input list<NFInstNode.ScopeRef> comps1;
+  input list<NFInstNode.ScopeRef> comps2;
   input MatchOptions options;
   output MatchKind matchKind;
 protected
-  InstNode c2;
-  list<InstNode> rest_c2 = comps2;
+  InstNode c1, c2;
+  NFInstNode.ScopeRef c2_ref;
+  list<NFInstNode.ScopeRef> rest_c2 = comps2;
   Expression dummy = Expression.INTEGER(0);
 algorithm
   if listLength(comps1) <> listLength(comps2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
   else
-    for c1 in comps1 loop
-      c2 :: rest_c2 := rest_c2;
+    for c1_ref in comps1 loop
+      c2_ref :: rest_c2 := rest_c2;
+      c1 := InstNode.borrow(c1_ref);
+      c2 := InstNode.borrow(c2_ref);
 
       if InstNode.name(c1) <> InstNode.name(c2) then
         matchKind := MatchKind.NOT_COMPATIBLE;

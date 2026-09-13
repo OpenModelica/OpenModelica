@@ -2857,7 +2857,7 @@ protected
 algorithm
   () := match ty
     local
-      InstNode con, de;
+      NFInstNode.ScopeRef con, de;
       NFInstNode.ScopeRef rec_con;
       Function fn;
 
@@ -2877,8 +2877,8 @@ algorithm
     // Collect external object structors.
     case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de))
       algorithm
-        funcs := collectStructor(con, funcs);
-        funcs := collectStructor(de, funcs);
+        funcs := collectStructor(InstNode.borrow(con), funcs);
+        funcs := collectStructor(InstNode.borrow(de), funcs);
       then
         ();
 

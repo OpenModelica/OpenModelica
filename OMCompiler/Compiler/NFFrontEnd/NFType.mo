@@ -1164,10 +1164,10 @@ public
           s := IOStream.append(s, "class ");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
-          {f} := Function.typeNodeCache(complexTy.constructor);
+          {f} := Function.typeNodeCache(InstNode.borrow(complexTy.constructor));
           s := Function.toFlatStream(f, format, indent + "  ", s, overrideName="constructor");
           s := IOStream.append(s, ";\n\n");
-          {f} := Function.typeNodeCache(complexTy.destructor);
+          {f} := Function.typeNodeCache(InstNode.borrow(complexTy.destructor));
           s := Function.toFlatStream(f, format, indent + "  ", s, overrideName="destructor");
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);

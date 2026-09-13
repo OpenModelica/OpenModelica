@@ -47,6 +47,7 @@ protected
   import Origin = NFComponentRef.Origin;
   import Connector = NFConnector;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import ElementSource;
   import Component = NFComponent;
   import NFClassTree.ClassTree;
@@ -355,7 +356,8 @@ protected
       case Type.COMPLEX()
         algorithm
           tree := Class.classTree(InstNode.getClass(Type.complexNode(ty)));
-          conns := splitImpl2(name, face, source, arrayList(ClassTree.getComponents(tree)), dims, conns);
+          conns := splitImpl2(name, face, source,
+            list(InstNode.scopeRef(c) for c in ClassTree.getComponents(tree)), dims, conns);
         then
           conns;
 
@@ -371,7 +373,7 @@ protected
     input ComponentRef name;
     input Face face;
     input DAE.ElementSource source;
-    input list<InstNode> comps;
+    input list<NFInstNode.ScopeRef> comps;
     input list<Dimension> dims;
     input output list<Connector> conns;
   protected
@@ -379,8 +381,10 @@ protected
     ComponentRef cref;
     Type ty;
     ConnectorType.Type cty;
+    InstNode comp;
   algorithm
-    for comp in comps loop
+    for comp_ref in comps loop
+      comp := InstNode.borrow(comp_ref);
       c := InstNode.component(comp);
       ty := Component.getType(c);
       cty := Component.connectorType(c);

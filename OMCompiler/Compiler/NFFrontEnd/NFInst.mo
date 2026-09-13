@@ -395,6 +395,7 @@ protected
   InstContext.Type next_context;
   String last;
   ComplexType cty;
+  NFInstNode.ScopeRef structor_ref;
 algorithm
   next_context := InstContext.set(context, NFInstContext.RELAXED);
 
@@ -413,10 +414,11 @@ algorithm
       Type.COMPLEX(complexTy = cty) := InstNode.getType(clsNode);
 
       if last == "constructor" then
-        ComplexType.EXTERNAL_OBJECT(constructor = clsNode) := cty;
+        ComplexType.EXTERNAL_OBJECT(constructor = structor_ref) := cty;
       else
-        ComplexType.EXTERNAL_OBJECT(destructor = clsNode) := cty;
+        ComplexType.EXTERNAL_OBJECT(destructor = structor_ref) := cty;
       end if;
+      clsNode := InstNode.borrow(structor_ref);
       ErrorExt.rollBack(getInstanceName());
     else
       ErrorExt.delCheckpoint(getInstanceName());
@@ -1040,7 +1042,7 @@ algorithm
           fail();
         end if;
       then
-        ComplexType.EXTERNAL_OBJECT(constructor, destructor);
+        ComplexType.EXTERNAL_OBJECT(InstNode.scopeRef(constructor), InstNode.scopeRef(destructor));
 
   end match;
 end makeExternalObjectType;
@@ -1346,6 +1348,7 @@ function instExternalObjectStructors
   input InstContext.Type context;
 protected
   InstNode constructor, destructor, par;
+  NFInstNode.ScopeRef con_ref, de_ref;
   SourceInfo info;
 algorithm
   // The constructor and destructor have function parameters that are instances
@@ -1355,7 +1358,9 @@ algorithm
   par := InstNode.parent(InstNode.parent(parent));
 
   if not (InstNode.isClass(par) and Class.isExternalObject(InstNode.getClass(par))) then
-    Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
+    Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(con_ref, de_ref)) := ty;
+    constructor := InstNode.borrow(con_ref);
+    destructor := InstNode.borrow(de_ref);
     info := InstNode.info(parent);
     Function.instFunctionNode(constructor, context, info);
     Function.instFunctionNode(destructor, context, info);
