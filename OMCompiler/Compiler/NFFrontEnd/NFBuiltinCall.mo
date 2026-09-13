@@ -39,6 +39,7 @@ encapsulated package NFBuiltinCall
   import Call = NFCall;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import NFPrefixes.{Variability, Purity};
   import Type = NFType;
   import Subscript = NFSubscript;
@@ -1897,14 +1898,14 @@ protected
     output Variability var = Variability.CONSTANT;
     output Purity purity = Purity.PURE;
   protected
-    InstNode scope;
+    NFInstNode.ScopeRef scope;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
     Call.typeMatchNormalCall(call, context, info);
     // getInstanceName is normally derived from the prefix during the flattening,
     // but sometimes the call is constant evaluated instead (e.g. when it's used
     // in a package). So we create an expression here that contains the scope.
-    result := Expression.INSTANCE_NAME(scope);
+    result := Expression.INSTANCE_NAME(InstNode.fromCell(scope));
   end typeGetInstanceName;
 
   function typeClockCall

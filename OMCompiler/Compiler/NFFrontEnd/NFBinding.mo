@@ -39,6 +39,7 @@ public
   import BaseModelica;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import Type = NFType;
   import NFPrefixes.{Variability, Purity};
   import ErrorTypes;
@@ -84,7 +85,8 @@ public
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
-    InstNode scope;
+    NFInstNode.ScopeRef scope "Weakly: the scope owns the class this binding
+      sits in.";
     list<Subscript> subs;
     EachType eachType;
     Source source;
@@ -95,7 +97,7 @@ public
   record UNTYPED_BINDING
     Expression bindingExp;
     Boolean isProcessing;
-    InstNode scope;
+    NFInstNode.ScopeRef scope "See RAW_BINDING.scope.";
     EachType eachType;
     Source source;
     Integer confidence;
@@ -154,7 +156,7 @@ public
         algorithm
           each_ty := if eachPrefix then EachType.EACH else EachType.NOT_EACH;
         then
-          RAW_BINDING(exp, scope, {}, each_ty, Source.BINDING, instanceLevel, info);
+          RAW_BINDING(exp, InstNode.scopeRef(scope), {}, each_ty, Source.BINDING, instanceLevel, info);
 
       else EMPTY_BINDING;
     end match;
@@ -943,7 +945,7 @@ public
     input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
-    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, confidence, info);
+    binding := UNTYPED_BINDING(exp, false, InstNode.scopeRef(scope), eachType, source, confidence, info);
   end makeUntyped;
 
   function makeTyped

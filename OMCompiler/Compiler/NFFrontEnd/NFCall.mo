@@ -42,6 +42,7 @@ import DAE;
 import Expression = NFExpression;
 import NFCallAttributes;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import NFPrefixes.{Variability, Purity};
 import Type = NFType;
@@ -92,14 +93,15 @@ public
     ComponentRef ref;
     list<Expression> arguments;
     list<NamedArg> named_args;
-    InstNode call_scope;
+    NFInstNode.ScopeRef call_scope "Weakly: the scope owns the class this call
+      sits in.";
   end UNTYPED_CALL;
 
   record ARG_TYPED_CALL
     ComponentRef ref;
     list<TypedArg> positional_args;
     list<TypedArg> named_args;
-    InstNode call_scope;
+    NFInstNode.ScopeRef call_scope "See UNTYPED_CALL.call_scope.";
   end ARG_TYPED_CALL;
 
   record TYPED_CALL
@@ -388,7 +390,7 @@ public
     list<Expression> args;
     list<TypedArg> typed_args;
     MatchedFunction matchedFunc;
-    InstNode scope;
+    NFInstNode.ScopeRef scope;
     Variability var, arg_var;
     Purity pur, arg_pur;
     Type ty;
@@ -2501,13 +2503,13 @@ protected
             fn_ref := Function.instFunction(functionName, scope, context, info);
           end try;
         then
-          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
+          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, InstNode.scopeRef(scope)));
 
       else
         algorithm
           fn_ref := Function.instFunction(functionName, scope, context, info);
         then
-          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
+          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, InstNode.scopeRef(scope)));
 
     end match;
   end instNormalCall;
@@ -3011,7 +3013,7 @@ protected
   function vectorizeCall
     input NFCall base_call;
     input FunctionMatchKind mk;
-    input InstNode scope;
+    input NFInstNode.ScopeRef scope;
     input SourceInfo info;
     output NFCall vectorized_call;
   protected

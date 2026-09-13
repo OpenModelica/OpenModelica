@@ -39,6 +39,37 @@ uniontype InstNode
     end match;
   end identityCell;
 
+  function scopeRef
+    "As `identityCell`, for a reference to a scope that is not this node's
+     parent. Publishes only into a cell nobody has published into yet: naming a
+     scope has no business replacing the snapshot its children read, and each
+     republish also leaves the previous copy as garbage."
+    input InstNode node;
+    output ScopeRef scope;
+  algorithm
+    scope := match node
+      local Mutable<InstNode> cell;
+
+      case CLASS_NODE(owner = SOME(cell))
+        algorithm
+          if isEmpty(Mutable.access(cell)) then
+            Mutable.update(cell, disown(node));
+          end if;
+        then node.identity;
+
+      case COMPONENT_NODE(owner = SOME(cell))
+        algorithm
+          if isEmpty(Mutable.access(cell)) then
+            Mutable.update(cell, disown(node));
+          end if;
+        then node.identity;
+
+      case CLASS_NODE() then node.identity;
+      case COMPONENT_NODE() then node.identity;
+      else NONE();
+    end match;
+  end scopeRef;
+
   function borrow
     "The node a cell holds, without taking ownership of it. For an edge that is
      not a parent edge and whose target is owned elsewhere: `fromCell` copies

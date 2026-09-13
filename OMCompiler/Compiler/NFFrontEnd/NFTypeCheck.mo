@@ -46,6 +46,7 @@ import Absyn;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import MutableWeak;
 import Binding = NFBinding;
 import NFPrefixes.{Variability, Purity};
@@ -939,7 +940,7 @@ algorithm
   if mk == MatchKind.EXACT then
     fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}),
       scope, NFInstContext.NO_CONTEXT, paramInfo2);
-    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
+    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, InstNode.scopeRef(scope)));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2);
 

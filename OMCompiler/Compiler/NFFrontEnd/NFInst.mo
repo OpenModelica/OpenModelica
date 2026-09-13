@@ -2890,7 +2890,7 @@ algorithm
 
       case Binding.RAW_BINDING()
         algorithm
-          bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
+          bind_exp := instExp(binding.bindingExp, InstNode.fromCell(binding.scope), context, binding.info);
 
           if not listEmpty(binding.subs) then
             bind_exp := Expression.SUBSCRIPTED_EXP(bind_exp, binding.subs, Type.UNKNOWN(), true);

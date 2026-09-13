@@ -757,6 +757,14 @@ uniontype InstNode
     output ScopeRef identity = node;
   end identityCell;
 
+  function scopeRef
+    "As `identityCell`, for a reference to a scope that is not this node's
+     parent: it must not replace the snapshot the node's children read. The
+     node itself here; see NFInstNode.rust.mo."
+    input InstNode node;
+    output ScopeRef scope = node;
+  end scopeRef;
+
   function handle
     "A weak handle for an edge that is not a parent edge. The node itself here;
      see NFInstNode.rust.mo."
