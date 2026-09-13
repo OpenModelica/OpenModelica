@@ -40,7 +40,33 @@ pub fn root<T: Clone + metamodelica::gc::MMTrace + 'static>(mutable: Mutable<T>)
 
 /// Drop everything [`root`] is holding.
 pub fn clearRoots() {
-    ROOTED_CELLS.with(|r| r.borrow_mut().clear());
+    ROOTED_CELLS.with(|r| {
+        let mut cells = r.borrow_mut();
+        if std::env::var_os("OPENMODELICA_ROOT_STATS").is_some() {
+            let (mut sole, mut sole_weak, mut shared) = (0usize, 0usize, 0usize);
+            for c in cells.iter() {
+                // The root's own reference is included in the strong count, so
+                // 1 means dropping it here is what frees the cell.
+                if Arc::strong_count(c) == 1 {
+                    sole += 1;
+                    if Arc::weak_count(c) > 0 {
+                        sole_weak += 1;
+                    }
+                } else {
+                    shared += 1;
+                }
+            }
+            eprintln!(
+                "root-stats: {} rooted, {} freed by the clear ({} of them still \
+                 weakly referenced), {} owned elsewhere",
+                cells.len(),
+                sole,
+                sole_weak,
+                shared
+            );
+        }
+        cells.clear();
+    });
 }
 
 /// A dangling reference, for a record field that has not been assigned yet.
