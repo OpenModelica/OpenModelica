@@ -58,12 +58,19 @@ fn collect_reporting() {
     metamodelica::mmval::collect();
     // Report only: nothing should be cyclic any more, so a collector bug here
     // would free live data rather than reclaim garbage.
-    metamodelica::gc::report_only();
+    let stats = metamodelica::gc::report_only();
     let mut log = metamodelica::mmval::take_cycle_log();
     log.extend(metamodelica::gc::take_cycle_log());
     log.sort_by(|a, b| b.1.cmp(&a.1));
     let total: usize = log.iter().map(|(_, n)| n).sum();
-    eprintln!("gc-cycle-log: reclaimed {total} allocations across {} types", log.len());
+    // `traced` is the denominator: reclaimed went *up* on a change that
+    // removed a strong edge is only good news if traced did not go up with it,
+    // which is what tells a converted leak from fresh garbage.
+    eprintln!(
+        "gc-cycle-log: reclaimed {total} allocations across {} types, of {} traced",
+        log.len(),
+        stats.traced_allocations
+    );
     for (ty, n) in log.iter().take(40) {
         eprintln!("  {n:>9}  {ty}");
     }
