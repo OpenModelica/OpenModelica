@@ -43,6 +43,7 @@ pub mod datarecon;
 /// `+profiling`, whose files go out through [`files`] like every other side file,
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
+#[cfg(feature = "result-files")]
 pub mod result;
 pub mod strings;
 /// The writer every file a run leaves beside its result goes through.
