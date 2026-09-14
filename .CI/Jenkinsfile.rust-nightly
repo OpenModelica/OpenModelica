@@ -54,7 +54,10 @@ pipeline {
   stages {
     stage('Environment') {
       agent {
-        label 'linux'
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
       }
       options {
         retry(count: 2, conditions: [nonresumable()])
@@ -79,6 +82,7 @@ pipeline {
                "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+          customWorkspace 'ws/OpenModelica'
         }
       }
       steps {
@@ -101,6 +105,7 @@ pipeline {
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -122,6 +127,7 @@ pipeline {
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -143,6 +149,7 @@ pipeline {
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -172,6 +179,7 @@ pipeline {
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -193,6 +201,7 @@ pipeline {
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -214,6 +223,7 @@ pipeline {
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -236,6 +246,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
               label 'linux'
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -262,6 +273,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
               label 'linux'
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {

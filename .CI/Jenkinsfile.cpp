@@ -13,7 +13,10 @@ pipeline {
   stages {
     stage('Environment') {
       agent {
-        label 'linux'
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
       }
       options {
         retry(count: 2, conditions: [nonresumable()])
@@ -31,7 +34,10 @@ pipeline {
     }
     stage('cpp-test') {
       agent {
-        label 'linux'
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
       }
       environment {
         RUNTESTDB = "/cache/runtest/"

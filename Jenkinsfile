@@ -41,7 +41,10 @@ pipeline {
   stages {
     stage('Environment') {
       agent {
-        label 'linux'
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
       }
       options {
         retry(count: 2, conditions: [nonresumable()])
@@ -79,6 +82,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           options {
@@ -98,6 +102,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           options {
@@ -117,6 +122,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           options {
@@ -136,6 +142,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -166,6 +173,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -198,6 +206,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -224,6 +233,7 @@ pipeline {
           agent {
             node {
               label 'M1'
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -254,6 +264,7 @@ pipeline {
           agent {
             node {
               label 'windows-no-release'
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -286,6 +297,7 @@ pipeline {
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           steps {
@@ -306,6 +318,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           options {
@@ -324,7 +337,10 @@ pipeline {
         // wasm-jit run is stages 23/24.
         stage('01 testsuite-rust 1/2') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -345,7 +361,10 @@ pipeline {
         }
         stage('02 testsuite-rust 2/2') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -367,7 +386,10 @@ pipeline {
 
         stage('04 testsuite-cmake-gcc 1/3') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -392,7 +414,10 @@ pipeline {
 
         stage('05 testsuite-cmake-gcc 2/3') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -417,7 +442,10 @@ pipeline {
 
         stage('06 testsuite-cmake-gcc 3/3') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -442,7 +470,10 @@ pipeline {
 
         stage('07 testsuite-clang 1/3') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -467,7 +498,10 @@ pipeline {
 
         stage('08 testsuite-clang 2/3') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -492,7 +526,10 @@ pipeline {
 
         stage('09 testsuite-clang 3/3') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -532,6 +569,7 @@ pipeline {
                    "-e EM_CACHE=/cache/emscripten " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -559,6 +597,7 @@ pipeline {
                    "-e EM_CACHE=/cache/emscripten " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -583,6 +622,7 @@ pipeline {
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -607,6 +647,7 @@ pipeline {
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -622,7 +663,10 @@ pipeline {
 
         stage('13 cross-build-fmu') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -654,6 +698,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           environment {
@@ -684,6 +729,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           environment {
@@ -706,6 +752,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           options {
@@ -723,6 +770,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           options {
@@ -735,12 +783,15 @@ pipeline {
 
         stage('18 testsuite-clang-parmod') {
           agent {
-            // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
-            // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) cannot name a Zen CPU it
-            // does not know and falls back to the target CPU 'generic', which LLVM
-            // rejects; the POCL_LLVM_CPU_NAME override only exists in later PoCL. Lifting
-            // this needs both the build and the tests on a newer image (Ubunut 26.04 or newer).
-            label 'linux-intel-x64'
+            node {
+              // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
+              // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) cannot name a Zen CPU it
+              // does not know and falls back to the target CPU 'generic', which LLVM
+              // rejects; the POCL_LLVM_CPU_NAME override only exists in later PoCL. Lifting
+              // this needs both the build and the tests on a newer image (Ubunut 26.04 or newer).
+              label 'linux-intel-x64'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           when {
             beforeAgent true
@@ -764,6 +815,7 @@ pipeline {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -784,6 +836,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -808,6 +861,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           environment {
@@ -836,6 +890,7 @@ pipeline {
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -860,7 +915,10 @@ pipeline {
         // so it loses the least by starting after the others.
         stage('23 testsuite-wasm-jit 1/2') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -884,7 +942,10 @@ pipeline {
         }
         stage('24 testsuite-wasm-jit 2/2') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -917,6 +978,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -932,6 +994,7 @@ pipeline {
             docker {
               label 'linux'
               image 'docker.openmodelica.org/fmpy:v0.3.18'
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -952,6 +1015,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           environment {
@@ -974,6 +1038,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              customWorkspace 'ws/OpenModelica'
             }
           }
           environment {
@@ -999,6 +1064,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -1018,6 +1084,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -1037,6 +1104,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              customWorkspace 'ws/OpenModelica'
             }
           }
           when {
@@ -1053,7 +1121,10 @@ pipeline {
       parallel {
         stage('push-to-master') {
           agent {
-            label 'linux'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
           }
           when {
             beforeAgent true
