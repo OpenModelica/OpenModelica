@@ -11,6 +11,12 @@ use Term::ANSIColor;
 use File::Path qw(rmtree);
 use Encode qw(decode encode);
 
+# Exit status telling runtests.pl that the test never started, because the
+# operating system refused to create the process. It has to stay clear of the
+# statuses an actual run can produce: 0 is a failed test and 1 .. 100 is the
+# runtime of a test that passed.
+use constant SPAWN_FAILED => 111;
+
 # Get the testcase to run from the command line argument.
 my $test_full = $ARGV[0];
 my $no_colour = 0;
@@ -317,7 +323,14 @@ if ( $osname eq 'MSWin32' ) {
 my $cmd = "$rtest $test > $test.test_log 2>&1";
 # print ("CMD: ", $cmd, "\n");
 if (-e $test_suit_path_rel . "rtest") {
-  system("$cmd");
+  # A -1 here means the process was never created, which is not a test result:
+  # the machine is out of memory, commit charge or handles. Say so and let
+  # runtests.pl abandon the run, instead of blaming the test for it.
+  if (system("$cmd") == -1) {
+    print STDERR "Could not start '$cmd': $!\n";
+    exit_sandbox() if $sandbox_needed;
+    exit SPAWN_FAILED;
+  }
 } else {
   open(my $out, ">", "$test.test_log");
   print $out "No rtest at ${test_suit_path_rel}rtest (cwd " . cwd() . ").\n"
