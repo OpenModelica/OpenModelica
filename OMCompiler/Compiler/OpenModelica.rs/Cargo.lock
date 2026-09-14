@@ -5716,10 +5716,12 @@ name = "metamodelica"
 version = "0.1.0"
 dependencies = [
  "arcstr",
+ "libc",
  "metamodelica_derive",
  "num-traits",
  "openmodelica_wasi",
  "ordered-float",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

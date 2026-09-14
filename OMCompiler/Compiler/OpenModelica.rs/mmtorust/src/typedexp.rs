@@ -3376,7 +3376,9 @@ pub enum TypedStmt {
     For { var: String, range: TypedExp, body: Vec<TypedStmt> },
     While { cond: TypedExp, body: Vec<TypedStmt> },
     /// `try body else else_body end try;`
-    Try { body: Vec<TypedStmt>, else_body: Vec<TypedStmt> },
+    /// `checkpoint` is `annotation(__OpenModelica_stackOverflowCheckpoint=true)`:
+    /// the `else` recovers from resource exhaustion, not from an ordinary failure.
+    Try { body: Vec<TypedStmt>, else_body: Vec<TypedStmt>, checkpoint: bool },
     /// `failure(body)` — succeeds iff `body` fails.
     Failure { body: Vec<TypedStmt> },
     Return,
@@ -3415,13 +3417,9 @@ pub(crate) fn comment_has_boolean_named_annotation(
 /// Lower one algorithm item, appending the resulting statement(s) to `out`.
 ///
 /// Almost every item lowers to a single statement. The exception is a
-/// `try`/`else` block annotated with `__OpenModelica_stackOverflowCheckpoint=true`:
-/// that annotation requests a stack-overflow recovery handler (the `else`
-/// branch) which we deliberately do not model. We splice the `try` body
-/// straight into the enclosing statement list — in the *same* scope, with no
-/// `else` handler — so the code behaves exactly as if the body had been written
-/// without any `try` wrapper. A nested annotated try (none exist today, but the
-/// recursion costs nothing) is inlined the same way.
+/// `__OpenModelica_stackOverflowCheckpoint` `try`, which becomes a `Try` with
+/// `checkpoint: true`; the C frontend lowers it to `DAE.TRY_STACKOVERFLOW`
+/// rather than `DAE.MATCHCONTINUE`, so an ordinary failure propagates past it.
 fn infer_stmt_into<'a>(
     out: &mut Vec<TypedStmt>,
     item: &Absyn::AlgorithmItem,
@@ -3431,12 +3429,14 @@ fn infer_stmt_into<'a>(
     type_vars: &[String],
 ) {
     if let Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, comment, .. } = item
-        && let Absyn::Algorithm::ALG_TRY { body, .. } = algorithm_.as_ref()
+        && let Absyn::Algorithm::ALG_TRY { body, elseBody } = algorithm_.as_ref()
         && comment_has_boolean_named_annotation(comment, "__OpenModelica_stackOverflowCheckpoint")
     {
-        for it in (&**body).into_iter() {
-            infer_stmt_into(out, it, env, top_level, pkg_prefix, type_vars);
-        }
+        let mut benv = env.clone();
+        let body = infer_stmts_list(body, &mut benv, top_level, pkg_prefix, type_vars);
+        let mut eenv = env.clone();
+        let else_body = infer_stmts_list(elseBody, &mut eenv, top_level, pkg_prefix, type_vars);
+        out.push(TypedStmt::Try { body, else_body, checkpoint: true });
         return;
     }
     if let Some(s) = infer_stmt(item, env, top_level, pkg_prefix, type_vars) {
@@ -3604,7 +3604,7 @@ fn infer_stmt<'a>(
             let body = infer_stmts_list(body, &mut benv, top_level, pkg_prefix, type_vars);
             let mut eenv = env.clone();
             let else_body = infer_stmts_list(elseBody, &mut eenv, top_level, pkg_prefix, type_vars);
-            TypedStmt::Try { body, else_body }
+            TypedStmt::Try { body, else_body, checkpoint: false }
         }
         Absyn::Algorithm::ALG_FAILURE { equ } => {
             let mut fenv = env.clone();

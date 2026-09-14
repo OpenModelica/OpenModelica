@@ -499,18 +499,16 @@ impl Walk {
             Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, comment, .. } => (&**algorithm_, comment),
             Absyn::AlgorithmItem::ALGORITHMITEMCOMMENT { .. } => return,
         };
-        // A `try`/`else` block annotated with `__OpenModelica_stackOverflowCheckpoint=true`
-        // is lowered as if the `try` body were written inline (see
-        // `typedexp::infer_stmt_into`): the `else` handler is discarded, so the
-        // body's failures propagate to the enclosing function rather than being
-        // caught. Mirror that here — scan the BODY, not the `else` handler.
-        if let Absyn::Algorithm::ALG_TRY { body, .. } = alg
+        // A checkpoint `try` only catches resource exhaustion, so a failure in
+        // either branch still propagates to the enclosing function.
+        if let Absyn::Algorithm::ALG_TRY { body, elseBody } = alg
             && crate::typedexp::comment_has_boolean_named_annotation(
                 comment,
                 "__OpenModelica_stackOverflowCheckpoint",
             )
         {
             for it in &**body { self.scan_algorithm_item(it); }
+            for it in &**elseBody { self.scan_algorithm_item(it); }
             return;
         }
         match alg {

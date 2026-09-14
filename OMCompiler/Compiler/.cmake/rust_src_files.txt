@@ -34,6 +34,7 @@ metamodelica/src/boolean.rs
 metamodelica/src/cancel.rs
 metamodelica/src/ext.rs
 metamodelica/src/gc.rs
+metamodelica/src/heap_limit.rs
 metamodelica/src/host_io.rs
 metamodelica/src/integer.rs
 metamodelica/src/lib.rs

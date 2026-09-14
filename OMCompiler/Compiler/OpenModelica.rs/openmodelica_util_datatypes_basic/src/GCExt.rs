@@ -40,12 +40,17 @@ pub fn free<T>(data: T) {}
 // refcounted heap frees acyclic garbage eagerly on its own, so an explicit
 // collection only needs to reclaim cycles closed through mutable cells.
 pub fn gcollect() {
+    // The shadow graph costs O(live heap) on top of it, and
+    // `Interactive.evaluate2` calls this from its out-of-memory recovery.
+    if metamodelica::heap_limit::recovering() {
+        return;
+    }
     metamodelica::gc::collect();
 }
 
 pub fn gcollectAndUnmap() {
     // No unmapping concept on the refcounted heap; same as `gcollect`.
-    metamodelica::gc::collect();
+    gcollect();
 }
 
 pub fn getForceUnmapOnGcollect() -> bool {
@@ -104,4 +109,8 @@ pub fn setForceUnmapOnGcollect(forceUnmap: bool) {}
 
 pub fn setFreeSpaceDivisor(divisor: i32) {}
 
-pub fn setMaxHeapSize(sz: metamodelica::Real) {}
+// 0 lifts the ceiling, as in Boehm.
+pub fn setMaxHeapSize(sz: metamodelica::Real) {
+    let sz = sz.into_inner();
+    metamodelica::heap_limit::set_max_heap_size(if sz > 0.0 { sz as usize } else { 0 });
+}
