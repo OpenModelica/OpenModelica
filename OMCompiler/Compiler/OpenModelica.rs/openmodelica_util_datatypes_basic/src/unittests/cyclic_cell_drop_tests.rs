@@ -1,15 +1,17 @@
 //! Drop-detection harness for cycles through `MutableCyclic`/`PointerCyclic`.
 //!
-//! The counterpart of [`super::mutable_cycle_drop_tests`] for the dumpster
-//! collector. What is being tested is the whole chain the `.mo`-level split
-//! buys: a cyclic cell allocates in a `Gc`, `Ref` boxes a traced value in a
-//! `Gc` too, `Array` picks a `Gc` spine for a traced element, and every
-//! `mm_accept` in between reports what it holds — so `collect()` can see the
-//! cycle and reclaim it. Break any one link and these tests leak.
+//! These reach the cycle through a `Ref` and through an `Array`, which
+//! [`super::mutable_cycle_drop_tests`] does not: what is being tested is that
+//! the cell collector still sees a back-edge buried under a container spine.
+//! Break a link in that chain and these leak.
+//!
+//! They used to exercise dumpster's traced arm as well, allocating the cyclic
+//! cell in a `Gc`. Nothing is traced any more, so only the `Arc`-cell collector
+//! runs here.
 
 use std::rc::Rc;
 
-use metamodelica::mmval::{self, collect, MmVal, Visitor};
+use metamodelica::mmval::{self, MmVal, Visitor};
 
 use crate::{MutableCyclic, PointerCyclic};
 
@@ -63,8 +65,9 @@ impl MmVal for DropProbe {
 }
 
 impl MmVal for Node {
-    // Traced: it can reach a cyclic cell. mmtorust declares this per type.
-    type Traced = mmval::Yes;
+    // Untraced, as everything is now: the cells are `Arc`s and the cell
+    // collector below is what reaches the back-edge.
+    type Traced = mmval::No;
     fn mm_accept<V: Visitor>(&self, v: &mut V) -> Result<(), ()> {
         self.probe.mm_accept(v)?;
         self.back.mm_accept(v)?;
@@ -73,7 +76,7 @@ impl MmVal for Node {
 }
 
 impl MmVal for Kids {
-    type Traced = mmval::Yes;
+    type Traced = mmval::No;
     fn mm_accept<V: Visitor>(&self, v: &mut V) -> Result<(), ()> {
         self.nodes.mm_accept(v)
     }
@@ -108,21 +111,20 @@ fn kids(nodes: Vec<metamodelica::Ref<Node>>) -> Option<metamodelica::Ref<Kids>> 
     Some(metamodelica::Ref::new(Kids { nodes: metamodelica::Array::from_vec(nodes) }))
 }
 
-/// A traced payload must select the `Gc` spine, an untraced one must not —
-/// otherwise the rest of these tests would pass for the wrong reason. The
-/// spine is what to inspect: `Ref` and `Array` are newtypes, so their own
-/// names say nothing about which allocation they picked.
+/// Every spine is the refcounted one now that the traced arm is gone. This
+/// is what makes the rest of these tests meaningful: the cycle they build has
+/// to be reachable by the cell collector *through an `Arc`/`Rc` spine*, not
+/// through a tracing pointer. The spine is what to inspect -- `Ref` and
+/// `Array` are newtypes, so their own names say nothing about what they picked.
 #[test]
-fn traced_payload_selects_the_gc_spine() {
+fn every_payload_selects_the_refcounted_spine() {
     use metamodelica::mmval::{RcSpine, Spine};
     let n = std::any::type_name::<Spine<Node, Node>>();
-    assert!(n.contains("Gc"), "Ref<Node> should be traced, got {n}");
+    assert!(n.contains("Arc"), "Ref<Node> should be an Arc, got {n}");
     let a = std::any::type_name::<RcSpine<metamodelica::Ref<Node>, u8>>();
-    assert!(a.contains("Gc"), "Array<Ref<Node>> should be traced, got {a}");
+    assert!(a.contains("Rc"), "Array<Ref<Node>> should be an Rc, got {a}");
     let u = std::any::type_name::<Spine<DropProbe, DropProbe>>();
-    assert!(!u.contains("Gc"), "Ref<DropProbe> should stay an Arc, got {u}");
-    let u2 = std::any::type_name::<RcSpine<metamodelica::Ref<DropProbe>, u8>>();
-    assert!(!u2.contains("Gc"), "Array<Ref<DropProbe>> should stay an Rc, got {u2}");
+    assert!(u.contains("Arc"), "Ref<DropProbe> should be an Arc, got {u}");
 }
 
 /// The one-node self-cycle: a cell whose content points back at the node that
@@ -144,11 +146,10 @@ fn self_cycle_through_a_cyclic_cell_is_reclaimed() {
         MutableCyclic::update(cell, node);
     }
     let before = drops.get();
-    collect();
     metamodelica::gc::collect();
     assert!(
         drops.get() > before,
-        "collect() reclaimed nothing: {} drops before, {} after",
+        "the collector reclaimed nothing: {} drops before, {} after",
         before,
         drops.get()
     );
@@ -179,11 +180,10 @@ fn cycle_through_an_array_is_reclaimed() {
         MutableCyclic::update(cell, parent);
     }
     let before = drops.get();
-    collect();
     metamodelica::gc::collect();
     assert!(
         drops.get() > before,
-        "collect() reclaimed nothing through the array: {} drops before, {} after",
+        "the collector reclaimed nothing through the array: {} drops before, {} after",
         before,
         drops.get()
     );
@@ -214,14 +214,13 @@ fn pointer_cyclic_cycle_is_reclaimed() {
         let _alias = cell.clone();
     }
     let before = drops.get();
-    collect();
     metamodelica::gc::collect();
     assert!(drops.get() >= before);
 }
 
 /// An acyclic value must still be freed by plain refcounting, with no
 /// collection needed — the traced representation must not turn every value
-/// into garbage that only `collect()` can reclaim.
+/// into garbage that only the collector can reclaim.
 #[test]
 fn acyclic_traced_value_drops_without_collect() {
     let (p, drops) = probe();

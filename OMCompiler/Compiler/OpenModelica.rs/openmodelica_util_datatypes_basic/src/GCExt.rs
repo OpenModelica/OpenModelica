@@ -49,18 +49,14 @@ pub fn free<T>(data: T) {}
 /// each other, even when the values form a tree.
 fn collect_reporting() {
     if std::env::var_os("OPENMODELICA_GC_CYCLE_LOG").is_none() {
-        metamodelica::mmval::collect();
         metamodelica::gc::collect();
         return;
     }
-    metamodelica::mmval::log_cycles();
     metamodelica::gc::log_cycles();
-    metamodelica::mmval::collect();
     // Report only: nothing should be cyclic any more, so a collector bug here
     // would free live data rather than reclaim garbage.
     let stats = metamodelica::gc::report_only();
-    let mut log = metamodelica::mmval::take_cycle_log();
-    log.extend(metamodelica::gc::take_cycle_log());
+    let mut log = metamodelica::gc::take_cycle_log();
     log.sort_by(|a, b| b.1.cmp(&a.1));
     let total: usize = log.iter().map(|(_, n)| n).sum();
     // `traced` is the denominator: reclaimed went *up* on a change that

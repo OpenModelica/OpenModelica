@@ -1,77 +1,29 @@
-//! Which MetaModelica values a cycle collector has to trace.
+//! Which allocation a MetaModelica value's container spine uses.
 //!
 //! Values are freed by reference counting, which reclaims everything except a
-//! cycle, and a cycle can only be closed through a cell declared
-//! `MutableCyclic`/`PointerCyclic` (see `Util/MutableCyclic.mo`). Only those,
-//! and what can reach them, need a traced allocation; the rest stay `Arc`.
+//! cycle. There used to be a second, traced allocation (dumpster's `Gc`) for
+//! values that could sit on one, selected per type by [`MmVal::Traced`].
 //!
-//! [`MmVal::Traced`] is the type-level flag carrying that distinction. mmtorust
-//! declares it per generated type, so it is never derived from a type's fields
-//! and the solver never recurses through a type cycle — `Arc` is always [`No`]
-//! and terminates the walk.
+//! **Nothing is traced any more.** NF holds its upward edges weakly, so the
+//! frontend and the new backend are acyclic and every generated type declares
+//! `Traced = No`; what cycles remain possible are closed through a `Mutable`
+//! cell, which [`crate::gc`] collects over `Arc` without a tracing pointer.
+//! The traced arm and the dumpster dependency are gone.
 //!
-//! The trait is ours rather than dumpster's `Trace` because of the orphan rule:
-//! `TraceWith` is foreign and generic over the visitor, so it cannot be
-//! implemented for `Arc`, `ArcStr` or `OrderedFloat`. `MmVal` can, which is what
-//! lets `Arc` be the barrier and `List<ArcStr>` exist.
-//!
-//! # Why a barrier is sound
-//!
-//! An `Arc` reports nothing, so a traced handle inside one is never counted as
-//! an internal reference and its target always looks externally rooted — kept,
-//! never freed early. The converse does not hold: tracing *through* a shared
-//! `Arc` would count the handles it owns once per path reaching it, and an
-//! over-count frees live data. Hence the barrier is only sound where the
-//! payload provably cannot reach a traced allocation.
+//! What is left is the spine selection itself: [`Spine`] still resolves a
+//! payload to its container allocation, and [`MmVal`] is still implemented by
+//! every generated type, because both appear in generated code. Both arms now
+//! answer `Arc`.
 
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-pub use dumpster::unsync::{collect, Gc};
-pub use dumpster::Visitor;
-
-thread_local! {
-    /// `(live Gc allocations, drops since the last collection)`, sampled every
-    /// time the collect condition runs. RSS cannot answer "is the collector
-    /// reclaiming cycles" — it counts pages the allocator has freed but not
-    /// returned, and the collector's own candidate set. A live-allocation count
-    /// is immune to both.
-    static GC_STATS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
-}
-
-fn record(info: &dumpster::unsync::CollectInfo) -> (usize, usize) {
-    let s = (info.n_gcs_existing(), info.n_gcs_dropped_since_last_collect());
-    GC_STATS.with(|c| c.set(s));
-    s
-}
-
-fn record_and_collect(info: &dumpster::unsync::CollectInfo) -> bool {
-    let (existing, dropped) = record(info);
-    dropped > existing
-}
-
-fn record_and_never(info: &dumpster::unsync::CollectInfo) -> bool {
-    record(info);
-    false
-}
-
-/// Live `Gc` allocations as of the last collect-condition check, and drops
-/// since the last collection.
-pub fn gc_stats() -> (usize, usize) {
-    GC_STATS.with(|c| c.get())
-}
-
-/// `OPENMODELICA_GC_DISABLE` turns automatic collection off for this thread, so
-/// the collector's cost can be measured against the same binary rather than
-/// against a differently-built one. Either way the condition records its stats.
-pub fn init_collect_condition() {
-    if std::env::var_os("OPENMODELICA_GC_DISABLE").is_some() {
-        dumpster::unsync::set_collect_condition(record_and_never);
-    } else {
-        dumpster::unsync::set_collect_condition(record_and_collect);
-    }
-}
+/// Every generated `mm_accept` is written `fn mm_accept<V: Visitor>(&self, v:
+/// &mut V)`, so the parameter has to keep existing. Nothing implements it any
+/// more -- NF is acyclic, every type declares `Traced = No`, and the generated
+/// bodies are all `Ok(())` -- but it stays so that code compiles unchanged.
+pub trait Visitor {}
 
 // ── type-level booleans ──────────────────────────────────────────────────────
 
@@ -95,127 +47,18 @@ impl Traced for No {
     type RcPtr<U: MmVal> = Rc<U>;
 }
 
+/// Kept so the type-level disjunction still has two inhabitants; it allocates
+/// exactly as `No` does now. Nothing declares `Traced = Yes`.
 impl Traced for Yes {
     type Or<B: Traced> = Yes;
-    type Ptr<U: MmVal> = GcRef<U>;
-    type RcPtr<U: MmVal> = GcRef<U>;
+    type Ptr<U: MmVal> = Arc<U>;
+    type RcPtr<U: MmVal> = Rc<U>;
 }
 
 /// Shorthand for the disjunction of two flags.
 pub type Or<A, B> = <<A as MmVal>::Traced as Traced>::Or<<B as MmVal>::Traced>;
 
 // ── the two spine allocations ────────────────────────────────────────────────
-
-/// Adapts an [`MmVal`] to dumpster's own trait. `Gc<T>` demands `T: Trace`,
-/// which is foreign and cannot be implemented for a generic MetaModelica
-/// value; wrapping one local type that forwards to `mm_accept` is what lets any
-/// `MmVal` sit inside a `Gc`.
-pub struct Cell<T: MmVal>(pub T);
-
-thread_local! {
-    /// Type names of the allocations reclaimed while [`log_cycles`] is armed.
-    ///
-    /// A static analysis cannot answer "which values are actually on a cycle" —
-    /// `InstNode -> Class -> ClassTree -> InstNode` is a cycle among *types*
-    /// even when the values form a strict tree, so every recursive type looks
-    /// cyclic. The collector knows the difference: what it reclaims was, by
-    /// construction, unreachable and cyclic. Arm this, run a workload with
-    /// automatic collection off, then force one `collect()`.
-    static CYCLE_LOG: std::cell::RefCell<Option<std::collections::BTreeMap<&'static str, usize>>> =
-        const { std::cell::RefCell::new(None) };
-}
-
-/// Start recording reclaimed allocations by type.
-pub fn log_cycles() {
-    CYCLE_LOG.with(|c| *c.borrow_mut() = Some(Default::default()));
-}
-
-/// Stop recording and return what was reclaimed, most frequent first.
-pub fn take_cycle_log() -> Vec<(&'static str, usize)> {
-    CYCLE_LOG.with(|c| {
-        let mut v: Vec<_> = c.borrow_mut().take().unwrap_or_default().into_iter().collect();
-        v.sort_by(|a, b| b.1.cmp(&a.1));
-        v
-    })
-}
-
-impl<T: MmVal> Drop for Cell<T> {
-    fn drop(&mut self) {
-        // `try_with`: a thread-local holding `Gc` values is itself dropped
-        // during TLS teardown, by which point this log may already be gone.
-        let _ = CYCLE_LOG.try_with(|c| {
-            if let Ok(mut g) = c.try_borrow_mut()
-                && let Some(m) = g.as_mut()
-            {
-                *m.entry(std::any::type_name::<T>()).or_insert(0) += 1;
-            }
-        });
-    }
-}
-
-unsafe impl<V: Visitor, T: MmVal> dumpster::TraceWith<V> for Cell<T> {
-    fn accept(&self, visitor: &mut V) -> Result<(), ()> {
-        self.0.mm_accept(visitor)
-    }
-}
-
-/// The traced spine. Hides the [`Cell`] hop so both arms deref to the payload.
-pub struct GcRef<U: MmVal>(Gc<Cell<U>>);
-
-impl<U: MmVal> Clone for GcRef<U> {
-    fn clone(&self) -> Self {
-        GcRef(self.0.clone())
-    }
-}
-
-impl<U: MmVal> std::ops::Deref for GcRef<U> {
-    type Target = U;
-    fn deref(&self) -> &U {
-        &self.0.0
-    }
-}
-
-// Forwarding impls, so a traced spine is a drop-in for the `Arc`/`Rc` one at
-// every derived use site (`#[derive(PartialEq)]` on a record holding one, a
-// `BTreeMap` keyed by a list, ...).
-
-impl<U: MmVal + std::fmt::Debug> std::fmt::Debug for GcRef<U> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        (**self).fmt(f)
-    }
-}
-
-impl<U: MmVal + PartialEq> PartialEq for GcRef<U> {
-    fn eq(&self, other: &Self) -> bool {
-        **self == **other
-    }
-}
-
-impl<U: MmVal + Eq> Eq for GcRef<U> {}
-
-impl<U: MmVal + PartialOrd> PartialOrd for GcRef<U> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        (**self).partial_cmp(&**other)
-    }
-}
-
-impl<U: MmVal + Ord> Ord for GcRef<U> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (**self).cmp(&**other)
-    }
-}
-
-impl<U: MmVal + std::hash::Hash> std::hash::Hash for GcRef<U> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        (**self).hash(state)
-    }
-}
-
-impl<U: MmVal + Default> Default for GcRef<U> {
-    fn default() -> Self {
-        Self::alloc(U::default())
-    }
-}
 
 /// What a shared container allocation must provide. The two implementations
 /// differ in `spine_accept`: the traced arm reports itself to the collector,
@@ -239,33 +82,6 @@ pub trait SpinePtr<U: ?Sized>: Clone + std::ops::Deref<Target = U> {
     /// Whether this is the only handle. Same caveat as `get_mut`.
     fn is_unique(this: &Self) -> bool;
     fn strong_count(this: &Self) -> usize;
-}
-
-impl<U: MmVal> SpinePtr<U> for GcRef<U> {
-    fn alloc(value: U) -> Self {
-        GcRef(Gc::new(Cell(value)))
-    }
-    fn spine_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
-        dumpster::TraceWith::accept(&self.0, visitor)
-    }
-    fn same(a: &Self, b: &Self) -> bool {
-        Gc::ptr_eq(&a.0, &b.0)
-    }
-    fn addr(this: &Self) -> *const () {
-        Gc::as_ptr(&this.0) as *const ()
-    }
-    fn payload_ptr(this: &Self) -> *const U {
-        &**this as *const U
-    }
-    fn get_mut(_: &mut Self) -> Option<&mut U> {
-        None
-    }
-    fn is_unique(_: &Self) -> bool {
-        false
-    }
-    fn strong_count(this: &Self) -> usize {
-        Gc::ref_count(&this.0).get()
-    }
 }
 
 impl<U: ?Sized> SpinePtr<U> for Rc<U> {
@@ -367,20 +183,6 @@ impl<T: ?Sized + 'static> MmVal for Rc<T> {
     }
 }
 
-impl<T: MmVal> MmVal for Gc<Cell<T>> {
-    type Traced = Yes;
-    fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
-        dumpster::TraceWith::accept(self, visitor)
-    }
-}
-
-impl<T: MmVal> MmVal for GcRef<T> {
-    type Traced = Yes;
-    fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
-        self.spine_accept(visitor)
-    }
-}
-
 /// A borrow can only originate on some stack frame, and whatever owns it keeps
 /// everything beneath it rooted, so hiding it can only make the collector more
 /// conservative.
@@ -453,7 +255,7 @@ impl<T: MmVal> MmVal for RefCell<T> {
 }
 
 /// The persistent list. Its cons cells are shared, so the walk reports the
-/// spine and stops: dumpster visits each cell once and counts the sharing
+/// spine and stops: a collector visits each cell once and counts the sharing
 /// itself. Walking *through* the cells instead would report a shared tail's
 /// contents once per path reaching it, and an over-count frees live data.
 /// On the untraced arm the spine is an `Arc` and reports nothing.
@@ -468,7 +270,7 @@ impl<T: MmVal + Clone> MmVal for crate::List<T> {
 }
 
 /// One cons cell: its head and the handle to the next cell. Reached only
-/// through the traced arm, where dumpster walks the allocation for us.
+/// through the spine, which the collector walks for us.
 impl<T: MmVal + Clone> MmVal for crate::ListNode<T> {
     type Traced = T::Traced;
     fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
@@ -514,17 +316,14 @@ mod tests {
     use super::*;
     use std::any::type_name;
 
-    /// The spine follows the payload, from one container type.
+    /// Every spine is an `Arc` now that the traced arm is gone. The selection
+    /// machinery is still exercised -- tuples and nesting still compute the
+    /// disjunction -- it just has one answer.
     #[test]
     fn spine_is_selected_per_instantiation() {
         assert!(type_name::<Spine<Arc<i32>, u8>>().contains("Arc"));
-        assert!(type_name::<Spine<GcRef<i32>, u8>>().contains("Gc"));
-        // Tuples and nesting propagate the flag.
         assert!(type_name::<Spine<(Arc<i32>, i32), u8>>().contains("Arc"));
-        assert!(type_name::<Spine<(Arc<i32>, GcRef<i32>), u8>>().contains("Gc"));
         assert!(type_name::<Spine<Option<Vec<Arc<i32>>>, u8>>().contains("Arc"));
-        assert!(type_name::<Spine<Option<Vec<GcRef<i32>>>, u8>>().contains("Gc"));
-        // A leaf the orphan rule blocks from dumpster's own trait.
         assert!(type_name::<Spine<arcstr::ArcStr, u8>>().contains("Arc"));
     }
 }

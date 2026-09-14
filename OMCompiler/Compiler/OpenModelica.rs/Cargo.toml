@@ -39,7 +39,6 @@ arcstr = "1.2.0"
 # Cycle-collecting Gc. Only the `unsync` half is used: MetaModelica values are
 # deliberately not `Send` (see System.launchParallelTasks), and `sync::Gc` would
 # require it.
-dumpster = { version = "2.1.0", default-features = false }
 list_comprehension_macro = "0.1.1"
 const-str = "1.1.0"
 encoding_rs = "0.8.35"
