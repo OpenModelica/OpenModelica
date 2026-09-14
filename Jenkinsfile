@@ -384,7 +384,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 1, 3)
+                common.ctestCMakeStashed('omc-cmake-gcc', 1, 3)
               }
             }
           }
@@ -409,7 +409,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 2, 3)
+                common.ctestCMakeStashed('omc-cmake-gcc', 2, 3)
               }
             }
           }
@@ -434,7 +434,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 3, 3)
+                common.ctestCMakeStashed('omc-cmake-gcc', 3, 3)
               }
             }
           }

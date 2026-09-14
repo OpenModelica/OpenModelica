@@ -228,11 +228,12 @@ void installTestLibraries() {
 }
 
 // makeLibsAndCache()'s counterpart for a CMake-built omc (see
-// partestCMakeStashed). Produces the same testsuite dependencies, but without
+// ctestCMakeStashed). Produces the same testsuite dependencies, but without
 // the Autoconf machinery: a CMake build has no config.status, so the top-level
 // Makefile the other variant drives does not exist. ReferenceFiles and the FFI
 // test library have standalone Makefiles of their own. omc-diff is not built
-// here: partest() rebuilds it from testsuite/difftool anyway.
+// here: its callers (partest(), ctestCMakeStashed()) rebuild it from
+// testsuite/difftool anyway.
 void makeLibsAndCacheCMake() {
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
@@ -1474,7 +1475,7 @@ void buildGccOMC() {
 }
 
 // The jammy CMake build of omc. Its install tree is what the testsuite-gcc
-// stages run against (partestCMakeStashed), so keep the flags in sync with what
+// stages run against (ctestCMakeStashed), so keep the flags in sync with what
 // those tests need.
 void buildCMakeGccOMC() {
   buildOMC_CMake([
@@ -1483,7 +1484,7 @@ void buildCMakeGccOMC() {
     "-DCMAKE_INSTALL_PREFIX=build"])
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
-  // load the compiler sources by path (see partestCMakeStashed).
+  // load the compiler sources by path (see ctestCMakeStashed).
   stash name: 'omc-cmake-gcc',
         includes: 'build/**,' +
                   'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
@@ -1532,20 +1533,45 @@ void partestStashed(stashName, partition, partitionmodulo) {
   partest(partition, partitionmodulo, true, '-suites=-arrow')
 }
 
-// The same, for a stashed CMake install tree (see buildCMakeGccOMC). Only the
-// way the test dependencies are built differs; the run itself is the same
-// partest.
-void partestCMakeStashed(stashName, partition, partitionmodulo) {
+// The CTest counterpart of the old partestCMakeStashed, for a stashed CMake
+// install tree (see buildCMakeGccOMC). Test dependencies are built the same
+// way as before; only how the tests themselves are discovered and run
+// changes: CTestTestfile.cmake is (re-)generated fresh here rather than
+// configuring the whole project (this stage only unstashes an installed omc,
+// not a configured build tree), and partitionmodulo reproducible shards are
+// CTest's own -I Start,,Stride instead of runtests.pl -partition=M/N. See
+// testsuite/CTest/Readme.md.
+void ctestCMakeStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCacheCMake()
+  // omc-diff: not built by makeLibsAndCacheCMake(), see its docstring.
+  sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
+  sh 'build/bin/omc-diff -v1.4'
+
   // Susan's generated *.mo files are in the build tree
   def ws = sh(script: 'pwd', returnStdout: true).trim()
   withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
+    sh """
+    cmake -DTESTSUITE_DIR=${ws}/testsuite -DOUTPUT_DIR=${ws}/build-testsuite-ctest \\
+          -DTESTSUITE_SUITES=+hdf5 \\
+          -P testsuite/CTest/Partest/GenerateCTestFile.cmake
+    """
     // hdf5: unlike the autotools build, this one links the system HDF5, which
-    // gives it MAT v7.3.
-    partest(partition, partitionmodulo, true, '-suites=+hdf5')
+    // gives it MAT v7.3. (baked into the generated CTestTestfile.cmake above)
+    sh ("""#!/bin/bash -x
+    ulimit -t 1500
+    # On top of the cgroup limit, to catch a single runaway process early
+    ulimit -v 6291456 # Max 6GB per process
+
+    .CI/scripts/cgroup-memory.sh check
+    ctest --test-dir build-testsuite-ctest -I ${partition},,${partitionmodulo} \\
+          -j${numPhysicalCPU()} --output-on-failure --output-junit ctest-result.xml || true
+    .CI/scripts/cgroup-memory.sh report
+    test -f build-testsuite-ctest/ctest-result.xml
+    """)
   }
+  junit 'build-testsuite-ctest/ctest-result.xml'
 }
 
 void crossBuildFMU() {

@@ -10,6 +10,7 @@
 /.vscode/
 /autom4te.cache/
 /build_cmake*/
+/build-testsuite-ctest/
 /build/
 /config.guess
 /config.log
