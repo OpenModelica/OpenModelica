@@ -408,16 +408,13 @@ bool AbstractAnimationWindow::loadVisualization()
                                                             Helper::errorLevel));
       return false;
     }
-    // The Qt Quick 3D scene lives in the viewer widget; the data classes drive it.
     mpVisualization->setScene(mpViewerWidget->getScene());
     connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualization->initData();
     mpVisualization->setUpScene();
     mpVisualization->initVisualization();
-    //choose suitable scales for the vector visualizers so that they fit well in the scene
     mpVisualization->getBaseData()->chooseVectorScales();
-    // Frame the camera on the now-populated scene (shapes have their real size/pose
-    // after initVisualization evaluated the dimensions; arrows now sized too).
+    // Only now do shapes and arrows have their real size, so frame the camera.
     mpViewerWidget->fitToScene();
   }
   //add window title
@@ -439,10 +436,6 @@ bool AbstractAnimationWindow::loadVisualization()
   return true;
 }
 
-/*!
- * \brief AbstractAnimationWindow::resetCamera
- * resets the camera position
- */
 void AbstractAnimationWindow::resetCamera() { if (mpViewerWidget) mpViewerWidget->fitToScene(); }
 void AbstractAnimationWindow::cameraPositionIsometric() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Isometric); }
 void AbstractAnimationWindow::cameraPositionSide() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Side); }
@@ -640,10 +633,6 @@ void AbstractAnimationWindow::setPerspective(int value)
   }
 }
 
-/*!
- * \brief AbstractAnimationWindow::rotateCameraLeft
- * orbits the camera to the left
- */
 void AbstractAnimationWindow::rotateCameraLeft() { if (mpViewerWidget) mpViewerWidget->orbitCamera(-15.0f, 0.0f); }
 void AbstractAnimationWindow::rotateCameraRight() { if (mpViewerWidget) mpViewerWidget->orbitCamera(15.0f, 0.0f); }
 

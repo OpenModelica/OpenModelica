@@ -91,8 +91,6 @@ public:
   void setUpScene();
 
   void updateVectorCoords(VectorObject& vector, const double time);
-  // The radius scale (median heuristic) and the per-quantity length scale come
-  // from the data alone; fitting to the camera is the viewer's fitToScene.
   void chooseVectorScales();
 private:
   std::string _modelFile;
@@ -110,7 +108,6 @@ public:
   virtual ~VisualizationAbstract() = default;
 
   VisType getVisType() const;
-  // The scene is the Qt Quick 3D scene owned by the viewer widget, injected here.
   void setScene(AnimationScene* scene) {mpScene = scene;}
   AnimationScene* getScene() const;
   OMVisualBase* getBaseData() const;
