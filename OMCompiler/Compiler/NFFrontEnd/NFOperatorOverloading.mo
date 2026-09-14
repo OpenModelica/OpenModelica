@@ -37,7 +37,6 @@ encapsulated package NFOperatorOverloading
   import Absyn;
   import AbsynUtil;
   import NFInstNode.InstNode;
-  import MutableWeak;
   import NFFunction.Function;
   import Type = NFType;
 

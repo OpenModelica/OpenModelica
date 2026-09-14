@@ -47,7 +47,6 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import Binding = NFBinding;
 import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;

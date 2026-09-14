@@ -60,7 +60,6 @@ import Call = NFCall;
 import Component = NFComponent;
 import NFFunction.Function;
 import NFInstNode.InstNode;
-import MutableWeak;
 import Operator = NFOperator;
 import SimplifyExp = NFSimplifyExp;
 import Type = NFType;

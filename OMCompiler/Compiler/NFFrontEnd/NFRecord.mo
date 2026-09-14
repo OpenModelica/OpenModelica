@@ -51,7 +51,6 @@ import NFComponent.ComponentState;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
-import MutableWeak;
 import NFInstNode.InstNodeType;
 import Type = NFType;
 import Subscript = NFSubscript;

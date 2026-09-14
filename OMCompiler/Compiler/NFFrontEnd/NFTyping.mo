@@ -51,7 +51,6 @@ import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import NFModifier.Modifier;
 import SimplifyExp = NFSimplifyExp;
 import Statement = NFStatement;

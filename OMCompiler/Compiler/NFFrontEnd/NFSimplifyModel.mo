@@ -45,7 +45,6 @@ import NFFlatten.FunctionTree;
 import Class = NFClass;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import NFFunction.Function;
 import Sections = NFSections;
 import Binding = NFBinding;

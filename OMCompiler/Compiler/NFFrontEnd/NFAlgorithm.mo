@@ -42,7 +42,6 @@ encapsulated uniontype NFAlgorithm
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFInstNode;
-  import MutableWeak;
   import Statement = NFStatement;
   import Type = NFType;
 

@@ -45,7 +45,6 @@ import Expression = NFExpression;
 import NFClassTree.ClassTree;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import NFModifier.Modifier;
 import NFSections.Sections;
 import NFStatement.Statement;

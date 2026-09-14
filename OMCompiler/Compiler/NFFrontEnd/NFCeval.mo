@@ -42,7 +42,6 @@ import Component = NFComponent;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import Operator = NFOperator;
 import NFOperator.Op;
 import Typing = NFTyping;

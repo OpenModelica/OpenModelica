@@ -51,7 +51,6 @@ public
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
   import NFInstNode;
-  import MutableWeak;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
   import NFFunction.Function;

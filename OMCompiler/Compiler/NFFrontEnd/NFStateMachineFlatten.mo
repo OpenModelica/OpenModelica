@@ -61,7 +61,6 @@ import NFBackendExtension;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import NFPrefixes.{Variability, Purity, Visibility};
 import SCode;
 import UnorderedMap;

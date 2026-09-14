@@ -48,7 +48,6 @@ import Sections = NFSections;
 import Pointer;
 import Mutable;
 import MutableWeak;
-import GCExt;
 import PointerWeak;
 import Error;
 import Prefixes = NFPrefixes;

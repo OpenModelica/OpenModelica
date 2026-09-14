@@ -40,7 +40,6 @@ import AbsynUtil;
 import Expression = NFExpression;
 import Pointer;
 import NFInstNode.InstNode;
-import MutableWeak;
 import Type = NFType;
 import NFPrefixes.*;
 import List;

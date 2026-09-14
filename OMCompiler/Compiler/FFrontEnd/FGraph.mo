@@ -49,7 +49,6 @@ import SCode;
 import DAE;
 import ClassInf;
 import FCore;
-import Mutable;
 import FNode;
 import InnerOuter;
 import FCore.RefTree;

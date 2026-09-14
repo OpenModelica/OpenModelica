@@ -47,7 +47,6 @@ import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
 import Algorithm = NFAlgorithm;

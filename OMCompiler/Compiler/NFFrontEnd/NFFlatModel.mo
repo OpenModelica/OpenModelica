@@ -65,7 +65,6 @@ protected
   import NFComponentRef.ComponentRef;
   import NFFunction.Function;
   import NFInstNode.InstNode;
-  import MutableWeak;
   import NFPrefixes.Visibility;
   import NFSubscript.Subscript;
   import Prefixes = NFPrefixes;

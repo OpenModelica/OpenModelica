@@ -41,7 +41,6 @@ import Equation = NFEquation;
 import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 import NFInstNode.InstNode;
-import MutableWeak;
 import Statement = NFStatement;
 import Restriction = NFRestriction;
 

@@ -51,7 +51,6 @@ import Inst = NFInst;
 import Class = NFClass;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import NFLookupState.LookupState;
 import Type = NFType;
 import ComponentRef = NFComponentRef;

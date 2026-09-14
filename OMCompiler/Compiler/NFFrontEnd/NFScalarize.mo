@@ -63,7 +63,6 @@ import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import SCode;
 
 uniontype AttributeIterator

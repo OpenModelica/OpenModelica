@@ -43,7 +43,6 @@ import Expression = NFExpression;
 import NFCallAttributes;
 import NFInstNode.InstNode;
   import NFInstNode;
-import MutableWeak;
 import NFPrefixes.{Variability, Purity};
 import Type = NFType;
 import Record = NFRecord;

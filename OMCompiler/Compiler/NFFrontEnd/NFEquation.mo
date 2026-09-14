@@ -38,7 +38,6 @@ encapsulated uniontype NFEquation
   import Type = NFType;
   import NFInstNode.InstNode;
   import NFInstNode;
-  import MutableWeak;
   import DAE;
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;

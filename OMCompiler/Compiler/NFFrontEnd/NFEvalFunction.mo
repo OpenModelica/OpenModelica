@@ -46,7 +46,6 @@ import NFCeval.EvalTarget;
 import NFClassTree.ClassTree;
 import NFFunction.Function;
 import NFInstNode.InstNode;
-import MutableWeak;
 import NFInstNode.CachedData;
 import Record = NFRecord;
 import Sections = NFSections;

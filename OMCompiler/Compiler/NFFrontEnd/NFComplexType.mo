@@ -36,7 +36,6 @@
 encapsulated uniontype NFComplexType
   import NFInstNode.InstNode;
   import NFInstNode;
-  import MutableWeak;
   import Record = NFRecord;
   import UnorderedMap;
 

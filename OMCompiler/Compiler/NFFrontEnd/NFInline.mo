@@ -49,7 +49,6 @@ import Dimension = NFDimension;
 import Flags;
 import NFFunction.Function;
 import NFInstNode.InstNode;
-import MutableWeak;
 import Statement = NFStatement;
 import Subscript = NFSubscript;
 import Type = NFType;
