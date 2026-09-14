@@ -68,10 +68,10 @@ fn conflict_replace() -> T::ConflictFunc {
     Arc::new(fnptr!(T::addConflictReplace, i32, i32, ArcStr))
 }
 fn conflict_fail() -> T::ConflictFunc {
-    metamodelica::Ref::new(T::addConflictFail)
+    Arc::new(T::addConflictFail)
 }
 fn conflict_default() -> T::ConflictFunc {
-    metamodelica::Ref::new(T::addConflictDefault)
+    Arc::new(T::addConflictDefault)
 }
 
 // ── new / isEmpty ─────────────────────────────────────────────────────────────
