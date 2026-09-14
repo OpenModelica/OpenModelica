@@ -965,11 +965,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (hide) {
       return false;
     } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return pLibraryTreeItem->getNameStructure().contains(filterRegularExpression());
-#else
-      return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
-#endif
     }
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);

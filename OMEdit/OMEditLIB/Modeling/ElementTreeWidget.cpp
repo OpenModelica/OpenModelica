@@ -347,11 +347,7 @@ bool ElementTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
         return true;
       }
     }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return pElementTreeItem->getName().contains(filterRegularExpression());
-#else
-    return pElementTreeItem->getName().contains(filterRegExp());
-#endif
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
   }

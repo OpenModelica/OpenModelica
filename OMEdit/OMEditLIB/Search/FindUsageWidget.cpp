@@ -218,11 +218,7 @@ bool ClassTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     while (parentIndex.isValid()) {
       ClassTreeItem *pParentItem = static_cast<ClassTreeItem*>(parentIndex.internalPointer());
       if (pParentItem) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         if (pParentItem->getText().contains(filterRegularExpression())) {
-#else
-        if (pParentItem->getText().contains(filterRegExp())) {
-#endif
           return true;  // Parent matches → accept all descendants
         }
       }
@@ -236,11 +232,7 @@ bool ClassTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
         return true;
       }
     }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return pClassTreeItem->getText().contains(filterRegularExpression());
-#else
-    return pClassTreeItem->getText().contains(filterRegExp());
-#endif
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
   }
