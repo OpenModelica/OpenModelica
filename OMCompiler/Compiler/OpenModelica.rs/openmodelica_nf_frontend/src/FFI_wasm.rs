@@ -31,6 +31,10 @@ impl Ord for ArgSpec {
 impl Default for ArgSpec {
     fn default() -> Self { Self::INPUT }
 }
+impl metamodelica::mmval::MmVal for ArgSpec {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> Result<(), ()> { Ok(()) }
+}
 
 pub fn callFunction(
     _fnHandle: i32,
