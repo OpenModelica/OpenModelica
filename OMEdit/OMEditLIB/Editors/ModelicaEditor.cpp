@@ -69,8 +69,6 @@ namespace {
   const int kContentChangeDebounceMs = 300;
   // How long to wait for a go-to-definition reply before falling back to class-tree navigation.
   const int kDefinitionFallbackMs = 2000;
-  // URI scheme for fileless (in-memory) classes; built in documentUri() and stripped back in navigateToLSPLocation().
-  const QString kInMemoryUriScheme = QStringLiteral("modelica:///");
 }
 
 /*!
@@ -130,13 +128,11 @@ ModelicaEditor::~ModelicaEditor()
  */
 QString ModelicaEditor::documentUri() const
 {
-  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->isFilePathValid()) {
     QString fileName = mpModelWidget->getLibraryTreeItem()->getFileName();
     if (!fileName.isEmpty()) {
       return QUrl::fromLocalFile(fileName).toString();
     }
-    // Synthetic URI for in-memory classes
-    return kInMemoryUriScheme + mpModelWidget->getLibraryTreeItem()->getNameStructure();
   }
   return QString();
 }
@@ -339,13 +335,11 @@ bool ModelicaEditor::navigateToLSPLocation(const LSP::Location &location)
   const int lineNumber = location.range.start.line + 1; // LSP positions are 0-based, OMEdit lines are 1-based
   const QString filePath = QUrl(location.uri).toLocalFile();
   if (filePath.isEmpty()) {
-    // In-memory document (modelica:///Name): this editor or another loaded class.
     if (location.uri == documentUri()) {
       mpPlainTextEdit->goToLineNumber(lineNumber);
       return true;
     }
     QString name = location.uri;
-    name.remove(kInMemoryUriScheme);
     LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (pLibraryTreeItem) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
