@@ -6,7 +6,7 @@
 // `.wasm.sig` sidecar, with no MMC heap to build.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock};
 
 use metamodelica::Result;
 use arcstr::ArcStr;
@@ -222,7 +222,7 @@ pub(super) fn load_and_execute(
 
     let mut out: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(results.len());
     for (val, ty) in results.iter().zip(sig.outputs.iter()) {
-        out.push(Arc::new(marshal_out(&mut store, &rt, ty, val)?));
+        out.push(metamodelica::Ref::new(marshal_out(&mut store, &rt, ty, val)?));
     }
 
     Ok(match out.len() {
@@ -452,7 +452,7 @@ fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcS
     let mut orderd = Vec::with_capacity(fields.len());
     for (i, (fname, fty)) in fields.iter().enumerate() {
         let addr = h as usize + layout.data_off as usize + layout.field_off[i] as usize;
-        orderd.push(Arc::new(read_elem(store, rt, fty, addr)?));
+        orderd.push(metamodelica::Ref::new(read_elem(store, rt, fty, addr)?));
         comp.push(fname.clone());
     }
     Ok(Values::Value::RECORD {
@@ -471,9 +471,9 @@ fn path_from_dotted(s: &str) -> metamodelica::Ref<Absyn::Path> {
     let last = it.next().copied().unwrap_or("");
     let mut p = Absyn::Path::IDENT { name: ArcStr::from(last) };
     for name in it {
-        p = Absyn::Path::QUALIFIED { name: ArcStr::from(*name), path: Arc::new(p) };
+        p = Absyn::Path::QUALIFIED { name: ArcStr::from(*name), path: metamodelica::Ref::new(p) };
     }
-    Arc::new(p)
+    metamodelica::Ref::new(p)
 }
 
 /// Read a runtime string handle's bytes into a `String`.
@@ -543,11 +543,11 @@ fn read_bytes<const N: usize>(store: &mut Store, rt: &RtFns, addr: usize) -> Res
 fn nest_values(dims: &[i32], flat: &[Values::Value]) -> Values::Value {
     let d = dims[0];
     let values: Vec<metamodelica::Ref<Values::Value>> = if dims.len() == 1 {
-        flat.iter().cloned().map(Arc::new).collect()
+        flat.iter().cloned().map(metamodelica::Ref::new).collect()
     } else {
         let chunk = flat.len() / d.max(1) as usize;
         (0..d as usize)
-            .map(|i| Arc::new(nest_values(&dims[1..], &flat[i * chunk..(i + 1) * chunk])))
+            .map(|i| metamodelica::Ref::new(nest_values(&dims[1..], &flat[i * chunk..(i + 1) * chunk])))
             .collect()
     };
     Values::Value::ARRAY {
