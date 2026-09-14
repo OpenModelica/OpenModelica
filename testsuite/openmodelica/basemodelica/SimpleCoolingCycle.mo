@@ -57,10 +57,10 @@ end SimpleCoolingCycle;
 // //! base 0.1.0
 // package 'SimpleCoolingCycle'
 //   function 'SimpleCoolingCycle.heatExchange_CounterFlowNTU.MediumA.specificHeatCapacityCp'
-//     input 'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState' 'state';
+//     input 'Medium_air.ThermodynamicState' 'state';
 //     output Real 'cp';
 //   algorithm
-//     'cp' := 'T.Functions.cp_T'('T.DataRecord'('heatExchange_CounterFlowNTU.MediumA.data'.'MM'), 'state'.'T');
+//     'cp' := 'T.Functions.cp_T'('T.DataRecord'('Medium_air.data'.'MM'), 'state'.'T');
 //   end 'SimpleCoolingCycle.heatExchange_CounterFlowNTU.MediumA.specificHeatCapacityCp';
 //
 //   function 'T.Functions.cp_T'
@@ -69,17 +69,17 @@ end SimpleCoolingCycle;
 //     output Real 'cp' = 0.0;
 //   end 'T.Functions.cp_T';
 //
-//   record 'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState'
+//   record 'Medium_air.ThermodynamicState'
 //     Real 'p';
 //     Real 'T';
-//   end 'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState';
+//   end 'Medium_air.ThermodynamicState';
 //
 //   record 'T.DataRecord'
 //     Real 'MM'(quantity = "MolarMass");
 //   end 'T.DataRecord';
 //
 //   model 'SimpleCoolingCycle'
-//     'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState' 'heatExchange_CounterFlowNTU.state';
+//     'Medium_air.ThermodynamicState' 'heatExchange_CounterFlowNTU.state';
 //     Real 'heatExchange_CounterFlowNTU.cpA_in' = 'SimpleCoolingCycle.heatExchange_CounterFlowNTU.MediumA.specificHeatCapacityCp'('heatExchange_CounterFlowNTU.state');
 //   end 'SimpleCoolingCycle';
 // end 'SimpleCoolingCycle';
