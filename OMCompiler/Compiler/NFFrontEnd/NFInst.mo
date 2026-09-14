@@ -1315,6 +1315,7 @@ algorithm
     case Class.INSTANCED_CLASS()
       algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
+        node := InstNode.reidentify(node);
         node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
         node := expand(node, context);
         node := instClass(node, outerMod, attributes, useBinding, instLevel, typeConfidence, parent, context);
