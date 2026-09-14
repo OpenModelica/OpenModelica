@@ -709,8 +709,7 @@ QDetachableProcess::QDetachableProcess(QObject *pParent)
 void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
 {
   QProcess::start(program, arguments, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
@@ -723,12 +722,27 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
 void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
 {
   QProcess::start(command, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 #endif
-#endif // QT_CONFIG(process)
 
+void QDetachableProcess::finishStart()
+{
+  mStartupError = false;
+  mStartupErrorString.clear();
+  if (!waitForStarted()) {
+    mStartupError = true;
+    mStartupErrorString = errorString();
+  } else if (waitForFinished(250) && (exitStatus() != QProcess::NormalExit || exitCode() != 0)) {
+    mStartupError = true;
+    mStartupErrorString = QString::fromLocal8Bit(readAllStandardError()).trimmed();
+    if (mStartupErrorString.isEmpty()) {
+      mStartupErrorString = tr("Process exited with code %1").arg(exitCode());
+    }
+  }
+  setProcessState(QProcess::NotRunning);
+}
+#endif // QT_CONFIG(process)
 
 JsonDocument::JsonDocument(QObject *pParent)
   : QObject(pParent)
