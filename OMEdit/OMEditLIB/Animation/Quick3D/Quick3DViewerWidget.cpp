@@ -174,8 +174,7 @@ void Quick3DViewerWidget::fitToScene()
 
 void Quick3DViewerWidget::setCameraView(CameraView view)
 {
-  // Match the OSG presets (their camera-to-world matrices): right/up/eye-direction
-  // per view, looking at the origin so the world axes line up as they do in OSG.
+  // Right/up/eye-direction per view, looking at the origin.
   switch (view) {
     case Isometric:
       mOrientation = orientationFromBasis(QVector3D(0.7071f, 0.0f, -0.7071f),
@@ -226,7 +225,7 @@ QString Quick3DViewerWidget::pickName(const QPointF& viewPos)
     return QString();
   }
   // pick() takes logical view pixels, which is exactly the widget-local mouse
-  // position (no devicePixelRatio scaling, unlike the OSG window picker).
+  // position (no devicePixelRatio scaling).
   QVariant ret;
   QMetaObject::invokeMethod(root, "pickName", Q_RETURN_ARG(QVariant, ret),
                             Q_ARG(QVariant, viewPos.x()), Q_ARG(QVariant, viewPos.y()));
@@ -311,8 +310,7 @@ void Quick3DViewerWidget::mousePressEvent(QMouseEvent* event)
 void Quick3DViewerWidget::mouseMoveEvent(QMouseEvent* event)
 {
   const QPoint delta = event->pos() - mLastMousePos;
-  // OSG MultiTouchTrackballManipulator mapping: left = rotate, middle (or
-  // Ctrl+left) = pan, right = zoom.
+  // Trackball mapping: left = rotate, middle (or Ctrl+left) = pan, right = zoom.
   const bool pan = (event->buttons() & Qt::MiddleButton) ||
                    ((event->buttons() & Qt::LeftButton) && (event->modifiers() & Qt::ControlModifier));
   if (pan) {

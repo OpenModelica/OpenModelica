@@ -128,7 +128,7 @@ OM_OMSHELL_ENABLE_TERMINAL=ON
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt
 based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser,
 OMPlot, OMShell. You will need to install and make available the necessary packages (and
-their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
+their dependencies) such as the Qt libs ...
 
 `OM_ENABLE_OMSIMULATOR` allows you to enable/disable building OMSimulator.
 

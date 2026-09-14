@@ -58,7 +58,7 @@
 namespace {
 // Built-in Qt Quick 3D primitive mesh dimensions: #Cube is 100^3 centered at the
 // origin; #Sphere has radius 50; #Cylinder/#Cone have radius 50, height 100 with
-// their axis along +Y. The Modelica/OSG convention is a shape that extends along
+// their axis along +Y. The Modelica convention is a shape that extends along
 // local +Z from 0 to length, with width/height across x/y.
 const char* kCube = "#Cube";
 const char* kSphere = "#Sphere";
@@ -253,7 +253,7 @@ void Quick3DScene::applyShapeGeometry(const ShapeObject& shape, Item& item)
   } else if (shape._type == "cone") {
     useBuiltinMesh(item, kCone, QVector3D(width / 100.f, length / 100.f, width / 100.f), pos, QVector3D(90, 0, 0));
   } else if (shape._type == "pipe" || shape._type == "pipecylinder") {
-    // rO = width/2, rI = width*extra/2 (Visualization.cpp Pipecylinder args).
+    // Outer radius = width/2, inner radius = width*extra/2.
     ensureGeometry(item)->buildPipe(width * extra / 2.0f, width / 2.0f, length);
     useCustomGeometry(item);
   } else if (shape._type == "spring") {
@@ -269,9 +269,9 @@ void Quick3DScene::applyShapeGeometry(const ShapeObject& shape, Item& item)
 void Quick3DScene::applyCadGeometry(const ShapeObject& shape, Item& item)
 {
   // Parse the mesh once (it doesn't change), then scale every update. The mesh
-  // loads in native coordinates; OSG scales the vertices by length/width/height
-  // on x/y/z when `extra` is set, else leaves them native — do the same via the
-  // model's scale property (cheap) rather than rebuilding the mesh.
+  // loads in native coordinates; scale it by length/width/height on x/y/z when
+  // `extra` is set, else leave it native. Done via the model's scale property
+  // (cheap) rather than by rebuilding the mesh.
   const QString fileKey = QStringLiteral("cad|%1|%2")
                             .arg(QString::fromStdString(shape._type), QString::fromStdString(shape._fileName));
   if (item.geomKey != fileKey) {
@@ -326,8 +326,8 @@ void Quick3DScene::applyTransform(QObject* node, const Mat4& mat)
   if (!node) {
     return;
   }
-  // mat is in OSG row-vector convention (world = local * mat): translation lives
-  // in row 3 and the top-left 3x3 is the row-vector rotation. Qt Quick 3D uses the
+  // mat is in row-vector convention (world = local * mat): translation lives in
+  // row 3 and the top-left 3x3 is the row-vector rotation. Qt Quick 3D uses the
   // column-vector convention (world = M * local), so the rotation is the transpose.
   const QVector3D position(float(mat(3, 0)), float(mat(3, 1)), float(mat(3, 2)));
   const float r[9] = {

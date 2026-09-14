@@ -789,8 +789,7 @@ Map nightlyTarget(String name) {
                     '-DOM_OMC_ENABLE_OPTIMIZATION=OFF']
   // Qt's one macOS desktop kit is universal, so both targets share it.
   List qtMac = ["-DCMAKE_PREFIX_PATH=${qtMacPrefix()}",
-                '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64',
-                '-DOM_OMEDIT_ANIMATION_QUICK3D=ON']
+                '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64']
   Map all = [
     'win64': [
       triple: 'x86_64-pc-windows-msvc',
@@ -799,10 +798,7 @@ Map nightlyTarget(String name) {
       // which the top-level CMakeLists includes when cross-compiling to Windows.
       configure: noFortran + ['-DENABLE_CPACK=OFF', '-DZMQ_BUILD_TESTS=OFF'],
       qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/msvc2022_64',
-           '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64',
-           // OpenSceneGraph's vcpkg port pulls in openimageio; Quick3D is the
-           // animation backend that cross-builds (as in the wasm build).
-           '-DOM_OMEDIT_ANIMATION_QUICK3D=ON'],
+           '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64'],
       sccache: true,
       cdylib: 'OpenModelicaCompiler.dll',
     ],

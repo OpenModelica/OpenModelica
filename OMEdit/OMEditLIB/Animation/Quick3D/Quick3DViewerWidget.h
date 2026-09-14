@@ -73,8 +73,8 @@ public:
   void setCameraView(CameraView view);
   // Turntable orbit by the given yaw/pitch deltas (degrees).
   void orbitCamera(float deltaYawDeg, float deltaPitchDeg);
-  // Pan the look-at centre in the camera's screen plane by a pixel drag (matches
-  // the OSG trackball's middle-button pan: the point under the cursor stays put).
+  // Pan the look-at centre in the camera's screen plane by a pixel drag: the
+  // point under the cursor stays put.
   void panCamera(float dxPixels, float dyPixels);
 
 protected:
@@ -87,8 +87,8 @@ private:
   // Ray-pick at a view pixel: returns the hit Model's objectName (visualizer id).
   QString pickName(const QPointF& viewPos);
   // Shift+right-click: pick the visualizer under the cursor and pop up the
-  // visual-property context menu (color/transparency/specular/reset), like the
-  // OSG ViewerWidget. Backend-agnostic — changes route through modifyVisualizer.
+  // visual-property context menu (color/transparency/specular/reset).
+  // Backend-agnostic — changes route through modifyVisualizer.
   void pickVisualizer(const QPointF& viewPos);
   void showVisualizerPickContextMenu(const QPoint& pos);
 
