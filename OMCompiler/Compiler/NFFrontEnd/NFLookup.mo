@@ -84,10 +84,11 @@ function lookupClassName
   input SourceInfo info;
   input Boolean checkAccessViolations = true;
   output InstNode node;
+  output list<InstNode> prefixes "The classes the name was looked up through, see lookupName.";
 protected
   LookupState state;
 algorithm
-  (node, state) := lookupNameWithError(name, scope, context, info, Error.LOOKUP_ERROR, checkAccessViolations);
+  (node, state, prefixes) := lookupNameWithError(name, scope, context, info, Error.LOOKUP_ERROR, checkAccessViolations);
   LookupState.assertClass(state, node, name, context, info);
 end lookupClassName;
 
@@ -572,9 +573,10 @@ function lookupNameWithError
   input Boolean checkAccessViolations = true;
   output InstNode node;
   output LookupState state;
+  output list<InstNode> prefixes;
 algorithm
   try
-    (node, state) := lookupName(name, scope, context, checkAccessViolations);
+    (node, state, prefixes) := lookupName(name, scope, context, checkAccessViolations);
   else
     Error.addSourceMessage(errorType, {AbsynUtil.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
@@ -588,24 +590,30 @@ function lookupName
   input Boolean checkAccessViolations;
   output InstNode node;
   output LookupState state;
+  output list<InstNode> prefixes
+    "The classes the name was looked up through, outermost first and excluding
+     the node itself, as found by the lookup and not as instPackage maps them.";
 protected
   Boolean self_reference;
+  InstNode prefix;
 algorithm
-  (node, state) := match name
+  (node, state, prefixes) := match name
     // Simple name, look it up in the given scope.
     case Absyn.Path.IDENT()
       algorithm
         (node, state, _) := lookupFirstIdent(name.name, scope, context);
       then
-        (node, state);
+        (node, state, {});
 
     // Qualified name, look up first part in the given scope and look up the
     // rest of the name in the found element.
     case Absyn.Path.QUALIFIED()
       algorithm
-        (node, state, self_reference) := lookupFirstIdent(name.name, scope, context);
+        (prefix, state, self_reference) := lookupFirstIdent(name.name, scope, context);
+        (node, state, prefixes) :=
+          lookupLocalName(name.path, prefix, state, context, checkAccessViolations, self_reference);
       then
-        lookupLocalName(name.path, node, state, context, checkAccessViolations, self_reference);
+        (node, state, prefix :: prefixes);
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -679,8 +687,10 @@ function lookupLocalName
   input InstContext.Type context;
   input Boolean checkAccessViolations = true;
   input Boolean selfReference = false;
+  output list<InstNode> prefixes = {} "See lookupName.";
 protected
   Boolean is_import;
+  InstNode prefix;
 algorithm
   // Looking something up in a component is only legal when the name begins with
   // a component reference, and for that we use lookupCref. So if the given node
@@ -716,13 +726,15 @@ algorithm
 
     case Absyn.Path.QUALIFIED()
       algorithm
-        (node, is_import) := lookupLocalSimpleName(name.name, node);
+        (prefix, is_import) := lookupLocalSimpleName(name.name, node);
 
         if is_import then
+          node := prefix;
           state := LookupState.ERROR(LookupState.IMPORT());
         else
-          state := LookupState.next(node, state, context, checkAccessViolations);
-          (node, state) := lookupLocalName(name.path, node, state, context, checkAccessViolations);
+          state := LookupState.next(prefix, state, context, checkAccessViolations);
+          (node, state, prefixes) := lookupLocalName(name.path, prefix, state, context, checkAccessViolations);
+          prefixes := prefix :: prefixes;
         end if;
       then
         ();

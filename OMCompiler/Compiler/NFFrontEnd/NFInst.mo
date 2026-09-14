@@ -1361,6 +1361,7 @@ protected
   InstNode inst;
   import NFInstNode.PackageCacheState;
   PackageCacheState state;
+  Option<InstNode> alias;
 algorithm
   cache := InstNode.getPackageCache(node);
 
@@ -1383,6 +1384,17 @@ algorithm
     return;
   end if;
 
+  if state == PackageCacheState.NOT_INITIALIZED then
+    alias := packageAlias(node, context);
+
+    if isSome(alias) then
+      SOME(inst) := alias;
+      InstNode.setPackageCache(node, inst, PackageCacheState.INSTANTIATED);
+      node := inst;
+      return;
+    end if;
+  end if;
+
   // Otherwise we need to at least partially instantiate the package.
   if state < PackageCacheState.PARTIALLY_INSTANTIATED then
     InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
@@ -1400,6 +1412,51 @@ algorithm
 
   node := inst;
 end instPackage;
+
+function packageAlias
+  "Returns the instance of the aliased package if the given node is a plain
+   alias for another package, i.e. 'package P = A.B' without modifications of
+   its own, which includes the common 'redeclare package Medium = A.B'. Such an
+   alias contains exactly what A.B contains, so A.B's shared instance can be
+   used instead of instantiating a copy of it per alias."
+  input InstNode node;
+  input InstContext.Type context;
+  output Option<InstNode> aliasInst;
+protected
+  Class cls;
+  Absyn.Path path;
+  InstNode base;
+algorithm
+  aliasInst := match (InstNode.definition(node), InstNode.getClass(node))
+    case (SCode.CLASS(restriction = SCode.Restriction.R_PACKAGE(),
+                      partialPrefix = SCode.Partial.NOT_PARTIAL(),
+                      classDef = SCode.ClassDef.DERIVED(
+                        typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = NONE()),
+                        modifications = SCode.Mod.NOMOD())),
+           cls as Class.PARTIAL_CLASS())
+      guard Modifier.isEmpty(cls.modifier) and Modifier.isEmpty(cls.ccMod)
+      algorithm
+        base :: _ := Lookup.lookupBaseClassName(path, InstNode.parent(node), context, InstNode.info(node));
+      then
+        if isAliasablePackage(base) and not referenceEq(base, node) then
+          SOME(instPackage(base, context)) else NONE();
+
+    else NONE();
+  end match;
+end packageAlias;
+
+function isAliasablePackage
+  input InstNode node;
+  output Boolean aliasable;
+algorithm
+  aliasable := match node
+    case InstNode.CLASS_NODE(definition = SCode.CLASS(
+        restriction = SCode.Restriction.R_PACKAGE(),
+        partialPrefix = SCode.Partial.NOT_PARTIAL()))
+      then true;
+    else false;
+  end match;
+end isAliasablePackage;
 
 function modifyExtends
   input output InstNode extendsNode;
@@ -2314,6 +2371,7 @@ function classConfidence
   input InstNode clsNode;
   input InstNode scope "The scope the type was looked up from.";
   input Integer instLevel;
+  input list<InstNode> prefixes = {} "The classes the type was looked up through.";
   output Integer confidence = instLevel;
 protected
   InstNode node = scope;
@@ -2341,6 +2399,23 @@ algorithm
 
     node := instanceScope(node);
   end while;
+
+  // A package alias that shares the instance of the package it names is not in
+  // the instance scope chain of what is looked up through it, so the redeclares
+  // on the lookup path have to be considered too.
+  for p in prefixes loop
+    if not List.exist1(enclosing, InstNode.refEqual, p) then
+      () := match p
+        case InstNode.CLASS_NODE(nodeType = ty as InstNodeType.REDECLARED_CLASS())
+          algorithm
+            confidence := min(confidence, ty.confidence);
+          then
+            ();
+
+        else ();
+      end match;
+    end if;
+  end for;
 end classConfidence;
 
 function instanceScope
@@ -2383,11 +2458,13 @@ function instTypeSpec
   input InstContext.Type context;
   output InstNode node;
   output Attributes outAttributes;
+protected
+  list<InstNode> prefixes;
 algorithm
   node := matchcontinue typeSpec
     case Absyn.TPATH()
       algorithm
-        node := Lookup.lookupClassName(typeSpec.path, scope, context, info);
+        (node, prefixes) := Lookup.lookupClassName(typeSpec.path, scope, context, info);
 
         if instLevel >= 100 then
           checkRecursiveDefinition(node, parent, limitReached = true);
@@ -2395,7 +2472,7 @@ algorithm
 
         node := expand(node, context);
         (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel,
-          classConfidence(node, scope, instLevel), parent, context);
+          classConfidence(node, scope, instLevel, prefixes), parent, context);
       then
         node;
 
