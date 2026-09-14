@@ -116,6 +116,29 @@ uniontype InstNode
     end match;
   end scopeRef;
 
+  function upgradeCell
+    "The cell a weak reference names. An empty node is not an answer here: it
+     travels on as a class that cannot be found or a connector with no type,
+     far from the reference that outlived its node, so say so and fail."
+    input MutableWeak<InstNode> weak;
+    input Boolean owning = false;
+    input String name = "";
+    output Mutable<InstNode> cell;
+  algorithm
+    try
+      if owning then
+        cell := MutableWeak.upgradeOwning(weak);
+      else
+        cell := MutableWeak.upgrade(weak);
+      end if;
+    else
+      Error.addInternalError("weakly held InstNode " +
+        (if stringEmpty(name) then "scope" else "'" + name + "'") +
+        " was collected before the reference to it", sourceInfo());
+      fail();
+    end try;
+  end upgradeCell;
+
   function borrow
     "The node a cell holds, without taking ownership of it. For an edge that is
      not a parent edge and whose target is owned elsewhere: `fromCell` copies
@@ -124,32 +147,32 @@ uniontype InstNode
     input ScopeRef cell;
     output InstNode node;
   algorithm
-    node := matchcontinue cell
+    node := match cell
       local MutableWeak<InstNode> w;
-      case SOME(w) then Mutable.access(MutableWeak.upgrade(w));
+      case SOME(w) then Mutable.access(upgradeCell(w));
       else EMPTY_NODE();
-    end matchcontinue;
+    end match;
   end borrow;
 
   function fromCell
-    "The node a parent cell holds, or an empty node if the parent is gone. The
+    "The node a parent cell holds, or an empty node if there is no parent. The
      result owns the cell, so a node reached through its parent is as usable as
      the original — including as a parent itself."
     input ScopeRef cell;
     output InstNode node;
   algorithm
-    node := matchcontinue cell
+    node := match cell
       local
         MutableWeak<InstNode> w;
         Mutable<InstNode> c;
 
       case SOME(w)
         algorithm
-          c := MutableWeak.upgradeOwning(w);
+          c := upgradeCell(w, owning = true);
         then reown(Mutable.access(c), c);
 
       else EMPTY_NODE();
-    end matchcontinue;
+    end match;
   end fromCell;
 
   function fromHandle
@@ -157,7 +180,7 @@ uniontype InstNode
     output InstNode node;
   algorithm
     node := match hnd
-      case NodeHandle.CELL() then borrow(SOME(hnd.cell));
+      case NodeHandle.CELL() then Mutable.access(upgradeCell(hnd.cell, name = hnd.name));
       case NodeHandle.VALUE() then hnd.node;
     end match;
   end fromHandle;
