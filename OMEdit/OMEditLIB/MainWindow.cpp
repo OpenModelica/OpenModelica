@@ -3790,9 +3790,10 @@ void MainWindow::openTerminal()
 #else
   process.start(terminalCommand + " " + arguments);
 #endif
-  if (process.error() == QProcess::FailedToStart) {
+  if (process.error() == QProcess::FailedToStart || process.hasStartupError()) {
+    const QString processError = process.startupErrorString().isEmpty() ? process.errorString() : process.startupErrorString();
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")
-                          .arg(terminalCommand, arguments, process.errorString());
+                          .arg(terminalCommand, arguments, processError);
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
 #else
