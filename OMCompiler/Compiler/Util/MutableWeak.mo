@@ -76,6 +76,22 @@ static inline void* mutableWeakUpgrade(void *weak)
 ");
 end upgrade;
 
+impure function upgradeOwning
+  "As `upgrade`, for a read that takes ownership of the cell (`InstNode.
+   fromCell`, which then rebuilds the record to set its owner) rather than
+   merely looking at it (`InstNode.borrow`). Identical at run time; split out
+   so `OPENMODELICA_CELL_STATS` can tell the two apart, since only the owning
+   one pays for a record copy."
+  input MutableWeak<T> weak;
+  output Mutable<T> mutable;
+external "C" mutable=mutableWeakUpgrade(weak) annotation(Include="
+static inline void* mutableWeakUpgrade(void *weak)
+{
+  return weak;
+}
+");
+end upgradeOwning;
+
 impure function ofValue
   "A handle that *is* the value. In the C compiler no cell is needed at all --
    a weak reference there is the strong one -- so the node is stored directly

@@ -76,10 +76,12 @@ fn report_cell_stats() {
     if crate::Mutable::stats::enabled() {
         let (created, updated, accessed) = crate::Mutable::stats::report();
         let upgraded = crate::MutableWeak::UPGRADED.with(|c| c.get());
+        let owning = crate::MutableWeak::UPGRADED_OWNING.with(|c| c.get());
         let rooted = crate::MutableWeak::ROOTED.with(|c| c.get());
         eprintln!(
             "cell-stats: {created} cells created, {rooted} rooted, {updated} published \
-             (a record copy each), {upgraded} weak upgrades, {accessed} reads"
+             (a record copy each), {upgraded} borrowing + {owning} owning weak \
+             upgrades (the owning ones copy the record too), {accessed} reads"
         );
     }
 }

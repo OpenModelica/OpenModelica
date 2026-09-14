@@ -99,7 +99,7 @@ uniontype InstNode
 
       case SOME(w)
         algorithm
-          c := MutableWeak.upgrade(w);
+          c := MutableWeak.upgradeOwning(w);
         then reown(Mutable.access(c), c);
 
       else EMPTY_NODE();

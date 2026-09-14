@@ -36,6 +36,7 @@ thread_local! {
 thread_local! {
     /// See `Mutable::stats`.
     pub static UPGRADED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    pub static UPGRADED_OWNING: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
     pub static ROOTED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
@@ -104,10 +105,23 @@ pub fn downgrade<T: Clone>(mutable: Mutable<T>) -> MutableWeak<T> {
 /// An owning cell again. Fails if the referent is already gone — a weak
 /// reference outlived the structure that owned it, so the ownership split is
 /// wrong somewhere. Dereferencing a cell never fails; only this conversion does.
+/// As [`upgrade`], counted separately: only this one is followed by a record
+/// copy (`InstNode.fromCell` -> `reown`).
+pub fn upgradeOwning<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T>> {
+    if crate::Mutable::stats::enabled() {
+        crate::Mutable::stats::bump(&UPGRADED_OWNING);
+    }
+    upgrade_impl(weak)
+}
+
 pub fn upgrade<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T>> {
     if crate::Mutable::stats::enabled() {
         crate::Mutable::stats::bump(&UPGRADED);
     }
+    upgrade_impl(weak)
+}
+
+fn upgrade_impl<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T>> {
     match weak.0.upgrade() {
         Some(cell) => Ok(Mutable(cell)),
         None => {
