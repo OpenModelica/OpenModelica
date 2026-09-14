@@ -47,7 +47,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/Commands.h"
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
 #include "Animation/AnimationWindow.h"
 #endif
 #include "TranslationFlagsWidget.h"
@@ -124,7 +124,7 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   mpBuildOnlyCheckBox->setChecked(buildOnly);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpLaunchAnimationCheckBox->setChecked(launchAnimation);
 #else
   assert(false==launchAnimation);
@@ -280,7 +280,7 @@ void SimulationDialog::setUpForm()
   mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
   // Launch Algorithmic Debugger checkbox
   mpLaunchAlgorithmicDebuggerCheckBox = new QCheckBox(tr("Launch Algorithmic Debugger"));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // Launch Animation
   mpLaunchAnimationCheckBox = new QCheckBox(tr("Launch Animation"));
 #endif
@@ -288,7 +288,7 @@ void SimulationDialog::setUpForm()
   pLaunchOptionsLayout->setAlignment(Qt::AlignTop);
   pLaunchOptionsLayout->addWidget(mpBuildOnlyCheckBox, 0, 0);
   pLaunchOptionsLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 0, 1);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   pLaunchOptionsLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 1, 0);
   pLaunchOptionsLayout->addWidget(mpLaunchAnimationCheckBox, 1, 1);
 #else
@@ -980,7 +980,7 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpLaunchTransformationalDebuggerCheckBox->setChecked(simulationOptions.getLaunchTransformationalDebugger());
   // Launch Algorithmic Debugger checkbox
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(simulationOptions.getLaunchAlgorithmicDebugger());
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // Simulate with Animation checkbox
   mpLaunchAnimationCheckBox->setChecked(simulationOptions.getSimulateWithAnimation());
 #endif
@@ -1114,7 +1114,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=gendebugsymbols");
   }
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // set the visulation flag before translation
   if (mpLaunchAnimationCheckBox->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=visxml");
@@ -1193,7 +1193,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   simulationOptions.setSimulateWithAnimation(mpLaunchAnimationCheckBox->isChecked());
 #endif
 
@@ -2039,7 +2039,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // variables' QSortFilterProxyModel sort while it is live traps; doing it first keeps the
     // sort synchronous and intact (and is harmless ordering on every platform).
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
 #ifdef OM_LEGACY_RESULT_READERS
@@ -2185,7 +2185,7 @@ void SimulationDialog::buildOnly(bool checked)
   if (!mpInteractiveSimulationGroupBox->isChecked()) {
     mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
   }
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpLaunchAnimationCheckBox->setEnabled(!checked);
 #endif
   mpSimulationFlagsTab->setEnabled(!checked);
@@ -2201,7 +2201,7 @@ void SimulationDialog::interactiveSimulation(bool checked)
 {
   mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
   mpLaunchTransformationalDebuggerCheckBox->setEnabled(!checked);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpLaunchAnimationCheckBox->setEnabled(!checked);
 #endif
 }

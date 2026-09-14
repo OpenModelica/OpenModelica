@@ -30,7 +30,8 @@
 #
 # See the full OSMC Public License conditions for more details.
 
-QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
+QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets \
+  quick quick3d qml quickwidgets
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
   qtHaveModule(httpserver) {
