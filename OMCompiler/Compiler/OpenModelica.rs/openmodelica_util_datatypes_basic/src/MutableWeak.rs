@@ -121,7 +121,87 @@ pub fn upgrade<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T
     upgrade_impl(weak)
 }
 
+/// `OPENMODELICA_CELL_SAMPLE=N` captures a backtrace every Nth upgrade and
+/// aggregates by the innermost frontend frame, so the scope walks doing the
+/// ~5M reads can be named rather than guessed at. Sampling, because a capture
+/// costs far more than the upgrade it is measuring.
+pub mod sample {
+    use std::cell::RefCell;
+    use std::collections::BTreeMap;
+    thread_local! {
+        static N: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+        static SEEN: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+        static HITS: RefCell<BTreeMap<String, usize>> = RefCell::new(BTreeMap::new());
+    }
+    fn every() -> u64 {
+        static E: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+        *E.get_or_init(|| {
+            std::env::var("OPENMODELICA_CELL_SAMPLE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0)
+        })
+    }
+    pub fn enabled() -> bool {
+        every() > 0
+    }
+    /// The innermost `openmodelica_*` frame that is not part of the cell
+    /// machinery itself -- that is the caller worth naming.
+    fn innermost(bt: &str) -> String {
+        for line in bt.lines() {
+            let l = line.trim();
+            let Some(i) = l.find("openmodelica_") else { continue };
+            let sym = &l[i..];
+            let sym = sym.split(&[' ', '(', ':'][..]).next().unwrap_or(sym);
+            // Skip the cell machinery itself: `borrow`/`fromCell` are always
+            // the innermost frontend frames, so naming them says nothing.
+            const MACHINERY: [&str; 6] = [
+                "MutableWeak",
+                "::Mutable::",
+                "InstNode::borrow",
+                "InstNode::fromCell",
+                "InstNode::fromHandle",
+                "InstNode::fromIdentity",
+            ];
+            if MACHINERY.iter().any(|m| l.contains(m)) {
+                continue;
+            }
+            let end = l[i..].find(" at ").map(|e| i + e).unwrap_or(l.len());
+            let full = l[i..end].trim().to_string();
+            if !full.is_empty() {
+                return full;
+            }
+            return sym.to_string();
+        }
+        "<unattributed>".to_string()
+    }
+    pub fn tick() {
+        let e = every();
+        let n = N.with(|c| {
+            let v = c.get() + 1;
+            c.set(v);
+            v
+        });
+        if n % e != 0 {
+            return;
+        }
+        SEEN.with(|c| c.set(c.get() + 1));
+        let bt = std::backtrace::Backtrace::force_capture().to_string();
+        let key = innermost(&bt);
+        HITS.with(|h| *h.borrow_mut().entry(key).or_insert(0) += 1);
+    }
+    pub fn report() -> (u64, Vec<(String, usize)>) {
+        let mut v: Vec<(String, usize)> =
+            HITS.with(|h| h.borrow().iter().map(|(k, n)| (k.clone(), *n)).collect());
+        v.sort_by(|a, b| b.1.cmp(&a.1));
+        (SEEN.with(|c| c.get()), v)
+    }
+}
+
 fn upgrade_impl<T: Clone>(weak: MutableWeak<T>) -> metamodelica::Result<Mutable<T>> {
+    if sample::enabled() {
+        sample::tick();
+    }
     match weak.0.upgrade() {
         Some(cell) => Ok(Mutable(cell)),
         None => {

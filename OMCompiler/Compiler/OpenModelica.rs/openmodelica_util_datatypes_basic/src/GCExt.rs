@@ -86,15 +86,28 @@ fn report_cell_stats() {
     }
 }
 
+fn report_cell_sample() {
+    if !crate::MutableWeak::sample::enabled() {
+        return;
+    }
+    let (seen, rows) = crate::MutableWeak::sample::report();
+    eprintln!("cell-sample: {seen} samples, innermost frontend frame:");
+    for (frame, n) in rows.iter().take(20) {
+        eprintln!("  {n:>7}  {frame}");
+    }
+}
+
 pub fn gcollect() {
     collect_reporting();
     report_cell_stats();
+    report_cell_sample();
 }
 
 pub fn gcollectAndUnmap() {
     // No unmapping concept on the refcounted heap; same as `gcollect`.
     collect_reporting();
     report_cell_stats();
+    report_cell_sample();
 }
 
 pub fn getForceUnmapOnGcollect() -> bool {
