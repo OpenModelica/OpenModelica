@@ -632,18 +632,8 @@ void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
 }
 
 /*!
- * \brief   Adjust scaling of vector visualizers.
- * \details Only adjustable-radius vectors have their radius adjusted, and only
- *          adjustable-length vectors their length; the two are decoupled.
- *
- *          The radius of adjustable-radius vectors is made equal to the median of
- *          the radii of the fixed-radius vectors and of the relevant shapes, plus
- *          or minus some constant factor (default: -10%).
- *
- *          The length of adjustable-length vectors is scaled per vector quantity
- *          by the default magnitude provided by the MSL, so that e.g. forces in
- *          newtons are not drawn kilometres long. Framing the result is left to
- *          the viewer's fitToScene.
+ * \brief Adjust radius and length scaling of vector visualizers, independently.
+ *        Framing the result is left to the viewer's fitToScene.
  */
 void OMVisualBase::chooseVectorScales()
 {
@@ -653,8 +643,6 @@ void OMVisualBase::chooseVectorScales()
 
   constexpr int8_t factorRadius = -10; // Vector radius vs. median of fixed radii [%]
 
-  /* Adjustable-radius vectors: scale the default radius by the median of the
-     fixed-radius vectors and the relevant shapes. */
   std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
   std::vector<float> radii;
   for (VectorObject& vector : _vectors) {
@@ -707,8 +695,8 @@ void OMVisualBase::chooseVectorScales()
     }
   }
 
-  /* Adjustable-length vectors: forces/torques are divided by their MSL reference
-     so they render at a comparable size. */
+  /* Forces/torques are divided by their MSL reference so they render at a
+     comparable size. */
   for (VectorObject& vector : _vectors) {
     if (vector.isLengthAdjustable()) {
       float scale = 1.0f;
