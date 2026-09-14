@@ -82,19 +82,44 @@ fi
 
 # `@rpath/QtCore.framework/Versions/A/QtCore` -> `QtCore.framework`, or a plain
 # `@rpath/libfoo.dylib` -> `libfoo.dylib`. Anything absolute is the system's.
-# Every Mach-O in the bundle. The dlopened plugins and QML modules are in nobody's
-# link list but carry @rpath dependencies of their own.
+# Every Mach-O in the bundle. The Qt plugins, the QML modules and the simulation
+# runtimes under Resources/lib are in nobody's link list -- omc and Qt dlopen
+# them by path -- but carry @rpath dependencies of their own.
 bundle_macho() {
   find "$out/Contents/MacOS" "$out/Contents/Frameworks" \
        "$out/Contents/PlugIns" "$out/Contents/Resources/qml" \
-       -type f \( -perm -u+x -o -name '*.dylib' \) 2>/dev/null
+       "$out/Contents/Resources/lib" \
+       -type f \( -perm -u+x -o -name '*.dylib' \) 2>/dev/null || true
 }
 
+# A dylib's own install name heads its -L listing; it is not a dependency, and
+# for a framework it is not spelled like the file either (@rpath/Qt.framework/...).
 rpath_deps() {
-  "$otool" -L "$1" 2>/dev/null | tail -n +2 | awk '{print $1}' | sed -n 's|^@rpath/||p'
+  self=$("$otool" -D "$1" 2>/dev/null | tail -n +2)
+  "$otool" -L "$1" 2>/dev/null | tail -n +2 |
+    awk -v self="$self" '$1 != self {print $1}' | sed -n 's|^@rpath/||p'
 }
 
-search_dirs="$out/Contents/Frameworks $out/Contents/Resources/lib/*/omc"
+# What this binary's own LC_RPATHs point at, inside the bundle. Frameworks is
+# only one of them: the simulation runtimes find each other through @loader_path,
+# and an rpath leading out of the bundle does not count as resolved.
+macho_rpaths() {
+  "$otool" -l "$1" 2>/dev/null |
+    awk '/LC_RPATH/ {r = 1} r && /^ *path / {print $2; r = 0}' |
+    sed -e "s|^@loader_path|$(dirname "$1")|" \
+        -e "s|^@executable_path|$out/Contents/MacOS|"
+}
+
+resolves() { # resolves <rpaths> <dep>
+  for dir in $1; do
+    case "$dir" in "$out"/*) ;; *) continue ;; esac
+    [ -e "$dir/$2" ] && return 0
+  done
+  return 1
+}
+
+# omsicpp/ and cpp/ hold the C++ runtimes OMCppOSUSimulation links against.
+search_dirs="$out/Contents/Frameworks $out/Contents/Resources/lib/*/omc $out/Contents/Resources/lib/*/omc/omsicpp $out/Contents/Resources/lib/*/omc/cpp"
 [ -n "$qt" ] && search_dirs="$search_dirs $qt/lib"
 
 find_dep() {
@@ -110,7 +135,9 @@ deploy() {
   while [ -n "$queue" ]; do
     next=""
     for bin in $queue; do
+      rpaths=$(macho_rpaths "$bin")
       for dep in $(rpath_deps "$bin"); do
+        resolves "$rpaths" "$dep" && continue
         top=${dep%%/*}                       # Foo.framework, or libfoo.dylib
         case " $seen " in *" $top "*) continue ;; esac
         seen="$seen $top"
@@ -132,13 +159,16 @@ deploy() {
           rm -rf "$out/Contents/Frameworks/$top/Headers" \
                  "$out/Contents/Frameworks/$top/Versions/A/Headers"
           find "$out/Contents/Frameworks/$top" -name '*.prl' -delete 2>/dev/null || true
-          next="$next $out/Contents/Frameworks/$top/$(basename "$top" .framework)"
+          case "$top" in
+            *.framework) next="$next $out/Contents/Frameworks/$top/${top%.framework}" ;;
+            *)           next="$next $out/Contents/Frameworks/$top" ;;
+          esac
         else
           echo "WARNING: no source for @rpath/$top (give the Qt prefix?)" >&2
         fi
       done
     done
-    queue=$(for f in $next; do [ -f "$f" ] && echo "$f"; done)
+    queue=$(for f in $next; do [ -f "$f" ] && echo "$f"; done; :)
   done
 }
 
@@ -202,6 +232,17 @@ if [ -n "$qt" ]; then
     > "$out/Contents/Resources/qt.conf"
 fi
 
+# Nothing links what sits under Resources/lib, so CMake gave it the unix tree's
+# rpath -- which has no way to reach Frameworks, where its dependencies land.
+if [ -n "${install_name_tool:-}" ]; then
+  bundle_macho | sed -n "s|^$out/Contents/\(Resources/lib/.*\)|\1|p" |
+  while read -r rel; do
+    up=$(dirname "$rel" | sed 's|[^/]*|..|g')
+    "$install_name_tool" -add_rpath "@loader_path/$up/Frameworks" \
+      "$out/Contents/$rel" 2>/dev/null || true
+  done
+fi
+
 deploy
 
 # QtWebEngineProcess is nested inside QtWebEngineCore.framework and loads it
@@ -216,10 +257,10 @@ fi
 # machine with the same Qt installed -- invisible until someone else opens it.
 missing=0
 for bin in $(bundle_macho); do
+  rpaths=$(macho_rpaths "$bin")
   for dep in $(rpath_deps "$bin"); do
-    top=${dep%%/*}
-    if [ ! -e "$out/Contents/Frameworks/$top" ]; then
-      echo "UNRESOLVED: $top (needed by ${bin#$out/})" >&2
+    if ! resolves "$rpaths" "$dep"; then
+      echo "UNRESOLVED: $dep (needed by ${bin#$out/})" >&2
       missing=$((missing + 1))
     fi
   done
