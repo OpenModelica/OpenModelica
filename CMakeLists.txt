@@ -265,7 +265,7 @@ if(APPLE)
   ## So make sure that the lib dir is referenced from that location as well
   # The last two are for the app bundle mac-app-bundle.sh builds; they resolve
   # nothing in a plain unix prefix.
-  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR};@loader_path/../Frameworks;@loader_path/../Resources/${CMAKE_INSTALL_LIBDIR}")
+  set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR};@loader_path/../Frameworks;@loader_path/../Resources/${CMAKE_INSTALL_LIBDIR}")
 else()
   set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 endif()
