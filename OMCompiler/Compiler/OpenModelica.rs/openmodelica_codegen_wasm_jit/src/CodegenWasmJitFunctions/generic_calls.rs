@@ -3,7 +3,6 @@
 //! calls it from the loops (`CodegenC.tpl:equationGenericAssign`); here it is
 //! inlined, the way `SES_IFEQUATION` inlines its branches.
 
-use std::sync::Arc;
 
 use metamodelica::Result;
 

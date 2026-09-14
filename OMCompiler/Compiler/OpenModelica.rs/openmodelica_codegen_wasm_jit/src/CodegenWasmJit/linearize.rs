@@ -10,7 +10,6 @@ use openmodelica_frontend_types::DAE;
 use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::LinLanguage;
 use std::fmt::Write;
-use std::sync::Arc;
 
 use crate::CodegenWasmJit::lst;
 

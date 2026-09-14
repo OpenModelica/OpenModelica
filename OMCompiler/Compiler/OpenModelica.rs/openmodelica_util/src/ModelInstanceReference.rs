@@ -28,7 +28,6 @@
 use std::cell::RefCell;
 use std::ffi::{c_char, c_double, c_int};
 use std::ptr;
-use std::sync::Arc;
 
 use metamodelica::List;
 use crate::JSON::JSON;

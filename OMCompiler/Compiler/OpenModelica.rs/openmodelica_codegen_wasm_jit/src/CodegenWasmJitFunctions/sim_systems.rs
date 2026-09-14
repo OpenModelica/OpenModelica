@@ -7,7 +7,6 @@
 //! shared lowering primitives (`FnCtx`, `compile_exp`, `coerce`, `mem_arg`, …)
 //! through `super::*` without widening their visibility.
 
-use std::sync::Arc;
 
 use metamodelica::Result;
 

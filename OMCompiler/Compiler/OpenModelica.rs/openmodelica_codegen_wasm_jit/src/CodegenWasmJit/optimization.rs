@@ -8,7 +8,6 @@
 
 use std::collections::HashMap;
 use std::string::String;
-use std::sync::Arc;
 
 use openmodelica_backend_types::BackendDAE;
 use openmodelica_simcode_types::{SimCode, SimCodeVar};

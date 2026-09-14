@@ -11,7 +11,6 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
 
 use metamodelica::Result;
 use openmodelica_frontend_types::DAE;

@@ -10,7 +10,6 @@
 //! unrecognised is reported as overlapping.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Arc;
 
 use openmodelica_ast::Absyn;
 

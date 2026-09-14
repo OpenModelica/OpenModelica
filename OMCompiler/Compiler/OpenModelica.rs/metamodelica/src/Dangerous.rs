@@ -1,6 +1,5 @@
 //! `MetaModelica.Dangerous` — bounds-check-skipping / destructive variants.
 
-use std::sync::Arc;
 use arcstr::ArcStr;
 pub use crate::*;
 use crate::mmval::MmVal;

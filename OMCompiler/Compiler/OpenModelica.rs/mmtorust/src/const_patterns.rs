@@ -38,7 +38,6 @@
 //! `localDecls`, and `for`-loop iterators of any enclosing loop.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Arc;
 
 use openmodelica_ast::Absyn;
 

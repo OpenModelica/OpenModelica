@@ -6,7 +6,7 @@
 // `.wasm.sig` sidecar, with no MMC heap to build.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock};
 
 use metamodelica::Result;
 use arcstr::ArcStr;

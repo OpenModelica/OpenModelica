@@ -10,7 +10,6 @@
 #![allow(non_snake_case, non_upper_case_globals, clippy::type_complexity)]
 
 use std::cell::RefCell;
-use std::sync::Arc;
 
 // ── Thread-local roots (process-global by MetaModelica semantics) ─────────────
 

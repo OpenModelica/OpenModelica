@@ -6,7 +6,6 @@
 // The entry points keep their MetaModelica names, which mmtorust calls.
 #![allow(non_snake_case)]
 
-use std::sync::Arc;
 
 use arcstr::ArcStr;
 use openmodelica_util::JSON::JSON;

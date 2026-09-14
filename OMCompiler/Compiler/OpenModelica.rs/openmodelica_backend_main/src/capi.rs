@@ -24,7 +24,6 @@
 
 use metamodelica::Result;
 use arcstr::ArcStr;
-use std::sync::Arc;
 
 use crate::Main;
 

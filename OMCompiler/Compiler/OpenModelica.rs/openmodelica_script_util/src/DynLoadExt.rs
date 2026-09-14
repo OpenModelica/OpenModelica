@@ -27,7 +27,6 @@
 // routes `DynLoad_executeFunction` here via `external_c_impl_path`.
 
 use std::ffi::{CStr, CString, c_char, c_void};
-use std::sync::Arc;
 
 use metamodelica::Result;
 use arcstr::ArcStr;

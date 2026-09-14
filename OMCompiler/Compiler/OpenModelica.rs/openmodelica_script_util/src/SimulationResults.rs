@@ -33,7 +33,7 @@
  */
 #![allow(non_snake_case, unused_variables, unused_mut, dead_code)]
 
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard};
 use std::time::SystemTime;
 
 use metamodelica::Result;
