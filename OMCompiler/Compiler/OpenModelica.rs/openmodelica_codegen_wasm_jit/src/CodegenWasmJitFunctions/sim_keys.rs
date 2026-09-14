@@ -43,17 +43,17 @@ pub(super) fn sim_pre_is_stored_lhs(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Re
 
 /// The `previous(cr)` component reference: `cr` wrapped in `DAE.previousNamePrefix`,
 /// the variable the backend introduced for it (key `$CLKPRE.<cr>`).
-pub(super) fn clkpre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+pub(super) fn clkpre_cref(cr: &DAE::ComponentRef) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     let identType = match cr {
         C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
         _ => crate::CodegenWasmJit::t_real(),
     };
-    Arc::new(C::CREF_QUAL {
+    metamodelica::Ref::new(C::CREF_QUAL {
         ident: arcstr::literal!("$CLKPRE"),
         identType,
         subscriptLst: metamodelica::nil(),
-        componentRef: Arc::new(cr.clone()),
+        componentRef: metamodelica::Ref::new(cr.clone()),
     })
 }
 
@@ -71,17 +71,17 @@ pub(super) fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<u32> {
 
 /// The `der(cr)` component reference: `cr` wrapped in a `$DER` qualifier, as the
 /// backend names the derivative variable (key `$DER.<cr>`).
-pub(super) fn der_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+pub(super) fn der_cref(cr: &DAE::ComponentRef) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     let identType = match cr {
         C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
         _ => crate::CodegenWasmJit::t_real(),
     };
-    Arc::new(C::CREF_QUAL {
+    metamodelica::Ref::new(C::CREF_QUAL {
         ident: arcstr::literal!("$DER"),
         identType,
         subscriptLst: metamodelica::nil(),
-        componentRef: Arc::new(cr.clone()),
+        componentRef: metamodelica::Ref::new(cr.clone()),
     })
 }
 
@@ -113,7 +113,7 @@ fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
 /// a recorded message. The callers that recover must not record one.
 pub(super) fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
     sim_cref_key(cr).map_err(|e| {
-        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(Arc::new(cr.clone()))
+        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(metamodelica::Ref::new(cr.clone()))
             .map(|s| s.to_string())
             .unwrap_or_default();
         crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: cannot resolve `{shown}` to a simulation variable"));
@@ -121,7 +121,7 @@ pub(super) fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
     })
 }
 
-fn sim_subs_into(subs: &List<Arc<DAE::Subscript>>, s: &mut String) -> Result<()> {
+fn sim_subs_into(subs: &List<metamodelica::Ref<DAE::Subscript>>, s: &mut String) -> Result<()> {
     for sub in &**subs {
         match &**sub {
             DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
@@ -141,7 +141,7 @@ fn sim_subs_into(subs: &List<Arc<DAE::Subscript>>, s: &mut String) -> Result<()>
 /// Append an intermediate component's subscripts to an array base key, spelled as
 /// [`sim_cref_key`] spells them (`bodybox[1].body.R_start.T`). `false` when a
 /// subscript is not a constant index, so there is no static base key.
-pub(crate) fn push_qual_subs(subs: &List<Arc<DAE::Subscript>>, s: &mut String) -> bool {
+pub(crate) fn push_qual_subs(subs: &List<metamodelica::Ref<DAE::Subscript>>, s: &mut String) -> bool {
     for sub in &**subs {
         match &**sub {
             DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
@@ -212,7 +212,7 @@ pub(crate) fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
 /// `(base cref key, subscript index expressions)`. Unlike [`sim_cref_key`], those
 /// subscripts need not be constant; this backs the dynamic array-element path
 /// (e.g. a `for`-loop iterator index). `None` for a plain scalar or a slice.
-pub(super) fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+pub(super) fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<metamodelica::Ref<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut exps = Vec::new();
@@ -246,7 +246,7 @@ pub(super) fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec
 /// final component) -> `(base key, leading index exprs)`. Such a selection is a
 /// contiguous row-major block. `None` for a scalar, a `SLICE`, or an `INDEX` after
 /// a whole dim.
-pub(super) fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+pub(super) fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<metamodelica::Ref<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut node = cr;
@@ -284,7 +284,7 @@ pub(super) fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec
 /// [`sim_slice_of`] for a slice indexed on *outer* components: `module[$i].x` is
 /// a contiguous run inside the flattened `module.x` group, so every subscript
 /// the cref carries is a leading index. `None` unless one of them is qualified.
-pub(super) fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+pub(super) fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<metamodelica::Ref<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut leading = Vec::new();
@@ -319,7 +319,7 @@ pub(super) fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String
 
 /// `base[subs]` (subscripts on the final component) -> `(base key, raw subscript
 /// list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
-pub(super) fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<Arc<DAE::Subscript>>)>> {
+pub(super) fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<metamodelica::Ref<DAE::Subscript>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut node = cr;
@@ -347,10 +347,10 @@ pub(super) fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(Stri
 
 /// [`sim_array_base_subs`] over a flattened group: `module[$i].x[2:3]` selects from
 /// `module.x`. `None` unless an outer component is subscripted.
-pub(super) fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<Arc<DAE::Subscript>>)>> {
+pub(super) fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<metamodelica::Ref<DAE::Subscript>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
-    let mut subs: Vec<Arc<DAE::Subscript>> = Vec::new();
+    let mut subs: Vec<metamodelica::Ref<DAE::Subscript>> = Vec::new();
     let mut qualified_subs = false;
     let mut node = cr;
     loop {
@@ -376,7 +376,7 @@ pub(super) fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<
     }
 }
 
-pub(super) fn subs_select_array(subs: &List<Arc<DAE::Subscript>>, group: &ArrayGroup) -> bool {
+pub(super) fn subs_select_array(subs: &List<metamodelica::Ref<DAE::Subscript>>, group: &ArrayGroup) -> bool {
     let rank = group.dims.len() as u32;
     (&**subs).into_iter().count() as u32 <= rank && !is_scalar_index(subs, rank)
 }
@@ -384,7 +384,7 @@ pub(super) fn subs_select_array(subs: &List<Arc<DAE::Subscript>>, group: &ArrayG
 /// Push the byte address of element `group[leading, 1, …]` and return
 /// `(trailing_element_count, element_stride)`; the block spans
 /// `trailing_count * stride` contiguous bytes from there.
-pub(super) fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<(u32, u32)> {
+pub(super) fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>]) -> Result<(u32, u32)> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let k = leading.len();
     if k >= group.dims.len() {

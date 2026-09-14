@@ -15,15 +15,15 @@ pub(super) fn finish_fn(ctx: FnCtx) -> we::Function {
 /// One lowering step of an equation entry point.
 pub(super) enum EqUnit<'a> {
     /// A parameter's binding expression, assigned ahead of `parameterEquations`.
-    Binding(&'a Arc<DAE::ComponentRef>, &'a Arc<DAE::Exp>),
+    Binding(&'a metamodelica::Ref<DAE::ComponentRef>, &'a metamodelica::Ref<DAE::Exp>),
     /// A SimCode equation; `Some(mask)` adds the DAE-mode stage guard.
-    Eq(&'a Arc<SimCode::SimEqSystem>, Option<u32>),
+    Eq(&'a metamodelica::Ref<SimCode::SimEqSystem>, Option<u32>),
 }
 
 impl EqUnit<'_> {
     /// Operands of a plain `cref := exp`, which `sim_const_store` may fold into a
     /// data segment.
-    fn assign_operands(&self) -> Option<(&Arc<DAE::ComponentRef>, &Arc<DAE::Exp>)> {
+    fn assign_operands(&self) -> Option<(&metamodelica::Ref<DAE::ComponentRef>, &metamodelica::Ref<DAE::Exp>)> {
         match self {
             EqUnit::Binding(cref, exp) => Some((cref, exp)),
             EqUnit::Eq(eq, None) => match &***eq {
@@ -42,7 +42,7 @@ impl EqUnit<'_> {
 pub(super) fn lower_unit(
     ctx: &mut FnCtx,
     unit: &EqUnit,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     pending: &mut BTreeMap<u32, Vec<u8>>,
 ) -> Result<()> {
     if let Some((cref, exp)) = unit.assign_operands() {
@@ -168,7 +168,7 @@ pub(super) fn build_split_fn(
     stateset_diag: &[u32],
     save_pre: &[(u32, u32, u32)],
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     bodies: &mut Vec<we::Function>,
@@ -194,7 +194,7 @@ pub(super) fn build_chunks(
     stateset_diag: &[u32],
     save_pre: &[(u32, u32, u32)],
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     pool: &mut ChunkPool,
@@ -268,9 +268,9 @@ fn eq_id_of(eq: &SimCode::SimEqSystem) -> i32 {
 /// The orders differ by more than the interleaving -- `algebraicEquations` ends with
 /// C's `removedEquations` reversed -- so that tail comes back one equation per run.
 pub(super) fn eq_segments(
-    ode: &[Arc<SimCode::SimEqSystem>],
-    alg: &[Arc<SimCode::SimEqSystem>],
-    all: &[Arc<SimCode::SimEqSystem>],
+    ode: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    alg: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    all: &[metamodelica::Ref<SimCode::SimEqSystem>],
 ) -> Option<Vec<EqSegment>> {
     let mut own: HashMap<i32, (EqOwner, usize)> = HashMap::new();
     for (owner, eqs) in [(EqOwner::Ode, ode), (EqOwner::Alg, alg)] {
@@ -315,11 +315,11 @@ pub(super) fn eq_segments(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn build_shared_eq_chunks(
     mut segs: Vec<EqSegment>,
-    all: &[Arc<SimCode::SimEqSystem>],
-    local_known: &[Arc<SimCode::SimEqSystem>],
+    all: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    local_known: &[metamodelica::Ref<SimCode::SimEqSystem>],
     ty: u32,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     pool: &mut ChunkPool,
@@ -351,7 +351,7 @@ pub(super) fn build_shared_eq_chunks(
 pub(super) fn build_eq_fn_single(
     units: &[EqUnit],
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
@@ -368,7 +368,7 @@ pub(super) fn build_eq_fn_single(
 }
 
 /// `EqUnit::Eq` over a plain equation list.
-pub(super) fn eq_units(eqs: &[Arc<SimCode::SimEqSystem>]) -> Vec<EqUnit<'_>> {
+pub(super) fn eq_units(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Vec<EqUnit<'_>> {
     eqs.iter().map(|e| EqUnit::Eq(e, None)).collect()
 }
 
@@ -384,7 +384,7 @@ pub(super) fn build_init_sample_fn(
 ) -> Result<we::Function> {
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    let pairs: Vec<(Arc<DAE::Exp>, Arc<DAE::Exp>)> =
+    let pairs: Vec<(metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)> =
         samples.iter().map(|s| (s.start.clone(), s.interval.clone())).collect();
     ctx.emit_init_sample(&pairs, layout.sample_off)?;
     let (locals, instrs) = ctx.finish_sim();

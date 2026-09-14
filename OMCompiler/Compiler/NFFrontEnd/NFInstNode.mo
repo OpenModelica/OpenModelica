@@ -46,7 +46,9 @@ import Type = NFType;
 import NFFunction.Function;
 import Sections = NFSections;
 import Pointer;
-import PointerCyclic;
+import Mutable;
+import MutableWeak;
+import PointerWeak;
 import Error;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
@@ -75,7 +77,8 @@ uniontype InstNodeType
 
   record BASE_CLASS
     "A base class extended by another class."
-    InstNode parent;
+    ScopeRef parent "The extending class, weakly; see
+      InstNode.CLASS_NODE.parentScope.";
     SCode.Element definition "The extends clause definition.";
     InstNodeType ty "The original node type before the class was extended.";
   end BASE_CLASS;
@@ -93,12 +96,16 @@ uniontype InstNodeType
     "The unnamed class containing all the top-level classes."
     InstNode annotationScope;
     UnorderedMap<String, InstNode> generatedInners;
+    MutableWeak.Roots roots "The identity cells of every node under this scope.
+      A node refers to its own scope weakly, and a cref outlives the node value
+      it was made from, so the tree owns the cells rather than the values do.";
   end TOP_SCOPE;
 
   record ROOT_CLASS
     "The root of the instance tree, i.e. the class that the instantiation starts from."
-    InstNode parent "The parent of the class, e.g. when instantiating a function
-                     in a component where the component is the parent.";
+    ScopeRef parent "The parent of the class, e.g. when instantiating a function
+                     in a component where the component is the parent. Weakly:
+                     the class tree owns it.";
     Option<Absyn.Path> context "Used by getModelInstance to add context to instances.";
   end ROOT_CLASS;
 
@@ -106,11 +113,11 @@ uniontype InstNodeType
   end NORMAL_COMP;
 
   record REDECLARED_COMP
-    InstNode parent "The parent of the replaced component";
+    ScopeRef parent "The parent of the replaced component, weakly.";
   end REDECLARED_COMP;
 
   record REDECLARED_CLASS
-    InstNode parent;
+    ScopeRef parent "Weakly: the class tree owns it.";
     InstNodeType originalType;
     Option<InstNode> originalNode;
     Integer confidence "instance level of the redeclare, see Inst.classConfidence";
@@ -127,6 +134,29 @@ uniontype InstNodeType
   end IMPLICIT_SCOPE;
 end InstNodeType;
 
+uniontype NodeHandle
+  "A stored reference to a node. `CELL` is the weak edge; `VALUE` is for a node
+   that has no identity cell -- the builtin constants, which are immutable
+   globals and so cannot be on a cycle, and which a constant's serialized form
+   in a .interface.mo can express while a weak reference cannot."
+
+  record CELL
+    MutableWeak<InstNode> cell;
+  end CELL;
+
+  record VALUE
+    InstNode node;
+  end VALUE;
+end NodeHandle;
+
+type ScopeRef = InstNode
+  "How a reference to an enclosing scope is stored. The Rust port stores a weak
+   handle instead -- see NFInstNode.rust.mo -- because a scope owns the nodes in
+   it, so a strong reference back would close the cycle. Read one with
+   `fromCell` or `borrow`, make one with `identityCell`.";
+
+constant ScopeRef NO_SCOPE = InstNode.EMPTY_NODE();
+
 constant Integer NUMBER_OF_CACHES = 3;
 
 type PackageCacheState = enumeration(
@@ -142,7 +172,8 @@ uniontype CachedData
   record NO_CACHE end NO_CACHE;
 
   record PACKAGE
-    InstNode instance;
+    NodeHandle instance "Weakly: this is a cache of the node it hangs off, so
+      the node's own scope owns it.";
     PackageCacheState state;
   end PACKAGE;
 
@@ -256,9 +287,10 @@ uniontype InstNode
     String name;
     SCode.Element definition;
     Visibility visibility;
-    PointerCyclic<Class> cls;
+    Pointer<Class> cls;
     array<CachedData> caches;
-    InstNode parentScope;
+    ScopeRef parentScope "The enclosing scope's identity.
+      Weak: a scope owns the nodes in it.";
     InstNodeType nodeType;
   end CLASS_NODE;
 
@@ -266,8 +298,9 @@ uniontype InstNode
     String name;
     Option<SCode.Element> definition;
     Visibility visibility;
-    PointerCyclic<Component> component;
-    InstNode parent "The instance that this component is part of.";
+    Pointer<Component> component;
+    ScopeRef parent "The instance that this component is
+      part of; see CLASS_NODE.parentScope.";
     InstNodeType nodeType;
   end COMPONENT_NODE;
 
@@ -299,7 +332,9 @@ uniontype InstNode
     NOTE: Map and traversal functions are not allowed to follow the variable
     pointer, it would create cyclic behaviour! Var->cref->pointer->Var"
     String name;
-    PointerCyclic<Variable> varPointer;
+    PointerWeak<Variable> varPointer "Weak, which is what stops the
+      `Var -> cref -> pointer -> Var` loop the note above warns about. The
+      backend's `VariablePointers` owns every variable.";
   end VAR_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
@@ -326,7 +361,8 @@ uniontype InstNode
   algorithm
     SCode.CLASS(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
-      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent, nodeType);
+      Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
+      identityCell(parent), nodeType);
   end newClass;
 
   function newComponent
@@ -339,7 +375,8 @@ uniontype InstNode
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := COMPONENT_NODE(name, SOME(definition), Prefixes.visibilityFromSCode(vis),
-      PointerCyclic.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
+      Pointer.create(Component.new(definition)),
+      identityCell(parent), InstNodeType.NORMAL_COMP());
   end newComponent;
 
   function newExtends
@@ -354,8 +391,9 @@ uniontype InstNode
     SCode.Element.EXTENDS(baseClassPath = base_path, visibility = vis) := definition;
     name := AbsynUtil.pathLastIdent(base_path);
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
-      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
-      InstNodeType.BASE_CLASS(parent, definition, nodeType(parent)));
+      Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(),
+      identityCell(parent),
+      InstNodeType.BASE_CLASS(identityCell(parent), definition, nodeType(parent)));
   end newExtends;
 
   function newIterator
@@ -391,8 +429,8 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, PointerCyclic.create(component),
-                           parent, InstNodeType.NORMAL_COMP());
+    node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, Pointer.create(component),
+                           identityCell(parent), InstNodeType.NORMAL_COMP());
   end fromComponent;
 
   function isClass
@@ -428,7 +466,7 @@ uniontype InstNode
           case InstNodeType.NORMAL_CLASS() then true;
           case InstNodeType.BASE_CLASS() then true;
           case InstNodeType.DERIVED_CLASS() then true;
-          case InstNodeType.REDECLARED_CLASS() then isUserdefinedClass(ty.parent);
+          case InstNodeType.REDECLARED_CLASS() then isUserdefinedClass(borrow(ty.parent));
           else false;
         end match;
       else false;
@@ -450,7 +488,7 @@ uniontype InstNode
     input InstNode parent = EMPTY_NODE();
     input Option<Absyn.Path> context = NONE();
   algorithm
-    node := setNodeType(InstNodeType.ROOT_CLASS(parent, context), node);
+    node := setNodeType(InstNodeType.ROOT_CLASS(scopeRef(parent), context), node);
   end makeRootClass;
 
   function isRootClass
@@ -478,7 +516,7 @@ uniontype InstNode
     output Boolean isFunc;
   algorithm
     isFunc := match node
-      case CLASS_NODE()     then Class.isFunction(PointerCyclic.access(node.cls));
+      case CLASS_NODE()     then Class.isFunction(Pointer.access(node.cls));
       case COMPONENT_NODE() then Class.isFunction(getClass(node));
       else false;
     end match;
@@ -500,7 +538,7 @@ uniontype InstNode
     output Boolean iterator;
   algorithm
     iterator := match node
-      case COMPONENT_NODE() then Component.isIterator(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isIterator(Pointer.access(node.component));
       else false;
     end match;
   end isIterator;
@@ -514,6 +552,24 @@ uniontype InstNode
       else false;
     end match;
   end isRef;
+
+  function isVar
+    "True for a backend VAR_NODE, which names a variable by pointer."
+    input InstNode node;
+    output Boolean isVar;
+  algorithm
+    isVar := match node
+      case VAR_NODE() then true;
+      else false;
+    end match;
+  end isVar;
+
+  function varPointer
+    input InstNode node;
+    output PointerWeak<Variable> varPointer;
+  algorithm
+    VAR_NODE(varPointer = varPointer) := node;
+  end varPointer;
 
   function isEmpty
     input InstNode node;
@@ -660,9 +716,16 @@ uniontype InstNode
   end typeName;
 
   function rename
+    "Renaming makes a copy, so the copy gets an identity of its own: any handle
+     already naming the old node keeps pointing at the old cell, which still
+     holds the old name. Doing it here rather than at each call site is what
+     lets `NodeHandle.CELL` cache the name -- a rename can no longer be seen
+     through a handle that was made before it."
     input String name;
     input output InstNode node;
   algorithm
+    node := reidentify(node);
+
     () := match node
       case CLASS_NODE()
         algorithm
@@ -690,13 +753,82 @@ uniontype InstNode
     end match;
   end rename;
 
+  function reidentify
+    "A fresh identity, for a node that is a copy of another rather than an
+     update of it. Nothing to do here; see NFInstNode.rust.mo."
+    input output InstNode node;
+  end reidentify;
+
+  function identityCell
+    "The scope reference a child stores to name this node as its parent. The
+     Rust port has to publish the node into its cell here; see
+     NFInstNode.rust.mo."
+    input InstNode node;
+    output ScopeRef identity = node;
+  end identityCell;
+
+  function scopeRef
+    "As `identityCell`, for a reference to a scope that is not this node's
+     parent: it must not replace the snapshot the node's children read. The
+     node itself here; see NFInstNode.rust.mo."
+    input InstNode node;
+    output ScopeRef scope = node;
+  end scopeRef;
+
+  function handle
+    "A weak handle for an edge that is not a parent edge. The node itself here;
+     see NFInstNode.rust.mo."
+    input InstNode node;
+    output NodeHandle hnd = NodeHandle.VALUE(node);
+  end handle;
+
+  function republish
+    "As `handle`, where the edge is an update of the same node rather than a
+     different one. Identical here; the Rust port has to replace the published
+     snapshot."
+    input InstNode node;
+    output NodeHandle hnd = handle(node);
+  end republish;
+
+  function handleName
+    "The name of the node a handle refers to. Resolving the node is the whole
+     cost of a weak edge, and `ComponentRef.isEqual`/`hashContinue` want only
+     the name, so the Rust port caches it in the handle -- see
+     NFInstNode.rust.mo."
+    input NodeHandle hnd;
+    output String name = InstNode.name(fromHandle(hnd));
+  end handleName;
+
+  function fromHandle
+    input NodeHandle hnd;
+    output InstNode node;
+  algorithm
+    node := match hnd
+      case NodeHandle.CELL() then MutableWeak.value(hnd.cell);
+      case NodeHandle.VALUE() then hnd.node;
+    end match;
+  end fromHandle;
+
+  function borrow
+    "The node a scope reference names, without taking ownership of it."
+    input ScopeRef cell;
+    output InstNode node = cell;
+  end borrow;
+
+  function fromCell
+    "The node a scope reference names. In the Rust port the scope may be gone,
+     and this owns what it hands back; see NFInstNode.rust.mo."
+    input ScopeRef cell;
+    output InstNode node = cell;
+  end fromCell;
+
   function parent
     input InstNode node;
     output InstNode parent;
   algorithm
     parent := match node
-      case CLASS_NODE() then node.parentScope;
-      case COMPONENT_NODE() then node.parent;
+      case CLASS_NODE() then fromCell(node.parentScope);
+      case COMPONENT_NODE() then fromCell(node.parent);
       case IMPLICIT_SCOPE() then node.parentScope;
       else EMPTY_NODE();
     end match;
@@ -710,19 +842,24 @@ uniontype InstNode
   function classParent
     input InstNode node;
     output InstNode parent;
+  protected
+    ScopeRef p;
   algorithm
-    CLASS_NODE(parentScope = parent) := node;
+    CLASS_NODE(parentScope = p) := node;
+    parent := fromCell(p);
   end classParent;
 
   function instanceParent
     "Returns the parent of the node in the instance tree."
     input InstNode node;
     output InstNode parent;
+  protected
+    ScopeRef rdcl_scope;
   algorithm
     parent := match node
       case CLASS_NODE() then getDerivedNode(parent(getDerivedNode(node)));
-      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
-        then getDerivedNode(parent);
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
+        then getDerivedNode(fromCell(rdcl_scope));
       case COMPONENT_NODE() then getDerivedNode(parent(getDerivedNode(node)));
       case IMPLICIT_SCOPE() then getDerivedNode(parent(getDerivedNode(node)));
       else EMPTY_NODE();
@@ -745,7 +882,7 @@ uniontype InstNode
     output InstNode parent;
   algorithm
     parent := match nodeType
-      case InstNodeType.ROOT_CLASS() guard not isEmpty(nodeType.parent) then nodeType.parent;
+      case InstNodeType.ROOT_CLASS() guard not isEmpty(borrow(nodeType.parent)) then borrow(nodeType.parent);
       case InstNodeType.DERIVED_CLASS() then rootTypeParent(nodeType.ty, node);
       else parent(node);
     end match;
@@ -760,6 +897,7 @@ uniontype InstNode
     output InstNode scope;
   protected
     InstNode orig_node;
+    ScopeRef rdcl_scope;
   algorithm
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS())
@@ -768,11 +906,11 @@ uniontype InstNode
         then
           if isBuiltin(scope) then
             // Builtin types like Real do not have a parent set, go to the top scope instead.
-            topScope(node.parentScope)
+            topScope(fromCell(node.parentScope))
           elseif referenceEq(node, scope) then
             // lastBaseClass above might return the same node if the class has
             // been flattened, go directly to the parent to avoid an infinite loop.
-            node.parentScope
+            fromCell(node.parentScope)
           else
             parentScope(scope);
 
@@ -780,12 +918,12 @@ uniontype InstNode
         guard ignoreRedeclare
         then parentScope(orig_node);
 
-      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = rdcl_scope))
         guard ignoreRedeclare
-        then scope;
+        then fromCell(rdcl_scope);
 
-      case CLASS_NODE() then node.parentScope;
-      case COMPONENT_NODE() then parentScope(Component.classInstance(PointerCyclic.access(node.component)));
+      case CLASS_NODE() then fromCell(node.parentScope);
+      case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;
     end match;
   end parentScope;
@@ -829,17 +967,18 @@ uniontype InstNode
     output InstNode scope;
   protected
     InstNode orig_node;
+    ScopeRef rdcl_scope;
   algorithm
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
         guard ignoreRedeclare
         then enclosingScope(orig_node, ignoreRedeclare, ignoreBaseClass);
 
-      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = rdcl_scope))
         guard ignoreRedeclare
-        then scope;
+        then fromCell(rdcl_scope);
 
-      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(node.parentScope) else node.parentScope;
+      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(fromCell(node.parentScope)) else fromCell(node.parentScope);
       case COMPONENT_NODE() then enclosingScope(classScope(node), ignoreRedeclare, ignoreBaseClass);
       case IMPLICIT_SCOPE() then node.parentScope;
     end match;
@@ -851,7 +990,7 @@ uniontype InstNode
   algorithm
     scope := match node
       case COMPONENT_NODE()
-        then Component.classInstance(PointerCyclic.access(node.component));
+        then Component.classInstance(Pointer.access(node.component));
       else node;
     end match;
   end classScope;
@@ -862,7 +1001,7 @@ uniontype InstNode
     output InstNode lib;
   algorithm
     lib := match node
-      case CLASS_NODE(parentScope = CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE())) then node;
+      case CLASS_NODE() guard isTopScope(fromCell(node.parentScope)) then node;
       else libraryScope(parentScope(node));
     end match;
   end libraryScope;
@@ -873,6 +1012,15 @@ uniontype InstNode
   algorithm
     topScope := match node
       case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
+
+      // Walking past the top means a parent cell no longer holds its node.
+      // Without this the tail call is a loop and the compiler simply hangs.
+      case EMPTY_NODE()
+        algorithm
+          Error.addInternalError(getInstanceName() +
+            " walked past the top scope: a parent cell lost its node", sourceInfo());
+        then fail();
+
       else topScope(parent(node));
     end match;
   end topScope;
@@ -902,8 +1050,8 @@ uniontype InstNode
     output InstNode topComponent;
   algorithm
     topComponent := match node
-      case COMPONENT_NODE(parent = EMPTY_NODE()) then node;
-      case COMPONENT_NODE() then topComponent(node.parent);
+      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent)) then node;
+      case COMPONENT_NODE() then topComponent(fromCell(node.parent));
     end match;
   end topComponent;
 
@@ -914,13 +1062,13 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          node.parentScope := parent;
+          node.parentScope := identityCell(parent);
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          node.parent := parent;
+          node.parent := identityCell(parent);
         then
           ();
 
@@ -938,15 +1086,15 @@ uniontype InstNode
     input output InstNode node;
   algorithm
     () := match node
-      case CLASS_NODE(parentScope = EMPTY_NODE())
+      case CLASS_NODE() guard isEmpty(fromCell(node.parentScope))
         algorithm
-          node.parentScope := parent;
+          node.parentScope := identityCell(parent);
         then
           ();
 
-      case COMPONENT_NODE(parent = EMPTY_NODE())
+      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent))
         algorithm
-          node.parent := parent;
+          node.parent := identityCell(parent);
         then
           ();
 
@@ -959,9 +1107,9 @@ uniontype InstNode
     output Class cls;
   algorithm
     cls := match node
-      case CLASS_NODE() then PointerCyclic.access(node.cls);
+      case CLASS_NODE() then Pointer.access(node.cls);
       case COMPONENT_NODE()
-        then getClass(Component.classInstance(PointerCyclic.access(node.component)));
+        then getClass(Component.classInstance(Pointer.access(node.component)));
     end match;
   end getClass;
 
@@ -972,7 +1120,7 @@ uniontype InstNode
     cls := match node
       case CLASS_NODE() then getClass(getDerivedNode(node));
       case COMPONENT_NODE()
-        then getClass(getDerivedNode(Component.classInstance(PointerCyclic.access(node.component))));
+        then getClass(getDerivedNode(Component.classInstance(Pointer.access(node.component))));
     end match;
   end getDerivedClass;
 
@@ -994,7 +1142,8 @@ uniontype InstNode
     output InstNode derived;
   algorithm
     derived := match ty
-      case InstNodeType.BASE_CLASS() then if recursive then getDerivedNode(ty.parent) else ty.parent;
+      case InstNodeType.BASE_CLASS()
+        then if recursive then getDerivedNode(fromCell(ty.parent)) else fromCell(ty.parent);
       case InstNodeType.DERIVED_CLASS() then getDerivedNode2(node, ty.ty, recursive);
       else node;
     end match;
@@ -1007,7 +1156,7 @@ uniontype InstNode
     node := match node
       case CLASS_NODE()
         algorithm
-          PointerCyclic.update(node.cls, cls);
+          Pointer.update(node.cls, cls);
           CachedData.clearTypeCache(node.caches);
         then
           node;
@@ -1019,7 +1168,7 @@ uniontype InstNode
     output Component component;
   algorithm
     component := match node
-      case COMPONENT_NODE() then PointerCyclic.access(node.component);
+      case COMPONENT_NODE() then Pointer.access(node.component);
       case VAR_NODE()       then Component.WILD();
       case NAME_NODE()      then Component.WILD();
     end match;
@@ -1032,7 +1181,7 @@ uniontype InstNode
     node := match node
       case COMPONENT_NODE()
         algorithm
-          PointerCyclic.update(node.component, component);
+          Pointer.update(node.component, component);
         then
           node;
     end match;
@@ -1045,7 +1194,7 @@ uniontype InstNode
     () := match node
       case COMPONENT_NODE()
         algorithm
-          node.component := PointerCyclic.create(component);
+          node.component := Pointer.create(component);
         then
           ();
     end match;
@@ -1058,7 +1207,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          node.cls := PointerCyclic.create(cls);
+          node.cls := Pointer.create(cls);
         then
           ();
     end match;
@@ -1125,7 +1274,7 @@ uniontype InstNode
   algorithm
     definition := match node
       case CLASS_NODE()     then node.definition;
-      case COMPONENT_NODE() then classDefinition(Component.classInstance(PointerCyclic.access(node.component)));
+      case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
@@ -1173,7 +1322,7 @@ uniontype InstNode
   algorithm
     node := match node
       case COMPONENT_NODE() algorithm
-        node.component := PointerCyclic.create(Component.setDirection(direction, PointerCyclic.access(node.component)));
+        node.component := Pointer.create(Component.setDirection(direction, Pointer.access(node.component)));
       then node;
 
       else algorithm
@@ -1192,8 +1341,8 @@ uniontype InstNode
       case CLASS_NODE(nodeType = ty as InstNodeType.BASE_CLASS())
         then SCodeUtil.elementInfo(ty.definition);
       case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
-      case COMPONENT_NODE() then Component.info(PointerCyclic.access(node.component));
-      case COMPONENT_NODE() then info(node.parent);
+      case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
+      case COMPONENT_NODE() then info(fromCell(node.parent));
       else Absyn.dummyInfo;
     end matchcontinue;
   end info;
@@ -1205,10 +1354,10 @@ uniontype InstNode
     Variable var;
   algorithm
     ty := match node
-      case CLASS_NODE()     then Class.getType(PointerCyclic.access(node.cls), node);
-      case COMPONENT_NODE() then Component.getType(PointerCyclic.access(node.component));
+      case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
+      case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
       case VAR_NODE() algorithm
-        var := PointerCyclic.access(node.varPointer);
+        var := Pointer.access(PointerWeak.upgrade(node.varPointer));
       then var.ty;
       case NAME_NODE()      then Type.UNKNOWN();
     end match;
@@ -1227,7 +1376,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          PointerCyclic.update(node.cls, func(arg, PointerCyclic.access(node.cls)));
+          Pointer.update(node.cls, func(arg, Pointer.access(node.cls)));
         then
           ();
     end match;
@@ -1246,7 +1395,7 @@ uniontype InstNode
     () := match node
       case COMPONENT_NODE()
         algorithm
-          PointerCyclic.update(node.component, func(arg, PointerCyclic.access(node.component)));
+          Pointer.update(node.component, func(arg, Pointer.access(node.component)));
         then
           ();
     end match;
@@ -1261,12 +1410,13 @@ uniontype InstNode
     scopes := match node
       local
         InstNode parent;
+        ScopeRef rdcl_scope;
 
       case CLASS_NODE() then scopeListClass(node, node.nodeType, includeRoot, accumScopes);
-      case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
-      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
-        then scopeList(parent, includeRoot, node :: accumScopes);
-      case COMPONENT_NODE() then scopeList(node.parent, includeRoot, node :: accumScopes);
+      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent)) then accumScopes;
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
+        then scopeList(fromCell(rdcl_scope), includeRoot, node :: accumScopes);
+      case COMPONENT_NODE() then scopeList(fromCell(node.parent), includeRoot, node :: accumScopes);
       case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
       else accumScopes;
     end match;
@@ -1283,7 +1433,7 @@ uniontype InstNode
       case InstNodeType.NORMAL_CLASS()
         then scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes);
       case InstNodeType.BASE_CLASS()
-        then scopeList(ty.parent, includeRoot, accumScopes);
+        then scopeList(fromCell(ty.parent), includeRoot, accumScopes);
       case InstNodeType.DERIVED_CLASS()
         then scopeListClass(clsNode, ty.ty, includeRoot, accumScopes);
       case InstNodeType.BUILTIN_CLASS()
@@ -1296,7 +1446,7 @@ uniontype InstNode
           else
             accumScopes;
       case InstNodeType.REDECLARED_CLASS()
-        then scopeList(ty.parent, includeRoot, getDerivedNode(clsNode) :: accumScopes);
+        then scopeList(fromCell(ty.parent), includeRoot, getDerivedNode(clsNode) :: accumScopes);
       case InstNodeType.IMPLICIT_SCOPE()
         then scopeList(parent(clsNode), includeRoot, accumScopes);
       else
@@ -1364,11 +1514,12 @@ uniontype InstNode
       case CLASS_NODE(nodeType = it)
         then
           match it
-            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, scopeType);
-            else scopePath2(node.parentScope, scopeType, Absyn.IDENT(node.name));
+            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass
+              then scopePath(fromCell(it.parent), scopeType);
+            else scopePath2(fromCell(node.parentScope), scopeType, Absyn.IDENT(node.name));
           end match;
 
-      case COMPONENT_NODE() then scopePath2(node.parent, scopeType, Absyn.IDENT(node.name));
+      case COMPONENT_NODE() then scopePath2(fromCell(node.parent), scopeType, Absyn.IDENT(node.name));
       case IMPLICIT_SCOPE() then scopePath(node.parentScope, scopeType);
 
       // For debugging.
@@ -1384,7 +1535,7 @@ uniontype InstNode
   algorithm
     path := match node
       case CLASS_NODE() then scopePathClass(node, node.nodeType, scopeType, accumPath);
-      case COMPONENT_NODE() then scopePath2(node.parent, scopeType, Absyn.QUALIFIED(node.name, accumPath));
+      case COMPONENT_NODE() then scopePath2(fromCell(node.parent), scopeType, Absyn.QUALIFIED(node.name, accumPath));
       else accumPath;
     end match;
   end scopePath2;
@@ -1400,7 +1551,7 @@ uniontype InstNode
       case InstNodeType.NORMAL_CLASS()
         then scopePath2(classParent(node), scopeType, Absyn.QUALIFIED(className(node), accumPath));
       case InstNodeType.BASE_CLASS()
-        then scopePath2(ty.parent, scopeType, accumPath);
+        then scopePath2(fromCell(ty.parent), scopeType, accumPath);
       case InstNodeType.DERIVED_CLASS()
         then scopePathClass(node, ty.ty, scopeType, accumPath);
       case InstNodeType.BUILTIN_CLASS()
@@ -1415,7 +1566,7 @@ uniontype InstNode
              else
                accumPath;
       case InstNodeType.REDECLARED_CLASS()
-        then scopePath2(ty.parent, scopeType, Absyn.QUALIFIED(className(node), accumPath));
+        then scopePath2(fromCell(ty.parent), scopeType, Absyn.QUALIFIED(className(node), accumPath));
       case InstNodeType.IMPLICIT_SCOPE()
         then scopePath2(classParent(node), scopeType, accumPath);
       else
@@ -1431,7 +1582,7 @@ uniontype InstNode
     output Boolean isInput;
   algorithm
     isInput := match node
-      case COMPONENT_NODE() then Component.isInput(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isInput(Pointer.access(node.component));
       else false;
     end match;
   end isInput;
@@ -1441,7 +1592,7 @@ uniontype InstNode
     output Boolean isOutput;
   algorithm
     isOutput := match node
-      case COMPONENT_NODE() then Component.isOutput(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isOutput(Pointer.access(node.component));
       else false;
     end match;
   end isOutput;
@@ -1451,7 +1602,7 @@ uniontype InstNode
     output Boolean isInner;
   algorithm
     isInner := match node
-      case COMPONENT_NODE() then Component.isInner(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isInner(Pointer.access(node.component));
       case CLASS_NODE()
         then AbsynUtil.isInner(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isInner(node.outerNode);
@@ -1464,7 +1615,7 @@ uniontype InstNode
     output Boolean isOuter;
   algorithm
     isOuter := match node
-      case COMPONENT_NODE() then Component.isOuter(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isOuter(Pointer.access(node.component));
       case CLASS_NODE()
         then AbsynUtil.isOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOuter(node.outerNode);
@@ -1477,7 +1628,7 @@ uniontype InstNode
     output Boolean isOuter;
   algorithm
     isOuter := match node
-      case COMPONENT_NODE() then Component.isOnlyOuter(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isOnlyOuter(Pointer.access(node.component));
       case CLASS_NODE()
         then AbsynUtil.isOnlyOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOnlyOuter(node.outerNode);
@@ -1593,7 +1744,7 @@ uniontype InstNode
     input PackageCacheState state;
   algorithm
     () := match node
-      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(packageNode, state)); then ();
+      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(handle(packageNode), state)); then ();
       else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setPackageCache;
@@ -1646,11 +1797,11 @@ uniontype InstNode
   algorithm
     refEqual := match (node1, node2)
       case (CLASS_NODE(), CLASS_NODE())
-        then referenceEq(PointerCyclic.access(node1.cls), PointerCyclic.access(node2.cls));
+        then referenceEq(Pointer.access(node1.cls), Pointer.access(node2.cls));
       case (COMPONENT_NODE(), COMPONENT_NODE())
-        then referenceEq(PointerCyclic.access(node1.component), PointerCyclic.access(node2.component));
+        then referenceEq(Pointer.access(node1.component), Pointer.access(node2.component));
       case (VAR_NODE(), VAR_NODE())
-        then referenceEq(PointerCyclic.access(node1.varPointer), PointerCyclic.access(node2.varPointer));
+        then referenceEq(Pointer.access(PointerWeak.upgrade(node1.varPointer)), Pointer.access(PointerWeak.upgrade(node2.varPointer)));
       // Other nodes like ref nodes might be equal, but we neither know nor care.
       else false;
     end match;
@@ -1663,13 +1814,13 @@ uniontype InstNode
   algorithm
     res := match (node1, node2)
       case (CLASS_NODE(), CLASS_NODE())
-        then Util.referenceCompare(PointerCyclic.access(node1.cls), PointerCyclic.access(node2.cls));
+        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.cls));
       case (COMPONENT_NODE(), COMPONENT_NODE())
-        then Util.referenceCompare(PointerCyclic.access(node1.component), PointerCyclic.access(node2.component));
+        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.component));
       case (CLASS_NODE(), COMPONENT_NODE())
-        then Util.referenceCompare(PointerCyclic.access(node1.cls), PointerCyclic.access(node2.component));
+        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.component));
       case (COMPONENT_NODE(), CLASS_NODE())
-        then Util.referenceCompare(PointerCyclic.access(node1.component), PointerCyclic.access(node2.cls));
+        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.cls));
     end match;
   end refCompare;
 
@@ -1730,7 +1881,7 @@ uniontype InstNode
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toString(node.name, PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.toString(node.name, Pointer.access(node.component));
       case CLASS_NODE() then SCodeDump.unparseElementStr(node.definition);
       else name(node);
     end match;
@@ -1743,8 +1894,8 @@ uniontype InstNode
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toFlatString(node.name, PointerCyclic.access(node.component), format, indent);
-      case CLASS_NODE() then Class.toFlatString(PointerCyclic.access(node.cls), node, format, indent);
+      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), format, indent);
+      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, format, indent);
       else name(node);
     end match;
   end toFlatString;
@@ -1756,8 +1907,8 @@ uniontype InstNode
     input output IOStream.IOStream s;
   algorithm
     s := match node
-      case COMPONENT_NODE() then Component.toFlatStream(node.name, PointerCyclic.access(node.component), format, indent, s);
-      case CLASS_NODE() then Class.toFlatStream(PointerCyclic.access(node.cls), node, format, indent, s);
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), format, indent, s);
+      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, format, indent, s);
       else IOStream.append(s, toFlatString(node, format, indent));
     end match;
   end toFlatStream;
@@ -1768,7 +1919,7 @@ uniontype InstNode
   algorithm
     isRedeclare := match node
       case CLASS_NODE() then SCodeUtil.isElementRedeclare(definition(node));
-      case COMPONENT_NODE() then Component.isRedeclare(PointerCyclic.access(node.component));
+      case COMPONENT_NODE() then Component.isRedeclare(Pointer.access(node.component));
       else false;
     end match;
   end isRedeclare;
@@ -1900,7 +2051,7 @@ uniontype InstNode
     output Boolean enc;
   algorithm
     enc := match node
-      case CLASS_NODE() then Class.isEncapsulated(PointerCyclic.access(node.cls));
+      case CLASS_NODE() then Class.isEncapsulated(Pointer.access(node.cls));
       case COMPONENT_NODE() then Class.isEncapsulated(getClass(node));
       else false;
     end match;
@@ -1911,8 +2062,8 @@ uniontype InstNode
     output Modifier mod;
   algorithm
     mod := match node
-      case CLASS_NODE() then Class.getModifier(PointerCyclic.access(node.cls));
-      case COMPONENT_NODE() then Component.getModifier(PointerCyclic.access(node.component));
+      case CLASS_NODE() then Class.getModifier(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Component.getModifier(Pointer.access(node.component));
       else Modifier.NOMOD();
     end match;
   end getModifier;
@@ -1924,13 +2075,13 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          PointerCyclic.update(node.cls, Class.mergeModifier(mod, PointerCyclic.access(node.cls)));
+          Pointer.update(node.cls, Class.mergeModifier(mod, Pointer.access(node.cls)));
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          PointerCyclic.update(node.component, Component.mergeModifier(mod, PointerCyclic.access(node.component)));
+          Pointer.update(node.component, Component.mergeModifier(mod, Pointer.access(node.component)));
         then
           ();
 
@@ -1945,13 +2096,13 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          PointerCyclic.update(node.cls, Class.setModifier(mod, PointerCyclic.access(node.cls)));
+          Pointer.update(node.cls, Class.setModifier(mod, Pointer.access(node.cls)));
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          PointerCyclic.update(node.component, Component.mergeModifier(mod, PointerCyclic.access(node.component)));
+          Pointer.update(node.component, Component.mergeModifier(mod, Pointer.access(node.component)));
         then
           ();
 
@@ -1974,7 +2125,7 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          cls := PointerCyclic.access(clsNode.cls);
+          cls := Pointer.access(clsNode.cls);
         then
           match cls
             case Class.DAE_TYPE() then stripDAETypeVars(cls.ty);
@@ -2026,7 +2177,7 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          cls := PointerCyclic.access(clsNode.cls);
+          cls := Pointer.access(clsNode.cls);
         then
           match cls
             case Class.DAE_TYPE() then cls.ty;
@@ -2037,7 +2188,7 @@ uniontype InstNode
                 state := Restriction.toDAE(res, fullPath(clsNode));
                 vars := ConvertDAE.makeTypeVars(clsNode);
                 outType := DAE.Type.T_COMPLEX(state, vars, NONE(), Restriction.isExternalRecord(res));
-                PointerCyclic.update(clsNode.cls, Class.DAE_TYPE(outType));
+                Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
                 outType;
           end match;
@@ -2070,7 +2221,7 @@ uniontype InstNode
     output Boolean isPartial;
   algorithm
     isPartial := match node
-      case CLASS_NODE() then Class.isPartial(PointerCyclic.access(node.cls));
+      case CLASS_NODE() then Class.isPartial(Pointer.access(node.cls));
       else false;
     end match;
   end isPartial;
@@ -2085,23 +2236,25 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          cls := PointerCyclic.access(node.cls);
+          cls := Pointer.access(node.cls);
           cls := Class.classTreeApply(cls, ClassTree.clone);
-          node.cls := PointerCyclic.create(cls);
+          node.cls := Pointer.create(cls);
           node.caches := CachedData.empty();
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          comp := PointerCyclic.access(node.component);
+          comp := Pointer.access(node.component);
           comp := Component.setClassInstance(InstNode.clone(Component.classInstance(comp)), comp);
-          node.component := PointerCyclic.create(comp);
+          node.component := Pointer.create(comp);
         then
           ();
 
       else ();
     end match;
+
+    node := reidentify(node);
   end clone;
 
   function cloneComponent
@@ -2111,8 +2264,12 @@ uniontype InstNode
   algorithm
     outComponent := match component
       case COMPONENT_NODE()
-        then COMPONENT_NODE(component.name, component.definition, component.visibility,
-          PointerCyclic.create(PointerCyclic.access(component.component)), newParent, component.nodeType);
+        then
+          COMPONENT_NODE(component.name, component.definition, component.visibility,
+            Pointer.create(Pointer.access(component.component)),
+            identityCell(newParent), component.nodeType);
+
+      else component;
     end match;
   end cloneComponent;
 
@@ -2127,7 +2284,7 @@ uniontype InstNode
         Class cls;
 
       case CLASS_NODE(definition = SCode.CLASS(cmt = cmt))
-        then cmt :: Class.getDerivedComments(PointerCyclic.access(node.cls), accumCmts);
+        then cmt :: Class.getDerivedComments(Pointer.access(node.cls), accumCmts);
 
       else accumCmts;
     end match;
@@ -2158,8 +2315,8 @@ uniontype InstNode
     output Boolean isRec;
   algorithm
     isRec := match node
-      case CLASS_NODE() then Restriction.isRecord(Class.restriction(PointerCyclic.access(node.cls)));
-      case COMPONENT_NODE() then isRecord(Component.classInstance(PointerCyclic.access(node.component)));
+      case CLASS_NODE() then Restriction.isRecord(Class.restriction(Pointer.access(node.cls)));
+      case COMPONENT_NODE() then isRecord(Component.classInstance(Pointer.access(node.component)));
       else false;
     end match;
   end isRecord;
@@ -2169,8 +2326,8 @@ uniontype InstNode
     output Boolean isModel;
   algorithm
     isModel := match node
-      case CLASS_NODE() then Restriction.isModel(Class.restriction(PointerCyclic.access(node.cls)));
-      case COMPONENT_NODE() then isModel(Component.classInstance(PointerCyclic.access(node.component)));
+      case CLASS_NODE() then Restriction.isModel(Class.restriction(Pointer.access(node.cls)));
+      case COMPONENT_NODE() then isModel(Component.classInstance(Pointer.access(node.component)));
       else false;
     end match;
   end isModel;
@@ -2186,7 +2343,7 @@ uniontype InstNode
   algorithm
     hasBinding := match node
       case COMPONENT_NODE()
-        then Component.hasBinding(PointerCyclic.access(node.component)) or hasBinding(instanceParent(node));
+        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(instanceParent(node));
       else false;
     end match;
   end hasBinding;
@@ -2203,13 +2360,13 @@ uniontype InstNode
       case COMPONENT_NODE() algorithm
         scope := instanceParent(node);
         try
-          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(PointerCyclic.access(node.component), scope));
+          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(Pointer.access(node.component), scope));
         else
           binding_exp := getBindingExpOpt(scope);
         end try;
       then binding_exp;
       case VAR_NODE() algorithm
-          var := PointerCyclic.access(node.varPointer);
+          var := Pointer.access(PointerWeak.upgrade(node.varPointer));
         then Binding.getExpOpt(var.binding);
       else NONE();
     end match;
@@ -2251,8 +2408,8 @@ uniontype InstNode
     output Integer count;
   algorithm
     count := match node
-      case COMPONENT_NODE() then Component.dimensionCount(PointerCyclic.access(node.component));
-      case CLASS_NODE() then Class.dimensionCount(PointerCyclic.access(node.cls));
+      case COMPONENT_NODE() then Component.dimensionCount(Pointer.access(node.component));
+      case CLASS_NODE() then Class.dimensionCount(Pointer.access(node.cls));
       else 0;
     end match;
   end dimensionCount;
@@ -2272,8 +2429,8 @@ uniontype InstNode
     output Restriction res;
   algorithm
     res := match node
-      case CLASS_NODE() then Class.restriction(PointerCyclic.access(node.cls));
-      case COMPONENT_NODE() then restriction(Component.classInstance(PointerCyclic.access(node.component)));
+      case CLASS_NODE() then Class.restriction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then restriction(Component.classInstance(Pointer.access(node.component)));
       case INNER_OUTER_NODE() then restriction(node.innerNode);
       else Restriction.UNKNOWN();
     end match;
@@ -2320,6 +2477,15 @@ uniontype InstNode
     InstNodeType.TOP_SCOPE(generatedInners = inners) := nodeType(InstNode.topScope(node));
     UnorderedMap.clear(inners);
   end clearGeneratedInners;
+
+  function scopeRoots
+    "The identity cells this node's tree owns; see TOP_SCOPE.roots. Pass it to
+     MutableWeak.useRoots before adding nodes to a tree built by an earlier run."
+    input InstNode node;
+    output MutableWeak.Roots roots;
+  algorithm
+    InstNodeType.TOP_SCOPE(roots = roots) := nodeType(InstNode.topScope(node));
+  end scopeRoots;
 
   function getAccessLevel
     input InstNode node;

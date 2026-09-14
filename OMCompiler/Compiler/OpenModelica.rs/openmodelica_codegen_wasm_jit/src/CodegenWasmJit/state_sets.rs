@@ -13,7 +13,7 @@ pub(super) fn build_state_set_infos(
     use openmodelica_backend_types::BackendDAE::VarKind;
     let mut infos = Vec::new();
     let mut cursor = layout.stateset_off;
-    let real_slot = |var_map: &SimVarMap, cr: &Arc<DAE::ComponentRef>| -> Result<u32> {
+    let real_slot = |var_map: &SimVarMap, cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
         let slot = var_map
             .vars
@@ -101,11 +101,11 @@ pub(super) fn build_state_set_infos(
 pub(super) fn build_stateset_jac_fn(
     state_sets: &List<SimCode::StateSet>,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut eqs: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
+    let mut eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = Vec::new();
     for set in lst(state_sets) {
         for col in lst(&set.jacobianMatrix.columns) {
             eqs.extend(lst(&col.constantEqns).cloned());
@@ -170,7 +170,7 @@ pub(super) fn stateset_diag_offsets(
 pub(super) fn lower_nonlinear_system(
     ctx: &mut FnCtx,
     nlsystem: &SimCode::NonlinearSystem,
-    _eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    _eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     let job = *ctx
         .sim()?

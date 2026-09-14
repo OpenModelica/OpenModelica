@@ -6,7 +6,6 @@
 // The entry points keep their MetaModelica names, which mmtorust calls.
 #![allow(non_snake_case)]
 
-use std::sync::Arc;
 
 use arcstr::ArcStr;
 use openmodelica_util::JSON::JSON;
@@ -973,12 +972,12 @@ fn render_icon_png(icon: &Icon) -> Vec<u8> {
 // JSON accessors. `None` plays the role of the C++ renderer's null Json
 // sentinel, so lookups chain without intermediate checks.
 
-type J = Option<Arc<JSON>>;
+type J = Option<metamodelica::Ref<JSON>>;
 
 trait JsonExt {
     fn get(&self, key: &str) -> J;
     fn at(&self, index: usize) -> J;
-    fn items(&self) -> Vec<Arc<JSON>>;
+    fn items(&self) -> Vec<metamodelica::Ref<JSON>>;
     fn len(&self) -> usize;
     fn is_object(&self) -> bool;
     fn is_array(&self) -> bool;
@@ -1012,7 +1011,7 @@ impl JsonExt for J {
         }
     }
 
-    fn items(&self) -> Vec<Arc<JSON>> {
+    fn items(&self) -> Vec<metamodelica::Ref<JSON>> {
         match self.as_deref() {
             Some(JSON::LIST { values }) => (&**values).into_iter().cloned().collect(),
             Some(JSON::ARRAY { values }) => (1..=Vector::size(values.clone()))

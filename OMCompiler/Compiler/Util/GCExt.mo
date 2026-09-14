@@ -35,6 +35,14 @@
 
 encapsulated package GCExt
 
+constant Boolean cellsNeedOwners = false
+  "True where a weak cell needs an explicit owner to stay alive, so `InstNode`
+   copies a record to set and clear one. A constant, so the C compiler folds
+   it and drops both the branch and the rooting call inside it: Boehm keeps
+   the cell alive by tracing, and an owner there would only build the cycle
+   the collector then has to reclaim. The Rust port sets it true -- `GCExt`
+   is hand-written there.";
+
 function gcollect
 external "C" GC_gcollect() annotation(Library = {"omcgc"});
 end gcollect;

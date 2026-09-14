@@ -1,9 +1,8 @@
 //! Mutable (aliasing) `Array<T>` builtins. Read-only constant tables
 //! use [`static_array::StaticArray`].
 
-use std::rc::Rc;
-use std::cell::RefCell;
 use crate::Result;
+use crate::mmval::MmVal;
 use crate::{Array, list::List};
 
 pub mod static_array;
@@ -11,27 +10,27 @@ pub use static_array::*;
 
 /// Wraps a `Vec<T>` into a fresh MetaModelica `Array<T>`.
 #[inline]
-pub fn arrayFromVec<A>(v: Vec<A>) -> Array<A> {
-    Rc::new(RefCell::new(v))
+pub fn arrayFromVec<A: MmVal>(v: Vec<A>) -> Array<A> {
+    Array::from_vec(v)
 }
 
-// All array fns take `Array<A>` by value: cloning an `Rc` is one atomic-free
-// refcount bump, so the by-value convention matches how `List<A>` is
+// All array fns take `Array<A>` by value: cloning the spine is one refcount
+// bump, so the by-value convention matches how `List<A>` is
 // handled elsewhere and lets generated call sites pass `arr.clone()` directly
 // without needing an explicit `&` prefix.
 
 /// Returns the length of the array. O(1).
-pub fn arrayLength<A>(arr: Array<A>) -> i32 {
+pub fn arrayLength<A: MmVal>(arr: Array<A>) -> i32 {
     arr.borrow().len() as i32
 }
 
 /// Returns true if the array is empty. O(1).
-pub fn arrayEmpty<A>(arr: Array<A>) -> bool {
+pub fn arrayEmpty<A: MmVal>(arr: Array<A>) -> bool {
     arr.borrow().is_empty()
 }
 
 /// Gets the element at the given 1-based index. O(1).
-pub fn arrayGet<A: Clone>(arr: Array<A>, index: i32) -> Result<A> {
+pub fn arrayGet<A: MmVal + Clone>(arr: Array<A>, index: i32) -> Result<A> {
     let idx = (index - 1) as usize; // 1-based to 0-based
     let v = arr.borrow();
     v.get(idx)
@@ -40,9 +39,9 @@ pub fn arrayGet<A: Clone>(arr: Array<A>, index: i32) -> Result<A> {
 }
 
 /// Creates a new array of the given size, initialized with initialValue. O(size).
-pub fn arrayCreate<A: Clone>(size: i32, initial_value: A) -> Array<A> {
+pub fn arrayCreate<A: MmVal + Clone>(size: i32, initial_value: A) -> Array<A> {
     if size <= 0 {
-        return arrayFromVec(Vec::new());
+        return arrayFromVec(Vec::<A>::new());
     }
     arrayFromVec(vec![initial_value; size as usize])
 }
@@ -58,15 +57,15 @@ pub fn arrayCreate<A: Clone>(size: i32, initial_value: A) -> Array<A> {
 /// lack a `Default` impl will fail to compile at the use site — the fix is
 /// to add a sensible `Default` for that type (often the "empty" or "first
 /// variant" form).
-pub fn arrayCreateDefault<A: Clone + Default>(size: i32) -> Array<A> {
+pub fn arrayCreateDefault<A: MmVal + Clone + Default>(size: i32) -> Array<A> {
     if size <= 0 {
-        return arrayFromVec(Vec::new());
+        return arrayFromVec(Vec::<A>::new());
     }
     arrayFromVec(vec![A::default(); size as usize])
 }
 
 /// Converts an array to a list. O(n).
-pub fn arrayList<A: Clone>(arr: Array<A>) -> List<A> {
+pub fn arrayList<A: MmVal + Clone>(arr: Array<A>) -> List<A> {
     let mut result = crate::nil();
     for item in arr.borrow().iter().rev().cloned() {
         result = List::cons(result, item);
@@ -75,7 +74,7 @@ pub fn arrayList<A: Clone>(arr: Array<A>) -> List<A> {
 }
 
 /// Converts a list to an array. O(n).
-pub fn listArray<A: Clone>(lst: List<A>) -> Array<A> {
+pub fn listArray<A: MmVal + Clone>(lst: List<A>) -> Array<A> {
     let mut result = Vec::new();
     for item in &lst {
         result.push(item.clone());
@@ -87,7 +86,7 @@ pub fn listArray<A: Clone>(lst: List<A>) -> Array<A> {
 /// Mutates the underlying storage; the change is visible through every alias
 /// of the same array. Returns the same `Rc` (a cheap clone) so call sites can
 /// chain or reassign as the MetaModelica signature suggests.
-pub fn arrayUpdate<A: Clone>(arr: Array<A>, index: i32, new_value: A) -> Result<Array<A>> {
+pub fn arrayUpdate<A: MmVal + Clone>(arr: Array<A>, index: i32, new_value: A) -> Result<Array<A>> {
     let idx = (index - 1) as usize; // 1-based to 0-based
     {
         let mut v = arr.borrow_mut();
@@ -116,13 +115,13 @@ pub fn index_mut_checked<A>(v: &mut [A], index: i32) -> Result<&mut A> {
 
 /// Creates a (deep, by-element) copy of the array. O(n).
 /// The returned array does NOT share storage with the input.
-pub fn arrayCopy<A: Clone>(arr: Array<A>) -> Array<A> {
+pub fn arrayCopy<A: MmVal + Clone>(arr: Array<A>) -> Array<A> {
     arrayFromVec(arr.borrow().clone())
 }
 
 /// Appends arr2 to arr1, creating a new array. O(length(arr1) + length(arr2)).
 /// The result does not share storage with either input.
-pub fn arrayAppend<A: Clone>(arr1: Array<A>, arr2: Array<A>) -> Array<A> {
+pub fn arrayAppend<A: MmVal + Clone>(arr1: Array<A>, arr2: Array<A>) -> Array<A> {
     let mut result = arr1.borrow().clone();
     result.extend(arr2.borrow().iter().cloned());
     arrayFromVec(result)
@@ -139,7 +138,7 @@ mod tests {
     mod array_function_tests {
         use super::*;
 
-        fn arr<A>(v: Vec<A>) -> Array<A> { arrayFromVec(v) }
+        fn arr<A: MmVal>(v: Vec<A>) -> Array<A> { arrayFromVec(v) }
 
         #[test]
         fn test_array_length() {

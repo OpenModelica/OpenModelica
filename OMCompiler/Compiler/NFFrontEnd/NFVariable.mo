@@ -96,6 +96,7 @@ public
     SourceInfo info;
     BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
     array<InstNode> child_nodes;
+    Type elem_ty;
     list<Variable> children = {};
   algorithm
     node := ComponentRef.node(cref);
@@ -118,7 +119,8 @@ public
     // get the record children if the variable is a record
     if not Type.isExternalObject(ty) then
       children := match Type.arrayElementType(ty)
-        case Type.COMPLEX(cls = class_node) algorithm
+        case elem_ty as Type.COMPLEX() algorithm
+          class_node := Type.complexNode(elem_ty);
           child_nodes := Class.getComponents(InstNode.getClass(class_node));
           children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
         then children;

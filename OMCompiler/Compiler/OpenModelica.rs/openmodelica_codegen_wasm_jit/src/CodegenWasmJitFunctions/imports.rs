@@ -382,5 +382,5 @@ pub(crate) fn rt_index(name: &str) -> Result<u32> {
 /// `generateFunctionName` (`AbsynUtil.pathStringUnquoteReplaceDot(path, "_")`).
 /// Used as the key that resolves a `CALL` to one of the generated functions.
 pub(crate) fn mangle(path: &Absyn::Path) -> Result<String> {
-    Ok(AbsynUtil::pathStringUnquoteReplaceDot(Arc::new(path.clone()), arcstr::literal!("_"))?.to_string())
+    Ok(AbsynUtil::pathStringUnquoteReplaceDot(metamodelica::Ref::new(path.clone()), arcstr::literal!("_"))?.to_string())
 }

@@ -196,3 +196,14 @@ impl<T> metamodelica::ReferenceEq for Pointer<T> {
         referenceEq(self, other)
     }
 }
+
+/// A plain cell is *not* where a cycle is closed — that is `MutableCyclic`'s
+/// job — so it stays an `Arc` barrier. Under-reporting only ever makes the
+/// collector keep too much.
+impl<T: Clone + metamodelica::mmval::MmVal> metamodelica::mmval::MmVal for Pointer<T> {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
+        let _ = visitor;
+        Ok(())
+    }
+}

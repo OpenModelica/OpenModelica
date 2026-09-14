@@ -41,6 +41,7 @@ encapsulated uniontype NFAlgorithm
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import Statement = NFStatement;
   import Type = NFType;
 
@@ -58,7 +59,8 @@ public
     list<ComponentRef> inputs;
     list<ComponentRef> outputs;
     Option<UnorderedSet<Statement>> stmtDiffInfo;
-    InstNode scope;
+    NFInstNode.ScopeRef scope "Weakly: that scope's sections hold
+      the algorithm.";
     DAE.ElementSource source;
   end ALGORITHM;
 

@@ -217,12 +217,12 @@ pub(super) fn extobj_destructor_key(sv: &SimCodeVar::SimVar) -> Result<String> {
     };
     let dpath = openmodelica_frontend_dump::AbsynUtil::joinPaths(
         path,
-        Arc::new(openmodelica_ast::Absyn::Path::IDENT { name: arcstr::literal!("destructor") }),
+        metamodelica::Ref::new(openmodelica_ast::Absyn::Path::IDENT { name: arcstr::literal!("destructor") }),
     )?;
     crate::CodegenWasmJitFunctions::mangle(&dpath)
 }
 
 /// Flatten a `list<SimEqSystem>` to a Vec of references.
-pub(super) fn flatten_eqs(eqs: &List<Arc<SimCode::SimEqSystem>>) -> Vec<Arc<SimCode::SimEqSystem>> {
+pub(super) fn flatten_eqs(eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>) -> Vec<metamodelica::Ref<SimCode::SimEqSystem>> {
     lst(eqs).cloned().collect()
 }

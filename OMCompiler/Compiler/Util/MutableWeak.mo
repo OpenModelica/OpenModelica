@@ -1,0 +1,152 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+encapsulated uniontype MutableWeak<T>
+"A non-owning reference to a Mutable cell.
+
+Breaks an ownership cycle so plain reference counting can reclaim it: a
+child holds its parent weakly, the parent owns its children, and the whole
+structure hangs off one strong root. Nothing here is reclaimed by a
+collector — the point is that no collector is needed.
+
+In the bootstrapped C compiler a weak reference *is* the strong one (Boehm
+reclaims cycles by tracing, so there is nothing to break) and `strong` can
+never fail. The Rust port gives it real weak semantics, and `strong` fails
+if the referent is already gone. Only code that can hold a weak reference
+past its owner's lifetime can observe the difference."
+
+import Mutable;
+
+impure function downgrade
+  "A reference that does not keep the cell alive. Never fails."
+  input Mutable<T> mutable;
+  output MutableWeak<T> weak;
+external "C" weak=mutableWeakDowngrade(mutable) annotation(Include="
+static inline void* mutableWeakDowngrade(void *mutable)
+{
+  return mutable;
+}
+");
+end downgrade;
+
+impure function upgrade
+  "An owning cell again. Fails if the referent is already gone — which means
+   a weak reference outlived the structure that owned it, so the ownership
+   split is wrong somewhere. Dereferencing a cell never fails; only this
+   conversion does."
+  input MutableWeak<T> weak;
+  output Mutable<T> mutable;
+external "C" mutable=mutableWeakUpgrade(weak) annotation(Include="
+static inline void* mutableWeakUpgrade(void *weak)
+{
+  return weak;
+}
+");
+end upgrade;
+
+impure function upgradeOwning
+  "As `upgrade`, for a read that takes ownership of the cell (`InstNode.
+   fromCell`, which then rebuilds the record to set its owner) rather than
+   merely looking at it (`InstNode.borrow`). Identical at run time; split out
+   so `OPENMODELICA_CELL_STATS` can tell the two apart, since only the owning
+   one pays for a record copy."
+  input MutableWeak<T> weak;
+  output Mutable<T> mutable;
+external "C" mutable=mutableWeakUpgrade(weak) annotation(Include="
+static inline void* mutableWeakUpgrade(void *weak)
+{
+  return weak;
+}
+");
+end upgradeOwning;
+
+impure function ofValue
+  "A handle that *is* the value. In the C compiler no cell is needed at all --
+   a weak reference there is the strong one -- so the node is stored directly
+   and `value` reads it straight back, which is what the frontend did before
+   any of this. Never reached where `GCExt.cellsNeedOwners` is true."
+  input T val;
+  output MutableWeak<T> weak;
+external "C" weak=mutableWeakOfValue(val) annotation(Include="
+static inline void* mutableWeakOfValue(void *val)
+{
+  return val;
+}
+");
+end ofValue;
+
+impure function value
+  "The value a handle made by `ofValue` holds."
+  input MutableWeak<T> weak;
+  output T val;
+external "C" val=mutableWeakValue(weak) annotation(Include="
+static inline void* mutableWeakValue(void *weak)
+{
+  return weak;
+}
+");
+end value;
+
+uniontype Roots
+  "The cells one structure keeps alive. Whatever owns that structure holds this
+   too, so the cells outlive every weak reference into it and die with it.
+   Empty in the C compiler, where a weak reference is the strong one."
+  record ROOTS end ROOTS;
+end Roots;
+
+function newRoots
+  "A fresh set, and the one `root` adds to from here on. The caller stores it
+   in whatever owns the cells about to be made."
+  output Roots roots = ROOTS();
+end newRoots;
+
+function useRoots
+  "Adds to `roots` again, for re-entering a structure built by an earlier run.
+   Inlined to nothing in the C compiler."
+  input Roots roots;
+algorithm
+  annotation(__OpenModelica_EarlyInline = true);
+end useRoots;
+
+function root
+  "Adds a cell to the current set. Inlined to nothing in the C compiler, so the
+   call does not survive code generation."
+  input Mutable<T> mutable;
+algorithm
+  annotation(__OpenModelica_EarlyInline = true);
+end root;
+
+annotation(__OpenModelica_Interface="util_datatypes_basic");
+end MutableWeak;

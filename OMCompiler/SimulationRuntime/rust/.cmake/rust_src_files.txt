@@ -64,6 +64,7 @@ openmodelica_result_bench/src/writers.rs
 openmodelica_result_capi/Cargo.toml
 openmodelica_result_capi/include/omc_result.h
 openmodelica_result_capi/src/lib.rs
+openmodelica_result_capi/src/writer.rs
 openmodelica_result_cli/Cargo.toml
 openmodelica_result_cli/src/main.rs
 openmodelica_result_diff/Cargo.toml

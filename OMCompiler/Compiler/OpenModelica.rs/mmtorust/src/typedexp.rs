@@ -468,7 +468,7 @@ pub(crate) fn walk_dotted_with_imports<'a>(
             // which are then reached through the renamed `FunctionTree` alias.
             // Without this fall-through, dotted calls like `FunctionTree.new()`
             // fail to resolve and the call emits as if `new` were an associated
-            // function of `Arc<FunctionTreeImpl::Tree>`.
+            // function of `metamodelica::Ref<FunctionTreeImpl::Tree>`.
             if !rest.is_empty()
                 && let Some((parent_target, _)) = target.rsplit_once('.') {
                 let alt = format!("{parent_target}.{rest}");
@@ -1911,7 +1911,7 @@ pub fn infer_exp<'a>(
                 // declared function type in `env` instead. Without this the
                 // scrutinee of a downstream pattern-let infers as `Unknown` and
                 // the `match_deref!` Arc-peeling for a recursive uniontype
-                // pattern (`Arc<DAE::Type>`) is skipped (E0308).
+                // pattern (`metamodelica::Ref<DAE::Type>`) is skipped (E0308).
                 let local_fn_output: Option<Ty> = if !func.contains('.') {
                     let resolve_fn_output = |t: &Ty| -> Option<Ty> {
                         match t {
@@ -2285,7 +2285,7 @@ fn infer_case<'a>(
                 }
             }
             Absyn::TypeSpec::TCOMPLEX { path, typeSpecs, .. } => {
-                let args: Vec<std::sync::Arc<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
+                let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
                 let ctor = path_to_dotted(path);
                 match ctor.as_str() {
                     "Option" if args.len() == 1 => {
@@ -2328,7 +2328,7 @@ fn infer_case<'a>(
         }
     }
 
-    fn infer_case_locals(local_decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
+    fn infer_case_locals(local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
         let mut out = Vec::new();
         for item in (&**local_decls).into_iter() {
             let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
@@ -2414,7 +2414,7 @@ fn infer_case<'a>(
                 TypedStmt::If { cond, then_, elseif, else_ }
             }
             Absyn::Equation::EQ_FOR { iterators, forEquations } => {
-                let iters: Vec<std::sync::Arc<Absyn::ForIterator>> = (&**iterators).into_iter().cloned().collect();
+                let iters: Vec<metamodelica::Ref<Absyn::ForIterator>> = (&**iterators).into_iter().cloned().collect();
                 if iters.len() == 1 {
                     let Absyn::ForIterator { name, range, .. } = &*iters[0];
                     let range_e = match range {
@@ -2461,7 +2461,7 @@ fn infer_case<'a>(
     }
 
     fn infer_eq_items_list_arc<'a>(
-        items: &metamodelica::List<std::sync::Arc<Absyn::EquationItem>>,
+        items: &metamodelica::List<metamodelica::Ref<Absyn::EquationItem>>,
         env: &mut HashMap<String, Ty>,
         top_level: &'a BTreeMap<String, NameNode<'a>>,
         pkg_prefix: &str,
@@ -2661,7 +2661,7 @@ fn infer_case<'a>(
 ///
 /// `type_vars` must be the function-level type variable names (e.g. `["Key"]`).
 fn infer_case_locals_standalone(
-    local_decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>,
+    local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
     type_vars: &[String],
     top_level: &BTreeMap<String, NameNode<'_>>,
     pkg_prefix: &str,
@@ -2688,7 +2688,7 @@ fn infer_case_locals_standalone(
                 }
             }
             Absyn::TypeSpec::TCOMPLEX { path, typeSpecs, .. } => {
-                let args: Vec<std::sync::Arc<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
+                let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
                 let ctor = path_to_dotted(path);
                 match ctor.as_str() {
                     "Option" if args.len() == 1 => {
@@ -2775,7 +2775,7 @@ pub fn resolve_typespec<'a>(
             }
         }
         Absyn::TypeSpec::TCOMPLEX { path, typeSpecs, .. } => {
-            let args: Vec<std::sync::Arc<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
+            let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
             let ctor = path_to_dotted(path);
             match ctor.as_str() {
                 "Option" if args.len() == 1 => {
@@ -3391,7 +3391,7 @@ pub enum TypedStmt {
 /// a list of `MODIFICATION` element-args; we look for one whose path is the
 /// bare identifier `name` bound to the literal `true` (`name = true`).
 pub(crate) fn comment_has_boolean_named_annotation(
-    comment: &Option<Arc<Absyn::Comment>>,
+    comment: &Option<metamodelica::Ref<Absyn::Comment>>,
     name: &str,
 ) -> bool {
     let Some(comment) = comment else { return false };
@@ -3447,7 +3447,7 @@ fn infer_stmt_into<'a>(
 /// Infer a list of algorithm items into typed statements, threading the env so that
 /// each pattern-assign extends bindings visible to subsequent stmts.
 pub fn infer_stmts<'a>(
-    items: &[Arc<Absyn::AlgorithmItem>],
+    items: &[metamodelica::Ref<Absyn::AlgorithmItem>],
     env: &mut HashMap<String, Ty>,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
     pkg_prefix: &str,
@@ -3547,7 +3547,7 @@ fn infer_stmt<'a>(
         Absyn::Algorithm::ALG_FOR { iterators, forBody }
         | Absyn::Algorithm::ALG_PARFOR { iterators, parforBody: forBody } => {
             // Single-iterator form only.
-            let iters: Vec<Arc<Absyn::ForIterator>> = (&**iterators).into_iter().cloned().collect();
+            let iters: Vec<metamodelica::Ref<Absyn::ForIterator>> = (&**iterators).into_iter().cloned().collect();
             if iters.len() == 1 {
                 let Absyn::ForIterator { name, range, .. } = &*iters[0];
                 let range_e = match range {
@@ -3619,7 +3619,7 @@ fn infer_stmt<'a>(
 }
 
 fn infer_stmts_list<'a>(
-    items: &metamodelica::List<std::sync::Arc<Absyn::AlgorithmItem>>,
+    items: &metamodelica::List<metamodelica::Ref<Absyn::AlgorithmItem>>,
     env: &mut HashMap<String, Ty>,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
     pkg_prefix: &str,

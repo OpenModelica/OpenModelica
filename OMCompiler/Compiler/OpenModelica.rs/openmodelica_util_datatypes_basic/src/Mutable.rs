@@ -154,15 +154,141 @@ impl<T: Clone + Default + MMTrace + 'static> Default for Mutable<T> {
     }
 }
 
+/// `OPENMODELICA_CELL_STATS=1` counts the identity-cell traffic, reported by
+/// `GCExt.gcollect`. The weak-parent design pays a record copy per publish
+/// (`disown`) and per owning read (`reown`), so these counts are what a
+/// redesign has to move.
+pub mod stats {
+    use std::cell::Cell;
+    thread_local! {
+        pub static CREATED: Cell<u64> = const { Cell::new(0) };
+        pub static UPDATED: Cell<u64> = const { Cell::new(0) };
+        pub static ACCESSED: Cell<u64> = const { Cell::new(0) };
+        // These belong to `MutableWeak`, but they live here so that `GCExt`
+        // can report them without naming that module: the bootstrap pass
+        // compiles this crate against a partial `lib.rs` that declares
+        // `Mutable` but not `MutableWeak`, and the full transpile which would
+        // declare it runs later.
+        pub static UPGRADED: Cell<u64> = const { Cell::new(0) };
+        pub static UPGRADED_OWNING: Cell<u64> = const { Cell::new(0) };
+        pub static ROOTED: Cell<u64> = const { Cell::new(0) };
+    }
+    #[inline]
+    pub fn bump(c: &'static std::thread::LocalKey<Cell<u64>>) {
+        c.with(|v| v.set(v.get().wrapping_add(1)));
+    }
+    /// Read once into a `OnceLock`: `access` is on a multi-million-call path
+    /// (5.8M for EngineV6), so the disabled check has to be a plain load and
+    /// not a thread-local with an `Option` in it.
+    #[inline]
+    pub fn enabled() -> bool {
+        static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *ON.get_or_init(|| std::env::var_os("OPENMODELICA_CELL_STATS").is_some())
+    }
+    pub fn report() -> (u64, u64, u64) {
+        (
+            CREATED.with(|c| c.get()),
+            UPDATED.with(|c| c.get()),
+            ACCESSED.with(|c| c.get()),
+        )
+    }
+}
+
+/// `OPENMODELICA_CELL_SAMPLE=N` captures a backtrace every Nth upgrade and
+/// aggregates by the innermost frontend frame, so the scope walks doing the
+/// ~5M reads can be named rather than guessed at. Sampling, because a capture
+/// costs far more than the upgrade it is measuring.
+pub mod sample {
+    use std::cell::RefCell;
+    use std::collections::BTreeMap;
+    thread_local! {
+        static N: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+        static SEEN: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+        static HITS: RefCell<BTreeMap<String, usize>> = RefCell::new(BTreeMap::new());
+    }
+    fn every() -> u64 {
+        static E: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+        *E.get_or_init(|| {
+            std::env::var("OPENMODELICA_CELL_SAMPLE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0)
+        })
+    }
+    pub fn enabled() -> bool {
+        every() > 0
+    }
+    /// The innermost `openmodelica_*` frame that is not part of the cell
+    /// machinery itself -- that is the caller worth naming.
+    fn innermost(bt: &str) -> String {
+        for line in bt.lines() {
+            let l = line.trim();
+            let Some(i) = l.find("openmodelica_") else { continue };
+            let sym = &l[i..];
+            let sym = sym.split(&[' ', '(', ':'][..]).next().unwrap_or(sym);
+            // Skip the cell machinery itself: `borrow`/`fromCell` are always
+            // the innermost frontend frames, so naming them says nothing.
+            const MACHINERY: [&str; 6] = [
+                "MutableWeak",
+                "::Mutable::",
+                "InstNode::borrow",
+                "InstNode::fromCell",
+                "InstNode::fromHandle",
+                "InstNode::fromIdentity",
+            ];
+            if MACHINERY.iter().any(|m| l.contains(m)) {
+                continue;
+            }
+            let end = l[i..].find(" at ").map(|e| i + e).unwrap_or(l.len());
+            let full = l[i..end].trim().to_string();
+            if !full.is_empty() {
+                return full;
+            }
+            return sym.to_string();
+        }
+        "<unattributed>".to_string()
+    }
+    pub fn tick() {
+        let e = every();
+        let n = N.with(|c| {
+            let v = c.get() + 1;
+            c.set(v);
+            v
+        });
+        if n % e != 0 {
+            return;
+        }
+        SEEN.with(|c| c.set(c.get() + 1));
+        let bt = std::backtrace::Backtrace::force_capture().to_string();
+        let key = innermost(&bt);
+        HITS.with(|h| *h.borrow_mut().entry(key).or_insert(0) += 1);
+    }
+    pub fn report() -> (u64, Vec<(String, usize)>) {
+        let mut v: Vec<(String, usize)> =
+            HITS.with(|h| h.borrow().iter().map(|(k, n)| (k.clone(), *n)).collect());
+        v.sort_by(|a, b| b.1.cmp(&a.1));
+        (SEEN.with(|c| c.get()), v)
+    }
+}
+
 pub fn create<T: Clone + MMTrace + 'static>(data: T) -> Mutable<T> {
+    if stats::enabled() {
+        stats::bump(&stats::CREATED);
+    }
     Mutable(new_cell(data))
 }
 
 pub fn update<T: Clone>(mutable: Mutable<T>, data: T) {
+    if stats::enabled() {
+        stats::bump(&stats::UPDATED);
+    }
     cell_set(&mutable.0, data);
 }
 
 pub fn access<T: Clone>(mutable: Mutable<T>) -> T {
+    if stats::enabled() {
+        stats::bump(&stats::ACCESSED);
+    }
     cell_get(&mutable.0)
 }
 
@@ -199,5 +325,16 @@ impl<T: Clone + MMTrace> MMTrace for Mutable<T> {
         } else {
             Ok(())
         }
+    }
+}
+
+/// A plain cell is *not* where a cycle is closed — that is `MutableCyclic`'s
+/// job — so it stays an `Arc` barrier. Under-reporting only ever makes the
+/// collector keep too much.
+impl<T: Clone + metamodelica::mmval::MmVal> metamodelica::mmval::MmVal for Mutable<T> {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
+        let _ = visitor;
+        Ok(())
     }
 }

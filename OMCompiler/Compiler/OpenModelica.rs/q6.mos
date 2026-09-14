@@ -1,0 +1,6 @@
+n := readSimulationResultSize("c/Modelica.Blocks.Examples.Rectifier6pulseFFT/Modelica.Blocks.Examples.Rectifier6pulseFFT_res.mat");
+c := readSimulationResult("c/Modelica.Blocks.Examples.Rectifier6pulseFFT/Modelica.Blocks.Examples.Rectifier6pulseFFT_res.mat", {time, groundDC.p.i}, n);
+w := readSimulationResult("wj/Modelica.Blocks.Examples.Rectifier6pulseFFT/Modelica.Blocks.Examples.Rectifier6pulseFFT_res.mat", {time, groundDC.p.i}, n);
+for i in 1:n loop
+  if abs(c[2,i]-w[2,i]) > 1e-12 then print("t=" + String(c[1,i]) + " C=" + String(c[2,i]) + " WJ=" + String(w[2,i]) + "\n"); end if;
+end for;

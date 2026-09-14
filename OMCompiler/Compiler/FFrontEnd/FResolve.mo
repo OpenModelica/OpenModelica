@@ -426,7 +426,7 @@ algorithm
         true := FNode.isRefClassExtends(r);
         FCore.CL(e = SCode.CLASS(name = id)) := FNode.refData(r);
         // get the parent where the extends are!
-        p::_ := FNode.parents(FNode.fromRef(r));
+        p := FNode.contextualParent(FNode.fromRef(r));
         // search ONLY in extends!
         (g, rr) := FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption);
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
@@ -439,7 +439,7 @@ algorithm
         true := FNode.isRefClassExtends(r);
         FCore.CL(e = SCode.CLASS(name = id)) := FNode.refData(r);
         // get the parent where the extends are!
-        p::_ := FNode.parents(FNode.fromRef(r));
+        p := FNode.contextualParent(FNode.fromRef(r));
         // search ONLY in extends!
         failure(FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption));
         print("FResolve.clsext_one: class extends: " + id + " scope: " + FNode.toPathStr(FNode.fromRef(r)) +
@@ -658,7 +658,7 @@ algorithm
         true := (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
         id := SCodeUtil.elementName(FNode.getElement(FNode.fromRef(r)));
         // get the parent where the extends are!
-        p::_ := FNode.parents(FNode.fromRef(r));
+        p := FNode.contextualParent(FNode.fromRef(r));
         // search ONLY in extends!
         (g, rr) := FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption);
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
@@ -672,7 +672,7 @@ algorithm
         true := (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
         id := SCodeUtil.elementName(FNode.getElement(FNode.fromRef(r)));
         // get the parent where the extends are!
-        p::_ := FNode.parents(FNode.fromRef(r));
+        p := FNode.contextualParent(FNode.fromRef(r));
         // search ONLY in extends!
         failure(FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption));
         print("FResolve.elred_one: redeclare as element: " + id + " scope: " + FNode.toPathStr(FNode.fromRef(r)) +

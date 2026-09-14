@@ -15,7 +15,7 @@ use crate::AvlSetString as S;
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /// Build a set from a &[&str] slice.
-fn set_of(keys: &[&str]) -> Result<Arc<S::Tree>> {
+fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<S::Tree>> {
     let mut t = S::new();
     for k in keys {
         t = S::add(t, arcstr::format!("{}", k))?;
@@ -24,7 +24,7 @@ fn set_of(keys: &[&str]) -> Result<Arc<S::Tree>> {
 }
 
 /// Collect listKeys into a Vec<String> for easy comparison.
-fn keys_vec(t: Arc<S::Tree>) -> Vec<String> {
+fn keys_vec(t: metamodelica::Ref<S::Tree>) -> Vec<String> {
     let list = S::listKeys(t, metamodelica::nil());
     let mut v = vec![];
     for k in &*list { v.push(k.to_string()); }

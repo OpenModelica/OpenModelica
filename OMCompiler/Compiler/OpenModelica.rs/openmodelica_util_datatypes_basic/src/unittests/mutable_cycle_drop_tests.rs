@@ -47,7 +47,7 @@ fn probe() -> (Arc<DropProbe>, Weak<DropProbe>, Arc<AtomicUsize>) {
 
 /// Minimal stand-in for a generated uniontype that stores a `Mutable` cell,
 /// shaped like `InstNode.CLASS_NODE { cls: Mutable<Arc<...>>, ... }`.
-/// Generated uniontypes are `Arc<enum>`, so the cell holds `Arc<Node>`.
+/// Generated uniontypes are `Arc<enum>`, so the cell holds `metamodelica::Ref<Node>`.
 #[derive(Clone, Debug)]
 enum Node {
     Empty,
@@ -56,7 +56,7 @@ enum Node {
     #[allow(dead_code)]
     Link {
         probe: Arc<DropProbe>,
-        next: Mutable::Mutable<Arc<Node>>,
+        next: Mutable::Mutable<metamodelica::Ref<Node>>,
     },
 }
 
@@ -75,6 +75,15 @@ impl MMTrace for Node {
     }
 }
 
+/// A plain `Mutable` is not a cyclic cell, so this stand-in is untraced and
+/// its `Ref` is an `Arc` — which is what the old collector walks.
+impl metamodelica::mmval::MmVal for Node {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> Result<(), ()> {
+        Ok(())
+    }
+}
+
 // ── harness sanity: refcounting alone frees acyclic structure ───────────
 
 // No cycle: a cell points at a Link whose `next` is a *different* cell
@@ -84,8 +93,8 @@ impl MMTrace for Node {
 #[test]
 fn acyclic_mutable_chain_is_dropped() {
     let (p, weak, drops) = probe();
-    let tail = Mutable::create(Arc::new(Node::Empty));
-    let head = Mutable::create(Arc::new(Node::Link { probe: p, next: tail }));
+    let tail = Mutable::create(metamodelica::Ref::new(Node::Empty));
+    let head = Mutable::create(metamodelica::Ref::new(Node::Link { probe: p, next: tail }));
     assert_eq!(drops.load(Ordering::SeqCst), 0);
     assert!(weak.upgrade().is_some());
     drop(head);
@@ -101,10 +110,10 @@ fn acyclic_mutable_chain_is_dropped() {
 /// in-cycle one has been dropped by the time this returns.
 fn build_self_cycle() -> (Weak<DropProbe>, Arc<AtomicUsize>) {
     let (p, weak, drops) = probe();
-    let cell = Mutable::create(Arc::new(Node::Empty));
+    let cell = Mutable::create(metamodelica::Ref::new(Node::Empty));
     Mutable::update(
         cell.clone(),
-        Arc::new(Node::Link { probe: p, next: cell.clone() }),
+        metamodelica::Ref::new(Node::Link { probe: p, next: cell.clone() }),
     );
     // `cell` (the last external handle) is dropped here.
     (weak, drops)
@@ -114,12 +123,12 @@ fn build_self_cycle() -> (Weak<DropProbe>, Arc<AtomicUsize>) {
 /// at each other's cells.
 fn build_two_cell_cycle() -> (Weak<DropProbe>, Arc<AtomicUsize>) {
     let (p, weak, drops) = probe();
-    let a = Mutable::create(Arc::new(Node::Empty));
-    let b = Mutable::create(Arc::new(Node::Link { probe: p, next: a.clone() }));
-    Mutable::update(a.clone(), Arc::new(Node::Empty)); // exercise update on a too
+    let a = Mutable::create(metamodelica::Ref::new(Node::Empty));
+    let b = Mutable::create(metamodelica::Ref::new(Node::Link { probe: p, next: a.clone() }));
+    Mutable::update(a.clone(), metamodelica::Ref::new(Node::Empty)); // exercise update on a too
     Mutable::update(
         a,
-        Arc::new(Node::Link {
+        metamodelica::Ref::new(Node::Link {
             probe: Arc::new(DropProbe { drops: drops.clone() }),
             next: b,
         }),
@@ -149,10 +158,10 @@ fn two_cell_cycle_through_mutable_update_is_dropped() {
 #[test]
 fn live_cycle_survives_collect() {
     let (p, weak, drops) = probe();
-    let cell = Mutable::create(Arc::new(Node::Empty));
+    let cell = Mutable::create(metamodelica::Ref::new(Node::Empty));
     Mutable::update(
         cell.clone(),
-        Arc::new(Node::Link { probe: p, next: cell.clone() }),
+        metamodelica::Ref::new(Node::Link { probe: p, next: cell.clone() }),
     );
     collect();
     assert_eq!(drops.load(Ordering::SeqCst), 0, "live cycle was freed");
@@ -165,15 +174,15 @@ fn live_cycle_survives_collect() {
 }
 
 // The regression that ruled out tracing-pointer libraries (dumpster freed
-// this case): the cycle-closing value is *shared* — the same `Arc<Node>`
+// this case): the cycle-closing value is *shared* — the same `metamodelica::Ref<Node>`
 // that contains the in-cycle handle is also held on the stack. The cell has
 // no external handle of its own, but it is reachable through the shared
 // content, so it must survive.
 #[test]
 fn content_shared_with_stack_survives_collect() {
     let (p, weak, drops) = probe();
-    let cell = Mutable::create(Arc::new(Node::Empty));
-    let link = Arc::new(Node::Link { probe: p, next: cell.clone() });
+    let cell = Mutable::create(metamodelica::Ref::new(Node::Empty));
+    let link = metamodelica::Ref::new(Node::Link { probe: p, next: cell.clone() });
     Mutable::update(cell.clone(), link.clone());
     drop(cell);
     collect();

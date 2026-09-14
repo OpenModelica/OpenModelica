@@ -26,7 +26,7 @@ fn init_flags() {
     });
 }
 
-fn make_ident(name: &str) -> Arc<DAE::ComponentRef> {
+fn make_ident(name: &str) -> metamodelica::Ref<DAE::ComponentRef> {
     CRB::makeCrefIdent(
         arcstr::format!("{}", name),
         DAE::T_REAL_DEFAULT().clone(),
@@ -36,12 +36,12 @@ fn make_ident(name: &str) -> Arc<DAE::ComponentRef> {
 
 fn make_ident_with_subs(
     name: &str,
-    subs: metamodelica::List<Arc<DAE::Subscript>>,
-) -> Arc<DAE::ComponentRef> {
+    subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>>,
+) -> metamodelica::Ref<DAE::ComponentRef> {
     CRB::makeCrefIdent(arcstr::format!("{}", name), DAE::T_REAL_DEFAULT().clone(), subs)
 }
 
-fn make_qual(name: &str, rest: Arc<DAE::ComponentRef>) -> Arc<DAE::ComponentRef> {
+fn make_qual(name: &str, rest: metamodelica::Ref<DAE::ComponentRef>) -> metamodelica::Ref<DAE::ComponentRef> {
     CRB::makeCrefQual(
         arcstr::format!("{}", name),
         DAE::T_REAL_DEFAULT().clone(),
@@ -50,9 +50,9 @@ fn make_qual(name: &str, rest: Arc<DAE::ComponentRef>) -> Arc<DAE::ComponentRef>
     )
 }
 
-fn index_sub(i: i32) -> Arc<DAE::Subscript> {
-    Arc::new(DAE::Subscript::INDEX {
-        exp: Arc::new(DAE::Exp::ICONST { integer: i }),
+fn index_sub(i: i32) -> metamodelica::Ref<DAE::Subscript> {
+    metamodelica::Ref::new(DAE::Subscript::INDEX {
+        exp: metamodelica::Ref::new(DAE::Exp::ICONST { integer: i }),
     })
 }
 
@@ -280,7 +280,7 @@ fn cref_subs_ident_with_subs() -> Result<()> {
     let sub = index_sub(3);
     let cr = make_ident_with_subs("x", list![sub.clone()]);
     let subs = CRB::crefSubs(cr)?;
-    let v: Vec<Arc<DAE::Subscript>> = subs.into_iter().cloned().collect();
+    let v: Vec<metamodelica::Ref<DAE::Subscript>> = subs.into_iter().cloned().collect();
     assert_eq!(v.len(), 1);
     assert_eq!(v[0], sub);
     Ok(())

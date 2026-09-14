@@ -20,14 +20,15 @@ macro_rules! list {
     };
 }
 
-/// Functionally update a single field of a record value stored as `Arc<T>`.
+/// Functionally update a single field of a record value stored behind a
+/// shared handle (`Arc<T>` or `metamodelica::Ref<T>`).
 ///
 /// MetaModelica record update (`var.field := value`) has value semantics: a new
-/// record is produced and rebound. We model the record as `Arc<T>` for cheap
-/// sharing, so direct field mutation through the `Arc` is impossible. This macro
+/// record is produced and rebound. The record lives behind a shared handle for
+/// cheap sharing, so direct field mutation through it is impossible. This macro
 /// clones the underlying record (a shallow copy — the contained fields are
-/// themselves cheap `Arc` handles or scalars), overwrites the targeted field on
-/// the owned copy, and rebinds `$base` to a fresh `Arc<T>`.
+/// themselves cheap handles or scalars), overwrites the targeted field on the
+/// owned copy, and rebinds `$base` to a fresh handle of the same kind.
 ///
 /// For multi-record uniontypes (Rust enums), use `assign_variant_field!` instead:
 /// the matched variant must be named explicitly because the enum tag is not
@@ -35,8 +36,8 @@ macro_rules! list {
 /// (or any plain struct), this macro suffices.
 #[macro_export]
 macro_rules! assign_field {
-    // One or more field assignments against the same `Arc<T>` base. The clone
-    // and the `Arc::new` happen once for the whole batch, no matter how many
+    // One or more field assignments against the same base. The clone and the
+    // reallocation happen once for the whole batch, no matter how many
     // fields are updated. All assignments must target the same identifier; the
     // macro reuses `$base` as the storage and only matches the trailing entries
     // to keep the parser happy.
@@ -48,7 +49,7 @@ macro_rules! assign_field {
         let mut __owned = (*$base).clone();
         __owned.$first_field = $first_value;
         $( __owned.$field = $value; )*
-        $base = ::std::sync::Arc::new(__owned);
+        $base = __owned.into();
     }};
 }
 
@@ -100,7 +101,7 @@ macro_rules! assign_variant_field {
                 );
             }
         )*
-        $base = ::std::sync::Arc::new(__owned);
+        $base = __owned.into();
     }};
 }
 
@@ -117,7 +118,7 @@ macro_rules! assign_variant_field {
 ///
 /// Two input forms are supported:
 ///   - `var_field!(v.field, Pkg::Type::VARIANT)` for a plain (owned) enum value.
-///   - `var_field!((*v).field, Pkg::Type::VARIANT)` when `v` is `Arc<Enum>` /
+///   - `var_field!((*v).field, Pkg::Type::VARIANT)` when `v` is `metamodelica::Ref<Enum>` /
 ///     other `Deref`-able smart pointer; the explicit `*` selects the deref arm.
 ///
 /// The variant path must be supplied so the destructure picks the right arm;
@@ -146,7 +147,7 @@ macro_rules! var_field {
             ),
         }
     };
-    // Reference to a smart pointer (e.g. `&Arc<Enum>`): produced by `ref`
+    // Reference to a smart pointer (e.g. `&metamodelica::Ref<Enum>`): produced by `ref`
     // pattern bindings on Arc-typed fields under `deref_patterns`. The first
     // `*` strips the outer reference, the second `*` derefs the Arc.
     ( ( * * $base:ident ) . $field:ident , $($variant:ident)::+ ) => {

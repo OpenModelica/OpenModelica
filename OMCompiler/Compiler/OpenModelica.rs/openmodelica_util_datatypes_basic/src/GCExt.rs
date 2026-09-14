@@ -3,6 +3,9 @@
 #![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
 
 use std::sync::Arc;
+
+/// The Rust port has real weak semantics, so a cell needs an explicit owner.
+pub const cellsNeedOwners: bool = true;
 use arcstr::ArcStr;
 use metamodelica::Result;
 use loop_unwrap::unwrap_break_err;
@@ -38,14 +41,73 @@ pub fn free<T>(data: T) {}
 
 // MetaModelica `GCExt.gcollect` maps to one run of the cycle collector: the
 // refcounted heap frees acyclic garbage eagerly on its own, so an explicit
-// collection only needs to reclaim cycles closed through mutable cells.
+// collection only needs to reclaim cycles closed through cyclic cells.
+/// `OPENMODELICA_GC_CYCLE_LOG=1`: report which types were actually on a
+/// reclaimed cycle. Pair it with `OPENMODELICA_GC_DISABLE=1` so nothing is
+/// collected until this call and the report covers the whole run. A static
+/// analysis cannot answer this — it sees a cycle wherever two types refer to
+/// each other, even when the values form a tree.
+fn collect_reporting() {
+    if std::env::var_os("OPENMODELICA_GC_CYCLE_LOG").is_none() {
+        metamodelica::gc::collect();
+        return;
+    }
+    metamodelica::gc::log_cycles();
+    // Report only: nothing should be cyclic any more, so a collector bug here
+    // would free live data rather than reclaim garbage.
+    let stats = metamodelica::gc::report_only();
+    let mut log = metamodelica::gc::take_cycle_log();
+    log.sort_by(|a, b| b.1.cmp(&a.1));
+    let total: usize = log.iter().map(|(_, n)| n).sum();
+    // `traced` is the denominator: reclaimed went *up* on a change that
+    // removed a strong edge is only good news if traced did not go up with it,
+    // which is what tells a converted leak from fresh garbage.
+    eprintln!(
+        "gc-cycle-log: reclaimed {total} allocations across {} types, of {} traced",
+        log.len(),
+        stats.traced_allocations
+    );
+    for (ty, n) in log.iter().take(40) {
+        eprintln!("  {n:>9}  {ty}");
+    }
+}
+
+fn report_cell_stats() {
+    if crate::Mutable::stats::enabled() {
+        let (created, updated, accessed) = crate::Mutable::stats::report();
+        let upgraded = crate::Mutable::stats::UPGRADED.with(|c| c.get());
+        let owning = crate::Mutable::stats::UPGRADED_OWNING.with(|c| c.get());
+        let rooted = crate::Mutable::stats::ROOTED.with(|c| c.get());
+        eprintln!(
+            "cell-stats: {created} cells created, {rooted} rooted, {updated} published \
+             (a record copy each), {upgraded} borrowing + {owning} owning weak \
+             upgrades (the owning ones copy the record too), {accessed} reads"
+        );
+    }
+}
+
+fn report_cell_sample() {
+    if !crate::Mutable::sample::enabled() {
+        return;
+    }
+    let (seen, rows) = crate::Mutable::sample::report();
+    eprintln!("cell-sample: {seen} samples, innermost frontend frame:");
+    for (frame, n) in rows.iter().take(20) {
+        eprintln!("  {n:>7}  {frame}");
+    }
+}
+
 pub fn gcollect() {
-    metamodelica::gc::collect();
+    collect_reporting();
+    report_cell_stats();
+    report_cell_sample();
 }
 
 pub fn gcollectAndUnmap() {
     // No unmapping concept on the refcounted heap; same as `gcollect`.
-    metamodelica::gc::collect();
+    collect_reporting();
+    report_cell_stats();
+    report_cell_sample();
 }
 
 pub fn getForceUnmapOnGcollect() -> bool {
