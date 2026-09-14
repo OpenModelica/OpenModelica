@@ -75,9 +75,9 @@ fn collect_reporting() {
 fn report_cell_stats() {
     if crate::Mutable::stats::enabled() {
         let (created, updated, accessed) = crate::Mutable::stats::report();
-        let upgraded = crate::MutableWeak::UPGRADED.with(|c| c.get());
-        let owning = crate::MutableWeak::UPGRADED_OWNING.with(|c| c.get());
-        let rooted = crate::MutableWeak::ROOTED.with(|c| c.get());
+        let upgraded = crate::Mutable::stats::UPGRADED.with(|c| c.get());
+        let owning = crate::Mutable::stats::UPGRADED_OWNING.with(|c| c.get());
+        let rooted = crate::Mutable::stats::ROOTED.with(|c| c.get());
         eprintln!(
             "cell-stats: {created} cells created, {rooted} rooted, {updated} published \
              (a record copy each), {upgraded} borrowing + {owning} owning weak \
@@ -87,10 +87,10 @@ fn report_cell_stats() {
 }
 
 fn report_cell_sample() {
-    if !crate::MutableWeak::sample::enabled() {
+    if !crate::Mutable::sample::enabled() {
         return;
     }
-    let (seen, rows) = crate::MutableWeak::sample::report();
+    let (seen, rows) = crate::Mutable::sample::report();
     eprintln!("cell-sample: {seen} samples, innermost frontend frame:");
     for (frame, n) in rows.iter().take(20) {
         eprintln!("  {n:>7}  {frame}");
