@@ -2375,8 +2375,7 @@ public
             // A copy of the differentiated function, not an update of it: it
             // needs its own identity, or both nodes publish into one cell and
             // the derivative reads back the function it was derived from.
-            node            := InstNode.reidentify(
-              InstNode.rename(der_func_name + "." + InstNode.name(node), node));
+            node            := InstNode.rename(der_func_name + "." + InstNode.name(node), node);
             node            := InstNode.setDefinition(
               SCodeUtil.setElementName(InstNode.definition(node), InstNode.name(node)), node);
             // create "fake" function from new node, update cache to get correct derivative name

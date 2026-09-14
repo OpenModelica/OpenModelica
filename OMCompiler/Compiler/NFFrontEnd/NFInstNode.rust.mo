@@ -11,6 +11,17 @@ type ScopeRef = Option<MutableWeak<InstNode>>;
 
 constant ScopeRef NO_SCOPE = NONE();
 
+uniontype NodeHandle
+  record CELL
+    MutableWeak<InstNode> cell;
+    String name "The node's name, fixed for the cell's lifetime.";
+  end CELL;
+
+  record VALUE
+    InstNode node;
+  end VALUE;
+end NodeHandle;
+
 uniontype InstNode
   function identityCell
     "Publishes the node into its cell and returns a weak reference for a child
@@ -277,10 +288,25 @@ uniontype InstNode
   algorithm
     hnd := match identity
       local MutableWeak<InstNode> w;
-      case SOME(w) then NodeHandle.CELL(w);
+      // The name is cached alongside the cell: it cannot go stale, because a
+      // rename is a copy and `reidentify` gives the copy a cell of its own.
+      case SOME(w) then NodeHandle.CELL(w, name(node));
       else NodeHandle.VALUE(node);
     end match;
   end fromIdentity;
+
+  function handleName
+    "The cached name, without upgrading the weak reference. This is what makes
+     `ComponentRef.isEqual` and `hashContinue` free of cell traffic; they were
+     a quarter of every weak read in the compiler."
+    input NodeHandle hnd;
+    output String name;
+  algorithm
+    name := match hnd
+      case NodeHandle.CELL() then hnd.name;
+      case NodeHandle.VALUE() then InstNode.name(hnd.node);
+    end match;
+  end handleName;
 
   function newClass
     input SCode.Element definition;

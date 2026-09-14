@@ -24,6 +24,19 @@ encapsulated uniontype NFComponentRef
     node := InstNode.fromHandle(hnd);
   end node;
 
+  function nodeName
+    "The name off the handle: no weak upgrade, no record clone. `isEqual` and
+     `hashContinue` want only this, and between them they were a quarter of
+     every weak read in the compiler."
+    input ComponentRef cref;
+    output String name;
+  protected
+    NFInstNode.NodeHandle hnd;
+  algorithm
+    CREF(node = hnd) := cref;
+    name := InstNode.handleName(hnd);
+  end nodeName;
+
   function fromNode
     input InstNode node;
     input Type ty;
@@ -98,9 +111,7 @@ encapsulated uniontype NFComponentRef
     cref := match cref
       case CREF()
         algorithm
-          // A rename makes a copy, not an update: it needs its own identity,
-          // or it publishes nothing and reads back under the old name.
-          cref.node := InstNode.handle(InstNode.reidentify(InstNode.rename(name, node(cref))));
+          cref.node := InstNode.handle(InstNode.rename(name, node(cref)));
         then
           cref;
 

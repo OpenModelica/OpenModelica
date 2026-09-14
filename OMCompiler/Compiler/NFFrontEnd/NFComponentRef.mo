@@ -322,6 +322,15 @@ public
     CREF(node = node) := cref;
   end node;
 
+  function nodeName
+    "The name of the node this cref names, without necessarily resolving the
+     node. Identical to `InstNode.name(node(cref))` here; in the Rust port the
+     name is cached in the handle, which is what keeps `isEqual` and
+     `hashContinue` off the weak-read path."
+    input ComponentRef cref;
+    output String name = InstNode.name(node(cref));
+  end nodeName;
+
   function nodes
     input ComponentRef cref;
     input list<InstNode> accum = {};
@@ -703,9 +712,7 @@ public
     cref := match cref
       case CREF()
         algorithm
-          // A rename makes a copy, not an update: it needs its own identity,
-          // or it publishes nothing and reads back under the old name.
-          cref.node := InstNode.reidentify(InstNode.rename(name, node(cref)));
+          cref.node := InstNode.rename(name, node(cref));
         then
           cref;
 
@@ -1330,7 +1337,7 @@ public
 
     b := match (cref1, cref2)
       case (CREF(), CREF()) algorithm
-        then InstNode.name(node(cref1)) == InstNode.name(node(cref2)) and
+        then nodeName(cref1) == nodeName(cref2) and
           Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
           isEqual(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
@@ -1352,7 +1359,7 @@ public
 
     b := match (cref1, cref2)
       case (CREF(), CREF()) algorithm
-        then InstNode.name(node(cref1)) == InstNode.name(node(cref2)) and
+        then nodeName(cref1) == nodeName(cref2) and
           isEqualStrip(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
       case (WILD(), WILD()) then true;
@@ -1669,7 +1676,7 @@ public
     hash := match cref
       case CREF()
         algorithm
-          hash := stringHashDjb2Continue(InstNode.name(node(cref)), hash);
+          hash := stringHashDjb2Continue(nodeName(cref), hash);
 
           if not strip then
             for s in cref.subscripts loop

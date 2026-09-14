@@ -714,9 +714,16 @@ uniontype InstNode
   end typeName;
 
   function rename
+    "Renaming makes a copy, so the copy gets an identity of its own: any handle
+     already naming the old node keeps pointing at the old cell, which still
+     holds the old name. Doing it here rather than at each call site is what
+     lets `NodeHandle.CELL` cache the name -- a rename can no longer be seen
+     through a handle that was made before it."
     input String name;
     input output InstNode node;
   algorithm
+    node := reidentify(node);
+
     () := match node
       case CLASS_NODE()
         algorithm
@@ -780,6 +787,15 @@ uniontype InstNode
     input InstNode node;
     output NodeHandle hnd = handle(node);
   end republish;
+
+  function handleName
+    "The name of the node a handle refers to. Resolving the node is the whole
+     cost of a weak edge, and `ComponentRef.isEqual`/`hashContinue` want only
+     the name, so the Rust port caches it in the handle -- see
+     NFInstNode.rust.mo."
+    input NodeHandle hnd;
+    output String name = InstNode.name(fromHandle(hnd));
+  end handleName;
 
   function fromHandle
     input NodeHandle hnd;
