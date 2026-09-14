@@ -366,11 +366,7 @@ TVariableTreeProxyModel::TVariableTreeProxyModel(QObject *parent)
 
 bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (!filterRegularExpression().pattern().isEmpty()) {
-#else
-  if (!filterRegExp().isEmpty()) {
-#endif
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if (index.isValid()) {
       // if any of children matches the filter, then current index matches the filter as well
@@ -385,24 +381,12 @@ bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex 
       if (pTVariablesTreeItem) {
         QString variableName = pTVariablesTreeItem->getVariableName();
         variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         return variableName.contains(filterRegularExpression());
-#else
-        return variableName.contains(filterRegExp());
-#endif
       } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         return sourceModel()->data(index).toString().contains(filterRegularExpression());
-#else
-        return sourceModel()->data(index).toString().contains(filterRegExp());
-#endif
       }
       QString key = sourceModel()->data(index, filterRole()).toString();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return key.contains(filterRegularExpression());
-#else
-      return key.contains(filterRegExp());
-#endif
     }
   }
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
