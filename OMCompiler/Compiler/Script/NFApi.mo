@@ -55,7 +55,8 @@ import Expression = NFExpression;
 import Import = NFImport;
 import NFClass.Class;
 import NFInstNode.InstNode;
-  import NFInstNode;
+import NFInstNode;
+import MutableWeak;
 import NFInstNode.InstNodeType;
 import NFModifier.ModifierScope;
 import Equation = NFEquation;
@@ -517,6 +518,9 @@ algorithm
   if reuse then
     (program, top) := Util.tuple22(listHead(cache));
     InstNode.clearGeneratedInners(top);
+    // Nodes made from here on belong to the cached tree, so they have to be
+    // rooted there rather than in whatever run was last to build a top node.
+    MutableWeak.useRoots(InstNode.scopeRoots(top));
   else
     if not listEmpty(cache) then
       setGlobalRoot(Global.instNFNodeCacheIndex, {});

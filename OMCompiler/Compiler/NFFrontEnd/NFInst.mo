@@ -58,7 +58,6 @@ import Class = NFClass;
 import NFInstNode.InstNode;
   import NFInstNode;
 import MutableWeak;
-import GCExt;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import NFModifier.ModifierScope;
@@ -496,6 +495,7 @@ protected
   InstNodeType node_ty;
   InstNode ann_node;
   UnorderedMap<String, InstNode> generated_inners;
+  MutableWeak.Roots roots;
 algorithm
   //topNode := Inst_makeTopNode(topClasses, annotationClasses);
 
@@ -514,7 +514,9 @@ algorithm
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
   generated_inners := UnorderedMap.new<InstNode>(stringHashDjb2, stringEq);
-  node_ty := InstNodeType.TOP_SCOPE(InstNode.EMPTY_NODE(), generated_inners);
+  // The tree about to be built owns its identity cells; see TOP_SCOPE.roots.
+  roots := MutableWeak.newRoots();
+  node_ty := InstNodeType.TOP_SCOPE(InstNode.EMPTY_NODE(), generated_inners, roots);
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
 
   // Create a node for the builtin annotation classes. These should only be
@@ -537,7 +539,7 @@ algorithm
   // Recreate the node type for the top scope to include the annotation node.
   // Note that this means that the annotation node will refer to a top scope
   // without an annotation node, which avoid loops during lookup.
-  node_ty := InstNodeType.TOP_SCOPE(ann_node, generated_inners);
+  node_ty := InstNodeType.TOP_SCOPE(ann_node, generated_inners, roots);
   topNode := InstNode.setNodeType(node_ty, topNode);
 
   // Create a new class from the elements, and update the inst node with it.
@@ -560,9 +562,6 @@ algorithm
   // Root the top scope: everything below it refers to its enclosing scope
   // weakly, so nothing else keeps it alive.
   setGlobalRoot(Global.nfTopScope, {topNode});
-  if GCExt.cellsNeedOwners then
-    MutableWeak.clearRoots();
-  end if;
   setGlobalRoot(Global.nbCreatedVars, {});
 end makeTopNode;
 

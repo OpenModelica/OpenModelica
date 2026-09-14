@@ -22,54 +22,146 @@ impl<T: Clone> Clone for MutableWeak<T> {
 /// The Rust port has real weak semantics, so a cell needs an owner.
 pub const ownership: bool = true;
 
-thread_local! {
-    /// Cells kept alive for the current frontend run. `Mutable` cells are
-    /// owned by the node values that carry them, but a node whose value has
-    /// died is still reachable weakly, so the run holds those here until
-    /// `clearRoots`.
-    static ROOTED_CELLS: std::cell::RefCell<Vec<Arc<dyn metamodelica::gc::TraceableCell>>> =
-        const { std::cell::RefCell::new(Vec::new()) };
+type CellSet = std::sync::Mutex<Vec<Arc<dyn metamodelica::gc::TraceableCell>>>;
+
+/// A set of cells held alive together. A `Mutable` cell is owned by the node
+/// value that carries it, but a node reached weakly can outlive every value
+/// that owned it, so the structure the nodes belong to holds their cells here
+/// and they die with it.
+pub struct Roots(Arc<CellSet>);
+
+impl Clone for Roots {
+    fn clone(&self) -> Self {
+        Roots(Arc::clone(&self.0))
+    }
 }
 
-/// Keep a cell alive for the current run. A no-op in the bootstrapped
-/// compiler, where a weak reference is the strong one.
+thread_local! {
+    /// The set `root` adds to.
+    static CURRENT: std::cell::RefCell<Roots> = std::cell::RefCell::new(Roots::new());
+}
+
+impl Roots {
+    fn new() -> Self {
+        Roots(Arc::new(std::sync::Mutex::new(Vec::new())))
+    }
+
+    fn stats(&self) -> (usize, usize, usize, usize) {
+        let cells = self.0.lock().unwrap();
+        let (mut sole, mut sole_weak, mut shared) = (0, 0, 0);
+        for c in cells.iter() {
+            // This set's own reference is in the strong count, so 1 means
+            // dropping the set is what frees the cell.
+            if Arc::strong_count(c) == 1 {
+                sole += 1;
+                if Arc::weak_count(c) > 0 {
+                    sole_weak += 1;
+                }
+            } else {
+                shared += 1;
+            }
+        }
+        (cells.len(), sole, sole_weak, shared)
+    }
+}
+
+impl Default for Roots {
+    fn default() -> Self {
+        Roots::new()
+    }
+}
+
+/// `OPENMODELICA_ROOT_STATS=1` reports what a set is holding when it is
+/// replaced: how much of it the owning structure is the last reference to, and
+/// how much of that something still names weakly.
+fn report(roots: &Roots, what: &str) {
+    if std::env::var_os("OPENMODELICA_ROOT_STATS").is_some() {
+        let (total, sole, sole_weak, shared) = roots.stats();
+        eprintln!(
+            "root-stats ({what}): {total} rooted, {sole} held only here ({sole_weak} of them \
+             still weakly referenced), {shared} owned elsewhere"
+        );
+    }
+}
+
+/// A fresh set, and the one [`root`] adds to from here on.
+pub fn newRoots() -> Roots {
+    let roots = Roots::new();
+    CURRENT.with(|c| {
+        report(&c.borrow(), "replaced");
+        *c.borrow_mut() = roots.clone();
+    });
+    roots
+}
+
+/// Add to `roots` again, for re-entering a structure built by an earlier run.
+pub fn useRoots(roots: Roots) {
+    CURRENT.with(|c| *c.borrow_mut() = roots);
+}
+
+/// Add a cell to the current set. A no-op in the bootstrapped compiler, where
+/// a weak reference is the strong one.
 pub fn root<T: Clone + metamodelica::gc::MMTrace + 'static>(mutable: Mutable<T>) {
     if crate::Mutable::stats::enabled() {
         crate::Mutable::stats::bump(&crate::Mutable::stats::ROOTED);
     }
     let cell: Arc<dyn metamodelica::gc::TraceableCell> = mutable.0;
-    ROOTED_CELLS.with(|r| r.borrow_mut().push(cell));
+    CURRENT.with(|c| c.borrow().0.lock().unwrap().push(cell));
 }
 
-/// Drop everything [`root`] is holding.
-pub fn clearRoots() {
-    ROOTED_CELLS.with(|r| {
-        let mut cells = r.borrow_mut();
-        if std::env::var_os("OPENMODELICA_ROOT_STATS").is_some() {
-            let (mut sole, mut sole_weak, mut shared) = (0usize, 0usize, 0usize);
-            for c in cells.iter() {
-                // The root's own reference is included in the strong count, so
-                // 1 means dropping it here is what frees the cell.
-                if Arc::strong_count(c) == 1 {
-                    sole += 1;
-                    if Arc::weak_count(c) > 0 {
-                        sole_weak += 1;
-                    }
-                } else {
-                    shared += 1;
-                }
-            }
-            eprintln!(
-                "root-stats: {} rooted, {} freed by the clear ({} of them still \
-                 weakly referenced), {} owned elsewhere",
-                cells.len(),
-                sole,
-                sole_weak,
-                shared
-            );
-        }
-        cells.clear();
-    });
+// Identity, like `Pointer`'s: a set is a place, not a value.
+
+impl PartialEq for Roots {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for Roots {}
+
+impl PartialOrd for Roots {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Roots {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (Arc::as_ptr(&self.0) as *const ()).cmp(&(Arc::as_ptr(&other.0) as *const ()))
+    }
+}
+
+impl std::hash::Hash for Roots {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&(Arc::as_ptr(&self.0) as *const ()), state);
+    }
+}
+
+impl std::fmt::Debug for Roots {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Roots({})", self.0.lock().map(|c| c.len()).unwrap_or(0))
+    }
+}
+
+impl metamodelica::ReferenceEq for Roots {
+    fn reference_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+/// The cells are held, not owned in the MetaModelica sense: they are already
+/// reachable from the structure this set belongs to.
+impl metamodelica::mmval::MmVal for Roots {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> Result<(), ()> {
+        Ok(())
+    }
+}
+
+impl metamodelica::gc::MMTrace for Roots {
+    fn mm_accept(&self, _: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
+        Ok(())
+    }
 }
 
 /// A dangling reference, for a record field that has not been assigned yet.

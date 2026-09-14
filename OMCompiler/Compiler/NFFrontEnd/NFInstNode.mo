@@ -96,6 +96,9 @@ uniontype InstNodeType
     "The unnamed class containing all the top-level classes."
     InstNode annotationScope;
     UnorderedMap<String, InstNode> generatedInners;
+    MutableWeak.Roots roots "The identity cells of every node under this scope.
+      A node refers to its own scope weakly, and a cref outlives the node value
+      it was made from, so the tree owns the cells rather than the values do.";
   end TOP_SCOPE;
 
   record ROOT_CLASS
@@ -2474,6 +2477,15 @@ uniontype InstNode
     InstNodeType.TOP_SCOPE(generatedInners = inners) := nodeType(InstNode.topScope(node));
     UnorderedMap.clear(inners);
   end clearGeneratedInners;
+
+  function scopeRoots
+    "The identity cells this node's tree owns; see TOP_SCOPE.roots. Pass it to
+     MutableWeak.useRoots before adding nodes to a tree built by an earlier run."
+    input InstNode node;
+    output MutableWeak.Roots roots;
+  algorithm
+    InstNodeType.TOP_SCOPE(roots = roots) := nodeType(InstNode.topScope(node));
+  end scopeRoots;
 
   function getAccessLevel
     input InstNode node;

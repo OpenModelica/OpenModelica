@@ -119,19 +119,34 @@ static inline void* mutableWeakValue(void *weak)
 ");
 end value;
 
+uniontype Roots
+  "The cells one structure keeps alive. Whatever owns that structure holds this
+   too, so the cells outlive every weak reference into it and die with it.
+   Empty in the C compiler, where a weak reference is the strong one."
+  record ROOTS end ROOTS;
+end Roots;
+
+function newRoots
+  "A fresh set, and the one `root` adds to from here on. The caller stores it
+   in whatever owns the cells about to be made."
+  output Roots roots = ROOTS();
+end newRoots;
+
+function useRoots
+  "Adds to `roots` again, for re-entering a structure built by an earlier run.
+   Inlined to nothing in the C compiler."
+  input Roots roots;
+algorithm
+  annotation(__OpenModelica_EarlyInline = true);
+end useRoots;
+
 function root
-  "Keeps a cell alive for the current frontend run. Inlined to nothing in the
-   C compiler, so the call does not survive code generation."
+  "Adds a cell to the current set. Inlined to nothing in the C compiler, so the
+   call does not survive code generation."
   input Mutable<T> mutable;
 algorithm
   annotation(__OpenModelica_EarlyInline = true);
 end root;
-
-function clearRoots
-  "Drops everything `root` is holding. Inlined to nothing in the C compiler."
-algorithm
-  annotation(__OpenModelica_EarlyInline = true);
-end clearRoots;
 
 annotation(__OpenModelica_Interface="util_datatypes_basic");
 end MutableWeak;
