@@ -18,6 +18,8 @@ set(OM_PACKAGE_COMPONENTS
     omshellterminal
     omplot
     omnotebook
+    drmodelica
+    drcontrol
     omshell
     omedit
     omsens
@@ -132,6 +134,20 @@ cpack_add_component(omnotebook
                     DEPENDS simrt omplot
                     GROUP GUIClients
                     DESCRIPTION "A Mathematica-style Notebook for OpenModelica."
+                    )
+
+cpack_add_component(drmodelica
+                    DISPLAY_NAME "DrModelica"
+                    DEPENDS omnotebook
+                    GROUP GUIClients
+                    DESCRIPTION "The DrModelica tutorial, a collection of OMNotebook example notebooks for learning Modelica."
+                    )
+
+cpack_add_component(drcontrol
+                    DISPLAY_NAME "DrControl"
+                    DEPENDS omnotebook
+                    GROUP GUIClients
+                    DESCRIPTION "The DrControl tutorial, a collection of OMNotebook example notebooks for learning control theory with Modelica."
                     )
 
 cpack_add_component(omshell
