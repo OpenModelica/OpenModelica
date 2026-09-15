@@ -6,7 +6,7 @@
 // Frame buffer layout (STRIDE floats per shape, from the crate):
 //   [0] kind, [1..9] rot (res._T, row-major), [10..12] pos, [13..15] size
 //   (length,width,height), [16] extra, [17..19] color (0..255 RGB).
-// rot/pos follow OMEdit's OSG "poke" convention: a local point p (length axis =
+// rot/pos follow OMEdit's "poke" convention: a local point p (length axis =
 // local +Z) maps to world as p·rot + pos (row-vector), so the three.js matrix is
 // the transpose (see _applyShape).
 
@@ -17,7 +17,7 @@ import { OrbitControls } from './OrbitControls.js';
 const KIND = { BOX: 0, SPHERE: 1, CYLINDER: 2, CONE: 3, PIPECYLINDER: 4, PIPE: 5, BEAM: 6, GEARWHEEL: 7, SPRING: 8, CAD: 9 };
 
 // Unit geometry per kind, with the shape's length axis along local +Z and its
-// base at z=0 — matching OMEdit's osg primitives, so the crate's poke matrix
+// base at z=0 — matching OMEdit's primitives, so the crate's poke matrix
 // places them identically. Real dimensions come from a per-frame non-uniform
 // scale (see scaleFor). Radial kinds share a unit cylinder/cone/sphere.
 function buildUnitGeometries() {

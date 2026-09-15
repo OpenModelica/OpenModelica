@@ -135,7 +135,7 @@ Next install `MacPorts` by following the instructions on https://guide.macports.
 Once XCode and macports are installed, you need to install the dependencies for OpenModelica using `MacPorts`:
 
 ```sh
-sudo port install curl libiconv gettext flex cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11
+sudo port install curl libiconv gettext flex cmake ccache qt5 qt5-qtwebkit autoconf boost openjdk11
 ```
 
 ##### 3.3.1.2 Homebrew
@@ -323,7 +323,7 @@ OM_OMSHELL_ENABLE_TERMINAL=ON
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt
 based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser,
 OMPlot, OMShell. You will need to install and make available the necessary packages (and
-their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
+their dependencies) such as the Qt libs ...
 
 `OM_ENABLE_ENCRYPTION` allows you to enable/disable building OpenModelica with library
 encryption support. Note that, for this to work, you need an additional module which is

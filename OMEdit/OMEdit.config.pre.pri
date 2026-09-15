@@ -30,7 +30,17 @@
 #
 # See the full OSMC Public License conditions for more details.
 
+# Only the animation windows use Qt Quick 3D, and configure can turn them off.
+win32 {
+  CONFIG += animation
+} else {
+  include($$PWD/OMEdit.animation.unix.config.pri)
+}
+
 QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
+CONFIG(animation) {
+  QT += quick quick3d qml quickwidgets
+}
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
   qtHaveModule(httpserver) {

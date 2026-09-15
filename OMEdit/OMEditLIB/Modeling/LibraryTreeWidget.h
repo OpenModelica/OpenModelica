@@ -353,7 +353,7 @@ private:
   QAction *mpTranslateCRMLAction;
   QAction *mpTranslateAsCRMLAction;
   QAction *mpRunScriptAction;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction *mpSimulateWithAnimationAction;
 #endif
   QAction *mpSimulationSetupAction;

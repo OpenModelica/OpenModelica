@@ -93,8 +93,7 @@ First you need to install the dependencies:
   linked version)
 - libcurl (libcurl4-gnutls-dev)
 - ncurses, readline (optional, used by OMShell-terminal)
-- OpenSceneGraph (optional, used by OMEdit)
-- Qt6 or Qt5, Webkit, QtOpenGL (optional, used by OMEdit)
+- Qt6 or Qt5, Webkit, QtOpenGL, QtQuick3D (optional, used by OMEdit)
 - rustc and cargo (optional if you disable it; see [1.3 Rust toolchain](#13-rust-toolchain)
 for how to install or disable)
 

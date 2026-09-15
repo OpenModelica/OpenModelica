@@ -190,16 +190,10 @@ list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/o
 # omc_error.c reaches <gc.h> for threadData_t; declarations only, no collector call.
 set_source_files_properties(${SIMRT}/util/omc_error.c PROPERTIES
   INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/gc/include)
-# TimeManager drives the result-replay time slider in VariablesWidget. It is the
-# one Animation/ source that has no OpenSceneGraph/GL dependency (just rtclock +
-# QTimer), so compile it (rtclock entry points are provided by wasm_stubs.cpp)
-# rather than guarding its ~40 use sites out.
+# TimeManager drives the result-replay time slider in VariablesWidget.
 list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
-# 3D animation via Qt Quick 3D (OSG does not build for wasm). The renderer-neutral
-# data classes + the Quick 3D backend; the OSG renderer sources (ViewerWidget,
-# ExtraShapes, GLWidget/OpenGLWidget, the OSGScene/UpdateVisitor parts of
-# Visualization.cpp) stay out via the OMEDIT_ANIMATION_QUICK3D guards. FMU animation
-# (VisualizationFMU/FMUWrapper/FMUSettingsDialog) is excluded (no fmilib on wasm).
+# 3D animation via Qt Quick 3D. FMU animation (VisualizationFMU/FMUWrapper/
+# FMUSettingsDialog) is excluded (no fmilib on wasm).
 list(APPEND OMEDITLIB_SOURCES
   ${LIB}/Animation/AbstractVisualizer.cpp
   ${LIB}/Animation/Shape.cpp
@@ -220,14 +214,9 @@ set_source_files_properties(
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
   ${LIB}/resource_omedit.qrc)
-# WITHOUT_OSG: no OpenSceneGraph animation. OMC_RUST_ABI: the MMC-free embedding
-# ABI (omc_rust_embedding.h). PUBLIC so main.cpp inherits both.
-# OMEDIT_ANIMATION_QUICK3D selects the Qt Quick 3D animation backend (over OSG).
-# WITHOUT_OSG is intentionally NOT defined: it gates off the animation *features*
-# (the New Animation action, addAnimationWindow, simulate-with-animation), which are
-# now available through the Quick 3D backend. OSG-renderer code stays out via the
-# OMEDIT_ANIMATION_QUICK3D guards in Animation/, not via WITHOUT_OSG.
-target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI OMEDIT_ANIMATION_QUICK3D)
+# OMC_RUST_ABI: the MMC-free embedding ABI (omc_rust_embedding.h). PUBLIC so
+# main.cpp inherits it.
+target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI)
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
 # Headers for subsystems whose libs aren't linked on wasm (antlr/OMParser,
 # open62541) compile fine for the static lib; the symbols are deferred.
