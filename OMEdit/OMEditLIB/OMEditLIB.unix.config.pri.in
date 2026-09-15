@@ -14,8 +14,6 @@ QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
 QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
 QMAKE_LFLAGS += @LDFLAGS@
 
-@QMAKE_CONFIG_ANIMATION@
-
 # required for backtrace
 # On unix we use backtrace of execinfo.h which requires -rdynamic
 # The symbol names may be unavailable without the use of special linker

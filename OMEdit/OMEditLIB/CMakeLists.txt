@@ -154,21 +154,22 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       MCP/MCPToolsSimulation.cpp
                       MCP/MCPToolsDiagram.cpp
                       Search/FindUsageWidget.cpp
-                      Animation/AbstractAnimationWindow.cpp
-                      Animation/AnimationWindow.cpp
-                      Animation/Visualization.cpp
-                      Animation/Quick3D/Quick3DScene.cpp
-                      Animation/Quick3D/Quick3DViewerWidget.cpp
-                      Animation/Quick3D/Quick3DGeometry.cpp
-                      Animation/VisualizationMAT.cpp
-                      Animation/VisualizationCSV.cpp
-                      Animation/VisualizationFMU.cpp
-                      Animation/FMUSettingsDialog.cpp
-                      Animation/FMUWrapper.cpp
-                      Animation/AbstractVisualizer.cpp
-                      Animation/Shape.cpp
-                      Animation/Vector.cpp
                       resource_omedit.qrc)
+
+set(OMEDITLIB_ANIMATION_SOURCES Animation/AbstractAnimationWindow.cpp
+                                Animation/AnimationWindow.cpp
+                                Animation/Visualization.cpp
+                                Animation/Quick3D/Quick3DScene.cpp
+                                Animation/Quick3D/Quick3DViewerWidget.cpp
+                                Animation/Quick3D/Quick3DGeometry.cpp
+                                Animation/VisualizationMAT.cpp
+                                Animation/VisualizationCSV.cpp
+                                Animation/VisualizationFMU.cpp
+                                Animation/FMUSettingsDialog.cpp
+                                Animation/FMUWrapper.cpp
+                                Animation/AbstractVisualizer.cpp
+                                Animation/Shape.cpp
+                                Animation/Vector.cpp)
 
 set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       LSP/LSPFileWatcher.h
@@ -312,23 +313,29 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       FlatModelica/Parser.h
                       MCP/MCPServer.h
                       MCP/MCPServerPrivate.h
-                      Search/FindUsageWidget.h
-                      Animation/AbstractAnimationWindow.h
-                      Animation/AnimationWindow.h
-                      Animation/AnimationUtil.h
-                      Animation/Visualization.h
-                      Animation/Quick3D/Quick3DScene.h
-                      Animation/Quick3D/Quick3DViewerWidget.h
-                      Animation/Quick3D/Quick3DGeometry.h
-                      Animation/VisualizationMAT.h
-                      Animation/VisualizationCSV.h
-                      Animation/VisualizationFMU.h
-                      Animation/FMUSettingsDialog.h
-                      Animation/FMUWrapper.h
-                      Animation/AbstractVisualizer.h
-                      Animation/Shape.h
-                      Animation/Vector.h
-                      Animation/rapidxml.hpp)
+                      Search/FindUsageWidget.h)
+
+set(OMEDITLIB_ANIMATION_HEADERS Animation/AbstractAnimationWindow.h
+                                Animation/AnimationWindow.h
+                                Animation/AnimationUtil.h
+                                Animation/Visualization.h
+                                Animation/Quick3D/Quick3DScene.h
+                                Animation/Quick3D/Quick3DViewerWidget.h
+                                Animation/Quick3D/Quick3DGeometry.h
+                                Animation/VisualizationMAT.h
+                                Animation/VisualizationCSV.h
+                                Animation/VisualizationFMU.h
+                                Animation/FMUSettingsDialog.h
+                                Animation/FMUWrapper.h
+                                Animation/AbstractVisualizer.h
+                                Animation/Shape.h
+                                Animation/Vector.h
+                                Animation/rapidxml.hpp)
+
+if(OM_OMEDIT_ENABLE_ANIMATION)
+  list(APPEND OMEDITLIB_SOURCES ${OMEDITLIB_ANIMATION_SOURCES})
+  list(APPEND OMEDITLIB_HEADERS ${OMEDITLIB_ANIMATION_HEADERS})
+endif()
 
 set(TS_FILES Resources/nls/OMEdit_de.ts
              Resources/nls/OMEdit_es.ts
@@ -438,9 +445,13 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::libzmq)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
-target_link_libraries(OMEditLib PUBLIC
-  Qt${OM_QT_MAJOR_VERSION}::Quick Qt${OM_QT_MAJOR_VERSION}::Quick3D
-  Qt${OM_QT_MAJOR_VERSION}::Qml Qt${OM_QT_MAJOR_VERSION}::QuickWidgets)
+if(OM_OMEDIT_ENABLE_ANIMATION)
+  target_link_libraries(OMEditLib PUBLIC
+    Qt${OM_QT_MAJOR_VERSION}::Quick Qt${OM_QT_MAJOR_VERSION}::Quick3D
+    Qt${OM_QT_MAJOR_VERSION}::Qml Qt${OM_QT_MAJOR_VERSION}::QuickWidgets)
+else()
+  target_compile_definitions(OMEditLib PUBLIC WITHOUT_ANIMATION)
+endif()
 target_link_libraries(OMEditLib PUBLIC OpenGL::GL)
 
 # Silence OpenGL deprecation warnings on macOS
