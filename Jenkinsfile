@@ -669,7 +669,10 @@ pipeline {
           }
         }
 
-        stage('18 testsuite-clang-parmod') {
+        // parmod, MetaModelica, the Matlab translator, the icon generator and the
+        // C unit tests. Short runs sharing one image, so one node: split up, the
+        // image pull and the git checkout cost more than the tests.
+        stage('18 testsuite-misc') {
           agent {
             node {
               // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
@@ -681,77 +684,6 @@ pipeline {
               customWorkspace 'ws/OpenModelica'
             }
           }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              // No runtest.db cache necessary; the tests run in serial and do not load libraries!
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', '') {
-                common.partestParmod()
-              }
-            }
-          }
-        }
-
-        stage('19 testsuite-clang-metamodelica') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.testMetaModelica() }
-          }
-        }
-
-        stage('20 testsuite-matlab-translator') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.testMatlabTranslator() }
-          }
-        }
-
-        stage('21 test-clang-icon-generator') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
           environment {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
@@ -764,32 +696,12 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.testIconGenerator() }
-          }
-        }
-
-        stage('22 testsuite-unit-test-C') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-              customWorkspace 'ws/OpenModelica'
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-clang-icon-generator')) {
+                common.testMisc()
+              }
             }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.testUnitC() }
           }
           post {
             always {
@@ -800,8 +712,9 @@ pipeline {
 
         // The wasm-jit partest, same setup as stages 01/02. Last in the block
         // (against the ordering rule above): the fastest of the testsuite runs,
-        // so it loses the least by starting after the others.
-        stage('23 testsuite-wasm-jit 1/2') {
+        // so it loses the least by starting after the others. Unpartitioned - it
+        // is fast enough not to need the split the C targets use.
+        stage('19 testsuite-wasm-jit') {
           agent {
             node {
               label 'linux'
@@ -823,34 +736,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('wasm-jit', 1, 2, true)
-              }
-            }
-          }
-        }
-        stage('24 testsuite-wasm-jit 2/2') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
-                                     common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('wasm-jit', 2, 2, true)
+                common.partestRust('wasm-jit', 1, 1, true)
               }
             }
           }
