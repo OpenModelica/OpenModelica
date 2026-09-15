@@ -8,7 +8,8 @@ cp ../../../../Compiler/Template/Tpl.mo ../10_pamtrans/ || exit 1
 
 mkdir -p "$DIR"
 
-svn export .. "$DIR/MetaModelica"
+mkdir -p "$DIR/MetaModelica"
+git -C "$(git rev-parse --show-toplevel)" archive --format=tar "HEAD:$(cd .. && git rev-parse --show-prefix)" | tar -x -C "$DIR/MetaModelica"
 (cd ../documentation/; for f in *.ppt *.odp *.url; do
   echo "$f"
   rm "$DIR/MetaModelica/documentation/$f"

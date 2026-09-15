@@ -57,6 +57,7 @@ CMake mirrors both trees into one per-build working copy reproducing the
 `.cmake/rust_omc.cmake`.
 
 ## Setup
+
 ```bash
 apt install rustup binaryen
 # We use this toolchain in Jenkins
@@ -76,7 +77,8 @@ apt install clang lld wasi-libc libclang-rt-21-dev-wasm32 libclang-rt-dev-wasm32
 # Overridable: OMC_WASI_CLANG (default `clang`), OMC_WASI_SYSROOT (default `/usr`).
 ```
 
-## For development (debug builds compile faster but are much slower):
+## For development (debug builds compile faster but are much slower)
+
 ```bash
 cd ../../..
 cmake -S . -B build-cmake-rust -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_PROFILE=debug
@@ -85,7 +87,8 @@ cmake --build build-cmake-rust --target ctestsuite-depends -j16
 cd build && ctest --output-on-failure --output-junit junit.xml # Note that tests take a while to compile - they use a different profile than the builds
 ```
 
-## CI native build (release, no incremental for CI since it does not need the cache):
+## CI native build (release, no incremental for CI since it does not need the cache)
+
 ```bash
 cd ../../..
 cmake -S . -B build -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON
@@ -267,7 +270,8 @@ come from the directory, and the crates' build scripts take each blob from
 checked, like `RUST_OMC_WASM_RUNTIME`. This is what
 `.CI/Jenkinsfile.rust-nightly` stage 1 hands to its per-platform stages.
 
-## Web bundle only (make all builds just the wasm):
+## Web bundle only (make all builds just the wasm)
+
 ```bash
 cd ../../..
 cmake -S . -B build-web -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_WASM=ON -DRUST_OMC_WASM_MODE=web-release -DRUST_OMC_CI=ON
@@ -316,7 +320,7 @@ makes the whole set best-effort again. Each needs its Rust target (`rustup targe
 add`) and a C toolchain, since `wasmtime-wasi` compiles a C fiber:
 
 | target | needs |
-|---|---|
+| --- | --- |
 | `*-pc-windows-msvc` | `cargo install cargo-xwin`, plus `llvm-lib` on `PATH` (`ln -s $(command -v llvm-lib-21) ~/.local/bin/llvm-lib`). For the 32-bit target the xwin cache must hold the x86 CRT: `XWIN_ARCH=x86,x86_64`. |
 | non-host `*-linux-gnu` | `cargo install cargo-zigbuild` + `pip install ziglang` |
 | `*-apple-darwin` | the same zig setup **and** an unpacked `MacOSX<version>.sdk` in `RUST_OMC_MACOS_SDK` (or `SDKROOT`; a macOS host needs neither) — `cap-time-ext` links `CoreFoundation`, which zig does not ship. Nothing else: the SDK's `.tbd` stubs are all the link needs. |
