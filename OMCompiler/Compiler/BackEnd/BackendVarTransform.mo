@@ -48,6 +48,7 @@ public import UnorderedMap;
 public import UnorderedSet;
 
 protected import Absyn;
+protected import AbsynUtil;
 protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import BackendEquation;
@@ -999,13 +1000,14 @@ algorithm
   repl := match ty
     local
       DAE.Exp bind;
+      Absyn.Path path;
 
-    case DAE.T_COMPLEX() algorithm
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path)) algorithm
       for var in ty.varLst loop
         // only do something if there is a binding
         if DAEUtil.isBound(var.binding) then
           SOME(bind) := DAEUtil.bindingExp(var.binding);
-          cref := getRecordElement(var.name, expl);
+          cref := getRecordElement(var.name, expl, path);
           // only replace if the expression is const and the name was found
           // if replacement already happened the name might not be found -> no error!
           if Expression.isConst(bind) and not ComponentReference.isWild(cref) then
@@ -1020,14 +1022,20 @@ end addConstantRecordReplacements;
 
 function getRecordElement
   "takes an attribute name and the list of full attribute names.
-  returns the cref of which the last ident matches the required name."
+  returns the cref of which the last ident matches the required name, and which
+  is an element of a record of the given type. A record expression may also be
+  built from the elements of a different record, and those are unrelated to this
+  record's bindings even when a name matches."
   input DAE.Ident name;
   input list<DAE.Exp> expl;
+  input Absyn.Path recordPath;
   output DAE.ComponentRef cref = DAE.WILD();
 algorithm
   for e in expl loop
     () := match e
-      case DAE.CREF() guard(ComponentReferenceBasics.crefLastIdent(e.componentRef) == name)
+      case DAE.CREF()
+        guard ComponentReferenceBasics.crefLastIdent(e.componentRef) == name and
+              isElementOfRecord(e.componentRef, recordPath)
         algorithm
           cref := e.componentRef;
           return;
@@ -1036,6 +1044,29 @@ algorithm
     end match;
   end for;
 end getRecordElement;
+
+function isElementOfRecord
+  "Whether the cref names an element of a record of the given type."
+  input DAE.ComponentRef cref;
+  input Absyn.Path recordPath;
+  output Boolean res;
+protected
+  Absyn.Path path;
+algorithm
+  res := match cref
+    case DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT())
+      algorithm
+        res := match Types.arrayElementType(cref.identType)
+          case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path))
+            then AbsynUtil.pathEqual(path, recordPath);
+          else false;
+        end match;
+      then res;
+
+    case DAE.CREF_QUAL() then isElementOfRecord(cref.componentRef, recordPath);
+    else false;
+  end match;
+end isElementOfRecord;
 
 public function replaceCref"replaces a cref.
 author: Waurich TUD 2014-06"
