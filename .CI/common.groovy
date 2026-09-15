@@ -776,6 +776,8 @@ String qtLinuxPrefix() { return '/opt/Qt/6.11.2/gcc_64' }
 //             makes the stage error out rather than build without Qt
 //   sccache   whether this target's C/C++ compiler can run under sccache
 //   cdylib    the file name cargo gives libOpenModelicaCompiler for it
+//   multiarch the Linux targets' <triple> under lib/; absent elsewhere
+//   arch      the Linux targets' archive-name architecture
 Map nightlyTarget(String name) {
   String rs = 'OMCompiler/Compiler/OpenModelica.rs/.cmake'
   // Fortran is off for both: flang compiles for either target but links for
@@ -837,6 +839,23 @@ Map nightlyTarget(String name) {
            '-DOM_OMEDIT_ANIMATION_QUICK3D=ON'],
       sccache: true,
       cdylib: 'libOpenModelicaCompiler.so',
+      arch: 'x86_64',
+      multiarch: 'x86_64-linux-gnu',
+    ],
+    // Cross-compiled on the same 22.04 floor with the distribution's own GNU
+    // cross toolchain (the qt-aarch64-linux add-on), which has a real gfortran,
+    // so Fortran stays in. Qt publishes no ARM64 Linux kit below GLIBC_2.38 and
+    // linux-deploy.sh cannot bundle the distribution's own layout, so this
+    // target is CLI-only: qt: [] makes the GUI stage error out.
+    'linux-aarch64': [
+      triple: 'aarch64-unknown-linux-gnu',
+      toolchain: "${rs}/linux-cross-toolchain.cmake",
+      configure: [],
+      qt: [],
+      sccache: true,
+      cdylib: 'libOpenModelicaCompiler.so',
+      arch: 'aarch64',
+      multiarch: 'aarch64-linux-gnu',
     ],
   ]
   Map t = all[name]
@@ -941,9 +960,9 @@ List nightlyCommonFlags(Map t) {
 }
 
 // A cross build cannot run what it produced, so check the file format instead --
-// a host binary left in bin/ by a misconfigured stage would otherwise ship. For
-// linux64 the format is a given and the glibc floor is what can regress, so that
-// is checked instead: the whole point of building on 22.04 is to stay at 2.35.
+// a host binary left in bin/ by a misconfigured stage would otherwise ship. On
+// the Linux targets the glibc floor is checked on top, because it is what can
+// regress there: the whole point of building on 22.04 is to stay at 2.35.
 void nightlyCheckArtifacts(Map t) {
   String exe = t.triple.contains('windows') ? '.exe' : ''
   sh """#!/bin/bash
@@ -955,9 +974,13 @@ void nightlyCheckArtifacts(Map t) {
     case '${t.triple}' in
       *windows*) test "\${magic:0:4}" = 4d5a ;;  # MZ
       *darwin*)  test "\$magic" = cffaedfe ;;    # 64-bit Mach-O, little endian
+      # ELF says nothing here (a host binary is one), so: e_machine, at 18.
+      *aarch64-unknown-linux-gnu)
+        test "\$magic" = 7f454c46
+        test "\$(od -An -tx1 -j18 -N2 "\$bin" | tr -d ' \\n')" = b700 ;;
     esac
   """
-  if (t.name == 'linux64') {
+  if (t.multiarch) {
     nightlyCheckGlibcFloor(nightlyInstallDir(t.name), nightlyGlibcFloor())
   }
 }
@@ -969,13 +992,28 @@ String nightlyGlibcFloor() { return '2.35' }
 // Every versioned glibc reference in a tree, against that floor. A stage that
 // silently moved to a newer image would otherwise ship a distribution that dies
 // with "version `GLIBC_2.39' not found" on the machines it is built for.
+// Only over real ELF: bin/OMSimulator is a Python wrapper and the wasi sysroot's
+// .so are linker scripts, and a reader exiting non-zero on one of those takes
+// the pipeline down under `pipefail`. readelf also reads a foreign architecture.
 void nightlyCheckGlibcFloor(String tree, String floor) {
   sh """#!/bin/bash
     set -euo pipefail
-    max=\$(find ${tree}/bin ${tree}/lib -type f \\( -name '*.so' -o -name '*.so.*' -o -perm -u+x \\) -print0 |
-      xargs -0 -r -n40 objdump -T 2> /dev/null |
-      grep -o 'GLIBC_[0-9][0-9.]*' | sort -uV | tail -1)
-    echo "highest glibc reference in ${tree}: \${max:-none}"
+    elfs=()
+    while read -r f; do
+      if [ "\$(od -An -tx1 -N4 "\$f" | tr -d ' \\n')" = 7f454c46 ]; then
+        elfs+=("\$f")
+      fi
+    done < <(find ${tree}/bin ${tree}/lib -type f \\( -name '*.so' -o -name '*.so.*' -o -perm -u+x \\))
+    if [ \${#elfs[@]} = 0 ]; then
+      echo "ERROR: no ELF files under ${tree}" >&2
+      exit 1
+    fi
+    max=\$(readelf -V "\${elfs[@]}" | grep -o 'GLIBC_[0-9][0-9.]*' | sort -uV | tail -1)
+    echo "highest glibc reference in \${#elfs[@]} ELF files under ${tree}: \${max:-none}"
+    if [ -z "\$max" ]; then
+      echo "ERROR: no glibc reference at all; the scan cannot have worked" >&2
+      exit 1
+    fi
     highest=\$(printf '%s\\n' "\${max#GLIBC_}" ${floor} | sort -V | tail -1)
     if [ "\$highest" != ${floor} ]; then
       echo "ERROR: needs glibc \${max#GLIBC_}, above the ${floor} floor" >&2
@@ -1064,10 +1102,11 @@ void zipRustNightlyWindows(String zip) {
   uploadRustNightly(zip)
 }
 
-// Stage 4, Linux: the same two-distribution split as Windows. The tree is the
-// agent's own, not a cross build, so the glibc floor is re-checked here against
-// the GUI files too -- the omc stage only saw its own.
-void packageRustNightlyLinux(List omcStashes, List guiStashes) {
+// Stage 4, Linux: the same two-distribution split as Windows, for one target.
+// An empty guiStashes leaves the CLI distribution as the only one, which is what
+// linux-aarch64 ships.
+void packageRustNightlyLinux(String name, List omcStashes, List guiStashes) {
+  Map t = nightlyTarget(name)
   standardSetup()
   for (s in omcStashes) {
     unstash s
@@ -1075,23 +1114,24 @@ void packageRustNightlyLinux(List omcStashes, List guiStashes) {
   // No Qt prefix: the CLI tree has no GUI clients, but it still needs its own
   // libraries bundled -- omc pulls in libgfortran and libcurl-gnutls, neither of
   // which a target is required to have.
-  tarRustNightlyLinux("OpenModelica-CLI-${tagName()}-x86_64-linux.tar.gz", '')
+  tarRustNightlyLinux(t, "OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz", '')
   if (!guiStashes) {
     return
   }
   for (s in guiStashes) {
     unstash s
   }
-  tarRustNightlyLinux("OpenModelica-${tagName()}-x86_64-linux.tar.gz", qtLinuxPrefix())
+  tarRustNightlyLinux(t, "OpenModelica-${tagName()}-${t.arch}-linux.tar.gz", qtLinuxPrefix())
 }
 
-void tarRustNightlyLinux(String tgz, String qtPrefix) {
+void tarRustNightlyLinux(Map t, String tgz, String qtPrefix) {
+  String tree = nightlyInstallDir(t.name)
   // Self-contain the tree before it is archived: the Qt kit lives in /opt on the
   // agent and nowhere on a user's machine, and several of the libraries omc
   // links are not standard on a target either.
-  sh ".CI/scripts/linux-deploy.sh ${nightlyInstallDir('linux64')} ${qtPrefix}"
-  nightlyCheckGlibcFloor(nightlyInstallDir('linux64'), nightlyGlibcFloor())
-  sh "rm -f ${tgz} && tar -C ${nightlyInstallDir('linux64')} -czf ${tgz} ."
+  sh "TRIPLE=${t.multiarch} .CI/scripts/linux-deploy.sh ${tree} ${qtPrefix}"
+  nightlyCheckGlibcFloor(tree, nightlyGlibcFloor())
+  sh "rm -f ${tgz} && tar -C ${tree} -czf ${tgz} ."
   sh "ls -l ${tgz}"
   uploadRustNightly(tgz)
 }
