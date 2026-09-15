@@ -1842,6 +1842,19 @@ uniontype InstNode
     end match;
   end isProtected;
 
+  function isInheritedProtected
+    input InstNode node;
+    output Boolean isProtected;
+  algorithm
+    isProtected := match node
+      case CLASS_NODE()
+        then node.visibility == Visibility.PROTECTED or isInheritedProtected(instanceParent(node));
+      case COMPONENT_NODE()
+        then node.visibility == Visibility.PROTECTED or isInheritedProtected(instanceParent(node));
+      else false;
+    end match;
+  end isInheritedProtected;
+
   function isPublic
     input InstNode node;
     output Boolean isPublic = not isProtected(node);

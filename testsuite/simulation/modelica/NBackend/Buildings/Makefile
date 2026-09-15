@@ -2,7 +2,6 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage.mos \
-Buildings.Fluid.Humidifiers.Examples.Humidifier_u.mos \
 Buildings.Fluid.Boilers.Examples.BoilerPolynomial.mos \
 Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves.mos \
 Buildings.Controls.OBC.CDL.Logical.Validation.Latch.mos \
@@ -10,6 +9,7 @@ Buildings.Controls.OBC.CDL.Logical.Validation.Latch.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+Buildings.Fluid.Humidifiers.Examples.Humidifier_u.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

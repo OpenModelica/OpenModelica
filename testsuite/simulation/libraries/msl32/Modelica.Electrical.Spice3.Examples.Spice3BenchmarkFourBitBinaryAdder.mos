@@ -83,6 +83,7 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// [Modelica 3.2.1+maint.om/Electrical/Spice3.mo:10522:9-10522:70:writable] Warning: Output parameter out_c.m_tBrkdwnV was not assigned a value
 // Notification: Tearing is skipped for linear strong component 22: solving it torn to 24 iteration variables is estimated at 24592 flops against 9517 for the untorn system of size 113.
 // Notification: Tearing is skipped for linear strong component 128: solving it torn to 30 iteration variables is estimated at 23630 flops against 10665 for the untorn system of size 126.
 // Notification: Tearing is skipped for linear strong component 175: solving it torn to 28 iteration variables is estimated at 19232 flops against 9517 for the untorn system of size 113.
