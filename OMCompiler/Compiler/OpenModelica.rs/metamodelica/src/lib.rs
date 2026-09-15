@@ -42,6 +42,7 @@ pub type Result<T, E = &'static str> = ::core::result::Result<T, E>;
 
 pub mod gc;
 pub mod cancel;
+pub mod heap_limit;
 
 /// MetaModelica `array<T>`. See module-level docs for rationale.
 pub type Array<A> = Rc<RefCell<Vec<A>>>;

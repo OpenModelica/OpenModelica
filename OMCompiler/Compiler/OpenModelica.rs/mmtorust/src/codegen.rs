@@ -468,6 +468,9 @@ struct GenCtx {
     /// (`tail`), which coincide with the match's assigned target. Paired with
     /// `mc_arm_writeback`; only meaningful when that is in effect.
     mc_arm_result_unit: bool,
+    /// Set inside a checkpoint's closure, where `return;` cannot leave the
+    /// function and instead reports that the body returned.
+    checkpoint_closure: bool,
     /// Variables currently known to hold a specific uniontype variant. Mirrors
     /// `LocalEnv::variants` but is accessible from `emit_exp` / `emit_var`,
     /// which don't receive the per-statement `LocalEnv`. Populated around the
@@ -773,6 +776,7 @@ impl GenCtx {
             fn_outputs_no_default: Vec::new(),
             mc_arm_writeback: Vec::new(),
             mc_arm_result_unit: false,
+            checkpoint_closure: false,
             variants: HashMap::new(),
             variant_shapes: HashMap::new(),
             fallible_functions,
@@ -4754,7 +4758,7 @@ fn stmt_has_nonexhaustive_match(stmt: &typedexp::TypedStmt, top_level: &BTreeMap
         }
         S::For { range, body, .. } => exp_has_nonexhaustive_match(range, top_level) || body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)),
         S::While { cond, body } => exp_has_nonexhaustive_match(cond, top_level) || body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)),
-        S::Try { body, else_body } => body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)) || else_body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)),
+        S::Try { body, else_body, .. } => body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)) || else_body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)),
         S::Failure { body } => body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)),
         S::Return | S::Break | S::Continue | S::Todo(_) => false,
     }
@@ -4883,7 +4887,7 @@ fn stmt_reads_name(stmt: &typedexp::TypedStmt, name: &str) -> bool {
         }
         S::For { range, body, .. } => exp_reads_name(range, name) || stmts_read_name(body, name),
         S::While { cond, body } => exp_reads_name(cond, name) || stmts_read_name(body, name),
-        S::Try { body, else_body } => stmts_read_name(body, name) || stmts_read_name(else_body, name),
+        S::Try { body, else_body, .. } => stmts_read_name(body, name) || stmts_read_name(else_body, name),
         S::Failure { body } => stmts_read_name(body, name),
         S::Return | S::Break | S::Continue | S::Todo(_) => false,
     }
@@ -4916,7 +4920,7 @@ fn stmts_break_under_try(stmts: &[typedexp::TypedStmt], in_try: bool) -> bool {
                 || elseif.iter().any(|(c, b)| exp_break_under_try(c, in_try) || stmts_break_under_try(b, in_try))
                 || stmts_break_under_try(else_, in_try)
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             stmts_break_under_try(body, true) || stmts_break_under_try(else_body, true)
         }
         S::Failure { body } => stmts_break_under_try(body, true),
@@ -5135,7 +5139,7 @@ fn hoist_scan_stmt(stmt: &typedexp::TypedStmt, name: &str, scan: &mut HoistScan)
             hoist_scan_exp(cond, name, scan);
             hoist_scan_stmts(body, name, scan);
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             hoist_scan_stmts(body, name, scan);
             hoist_scan_stmts(else_body, name, scan);
         }
@@ -5474,7 +5478,7 @@ fn body_has_return(stmts: &[typedexp::TypedStmt]) -> bool {
         }
         S::For { range, body, .. } => exp_has_return(range) || body_has_return(body),
         S::While { cond, body } => exp_has_return(cond) || body_has_return(body),
-        S::Try { body, else_body } => body_has_return(body) || body_has_return(else_body),
+        S::Try { body, else_body, .. } => body_has_return(body) || body_has_return(else_body),
         S::Failure { body } => body_has_return(body),
         S::Break | S::Continue | S::Todo(_) => false,
     })
@@ -5758,7 +5762,7 @@ fn collect_type_vars_in_typed_stmts(stmts: &[typedexp::TypedStmt], out: &mut Vec
                 }
                 TypedStmt::For { range, body, .. } => { visit_exp(range, out); visit_stmts(body, out); }
                 TypedStmt::While { cond, body } => { visit_exp(cond, out); visit_stmts(body, out); }
-                TypedStmt::Try { body, else_body } => { visit_stmts(body, out); visit_stmts(else_body, out); }
+                TypedStmt::Try { body, else_body, .. } => { visit_stmts(body, out); visit_stmts(else_body, out); }
                 TypedStmt::Failure { body } => visit_stmts(body, out),
                 _ => {}
             }
@@ -5867,7 +5871,7 @@ fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, outputs: &HashSet
             collect_exp_names(cond, &mut reads);
             live.extend(reads);
         }
-        TypedStmt::Try { body, else_body } => {
+        TypedStmt::Try { body, else_body, .. } => {
             // A failure mid-`body` transfers to `else_body`; treat both
             // conservatively so a value moved in `body` can't be needed by the
             // recovery path.
@@ -6224,7 +6228,7 @@ fn collect_moved_names_stmt(stmt: &TypedStmt, out: &mut HashSet<String>) {
             collect_moved_names(cond, out);
             for st in body { collect_moved_names_stmt(st, out); }
         }
-        TypedStmt::Try { body, else_body } => {
+        TypedStmt::Try { body, else_body, .. } => {
             for st in body { collect_moved_names_stmt(st, out); }
             for st in else_body { collect_moved_names_stmt(st, out); }
         }
@@ -6266,7 +6270,7 @@ fn clear_last_use_stmt(stmt: &mut TypedStmt) {
                 clear_last_use_stmt(s);
             }
         }
-        TypedStmt::Try { body, else_body } => {
+        TypedStmt::Try { body, else_body, .. } => {
             for s in body.iter_mut() {
                 clear_last_use_stmt(s);
             }
@@ -6460,7 +6464,7 @@ fn collect_stmt_names(stmt: &TypedStmt, out: &mut HashSet<String>) {
             collect_exp_names(cond, out);
             collect_stmts_names(body, out);
         }
-        TypedStmt::Try { body, else_body } => {
+        TypedStmt::Try { body, else_body, .. } => {
             collect_stmts_names(body, out);
             collect_stmts_names(else_body, out);
         }
@@ -7740,6 +7744,9 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         .collect();
     let vars_need_default = vars_needing_default(
         &typed_stmts, &tracked_locals, &output_names_set, &pre_assigned_locals);
+    let mut checkpoint_vars: HashSet<String> = HashSet::new();
+    checkpoint_assigned_names(&typed_stmts, &mut checkpoint_vars);
+    checkpoint_vars.retain(|n| tracked_locals.contains(n) && !pre_assigned_locals.contains(n));
 
     // Infallible functions drop the `Result<>` wrapper — the surrounding code
     // can then call them without `?` and use the value directly. Fallible
@@ -8091,6 +8098,11 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
                     // (a use-before-def analysis) restricts this to the
                     // variables actually read before assignment; the rest are
                     // declared without the placeholder default below.
+                    ctx.fn_initialized_vars.insert(n.to_string());
+                    writeln!(out, "{body_indent}let mut {}{ty_annot} = {def};", escape_ident(n)).unwrap();
+                } else if checkpoint_vars.contains(n)
+                    && let Some(def) = ty_checkpoint_placeholder(t, ctx, top_level)
+                {
                     ctx.fn_initialized_vars.insert(n.to_string());
                     writeln!(out, "{body_indent}let mut {}{ty_annot} = {def};", escape_ident(n)).unwrap();
                 } else {
@@ -16527,7 +16539,7 @@ fn stmts_need_match_deref(stmts: &[typedexp::TypedStmt], ctx: &GenCtx, top_level
         S::While { cond, body } => {
             exp_needs_match_deref(cond, ctx, top_level) || stmts_need_match_deref(body, ctx, top_level)
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             stmts_need_match_deref(body, ctx, top_level) || stmts_need_match_deref(else_body, ctx, top_level)
         }
         S::Failure { body } => stmts_need_match_deref(body, ctx, top_level),
@@ -16733,7 +16745,7 @@ fn stmts_assigned_var_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<Str
                 stmts_assigned_var_names(body, out);
             }
             S::Failure { body } => stmts_assigned_var_names(body, out),
-            S::Try { body, else_body } => {
+            S::Try { body, else_body, .. } => {
                 stmts_assigned_var_names(body, out);
                 stmts_assigned_var_names(else_body, out);
             }
@@ -19604,7 +19616,7 @@ fn collect_reassigned_vars(stmts: &[typedexp::TypedStmt], out: &mut HashSet<Stri
                 collect_reassigned_vars(body, out);
             }
             S::While { body, .. } => collect_reassigned_vars(body, out),
-            S::Try { body, else_body } => {
+            S::Try { body, else_body, .. } => {
                 collect_reassigned_vars(body, out);
                 collect_reassigned_vars(else_body, out);
             }
@@ -20417,7 +20429,7 @@ fn stmt_flow(s: &typedexp::TypedStmt) -> FlowResult {
             branches.push(stmts_flow(else_));
             merge_branch_flows(&branches)
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             merge_branch_flows(&[stmts_flow(body), stmts_flow(else_body)])
         }
         S::For { .. } | S::While { .. } | S::Failure { .. } | S::Todo(_) => {
@@ -20623,7 +20635,7 @@ impl<'a> UseBeforeDef<'a> {
                 branch_sets.push(run(self, else_, None));
                 self.merge(assigned, branch_sets)
             }
-            S::Try { body, else_body } => {
+            S::Try { body, else_body, .. } => {
                 let mut b = assigned.clone();
                 let bf = self.walk_stmts(body, &mut b);
                 let mut e = assigned.clone();
@@ -20701,6 +20713,20 @@ impl<'a> UseBeforeDef<'a> {
 /// before any assignment. `pre_assigned` are the names already initialised at
 /// entry (outputs/protected carrying an `= expr` modification, and
 /// `input output` parameters). See [`UseBeforeDef`].
+/// The tuple a `return;` yields. Cloned: an output name may be shadowed by a
+/// by-ref pattern binding in an enclosing match arm.
+fn outputs_tuple(env: &LocalEnv) -> String {
+    match env.outputs.len() {
+        0 => "()".to_owned(),
+        1 => format!("{}.clone()", escape_ident(&env.outputs[0])),
+        _ => {
+            let parts: Vec<String> =
+                env.outputs.iter().map(|n| format!("{}.clone()", escape_ident(n))).collect();
+            format!("({})", parts.join(", "))
+        }
+    }
+}
+
 fn vars_needing_default(
     stmts: &[typedexp::TypedStmt],
     tracked: &HashSet<String>,
@@ -20716,7 +20742,61 @@ fn vars_needing_default(
         let outs: Vec<String> = outputs.iter().cloned().collect();
         for o in outs { analysis.read(&o, &assigned); }
     }
-    analysis.needs
+    let mut needs = analysis.needs;
+    // A checkpoint body becomes a closure, which captures what it assigns by
+    // unique borrow; that requires the binding to be initialised.
+    let mut cp = HashSet::new();
+    checkpoint_assigned_names(stmts, &mut cp);
+    needs.extend(cp.into_iter().filter(|n| tracked.contains(n) && !pre_assigned.contains(n)));
+    needs
+}
+
+/// Names assigned inside a checkpoint's `try` body.
+fn checkpoint_assigned_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<String>) {
+    use typedexp::TypedStmt as S;
+    for s in stmts {
+        match s {
+            S::Try { body, else_body, checkpoint } => {
+                if *checkpoint {
+                    collect_stmts_assigned(body, out);
+                }
+                checkpoint_assigned_names(body, out);
+                checkpoint_assigned_names(else_body, out);
+            }
+            S::If { then_, elseif, else_, .. } => {
+                checkpoint_assigned_names(then_, out);
+                checkpoint_assigned_names(else_, out);
+                for (_, b) in elseif { checkpoint_assigned_names(b, out); }
+            }
+            S::For { body, .. } | S::While { body, .. } | S::Failure { body } => {
+                checkpoint_assigned_names(body, out)
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Every name assigned by `stmts`, at any depth.
+fn collect_stmts_assigned(stmts: &[typedexp::TypedStmt], out: &mut HashSet<String>) {
+    use typedexp::TypedStmt as S;
+    for s in stmts {
+        match s {
+            S::Assign { lhs, .. } => pat_assigned_names(lhs, out),
+            S::If { then_, elseif, else_, .. } => {
+                collect_stmts_assigned(then_, out);
+                collect_stmts_assigned(else_, out);
+                for (_, b) in elseif { collect_stmts_assigned(b, out); }
+            }
+            S::For { body, .. } | S::While { body, .. } | S::Failure { body } => {
+                collect_stmts_assigned(body, out)
+            }
+            S::Try { body, else_body, .. } => {
+                collect_stmts_assigned(body, out);
+                collect_stmts_assigned(else_body, out);
+            }
+            _ => {}
+        }
+    }
 }
 
 /// Compute which of a match/matchcontinue arm's no-initialiser case-locals are
@@ -20894,6 +20974,86 @@ fn emit_else_body<'a>(
         }
         other => emit_stmt(out, indent, other, fail_mode, ctx, env, top_level, fresh),
     }
+}
+
+/// A `__OpenModelica_stackOverflowCheckpoint` `try`. The C runtime longjmps here
+/// when memory or stack runs out; Rust unwinds, so the body runs inside
+/// `heap_limit::catch`. Only that unwind is caught, per `DAE.TRY_STACKOVERFLOW`.
+///
+/// The closure reports whether the body ran `return;`; the values it would
+/// return are the outputs, which the body assigned in place.
+fn emit_checkpoint_try<'a>(
+    out: &mut String,
+    indent: &str,
+    body: &[typedexp::TypedStmt],
+    else_body: &[typedexp::TypedStmt],
+    fail_mode: FailureMode,
+    ctx: &mut GenCtx,
+    env: &mut LocalEnv,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+    fresh: &mut u32,
+) {
+    let var = format!("__cp{}", *fresh);
+    *fresh += 1;
+    let fallible = ctx.current_fn_fallible;
+    let (ret_ty, fell_through) =
+        if fallible { ("Result<bool>", "Ok(false)") } else { ("bool", "false") };
+
+    writeln!(
+        out,
+        "{indent}let {var} = metamodelica::heap_limit::catch(|| -> {ret_ty} {{"
+    )
+    .unwrap();
+    let saved_cp = std::mem::replace(&mut ctx.checkpoint_closure, true);
+    // The closure is also a boundary for an enclosing matchcontinue arm: a
+    // `return` inside it exits the closure, not that arm's IIFE.
+    let saved_mc = std::mem::take(&mut ctx.mc_arm_writeback);
+    let mut benv = env.clone();
+    // A closure is a propagation boundary: a failure inside must not `break` to
+    // a try label outside it.
+    ctx.with_qmode(QMode::Function, |ctx| {
+        emit_stmts(
+            out,
+            &format!("{indent}    "),
+            body,
+            FailureMode::Function,
+            ctx,
+            &mut benv,
+            top_level,
+            fresh,
+        )
+    });
+    ctx.checkpoint_closure = saved_cp;
+    ctx.mc_arm_writeback = saved_mc;
+    writeln!(out, "{indent}    {fell_through}").unwrap();
+    writeln!(out, "{indent}}});").unwrap();
+
+    let tail = outputs_tuple(env);
+    let ret = if fallible { format!("return Ok({tail});") } else { format!("return {tail};") };
+    let returned = if fallible { "__returned?" } else { "__returned" };
+    writeln!(out, "{indent}match {var} {{").unwrap();
+    writeln!(out, "{indent}    Ok(__returned) => if {returned} {{ {ret} }},").unwrap();
+    writeln!(out, "{indent}    Err(_) => {{").unwrap();
+    // Recovery runs disarmed so reporting cannot trip again and escape past
+    // this checkpoint; the guard arms it on every way out, `fail` included.
+    writeln!(
+        out,
+        "{indent}        let _rearm = metamodelica::heap_limit::RearmOnDrop;"
+    )
+    .unwrap();
+    let mut eenv = env.clone();
+    emit_stmts(
+        out,
+        &format!("{indent}        "),
+        else_body,
+        fail_mode,
+        ctx,
+        &mut eenv,
+        top_level,
+        fresh,
+    );
+    writeln!(out, "{indent}    }}").unwrap();
+    writeln!(out, "{indent}}}").unwrap();
 }
 
 fn emit_stmt<'a>(
@@ -21398,7 +21558,11 @@ fn emit_stmt<'a>(
             ctx.loop_label_stack.pop();
             writeln!(out, "{indent}}}").unwrap();
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, checkpoint } => {
+            if *checkpoint {
+                emit_checkpoint_try(out, indent, body, else_body, fail_mode, ctx, env, top_level, fresh);
+                return;
+            }
             // ── Single-statement fast path ──────────────────────────────────
             // When the body is exactly one `PAT := CALL` assignment and the
             // else-branch always diverges, emit a concise `if let Ok(PAT) =
@@ -21662,14 +21826,16 @@ fn emit_stmt<'a>(
             // `DAE.VAR(binding = obnd)` rebinds the output `obnd` to `&Option<…>`),
             // so the bare name would be a reference. Outputs are always Clone, and
             // cloning an owned local is harmless, so clone unconditionally.
-            let tail: String = match env.outputs.len() {
-                0 => "()".to_owned(),
-                1 => format!("{}.clone()", escape_ident(&env.outputs[0])),
-                _ => {
-                    let parts: Vec<String> = env.outputs.iter().map(|n| format!("{}.clone()", escape_ident(n))).collect();
-                    format!("({})", parts.join(", "))
+            let tail: String = outputs_tuple(env);
+            // In a checkpoint closure `return;` cannot leave the function.
+            if ctx.checkpoint_closure && ctx.mc_arm_writeback.is_empty() {
+                if ctx.current_fn_fallible {
+                    writeln!(out, "{indent}return Ok(true);").unwrap();
+                } else {
+                    writeln!(out, "{indent}return true;").unwrap();
                 }
-            };
+                return;
+            }
             // Inside a matchcontinue arm the `return` exits the arm's IIFE
             // closure, not the function — and that closure returns
             // `(then_result, threaded_outputs…)`. To match the arm's normal-exit
@@ -22093,7 +22259,7 @@ fn visit_stmt_for_refeq(stmt: &typedexp::TypedStmt, out: &mut std::collections::
             visit_exp_for_refeq(cond, out);
             for st in body { visit_stmt_for_refeq(st, out); }
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             for st in body { visit_stmt_for_refeq(st, out); }
             for st in else_body { visit_stmt_for_refeq(st, out); }
         }
@@ -22386,7 +22552,7 @@ fn propagate_stmt_partial_eq<'a>(
             propagate_exp_partial_eq(cond, required, top_level, pkg_prefix, out);
             for s in body { propagate_stmt_partial_eq(s, required, top_level, pkg_prefix, out); }
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             for s in body { propagate_stmt_partial_eq(s, required, top_level, pkg_prefix, out); }
             for s in else_body { propagate_stmt_partial_eq(s, required, top_level, pkg_prefix, out); }
         }
@@ -22761,7 +22927,7 @@ fn visit_stmt_for_static(stmt: &typedexp::TypedStmt, out: &mut std::collections:
             visit_exp_for_static(cond, out);
             for s in body { visit_stmt_for_static(s, out); }
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             for s in body { visit_stmt_for_static(s, out); }
             for s in else_body { visit_stmt_for_static(s, out); }
         }
@@ -22894,7 +23060,7 @@ fn visit_stmt_for_eq(stmt: &typedexp::TypedStmt, out: &mut std::collections::Has
             visit_exp_for_eq(cond, out);
             for s in body { visit_stmt_for_eq(s, out); }
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             for s in body { visit_stmt_for_eq(s, out); }
             for s in else_body { visit_stmt_for_eq(s, out); }
         }
@@ -23542,7 +23708,7 @@ fn collect_concrete_default_uses_in_stmt<'a>(
             collect_concrete_default_uses_in_exp(cond, ever_assigned, default_required, top_level, pkg_prefix, out);
             for s in body { collect_concrete_default_uses_in_stmt(s, ever_assigned, default_required, top_level, pkg_prefix, out); }
         }
-        S::Try { body, else_body } => {
+        S::Try { body, else_body, .. } => {
             for s in body { collect_concrete_default_uses_in_stmt(s, ever_assigned, default_required, top_level, pkg_prefix, out); }
             for s in else_body { collect_concrete_default_uses_in_stmt(s, ever_assigned, default_required, top_level, pkg_prefix, out); }
         }
@@ -23808,7 +23974,7 @@ fn collect_assigned_vars_in_stmts(stmts: &[typedexp::TypedStmt], out: &mut std::
                 collect_assigned_vars_in_stmts(body, out);
             }
             S::While { body, .. } => collect_assigned_vars_in_stmts(body, out),
-            S::Try { body, else_body } => {
+            S::Try { body, else_body, .. } => {
                 collect_assigned_vars_in_stmts(body, out);
                 collect_assigned_vars_in_stmts(else_body, out);
             }
@@ -23845,7 +24011,7 @@ fn collect_default_needs_in_stmts(
                 collect_default_needs_in_exp(cond, ever_assigned, out);
                 collect_default_needs_in_stmts(body, ever_assigned, out);
             }
-            S::Try { body, else_body } => {
+            S::Try { body, else_body, .. } => {
                 collect_default_needs_in_stmts(body, ever_assigned, out);
                 collect_default_needs_in_stmts(else_body, ever_assigned, out);
             }
@@ -23985,6 +24151,37 @@ fn ty_default_init(ty: &Ty) -> Option<String> {
 /// struct with default values for every field, which is not generally safe
 /// (a field's type might not have a default). We leave those uninitialised
 /// so a real E0381 surfaces rather than synthesising a wrong default.
+/// Initialiser for a checkpoint-assigned variable whose type has no
+/// MetaModelica default, so the closure can capture it. Unreadable: the body
+/// overwrites it, and recovery runs only when the body was abandoned part-way.
+fn ty_checkpoint_placeholder<'a>(
+    ty: &Ty,
+    ctx: &mut GenCtx,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> Option<String> {
+    if let Some(s) = ty_default_init_with_hier(ty, ctx, top_level) {
+        return Some(s);
+    }
+    match ty {
+        Ty::Tuple(elems) => {
+            let parts = elems
+                .iter()
+                .map(|t| ty_checkpoint_placeholder(t, ctx, top_level))
+                .collect::<Option<Vec<String>>>()?;
+            Some(format!("({})", parts.join(", ")))
+        }
+        // The `let`'s type annotation drives the closure signature and the
+        // unsizing to `Arc<dyn Fn(..)>`.
+        Ty::Function { inputs, .. } => {
+            let args = vec!["_"; inputs.len()].join(", ");
+            Some(format!(
+                "std::sync::Arc::new(|{args}| unreachable!(\"checkpoint placeholder\"))"
+            ))
+        }
+        _ => None,
+    }
+}
+
 fn ty_default_init_with_hier<'a>(ty: &Ty, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Option<String> {
     if let Some(s) = ty_default_init(ty) {
         return Some(s);

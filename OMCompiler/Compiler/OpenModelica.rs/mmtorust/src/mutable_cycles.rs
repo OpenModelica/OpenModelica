@@ -399,7 +399,7 @@ fn visit_stmt(s: &TypedStmt, f: &mut CallVisit<'_>) {
             visit_exp(cond, info, f);
             body.iter().for_each(|s| visit_stmt(s, f));
         }
-        TypedStmt::Try { body, else_body } => {
+        TypedStmt::Try { body, else_body, .. } => {
             body.iter().for_each(|s| visit_stmt(s, f));
             else_body.iter().for_each(|s| visit_stmt(s, f));
         }

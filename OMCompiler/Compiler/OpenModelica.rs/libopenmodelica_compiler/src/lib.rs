@@ -74,13 +74,21 @@ mod mi {
     }
 }
 
+// The wasm build keeps the plain allocator: its address space is the ceiling.
+#[cfg(not(target_arch = "wasm32"))]
+use metamodelica::heap_limit::Limited;
+
 #[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
 #[global_allocator]
-static GLOBAL: mi::MiMalloc = mi::MiMalloc;
+static GLOBAL: Limited<mi::MiMalloc> = Limited(mi::MiMalloc);
 
 #[cfg(all(feature = "jemalloc", not(target_arch = "wasm32")))]
 #[global_allocator]
-static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+static GLOBAL: Limited<tikv_jemallocator::Jemalloc> = Limited(tikv_jemallocator::Jemalloc);
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "mimalloc"), not(feature = "jemalloc")))]
+#[global_allocator]
+static GLOBAL: Limited<std::alloc::System> = Limited(std::alloc::System);
 
 // MetaModelica-ABI compatibility shims (`omc_Main_init` / `omc_Main_handleCommand`
 // / GC + Windows no-ops) OMEdit links against. Implemented over the embedding ABI
@@ -152,7 +160,36 @@ pub use openmodelica_sim_meta::lapack_dyn::*;
 
 /// Report this build's revision as the compiler version (`getVersion()`,
 /// `omc --version`); called by every entry point that starts a session.
+// `libmimalloc-sys` binds only the allocation entry points; `mi_collect` is part
+// of the same mimalloc C API it links.
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+unsafe extern "C" {
+    fn mi_collect(force: bool);
+}
+
+/// Hand the pages a caught unwind freed back to the OS. Under jemalloc nothing
+/// is released and recovery leans on the ceiling rising instead.
+#[cfg(not(target_arch = "wasm32"))]
+fn release_memory() {
+    #[cfg(all(feature = "mimalloc", not(feature = "jemalloc")))]
+    unsafe {
+        mi_collect(true)
+    };
+    // glibc only; elsewhere the allocator decides for itself when to unmap.
+    #[cfg(all(
+        not(all(feature = "mimalloc", not(feature = "jemalloc"))),
+        target_os = "linux",
+        target_env = "gnu"
+    ))]
+    unsafe {
+        libc::malloc_trim(0)
+    };
+}
+
 fn set_revision() {
+    metamodelica::heap_limit::init();
+    #[cfg(not(target_arch = "wasm32"))]
+    metamodelica::heap_limit::set_release_fn(release_memory);
     capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
 }
 
@@ -219,9 +256,17 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
         // Mirror the launcher's old inline `run()`: flush stdout, report on
         // stderr and exit 1. The MetaModelica exception carries no payload worth
         // printing — diagnostics were already emitted via the Error buffer.
-        Ok(Err(_)) | Err(_) => {
+        Ok(Err(_)) => {
             let _ = std::io::stdout().flush();
             eprintln!("Execution failed!");
+            1
+        }
+        Err(p) => {
+            let _ = std::io::stdout().flush();
+            match metamodelica::heap_limit::oom_from_panic(&*p) {
+                Some(oom) => eprintln!("{oom}"),
+                None => eprintln!("Execution failed!"),
+            }
             1
         }
     }
@@ -308,7 +353,11 @@ pub extern "C" fn omc_compiler_eval_keep(
         // Evaluation failure: surface the error text rather than a bare null so
         // the embedder gets a diagnostic, matching omc's interactive behaviour.
         Ok(Err(e)) => (true, ArcStr::from(format!("Error: {e}"))),
-        Err(_) => return std::ptr::null_mut(),
+        // A ceiling trip unwound just this command; the session stays usable.
+        Err(p) => match metamodelica::heap_limit::oom_from_panic(&*p) {
+            Some(oom) => (true, ArcStr::from(format!("Error: {oom}"))),
+            None => return std::ptr::null_mut(),
+        },
     };
     if !keep_running.is_null() {
         unsafe { *keep_running = if keep { 1 } else { 0 } };
