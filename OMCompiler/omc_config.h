@@ -91,7 +91,16 @@
 /* if we compiled omc with clang asume we
  * use it to compile simulation code with it
  */
-#if defined(__clang__)
+#if defined(_MSC_VER) && !defined(__clang__)
+  /* CMake MSVC build: drive simulation compilation through cl/link, the same
+   * toolchain omc itself was built with. The +target=msvc code path (see
+   * Config.simulationCodeTarget and CodegenC.tpl) writes its own nmake flags,
+   * so these are mostly a sane fallback for anything reading the defaults. */
+  #define DEFAULT_CC "cl"
+  #define DEFAULT_CXX "cl"
+  #define DEFAULT_OMPCC "cl /openmp"
+  #define DEFAULT_LD "link"
+#elif defined(__clang__)
   #define DEFAULT_CC "clang"
   #define DEFAULT_CXX "clang++"
   #define DEFAULT_OMPCC "clang -fopenmp"
@@ -106,8 +115,12 @@
 
 #define CONFIG_TRIPLE ""
 
+#if defined(_MSC_VER) && !defined(__clang__)
+  #define DEFAULT_LDFLAGS ""
+#else
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
+#endif
 
 #define CONFIG_WITH_OPENMP 1
 
@@ -116,10 +129,11 @@
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define CONFIG_DLL_EXT ".dll"
 
-#if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
+  #define DEFAULT_CFLAGS "/nologo /DOM_HAVE_PTHREADS /DNOMINMAX /D_USE_MATH_DEFINES ${MODELICAUSERCFLAGS}"
+#elif defined(__i386__) || defined(__x86_64__)
   /*
-   * if we are on i386 or x86_64 or compiling with
-   * Visual Studio then use the SSE instructions,
+   * if we are on i386 or x86_64 use the SSE instructions,
    * not the normal i387 FPU
    */
   #define DEFAULT_CFLAGS "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
@@ -127,8 +141,12 @@
   #define DEFAULT_CFLAGS "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions ${MODELICAUSERCFLAGS}"
 #endif
 
+#if defined(_MSC_VER) && !defined(__clang__)
+  #define DEFAULT_LINKER "link -DLL"
+#else
 /* for windows/mingw we don't need -fPIC for x86_64 target, also clang doesn't support it, gcc ignores it */
 #define DEFAULT_LINKER DEFAULT_LD" -shared -Xlinker --export-all-symbols"
+#endif
 
 #define CONFIG_IPOPT_INC /* Without IPOPT */
 #define CONFIG_IPOPT_LIB /* Without IPOPT */

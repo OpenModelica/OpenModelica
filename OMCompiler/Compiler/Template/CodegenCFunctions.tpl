@@ -488,7 +488,10 @@ template recordDeclarationHeader(RecordDeclaration recDecl)
   case r as RECORD_DECL_FULL(__) then recordDeclarationFullHeader(r)
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then recordDeclarationExtraCtor(r)
   // TODO revise me
-  case r as RECORD_DECL_DEF(__) then 'extern struct record_description <%underscorePath(r.path)%>__desc;<%\n%>'
+  // meta_modelica_builtin.h already declares SourceInfo_SOURCEINFO__desc
+  // (DLLDirection-annotated); see recordDefinitionHeader above for why a
+  // second, undecorated extern here would conflict with it on MSVC.
+  case r as RECORD_DECL_DEF(__) then if stringEq(underscorePath(r.path), "SourceInfo_SOURCEINFO") then '' else 'extern struct record_description <%underscorePath(r.path)%>__desc;<%\n%>'
 end recordDeclarationHeader;
 
 template recordDeclarationExtraCtor(RecordDeclaration recDecl)
@@ -597,7 +600,12 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       %>
       >>
       %>
-      extern struct record_description <%underscorePath(r.defPath)%>__desc;
+      <% if not stringEq(underscorePath(r.defPath), "SourceInfo_SOURCEINFO") then
+      // meta_modelica_builtin.h already declares SourceInfo_SOURCEINFO__desc
+      // (DLLDirection-annotated); see recordDefinitionHeader above for why a
+      // second, undecorated extern here would conflict with it on MSVC.
+      'extern struct record_description <%underscorePath(r.defPath)%>__desc;<%\n%>'
+      %>
 
       void <%ctor_func_name%>(threadData_t *threadData, void* v_ths <%ctor_additional_inputs%>);
       #define <%ctor_macro_name%>(td, ths <%ctor_macro_additional_inputs%>) <%ctor_func_name%>(td, &ths <%ctor_macro_additional_inputs%>)
@@ -985,6 +993,14 @@ end recordDefinition;
 template recordDefinitionHeader(String origName, String encName, Integer numFields)
  "Generates the definition struct for a record declaration."
 ::=
+  match encName
+  // meta_modelica_builtin.h already declares this one (DLLDirection-annotated,
+  // matching its definition in meta_modelica_builtin.c). A plain, undecorated
+  // extern re-declaration here - like recordDefinition() above already avoids
+  // for the .c-side definition - would conflict with it on MSVC (warning C4273
+  // "inconsistent dll linkage"): harmless, but the two declarations should agree.
+  case "SourceInfo_SOURCEINFO" then ''
+  else
   <<
   extern struct record_description <%encName%>__desc;
   >>

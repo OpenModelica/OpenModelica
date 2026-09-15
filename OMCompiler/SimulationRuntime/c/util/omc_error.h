@@ -159,9 +159,9 @@ DLLDirection extern int omc_showAllWarnings;
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
 
-extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
-extern void (*messageClose)(int stream);
-extern void (*messageCloseWarning)(int stream);
+DLLDirection extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
+DLLDirection extern void (*messageClose)(int stream);
+DLLDirection extern void (*messageCloseWarning)(int stream);
 
 #if !defined(OMC_MINIMAL_LOGGING)
 extern void infoStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
