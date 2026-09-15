@@ -61,6 +61,14 @@ message(STATUS "configuring ModelicaConfig_gcc.inc in OMCompiler/SimulationRunti
 message(STATUS "boost include: ${Boost_INCLUDE_DIR}")
 message(STATUS "boost libraries implict / explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
 
+# A coverage build instruments the runtime libraries, so generated code that
+# statically links them (the FMUs, which pull in the OMCpp*_static variants)
+# needs the gcov runtime too, or it fails with undefined references to
+# __gcov_*/llvm_gcda_*. See SYSTEM_LDFLAGS in ModelicaConfig_gcc.inc.in.
+if(OM_ENABLE_COVERAGE)
+  set(SYSTEM_LDFLAGS "--coverage")
+endif()
+
 # Configure the files. The generated makefile includes the pair matching its
 # own dialect, so MSVC needs the _msvc variants alongside the _gcc ones.
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)
@@ -368,5 +376,3 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         FILES_MATCHING
         PATTERN System/*.h
 )
-
-

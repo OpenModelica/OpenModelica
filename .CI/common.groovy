@@ -1621,12 +1621,15 @@ void buildGccOMC() {
 
 // The jammy CMake build of omc. Its install tree is what the testsuite-gcc
 // stages run against (ctestCMakeStashed), so keep the flags in sync with what
-// those tests need.
+// those tests need. Built with -DOM_ENABLE_COVERAGE=ON so those stages'
+// coverage numbers (see coverageReportStage()) come from the same run that
+// tests the PR, rather than a separate instrumented build.
 void buildCMakeGccOMC() {
   buildOMC_CMake([
     "-DCMAKE_BUILD_TYPE=Release",
     "-DOM_USE_CCACHE=OFF",
-    "-DCMAKE_INSTALL_PREFIX=build"])
+    "-DCMAKE_INSTALL_PREFIX=build",
+    "-DOM_ENABLE_COVERAGE=ON"])
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see ctestCMakeStashed).
@@ -1634,6 +1637,18 @@ void buildCMakeGccOMC() {
         includes: 'build/**,' +
                   'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
                   'OMCompiler/Compiler/Util/Autoconf.mo'
+
+  // Coverage counters (*.gcda), written by the instrumented binaries as the
+  // testsuite runs, land next to the *.gcno files below, at whatever absolute
+  // path this build happened to compile at (baked in by the compiler). The
+  // testsuite-cmake-gcc stages run on other agents/workspaces that don't have
+  // that path, so they redirect their counters elsewhere with GCOV_PREFIX
+  // (see ctestCMakeStashed) instead of writing there directly; this string is
+  // what lets coverageReportStage() find them again afterwards to merge in
+  // the *.gcno tree. See section 9 of README.cmake.md for what is instrumented.
+  writeFile file: 'coverage-build-root.txt', text: env.WORKSPACE
+  stash name: 'omc-cmake-gcc-coverage-root', includes: 'coverage-build-root.txt'
+  stash name: 'omc-cmake-gcc-gcno', includes: 'build_cmake/**/*.gcno'
 }
 
 void buildClangOMC() {
@@ -1694,6 +1709,14 @@ void partestStashed(stashName, partition, partitionmodulo) {
 // configuring the whole project (this stage only unstashes an installed omc,
 // not a configured build tree), and the generated file holds just this shard,
 // which runtests.pl selects. See testsuite/CTest/Readme.md.
+//
+// The install tree carries the coverage-instrumented runtime/omc from
+// buildCMakeGccOMC(), so this shard's share of the testsuite also produces
+// coverage counters (*.gcda). They can't be written to the build tree they
+// were compiled in - this stage never has one, only the install tree - so
+// GCOV_PREFIX redirects them under the workspace instead, and
+// coverageReportStage() merges them back onto the original *.gcno tree
+// afterwards. See section 9 of README.cmake.md.
 void ctestCMakeStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
@@ -1704,7 +1727,8 @@ void ctestCMakeStashed(stashName, partition, partitionmodulo) {
 
   // Susan's generated *.mo files are in the build tree
   def ws = sh(script: 'pwd', returnStdout: true).trim()
-  withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
+  withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo",
+           "GCOV_PREFIX=${ws}/gcda-out"]) {
     sh """
     cmake -DTESTSUITE_DIR=${ws}/testsuite -DOUTPUT_DIR=${ws}/build-testsuite-ctest \\
           -DTESTSUITE_SUITES=+hdf5 \\
@@ -1727,6 +1751,80 @@ void ctestCMakeStashed(stashName, partition, partitionmodulo) {
     """)
   }
   junit 'build-testsuite-ctest/ctest-result.xml'
+
+  // GCOV_PREFIX is prepended verbatim to the original build's absolute
+  // compile path, so the counters land at gcda-out/<coverage-build-root>/...
+  // (coverageReportStage() re-derives that same coverage-build-root string
+  // from the stash buildCMakeGccOMC() left, to find them again). Stash only
+  // the counters themselves (not the rest of gcda-out) to keep it small.
+  sh "find gcda-out -name '*.gcda' | wc -l"
+  stash name: "gcda-${partition}", includes: 'gcda-out/**/*.gcda', allowEmpty: true
+}
+
+// Merges the coverage counters (*.gcda) the shardCount testsuite-cmake-gcc
+// shards produced (ctestCMakeStashed) back onto the *.gcno tree from the
+// original instrumented build (buildCMakeGccOMC), then writes the combined
+// report. gcov-tool only merges two directories at a time, so shards are
+// folded in pairwise. This never rebuilds anything - the coverage-report
+// CMake target only invokes gcovr - so a fresh, otherwise-empty configure
+// (matching -DOM_ENABLE_COVERAGE=ON) is enough to get that target back
+// without a configured build tree having to be stashed/unstashed. See
+// section 9 of README.cmake.md.
+//
+// Known gap: the *.gcno files embed the build's absolute source paths. Every
+// agent checks out to ws/OpenModelica, but that is relative to each node's own
+// root, so when this stage runs on a different node than the build the paths
+// may not match and gcovr's HTML report may fail to annotate some source files
+// with their text. The line/function/branch numbers - and the Cobertura XML -
+// are unaffected; they come from the *.gcno structure and the counters alone.
+void coverageReportStage(int shardCount) {
+  standardSetup()
+  unstash 'omc-cmake-gcc-coverage-root'
+  def coverageBuildRoot = readFile('coverage-build-root.txt').trim()
+  unstash 'omc-cmake-gcc-gcno'
+
+  def mergeDirs = []
+  for (int i = 1; i <= shardCount; i++) {
+    dir("shard-${i}") {
+      unstash "gcda-${i}"
+    }
+    mergeDirs << "shard-${i}/gcda-out${coverageBuildRoot}/build_cmake"
+  }
+
+  sh """#!/bin/bash -xe
+  merged=${mergeDirs[0]}
+  for src in ${mergeDirs.drop(1).join(' ')}; do
+    gcov-tool merge "\$merged" "\$src" -o merged-next
+    rm -rf merged-tmp
+    mv merged-next merged-tmp
+    merged=merged-tmp
+  done
+  # Overlay the merged counters onto the *.gcno tree unstashed above.
+  cp -a "\$merged/." build_cmake/
+  """
+
+  // Configure only: nothing needs (re)building for the coverage-report
+  // target, and the flags otherwise just have to be enough to reach it
+  // (matching buildCMakeGccOMC() keeps this from silently drifting out of
+  // sync with what was actually instrumented).
+  sh """
+  cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \\
+        -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON
+  """
+  sh 'cmake --build build_cmake --target coverage-report'
+
+  // The browsable HTML, kept per build.
+  archiveArtifacts artifacts: 'build_cmake/coverage/**', allowEmptyArchive: false
+
+  // Publish to Jenkins itself (Coverage plugin), which keeps the numbers per
+  // build and draws the trend. In a multibranch job it also picks the primary
+  // branch's last good build as the reference, so a PR shows its delta
+  // against master rather than just an absolute number.
+  recordCoverage(tools: [[parser: 'COBERTURA',
+                          pattern: 'build_cmake/coverage/coverage.xml']],
+                 id: 'omc-coverage',
+                 name: 'C/C++ runtime and compiler',
+                 sourceCodeRetention: 'LAST_BUILD')
 }
 
 void crossBuildFMU() {

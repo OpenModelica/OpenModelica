@@ -25,6 +25,14 @@ if(NOT MSVC)
   endif()
 endif()
 
+# Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON), applied directory-wide so
+# every target defined here and in every add_subdirectory() below is covered.
+# See cmake/modules/OpenModelicaCoverage.cmake.
+if(OM_ENABLE_COVERAGE)
+  add_compile_options(${OM_COVERAGE_COMPILE_OPTIONS})
+  add_link_options(--coverage)
+endif()
+
 # ######################################################################################################################
 # INTERFACE target
 # Other targets can link to this interface to get the include path transitively.

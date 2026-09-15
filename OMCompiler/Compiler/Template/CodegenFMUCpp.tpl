@@ -891,7 +891,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  LDFLAGS=-L"$(OMHOME)/lib/$(TRIPLET)/omc/cpp" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
+  LDFLAGS=-L"$(OMHOME)/lib/$(TRIPLET)/omc/cpp" <%additionalLinkerFlags_GCC%> $(SYSTEM_LDFLAGS) -Wl,--no-undefined
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
 

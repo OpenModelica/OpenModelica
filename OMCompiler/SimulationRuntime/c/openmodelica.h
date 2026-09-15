@@ -65,6 +65,15 @@ extern "C" {
 /* BEFORE: compat.h */
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(__AVR__)
 #define EXIT(code) exit(code)
+#elif defined(OMC_GCOV_COVERAGE)
+/* Same _exit() as below, but gcov writes its counters from an atexit handler,
+ * which _exit() skips - omc and every simulation would record nothing at all.
+ * Dump them explicitly first rather than switching to exit(), so a coverage
+ * build keeps the exit-code behaviour the comment below describes.
+ * Defined by -DOM_ENABLE_COVERAGE=ON; see cmake/modules/OpenModelicaCoverage.cmake. */
+#include <unistd.h>
+extern void __gcov_dump(void);
+#define EXIT(code) {fflush(NULL); __gcov_dump(); _exit(code);}
 #else
 /* We need to patch exit() on Unix systems
  * It does not change the exit code of simulations for some reason! */
