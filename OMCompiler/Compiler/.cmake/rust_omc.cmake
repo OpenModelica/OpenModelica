@@ -126,8 +126,11 @@ if(RUST_OMC_TARGET)
   elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
     set(RUST_OMC_EXE_SUFFIX "")
     set(RUST_OMC_CDYLIB_NAME "libOpenModelicaCompiler.dylib")
+  elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
+    set(RUST_OMC_EXE_SUFFIX "")
+    set(RUST_OMC_CDYLIB_NAME "libOpenModelicaCompiler.so")
   else()
-    message(FATAL_ERROR "RUST_OMC_TARGET=${RUST_OMC_TARGET} is unsupported; only *-windows-msvc (cargo-xwin) and *-apple-darwin (cargo-zigbuild) triples are wired.")
+    message(FATAL_ERROR "RUST_OMC_TARGET=${RUST_OMC_TARGET} is unsupported; only *-windows-msvc (cargo-xwin), *-apple-darwin (cargo-zigbuild) and *-linux-gnu (the distribution's GNU cross toolchain) triples are wired.")
   endif()
   # The dev profile selects the cranelift rustc backend, which has no backend for
   # these targets; a cross build must use release (LLVM backend).
@@ -960,6 +963,21 @@ elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
   endif()
   set(CARGO_BUILD_ARTIFACT ${CARGO_ENV} SDKROOT=${_rust_omc_sdkroot}
       ${CARGO_EXECUTABLE} zigbuild --target ${RUST_OMC_TARGET} --target-dir ${RUST_TARGET_DIR})
+elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
+  # Another Linux architecture needs no cargo wrapper at all -- rustc links it
+  # with the distribution's GNU cross gcc, which is also what the C/C++ half of
+  # the build uses (linux-cross-toolchain.cmake). Only the linker has to be named:
+  # cargo would otherwise invoke the host `cc`.
+  string(TOUPPER ${RUST_OMC_TARGET} _rust_omc_target_env)
+  string(REPLACE "-" "_" _rust_omc_target_env ${_rust_omc_target_env})
+  # pkg-config has to be told this is a cross build and pointed at the target's
+  # multiarch .pc files, or a -sys crate (openssl-sys, via curl) either refuses to
+  # run at all or answers with the host's libraries.
+  set(CARGO_BUILD_ARTIFACT ${CARGO_ENV}
+      CARGO_TARGET_${_rust_omc_target_env}_LINKER=${CMAKE_C_COMPILER}
+      PKG_CONFIG_ALLOW_CROSS=1
+      PKG_CONFIG_LIBDIR=/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig:/usr/share/pkgconfig
+      ${CARGO_EXECUTABLE} build --target ${RUST_OMC_TARGET} --target-dir ${RUST_TARGET_DIR})
 else()
   set(CARGO_BUILD_ARTIFACT ${CARGO_BUILD})
 endif()
