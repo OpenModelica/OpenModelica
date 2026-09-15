@@ -83,8 +83,21 @@ fn ipopt() {
     }
     // Ipopt is C++; MUMPS is Fortran (quadmath). LAPACK/BLAS: `lapack_dyn` on
     // unix, linked by name elsewhere.
+    //
+    // quadmath only where GCC builds it. It exists to provide __float128 on
+    // targets whose `long double` is something else; on aarch64 `long double`
+    // is already IEEE binary128, so there is no libquadmath at all -- not even a
+    // cross package -- and naming it fails the link.
     let unix = std::env::var_os("CARGO_CFG_UNIX").is_some();
-    let libs: &[&str] = if unix { &["stdc++", "gfortran", "quadmath"] } else { &["lapack", "blas", "stdc++", "gfortran", "quadmath"] };
+    let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    let mut libs: Vec<&str> = if unix {
+        vec!["stdc++", "gfortran"]
+    } else {
+        vec!["lapack", "blas", "stdc++", "gfortran"]
+    };
+    if matches!(arch.as_str(), "x86" | "x86_64") {
+        libs.push("quadmath");
+    }
     for l in libs {
         println!("cargo:rustc-link-lib=dylib={l}");
     }

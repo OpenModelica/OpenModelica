@@ -33,6 +33,15 @@ function(omc_result_reader_library)
       # path in this build tree; @rpath defers that to whoever loads it.
       list(APPEND _env "SDKROOT=${CMAKE_OSX_SYSROOT}"
            "RUSTFLAGS=-Clink-arg=-Wl,-install_name,@rpath/libomc_result.dylib")
+    elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
+      # Plain `cargo build` is right for another Linux architecture, but the
+      # linker has to be named or rustc calls the host `cc` -- which rejects the
+      # AArch64-only --fix-cortex-a53-843419 that rustc passes for the target.
+      string(TOUPPER ${RUST_OMC_TARGET} _res_target_env)
+      string(REPLACE "-" "_" _res_target_env ${_res_target_env})
+      list(APPEND _env "CARGO_TARGET_${_res_target_env}_LINKER=${CMAKE_C_COMPILER}"
+           "PKG_CONFIG_ALLOW_CROSS=1"
+           "PKG_CONFIG_LIBDIR=/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig:/usr/share/pkgconfig")
     endif()
   endif()
   if(WIN32 OR RUST_OMC_TARGET MATCHES "windows")

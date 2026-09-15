@@ -61,12 +61,21 @@ if(RUST_OMC_TARGET)
     # Both cargo-zigbuild and build.rs read the SDK from SDKROOT; handed over
     # below, where _simrt_env exists.
     set(_simrt_sdkroot ${CMAKE_OSX_SYSROOT})
+  elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
+    # Another Linux architecture needs no cargo driver, just the cross linker --
+    # the same one the C half of this build uses.
+    string(TOUPPER ${RUST_OMC_TARGET} _simrt_target_env)
+    string(REPLACE "-" "_" _simrt_target_env ${_simrt_target_env})
+    set(_simrt_linker_env
+        "CARGO_TARGET_${_simrt_target_env}_LINKER=${CMAKE_C_COMPILER}"
+        "PKG_CONFIG_ALLOW_CROSS=1"
+        "PKG_CONFIG_LIBDIR=/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig:/usr/share/pkgconfig")
   else()
     message(WARNING
       "RUST_OMC_TARGET=${RUST_OMC_TARGET}: libSimulationRuntimeRust will be built "
       "with a plain `cargo build --target`, which needs a linker for that target "
-      "on PATH. Only *-windows-msvc (cargo-xwin) and *-apple-darwin "
-      "(cargo-zigbuild) are wired.")
+      "on PATH. Only *-windows-msvc (cargo-xwin), *-apple-darwin "
+      "(cargo-zigbuild) and *-linux-gnu are wired.")
   endif()
 endif()
 
@@ -81,6 +90,9 @@ set(_simrt_headers "${CMAKE_CURRENT_SOURCE_DIR}/../c|${CMAKE_CURRENT_SOURCE_DIR}
 set(_simrt_env ${CMAKE_COMMAND} -E env "OMC_SIMRT_INCLUDE_DIRS=${_simrt_headers}")
 if(_simrt_sdkroot)
   list(APPEND _simrt_env "SDKROOT=${_simrt_sdkroot}")
+endif()
+if(_simrt_linker_env)
+  list(APPEND _simrt_env "${_simrt_linker_env}")
 endif()
 # The archives native_solver_archives.cmake collected, so the driver gets
 # CVODE/IDA. Both or neither: openmodelica_solvers' build script needs the index
