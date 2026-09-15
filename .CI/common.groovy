@@ -1625,13 +1625,22 @@ void checks() {
   stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
 }
 
+// The suites the gcc and clang testsuite shards have in common: only the CMake
+// build has HDF5, only the autotools one lacks libomc_result. Partitioning is
+// computed over these, so what a shard enables on top of them runs there in
+// full. See -partition-suites in testsuite/partest/runtests.pl.
+String sharedTestSuites() {
+  return '-hdf5,-arrow'
+}
+
 // A partest shard against a stashed omc build (gcc/clang).
 void partestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
   // arrow: this is the autotools build, the one without libomc_result.
-  partest(partition, partitionmodulo, true, '-suites=-arrow')
+  partest(partition, partitionmodulo, true,
+          "-suites=-arrow -partition-suites=${sharedTestSuites()}")
 }
 
 // The CTest counterpart of the old partestCMakeStashed, for a stashed CMake
@@ -1639,9 +1648,8 @@ void partestStashed(stashName, partition, partitionmodulo) {
 // way as before; only how the tests themselves are discovered and run
 // changes: CTestTestfile.cmake is (re-)generated fresh here rather than
 // configuring the whole project (this stage only unstashes an installed omc,
-// not a configured build tree), and partitionmodulo reproducible shards are
-// CTest's own -I Start,,Stride instead of runtests.pl -partition=M/N. See
-// testsuite/CTest/Readme.md.
+// not a configured build tree), and the generated file holds just this shard,
+// which runtests.pl selects. See testsuite/CTest/Readme.md.
 void ctestCMakeStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
@@ -1656,6 +1664,8 @@ void ctestCMakeStashed(stashName, partition, partitionmodulo) {
     sh """
     cmake -DTESTSUITE_DIR=${ws}/testsuite -DOUTPUT_DIR=${ws}/build-testsuite-ctest \\
           -DTESTSUITE_SUITES=+hdf5 \\
+          -DTESTSUITE_PARTITION=${partition}/${partitionmodulo} \\
+          -DTESTSUITE_PARTITION_SUITES=${sharedTestSuites()} \\
           -P testsuite/CTest/Partest/GenerateCTestFile.cmake
     """
     // hdf5: unlike the autotools build, this one links the system HDF5, which
@@ -1666,7 +1676,7 @@ void ctestCMakeStashed(stashName, partition, partitionmodulo) {
     ulimit -v 6291456 # Max 6GB per process
 
     .CI/scripts/cgroup-memory.sh check
-    ctest --test-dir build-testsuite-ctest -I ${partition},,${partitionmodulo} \\
+    ctest --test-dir build-testsuite-ctest \\
           -j${numPhysicalCPU()} --output-on-failure --output-junit ctest-result.xml || true
     .CI/scripts/cgroup-memory.sh report
     test -f build-testsuite-ctest/ctest-result.xml
