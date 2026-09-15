@@ -384,7 +384,7 @@ pipeline {
           }
         }
 
-        stage('04 testsuite-cmake-gcc 1/3') {
+        stage('04 testsuite-cmake-gcc 1/2') {
           agent {
             node {
               label 'linux'
@@ -406,69 +406,13 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.ctestCMakeStashed('omc-cmake-gcc', 1, 3)
+                common.ctestCMakeStashed('omc-cmake-gcc', 1, 2)
               }
             }
           }
         }
 
-        stage('05 testsuite-cmake-gcc 2/3') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
-                                     common.testCacheMounts('runtest-gcc-cache')) {
-                common.ctestCMakeStashed('omc-cmake-gcc', 2, 3)
-              }
-            }
-          }
-        }
-
-        stage('06 testsuite-cmake-gcc 3/3') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
-                                     common.testCacheMounts('runtest-gcc-cache')) {
-                common.ctestCMakeStashed('omc-cmake-gcc', 3, 3)
-              }
-            }
-          }
-        }
-
-        stage('07 testsuite-clang 1/3') {
+        stage('05 testsuite-clang 2/2') {
           agent {
             node {
               label 'linux'
@@ -490,63 +434,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 1, 3)
-              }
-            }
-          }
-        }
-
-        stage('08 testsuite-clang 2/3') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
-                                     common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 2, 3)
-              }
-            }
-          }
-        }
-
-        stage('09 testsuite-clang 3/3') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
-                                     common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 3, 3)
+                common.partestStashed('omc-clang', 2, 2)
               }
             }
           }

@@ -10,11 +10,13 @@
 # testsuite/: discovery is delegated entirely to runtests.pl, which never
 # looks outside the testsuite Makefiles.
 #
-# Test discovery, suite filtering and ordering are all delegated to
+# Test discovery, suite filtering, sharding and ordering are all delegated to
 # runtests.pl (-printtests -nodb), so the set of tests and their order match
-# exactly what an unpartitioned Makefile testsuite run would use. Splitting
-# into reproducible shards is then just `ctest -I <M>,,<N>`: CTest numbers
-# tests in the (stable) order they were added below.
+# exactly what the Makefile testsuite would use. A shard is therefore selected
+# here rather than by `ctest -I`: runtests.pl is the only place that knows
+# which tests a shard shares with the shards running elsewhere
+# (-partition-suites), and the generated file simply lists what this shard
+# runs.
 #
 # runtest.pl uses an inverted exit code (0 means the test FAILED; the
 # process otherwise exits non-zero, encoding the elapsed time for partest's
@@ -27,6 +29,8 @@
 #   OUTPUT_DIR        Directory to (re-)write CTestTestfile.cmake into.
 # Optional:
 #   TESTSUITE_SUITES  Forwarded to runtests.pl's -suites= flag.
+#   TESTSUITE_PARTITION        "M/N", forwarded to runtests.pl's -partition=.
+#   TESTSUITE_PARTITION_SUITES Forwarded to runtests.pl's -partition-suites=.
 #   PERL_EXECUTABLE   Defaults to "perl".
 
 if(NOT TESTSUITE_DIR)
@@ -42,6 +46,12 @@ endif()
 set(list_args -nodb -printtests)
 if(TESTSUITE_SUITES)
   list(APPEND list_args "-suites=${TESTSUITE_SUITES}")
+endif()
+if(TESTSUITE_PARTITION)
+  list(APPEND list_args "-partition=${TESTSUITE_PARTITION}")
+endif()
+if(TESTSUITE_PARTITION_SUITES)
+  list(APPEND list_args "-partition-suites=${TESTSUITE_PARTITION_SUITES}")
 endif()
 
 # Must run from testsuite/partest/: runtests.pl refuses to start otherwise.
