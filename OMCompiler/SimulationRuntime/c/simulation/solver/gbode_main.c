@@ -283,7 +283,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       else {
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
-      if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
+      if (jacobian->sparsePattern == NULL) {
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
 
@@ -538,7 +538,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     /* GBODE always needs the forward Jacobian A for its evaluation DAG and the
      * multi-rate path, see gbInternal_evalJacobian() and initRK_NLS_DATA_MR(). */
     jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, TRUE);
-    if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
+    if (jacobian->sparsePattern == NULL) {
       throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
     }
 

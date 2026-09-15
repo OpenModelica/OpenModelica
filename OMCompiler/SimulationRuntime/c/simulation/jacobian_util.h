@@ -55,7 +55,7 @@ void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);
 void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex);
 JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData);
-JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_METHOD jacobianMethod);
+JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian, JACOBIAN_METHOD jacobianMethod);
 JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian);
 JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN_METHOD* jacobianMethod, modelica_boolean requireForwardJacobian);
 JACOBIAN* getSymbolicOdeJacobian(DATA* data);
