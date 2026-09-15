@@ -42,7 +42,10 @@ extern "C" {
 
 #include <stdlib.h>
 #if defined(OM_HAVE_PTHREADS)
-#include <pthread.h>
+  #ifdef _WIN32
+    #include <winsock2.h>  /* Must precede windows.h (via pthread.h) to prevent winsock/winsock2 conflict */
+  #endif
+  #include <pthread.h>
 #endif
 #include <setjmp.h>
 
@@ -64,8 +67,15 @@ typedef struct {
   void (*free_string_persist)(void*);
 } omc_alloc_interface_t;
 
-extern omc_alloc_interface_t omc_alloc_interface;
-extern omc_alloc_interface_t omc_alloc_interface_pooled;
+/* omc_alloc_interface is global data used from inline code in the MetaModelica
+ * headers, so on a shared-library Windows build consumers need it as
+ * __declspec(dllimport). DLLDirection keys off IMPORT_INTO; pull in the header
+ * that defines it if we were included on our own rather than via openmodelica.h. */
+#ifndef DLLDirection
+#include "../openmodelica.h"
+#endif
+DLLDirection extern omc_alloc_interface_t omc_alloc_interface;
+DLLDirection extern omc_alloc_interface_t omc_alloc_interface_pooled;
 
 /*
  * ERROR_STAGE defines different
@@ -146,7 +156,7 @@ typedef struct threadData_s {
 typedef threadData_t OpenModelica_threadData_ThreadData;
 
 #include "../meta/meta_modelica_segv.h"
-void mmc_do_out_of_memory(void) __attribute__ ((noreturn));
+DLLDirection void mmc_do_out_of_memory(void) __attribute__ ((noreturn));
 #define GC_RETURN_REPORT_ALLOC_FAILED(X) { void *res = (X); \
   if (0==res) { \
     mmc_do_out_of_memory(); \
@@ -207,7 +217,7 @@ struct mmc_GC_state_type /* the structure of GC state */
   modelica_metatype       global_roots[MMC_GC_GLOBAL_ROOTS_SIZE]; /* the global roots ! */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
-extern mmc_GC_state_type* mmc_GC_state;
+DLLDirection extern mmc_GC_state_type* mmc_GC_state;
 
 /* tag the free reqion as a free object with 250 ctor*/
 #define MMC_FREE_OBJECT_CTOR           200

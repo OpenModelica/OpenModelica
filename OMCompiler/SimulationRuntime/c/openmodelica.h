@@ -49,7 +49,17 @@ extern "C" {
 /* adrpo: extreme windows crap! */
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define DLLImport   __declspec( dllimport )
+/* IMPORT_INTO marks a translation unit that only *consumes* the OpenModelica
+ * runtime DLL (generated simulation code, the Qt GUI clients) - it never
+ * provides these symbols, so even the historically export-only DLLExport must
+ * come in as dllimport there. The runtime's own .c files build without
+ * IMPORT_INTO and keep dllexport. MinGW auto-exports everything, so this only
+ * matters for MSVC's strict import/export. */
+#if defined(IMPORT_INTO)
+#define DLLExport   __declspec( dllimport )
+#else
 #define DLLExport   __declspec( dllexport )
+#endif
 #else
 #define DLLImport /* extern */
 #define DLLExport /* nothing */

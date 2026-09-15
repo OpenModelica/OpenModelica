@@ -90,32 +90,38 @@ typedef struct {
 } ModelicaMatReader;
 
 
+/* The Qt GUI clients call these directly, so on MSVC they must be exported from
+ * OpenModelicaCompiler.dll and imported (IMPORT_INTO) on the consumer side. */
+#ifndef DLLDirection
+#include "../openmodelica.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader);
+DLLDirection const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader);
 
-void omc_free_matlab4_reader(ModelicaMatReader *reader);
+DLLDirection void omc_free_matlab4_reader(ModelicaMatReader *reader);
 
-ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const char *varName);
+DLLDirection ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const char *varName);
 
-double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex);
+DLLDirection double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex);
 
-int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);
+DLLDirection int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);
 
-int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **var, int N, double time);
+DLLDirection int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **var, int N, double time);
 
-void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
+DLLDirection void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 
-double omc_matlab4_startTime(ModelicaMatReader *reader);
-double omc_matlab4_stopTime(ModelicaMatReader *reader);
+DLLDirection double omc_matlab4_startTime(ModelicaMatReader *reader);
+DLLDirection double omc_matlab4_stopTime(ModelicaMatReader *reader);
 
-void matrix_transpose(double *m, int w, int h);
-void matrix_transpose_uint32(uint32_t *m, int w, int h);
-int omc_matlab4_read_all_vals(ModelicaMatReader *reader);
+DLLDirection void matrix_transpose(double *m, int w, int h);
+DLLDirection void matrix_transpose_uint32(uint32_t *m, int w, int h);
+DLLDirection int omc_matlab4_read_all_vals(ModelicaMatReader *reader);
 
-char* openmodelicaStyleVariableName(const char *varName);
+DLLDirection char* openmodelicaStyleVariableName(const char *varName);
 
 #ifdef __cplusplus
 } /* extern "C" */

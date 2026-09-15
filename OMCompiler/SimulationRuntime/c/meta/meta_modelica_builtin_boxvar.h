@@ -41,8 +41,10 @@ extern "C" {
  * C forbids this, but it is a well-defined GNU extension on all supported
  * platforms.
  */
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 
 #if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
 
@@ -309,7 +311,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_valueHashMod,2,0) {(modelica_metatype) 
 
 #undef OMC_SYM_BOXPTR
 
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
 
 #endif /* #if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
 #if defined(__cplusplus)

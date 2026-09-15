@@ -617,6 +617,15 @@ algorithm
       String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
 
+    // An omc built with MSVC drives simulation compilation through cl/link
+    // (+target=msvc); there is no bundled MSYS/MinGW tree to add to PATH.
+    case _
+      guard stringEq(System.openModelicaPlatform(), "msvc64") or
+            stringEq(System.openModelicaPlatform(), "msvc32")
+      algorithm
+        System.setEnv("OPENMODELICAHOME", inOMHome, true);
+      then ();
+
     // check if we have OMDEV set
     case omHome
       algorithm

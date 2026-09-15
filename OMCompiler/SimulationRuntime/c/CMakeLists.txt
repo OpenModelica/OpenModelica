@@ -68,14 +68,20 @@ add_subdirectory(gc)
 add_subdirectory(meta)
 add_subdirectory(util)
 
-# For the moment, we build OpenModelicaRuntimeC as a static library with MSVC.
-# It has some dll exporting issues in it that need to be resolved.
+# On MSVC OpenModelicaRuntimeC is a static library that gets absorbed whole into
+# OpenModelicaCompiler.dll (and SimulationRuntimeC.dll). The DLLDirection-
+# annotated runtime symbols are re-exported from there; the pure consumers
+# (omc.exe, libOMCDLL, the Qt GUI clients) import them by compiling with
+# IMPORT_INTO. Anything that *defines* those symbols - the generated omc_* code
+# in bomc / OpenModelicaCompiler, the *_omc.cpp runtime - must keep
+# DLLDirection == DLLExport, i.e. must NOT get IMPORT_INTO, so it is set narrowly
+# on the consumers (OpenModelicaCompiler's INTERFACE, each GUI client) rather
+# than on this library's INTERFACE.
 if(MSVC)
   add_library(OpenModelicaRuntimeC STATIC)
 else()
   add_library(OpenModelicaRuntimeC SHARED)
 endif()
-
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
 target_link_libraries(OpenModelicaRuntimeC
@@ -90,6 +96,10 @@ target_link_libraries(OpenModelicaRuntimeC
 # to use winsock2.h in some 3rdParty libraries and the two can not be used simultaneously.
 # winsock2.h is backwards compatible with winsock.h.
 target_compile_definitions(OpenModelicaRuntimeC PUBLIC WIN32_LEAN_AND_MEAN)
+# NOMINMAX: keep windows.h from defining the min()/max() function-like macros,
+# which otherwise break std::min/std::max and std::numeric_limits<>::max() in
+# C++ consumers (e.g. Compiler/runtime/OMGraphics_omc.cpp). Inert off Windows.
+target_compile_definitions(OpenModelicaRuntimeC PUBLIC NOMINMAX)
 
 target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
@@ -151,6 +161,18 @@ if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # Generated simulation code is compiled IMPORT_INTO and imports the *entire*
+  # MetaModelica + util + gc runtime (mmc_*, boxptr_*, throwStreamPrint,
+  # GC_asprintf, rtclock, ...) from this one DLL. Those come from the OBJECT
+  # libraries behind the static OpenModelicaRuntimeC; link them here directly so
+  # WINDOWS_EXPORT_ALL_SYMBOLS (which scans a target's own + linked OBJECT-lib
+  # objects, but not a static archive's members) exports them. The static
+  # OpenModelicaRuntimeC still comes in transitively via the simulation object
+  # lib but contributes nothing new, so no duplicate-symbol errors.
+  target_link_libraries(SimulationRuntimeC PRIVATE
+    omc::simrt::runtime::util
+    omc::simrt::runtime::meta
+    omc::simrt::runtime::gc)
 endif(MINGW)
 
 if(OM_OMC_ENABLE_COLPACK)
@@ -163,6 +185,28 @@ target_include_directories(SimulationRuntimeC
 )
 
 install(TARGETS SimulationRuntimeC)
+
+# Generated simulation code (the +target=msvc makefile from CodegenC.tpl) links
+# BLAS and pthreads directly. vcpkg only app-local-installs their DLLs into bin/,
+# so stage the import libraries next to the OpenModelica runtime libs where the
+# generated makefile's /LIBPATH points. A real install has no vcpkg_installed/.
+if(MSVC AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+  install(FILES
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/openblas.lib
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/lapack.lib
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/pthreadVC3.lib
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+  # The runtime headers pulled into generated model code (omc_gc.h -> <pthread.h>)
+  # need the vcpkg pthreads-win32 headers on the /I"include/omc/c" search path.
+  install(FILES
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/pthread.h
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/sched.h
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/semaphore.h
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/_ptw32.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
+    OPTIONAL)
+endif()
 
 
 # ######################################################################################################################

@@ -45,10 +45,10 @@ extern double newtonFTol;
 extern int newtonMaxSteps;
 extern int maxJacUpdate[4];
 extern double maxStepFactor;
-extern double steadyStateTol;
+DLLDirection extern double steadyStateTol;
 extern const size_t SIZERINGBUFFER;
-extern int compiledInDAEMode;
-extern int compiledWithSymSolver;
+DLLDirection extern int compiledInDAEMode;
+DLLDirection extern int compiledWithSymSolver;
 extern double numericalDifferentiationDeltaXlinearize;
 extern double numericalDifferentiationDeltaXsolver;
 extern double homAdaptBend;
@@ -230,7 +230,7 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
   }
 }
 
-extern int measure_time_flag;
+DLLDirection extern int measure_time_flag;
 
 #ifdef __cplusplus
 }

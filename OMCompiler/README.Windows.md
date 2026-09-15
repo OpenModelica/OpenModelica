@@ -11,6 +11,12 @@
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 MSYS and CMake](#21-msys-and-cmake)
   - [2.2 MSVC (experimental)](#22-msvc-experimental)
+    - [2.2.1 Visual Studio](#221-visual-studio)
+    - [2.2.2 Windows Terminal and Ninja](#222-windows-terminal-and-ninja)
+    - [2.2.3 Enable Windows long path support](#223-enable-windows-long-path-support)
+    - [2.2.4 vcpkg](#224-vcpkg)
+    - [2.2.5 Configure and build omc](#225-configure-and-build-omc)
+    - [2.2.6 Qt GUI clients](#226-qt-gui-clients)
 - [3 Installer](#3-installer)
 - [4 Test Suite](#4-test-suite)
 
@@ -190,23 +196,38 @@ Windows.
 > The OpenModelica MSVC build is highly experimental. If you encounter issues or have
 > suggestions for fixes please open a new discussion or issue.
 
-You can compile the OpenModelica compiler (`omc`) and the C and C++ simulation runtimes
-with the Microsoft Visual C++ compiler (MSVC). Some parts are not built with MSVC yet:
-ModelicaExternalC, the OMSI runtimes, ParModelica and PRIMME support. Compiling and
-simulating models with such a build may still need some work.
+You can compile the OpenModelica compiler (`omc`), the C simulation runtime, and the Qt GUI
+clients (`OMEdit`, `OMPlot`, `OMShell`, `OMNotebook`) with the Microsoft Visual C++ compiler
+(MSVC), and compile and simulate Modelica models with the result. Some parts are not built
+with MSVC yet: the C++ simulation runtime, ModelicaExternalC, the OMSI runtimes, ParModelica
+and PRIMME support, and FMU export.
 
-The MSVC build that CI exercises is a cross-compile from Linux with clang-cl, including the
-GUI clients built against Qt's MSVC kit. See
+There is a second, unrelated MSVC build that CI exercises: a cross-compile from Linux with
+clang-cl, including the GUI clients built against Qt's MSVC kit. See
 [Cross-compiling to Windows](Compiler/OpenModelica.rs/README.md#cross-compiling-to-windows-x86_64-pc-windows-msvc).
-The native build described here does not cover the GUI clients.
+Everything below is about the **native** build, run directly on Windows.
 
 This build does not use MSYS2. The dependencies (`libcurl`, `libiconv`, `gettext`,
-`pthreads`, `Lapack`, `Boost`, ...) come from the Microsoft
-[vcpkg](https://github.com/microsoft/vcpkg) package manager, and all commands are run in a
-Developer PowerShell for Visual Studio. If you use Rust, select the
+`pthreads`, `Lapack`, ...) come from the Microsoft
+[vcpkg](https://github.com/microsoft/vcpkg) package manager; Qt (for the GUI clients) comes
+from an official prebuilt Qt instead (see [2.2.6](#226-qt-gui-clients)). All commands are run
+in a Developer PowerShell for Visual Studio. If you use Rust, select the
 `stable-x86_64-pc-windows-msvc` toolchain (see [1.4 Rust toolchain](#14-rust-toolchain)).
 
-#### 2.2.1 Windows Terminal and Ninja
+#### 2.2.1 Visual Studio
+
+Any edition of **Visual Studio 2022 (v17) or newer** works, including **Community** and the
+**Visual Studio 2026 (v18)** preview — the MSVC C++ ABI is stable across all of them, so a Qt
+built for `msvc2022_64` links fine with a v18 compiler. The `msvc-ninja` CMake presets (see
+[2.2.5](#225-configure-and-build-omc)) pick up whatever `cl.exe` is active in your Developer
+shell; nothing is pinned to a specific toolset version.
+
+Install the **"Desktop development with C++"** workload. It provides the MSVC compiler, the
+Windows SDK, and — via the **"C++ CMake tools for Windows"** component — `cmake` and `ninja`.
+The **Build Tools for Visual Studio** (no IDE) are enough if you only build from the command
+line.
+
+#### 2.2.2 Windows Terminal and Ninja
 
 We recommend Windows Terminal. It is included in Windows 11; on Windows 10 install it from
 the [Microsoft Store](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701).
@@ -232,7 +253,14 @@ If Ninja is missing, download the binary from the
 `CMake\bin\` directory (e.g., `C:\Program Files\CMake\bin`), so it is available wherever
 CMake is. You can use another generator, but then adjust the CMake commands below.
 
-#### 2.2.2 vcpkg
+#### 2.2.3 Enable Windows long path support
+
+Some packages built by vcpkg (and some deep vcpkg/Ninja build-tree paths) exceed Windows's
+default 260-character path limit, which fails the build. Before proceeding, enable long path
+support by following the Microsoft documentation:
+[Enable long paths in Windows](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry).
+
+#### 2.2.4 vcpkg
 
 Clone vcpkg at the root of OpenModelica. It works as a local package manager: packages are
 installed into the CMake build directory, leaving the rest of your system unaffected
@@ -243,74 +271,110 @@ cd OpenModelica
 git clone https://github.com/microsoft/vcpkg.git
 ```
 
-Then create a file named `vcpkg.json` in the OpenModelica directory with the following
-contents. It tells vcpkg which packages to install in
-[manifest mode](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode).
+The `vcpkg.json` manifest at the repository root already lists the required packages; vcpkg
+installs them in [manifest mode](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode)
+the first time you configure (see [2.2.5](#225-configure-and-build-omc)) — nothing to create
+yourself.
 
-```json
-{
-  "name": "openmodelica",
-  "homepage": "https://openmodelica.org/",
-  "description": "an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.",
-  "dependencies": [
-    "curl",
-    "libiconv",
-    "gettext",
-    "lapack",
-    "pthread",
-    "dirent",
-    "boost-program-options",
-    "boost-filesystem",
-    "boost-ublas",
-    "boost-lambda",
-    "boost-asio",
-    "boost-circular-buffer"
-  ]
-}
-```
+#### 2.2.5 Configure and build omc
 
-The Boost packages are for the C++ simulation runtime. Instead of getting Boost from vcpkg,
-`-DOM_FETCH_BOOST=ON` downloads and builds it as part of OpenModelica; that option is meant
-for cross builds and has not been tested with a native MSVC build.
+The repository includes a `CMakePresets.json` file that captures the full MSVC build
+configuration. The preset named `msvc-ninja` selects the Ninja generator, the MSVC compiler,
+vcpkg, and the appropriate feature flags (it also disables parts not built with MSVC yet:
+Fortran/optimization/MOO, ColPack, the Rust result readers/writers).
 
-> [!NOTE]
-> This file might eventually become part of the OpenModelica repository. Until the MSVC
-> build is tested well, create it locally.
-
-#### 2.2.3 Configure and build
-
-Setting `OM_WITH_VCPKG=ON` tells CMake to take the packages from vcpkg. Open a Developer
-PowerShell for Visual Studio and run:
+Open a Developer PowerShell for Visual Studio and run:
 
 ```powershell
 cd OpenModelica
-cmake -S . -B build_msvc_ninja -Wno-dev -DOM_WITH_VCPKG=ON -DOM_USE_CCACHE=OFF -DOM_ENABLE_GUI_CLIENTS=OFF -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF -G "Ninja"
-cmake --build build_msvc_ninja --target install
+cmake --preset msvc-ninja
+cmake --build --preset msvc-ninja
 ```
 
-The options:
+The first build takes a considerable amount of time: vcpkg bootstraps itself, downloads,
+builds and installs all packages listed in `vcpkg.json` (using prebuilt binaries where
+available), and only then CMake builds OpenModelica. Later builds are faster, since vcpkg
+does nothing unless `vcpkg.json` changes.
 
-- `OM_WITH_VCPKG=ON` uses the packages installed by vcpkg.
-- `OM_USE_CCACHE=OFF`, since ccache is not installed and does not work well with MSVC.
-- `OM_ENABLE_GUI_CLIENTS=OFF`, since the native MSVC build does not cover the GUI clients.
-- `OM_OMC_ENABLE_FORTRAN=OFF`, since there is no Fortran compiler. The dynamic optimization
-  runtimes need Fortran, so `OM_OMC_ENABLE_OPTIMIZATION` and `OM_OMC_ENABLE_MOO` are
-  disabled as well.
-
-The first build takes a considerable amount of time: vcpkg bootstraps itself, then
-downloads, builds and installs all packages listed in `vcpkg.json` (using prebuilt binaries
-where available), and only then CMake builds OpenModelica. Later builds are faster, since
-vcpkg does nothing unless `vcpkg.json` changes.
-
-CMake installs OpenModelica into `OpenModelica/build_msvc_ninja/install_cmake/`. Check that
-`omc` works:
+The build preset targets `install` by default, so CMake installs OpenModelica into
+`build\msvc-ninja\install_cmake\`. Check that `omc` works and can simulate a model:
 
 ```powershell
-.\build_msvc_ninja\install_cmake\bin\omc.exe --help
+.\build\msvc-ninja\install_cmake\bin\omc.exe --help
+
+@'
+loadString("model M Real x(start=1); equation der(x)=-x; end M;");
+simulate(M, stopTime=1.0);
+getErrorString();
+'@ | Set-Content t.mos
+.\build\msvc-ninja\install_cmake\bin\omc.exe t.mos
 ```
 
-If this prints the omc help, omc can be used to generate model code. Compiling the generated
-model code and simulating models still needs some fixes.
+The `simulate(M, ...)` call should return a `SimulationResult` record with a non-empty
+`resultFile` and empty `messages`.
+
+#### 2.2.6 Qt GUI clients
+
+The GUI clients need Qt 6. Building Qt (and especially `QtWebEngine`, which `OMEdit` uses)
+from source takes hours, so instead point the build at an **official prebuilt Qt for MSVC**.
+vcpkg still provides the C libraries; Qt is found through `CMAKE_PREFIX_PATH` and is not added
+to `vcpkg.json`.
+
+Install an official prebuilt **Qt 6 for MSVC 2022 64-bit**, ideally the same Qt 6 minor
+version the MSYS2/UCRT64 build uses (Qt 6.11.2 is a good current choice). The installer does
+**not** resolve module dependencies for you, so tick **all** of these components under the Qt
+version:
+
+| Installer component | `find_package` components it provides |
+|---|---|
+| **MSVC 2022 64-bit** | `Widgets` `Gui` `Core` `Network` `OpenGL` `OpenGLWidgets` `PrintSupport` `Xml` `Svg` `Test` `LinguistTools` `Quick` `Qml` `QuickWidgets`, plus `windeployqt` |
+| **Qt 5 Compatibility Module** | `Core5Compat` |
+| **Qt WebEngine** | `WebEngineWidgets` (used by `OMEdit`) |
+| **Qt WebChannel** | dependency of Qt WebEngine |
+| **Qt Positioning** | dependency of Qt WebEngine |
+| **Qt Quick 3D** | `Quick3D` — OMEdit's animation backend (`OM_OMEDIT_ANIMATION_QUICK3D=ON`) |
+
+`Qt HTTP Server` is used if present but is optional. Miss **Qt WebChannel** / **Qt
+Positioning** and `find_package(Qt6 WebEngineWidgets)` fails with *"dependency
+Qt6WebEngineCore could not be found"*.
+
+> [!NOTE]
+> Using the Qt Quick 3D animation backend means **OpenSceneGraph is not required** (it is the
+> other backend, and there is no vcpkg/prebuilt path set up for it here). The only remaining
+> non-Qt prerequisite is a Java runtime, which OpenModelica already needs.
+
+Get Qt either from the GUI [online installer](https://www.qt.io/download-qt-installer) (needs
+a free Qt account; installs into e.g. `C:\Qt\6.11.2\msvc2022_64`), or with
+[`aqtinstall`](https://github.com/miurahr/aqtinstall) (no sign-in, pulls the same official
+prebuilt archives):
+
+```powershell
+pip install aqtinstall
+aqt install-qt windows desktop 6.11.2 win64_msvc2022_64 -m qt5compat qtwebengine qtwebchannel qtpositioning qtquick3d --outputdir C:\Qt
+```
+
+Then tell CMake where Qt is with `QT_ROOT_DIR` (the `msvc2022_64` directory) and use the
+`msvc-ninja-gui` preset (`msvc-ninja` plus `OM_ENABLE_GUI_CLIENTS=ON` and
+`OM_OMEDIT_ANIMATION_QUICK3D=ON`):
+
+```powershell
+$env:QT_ROOT_DIR = "C:\Qt\6.11.2\msvc2022_64"
+cmake --preset msvc-ninja-gui
+cmake --build --preset msvc-ninja-gui
+```
+
+On `install`, `windeployqt` copies the Qt runtime (DLLs, plugins, translations, and the
+QtWebEngine assets for `OMEdit`) next to each `.exe`; the non-Qt DLLs come from vcpkg. The
+clients end up in `build\msvc-ninja-gui\install_cmake\bin\`:
+
+```powershell
+.\build\msvc-ninja-gui\install_cmake\bin\OMEdit.exe
+```
+
+> [!NOTE]
+> The legacy `OMShell` REPL terminal (`mosh`) needs GNU readline, which is not available for
+> MSVC, so it is disabled by default here (`OM_OMSHELL_ENABLE_TERMINAL=OFF`); the `OMShell`
+> GUI is still built.
 
 ## 3 Installer
 
