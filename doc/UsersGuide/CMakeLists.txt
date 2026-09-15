@@ -123,9 +123,20 @@ set(UG_OMSIMULATOR_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../../OMSimulator/doc/Use
 
 # OMPython needs to find the omc it should talk to, and conf.py needs the source
 # root to describe the version this guide was built from.
+#
+# The OpenModelica being documented may be a coverage build
+# (-DOM_ENABLE_COVERAGE=ON), and every omc and simulation the guide runs then
+# writes gcov counters to the build tree it was compiled in. Where that is not
+# writable - CI documents an unstashed install, on another agent - or holds
+# counters in another format, libgcov complains on stderr for each file, and
+# omc's output is what the guide shows. GCOV_PREFIX sends the counters into this
+# build directory instead: they are not wanted here, and writing them somewhere
+# fresh is the one thing that silences libgcov for both GCC and Clang.
+# Harmless for an uninstrumented OpenModelica, which ignores it.
 set(UG_ENV
   "OPENMODELICAHOME=${OM_USERSGUIDE_OMHOME}"
-  "OPENMODELICA_SOURCE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/../..")
+  "OPENMODELICA_SOURCE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/../.."
+  "GCOV_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/gcov-discarded")
 
 ## Inputs generated from the OpenModelica being documented ##########################################
 
@@ -150,11 +161,17 @@ add_custom_target(usersguide-prepare
           "${CMAKE_CURRENT_SOURCE_DIR}/interface.mos"
   COMMAND ${CMAKE_COMMAND} -E rename "${UG_WORKDIR}/interface.inc" "${UG_SOURCE}/interface.inc"
 
-  # The simulation flags and the omc command line reference.
-  COMMAND ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=+help=simulation-sphinxoutput
+  # The simulation flags and the omc command line reference. Through UG_ENV like
+  # every other omc run, so a coverage build's counters go to GCOV_PREFIX rather
+  # than the build tree (see there). libgcov complains on stderr, which the
+  # script already keeps out of these two pages; the complaints that reached the
+  # guide came from the omc and simulation output sphinx-build embeds.
+  COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
+          ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=+help=simulation-sphinxoutput
           -DOUTPUT=${UG_SOURCE}/simoptions.inc
           -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/omc_help_to_file.cmake"
-  COMMAND ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=+help=omcall-sphinxoutput
+  COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
+          ${CMAKE_COMMAND} -DOMC=${OM_USERSGUIDE_OMC} -DFLAG=+help=omcall-sphinxoutput
           -DOUTPUT=${UG_SOURCE}/omchelptext.rst
           -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/omc_help_to_file.cmake"
 
