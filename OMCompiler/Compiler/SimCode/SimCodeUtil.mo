@@ -17405,7 +17405,8 @@ algorithm
 
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
         locations := stringDelimitList(locations_lst, ";");
-        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
+        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/"
+                               + ";" + Settings.getInstallationDirectoryPath() + "/lib/" + Config.targetTriple() + "/omc";
         str := "@echo off\n"
                 + "SET PATH=" + locations + ";%PATH%;\n"
                 + "SET ERRORLEVEL=\n"

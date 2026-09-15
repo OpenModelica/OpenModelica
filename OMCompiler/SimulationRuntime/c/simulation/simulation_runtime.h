@@ -53,13 +53,13 @@ extern "C" {
 
 extern int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime);
 
-extern int modelTermination;     /* Becomes non-zero when simulation terminates. */
-extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
-extern int terminationAssert;    /* Becomes non-zero when model call assert simulation. */
-extern int warningLevelAssert;   /* Becomes non-zero when model call assert with warning level. */
-extern FILE_INFO TermInfo;       /* message for termination. */
+DLLDataDirection extern int modelTermination;     /* Becomes non-zero when simulation terminates. */
+DLLDataDirection extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
+DLLDataDirection extern int terminationAssert;    /* Becomes non-zero when model call assert simulation. */
+DLLDataDirection extern int warningLevelAssert;   /* Becomes non-zero when model call assert with warning level. */
+DLLDataDirection extern FILE_INFO TermInfo;       /* message for termination. */
 
-extern char* TermMsg; /* message for termination. */
+DLLDataDirection extern char* TermMsg; /* message for termination. */
 
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
 extern const char* getNameReal(double* ptr);

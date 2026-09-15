@@ -1644,8 +1644,9 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
 {
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
-  QString OMHOMEBin = OMHOME + "\\bin;" + OMHOME + "\\lib\\omc\\msvc;" + OMHOME + "\\lib\\omc\\cpp;" + OMHOME + "\\lib\\omc\\cpp\\msvc";
-  environment.insert("PATH", OMHOMEBin + ";" + environment.value("PATH"));
+  // Only bin/; modelicaSimulationProcessEnvironment() takes the runtime's
+  // lib/<triple>/omc from the generated <model>.bat, which knows the target.
+  environment.insert("PATH", OMHOME + "\\bin;" + environment.value("PATH"));
   return environment;
 }
 

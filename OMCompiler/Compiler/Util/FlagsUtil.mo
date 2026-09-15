@@ -484,6 +484,11 @@ algorithm
       checkConfigFlags();
       flags := Flags.FLAGS(createDebugFlags(), createConfigFlags());
       saveFlags(flags);
+      // Not in Flags.TARGET itself: a constant's initialiser cannot reach
+      // another package. new() calls readArgs() after this, so --target wins.
+      if StringUtil.startsWith(System.openModelicaPlatform(), "msvc") then
+        setConfigString(Flags.TARGET, "msvc");
+      end if;
     else
       print("Flag loading failed!\n");
       flags := Flags.NO_FLAGS();

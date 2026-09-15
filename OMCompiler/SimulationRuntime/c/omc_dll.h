@@ -25,24 +25,36 @@
  *
  */
 
-#ifndef OMC_SIMULATION_OMC_ASSERT_H
-#define OMC_SIMULATION_OMC_ASSERT_H
+/*! \file omc_dll.h
+ * The dllexport/dllimport decorations. Their own header because omc_gc.h needs
+ * them and is itself included from the middle of openmodelica.h.
+ */
 
-#include "../util/omc_error.h"
+#ifndef OMC_DLL_H
+#define OMC_DLL_H
 
-DLLDataDirection extern void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...)  __attribute__ ((noreturn));
+/* adrpo: extreme windows crap! */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define DLLImport   __declspec( dllimport )
+#define DLLExport   __declspec( dllexport )
+#else
+#define DLLImport /* extern */
+#define DLLExport /* nothing */
+#endif
 
-DLLDataDirection extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO info, const int *indexes, const char *msg, ...);
+#if defined(IMPORT_INTO)
+#define DLLDirection DLLImport
+#else /* we export from the dll */
+#define DLLDirection DLLExport
+#endif
 
+/* Global data crossing the runtime DLL boundary. MSVC needs an explicit export
+ * (WINDOWS_EXPORT_ALL_SYMBOLS skips .bss) and dllimport at the use site; MinGW
+ * auto-imports and needs neither. */
+#if defined(_MSC_VER)
+#define DLLDataDirection DLLDirection
+#else
+#define DLLDataDirection
+#endif
 
-
-void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...) __attribute__ ((noreturn));
-
-void omc_assert_warning_simulation_withEquationIndexes(FILE_INFO info, const int *indexes, const char *msg, ...);
-
-void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
-void omc_terminate_simulation(FILE_INFO info, const char *msg, ...);
-void omc_throw_simulation(threadData_t* threadData) __attribute__ ((noreturn));
-void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...);
-
-#endif // Header
+#endif

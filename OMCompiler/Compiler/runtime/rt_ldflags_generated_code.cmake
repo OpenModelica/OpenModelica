@@ -3,19 +3,21 @@
 # Rust port: rust_omc.cmake forwards these to the cargo build as OMC_RT_LDFLAGS_*
 # env vars, which Autoconf.rs reads via option_env!. Only platform booleans are
 # used, so this can be included before omc_config_unix.cmake.
-if(MINGW OR MSVC)
+if(MSVC)
+  # link.exe takes file names, not -l, and has no -lm/-lgfortran/-lstdc++.
+  # OpenModelicaRuntimeC is static and already inside SimulationRuntimeC.dll.
+  set(RT_LDFLAGS_GENERATED_CODE "OpenModelicaRuntimeC.lib omcgc.lib libopenblas.lib pthreadVC3.lib")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM "SimulationRuntimeC.lib omcgc.lib libopenblas.lib pthreadVC3.lib")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM_RUST "SimulationRuntimeRust.lib omcgc.lib libopenblas.lib pthreadVC3.lib")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU "libopenblas.lib pthreadVC3.lib")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "SimulationRuntimeFMI.lib libopenblas.lib pthreadVC3.lib")
+elseif(MINGW)
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread")
-  # -Wl,--allow-multiple-definition (MinGW only): SimulationRuntimeC.dll and OpenModelicaRuntimeC.dll
+  # -Wl,--allow-multiple-definition: SimulationRuntimeC.dll and OpenModelicaRuntimeC.dll
   # both re-export the same __imp_ import descriptors; recent binutils ld errors on the duplicates,
-  # so keep the first (they resolve to the same DLL symbol). MSVC builds OpenModelicaRuntimeC static
-  # and uses link.exe, so it neither hits the issue nor understands this flag.
-  if(MINGW)
-    set(RT_LDFLAGS_GENERATED_CODE_SIM " -Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-    set(RT_LDFLAGS_GENERATED_CODE_SIM_RUST " -Wl,--allow-multiple-definition -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-  else()
-    set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-    set(RT_LDFLAGS_GENERATED_CODE_SIM_RUST " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-  endif()
+  # so keep the first (they resolve to the same DLL symbol).
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM_RUST " -Wl,--allow-multiple-definition -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
 elseif(APPLE)
@@ -45,6 +47,6 @@ else()
 endif()
 
 # libSimulationRuntimeC writes result files through libomc_result (OM_RUST_RESULT_WRITERS).
-if(OM_RUST_RESULT_WRITERS)
+if(OM_RUST_RESULT_WRITERS AND NOT MSVC)
   string(APPEND RT_LDFLAGS_GENERATED_CODE_SIM " -lomc_result ")
 endif()

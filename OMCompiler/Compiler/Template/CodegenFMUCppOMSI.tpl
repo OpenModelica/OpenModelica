@@ -713,7 +713,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MODELICA_UTILITIES_LIB=OMCppModelicaUtilities_static.lib
   EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
 
-  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystemBase_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppDataExchange_static.lib OMCppFMU_static.lib  $(OMCPP_SOLVER_LIBS)  $(EXTRA_LIBS) $(MODELICA_UTILITIES_LIB)
+  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystemBase_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppDataExchange_static.lib OMCppFMU_static.lib  $(OMCPP_SOLVER_LIBS)  $(EXTRA_LIBS) $(MODELICA_UTILITIES_LIB)
 
   PLATFORM="<%makefileParams.platform%>"
 
@@ -772,7 +772,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # native build or cross compilation
   ifeq ($(TARGET_TRIPLET),)
-    TRIPLET=<%Autoconf.triple%>
+    TRIPLET=<%Config.targetTriple()%>
     CC=<%makefileParams.ccompiler%>
     CXX=<%makefileParams.cxxcompiler%>
     ABI_CFLAG=
@@ -796,7 +796,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  LDFLAGS=-L"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
+  LDFLAGS=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/omsicpp" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
 

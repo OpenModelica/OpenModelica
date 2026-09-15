@@ -47,8 +47,14 @@ extern "C" {
 #include <setjmp.h>
 
 #if defined(_MSC_VER)
+#include "omc_dll.h"
 #include "omc_inline.h"
 #include "util/omc_msvc.h"
+#elif !defined(DLLDataDirection)
+/* Only MSVC decorates shared data. Not omc_dll.h: reaching it needs c/ on the
+   include path, which only the _MSC_VER branch above has ever required, and
+   openmodelica.h includes this header from the middle of itself. */
+#define DLLDataDirection
 #endif
 
 typedef struct {
@@ -64,7 +70,7 @@ typedef struct {
   void (*free_string_persist)(void*);
 } omc_alloc_interface_t;
 
-extern omc_alloc_interface_t omc_alloc_interface;
+DLLDataDirection extern omc_alloc_interface_t omc_alloc_interface;
 extern omc_alloc_interface_t omc_alloc_interface_pooled;
 
 /*

@@ -124,6 +124,12 @@ const win_ldflags_basic: &str = const_str::concat!(
 
 const win_ldflags_zip: &str = "-lz -lsz ";
 
+// x86_64-pc-windows-msvc: link.exe takes library file names. Mirrors the MSVC
+// branch of runtime/rt_ldflags_generated_code.cmake, which overrides these
+// through OMC_RT_LDFLAGS_* whenever the C runtime was built alongside.
+const msvc_is_target: bool = cfg!(all(windows, target_env = "msvc"));
+const msvc_ldflags_basic: &str = "omcgc.lib libopenblas.lib pthreadVC3.lib";
+
 const win_ldflags_runtime_fmu: &str = const_str::concat!(
     win_linkType,
     "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm ",
@@ -137,7 +143,9 @@ const win_ldflags_runtime_fmu: &str = const_str::concat!(
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        const_str::concat!("OpenModelicaRuntimeC.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
         const_str::concat!(" -lOpenModelicaRuntimeC", win_ldflags_basic)
     } else if cfg!(target_os = "macos") {
         " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
@@ -150,7 +158,9 @@ pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CO
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        const_str::concat!("SimulationRuntimeC.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
         // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
         // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
         // matching note in Autoconf.mo.omdev.mingw).
@@ -170,7 +180,9 @@ pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        const_str::concat!("SimulationRuntimeRust.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
         // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
         // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
         // matching note in Autoconf.mo.omdev.mingw).
@@ -190,7 +202,9 @@ pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GEN
 /// the fallback matches the C runtime build per platform).
 pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        "libopenblas.lib pthreadVC3.lib"
+    } else if cfg!(windows) {
         win_ldflags_runtime_fmu
     } else if cfg!(target_os = "macos") {
         " -llapack -lblas -lm"
@@ -203,7 +217,9 @@ pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
 /// OMC_RT_LDFLAGS_*; the fallback matches the C runtime build per platform).
 pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        "SimulationRuntimeFMI.lib libopenblas.lib pthreadVC3.lib"
+    } else if cfg!(windows) {
         const_str::concat!(" -lSimulationRuntimeFMI ", win_ldflags_runtime_fmu)
     } else if cfg!(target_os = "macos") {
         " -lSimulationRuntimeFMI -llapack -lblas -lm"

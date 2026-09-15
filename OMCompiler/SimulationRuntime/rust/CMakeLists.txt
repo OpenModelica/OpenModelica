@@ -133,13 +133,43 @@ if(TARGET OpenModelicaRuntimeC)
     if(TARGET PThreads4W::PThreads4W)
       string(APPEND _simrt_rtc_link "|$<TARGET_LINKER_FILE:PThreads4W::PThreads4W>")
     endif()
+    # Re-exporting the archive below pulls in members nothing referenced before,
+    # and with them utility.c's regex, realString.c's ryu and the registry calls.
+    foreach(_simrt_rtc_dep omcregex ryu)
+      if(TARGET ${_simrt_rtc_dep})
+        string(APPEND _simrt_rtc_link "|$<TARGET_LINKER_FILE:${_simrt_rtc_dep}>")
+      endif()
+    endforeach()
+    if(WIN32)
+      # Lower case: Windows does not care, and the xwin SDK ships it under this
+      # spelling on a case-sensitive filesystem.
+      string(APPEND _simrt_rtc_link "|advapi32.lib")
+    endif()
     list(APPEND _simrt_env "OMC_RUNTIME_C_LINK=${_simrt_rtc_link}")
+    if(WIN32)
+      # Absorbing the archive is not enough on Windows: a cdylib exports only
+      # what Rust marks dllexport, so --simCodeTarget=C+Rust found none of the C
+      # runtime. An ELF .so exports it anyway.
+      find_program(OMC_NM_EXECUTABLE NAMES llvm-nm nm)
+      if(OMC_NM_EXECUTABLE)
+        set(_simrt_def "${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaRuntimeC-reexport.rsp")
+        set(_simrt_def_command COMMAND ${CMAKE_COMMAND}
+            "-DLIB=$<TARGET_LINKER_FILE:OpenModelicaRuntimeC>" "-DOUT=${_simrt_def}"
+            "-DNM=${OMC_NM_EXECUTABLE}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/reexport_def.cmake")
+        list(APPEND _simrt_env "OMC_RUNTIME_C_DEF=${_simrt_def}")
+      else()
+        message(WARNING "No llvm-nm/nm found: libSimulationRuntimeRust will not "
+                        "re-export the C runtime, so --simCodeTarget=C+Rust cannot link.")
+      endif()
+    endif()
   endif()
 endif()
 
 add_custom_target(SimulationRuntimeRust ALL
   WORKING_DIRECTORY ${_simrt_workspace}
   JOB_SERVER_AWARE TRUE
+  ${_simrt_def_command}
   COMMAND ${_simrt_env} ${CARGO_EXECUTABLE} ${_simrt_cargo_cmd} --target-dir ${_simrt_target_dir}
           ${_simrt_target_flag} ${_simrt_profile_flag} -p openmodelica_simulation_runtime
   BYPRODUCTS ${_simrt_so}
@@ -161,4 +191,12 @@ if(TARGET OpenModelicaRuntimeC)
   add_dependencies(SimulationRuntimeRust OpenModelicaRuntimeC)
 endif()
 
-install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+if(WIN32)
+  # The DLL belongs next to the executables that load it, and cargo names the
+  # import library <dll>.lib, not <name>.lib.
+  install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+  install(FILES ${_simrt_so}.lib DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc
+          RENAME SimulationRuntimeRust.lib)
+else()
+  install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+endif()

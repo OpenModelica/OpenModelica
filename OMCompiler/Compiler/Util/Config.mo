@@ -45,8 +45,10 @@ encapsulated package Config
 public import Flags;
 protected
 
+import Autoconf;
 import Error;
 import FlagsUtil;
+import StringUtil;
 import System;
 
 public
@@ -410,6 +412,22 @@ algorithm
     target := "C";
   end if;
 end simCodeTarget;
+
+public function targetTriple
+  "The lib/<triple>/omc holding the runtime --target builds against. Autoconf.triple
+   is omc's own build, which is the same only while one toolchain is shipped."
+  output String triple;
+protected
+  String target;
+algorithm
+  if Autoconf.os <> "Windows_NT" then
+    triple := Autoconf.triple;
+    return;
+  end if;
+  target := Flags.getConfigString(Flags.TARGET);
+  triple := listHead(System.strtok(Autoconf.triple, "-")) +
+    (if StringUtil.startsWith(target, "msvc") or target == "debugrt" then "-windows-msvc" else "-windows-gnu");
+end targetTriple;
 
 public function simCodeRustRuntime "+simCodeTarget=C+Rust: link libSimulationRuntimeRust instead of libSimulationRuntimeC."
   output Boolean rust;
