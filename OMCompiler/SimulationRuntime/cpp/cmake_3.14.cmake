@@ -11,7 +11,13 @@ set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/cpp)
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrtcpp)
 
-
+# Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON), applied directory-wide so
+# every target defined here and in every add_subdirectory() below is covered.
+# See cmake/modules/OpenModelicaCoverage.cmake.
+if(OM_ENABLE_COVERAGE)
+  add_compile_options(${OM_COVERAGE_COMPILE_OPTIONS})
+  add_link_options(--coverage)
+endif()
 
 # Boost and a threading library are required for the CPP-runtime.
 if(OM_FETCH_BOOST)

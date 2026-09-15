@@ -347,6 +347,11 @@ set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
 include(CTest)
 enable_testing()
 
+# Code coverage for the compiler and the C/C++ simulation runtimes
+# (-DOM_ENABLE_COVERAGE=ON). Included ahead of the subdirectories it
+# instruments, which read OM_ENABLE_COVERAGE and OM_COVERAGE_COMPILE_OPTIONS.
+include(cmake/modules/OpenModelicaCoverage.cmake)
+
 # libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
 if(OM_RUST_RESULT_READERS OR OM_RUST_RESULT_WRITERS)
   include(OMCompiler/Compiler/.cmake/rust_result_reader.cmake)
