@@ -46,20 +46,7 @@ extern "C" {
 #include <assert.h>
 #include <float.h>
 
-/* adrpo: extreme windows crap! */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define DLLImport   __declspec( dllimport )
-#define DLLExport   __declspec( dllexport )
-#else
-#define DLLImport /* extern */
-#define DLLExport /* nothing */
-#endif
-
-#if defined(IMPORT_INTO)
-#define DLLDirection DLLImport
-#else /* we export from the dll */
-#define DLLDirection DLLExport
-#endif
+#include "omc_dll.h"
 
 #if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L
 #define HAVE_VA_MACROS 1

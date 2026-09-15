@@ -1427,12 +1427,10 @@ function(omc_rust_setup_codegen)
   # meant to spare compiles instead. omc skips a blob whose artifact is current,
   # so a build that changed none of them costs the process start.
   #
-  # Cross builds ship no cache. wasmtime can compile for another target, but that
-  # turns off host CPU detection, and `aot_module` prefers the installed artifact
-  # over everything -- so shipping one would hold every user on that platform to
-  # baseline codegen for ever, for 140 MB. An installer is the place to fill it:
-  # run the installed omc with OMC_WASM_PRECOMPILE_CACHE. The directory is still
-  # created so the shipped layout matches.
+  # Filled in the build tree only. `aot_module` prefers the installed artifact
+  # over everything, so shipping one pins every user to the CPU it was compiled
+  # for, and nothing prunes the directory. An installer is the place to fill it:
+  # run the installed omc with OMC_WASM_PRECOMPILE_CACHE.
   set(RUST_WASMJIT_CACHE_DIR ${CMAKE_CURRENT_BINARY_DIR}/wasmjit-cache)
   if(RUST_OMC_TARGET STREQUAL "")
     set(_rust_wasmjit_precompile COMMAND ${CMAKE_COMMAND} -E env
@@ -1448,9 +1446,16 @@ function(omc_rust_setup_codegen)
     COMMENT "Precompiling the wasm-jit artifacts"
     VERBATIM)
   add_dependencies(rust_wasmjit_cache rust_omc)
-  install(DIRECTORY ${RUST_WASMJIT_CACHE_DIR}/
-          DESTINATION ${CMAKE_INSTALL_LIBDIR}/cache COMPONENT omc
-          FILES_MATCHING PATTERN "*.cwasm")
+  # The empty directory keeps the shipped layout.
+  option(RUST_OMC_INSTALL_WASMJIT_CACHE
+         "Ship the precompiled wasm-jit .cwasm artifacts in the install tree." OFF)
+  if(RUST_OMC_INSTALL_WASMJIT_CACHE)
+    install(DIRECTORY ${RUST_WASMJIT_CACHE_DIR}/
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cache COMPONENT omc
+            FILES_MATCHING PATTERN "*.cwasm")
+  else()
+    install(DIRECTORY DESTINATION ${CMAKE_INSTALL_LIBDIR}/cache COMPONENT omc)
+  endif()
 
   # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
   # against, with the compiler-rt builtins so it matches the libc.so omc resolves

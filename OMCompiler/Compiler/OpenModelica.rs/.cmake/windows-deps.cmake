@@ -117,3 +117,35 @@ if(_om_p4w_dll)
   list(GET _om_p4w_dll 0 _om_p4w_dll)
   install(FILES "${_om_p4w_dll}" TYPE BIN COMPONENT omc)
 endif()
+
+# Generated code is compiled against the installed tree, so these deps need
+# their headers and import libraries shipped, not just their DLLs. The install
+# dirs are not final here, so om_windows_deps_install() emits the rules later.
+# The globs are repeated because the block above is skipped on a re-configure.
+file(GLOB_RECURSE _om_p4w_install_implib "${_om_p4w_prefix}/pthreadVC[0-9]*.lib")
+file(GLOB_RECURSE _om_p4w_install_hdr "${_om_p4w_prefix}/pthread.h")
+if(_om_p4w_install_implib AND _om_p4w_install_hdr)
+  list(GET _om_p4w_install_implib 0 _om_p4w_install_implib)
+  list(GET _om_p4w_install_hdr 0 _om_p4w_install_hdr)
+  get_filename_component(_om_p4w_install_inc "${_om_p4w_install_hdr}" DIRECTORY)
+  set(OM_WINDOWS_PTHREADS_INCLUDE_DIR "${_om_p4w_install_inc}")
+  set(OM_WINDOWS_PTHREADS_IMPLIB "${_om_p4w_install_implib}")
+endif()
+set(OM_WINDOWS_OPENBLAS_IMPLIB "${_om_openblas_prefix}/lib/libopenblas.lib")
+
+function(om_windows_deps_install)
+  if(NOT (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows"))
+    return()
+  endif()
+  foreach(_hdr pthread.h sched.h semaphore.h _ptw32.h)
+    if(EXISTS "${OM_WINDOWS_PTHREADS_INCLUDE_DIR}/${_hdr}")
+      install(FILES "${OM_WINDOWS_PTHREADS_INCLUDE_DIR}/${_hdr}"
+              DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" COMPONENT omc)
+    endif()
+  endforeach()
+  foreach(_lib "${OM_WINDOWS_PTHREADS_IMPLIB}" "${OM_WINDOWS_OPENBLAS_IMPLIB}")
+    if(EXISTS "${_lib}")
+      install(FILES "${_lib}" DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT omc)
+    endif()
+  endforeach()
+endfunction()
