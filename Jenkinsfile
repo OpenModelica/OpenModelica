@@ -384,6 +384,9 @@ pipeline {
           }
         }
 
+        // The only shard that runs the coverage-instrumented CMake build: its
+        // counters become the coverage report in 'check-and-upload'. The clang
+        // shard below runs the autotools build and records none.
         stage('04 testsuite-cmake-gcc 1/2') {
           agent {
             node {
@@ -832,6 +835,29 @@ pipeline {
     }
     stage('check-and-upload') {
       parallel {
+        // Turns the coverage counters of the testsuite-cmake-gcc shard into a
+        // report. Unlike its neighbours it is not gated on !isPR: the point is
+        // to get the number on every PR.
+        stage('coverage-report') {
+          agent {
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-gcc-cache')) {
+                common.coverageReportStage(1)
+              }
+            }
+          }
+        }
         stage('upload-compliance') {
           agent {
             docker {

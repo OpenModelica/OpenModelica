@@ -76,7 +76,16 @@ set(OMC_EXE $<TARGET_FILE:bomc>)
 
 # Enable MetaModelica debug symbols when doing a debug build, which is needed
 # for the debugger to work.
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+#
+# A coverage build needs them too, for a different reason: they make the code
+# generator emit /*#modelicaLine <file>:<line>*/ markers, which Print writes
+# out as C `#line` directives pointing at the .mo source. gcov then attributes
+# the coverage of the generated C back to the MetaModelica it came from, so the
+# report covers NFFrontEnd/*.mo etc. rather than build_cmake/.../c_files/*.c.
+# This costs nothing at runtime; the mmc_set_current_pos() calls that would
+# are only emitted with OMC_RECORD_ALLOC_WORDS on top of this (see
+# modelicaLine in Compiler/Template/CodegenCFunctions.tpl).
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR OM_ENABLE_COVERAGE)
   set(GEN_DEBUG_SYMBOLS "-d=gendebugsymbols")
 endif()
 
@@ -273,6 +282,15 @@ add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
 add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
+
+# Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON) for the whole compiler.
+# GEN_DEBUG_SYMBOLS above makes the generated C carry #line directives back to
+# the .mo sources, so this reports as MetaModelica coverage. See
+# cmake/modules/OpenModelicaCoverage.cmake.
+if(OM_ENABLE_COVERAGE)
+  target_compile_options(OpenModelicaCompiler PRIVATE ${OM_COVERAGE_COMPILE_OPTIONS})
+  target_link_options(OpenModelicaCompiler PUBLIC --coverage)
+endif()
 
 # output libOpenModelicaCompiler in a directory named 'lib' or 'bin' (on Windows, dll) inside
 # the current binary directory. The reason for this is that omc (using libOpenModelicaCompiler),
