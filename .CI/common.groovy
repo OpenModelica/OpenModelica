@@ -138,10 +138,10 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   """)
 
   } else {
-  sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
-  sh 'build/bin/omc-diff -v1.4'
+  sh label: 'Build omc-diff', script: "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
+  sh label: 'Check the omc-diff version', script: 'build/bin/omc-diff -v1.4'
 
-  sh ("""#!/bin/bash -x
+  sh (label: "Run the testsuite (partition ${partition}/${partitionmodulo}${extraArgs ? ', ' + extraArgs : ''})", script: """#!/bin/bash -x
   ulimit -t 1500
   # On top of the cgroup limit, to catch a single runaway process early
   ulimit -v 6291456 # Max 6GB per process
@@ -179,9 +179,10 @@ void makeLibsAndCache() {
   {
     // do nothing
   } else {
-  sh "test ! -z '${env.LIBRARIES}'"
+  sh label: 'Check that LIBRARIES is set', script: "test ! -z '${env.LIBRARIES}'"
   // If we don't have any result, copy to the master to get a somewhat decent cache
-  sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
+  sh label: 'Fetch the runtest.db cache', script:
+     "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
   // env.WORKSPACE is null in the docker agent, so link the package cache afterwards
   sh label: 'Create directory for omlibrary cache', script: """
@@ -194,8 +195,9 @@ void makeLibsAndCache() {
   ls -lh libraries/.openmodelica/cache/
   """
   generateTemplates()
-  sh "touch omc.skip"
-  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff ffi-test-lib"
+  sh label: 'Keep make from rebuilding omc', script: "touch omc.skip"
+  def cmd = [label: 'Build the testsuite libraries and tools',
+             script: "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff ffi-test-lib"]
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd
@@ -1342,9 +1344,9 @@ void generateTemplates() {
   } else {
   patchConfigStatus()
   // Runs Susan again, for bootstrapping tests, etc
-  sh "${makeCommand()} -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=\$PWD/build/bin/omc"
-  sh 'cd OMCompiler && ./config.status'
-  sh './config.status'
+  sh label: 'Regenerate the Susan templates', script: "${makeCommand()} -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=\$PWD/build/bin/omc"
+  sh label: 'Re-run OMCompiler/config.status', script: 'cd OMCompiler && ./config.status'
+  sh label: 'Re-run config.status', script: './config.status'
   }
 }
 
@@ -1739,39 +1741,27 @@ void buildGUIAndStash(stashInput, qtVersion, outStash) {
   stash name: outStash, includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
 }
 
-void partestParmod() {
+void testUnitC() {
+  sh label: 'cmake version', script: "cmake --version"
+  sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF"
+  sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
+  sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
+  sh label: 'Check that the C unit tests wrote junit.xml', script: "test -f ./build_cmake/junit.xml"
+}
+
+// The short test suites, run back to back in one node. testUnitC() goes first
+// so CMake configures a tree that only git clean has touched.
+void testMisc() {
+  echo "Running on: ${env.NODE_NAME}"
   standardSetup()
+  testUnitC()
   unstash 'omc-clang'
   partest(1, 1, false, '-j1 -parmodexp')
-}
-
-void testMetaModelica() {
-  standardSetup()
-  unstash 'omc-clang'
-  sh 'make -C testsuite/metamodelica/MetaModelicaDev test-error'
-}
-
-void testMatlabTranslator() {
-  standardSetup()
-  unstash 'omc-clang'
-  generateTemplates()
-  sh 'make -C testsuite/special/MatlabTranslator/ test'
-}
-
-void testIconGenerator() {
-  standardSetup()
-  unstash 'omc-clang'
+  sh label: 'MetaModelicaDev error messages', script: 'make -C testsuite/metamodelica/MetaModelicaDev test-error'
+  // Also runs the generateTemplates() the Matlab translator needs
   makeLibsAndCache()
-  sh 'make -C testsuite/openmodelica/icon-generator test'
-}
-
-void testUnitC() {
-  echo "Running on: ${env.NODE_NAME}"
-  sh "cmake --version"
-  sh "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF"
-  sh "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
-  sh "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
-  sh "test -f ./build_cmake/junit.xml"
+  sh label: 'Matlab translator', script: 'make -C testsuite/special/MatlabTranslator/ test'
+  sh label: 'Icon generator', script: 'make -C testsuite/openmodelica/icon-generator test'
 }
 
 void fmpyLinux() {
