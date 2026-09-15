@@ -527,9 +527,9 @@ pub fn winGetSystemDirectory() -> ArcStr {
 }
 
 pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
-    // Spawn /bin/sh -c <command>; if outFile is non-empty, redirect both
-    // stdout and stderr there. Returns the child's exit code, or -1 on
-    // spawn failure.
+    // Spawn the command through the platform shell; if outFile is non-empty,
+    // redirect both stdout and stderr there. Returns the child's exit code, or
+    // -1 on spawn failure.
     use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
@@ -538,10 +538,31 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         let _ = std::io::stdout().flush();
     };
     flush();
-    let mut cmd = Command::new("/bin/sh");
-    cmd.arg("-c").arg(command.as_str());
+    #[cfg(windows)]
+    let mut cmd = {
+        use std::os::windows::process::CommandExt;
+        // `SystemImpl__runProcess`. The command is a cmd.exe line
+        // (`set X=Y&& prog args`), so it must reach cmd unquoted.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let mut cmd = Command::new("cmd.exe");
+        cmd.raw_arg(format!("/c \"{}\"", command.as_str()));
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd
+    };
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut cmd = Command::new("/bin/sh");
+        cmd.arg("-c").arg(command.as_str());
+        cmd
+    };
     if !outFile.is_empty() {
-        match fs::File::create(outFile.as_str()) {
+        // C appends on both; unix here has always truncated, so only the new
+        // path follows the C runtime.
+        #[cfg(windows)]
+        let opened = fs::OpenOptions::new().append(true).create(true).open(outFile.as_str());
+        #[cfg(not(windows))]
+        let opened = fs::File::create(outFile.as_str());
+        match opened {
             Ok(f) => {
                 let f2 = match f.try_clone() {
                     Ok(c) => c,

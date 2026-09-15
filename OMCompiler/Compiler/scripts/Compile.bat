@@ -1,12 +1,19 @@
 @echo off
+REM Builds the C code OpenModelica generated for a model, on Windows.
+REM Called by CevalScript.compileModel and by OMEdit.
+REM
 REM Arguments
 REM 1 fileprefix
 REM 2 target (gcc|msvc)
-REM 3 platform (ucrt64|mingw64)
+REM 3 platform (ucrt64|mingw64|msvc64|msvc32)
 REM 4 serial/parallel
 REM 5 linkType (dynamic|static)
 REM 6 number of processors
 REM 7 LOGGING 0/1
+REM
+REM The target says which makefile dialect omc generated: "gcc" is a GNU
+REM makefile for mingw32-make, "msvc" an nmake one. Set OMC_TOOLCHAIN=clang-cl
+REM to build the msvc target with clang-cl rather than cl.
 if not "%5"=="" (set LINK_TYPE=%5) else (set LINK_TYPE=dynamic)
 if not "%6"=="" (set NUM_PROCS=%6) else (set NUM_PROCS=%NUMBER_OF_PROCESSORS%)
 if not "%7"=="" (set LOGGING=%7) else (set LOGGING=1)
@@ -17,113 +24,112 @@ set CPLUS_INCLUDE_PATH=
 set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
-call :CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME "%OPENMODELICAHOME%"
-set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
-set ADDITIONAL_ARGS=
-REM If OMDEV is set, use msys2-ucrt64 from there instead of OPENMODELICAHOME
-REM It is not certain that release OMC is installed
-if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
-REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
-REM echo MINGW = %MINGW% >>%1.log 2>&1
-call :CONVERT_CD_TO_SHORT_PATH_NAME "%CD%"
+set RESULT=1
+call :SHORT_PATH OPENMODELICAHOME "%OPENMODELICAHOME%"
+call :SHORT_PATH CURRENT_DIR "%CD%"
+REM The MinGW branch cd's away, so name the log absolutely.
+set LOGFILE=%CURRENT_DIR%\%1.log
+set MAKEFILE=%1.makefile
 
-if %LOGGING%==1 (goto :SET_PATH_LOG) else (goto :SET_PATH)
+if /I "%2"=="msvc"   goto :MSVC
+if /I "%2"=="msvc10" goto :MSVC
+if /I "%2"=="msvc12" goto :MSVC
+if /I "%2"=="msvc13" goto :MSVC
+if /I "%2"=="msvc15" goto :MSVC
+if /I "%2"=="msvc19" goto :MSVC
+goto :MINGW
 
-:SET_PATH_LOG
-cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.log 2>&1
-set PATH=%CD%;%CD%\..\..\usr\bin; >>%CURRENT_DIR%\%1.log 2>&1
-cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.log 2>&1
-goto :CHECK_TARGET
-
-:SET_PATH
+REM ---------------------------------------------------------------- MinGW ---
+REM An OMDev or OpenModelica installation ships its toolchain under
+REM tools\msys\<platform>; a stand-alone MSYS2 is used through the PATH.
+:MINGW
+set MINGW=%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%
+if not "%OMDEV%"=="" set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
+set MINGW_MAKE=
+if not exist "%MINGW%\bin\mingw32-make.exe" goto :MINGW_ON_PATH
 cd /D "%MINGW%\bin"
 set PATH=%CD%;%CD%\..\..\usr\bin;
-echo PATH = "%PATH%"
 cd /D "%CURRENT_DIR%"
-goto :CHECK_TARGET
+set MINGW_MAKE=%MINGW%\bin\mingw32-make.exe
+goto :MINGW_BUILD
 
-REM echo PATH = %PATH% >>%1.log 2>&1
-REM echo CD = %CD% >>%1.log 2>&1
+:MINGW_ON_PATH
+for %%I in (mingw32-make.exe) do set MINGW_MAKE=%%~$PATH:I
+if "%MINGW_MAKE%"=="" for %%I in (make.exe) do set MINGW_MAKE=%%~$PATH:I
+if "%MINGW_MAKE%"=="" goto :NO_MINGW
 
-:CHECK_TARGET
-if /I "%2"=="msvc" (goto :MSVC)
-if /I "%2"=="msvc10" (goto :MSVC100)
-if /I "%2"=="msvc12" (goto :MSVC110)
-if /I "%2"=="msvc13" (goto :MSVC120)
-if /I "%2"=="msvc15" (goto :MSVC140) else (goto :MINGW)
+:MINGW_BUILD
+set ADDITIONAL_ARGS=
+if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
+call :RUN "%MINGW_MAKE%" -w -f %MAKEFILE% OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%
+goto :Final
 
+:NO_MINGW
+call :FAIL No MinGW toolchain found. Searched %MINGW%\bin\mingw32-make.exe and the PATH.
+call :FAIL Install OMDev, or MSYS2 from https://www.msys2.org with the packages
+call :FAIL mingw-w64-ucrt-x86_64-gcc and mingw-w64-ucrt-x86_64-make,
+call :FAIL or build with MSVC instead: omc --target=msvc
+goto :Final
+
+REM ----------------------------------------------------------------- MSVC ---
 :MSVC
-REM echo "MSVC"
-REM check if msvc is there
-if defined VS140COMNTOOLS (goto :MSVC140)
-if defined VS120COMNTOOLS (goto :MSVC120)
-if defined VS110COMNTOOLS (goto :MSVC110)
-if not defined VS100COMNTOOLS (goto :MINGW)
-goto :MSVC100
-
-:MSVC100
-REM "Use Visual Studio 2010"
-set MSVCHOME=%VS100COMNTOOLS%..\..\VC
-if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
-set PATHTMP=%PATH%
+REM Already inside a developer command prompt?
+if not "%VCINSTALLDIR%"=="" goto :MSVCCOMPILE
+set VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe
+if not exist "%VSWHERE%" set VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe
+if not exist "%VSWHERE%" goto :NO_MSVC
+set VSPATH=
+for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSPATH=%%I
+if "%VSPATH%"=="" goto :NO_MSVC
+set VCVARS=%VSPATH%\VC\Auxiliary\Build\vcvars64.bat
+if /I "%OM_PLATFORM%"=="msvc32" set VCVARS=%VSPATH%\VC\Auxiliary\Build\vcvars32.bat
+if not exist "%VCVARS%" goto :NO_MSVC
+REM vcvars needs the unrestricted PATH. Its banner goes to NUL, not the log: a
+REM batch called with the log redirected keeps that handle open, and nmake then
+REM cannot write there.
 set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
-goto :MSVCCOMPILE
-
-:MSVC110
-REM "Use Visual Studio 2012"
-set MSVCHOME=%VS110COMNTOOLS%..\..\VC
-if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
-set PATHTMP=%PATH%
-set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
-goto :MSVCCOMPILE
-
-:MSVC120
-REM "Use Visual Studio 2013"
-echo "msvc120"
-set MSVCHOME=%VS120COMNTOOLS%..\..\VC
-if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
-set PATHTMP=%PATH%
-set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
-goto :MSVCCOMPILE
-
-:MSVC140
-REM "Use Visual Studio 2015"
-set MSVCHOME=%VS140COMNTOOLS%..\..\VC
-if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
-set PATHTMP=%PATH%
-set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
-goto :MSVCCOMPILE
+call "%VCVARS%" > NUL 2>&1
+if errorlevel 1 goto :NO_MSVC
 
 :MSVCCOMPILE
 set MAKE=
 set MAKEFLAGS=
-if %LOGGING%==1 (nmake /a /f %1.makefile >> %1.log 2>&1) else (nmake /a /f %1.makefile)
-set RESULT=%ERRORLEVEL%
-if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
+set OMC_CC=cl
+if /I "%OMC_TOOLCHAIN%"=="clang-cl" set OMC_CC=clang-cl
+call :RUN nmake /nologo /f %MAKEFILE% CC=%OMC_CC% CXX=%OMC_CC%
 goto :Final
 
-:MINGW
-REM echo "MINGW"
-if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
-if %LOGGING%==1 ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.log 2>&1) else ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%)
-set RESULT=%ERRORLEVEL%
-if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
+:NO_MSVC
+call :FAIL No MSVC toolchain found.
+call :FAIL Install the Visual Studio Build Tools with the Desktop development
+call :FAIL with C++ workload, or run this from a Developer Command Prompt.
 goto :Final
 
+REM ------------------------------------------------------------------------
 :Final
 set PATH=%OLD_PATH%
 set OLD_PATH=
 @%COMSPEC% /C exit %RESULT%
 EXIT /B %ERRORLEVEL%
 
-:CONVERT_CD_TO_SHORT_PATH_NAME
-set CURRENT_DIR="%~s1"
+REM Run the build, honouring LOGGING, and leave its exit code in RESULT.
+:RUN
+if "%LOGGING%"=="1" (
+  %* >> "%LOGFILE%" 2>&1
+) else (
+  %*
+)
+set RESULT=%ERRORLEVEL%
+if "%LOGGING%"=="1" echo RESULT: %RESULT% >> "%LOGFILE%"
 EXIT /B 0
 
-:CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME
-set OPENMODELICAHOME=%~s1
+REM Report a setup problem where omc will find it: the model's .log file.
+:FAIL
+echo %*
+if "%LOGGING%"=="1" echo %*>> "%LOGFILE%"
+set RESULT=1
+EXIT /B 0
+
+:SHORT_PATH
+set %1=%~s2
 EXIT /B 0

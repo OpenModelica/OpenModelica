@@ -253,6 +253,11 @@ else()
 endif()
 message(STATUS "CMAKE_INSTALL_INCLUDEDIR: ${CMAKE_INSTALL_INCLUDEDIR}")
 
+# windows-deps.cmake deferred these until the install dirs were final.
+if(COMMAND om_windows_deps_install)
+  om_windows_deps_install()
+endif()
+
 # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
 if(APPLE)
   set(OM_MACOS_INSTALL_BUNDLEDIR "Applications/")
