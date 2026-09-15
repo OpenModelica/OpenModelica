@@ -1443,7 +1443,11 @@ function(omc_rust_setup_codegen)
 
   install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
           DESTINATION lib/wasm32-wasip1/omc/sysroot COMPONENT omc)
-  if(_wasi_builtins)
+  # Only when this build made the sysroot. A hand-over already carries the
+  # builtins inside it (see the collect step above), and the clang on the image
+  # that consumes one need have no wasm32 set at all -- jammy's clang 14 has
+  # none, and installing a path that does not exist is a hard error.
+  if(NOT RUST_OMC_PREBUILT_WASM_DIR AND _wasi_builtins)
     install(FILES ${_wasi_builtins}
             DESTINATION lib/wasm32-wasip1/omc/sysroot/lib/wasm32-wasip1 COMPONENT omc)
   endif()
