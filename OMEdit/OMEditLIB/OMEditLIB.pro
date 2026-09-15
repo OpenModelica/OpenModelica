@@ -67,8 +67,6 @@ win32 {
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
-
-  CONFIG += animation
 } else { # Unix libraries and includes
   include(OMEditLIB.unix.config.pri)
 }

@@ -39,15 +39,21 @@ FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
 FIND_LIBOMQWT()
 
+dnl The animation windows render with Qt Quick 3D, which is a qt6 module here.
+dnl Override with WITH_ANIMATION=1 for a qt5 that does have it.
 if test -z "$WITH_ANIMATION"; then
-  WITH_ANIMATION=1
+  if test "$WITH_QT6" = "yes"; then
+    WITH_ANIMATION=1
+  else
+    WITH_ANIMATION=0
+  fi
 else
   AC_MSG_RESULT([WITH_ANIMATION=$WITH_ANIMATION])
 fi
 
 if test "$WITH_ANIMATION" = 0; then
   CPPFLAGS="$CPPFLAGS -DWITHOUT_ANIMATION"
-  AC_MSG_RESULT("Disabled 3D animation")
+  AC_MSG_RESULT("Disabled 3D animation (Qt Quick 3D needs qt6)")
 else
   QMAKE_CONFIG_ANIMATION="CONFIG += animation"
   AC_MSG_RESULT("3D animation is enabled")
@@ -107,5 +113,5 @@ fi
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
-AC_CONFIG_FILES([Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix])
+AC_CONFIG_FILES([Makefile.unix omedit_config.h OMEdit.animation.unix.config.pri OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix])
 AC_OUTPUT
