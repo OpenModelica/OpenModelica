@@ -183,7 +183,7 @@ void makeLibsAndCache() {
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
-  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
+  // env.WORKSPACE is null in the docker agent, so link the package cache afterwards
   sh label: 'Create directory for omlibrary cache', script: """
   mkdir -p '${env.LIBRARIES}/om-pkg-cache'
   # Remove the symbolic link, or if it's a directory there... the entire thing
@@ -213,7 +213,7 @@ void makeLibsAndCache() {
 // the stages calling this unstash an install tree, not a configured build tree,
 // so no CMake target is available to them.
 void installTestLibraries() {
-  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
+  // env.WORKSPACE is null in the docker agent, so link the package cache afterwards
   sh label: 'Install the testsuite libraries', script: """#!/bin/bash -xe
   test ! -z '${env.LIBRARIES}'
   mkdir -p '${env.LIBRARIES}/om-pkg-cache'
@@ -367,7 +367,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
 
   if (isWindows()) {
     withEnv (["OMDEV=C:\\OMDevUCRT",
-              "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+              "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
       bat "echo PATH: %PATH%"
       cloneOMDev()
       bat (label: 'build', script: """

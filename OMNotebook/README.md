@@ -11,6 +11,7 @@ A Mathematica-style Notebook for OpenModelica.
 Follow the instructions matching your OS:
 
   - [OMCompiler/README.Linux.md](../OMCompiler/README.Linux.md)
+  - [OMCompiler/README-macOS.md](../OMCompiler/README-macOS.md)
   - [OMCompiler/README.Windows.md](../OMCompiler/README.Windows.md)
 
 On Windows, OMNotebook is built as part of the normal CMake `install` target (see

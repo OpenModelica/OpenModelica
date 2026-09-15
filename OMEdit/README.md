@@ -12,6 +12,7 @@ A Modelica connection editor for OpenModelica.
 Follow the instructions matching your OS:
 
   - [OMCompiler/README.Linux.md](../OMCompiler/README.Linux.md)
+  - [OMCompiler/README-macOS.md](../OMCompiler/README-macOS.md)
   - [OMCompiler/README.Windows.md](../OMCompiler/README.Windows.md)
 
 ### Compile/Debug from Qt Creator

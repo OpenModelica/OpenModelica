@@ -6,5 +6,11 @@ usage.
 
 ## Building the OpenModelica Compiler
 
-* [Linux/WSL/OSX instructions](README.Linux.md)
+OpenModelica is built with CMake. Follow the instructions for your operating system:
+
+* [Linux/WSL instructions](README.Linux.md)
 * [Windows instructions](README.Windows.md)
+* [macOS instructions](README-macOS.md)
+
+The configuration options, tests and packaging are described in
+[README.cmake.md](../README.cmake.md).
