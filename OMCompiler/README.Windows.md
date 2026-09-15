@@ -130,7 +130,7 @@ root directory.
 > Use Linux like path. E.g. `C:\Program Files\Git\bin` becomes `/c/Program Files/Git/bin`
 
 ```bash
-export PATH=$PATH:/c/path/to/git/bin:/c/path/to/jdk/bin:/c/path/to/cmake/bin
+export PATH="$PATH:/c/path/to/git/bin:/c/path/to/jdk/bin:/c/path/to/cmake/bin"
 export OPENMODELICAHOME="/c/path/to/OpenModelica/build_cmake/install_cmake"
 export OPENMODELICALIBRARY="/c/Users/<user name>/AppData/Roaming/.openmodelica/libraries"
 export OMDEV="/c/OMDev"

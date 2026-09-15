@@ -4,12 +4,11 @@ DIR=/tmp/make-package-sh-$$/
 
 sh createbuilders.sh win32
 make -C latex
-cp ../../../../Compiler/Template/Tpl.mo ../10_pamtrans/ || exit 1
-
-mkdir -p "$DIR"
 
 mkdir -p "$DIR/MetaModelica"
-git -C "$(git rev-parse --show-toplevel)" archive --format=tar "HEAD:$(cd .. && git rev-parse --show-prefix)" | tar -x -C "$DIR/MetaModelica"
+# The tracked files as they are in the working tree, so the builders generated above are included
+(cd .. && git ls-files -z | tar --null -T - -cf -) | tar -x -C "$DIR/MetaModelica" || exit 1
+cp ../../../../OMCompiler/Compiler/Template/Tpl.mo "$DIR/MetaModelica/10_pamtrans/" || exit 1
 (cd ../documentation/; for f in *.ppt *.odp *.url; do
   echo "$f"
   rm "$DIR/MetaModelica/documentation/$f"

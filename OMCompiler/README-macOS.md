@@ -44,8 +44,8 @@ Install `homebrew` by following the instructions on <https://brew.sh/>, then ins
 dependencies for OpenModelica:
 
 ```sh
-brew install openjdk pkg-config cmake make ccache
-echo 'export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"' >> ~/.zshrc
+brew install openjdk pkg-config cmake make ccache boost
+echo "export PATH=\"$(brew --prefix openjdk)/bin:\$PATH\"" >> ~/.zshrc
 ```
 
 ### 1.3 Rust toolchain
@@ -106,12 +106,28 @@ cmake -S . -B build_cmake \
   -DCMAKE_C_FLAGS="-I/opt/local/include/libomp" \
   -DCMAKE_CXX_FLAGS="-I/opt/local/include/libomp"
 
-# With MacPorts and Fortran available. Add the Boost_DIR and OpenMP options from above.
-cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_PREFIX_PATH=/opt/local
+# With MacPorts and Fortran available.
+# Adjust Boost_DIR to the output of the ls command above.
+cmake -S . -B build_cmake \
+  -DCMAKE_C_COMPILER=gcc \
+  -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_Fortran_COMPILER=gfortran \
+  -DCMAKE_PREFIX_PATH=/opt/local \
+  -DBoost_DIR=/opt/local/libexec/boost/1.88/lib/cmake/Boost-1.88.0 \
+  -DOpenMP_ROOT=/opt/local \
+  -DCMAKE_C_FLAGS="-I/opt/local/include/libomp" \
+  -DCMAKE_CXX_FLAGS="-I/opt/local/include/libomp"
 
 # With homebrew, you also need to disable the graphical clients.
-# This assumes homebrew is installing packages to its default location /usr/local/opt/
-cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF -DOM_ENABLE_GUI_CLIENTS=OFF -DCMAKE_PREFIX_PATH=/usr/local/opt/
+# brew --prefix is /opt/homebrew on Apple Silicon and /usr/local on Intel.
+cmake -S . -B build_cmake \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DOM_OMC_ENABLE_FORTRAN=OFF \
+  -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
+  -DOM_OMC_ENABLE_MOO=OFF \
+  -DOM_ENABLE_GUI_CLIENTS=OFF \
+  -DCMAKE_PREFIX_PATH="$(brew --prefix)"
 ```
 
 > [!WARNING]
