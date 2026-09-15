@@ -103,10 +103,19 @@ end simulation;
 public function simulationCodeTarget
 "@author: adrpo
  returns: 'gcc' or 'msvc'
- usage: omc [+target=gcc|msvc], default to 'gcc'."
+ usage: omc [+target=gcc|msvc], default to 'gcc'.
+ An omc built with MSVC has no bundled GCC/MinGW toolchain, so it falls back to
+ the 'msvc' target (cl/link + nmake) unless the user asked for something else."
   output String outCodeTarget;
 algorithm
   outCodeTarget := Flags.getConfigString(Flags.TARGET);
+  // An omc whose default C compiler is cl.exe was built with MSVC and has no
+  // GCC/MinGW to fall back on, so use the 'msvc' code target unless the user
+  // explicitly asked for another one.
+  if stringEq(outCodeTarget, "gcc") and
+     (stringEq(System.getCCompiler(), "cl") or stringEq(System.getCCompiler(), "cl.exe")) then
+    outCodeTarget := "msvc";
+  end if;
 end simulationCodeTarget;
 
 public function classToInstantiate

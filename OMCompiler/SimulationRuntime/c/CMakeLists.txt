@@ -161,6 +161,18 @@ if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # Generated simulation code is compiled IMPORT_INTO and imports the *entire*
+  # MetaModelica + util + gc runtime (mmc_*, boxptr_*, throwStreamPrint,
+  # GC_asprintf, rtclock, ...) from this one DLL. Those come from the OBJECT
+  # libraries behind the static OpenModelicaRuntimeC; link them here directly so
+  # WINDOWS_EXPORT_ALL_SYMBOLS (which scans a target's own + linked OBJECT-lib
+  # objects, but not a static archive's members) exports them. The static
+  # OpenModelicaRuntimeC still comes in transitively via the simulation object
+  # lib but contributes nothing new, so no duplicate-symbol errors.
+  target_link_libraries(SimulationRuntimeC PRIVATE
+    omc::simrt::runtime::util
+    omc::simrt::runtime::meta
+    omc::simrt::runtime::gc)
 endif(MINGW)
 
 if(OM_OMC_ENABLE_COLPACK)
@@ -173,6 +185,28 @@ target_include_directories(SimulationRuntimeC
 )
 
 install(TARGETS SimulationRuntimeC)
+
+# Generated simulation code (the +target=msvc makefile from CodegenC.tpl) links
+# BLAS and pthreads directly. vcpkg only app-local-installs their DLLs into bin/,
+# so stage the import libraries next to the OpenModelica runtime libs where the
+# generated makefile's /LIBPATH points. A real install has no vcpkg_installed/.
+if(MSVC AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+  install(FILES
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/openblas.lib
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/lapack.lib
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/pthreadVC3.lib
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+  # The runtime headers pulled into generated model code (omc_gc.h -> <pthread.h>)
+  # need the vcpkg pthreads-win32 headers on the /I"include/omc/c" search path.
+  install(FILES
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/pthread.h
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/sched.h
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/semaphore.h
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/_ptw32.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
+    OPTIONAL)
+endif()
 
 
 # ######################################################################################################################
