@@ -201,7 +201,7 @@ typedef int mmc_switch_type;
 
 void mmc_catch_dummy_fn(void);
 
-#define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
+#define MMC_INIT() pthread_once(&mmc_init_once,mmc_init)
 #define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper __attribute__((unused)) = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
 
@@ -222,6 +222,11 @@ void mmc_catch_dummy_fn(void);
 #define MMC_TRY_TOP_SET(X) { threadData_t threadDataOnStack = *((threadData_t*)X), *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); mmc_init_stackoverflow_fast(threadData, oldThreadData); MMC_TRY_INTERNAL(mmc_jumper) threadData->mmc_stack_overflow_jumper = threadData->mmc_jumper; /* Let the default stack overflow handler be the top-level handler */
 
 #define MMC_TRY_TOP_INTERNAL() { threadData_t *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key); pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); mmc_init_stackoverflow_fast(threadData, oldThreadData); MMC_TRY_INTERNAL(mmc_jumper) threadData->mmc_stack_overflow_jumper = threadData->mmc_jumper;
+/* MMC_CATCH_TOP(X) takes one argument (X runs in the catch branch). GCC/Clang
+ * silently treat an empty argument list as one empty argument; MSVC's
+ * preprocessor instead warns C4003 "not enough arguments for macro invocation"
+ * for the same call. Callers with nothing to run there should write
+ * MMC_CATCH_TOP((void)0) rather than MMC_CATCH_TOP(). */
 #define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
 
 /* use this to allocate and initialize threadData */

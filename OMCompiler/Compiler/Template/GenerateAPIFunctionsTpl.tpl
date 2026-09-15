@@ -467,9 +467,6 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
       <%outArg%>omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData<%inArgs%><%outArgs%>);
       <%postCall%>
 
-      /* Explicit (void)0: MMC_CATCH_TOP(X) takes one argument. GCC/Clang
-       * silently accept an empty argument list as an empty X; MSVC's
-       * preprocessor warns C4003 "not enough arguments" for the same call. */
       MMC_CATCH_TOP((void)0)
     } catch(std::exception &exception) {
       emit throwException(QString("<%replaceDotAndUnderscore(name)%> failed. %1").arg(exception.what()));

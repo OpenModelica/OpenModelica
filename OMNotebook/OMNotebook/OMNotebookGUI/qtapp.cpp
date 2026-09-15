@@ -110,6 +110,5 @@ int main(int argc, char *argv[])
 
   return 0;
 
-  MMC_CATCH_TOP();
+  MMC_CATCH_TOP((void)0);
 }
-

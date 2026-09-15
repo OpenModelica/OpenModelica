@@ -222,9 +222,6 @@ int OMC_DLL SendCommand(OMCData *omcData, const char *expression, char **result)
   MMC_ELSE()
   return OMC_STATUS_ERROR;
   MMC_CATCH_STACK()
-  /* Explicit (void)0: MMC_CATCH_TOP(X) takes one argument. GCC/Clang silently
-   * accept an empty argument list as an empty X; MSVC's preprocessor warns
-   * C4003 "not enough arguments" for the same call. */
   MMC_CATCH_TOP((void)0);
 
   return flagError ? OMC_STATUS_ERROR : OMC_STATUS_OK;

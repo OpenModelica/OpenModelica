@@ -56,7 +56,7 @@
 pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;
 
-static void make_key()
+static void make_key(void)
 {
   pthread_key_create(&modelicaParserKey,NULL);
 }

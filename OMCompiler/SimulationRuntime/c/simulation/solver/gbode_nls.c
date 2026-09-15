@@ -307,7 +307,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case GB_NLS_INTERNAL:
     nlsData->nlsMethod = NLS_NONE;
-    nlsData->nlsLinearSolver = LS_NONE;
+    nlsData->nlsLinearSolver = NLS_LS_UNKNOWN;
     solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
@@ -421,7 +421,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case GB_NLS_INTERNAL:
     nlsData->nlsMethod = NLS_NONE;
-    nlsData->nlsLinearSolver = LS_NONE;
+    nlsData->nlsLinearSolver = NLS_LS_UNKNOWN;
     solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, TRUE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;

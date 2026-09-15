@@ -1015,9 +1015,6 @@ static void* System_launchParallelTasksThread(void *in)
     threadData->mmc_thread_work_exit = threadData->mmc_jumper;
     data->status[n] = data->fn(threadData,data->commands[n]);
     fail = 0;
-    /* Explicit (void)0: MMC_CATCH_TOP(X) takes one argument. GCC/Clang silently
-     * accept an empty argument list as an empty X; MSVC's preprocessor warns
-     * C4003 "not enough arguments" for the same call. */
     MMC_CATCH_TOP((void)0)
     if (fail) {
       data->fail = 1;

@@ -109,7 +109,9 @@ typedef void* iconv_t;
 #include <process.h>
 
 #define MAXPATHLEN MAX_PATH
+#ifndef S_IFLNK
 #define S_IFLNK  0120000  /* symbolic link */
+#endif
 
 #include <sys/types.h>
 
@@ -1461,7 +1463,7 @@ static int loadLibraryWithBinding(const char *str, int relativePath, int printDe
   }
   lib = lookup_ptr(libIndex); // lib->cnt = 1
   lib->data.lib = h;
-  if (printDebug) { fprintf(stderr, "LIB LOAD name[%s] index[%d] handle[%lu].\n", libname, libIndex, h); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "LIB LOAD name[%s] index[%" PRINT_MMC_SINT_T "] handle[%p].\n", libname, libIndex, (void*)h); fflush(stderr); }
   return libIndex;
 }
 

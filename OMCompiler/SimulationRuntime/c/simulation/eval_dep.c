@@ -102,7 +102,7 @@ void freeEvalDAG(EVAL_DAG* dag)
  */
 EVAL_SELECTION* allocEvalSelection(EVAL_DAG* dag)
 {
-  assertStreamPrint(NULL, dag, "No DAG was given.");
+  assertStreamPrint(NULL, dag != NULL, "No DAG was given.");
 
   EVAL_SELECTION* selection = (EVAL_SELECTION*) malloc(sizeof(EVAL_SELECTION));
   selection->n = 0;
@@ -136,7 +136,7 @@ void freeEvalSelection(EVAL_SELECTION* selection)
  */
 void clearEvalSelection(EVAL_SELECTION* selection)
 {
-  assertStreamPrint(NULL, selection, "selection is NULL.");
+  assertStreamPrint(NULL, selection != NULL, "selection is NULL.");
 
   /* clear work array */
   for (size_t i = 0; i < selection->dag->nEqns; ++i) {
@@ -158,7 +158,7 @@ void clearEvalSelection(EVAL_SELECTION* selection)
  */
 void activateEvalDependencies(EVAL_SELECTION* selection)
 {
-  assertStreamPrint(NULL, selection, "selection is NULL.");
+  assertStreamPrint(NULL, selection != NULL, "selection is NULL.");
 
   EVAL_DAG* dag = selection->dag;
   /* select dependencies backwards */
@@ -209,7 +209,7 @@ static void addVarToHashTable(const char *name, size_t index)
 {
   hash_varName_index *s;
   HASH_FIND_STR(varName_ht, name, s);
-  assertStreamPrint(NULL, s, "Variable %s was not initialized in the DAG hash table.", name);
+  assertStreamPrint(NULL, s != NULL, "Variable %s was not initialized in the DAG hash table.", name);
   if (s->eqIndex != (size_t)(-1)) {
     errorStreamPrint(OMC_LOG_STDOUT, 1, "Variable %s is solved in more than one equation.", name);
     errorStreamPrint(OMC_LOG_STDOUT, 0, "originally solved in %zu, now in %zu", s->eqIndex, index);

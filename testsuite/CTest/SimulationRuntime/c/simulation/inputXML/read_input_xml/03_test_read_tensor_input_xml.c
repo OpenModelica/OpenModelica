@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
   initDumpSystem();
 
-  MMC_INIT(0);
+  MMC_INIT();
   {
     MMC_TRY_TOP()
     MMC_TRY_STACK()

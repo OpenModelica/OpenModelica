@@ -67,10 +67,10 @@ DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const
 void initDumpSystem(void);
 void deactivateLogging(void);
 void reactivateLogging(void);
-void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+OMC_NORETURN void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
-void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
+OMC_NORETURN void omc_throw_function(threadData_t*);
 
 enum OMC_LOG_STREAM
 {
@@ -189,9 +189,9 @@ static inline void va_errorStreamPrint(int stream, int indentNext, const char *f
 static inline void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap) {}
 #endif
 
-extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
-extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
-extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5), noreturn));
+OMC_NORETURN extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap);
+OMC_NORETURN extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+OMC_NORETURN extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else

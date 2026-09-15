@@ -1083,7 +1083,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 #if defined(_WIN32)
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
-  MMC_CATCH_TOP()
+  MMC_CATCH_TOP((void)0)
 #endif
   /* set the tmp directory as the working directory */
   changeDirectory(tmpPath);

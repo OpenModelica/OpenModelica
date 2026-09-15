@@ -252,7 +252,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix, modelica_metaty
 
   if (MMC_IS_INTEGER(any)) {
     checkAnyStringBufSize(ix,40);
-    ix += sprintf(anyStringBuf+ix, "%ld", (mmc_sint_t) MMC_UNTAGFIXNUM(any));
+    ix += sprintf(anyStringBuf+ix, "%" PRINT_MMC_SINT_T, (mmc_sint_t) MMC_UNTAGFIXNUM(any));
     return ix;
   }
 
