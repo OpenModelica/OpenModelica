@@ -37,8 +37,11 @@ if(NOT GCOVR_EXECUTABLE)
                        "Install it with 'pip install gcovr' or your package manager.")
 endif()
 
-# Atomic counters because the testsuite runs many omc and simulation processes
-# at once, all writing into the same counter files.
+# Atomic counters because omc and parts of the simulation runtimes are
+# multithreaded, and threads share a translation unit's counters: without atomic
+# updates, concurrent increments are lost. Separate processes need no such care -
+# each keeps its own counters, and libgcov merges them into the .gcda file at
+# exit - so neither ctest -j nor the number of CI stages is a reason for this.
 #
 # The build type's optimization level is deliberately left alone. -O0 gives
 # more precise line attribution (no inlining), but omc and the simulation
@@ -130,6 +133,24 @@ add_custom_target(coverage-reset
                   COMMENT "Discarding previously collected coverage data"
                   VERBATIM)
 
+# gcovr 8 rejects a line hit more often than a threshold as "suspicious": GCC
+# bug 68080 turns racing counter updates into garbage counts, and gcovr aborts
+# the whole report on the first one. Here the counters are atomic
+# (-fprofile-update=atomic), so large counts are real - the array indexing in
+# base_array.c alone runs well past ten billion times over the testsuite. Raise
+# the threshold far above anything a real run reaches rather than turning the
+# check off, so the near-2^64 values that bug actually produces still get caught.
+# Older gcovr (7.x) has neither the check nor the option, and rejects options it
+# does not know, so only pass it where gcovr offers it.
+execute_process(COMMAND ${GCOVR_EXECUTABLE} --help
+                OUTPUT_VARIABLE _om_gcovr_help
+                ERROR_QUIET)
+set(_om_coverage_gcovr_threshold_args)
+if(_om_gcovr_help MATCHES "--gcov-suspicious-hits-threshold")
+  list(APPEND _om_coverage_gcovr_threshold_args
+       --gcov-suspicious-hits-threshold 281474976710656) # 2^48
+endif()
+
 add_custom_target(coverage-report
                   COMMAND ${CMAKE_COMMAND} -E make_directory "${OM_COVERAGE_DIR}"
                   COMMAND ${GCOVR_EXECUTABLE}
@@ -158,6 +179,8 @@ add_custom_target(coverage-report
                           # candidate working directory - littering each one
                           # with leftover .gcov files on the way.
                           --merge-mode-functions=merge-use-line-min
+                          # Large but real counts; see above.
+                          ${_om_coverage_gcovr_threshold_args}
                           --exclude-unreachable-branches
                           --exclude-throw-branches
                           --print-summary
