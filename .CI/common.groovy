@@ -762,6 +762,10 @@ String nightlyInstallDir(String name) { return "install/${name}" }
 // the packaging stage deploys its frameworks into the bundle.
 String qtMacPrefix() { return '/opt/Qt/6.11.2/macos' }
 
+// The Linux Qt kit in the ubuntu-22.04 image. Same 6.11.2 the other platforms
+// ship, rather than 22.04's packaged 6.2.4, so the three clients are one version.
+String qtLinuxPrefix() { return '/opt/Qt/6.11.2/gcc_64' }
+
 // One nightly cross target:
 //   triple    the rustc target triple (RUST_OMC_TARGET, and cargo's subdirectory)
 //   toolchain the CMake toolchain file for the C/C++ half of the tree
@@ -818,6 +822,19 @@ Map nightlyTarget(String name) {
       qt: qtMac,
       sccache: false,
       cdylib: 'libOpenModelicaCompiler.dylib',
+    ],
+    // The only native target. It builds on 22.04 rather than the 26.04 image
+    // the other stages use because the distribution's glibc floor is its build
+    // host's, and Qt's own binaries stop at 2.34 -- so 22.04 (2.35) is as low as
+    // anything linking Qt can go, and cross-compiling would buy nothing.
+    'linux64': [
+      triple: '',
+      toolchain: '',
+      configure: [],
+      qt: ["-DCMAKE_PREFIX_PATH=${qtLinuxPrefix()}",
+           '-DOM_OMEDIT_ANIMATION_QUICK3D=ON'],
+      sccache: true,
+      cdylib: 'libOpenModelicaCompiler.so',
     ],
   ]
   Map t = all[name]
@@ -900,8 +917,7 @@ void restoreNightlyShared() {
 
 // The configure flags shared by a target's omc stage and its GUI stage.
 List nightlyCommonFlags(Map t) {
-  List flags = ["-DCMAKE_TOOLCHAIN_FILE=${t.toolchain}",
-                '-DCMAKE_BUILD_TYPE=Release',
+  List flags = ['-DCMAKE_BUILD_TYPE=Release',
                 '-DOM_OMC_ENABLE_RUST=ON',
                 '-DRUST_OMC_CI=ON',
                 "-DRUST_OMC_TARGET=${t.triple}",
@@ -912,6 +928,10 @@ List nightlyCommonFlags(Map t) {
                 // a 108 MB tarball).
                 '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
                 "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"]
+  // linux64 is native, so it has neither.
+  if (t.toolchain) {
+    flags += ["-DCMAKE_TOOLCHAIN_FILE=${t.toolchain}", "-DRUST_OMC_TARGET=${t.triple}"]
+  }
   if (t.sccache) {
     flags += ['-DCMAKE_C_COMPILER_LAUNCHER=sccache', '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache']
   }
@@ -919,7 +939,9 @@ List nightlyCommonFlags(Map t) {
 }
 
 // A cross build cannot run what it produced, so check the file format instead --
-// a host binary left in bin/ by a misconfigured stage would otherwise ship.
+// a host binary left in bin/ by a misconfigured stage would otherwise ship. For
+// linux64 the format is a given and the glibc floor is what can regress, so that
+// is checked instead: the whole point of building on 22.04 is to stay at 2.35.
 void nightlyCheckArtifacts(Map t) {
   String exe = t.triple.contains('windows') ? '.exe' : ''
   sh """#!/bin/bash
@@ -928,10 +950,35 @@ void nightlyCheckArtifacts(Map t) {
     test -f "\$bin"
     magic=\$(od -An -tx1 -N4 "\$bin" | tr -d ' \\n')
     echo "\$bin: \$magic"
-    case ${t.triple} in
+    case '${t.triple}' in
       *windows*) test "\${magic:0:4}" = 4d5a ;;  # MZ
       *darwin*)  test "\$magic" = cffaedfe ;;    # 64-bit Mach-O, little endian
     esac
+  """
+  if (t.name == 'linux64') {
+    nightlyCheckGlibcFloor(nightlyInstallDir(t.name), nightlyGlibcFloor())
+  }
+}
+
+// The glibc version the Linux distribution is allowed to demand. 22.04's own,
+// one above the 2.34 the Qt binaries need.
+String nightlyGlibcFloor() { return '2.35' }
+
+// Every versioned glibc reference in a tree, against that floor. A stage that
+// silently moved to a newer image would otherwise ship a distribution that dies
+// with "version `GLIBC_2.39' not found" on the machines it is built for.
+void nightlyCheckGlibcFloor(String tree, String floor) {
+  sh """#!/bin/bash
+    set -euo pipefail
+    max=\$(find ${tree}/bin ${tree}/lib -type f \\( -name '*.so' -o -name '*.so.*' -o -perm -u+x \\) -print0 |
+      xargs -0 -r -n40 objdump -T 2> /dev/null |
+      grep -o 'GLIBC_[0-9][0-9.]*' | sort -uV | tail -1)
+    echo "highest glibc reference in ${tree}: \${max:-none}"
+    highest=\$(printf '%s\\n' "\${max#GLIBC_}" ${floor} | sort -V | tail -1)
+    if [ "\$highest" != ${floor} ]; then
+      echo "ERROR: needs glibc \${max#GLIBC_}, above the ${floor} floor" >&2
+      exit 1
+    fi
   """
 }
 
@@ -952,7 +999,9 @@ void buildRustNightlyOMC(String name) {
   // The cdylib (and on Windows its import library) for the GUI stage, staged in
   // the workspace: the cargo target directory is in a build tree that stage does
   // not have.
-  String cdylib = "build_cmake/OMCompiler/Compiler/rust-target/${t.triple}/release/${t.cdylib}"
+  // A native cargo build has no <triple>/ level under the target directory.
+  String sub = t.triple ? "${t.triple}/release" : 'release'
+  String cdylib = "build_cmake/OMCompiler/Compiler/rust-target/${sub}/${t.cdylib}"
   sh """
     rm -rf nightly-cdylib && mkdir -p nightly-cdylib
     cp -a ${cdylib} nightly-cdylib/
@@ -989,28 +1038,92 @@ void buildRustNightlyGUI(String name) {
   stash name: "nightly-gui-${name}", includes: "${nightlyInstallDir(name)}/**"
 }
 
-// Stage 4, Windows: the install tree of every stage that contributed to it, as
-// one zip.
-void packageRustNightlyWindows(List stashes) {
+// Stage 4, Windows. Two distributions off the same install tree: the CLI one is
+// the omc stages' tree alone, the full one is that tree with the GUI stages'
+// files unstashed on top, so the CLI zip has to be made before they are.
+void packageRustNightlyWindows(List omcStashes, List guiStashes) {
   standardSetup()
-  for (s in stashes) {
+  for (s in omcStashes) {
     unstash s
   }
-  String zip = "OpenModelica-${tagName()}-x86_64-windows.zip"
+  zipRustNightlyWindows("OpenModelica-CLI-${tagName()}-x86_64-windows.zip")
+  if (!guiStashes) {
+    return
+  }
+  for (s in guiStashes) {
+    unstash s
+  }
+  zipRustNightlyWindows("OpenModelica-${tagName()}-x86_64-windows.zip")
+}
+
+void zipRustNightlyWindows(String zip) {
   sh "rm -f ${zip} && (cd ${nightlyInstallDir('win64')} && zip -q -r -9 -y ${env.WORKSPACE}/${zip} .)"
   sh "ls -l ${zip}"
   uploadRustNightly(zip)
 }
 
-// Stage 4, macOS: lipo the two per-architecture install trees into one universal
-// tree (.CI/scripts/mac-universal.sh), fold that into OMEdit.app and ship it as a
-// .dmg. The unix tree is not shipped: it only runs from inside the bundle.
-void packageRustNightlyMacUniversal(List stashes) {
+// Stage 4, Linux: the same two-distribution split as Windows. The tree is the
+// agent's own, not a cross build, so the glibc floor is re-checked here against
+// the GUI files too -- the omc stage only saw its own.
+void packageRustNightlyLinux(List omcStashes, List guiStashes) {
   standardSetup()
-  for (s in stashes) {
+  for (s in omcStashes) {
+    unstash s
+  }
+  // No Qt prefix: the CLI tree has no GUI clients, but it still needs its own
+  // libraries bundled -- omc pulls in libgfortran and libcurl-gnutls, neither of
+  // which a target is required to have.
+  tarRustNightlyLinux("OpenModelica-CLI-${tagName()}-x86_64-linux.tar.gz", '')
+  if (!guiStashes) {
+    return
+  }
+  for (s in guiStashes) {
+    unstash s
+  }
+  tarRustNightlyLinux("OpenModelica-${tagName()}-x86_64-linux.tar.gz", qtLinuxPrefix())
+}
+
+void tarRustNightlyLinux(String tgz, String qtPrefix) {
+  // Self-contain the tree before it is archived: the Qt kit lives in /opt on the
+  // agent and nowhere on a user's machine, and several of the libraries omc
+  // links are not standard on a target either.
+  sh ".CI/scripts/linux-deploy.sh ${nightlyInstallDir('linux64')} ${qtPrefix}"
+  nightlyCheckGlibcFloor(nightlyInstallDir('linux64'), nightlyGlibcFloor())
+  sh "rm -f ${tgz} && tar -C ${nightlyInstallDir('linux64')} -czf ${tgz} ."
+  sh "ls -l ${tgz}"
+  uploadRustNightly(tgz)
+}
+
+// Stage 4, macOS: lipo the two per-architecture install trees into one universal
+// tree (.CI/scripts/mac-universal.sh). That tree ships as the CLI tar.gz; with
+// the GUI stages unstashed on top it is lipo'd again, folded into OMEdit.app and
+// shipped as a .dmg (the unix tree inside the bundle only runs from there).
+void packageRustNightlyMacUniversal(List omcStashes, List guiStashes) {
+  standardSetup()
+  for (s in omcStashes) {
+    unstash s
+  }
+  String cli = 'install/mac-universal-cli'
+  macUniversalTree(cli)
+  String tgz = "OpenModelica-CLI-${tagName()}-macos-universal.tar.gz"
+  sh "rm -f ${tgz} && tar -C ${cli} -czf ${tgz} ."
+  sh "ls -l ${tgz}"
+  uploadRustNightly(tgz)
+  if (!guiStashes) {
+    return
+  }
+  for (s in guiStashes) {
     unstash s
   }
   String out = 'install/mac-universal'
+  macUniversalTree(out)
+  sh ".CI/scripts/mac-app-bundle.sh ${out} install/OMEdit.app ${qtMacPrefix()}"
+  String dmg = "OpenModelica-${tagName()}-macos-universal.dmg"
+  sh ".CI/scripts/mac-dmg.sh install/OMEdit.app ${dmg} OpenModelica"
+  uploadRustNightly(dmg)
+}
+
+void macUniversalTree(String out) {
   sh ".CI/scripts/mac-universal.sh ${out} ${nightlyInstallDir('mac-x86_64')} ${nightlyInstallDir('mac-aarch64')}"
   // Both architectures really in the shipped launcher, not just in the tree.
   sh """#!/bin/bash
@@ -1023,18 +1136,6 @@ void packageRustNightlyMacUniversal(List stashes) {
       *) echo "ERROR: bin/omc is not universal" >&2; exit 1 ;;
     esac
   """
-  if (!fileExists("${out}/Applications/OMEdit.app")) {
-    // BUILD_GUI_CLIENTS off: no OMEdit.app to wrap.
-    String tgz = "OpenModelica-${tagName()}-macos-universal.tar.gz"
-    sh "rm -f ${tgz} && tar -C ${out} -czf ${tgz} ."
-    sh "ls -l ${tgz}"
-    uploadRustNightly(tgz)
-    return
-  }
-  sh ".CI/scripts/mac-app-bundle.sh ${out} install/OMEdit.app ${qtMacPrefix()}"
-  String dmg = "OpenModelica-${tagName()}-macos-universal.dmg"
-  sh ".CI/scripts/mac-dmg.sh install/OMEdit.app ${dmg} OpenModelica"
-  uploadRustNightly(dmg)
 }
 
 // build.openmodelica.org/omc/rust/latest/, under the artifact's own name
