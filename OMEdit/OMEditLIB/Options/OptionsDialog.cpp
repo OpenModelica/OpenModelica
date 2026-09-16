@@ -5338,19 +5338,21 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetBuildComboBox = new ComboBox;
 #ifdef Q_OS_WIN
   mpTargetBuildComboBox->addItem("MinGW", "gcc");
-  // We do not support any of the MSVC targets anymore
-  // mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
+  mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
 #else
   mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif
   mpTargetBuildComboBox->addItem("vxworks69", "vxworks69");
   mpTargetBuildComboBox->addItem("debugrt", "debugrt");
   connect(mpTargetBuildComboBox, SIGNAL(currentIndexChanged(int)), SLOT(targetBuildChanged(int)));
+  // An omc built with MSVC has no bundled MinGW to fall back on: default the
+  // Target Build to match, the same way the C Compiler default below already
+  // mirrors whatever omc reports (cl vs. gcc).
+#ifdef Q_OS_WIN
+  if (MainWindow::instance()->getOMCProxy()->getCompiler().compare("cl", Qt::CaseInsensitive) == 0) {
+    OptionsDefaults::Simulation::targetBuild = "msvc";
+  }
+#endif
   // C Compiler
   mpCompilerLabel = new Label(tr("C Compiler:"));
   mpCompilerComboBox = new ComboBox;

@@ -10,14 +10,12 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
   endif()
   omc_add_subdirectory(fmi)
 
-  # ModelicaExternalC
-  # Disable ModelicaExternalC for MSVC since right now we are building static
-  # and shared versions of the library with the *same name*. This works on linux
-  # and MinGW because lib.a and lib.so. MSVC, however, wants to build an import
-  # lib (.lib) for DLLs. This conflicts with the static library (also .lib).
-  if(NOT MSVC)
-    omc_add_subdirectory(ModelicaExternalC)
-  endif()
+  # ModelicaExternalC. The static and shared libraries in this subdirectory
+  # give MSVC's import lib (.lib) for the DLL the same name as the static
+  # library (also .lib) - unlike Unix (.a vs .so) or MinGW (.a vs .dll.a),
+  # which never collide - so on MSVC the static ones get a _static suffix
+  # (see the OUTPUT_NAME overrides in ModelicaExternalC/CMakeLists.txt).
+  omc_add_subdirectory(ModelicaExternalC)
 
   # OMSI
   #

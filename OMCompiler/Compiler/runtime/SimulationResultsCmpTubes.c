@@ -563,7 +563,7 @@ static void assertMonotonic(addTargetEventTimesRes series)
   int i;
   for (i=1; i<series.size; i++) {
     if (series.time[i] < series.time[i-1]) {
-      printf("assertion failed, size %ld: %.15g < %.15g\n", series.size, series.time[i], series.time[i-1]);
+      printf("assertion failed, size %zu: %.15g < %.15g\n", series.size, series.time[i], series.time[i-1]);
       abort();
     }
   }

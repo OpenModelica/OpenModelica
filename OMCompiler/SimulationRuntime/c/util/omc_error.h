@@ -51,7 +51,7 @@ typedef struct _FILE_INFO
 } FILE_INFO;
 
 #define omc_dummyFileInfo_val {"",0,0,0,0,0}
-extern const FILE_INFO omc_dummyFileInfo;
+DLLDirection extern const FILE_INFO omc_dummyFileInfo;
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
 // Defined in omc_error.c
@@ -67,10 +67,10 @@ DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const
 void initDumpSystem(void);
 void deactivateLogging(void);
 void reactivateLogging(void);
-void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+OMC_NORETURN void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
-void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
+OMC_NORETURN void omc_throw_function(threadData_t*);
 
 enum OMC_LOG_STREAM
 {
@@ -147,21 +147,21 @@ enum OMC_LOG_TYPE
   OMC_LOG_TYPE_MAX
 };
 
-extern const int firstOMCErrorStream;
-extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
+DLLDirection extern const int firstOMCErrorStream;
+DLLDirection extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
+DLLDirection extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
+DLLDirection extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
+DLLDirection extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 
-extern int omc_useStream[OMC_SIM_LOG_MAX];
-extern int omc_showAllWarnings;
+DLLDirection extern int omc_useStream[OMC_SIM_LOG_MAX];
+DLLDirection extern int omc_showAllWarnings;
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
 
-extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
-extern void (*messageClose)(int stream);
-extern void (*messageCloseWarning)(int stream);
+DLLDirection extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
+DLLDirection extern void (*messageClose)(int stream);
+DLLDirection extern void (*messageCloseWarning)(int stream);
 
 #if !defined(OMC_MINIMAL_LOGGING)
 extern void infoStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
@@ -189,9 +189,9 @@ static inline void va_errorStreamPrint(int stream, int indentNext, const char *f
 static inline void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap) {}
 #endif
 
-extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
-extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
-extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5), noreturn));
+OMC_NORETURN extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap);
+OMC_NORETURN extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+OMC_NORETURN extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else

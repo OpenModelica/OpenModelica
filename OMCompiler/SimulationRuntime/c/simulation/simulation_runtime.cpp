@@ -972,8 +972,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     int port;
     stream >> port;
     sim_communication_port_open = 1;
-    sim_communication_port_open &= sim_communication_port.create();
-    sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
+    sim_communication_port_open &= (int)sim_communication_port.create();
+    sim_communication_port_open &= (int)sim_communication_port.connect("127.0.0.1", port);
   }
 #endif
 

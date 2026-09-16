@@ -91,7 +91,7 @@ static void free_printimpl(void *data)
 pthread_once_t printimpl_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t printimplKey;
 
-static void make_key()
+static void make_key(void)
 {
   pthread_key_create(&printimplKey,free_printimpl);
 }
@@ -497,10 +497,10 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
         GC_free(modelicaFileName);
 #endif
         modelicaFileName = NULL;
-        fprintf(file,"#line %ld OMC_FILE\n", nlines++);
+        fprintf(file,"#line %" PRINT_MMC_UINT_T " OMC_FILE\n", nlines++);
       }
     } else if (modelicaFileName) {
-      fprintf(file,"#line %ld \"%s\"\n", modelicaLine, modelicaFileName);
+      fprintf(file,"#line %" PRINT_MMC_UINT_T " \"%s\"\n", modelicaLine, modelicaFileName);
       fprintf(file,"%s\n", str);
       nlines+=2;
     } else {

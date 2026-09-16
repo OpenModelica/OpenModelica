@@ -177,8 +177,13 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
 
   #include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
   #include <QtCore>
-  /* import the scripting here */
+  /* import the scripting here. Guarded: a target that links OpenModelicaCompiler
+   * (e.g. OMEdit) already gets IMPORT_INTO=1 from its INTERFACE compile
+   * definitions, and redefining it here with a different token (empty, vs. the
+   * command line's "1") warns C4005 on MSVC (and would on GCC/Clang too). */
+  #ifndef IMPORT_INTO
   #define IMPORT_INTO
+  #endif
   #include "OpenModelicaScriptingAPI.h"
 
   class <%className%> : public QObject
@@ -462,7 +467,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
       <%outArg%>omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData<%inArgs%><%outArgs%>);
       <%postCall%>
 
-      MMC_CATCH_TOP()
+      MMC_CATCH_TOP((void)0)
     } catch(std::exception &exception) {
       emit throwException(QString("<%replaceDotAndUnderscore(name)%> failed. %1").arg(exception.what()));
     }

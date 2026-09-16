@@ -331,7 +331,7 @@ namespace IAEX
     omc_Main_init(threadData, args);
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
-    MMC_CATCH_TOP()
+    MMC_CATCH_TOP((void)0)
     // set the +d=initialization flag default.
     evalExpression(QString("setCommandLineOptions(\"+d=initialization\")"));
 #ifdef WIN32
@@ -340,7 +340,7 @@ namespace IAEX
     result = result.remove( "\"" );
     MMC_TRY_TOP_INTERNAL()
     omc_Main_setWindowsPaths(threadData, mmc_mk_scon(result.toStdString().c_str()));
-    MMC_CATCH_TOP()
+    MMC_CATCH_TOP((void)0)
 #endif
   }
 
@@ -457,7 +457,7 @@ namespace IAEX
     }
     catch(std::exception &e )
     {
-      e.what();
+      (void)e;
       QMessageBox::critical( 0, QObject::tr("OMC Error"), QObject::tr("Unable to get OMC version, OMC is not started.") );
     }
 

@@ -91,7 +91,7 @@ static bool contains(std::string s1, std::string s2);
 #endif
     MMC_TRY_TOP_INTERNAL()
     omc_Main_init(threadData, args);
-    MMC_CATCH_TOP()
+    MMC_CATCH_TOP((void)0)
     threadData_ = threadData;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
@@ -104,7 +104,7 @@ static bool contains(std::string s1, std::string s2);
     result.erase(std::remove(result.begin(), result.end(), '\"'), result.end());
     MMC_TRY_TOP_INTERNAL()
     omc_Main_setWindowsPaths(threadData, mmc_mk_scon(result.c_str()));
-    MMC_CATCH_TOP()
+    MMC_CATCH_TOP((void)0)
 #endif
   }
 

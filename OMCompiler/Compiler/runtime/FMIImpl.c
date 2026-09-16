@@ -850,7 +850,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     free(name_safe);
 
     /* check if type is enum */
-    if(fmi2_import_get_base_type(variableTypeDef) != fmi1_base_type_enum) {
+    if(fmi2_import_get_base_type(variableTypeDef) != fmi2_base_type_enum) {
       continue;
     }
 

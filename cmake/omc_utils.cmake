@@ -58,3 +58,69 @@ function(omc_get_msys_prefix out_var)
 
   set(${out_var} "${msys_prefix}" PARENT_SCOPE)
 endfunction()
+
+# Run windeployqt on an already-installed GUI client so its Qt runtime (the Qt
+# DLLs, the platform/imageformat/tls plugins, the translations and -- for a
+# client that links Qt WebEngine -- QtWebEngineProcess.exe and the Chromium
+# resource/locale trees) is copied next to the installed <target>.exe.
+#
+# Works both for the MSYS2/MinGW Qt (windeployqt found under the ucrt64 tree)
+# and for a native MSVC build against an official Qt on CMAKE_PREFIX_PATH
+# (windeployqt found next to qmake). It is a no-op when not building for Windows
+# and when cross-compiling -- a Windows windeployqt.exe cannot run on the build
+# host, so those builds bundle the Qt runtime by hand instead.
+function(omc_windeployqt target)
+  if(NOT WIN32 OR CMAKE_CROSSCOMPILING)
+    return()
+  endif()
+
+  # Cache the lookup: every GUI client calls this, but windeployqt is the same
+  # tool for all of them.
+  if(NOT WINDEPLOYQT_EXECUTABLE)
+    set(_hints "")
+    # Qt >= 6.5 exports the tool as an imported target.
+    if(TARGET Qt6::windeployqt)
+      get_target_property(_wdq Qt6::windeployqt IMPORTED_LOCATION)
+      if(_wdq)
+        set(WINDEPLOYQT_EXECUTABLE "${_wdq}" CACHE FILEPATH "windeployqt")
+      endif()
+    endif()
+    if(TARGET Qt6::qmake)
+      get_target_property(_qmake Qt6::qmake IMPORTED_LOCATION)
+      if(_qmake)
+        get_filename_component(_qtbin "${_qmake}" DIRECTORY)
+        list(APPEND _hints "${_qtbin}")
+      endif()
+    endif()
+    if(MINGW)
+      omc_get_msys_prefix(_msys_prefix)
+      list(APPEND _hints "${_msys_prefix}/bin")
+    endif()
+    if(NOT WINDEPLOYQT_EXECUTABLE)
+      find_program(WINDEPLOYQT_EXECUTABLE
+        NAMES windeployqt6 windeployqt
+        HINTS ${_hints}
+        REQUIRED)
+    endif()
+  endif()
+
+  install(CODE "
+    message(STATUS \"Running windeployqt on ${target}...\")
+    execute_process(
+      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        --no-compiler-runtime
+        --no-system-d3d-compiler
+        --no-quick-import
+        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        --translationdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt6/translations\"
+        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${target}.exe\"
+      RESULT_VARIABLE _wdq_rc
+      OUTPUT_VARIABLE _wdq_out
+      ERROR_VARIABLE  _wdq_err
+    )
+    if(NOT _wdq_rc EQUAL 0)
+      message(FATAL_ERROR \"windeployqt failed for ${target}:\n\${_wdq_out}\n\${_wdq_err}\")
+    endif()
+    message(STATUS \"windeployqt (${target}): \${_wdq_out}\")
+  ")
+endfunction()

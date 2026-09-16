@@ -205,7 +205,7 @@ void rotateRingBuffer(RINGBUFFER *rb, int n)
 void lookupRingBuffer(RINGBUFFER *rb, void **lookup)
 {
   assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
-  assertStreamPrint(NULL, lookup, "Target buffer is NULL");
+  assertStreamPrint(NULL, lookup != NULL, "Target buffer is NULL");
 
   for (int i = 0; i < rb->nElements; i++) {
     lookup[i] = ((char*)rb->buffer) + (((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);

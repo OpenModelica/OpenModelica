@@ -49,7 +49,17 @@ extern "C" {
 /* adrpo: extreme windows crap! */
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define DLLImport   __declspec( dllimport )
+/* IMPORT_INTO marks a translation unit that only *consumes* the OpenModelica
+ * runtime DLL (generated simulation code, the Qt GUI clients) - it never
+ * provides these symbols, so even the historically export-only DLLExport must
+ * come in as dllimport there. The runtime's own .c files build without
+ * IMPORT_INTO and keep dllexport. MinGW auto-exports everything, so this only
+ * matters for MSVC's strict import/export. */
+#if defined(IMPORT_INTO)
+#define DLLExport   __declspec( dllimport )
+#else
 #define DLLExport   __declspec( dllexport )
+#endif
 #else
 #define DLLImport /* extern */
 #define DLLExport /* nothing */
@@ -59,6 +69,30 @@ extern "C" {
 #define DLLDirection DLLImport
 #else /* we export from the dll */
 #define DLLDirection DLLExport
+#endif
+
+/* Portable spelling of "this function never returns", for plain function
+ * declarations only (not function-pointer variables - GCC/Clang's
+ * __attribute__((noreturn)) also accepts those as an extension, but neither
+ * __declspec(noreturn) nor [[noreturn]] do).
+ * omc_msvc.h #defines __attribute__(x) away entirely, so MSVC never sees
+ * __attribute__((noreturn)) and can't tell a switch's default: case that
+ * only calls throwStreamPrint()/omc_throw_function() is unreachable, warning
+ * C4715 "not all control paths return a value" at every caller. GCC/Clang
+ * already handle __attribute__((noreturn)) correctly, so leave them on it.
+ * On the MSVC side, __declspec(noreturn) (not C11's _Noreturn - MSVC only
+ * recognizes that keyword under an explicit /std:c11 or newer, which this
+ * project does not set, and otherwise hard-errors on it) works in C mode
+ * with no extra flags; [[noreturn]] already works in MSVC's default C++
+ * mode the same way. */
+#if defined(_MSC_VER) && !defined(__clang__)
+  #if defined(__cplusplus)
+    #define OMC_NORETURN [[noreturn]]
+  #else
+    #define OMC_NORETURN __declspec(noreturn)
+  #endif
+#else
+  #define OMC_NORETURN __attribute__((noreturn))
 #endif
 
 #if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L

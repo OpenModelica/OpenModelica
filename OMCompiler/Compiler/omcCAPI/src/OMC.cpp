@@ -222,7 +222,7 @@ int OMC_DLL SendCommand(OMCData *omcData, const char *expression, char **result)
   MMC_ELSE()
   return OMC_STATUS_ERROR;
   MMC_CATCH_STACK()
-  MMC_CATCH_TOP();
+  MMC_CATCH_TOP((void)0);
 
   return flagError ? OMC_STATUS_ERROR : OMC_STATUS_OK;
 }

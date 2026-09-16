@@ -30,7 +30,7 @@ static int rml_execution_failed()
 
 int __omc_main(int argc, char **argv)
 {
-  MMC_INIT(0);
+  MMC_INIT();
   {
   void *lst = mmc_mk_nil();
   int i = 0;

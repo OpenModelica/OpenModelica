@@ -137,5 +137,5 @@ int main(int argc, char *argv[])
 
   return app.exec();
 
-  MMC_CATCH_TOP();
+  MMC_CATCH_TOP((void)0);
 }
