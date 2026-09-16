@@ -20,6 +20,7 @@
 - [6. Running Tests](#6-running-tests)
 - [7. Modelica libraries (omlibrary)](#7-modelica-libraries-omlibrary)
 - [8. Packing with CPack](#8-packing-with-cpack)
+- [9. Code Coverage](#9-code-coverage)
 
 ## 1. Quick start
 
@@ -435,3 +436,137 @@ instead.
 
 For an archive of an _installation_ rather than of the sources, use an archive generator on
 the normal config: `cpack --config build_cmake/CPackConfig.cmake -G TXZ`.
+
+## 9. Code Coverage
+
+`-DOM_ENABLE_COVERAGE=ON` builds OpenModelica with [gcov] instrumentation and adds targets
+that turn the collected counters into a report. Three things are covered:
+
+| Component    | Sources reported                    |
+| ------------ | ----------------------------------- |
+| The compiler | `OMCompiler/Compiler/**.mo`         |
+| C runtime    | `OMCompiler/SimulationRuntime/c/`   |
+| C++ runtime  | `OMCompiler/SimulationRuntime/cpp/` |
+
+You need GCC or Clang, and [gcovr] (`pip install gcovr`, or your package manager).
+
+Coverage is only as good as what you run: the numbers come from whatever the instrumented
+binaries executed since the last reset, so run the testsuite - or the subset you care
+about - in between.
+
+### How MetaModelica is covered
+
+The compiler is written in MetaModelica, which `omc` translates to C before anything is
+compiled, so gcov would normally only ever see the generated
+`build_cmake/OMCompiler/Compiler/c_files/*.c`.
+
+A coverage build therefore also turns on `omc -d=gendebugsymbols`. The code generator then
+emits `/*#modelicaLine <file>:<line>*/` markers, which `Print` writes out as C `#line`
+directives naming the `.mo` file (see `modelicaLine` in
+`Compiler/Template/CodegenCFunctions.tpl`, and `printimpl.c`). gcov follows those, so the
+report shows `NFFlatten.mo` and friends rather than `NFFlatten.c`. It costs nothing at
+runtime: the `mmc_set_current_pos()` calls that would need `OMC_RECORD_ALLOC_WORDS` on top.
+
+Since the report filters on the source tree, the leftover generated C - boilerplate that
+has no `#line` of its own - stays out of it.
+
+### Susan templates
+
+The code generator is written as Susan templates, which are translated to
+MetaModelica (`*Tpl.mo`) and only then to C, so gcov reports the generated
+MetaModelica and never the templates. Susan keeps no line mapping back to the
+`.tpl` - it records template positions only at a handful of error sites - but it
+does keep the _names_: every `template foo` becomes a `public function foo`.
+
+`OpenModelicaCoverageTemplates.py` uses that. For each generated function it
+takes the coverage of its lines and attributes it to the `template foo` line in
+the `.tpl`, and `coverage-report` merges the result into the report as another
+tracefile. Coverage of a `.tpl` therefore reads as _how many of its templates
+ran_, which is what separates dead templates from live ones. It is not line
+coverage _within_ a template - that would need Susan to emit a real line map.
+
+The generated `*Tpl.mo` are reported too, so per-line detail is still available,
+just against the generated MetaModelica rather than the template.
+
+This needs the compiler to record absolute paths for the generated
+MetaModelica, which lives in the build tree: `-fprofile-abs-path` on GCC, and a
+`-ffile-compilation-dir` pointing outside the tree on Clang (see
+`OM_COVERAGE_CLANG_COMPILATION_DIR`). Without it gcov cannot find the generated
+`.mo` from the object directory and the templates silently drop out.
+
+### Running it
+
+Configure and build as usual, with coverage on:
+
+```sh
+cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=build \
+      -DOM_ENABLE_COVERAGE=ON
+cmake --build build_cmake --target install --parallel $(nproc)
+```
+
+Discard counters left over from earlier runs, so the report covers only what you are about
+to run:
+
+```sh
+cmake --build build_cmake --target coverage-reset
+```
+
+Then run something. For the whole testsuite through CTest (see
+[testsuite/CTest/Readme.md](testsuite/CTest/Readme.md)):
+
+```sh
+cmake -DTESTSUITE_DIR="$PWD/testsuite" -DOUTPUT_DIR="$PWD/build-testsuite-ctest" \
+      -P testsuite/CTest/Partest/GenerateCTestFile.cmake
+ctest --test-dir build-testsuite-ctest -j$(nproc) --output-on-failure
+```
+
+While iterating, `ctest -R <regex>` or `-L <label>` narrows that down - e.g. `-L flattening`
+for just the flattening tests. Counters accumulate until the next `coverage-reset`, so
+several runs can be combined into one report. Finally:
+
+```sh
+cmake --build build_cmake --target coverage-report
+```
+
+It prints a summary and writes `build_cmake/coverage/`: `index.html` (browsable, per-file
+and per-line) and `coverage.xml` (Cobertura, for tooling).
+
+### Viewing the report
+
+```sh
+cmake --build build_cmake --target coverage-serve
+```
+
+serves it on <http://localhost:8000/> until you Ctrl-C; override the port with
+`-DOM_COVERAGE_PORT=9000`. This also works over an SSH port forward or from a container,
+where opening the file directly would not. Otherwise just open
+`build_cmake/coverage/index.html` in a browser.
+
+### Notes
+
+- The build type's optimization level is left alone, because `omc` and the simulation
+  runtime are on the hot path of every test and an unoptimized coverage build makes a
+  testsuite run far slower. For exact per-line attribution (no inlining) at that cost,
+  configure with `-DOM_COVERAGE_COMPILE_OPTIONS="--coverage;-fprofile-update=atomic;-O0"`.
+- With Clang the report is read back with `llvm-cov gcov`; this is picked automatically and
+  can be overridden with `-DOM_COVERAGE_GCOV=...`.
+- Turning `OM_ENABLE_COVERAGE` on or off changes the generated C (`-d=gendebugsymbols`), so
+  the compiler is retranslated and rebuilt. Counters collected before such a switch carry no
+  `.mo` mapping and report the compiler as 0%: rebuild, `coverage-reset`, then re-run.
+- `gcov` also wants to read the _generated_ `c_files/*.c` behind each translation unit.
+  Those are build artifacts, filtered out of the report, and not present when the report is
+  produced somewhere other than the build (as in CI), so `--gcov-ignore-errors` is passed to
+  let gcov not find them - without it, it discards the whole `.gcda`, `.mo` data included.
+  It still prints a complaint per file; the line data is unaffected.
+- A coverage build also appends `--coverage` to the link flags omc uses for generated code
+  (`Autoconf.ldflags_runtime*` and `SYSTEM_LDFLAGS` in the C++ runtime's
+  `ModelicaConfig_gcc.inc`). Simulations that link the runtime _dynamically_ would not need
+  it - libgcov is inside the shared library - but source FMUs link the static runtime, and
+  without it they fail with undefined references to `__gcov_*` / `llvm_gcda_*`.
+- Jenkins does all of this on every PR, from the `testsuite-cmake-gcc` shard; see
+  `coverageReportStage()` in [.CI/common.groovy](.CI/common.groovy). That shard runs half of
+  the testsuite - the other half runs in the clang shard, on the autotools build, which is
+  not instrumented - so CI's numbers cover roughly half the tests a full local run would.
+
+[gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
+[gcovr]: https://gcovr.com/

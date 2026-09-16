@@ -50,3 +50,18 @@ endif()
 if(OM_RUST_RESULT_WRITERS AND NOT MSVC)
   string(APPEND RT_LDFLAGS_GENERATED_CODE_SIM " -lomc_result ")
 endif()
+
+# A coverage build instruments the runtime, so anything omc links against it
+# needs the gcov runtime too. Linking a *shared* instrumented runtime is fine
+# on its own (libgcov is already inside it), but the static variants - the
+# source FMUs above all link one - would otherwise fail with undefined
+# references to __gcov_*/llvm_gcda_*. Harmless where it is not needed.
+if(OM_ENABLE_COVERAGE)
+  foreach(_flags RT_LDFLAGS_GENERATED_CODE
+                 RT_LDFLAGS_GENERATED_CODE_SIM
+                 RT_LDFLAGS_GENERATED_CODE_SIM_RUST
+                 RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU
+                 RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC)
+    string(APPEND ${_flags} " --coverage ")
+  endforeach()
+endif()
