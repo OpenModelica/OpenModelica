@@ -851,10 +851,10 @@ pipeline {
           }
           steps {
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
-                                     common.testCacheMounts('runtest-gcc-cache')) {
-                common.coverageReportStage(1)
-              }
+              // Enters the build image itself: which mounts it needs depends
+              // on where the instrumented build ran, which it only learns
+              // from the stash.
+              common.coverageReportStage(1)
             }
           }
         }

@@ -1803,27 +1803,51 @@ void coverageReportStage(int shardCount) {
     mergeDirs << "shard-${i}/gcda-out${coverageBuildRoot}/build_cmake"
   }
 
-  sh """#!/bin/bash -xe
-  merged=${mergeDirs[0]}
-  for src in ${mergeDirs.drop(1).join(' ')}; do
-    gcov-tool merge "\$merged" "\$src" -o merged-next
-    rm -rf merged-tmp
-    mv merged-next merged-tmp
-    merged=merged-tmp
-  done
-  # Overlay the merged counters onto the *.gcno tree unstashed above.
-  cp -a "\$merged/." build_cmake/
-  """
+  // The compiler bakes the absolute path of the build into the *.gcno files,
+  // and that is the only path under which the data is recognised afterwards:
+  // gcov looks for the sources there and gcovr's --filter (absolute, built
+  // from CMAKE_SOURCE_DIR) has to match it. 'ws/OpenModelica' resolves
+  // against each agent's own root, so landing on another agent than the build
+  // did - the normal case - leaves gcovr filtering everything out and
+  // reporting 0%. Bind-mount the workspace a second time at the path the
+  // build used and work through that; it is the same directory, so what is
+  // written there is in the workspace as usual, for archiveArtifacts and
+  // recordCoverage below.
+  def extraMounts = coverageBuildRoot == env.WORKSPACE ? ''
+                                                       : "-v ${env.WORKSPACE}:${coverageBuildRoot}"
 
-  // Configure only: nothing needs (re)building for the coverage-report
-  // target, and the flags otherwise just have to be enough to reach it
-  // (matching buildCMakeGccOMC() keeps this from silently drifting out of
-  // sync with what was actually instrumented).
-  sh """
-  cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \\
-        -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON
-  """
-  sh 'cmake --build build_cmake --target coverage-report'
+  // gcov and gcov-tool have to be the ones that match the compiler the data
+  // was produced with, which is this image's; the testsuite caches are of no
+  // use here because this stage runs no tests.
+  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', extraMounts) {
+    sh """#!/bin/bash -xe
+    # Fails the stage right here if the mount above did not take effect,
+    # rather than further down with an empty report.
+    test -e "${coverageBuildRoot}/OMCompiler/Compiler/CMakeLists.txt"
+    cd "${coverageBuildRoot}"
+
+    merged=${mergeDirs[0]}
+    for src in ${mergeDirs.drop(1).join(' ')}; do
+      gcov-tool merge "\$merged" "\$src" -o merged-next
+      rm -rf merged-tmp
+      mv merged-next merged-tmp
+      merged=merged-tmp
+    done
+    # Overlay the merged counters onto the *.gcno tree unstashed above.
+    cp -a "\$merged/." build_cmake/
+    """
+
+    // Configure only: nothing needs (re)building for the coverage-report
+    // target, and the flags otherwise just have to be enough to reach it
+    // (matching buildCMakeGccOMC() keeps this from silently drifting out of
+    // sync with what was actually instrumented).
+    sh """#!/bin/bash -xe
+    cd "${coverageBuildRoot}"
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \\
+          -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON
+    cmake --build build_cmake --target coverage-report
+    """
+  }
 
   // The browsable HTML, kept per build.
   archiveArtifacts artifacts: 'build_cmake/coverage/**', allowEmptyArchive: false
