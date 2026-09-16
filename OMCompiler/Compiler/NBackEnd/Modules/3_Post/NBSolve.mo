@@ -213,7 +213,12 @@ public
 
         // solve component that was simplified
         case StrongComponent.MULTI_COMPONENT(vars = {var_slice}) guard(not Equation.isCompound(Slice.getT(comp.eqn))) algorithm
-          (solved_comps, implicit_index) := solveStrongComponent(StrongComponent.createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, comp.eqn), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          // var_slice can be a genuine partial slice; resolve the cref that actually
+          // occurs in the equation with the matching size instead of the bare declared
+          // name (var_cref is documented to carry subscripts, see the comment below).
+          var_cref := if Slice.isFull(var_slice) then BVariable.getVarName(Slice.getT(var_slice))
+            else Slice.resolveSlicedCref(BVariable.getVarName(Slice.getT(var_slice)), PointerCyclic.access(Slice.getT(comp.eqn)), Slice.size(var_slice, function BVariable.size(resize = false)));
+          (solved_comps, implicit_index) := solveStrongComponent(StrongComponent.createSliceOrSingle(var_cref, var_slice, comp.eqn), funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then (solved_comps, Status.UNPROCESSED); // status is unknown, but does not matter because errors were handled in the recursive call.
 
         case StrongComponent.MULTI_COMPONENT() algorithm
@@ -1653,7 +1658,7 @@ protected
     output Status solve_status;
   protected
     PointerCyclic<Variable> var_ptr = BVariable.getVarPointer(var_cref, sourceInfo());
-    list<ComponentRef> slices_lst;
+    list<ComponentRef> slices_lst, filtered;
     Option<PointerCyclic<Variable>> record_parent;
     function checkReference
       input ComponentRef var_cref;
@@ -1687,8 +1692,16 @@ protected
       elseif listEmpty(slices_lst) then
         solve_status := Status.UNSOLVABLE;
       else
-        // todo: choose best slice of list if more than one.
-        solve_status := Status.IMPLICIT;
+        // more than one candidate slice occurs (e.g. the whole variable on one side and
+        // a partial slice on the other) -- narrow down with the same size check used for
+        // the single-candidate case above.
+        filtered := list(c for c guard(checkReference(c, reference)) in slices_lst);
+        if List.hasOneElement(filtered) then
+          var_cref := listHead(filtered);
+          solve_status := Status.UNPROCESSED;
+        else
+          solve_status := Status.IMPLICIT;
+        end if;
       end if;
     end if;
   end getVarSlice;
