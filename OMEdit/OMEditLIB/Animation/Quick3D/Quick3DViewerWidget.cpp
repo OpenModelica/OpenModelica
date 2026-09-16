@@ -38,6 +38,8 @@
 #include <cmath>
 
 #include <QColorDialog>
+#include <QCoreApplication>
+#include <QEventLoop>
 #include <QInputDialog>
 #include <QMatrix3x3>
 #include <QMenu>
@@ -97,29 +99,66 @@ Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
     mpScene(nullptr),
     mpSceneRoot(nullptr),
     mpCamera(nullptr),
+    mpShellComponent(nullptr),
     mpAnimationWindow(qobject_cast<AbstractAnimationWindow*>(parent)),
     mpSelectedVisualizer(nullptr),
     mCenter(0.0f, 0.0f, 0.0f),
     mDistance(5.0f)
 {
   setResizeMode(QQuickWidget::SizeRootObjectToView);
+  // The shell imports QtQuick3D, whose module/plugin loading may finish
+  // asynchronously; building the scene ahead of time would leave getScene()
+  // null. Load it now and create the scene from the statusChanged handler.
+  mpShellComponent = new QQmlComponent(engine(), this);
+  connect(mpShellComponent, &QQmlComponent::statusChanged, this,
+          [this](QQmlComponent::Status status) {
+            if (status == QQmlComponent::Ready) {
+              createSceneFromShell();
+            } else if (status == QQmlComponent::Error) {
+              qWarning("Quick3DViewerWidget: shell error: %s", qPrintable(mpShellComponent->errorString()));
+            }
+          });
+  mpShellComponent->setData(kShellQml, QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")));
+  if (mpShellComponent->isReady()) {
+    createSceneFromShell(); // load completed synchronously
+  }
+}
 
-  QQmlComponent* shell = new QQmlComponent(engine(), this);
-  shell->setData(kShellQml, QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")));
-  if (shell->isError()) {
-    qWarning("Quick3DViewerWidget: shell error: %s", qPrintable(shell->errorString()));
+void Quick3DViewerWidget::createSceneFromShell()
+{
+  if (mpScene || !mpShellComponent || !mpShellComponent->isReady()) {
     return;
   }
-  QObject* root = shell->create(engine()->rootContext());
-  setContent(QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")), shell, root);
+  QObject* root = mpShellComponent->create(engine()->rootContext());
+  if (!root) {
+    qWarning("Quick3DViewerWidget: failed to create scene from shell: %s", qPrintable(mpShellComponent->errorString()));
+    return;
+  }
+  setContent(QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")), mpShellComponent, root);
 
-  mpSceneRoot = root ? qobject_cast<QQuick3DObject*>(root->findChild<QObject*>(QStringLiteral("sceneRoot"))) : nullptr;
-  mpCamera = root ? root->findChild<QObject*>(QStringLiteral("camera")) : nullptr;
+  mpSceneRoot = qobject_cast<QQuick3DObject*>(root->findChild<QObject*>(QStringLiteral("sceneRoot")));
+  mpCamera = root->findChild<QObject*>(QStringLiteral("camera"));
   if (mpSceneRoot) {
     mpScene = new Quick3DScene(engine(), mpSceneRoot);
   } else {
     qWarning("Quick3DViewerWidget: scene root not found");
   }
+}
+
+bool Quick3DViewerWidget::ensureScene() const
+{
+  if (mpScene) {
+    return true;
+  }
+  if (!mpShellComponent) {
+    return false;
+  }
+  // QML loads in chunks; keep the loop alive until the shell resolves (create()
+  // needs status Ready) or fails.
+  while (!mpScene && mpShellComponent->status() == QQmlComponent::Loading) {
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
+  }
+  return mpScene != nullptr;
 }
 
 Quick3DViewerWidget::~Quick3DViewerWidget()

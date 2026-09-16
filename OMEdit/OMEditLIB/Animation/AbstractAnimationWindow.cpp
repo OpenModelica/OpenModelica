@@ -393,6 +393,15 @@ bool AbstractAnimationWindow::loadVisualization()
 #endif
     return false;
   } else {
+    // The Qt Quick 3D shell loads asynchronously; wait for it so the data
+    // classes can be wired to a real scene (and fail cleanly instead of
+    // dereferencing a null scene).
+    if (!mpViewerWidget->ensureScene()) {
+      QString msg = tr("Could not initialize the 3D scene for %1.").arg(QString(mFileName.c_str()));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
+                                                            Helper::errorLevel));
+      return false;
+    }
     //init visualization
     if (visType == VisType::MAT) {
       mpVisualization = new VisualizationMAT(mFileName, mPathName);

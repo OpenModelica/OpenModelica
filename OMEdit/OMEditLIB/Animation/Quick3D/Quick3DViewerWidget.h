@@ -47,6 +47,7 @@ class AnimationScene;
 class AbstractAnimationWindow;
 class AbstractVisualizerObject;
 class QQuick3DObject;
+class QQmlComponent;
 
 /*
  * Qt Quick 3D viewport widget. Hosts a QML scene shell (View3D + camera + lights
@@ -66,6 +67,9 @@ public:
   AnimationScene* getScene() const;
   QObject* getCamera() const { return mpCamera; }
   QQuick3DObject* getSceneRoot() const { return mpSceneRoot; }
+  // Block until the QML shell has loaded (it loads asynchronously) and return
+  // whether the animation scene is available.
+  bool ensureScene() const;
 
   // Frame the whole scene (bounding sphere) at the current view angle.
   void fitToScene();
@@ -84,6 +88,9 @@ protected:
 
 private:
   void applyCamera();
+  // Build the scene root, the camera handle and the Quick3DScene once the shell
+  // QML component has finished loading (statusChanged -> Ready).
+  void createSceneFromShell();
   // Ray-pick at a view pixel: returns the hit Model's objectName (visualizer id).
   QString pickName(const QPointF& viewPos);
   // Shift+right-click: pick the visualizer under the cursor and pop up the
@@ -95,6 +102,7 @@ private:
   Quick3DScene* mpScene;
   QQuick3DObject* mpSceneRoot;
   QObject* mpCamera;
+  QQmlComponent* mpShellComponent;
   AbstractAnimationWindow* mpAnimationWindow;
   AbstractVisualizerObject* mpSelectedVisualizer;
 
