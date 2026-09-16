@@ -147,14 +147,14 @@ enum OMC_LOG_TYPE
   OMC_LOG_TYPE_MAX
 };
 
-extern const int firstOMCErrorStream;
-extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
+DLLDataDirection extern const int firstOMCErrorStream;
+DLLDataDirection extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 
-extern int omc_useStream[OMC_SIM_LOG_MAX];
-extern int omc_showAllWarnings;
+DLLDataDirection extern int omc_useStream[OMC_SIM_LOG_MAX];
+DLLDataDirection extern int omc_showAllWarnings;
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])

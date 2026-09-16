@@ -3120,8 +3120,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   !ENDIF
   CPPFLAGS=$(CFLAGS)
 
-  LDSYSTEMFLAGS=/link /DLL /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" <%dirExtra%> <%libsStr%> OMCppSystem.lib OMCppModelicaUtilities.lib OMCppDataExchange.lib OMCppMath.lib OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
-  LDMAINFLAGS=/link /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" OMCppOMCFactory.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDSYSTEMFLAGS=/link /DLL /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" <%dirExtra%> <%libsStr%> OMCppSystem.lib OMCppModelicaUtilities.lib OMCppDataExchange.lib OMCppMath.lib OMCppOMCFactory.lib $(BOOST_LIBRARIES) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDMAINFLAGS=/link /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(BOOST_LIBRARIES) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
 
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=OMCpp<%fileNamePrefix%>Main.cpp

@@ -66,8 +66,8 @@ void SystemStateSelection::initialize()
         _dimStateCanditates.push_back(_state_selection->getDimCanditates(i));
         _dimDummyStates.push_back(_dimStateCanditates[i] - _dimStates[i]);
 
-        _rowPivot.push_back(boost::shared_array<int>(new int[_dimDummyStates[i]]));
-        _colPivot.push_back(boost::shared_array<int>(new int[_dimStateCanditates[i]]));
+        _rowPivot.push_back(std::vector<int>(_dimDummyStates[i]));
+        _colPivot.push_back(std::vector<int>(_dimStateCanditates[i]));
         for (int n = 0; n < _dimDummyStates[i]; n++)
             _rowPivot[i][n] = n;
 
@@ -101,35 +101,35 @@ return true;
     int changed = false;
     for (int i = 0; i < _dimStateSets; i++)
     {
-        boost::shared_array<int> oldColPivot(new int[_dimStateCanditates[i]]);
-        boost::shared_array<int> oldRowPivot(new int[_dimDummyStates[i]]);
+        std::vector<int> oldColPivot(_dimStateCanditates[i]);
+        std::vector<int> oldRowPivot(_dimDummyStates[i]);
         const matrix_t& stateset_matrix = _system->getStateSetJacobian(i);
 
         /* call pivoting function to select the states */
 
 
-        memcpy(oldColPivot.get(), _colPivot[i].get(), _dimStateCanditates[i] * sizeof(int));
-        memcpy(oldRowPivot.get(), _rowPivot[i].get(), _dimDummyStates[i] * sizeof(int));
+        memcpy(oldColPivot.data(), _colPivot[i].data(), _dimStateCanditates[i] * sizeof(int));
+        memcpy(oldRowPivot.data(), _rowPivot[i].data(), _dimDummyStates[i] * sizeof(int));
 
         const double* jac = stateset_matrix.data().begin();
-        int* piv = _colPivot[i].get();
+        int* piv = _colPivot[i].data();
 
         double* jac_ = new double[_dimDummyStates[i] * _dimStateCanditates[i]];
         memcpy(jac_, jac, _dimDummyStates[i] * _dimStateCanditates[i] * sizeof(double));
 
 
-        if ((pivot(jac_, _dimDummyStates[i], _dimStateCanditates[i], _rowPivot[i].get(), _colPivot[i].get()) != 0))
+        if ((pivot(jac_, _dimDummyStates[i], _dimStateCanditates[i], _rowPivot[i].data(), _colPivot[i].data()) != 0))
         {
             throw ModelicaSimulationError(MATH_FUNCTION,
                                           "Error, singular Jacobian for dynamic state selection at time");
         }
         /* if we have a new set throw event for reinitialization
         and set the A matrix for set.x=A*(states) */
-        res = comparePivot(oldColPivot.get(), _colPivot[i].get(), switchStates, i);
+        res = comparePivot(oldColPivot.data(), _colPivot[i].data(), switchStates, i);
         if (!switchStates)
         {
-            memcpy(_colPivot[i].get(), oldColPivot.get(), _dimStateCanditates[i] * sizeof(int));
-            memcpy(_rowPivot[i].get(), oldRowPivot.get(), _dimDummyStates[i] * sizeof(int));
+            memcpy(_colPivot[i].data(), oldColPivot.data(), _dimStateCanditates[i] * sizeof(int));
+            memcpy(_rowPivot[i].data(), oldRowPivot.data(), _dimDummyStates[i] * sizeof(int));
         }
         delete [] jac_;
         if (res)

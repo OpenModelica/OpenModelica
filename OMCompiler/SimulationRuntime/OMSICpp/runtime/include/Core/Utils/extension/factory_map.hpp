@@ -79,10 +79,34 @@ namespace boost
 #else
             // generate get and conversion template member functions from the
             // specification in impl/
-# define BOOST_PP_ITERATION_LIMITS (0, \
-    BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
-# define BOOST_PP_FILENAME_1 "Core/Utils/extension/impl/factory_map.hpp"
-# include BOOST_PP_ITERATE()
+  template <class Interface, class Info, class... Params>
+  std::map<Info, factory<Interface, Params...> >& get() {
+    typedef Interface* (*func_ptr_type)(Params...);
+    typedef type_info_handler<TypeInfo, func_ptr_type> handler_type;
+
+    TypeInfo t = handler_type::get_class_type();
+
+    typename std::map<TypeInfo, generic_map_holder*>::iterator
+      it = maps_.find(t);
+
+    typedef factory<Interface, Params...> factory_type;
+    typedef std::map<Info, factory_type> map_type;
+
+    map_holder<map_type>* holder;
+    if (it == maps_.end()) {
+      holder = new map_holder<map_type>;
+      it = maps_.insert(std::make_pair(t, holder)).first;
+    } else {
+      holder = static_cast<map_holder<map_type>*>(it->second);
+    }
+
+    return *(static_cast<map_type*>(holder));
+  }
+
+  template <class Interface, class Info, class... Params>
+  operator std::map<Info, factory<Interface, Params...> >&() {
+    return get<Interface, Info, Params...>();
+  }
 
         private:
 

@@ -35,6 +35,7 @@
 
 #ifndef OMC_GC_H_
 #define OMC_GC_H_
+#include "../omc_dll.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -213,7 +214,7 @@ struct mmc_GC_state_type /* the structure of GC state */
   modelica_metatype       global_roots[MMC_GC_GLOBAL_ROOTS_SIZE]; /* the global roots ! */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
-extern mmc_GC_state_type* mmc_GC_state;
+DLLDataDirection extern mmc_GC_state_type* mmc_GC_state;
 
 /* tag the free reqion as a free object with 250 ctor*/
 #define MMC_FREE_OBJECT_CTOR           200

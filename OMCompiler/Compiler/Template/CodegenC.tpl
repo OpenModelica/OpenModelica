@@ -8215,7 +8215,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => extraFile ;separator=" "%>
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX).makefile $(FILEPREFIX)_literals.h $(FILEPREFIX)_functions.h $(CFILES)
 
   omc_main_target:

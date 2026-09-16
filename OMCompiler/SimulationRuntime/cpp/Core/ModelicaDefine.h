@@ -33,6 +33,20 @@
 // this might be used by external C code to identify OpenModelica
 #define OPENMODELICA_H_
 
+/* MSVC binary compatibility is forward-only, so a cl.exe older than the STL the
+ * Windows binaries were built against cannot link them; it fails on missing STL
+ * helpers such as __std_search_1. Only the C++ runtime is affected, the C one
+ * crosses a pure C ABI. clang-cl reports an _MSC_VER of its own that says
+ * nothing about the STL it was handed, so it is excluded. */
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(OMC_CPP_SKIP_MSC_VERSION_CHECK)
+  #ifndef OMC_CPP_MIN_MSC_VER
+  #define OMC_CPP_MIN_MSC_VER 1944
+  #endif
+  #if _MSC_VER < OMC_CPP_MIN_MSC_VER
+    #error "The OpenModelica C++ simulation runtime needs Visual Studio 2022 17.14 (MSVC 19.44) or newer. Update the Build Tools in the Visual Studio Installer, or use --simCodeTarget=C, or the MinGW target (Tools->Options->Simulation->Target Build)."
+  #endif
+#endif
+
 typedef double modelica_real;
 typedef int modelica_integer;
 typedef bool modelica_boolean;

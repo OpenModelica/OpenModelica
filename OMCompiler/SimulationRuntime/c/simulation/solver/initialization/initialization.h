@@ -30,6 +30,7 @@
 
 #ifndef _INITIALIZATION_H_
 #define _INITIALIZATION_H_
+#include "../../../omc_dll.h"
 
 #include "../../../simulation_data.h"
 
@@ -39,7 +40,7 @@ extern "C"
 {
 #endif
 
-extern int init_lambda_steps;
+DLLDataDirection extern int init_lambda_steps;
 
 void initSample(DATA *data, threadData_t *threadData, double start, double stop);
 extern int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime);
