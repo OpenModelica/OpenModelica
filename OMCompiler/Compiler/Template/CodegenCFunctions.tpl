@@ -99,7 +99,7 @@ static int rml_execution_failed()
 
 DLLDirection int __omc_main(int argc, char **argv)
 {
-  MMC_INIT(0);
+  MMC_INIT();
   {
   void *lst = mmc_mk_nil();
   int i = 0;
@@ -1658,7 +1658,7 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
   }
 
   int main(int argc, char **argv) {
-    MMC_INIT(0);
+    MMC_INIT();
     {
     void *lst = mmc_mk_nil();
     int i = 0;
