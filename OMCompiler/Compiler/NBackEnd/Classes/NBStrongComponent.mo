@@ -1152,6 +1152,7 @@ public
         Slice<VariablePointer> var_slice;
         Slice<EquationPointer> eqn_slice;
         Pointer<Boolean> homotopy = Pointer.create(false);
+        ComponentRef resolved_cref;
 
       // Size 1 strong component
       // - case 1: sliced equation because of for-equation
@@ -1192,7 +1193,14 @@ public
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
           case ({var_slice}, {eqn_slice}) guard(not (Equation.isForEquation(Slice.getT(eqn_slice)) or Equation.isAlgorithm(Slice.getT(eqn_slice))))
-          then createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, eqn_slice);
+          algorithm
+            // var_slice can be a genuine partial slice (e.g. i_s[{1, 2}]); the bare
+            // declared name loses that, so resolve the cref that actually occurs in the
+            // equation with the matching size instead (SLICED_COMPONENT.var_cref is
+            // documented to carry subscripts, see NBSolve.solveStrongComponent).
+            resolved_cref := if Slice.isFull(var_slice) then BVariable.getVarName(Slice.getT(var_slice))
+              else Slice.resolveSlicedCref(BVariable.getVarName(Slice.getT(var_slice)), PointerCyclic.access(Slice.getT(eqn_slice)), Slice.size(var_slice, function BVariable.size(resize = false)));
+          then createSliceOrSingle(resolved_cref, var_slice, eqn_slice);
 
           // for equations that are not algebraic loops are caught earlier! Any for equation
           // getting to this point is an actual algebraic loop

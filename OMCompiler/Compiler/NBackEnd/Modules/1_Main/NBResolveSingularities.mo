@@ -134,20 +134,10 @@ public
     UnorderedMap<ComponentRef, SliceSet> slice_map = UnorderedMap.new<SliceSet>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> dummy_slice_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual) "dummy variables to fill unslicable equations";
 
-    // sliced dummy/state candidate handling: state candidates matched by Matching.getMatches
-    // can be a partial (non-full) slice of an array variable, e.g. only theta[1] out of theta[1:2]
-    // needs to become a dummy state. Since a variable's VariableKind (STATE / DUMMY_STATE / ...)
-    // is a whole-variable property, not a per-index one, such a slice is materialized as its own
-    // small alias variable (sized to exactly the selected indices) plus a linking equation, the
-    // same technique NBFunctionAlias.introduceSlicedStateAlias uses for the mirror-image problem
-    // (a variable only partially a *state* because der() only touches some of its indices).
-    // NOTE: intentionally *not* a fresh Pointer.create(1) -- indexReduction is called
-    // once per detected singular subsystem, so a local counter would restart at 1 each
-    // time and could collide with (or literally reuse the exact name of) an alias
-    // variable created by an earlier call, e.g. two unrelated aliases both "$DUM_1".
-    // VarData.getUniqueIndex(varData) is the same model-wide, ever-increasing counter
-    // already used for equation naming in this function (see removeSlicedDerivatives
-    // below); reusing it for the alias variable name too guarantees no collision.
+    // sliced state candidates get materialized as a whole alias variable + linking
+    // equation (see resolveSlicedCandidates); aux_index reuses VarData.getUniqueIndex
+    // (model-wide, already used for equation naming below) instead of a fresh counter,
+    // to avoid colliding with an alias from an earlier indexReduction call.
     UnorderedMap<ComponentRef, Expression> alias_subst = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     list<PointerCyclic<Equation>> alias_eqns;
 
@@ -263,26 +253,12 @@ public
       (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
       unmatched_eqns := resolveSlicedUnmatched(unmatched_eqns, slice_map);
 
-      // resolve sliced (partial-index) state/dummy candidates *before* differentiation:
-      // this has to happen first so the constraint equations reference the (whole) alias
-      // instead of a slice of the original by the time they are differentiated below --
-      // differentiation is what promotes a plain algebraic alias to a proper STATE (see
-      // NBDifferentiate.mo's ALGEBRAIC => STATE_DER case), so the alias arrives at the
-      // state bucketing further down already whole.
-      //
-      // the state side and the dummy side are NOT symmetric here: a sliced *state*
-      // candidate gets its own small alias variable + linking equation (same technique as
-      // NBFunctionAlias.introduceSlicedStateAlias). A sliced *dummy* candidate does not --
-      // a component reference indexed inside a for-loop can represent either slice
-      // depending on the iterator value, so it cannot always be statically replaced by an
-      // alias. Instead, once the sibling state slice(s) of the same variable have been
-      // aliased out, the remainder of the original variable purely *is* the dummy, so the
-      // whole original variable can (and must) be marked DUMMY_STATE directly below --
-      // this is also what correctly excludes it from all future candidacy (see
-      // getStateCandidate's isDummyState check), which a second alias never would (the
-      // original variable would remain a plain, unexcluded candidate forever).
-      // resolveSlicedDummyStates checks that the combined state+dummy indices fully
-      // account for the variable before upgrading it to whole; see its docstring.
+      // sliced state/dummy candidates have to be resolved before differentiation, so the
+      // constraint equations reference the whole alias rather than a slice of the
+      // original by the time they get differentiated below. Dummy and state sides are
+      // not symmetric: only a sliced state gets its own alias (resolveSlicedCandidates);
+      // a sliced dummy is upgraded to the whole variable instead once its sibling state
+      // slice(s) cover the rest (resolveSlicedDummyStates) -- see their docstrings.
       dummy_states := resolveSlicedDummyStates(dummy_states, states);
       (states, alias_eqns) := resolveSlicedCandidates(states, alias_subst, VarData.getUniqueIndex(varData), VarData.getUniqueIndex(varData));
       if not UnorderedMap.isEmpty(alias_subst) then
@@ -291,16 +267,10 @@ public
         end for;
       end if;
       new_eqns := listAppend(alias_eqns, new_eqns);
-      // the alias linking equations must also be *differentiated*, same as the other
-      // constraint equations below -- otherwise only the value-level link ($DUM_n =
-      // theta[i]) exists, and the *derivative* of the aliased slice (part of the whole
-      // original variable's now-DUMMY_DER derivative, e.g. $DER.theta) is left without a
-      // defining equation -- exactly the "(and their derivatives too?)" gap flagged when
-      // this design was discussed. NBSorting.tarjan fails on the resulting var/eqn
-      // imbalance otherwise. Folding them into constraint_ptrs reuses the loop below
-      // instead of a second, separate differentiation pass; slice_map needs a matching
-      // (empty, i.e. "not itself sliced") entry so removeSlicedDerivatives is a no-op
-      // for them.
+      // alias linking equations must be differentiated too (their derivative side needs
+      // linking as well, e.g. $DER.theta), so fold them into constraint_ptrs and let the
+      // loop below handle them; slice_map needs a matching (empty) entry so
+      // removeSlicedDerivatives treats them as unsliced.
       for eqn in alias_eqns loop
         UnorderedMap.add(Equation.getEqnName(eqn), UnorderedSet.new(Util.id, intEq), slice_map);
       end for;
@@ -331,9 +301,8 @@ public
       //  3. STATIC AND DYNAMIC STATE SELECTION
       // --------------------------------------------------------
       // for both static and dynamic state selection all matched states are regarded dummys
-      // note: any originally-sliced candidate was already upgraded to its whole variable
-      // above (resolveSlicedDummyStates), so every entry here should have empty .indices
-      // by construction -- the else branch is a defensive fallback, not an expected path.
+      // note: sliced candidates were already upgraded to whole above (resolveSlicedDummyStates);
+      // the else branch is a defensive fallback, not an expected path.
       for dummy in dummy_states loop
         if listEmpty(dummy.indices) then
           dummy_derivatives := BVariable.makeDummyState(Slice.getT(dummy)) :: dummy_derivatives;
@@ -737,26 +706,13 @@ protected
   end sortCandidates;
 
   function resolveSlicedDummyStates
-    "handles sliced (partial-index) entries of the *dummy* candidate list (as returned by
-    Matching.getMatches), which -- unlike sliced state candidates, see
-    resolveSlicedCandidates -- must NOT be given their own alias: a component reference
-    indexed inside a for-loop can represent elements of either slice depending on the
-    iterator value, so it cannot always be statically replaced. Instead, for each sliced
-    dummy candidate this checks whether the combined indices matched as either state or
-    dummy for that same variable, in this call, cover its *entire* declared extent. If
-    so, nothing of the variable is left unaccounted for -- the state-side slice(s) will
-    be aliased out separately (resolveSlicedCandidates), leaving the dummy side to purely
-    *be* the remainder of the original variable -- so the candidate is upgraded to the
-    whole variable (empty .indices), letting it be marked DUMMY_STATE directly by the
-    existing, unmodified whole-variable BVariable.makeDummyState further down. This also
-    correctly excludes it from all future candidacy (see getStateCandidate's isDummyState
-    check), which a second alias never would (the original variable would remain a plain,
-    unexcluded candidate forever, see the infinite-loop this replaced).
-    Fails loudly instead of silently mismarking a variable if coverage is incomplete --
-    e.g. because some of the variable's indices genuinely belong to a different, not
-    (yet) detected singular subsystem -- since marking the whole variable dummy in that
-    case would wrongly exclude those indices from ever becoming candidates, now or in a
-    later, recursive index reduction pass (see NBMatching.singular)."
+    "unlike a sliced state candidate (resolveSlicedCandidates), a sliced dummy candidate
+    is not given its own alias -- a for-loop-indexed cref can't always be statically
+    resolved to one slice. Instead, once the combined state+dummy indices for a variable
+    cover its full extent, the candidate is upgraded to the whole variable so the
+    existing whole-variable BVariable.makeDummyState/isDummyState exclusion applies.
+    Fails loudly if coverage is incomplete rather than wrongly excluding the rest of the
+    variable from future candidacy."
     input output list<Slice<VariablePointer>> dummy_states;
     input list<Slice<VariablePointer>> states;
   protected
@@ -805,21 +761,11 @@ protected
   end resolveSlicedDummyStates;
 
   function resolveSlicedCandidates
-    "resolves any sliced (partial-index) entries of a *state* candidate list (as
-    returned by Matching.getMatches) into a whole alias variable, sized to exactly the
-    selected indices, plus a linking equation collected in the output list. A variable's
-    VariableKind (STATE / DUMMY_STATE / ...) is a whole-variable property, not a
-    per-index one, so a candidate that is only a partial slice of a larger array
-    variable cannot be handled directly -- same problem, same fix, as
-    NBFunctionAlias.introduceSlicedStateAlias (there: a variable only partially a
-    *state* because der() only touches some of its indices).
-    Whole (unsliced, empty .indices) entries pass through unchanged. This must run
-    *before* the constraint equations are differentiated (see indexReduction): the
-    substitution rules recorded in subst have to be applied to those equations first,
-    so differentiation encounters the (whole) alias instead of a slice of the original
-    and promotes it to a proper state on its own, the same way it would any other
-    algebraic candidate.
-    NOT used for sliced *dummy* candidates -- see resolveSlicedDummyStates for why."
+    "resolves sliced entries of a *state* candidate list into a whole alias variable
+    (sized to the selected indices) plus a linking equation, same technique as
+    NBFunctionAlias.introduceSlicedStateAlias. Whole entries pass through unchanged.
+    Must run before differentiation so the substitution rules in subst apply first.
+    Not used for sliced dummy candidates -- see resolveSlicedDummyStates."
     input output list<Slice<VariablePointer>> candidates;
     input UnorderedMap<ComponentRef, Expression> subst;
     input Pointer<Integer> aux_index;
@@ -843,11 +789,9 @@ protected
   end resolveSlicedCandidates;
 
   function resolveSlicedDummy
-    "materializes a single sliced state/dummy candidate as its own whole alias variable
-    (see resolveSlicedCandidates): creates $DUM_n (scalar if only one index is
-    selected, Real[n] otherwise), records cref(original[selected index]) ->
-    cref(alias[i]) substitution rules in subst for each selected index, and returns
-    the linking equation $DUM_n = {original[indices...]}."
+    "materializes one sliced candidate as its own whole alias variable (see
+    resolveSlicedCandidates): creates the alias, records cref substitution rules in
+    subst for each selected index, and returns the linking equation."
     input Slice<VariablePointer> dummy;
     input UnorderedMap<ComponentRef, Expression> subst;
     input Pointer<Integer> aux_index;

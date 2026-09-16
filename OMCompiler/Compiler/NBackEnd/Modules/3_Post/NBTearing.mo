@@ -227,6 +227,25 @@ public
         index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
+      // a component matched to a genuine partial array slice (comp.var/comp.eqn already
+      // carry the correct .indices) that could not be solved explicitly, e.g. a torn
+      // matrix-shaped subsystem for i_s[{1, 2}]. Same treatment as
+      // SINGLE_COMPONENT/RESIZABLE_COMPONENT, keeping the slice instead of wrapping a
+      // whole variable/equation. Was previously missing, falling through to "do nothing".
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        new_comp := StrongComponent.ALGEBRAIC_LOOP(
+          idx     = index,
+          strict  = slicedImplicit(comp.var, comp.eqn),
+          casual  = NONE(),
+          linear  = false,
+          mixed   = false,
+          homotopy = Pointer.access(homotopy),
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
+        index := index + 1;
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+
       // do nothing otherwise
       else (comp, dummy, index);
     end match;
@@ -241,6 +260,18 @@ public
       innerEquations  = listArray({}),
       jac             = NONE());
   end singleImplicit;
+
+  function slicedImplicit
+    "same as singleImplicit, but var/eqn already carry the correct .indices (see the
+    SLICED_COMPONENT case in implicit()) and must not be re-wrapped as a whole slice."
+    input Slice<VariablePointer> var;
+    input Slice<EquationPointer> eqn;
+    output NBTearing tearingSet = Tearing.TEARING_SET(
+      iteration_vars  = {var},
+      residual_eqns   = {eqn},
+      innerEquations  = listArray({}),
+      jac             = NONE());
+  end slicedImplicit;
 
   function getModule
     "Returns the module function that was chosen by the user."
