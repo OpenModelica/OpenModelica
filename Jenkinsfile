@@ -782,29 +782,6 @@ pipeline {
             script { common.fmpyLinux() }
           }
         }
-        stage('clang-qt5-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt5', 'qt5')
-            }
-          }
-        }
         stage('clang-qt6-omedit-testsuite') {
           agent {
             docker {
