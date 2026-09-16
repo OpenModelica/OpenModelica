@@ -1649,6 +1649,17 @@ void buildCMakeGccOMC() {
   writeFile file: 'coverage-build-root.txt', text: env.WORKSPACE
   stash name: 'omc-cmake-gcc-coverage-root', includes: 'coverage-build-root.txt'
   stash name: 'omc-cmake-gcc-gcno', includes: 'build_cmake/**/*.gcno'
+  // Sources that only exist because this stage built them: Susan's generated
+  // *.mo and the two *.mo generated into the source tree. The report stage
+  // starts from a clean checkout and only configures, so nothing regenerates
+  // them there - and gcovr needs to read every source it covers to annotate
+  // it, failing the whole report otherwise. They are also what lets the
+  // template mapping (OpenModelicaCoverageTemplates.py) find the generated
+  // functions to attribute back to *.tpl.
+  stash name: 'omc-cmake-gcc-coverage-sources',
+        includes: 'build_cmake/OMCompiler/Compiler/generated-mo/**/*.mo,' +
+                  'OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo,' +
+                  'OMCompiler/Compiler/Util/Autoconf.mo'
 }
 
 void buildClangOMC() {
@@ -1782,6 +1793,7 @@ void coverageReportStage(int shardCount) {
   unstash 'omc-cmake-gcc-coverage-root'
   def coverageBuildRoot = readFile('coverage-build-root.txt').trim()
   unstash 'omc-cmake-gcc-gcno'
+  unstash 'omc-cmake-gcc-coverage-sources'
 
   def mergeDirs = []
   for (int i = 1; i <= shardCount; i++) {
