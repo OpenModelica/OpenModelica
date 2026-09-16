@@ -57,11 +57,11 @@ CONFIG(release, debug|release) { # release
   # -s will remove all symbol table and relocation information from the executable.
   QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
   QMAKE_LFLAGS_RELEASE =
-  OSG_LIBS = -limagehlp $$BFD_LIBS -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll -lOpengl32
+  GL_LIBS = -limagehlp $$BFD_LIBS -lOpengl32
 } else { # debug
   LIBS += -L$$(MSYSTEM_PREFIX)/bin
-  OSG_LIBS = -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll -lOpengl32
+  GL_LIBS = -lOpengl32
 }
 
 LIBS += -L$$BFD_PATH -L$$(MSYSTEM_PREFIX)/bin
-LIBS += $$OSG_LIBS
+LIBS += $$GL_LIBS

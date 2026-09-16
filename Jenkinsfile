@@ -190,8 +190,7 @@ pipeline {
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
                 "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++",
-                "-DOM_OMEDIT_ANIMATION_QUICK3D=ON" // Almalinux-10 has no OpenSceneGraph, switch to Quick3D
+                "-DCMAKE_CXX_COMPILER=g++"
               ])
             }
           }
@@ -254,6 +253,7 @@ pipeline {
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DCMAKE_Fortran_COMPILER=gfortran",
                 "-DOM_QT_MAJOR_VERSION=5",          // Use Qt5 on old macOS machines
+                "-DOM_OMEDIT_ENABLE_ANIMATION=OFF", // Qt5 has no Qt Quick 3D
                 "-DOM_OMC_ENABLE_COLPACK=OFF"])     // Disable ColPack (missing OpenMP)
             }
           }

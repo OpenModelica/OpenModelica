@@ -29,9 +29,9 @@ Install `MacPorts` by following the instructions on
 OpenModelica:
 
 ```sh
-sudo port install curl libiconv gettext flex cmake ccache boost libomp OpenSceneGraph openjdk11
+sudo port install curl libiconv gettext flex cmake ccache boost libomp openjdk11
 # Qt6 for the graphical clients, needs macOS 14 or newer for QtWebEngine
-sudo port install qt6-qtbase qt6-qtwebengine qt6-qt5compat qt6-qtsvg
+sudo port install qt6-qtbase qt6-qtwebengine qt6-qt5compat qt6-qtsvg qt6-qtquick3d
 ```
 
 MacPorts does not install `boost` and `libomp` where CMake looks for them, so the configure

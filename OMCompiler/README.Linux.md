@@ -85,8 +85,7 @@ Install the following dependencies with your package manager:
 - libcurl (libcurl4-gnutls-dev), libuuid, gettext
 - libhdf5 (optional, MAT v7.3 result files, see `OM_ENABLE_HDF5`)
 - ncurses, readline (optional, used by OMShell-terminal)
-- OpenSceneGraph (optional, used by OMEdit)
-- Qt6 with QtWebEngine, Qt5Compat and QtSvg (optional, used by the graphical clients)
+- Qt6 with QtWebEngine, Qt5Compat, QtQuick3D (optional, used by OMEdit) and QtSvg (optional, used by the graphical clients)
 - rustc and cargo (optional if you disable it; see [1.3 Rust toolchain](#13-rust-toolchain)
   for how to install or disable)
 

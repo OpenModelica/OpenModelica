@@ -203,7 +203,7 @@ public:
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
 #endif
   QAction* getSimulateModelInteractiveAction() {return mpSimulateModelInteractiveAction;}
@@ -265,7 +265,7 @@ public:
   void simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
@@ -426,7 +426,7 @@ private:
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction *mpSimulateWithAnimationAction;
 #endif
   QAction *mpSimulateModelInteractiveAction;
@@ -485,7 +485,7 @@ private:
   QAction *mpNewParametricPlotWindowAction;
   QAction *mpNewArrayPlotWindowAction;
   QAction *mpNewArrayParametricPlotWindowAction;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction *mpNewAnimationWindowAction;
 #endif
   QAction *mpDiagramWindowAction;
