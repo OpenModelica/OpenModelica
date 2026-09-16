@@ -106,6 +106,11 @@ Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
     mDistance(5.0f)
 {
   setResizeMode(QQuickWidget::SizeRootObjectToView);
+#ifdef Q_OS_WIN
+  // Make sure QtQuick3D (and any other QML modules) resolve from the
+  // windeployqt-default deployment location, "<exe-dir>/qml".
+  engine()->addImportPath(QCoreApplication::applicationDirPath() + QStringLiteral("/qml"));
+#endif // #ifdef Q_OS_WIN
   // The shell imports QtQuick3D, whose module/plugin loading may finish
   // asynchronously; building the scene ahead of time would leave getScene()
   // null. Load it now and create the scene from the statusChanged handler.
