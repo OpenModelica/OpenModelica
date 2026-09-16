@@ -41,8 +41,9 @@ endif()
 
 omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack." ON)
 
-# Off when cross-compiling: generated Cpp code needs Boost headers on the user's
-# machine, which a distribution would have to ship (55-190 MB).
+# Off when cross-compiling: the runtime libraries build against Boost, so a cross
+# build has to fetch and build it (OM_FETCH_BOOST). Generated Cpp code needs no
+# Boost headers, so nothing has to ship them.
 if(CMAKE_CROSSCOMPILING)
   set(_om_cpp_runtime_default OFF)
 else()

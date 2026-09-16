@@ -100,10 +100,28 @@ function(get_linker_flag_from_library_target TARGET OUT_VAR)
 endfunction()
 
 if (Boost_FOUND)
-get_linker_flag_from_library_target(Boost::program_options LINK_FLAG)
-set(Boost_LIBRARIES_  ${LINK_FLAG})
-get_linker_flag_from_library_target(Boost::filesystem LINK_FLAG)
-set(Boost_LIBRARIES_ "${Boost_LIBRARIES_} ${LINK_FLAG}")
+if (OM_FETCH_BOOST)
+  # OMCppOMCFactory is a static library, so the generated model is what resolves
+  # boost::program_options and boost::filesystem. Install them beside the OMCpp*
+  # libraries under stable names; the upstream ones carry a toolset/version tag.
+  set(_omc_boost_po ${CMAKE_STATIC_LIBRARY_PREFIX}omc_boost_program_options${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(_omc_boost_fs ${CMAKE_STATIC_LIBRARY_PREFIX}omc_boost_filesystem${CMAKE_STATIC_LIBRARY_SUFFIX})
+  install(FILES $<TARGET_FILE:boost_program_options>
+          DESTINATION ${CMAKE_INSTALL_LIBDIR} RENAME ${_omc_boost_po})
+  install(FILES $<TARGET_FILE:boost_filesystem>
+          DESTINATION ${CMAKE_INSTALL_LIBDIR} RENAME ${_omc_boost_fs})
+  if(MSVC)
+    # link.exe takes file names, not -l
+    set(Boost_LIBRARIES_ "${_omc_boost_po} ${_omc_boost_fs}")
+  else()
+    set(Boost_LIBRARIES_ "-lomc_boost_program_options -lomc_boost_filesystem")
+  endif()
+else()
+  get_linker_flag_from_library_target(Boost::program_options LINK_FLAG)
+  set(Boost_LIBRARIES_  ${LINK_FLAG})
+  get_linker_flag_from_library_target(Boost::filesystem LINK_FLAG)
+  set(Boost_LIBRARIES_ "${Boost_LIBRARIES_} ${LINK_FLAG}")
+endif()
 
 message(STATUS "using boost include for OMCompiler/SimulationRuntime/cpp runtime: ${Boost_INCLUDE_DIR}")
 message(STATUS "Boost Libraries for OMCompiler/SimulationRuntime/cpp runtime implict/explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")

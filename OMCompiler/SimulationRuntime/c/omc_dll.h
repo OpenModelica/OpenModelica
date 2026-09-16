@@ -48,6 +48,10 @@
 #define DLLDirection DLLExport
 #endif
 
+/* Symbols the generated model defines itself. IMPORT_INTO says the runtime DLL
+ * is external, which must not turn these into dllimport. */
+#define DLLModelDirection DLLExport
+
 /* Global data crossing the runtime DLL boundary. MSVC needs an explicit export
  * (WINDOWS_EXPORT_ALL_SYMBOLS skips .bss) and dllimport at the use site; MinGW
  * auto-imports and needs neither. */

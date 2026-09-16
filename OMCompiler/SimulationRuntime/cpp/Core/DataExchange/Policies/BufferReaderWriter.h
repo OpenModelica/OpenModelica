@@ -33,11 +33,11 @@
 #include "TextfileWriter.h"
 
 #include <boost/circular_buffer.hpp>
-typedef boost::container::vector<double> real_values_t;
-typedef boost::container::vector<int> int_values_t;
-typedef boost::container::vector<bool> bool_values_t;
-typedef boost::container::vector<double> der_values_t;
-typedef boost::container::vector<double> res_values_t;
+typedef std::vector<double> real_values_t;
+typedef std::vector<int> int_values_t;
+typedef std::vector<bool> bool_values_t;
+typedef std::vector<double> der_values_t;
+typedef std::vector<double> res_values_t;
 struct CopyVar {
   template<class T>
    T operator()(T* var) const {
@@ -512,7 +512,6 @@ protected:
     typedef boost::circular_buffer<  bool_values_t   > bool_buffer_type;
     typedef boost::circular_buffer<  der_values_t> der_buffer_type;
     typedef boost::circular_buffer<  res_values_t> res_buffer_type;
-     //typedef boost::circular_buffer< boost::container::vector<double>> buffer_type;
 
     typedef std::map<double,unsigned long> _time_entries_type;
 

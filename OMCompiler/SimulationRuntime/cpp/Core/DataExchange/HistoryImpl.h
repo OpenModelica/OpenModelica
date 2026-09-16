@@ -26,16 +26,6 @@
  */
 
 #pragma once
-/*includes removed for static linking not needed any more
-#ifdef RUNTIME_STATIC_LINKING
-#include <Core/SimulationSettings//IGlobalSettings.h>
-#include <Core/DataExchange/IHistory.h>
-#include <map>
-#include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
-using std::map;
-#endif
-*/
  /** @defgroup core Core
  *  Core module of cpp runtime
  *

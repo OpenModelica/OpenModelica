@@ -35,7 +35,7 @@
 #endif
 
 #include <Core/System/IStateSelection.h>
-#include <boost/shared_array.hpp>
+#include <vector>
 
 class BOOST_EXTENSION_STATESELECT_DECL SystemStateSelection
 {
@@ -52,8 +52,8 @@ private:
 
   IMixedSystem* _system;
   IStateSelection* _state_selection;
-  vector<boost::shared_array<int> > _rowPivot;
-  vector<boost::shared_array<int> > _colPivot;
+  vector<std::vector<int> > _rowPivot;
+  vector<std::vector<int> > _colPivot;
   unsigned int _dimStateSets;
   vector<unsigned int> _dimStates;
   vector<unsigned int> _dimDummyStates;

@@ -27,6 +27,7 @@
 
 #ifndef DAE_MODE_H
 #define DAE_MODE_H
+#include "../../omc_dll.h"
 
 #include "simulation_data.h"
 
@@ -39,7 +40,7 @@ DLLDataDirection extern const int EVAL_ZEROCROSS;
 /* EVAL_DISCRETE = 0001 */
 DLLDataDirection extern const int EVAL_DISCRETE;
 /* EVAL_ALL = 1111 */
-extern const int EVAL_ALL;
+DLLDataDirection extern const int EVAL_ALL;
 
 #ifdef __cplusplus
 extern "C" {

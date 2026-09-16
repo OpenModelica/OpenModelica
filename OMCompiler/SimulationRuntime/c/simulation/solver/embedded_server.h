@@ -27,6 +27,7 @@
 
 #ifndef __OMC_EMBEDDED_SERVER_H
 #define __OMC_EMBEDDED_SERVER_H
+#include "../../omc_dll.h"
 
 #include "simulation_data.h"
 
@@ -34,9 +35,9 @@
 extern "C" {
 #endif
 
-extern void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port);
-extern void (*wait_for_step)(void *handle);
-extern void (*embedded_server_deinit)(void *handle);
+DLLDataDirection extern void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port);
+DLLDataDirection extern void (*wait_for_step)(void *handle);
+DLLDataDirection extern void (*embedded_server_deinit)(void *handle);
 /* Tells the embedded server that a simulation step has passed; the server
  * can read/write values from/to the simulator
  */

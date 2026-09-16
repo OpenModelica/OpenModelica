@@ -19,7 +19,9 @@ set(Boost_INCLUDE_ ".")
 # This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
 set(Boost_LIBS_ ".")
 # The actual boost libraries needed to be linked.
-if (NOT Boost_LIBRARIES_)
+# DEFINED, not truthiness: Boost_LIBRARIES holds CMake target names, which mean
+# nothing in a makefile.
+if (NOT DEFINED Boost_LIBRARIES_)
 set(Boost_LIBRARIES_ ${Boost_LIBRARIES})
 endif()
 
@@ -46,10 +48,12 @@ set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 # Some common flags for the generated simulation code. It is not clear why OMC_BUILD is defined
 # by the old system. It is always defined for some reason. USE_THREAD means use the C++ standard
 # library's thread library (instead of something like boost threads).
+# The generated model is built with the same optimization as the runtime; the
+# autotools build forwarded CMAKE_CXX_FLAGS here and this replaces that.
 if(MSVC)
-  set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "/DOMC_BUILD /DUSE_THREAD")
+  set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "/DOMC_BUILD /DUSE_THREAD /O2 /DNDEBUG")
 else()
-  set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC")
+  set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC -O2 -DNDEBUG")
 endif()
 
 # Compile the generated model code with -DUSE_LOGGER, like the runtime libraries
