@@ -68,6 +68,9 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   )
 
   install(CODE "
+    # windeployqt invokes qmlimportscanner, which lives in share/qt6/bin of
+    # the MSYS prefix rather than bin, so put it on PATH for the subprocess.
+    set(ENV{PATH} \"${MSYSTEM_PREFIX_ESCAPED}/share/qt6/bin;\$ENV{PATH}\")
     message(STATUS \"Running windeployqt6 on OMEdit...\")
     execute_process(
       COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
