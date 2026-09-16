@@ -33,6 +33,7 @@ add_library(omc::simrt::runtime::headers ALIAS OpenModelicaRuntimeCInterface)
 
 set(OMC_SIMRT_PUBLIC_HEADERS
   "ModelicaUtilities.h"
+  "omc_dll.h"
   "omc_inline.h"
   "omc_simulation_settings.h"
   "openmodelica_func.h"
@@ -68,8 +69,9 @@ add_subdirectory(gc)
 add_subdirectory(meta)
 add_subdirectory(util)
 
-# For the moment, we build OpenModelicaRuntimeC as a static library with MSVC.
-# It has some dll exporting issues in it that need to be resolved.
+# Static with MSVC: as its own DLL every global it shares with
+# SimulationRuntimeC would cross a DLL boundary, and the consumers inside this
+# project are not compiled with IMPORT_INTO.
 if(MSVC)
   add_library(OpenModelicaRuntimeC STATIC)
 else()
@@ -151,6 +153,13 @@ if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # WINDOWS_EXPORT_ALL_SYMBOLS only scans the target's own objects, so the
+  # static OpenModelicaRuntimeC's symbols (boxptr_*, the MMC runtime) would sit
+  # in the DLL unexported. Put those objects in it directly.
+  target_sources(SimulationRuntimeC PRIVATE
+    $<TARGET_OBJECTS:OpenModelicaRuntimeCMeta>
+    $<TARGET_OBJECTS:OpenModelicaRuntimeCUtil>
+    $<TARGET_OBJECTS:OpenModelicaRuntimeCGC>)
 endif(MINGW)
 
 if(OM_OMC_ENABLE_COLPACK)

@@ -3826,7 +3826,7 @@ void MainWindow::runOMSensPlugin()
   }
 #else
 #ifdef Q_OS_WIN
-    QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
+    QPluginLoader loader(QString("%1/lib/%2/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #else
     QPluginLoader loader(QString("%1/lib/%2/omc/libomsensplugin.so").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #endif

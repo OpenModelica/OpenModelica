@@ -28,14 +28,15 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include "../openmodelica.h"
 #include "../util/simulation_options.h"
 
 #ifdef __cplusplus
   extern "C" {
 #endif
 
-extern int omc_flag[FLAG_MAX];
-extern const char *omc_flagValue[FLAG_MAX];
+DLLDataDirection extern int omc_flag[FLAG_MAX];
+DLLDataDirection extern const char *omc_flagValue[FLAG_MAX];
 
 int helpFlagSet(int argc, char** argv);
 int setLogFormat(int argc, char** argv);

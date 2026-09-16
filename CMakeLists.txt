@@ -96,6 +96,8 @@ else()
   endif()
 endif()
 omc_add_to_report(OM_LIBRARY_ARCH)
+# The name Autoconf gives it, and what every *.in in the tree interpolates.
+set(host_short ${OM_LIBRARY_ARCH})
 
 ## OPTIONS #################################################################################################
 
@@ -252,6 +254,11 @@ else()
   set(CMAKE_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/omc/")
 endif()
 message(STATUS "CMAKE_INSTALL_INCLUDEDIR: ${CMAKE_INSTALL_INCLUDEDIR}")
+
+# windows-deps.cmake deferred these until the install dirs were final.
+if(COMMAND om_windows_deps_install)
+  om_windows_deps_install()
+endif()
 
 # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
 if(APPLE)

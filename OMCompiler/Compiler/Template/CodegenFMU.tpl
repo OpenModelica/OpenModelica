@@ -1514,25 +1514,14 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       FMUEXT=.fmu
       PLATWIN32 = win32
 
-      # /Od - Optimization disabled
-      # /EHa enable C++ EH (w/ SEH exceptions)
-      # /fp:except - consider floating-point exceptions when generating code
-      # /arch:SSE2 - enable use of instructions available with SSE2 enabled CPUs
-      # /I - Include Directories
-      # /DNOMINMAX - Define NOMINMAX (does what it says)
-      # /TP - Use C++ Compiler
-      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion30(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi3" /I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
+      # /EHa so SEH exceptions unwind, /fp:except to keep FP exceptions, /TP to
+      # compile the C sources as C++.
+      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" <%if isFMIVersion30(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi3" /I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
 
-      # /ZI enable Edit and Continue debug info
       CDFLAGS=/ZI
 
-      # /MD - link with MSVCRT.LIB
-      # /link - [linker options and libraries]
-      # /LIBPATH: - Directories where libs can be found
-      LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib sundials_core.lib util.lib lapack_win32_MT.lib lis.lib  omcgc.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
-
-      # /MDd link with MSVCRTD.LIB debug lib
-      # lib names should not be appended with a d just switch to lib/omc/msvc/debug
+      RUNTIME_LIBS=<%makefileParams.runtimelibs%>
+      LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" <%dirExtra%> <%libsPos1%> <%libsPos2%> wsock32.lib $(RUNTIME_LIBS)
 
 
       <%common%>
@@ -1553,12 +1542,8 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
           copy <%fileNamePrefix%>_functions.h <%fmudirname%>\sources\<%fileNamePrefix%>_functions.h
           copy <%fileNamePrefix%>_records.c <%fmudirname%>\sources\<%fileNamePrefix%>_records.c
           copy modelDescription.xml <%fmudirname%>\modelDescription.xml
-          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_CVODE.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_KINSOL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_NVECSERIAL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_CORE.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\LAPACK_WIN32_MT.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\pthreadVC2.dll <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\libopenblas.dll <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\pthreadVC3.dll <%fmudirname%>\binaries\$(PLATWIN32)
           cd <%fmudirname%>
           "zip.exe" -r ../<%fmuTargetName%>.fmu *
           cd ..
