@@ -2734,31 +2734,64 @@ public
     PointerCyclic<Variable> var;
     Integer sk = 1;
     list<Subscript> subs;
+    list<ComponentRef> scalar_matches;
+    Boolean hasSetSub = false;
   algorithm
-    if UnorderedMap.contains(cref, map) then
+    for s in ComponentRef.subscriptsAllFlat(cref) loop
+      if not Subscript.isScalar(s) then
+        hasSetSub := true;
+      end if;
+    end for;
+
+    // a cref with a set/array-valued subscript (e.g. i_s[{1, 2}], produced when a torn
+    // slice's residual equation keeps its original vector-valued RHS subexpression --
+    // see NBTearing.scalarSlices) must not go through the ordinary exact-match check
+    // below: "map" here can use stripped (subscript-ignoring) cref equality
+    // (VariablePointers' non-scalarized mode), under which i_s[{1, 2}] can spuriously
+    // "contain"-match some unrelated whole-array entry for the same base variable,
+    // recording that wrong, un-scalarized cref as the dependency and silently breaking
+    // the seed/column mapping in fullToSparsity downstream (whose seed set is matched by
+    // strict, non-stripped equality). Resolve those via their individual scalar elements
+    // instead, matched strictly against map.
+    if not hasSetSub and UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
       end if;
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
-    else
-      var := BVariable.getVarPointer(cref, sourceInfo());
-      if BVariable.isRecord(var) then
-        subs := ComponentRef.subscriptsAllFlat(cref);
-        // get all Record children that are relevant for current context
-        crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
-        crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
-        // add original subscripts
-        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
-        // collect dependencies
-        crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
-        for cref in crefs loop
-          Dependency.skip(cref, depth + 1, sk, dep_map);
-          sk := sk + 1;
+      return;
+    end if;
+
+    if hasSetSub then
+      scalar_matches := list(c for c guard(UnorderedMap.contains(c, map)) in ComponentRef.scalarize(cref, false));
+      if not listEmpty(scalar_matches) then
+        for c in scalar_matches loop
+          if not UnorderedMap.contains(c, dep_map) then
+            UnorderedMap.add(c, Dependency.create(ComponentRef.getSubscriptedType(c), depth), dep_map);
+          end if;
+          Solvability.update(c, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
         end for;
-      else
-        crefs := {};
+        crefs := scalar_matches;
+        return;
       end if;
+    end if;
+
+    var := BVariable.getVarPointer(cref, sourceInfo());
+    if BVariable.isRecord(var) then
+      subs := ComponentRef.subscriptsAllFlat(cref);
+      // get all Record children that are relevant for current context
+      crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
+      crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
+      // add original subscripts
+      crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
+      // collect dependencies
+      crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
+      for cref in crefs loop
+        Dependency.skip(cref, depth + 1, sk, dep_map);
+        sk := sk + 1;
+      end for;
+    else
+      crefs := {};
     end if;
   end collectDependenciesCref;
 

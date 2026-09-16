@@ -1075,6 +1075,10 @@ public
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
+        list<ComponentRef> elem_crefs;
+        list<Expression> elem_exps;
+        Expression elem_res;
+        Boolean hasSetSub;
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
       // -------------------------------------
@@ -1258,7 +1262,37 @@ public
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
         else
-          res     := Expression.makeZero(exp.ty);
+          // a cref with a set/array-valued subscript whose individual scalar elements
+          // are each registered in diff_map (e.g. i_s[{1, 2}] when the Jacobian's seeds
+          // are the individual i_s[1]/i_s[2], as produced for a torn slice's residual
+          // equation -- see NBTearing.scalarSlices) has no single matching diff_map
+          // entry of its own: neither the exact nor the whole-base-stripped lookup
+          // above can find it, so without this the symbolic derivative fell through to
+          // a hardcoded zero, silently producing a zero column in the analytical
+          // Jacobian for those seeds. Differentiate it elementwise instead, matching how
+          // dependency collection resolves the same shape of cref (see
+          // NBAdjacency.collectDependenciesCref).
+          hasSetSub := false;
+          for s in ComponentRef.subscriptsAllFlat(exp.cref) loop
+            if not Subscript.isScalar(s) then
+              hasSetSub := true;
+            end if;
+          end for;
+          if not hasSetSub then
+            // no set-valued subscript to expand (e.g. a fully bare/unsubscripted
+            // matrix cref like Rot_dq): keep the original whole-type zero, since
+            // building it element-by-element would flatten its shape and break
+            // codegen for multi-dimensional types.
+            res := Expression.makeZero(exp.ty);
+          else
+            elem_crefs := ComponentRef.scalarize(exp.cref, false);
+            elem_exps := {};
+            for c in elem_crefs loop
+              (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
+              elem_exps := elem_res :: elem_exps;
+            end for;
+            res := Expression.makeArray(exp.ty, listArray(listReverse(elem_exps)));
+          end if;
         end if;
       then (res, diffArguments);
 

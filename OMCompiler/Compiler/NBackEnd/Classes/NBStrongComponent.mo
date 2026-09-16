@@ -687,6 +687,8 @@ public
     PointerCyclic<Equation> eqn_ptr = Slice.getT(eqn_slice);
     Equation eqn = PointerCyclic.access(eqn_ptr);
     IfEquationBody body;
+    list<Subscript> subs;
+    ComponentRef lhs_cref;
     function simpleSolvedEquation
       input Equation eqn;
       input PointerCyclic<Equation> eqn_ptr;
@@ -700,23 +702,36 @@ public
       end match;
     end simpleSolvedEquation;
   algorithm
-    comp := match eqn
-      case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.IF_EQUATION(body = body) algorithm
-        if IfEquationBody.isSplit(body) then
-          comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
-        else
-          comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
-        end if;
-      then comp;
-      case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(PointerCyclic.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
-      // ToDo: the other types
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
-      then fail();
-    end match;
+    // a genuine partial slice of an array equation (e.g. one row of a torn
+    // matrix-shaped subsystem, see NBTearing.scalarSlices) needs a
+    // SLICED_COMPONENT, not a SINGLE_COMPONENT -- the latter's .eqn field is a
+    // whole PointerCyclic<Equation> with no room for which row this is, so every
+    // slice of the same array equation previously collapsed to an identical
+    // whole-array component, undercounting rows for the caller's adjacency/
+    // sparsity build (e.g. NBJacobian.compJacobian, empty Jacobian columns).
+    if not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(eqn_ptr) and List.hasOneElement(eqn_slice.indices) then
+      subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(listHead(eqn_slice.indices), Equation.sizes(eqn_ptr)));
+      lhs_cref := ComponentRef.setSubscripts(subs, Expression.toCref(Util.getOption(Equation.getLHS(eqn))));
+      comp := SLICED_COMPONENT(lhs_cref, Slice.SLICE(BVariable.getVarPointer(lhs_cref, sourceInfo()), {}), eqn_slice, NBSolve.Status.EXPLICIT);
+    else
+      comp := match eqn
+        case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+        case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr);
+        case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+        case Equation.IF_EQUATION(body = body) algorithm
+          if IfEquationBody.isSplit(body) then
+            comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+          else
+            comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
+          end if;
+        then comp;
+        case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(PointerCyclic.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
+        // ToDo: the other types
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
+        then fail();
+      end match;
+    end if;
   end fromSolvedEquationSlice;
 
   function toSolvedEquation
