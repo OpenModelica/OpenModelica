@@ -1617,15 +1617,36 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion, String fileNamePr
   case SIMCODE(modelInfo=modelInfo as MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let includedir = '<%fileNamePrefixHash%>.fmutmp/sources/'
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
+  let initXmlFile = '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>_init.xml'
+  let buildprojectSrc = '<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject'
+  let fmuLibsFile = '<%fileNamePrefix%>_FMU.libs'
+  let sourcesDir = '<%fileNamePrefixHash%>.fmutmp/sources'
+  // xcopy needs backslashes: with forward slashes it can misjudge source vs.
+  // destination as overlapping and refuse with "Cyclic copy not possible",
+  // even though they are unrelated paths.
+  let initXmlFileWin = System.stringReplace(initXmlFile, "/", "\\")
+  let buildprojectSrcWin = System.stringReplace(buildprojectSrc, "/", "\\")
+  let sourcesDirWin = System.stringReplace(sourcesDir, "/", "\\")
   <<
   # FIXME: before you push into master...
   RUNTIMEDIR=<%makefileParams.omhome%>/include/omc/c/
   #COPY_RUNTIMEFILES=$(FMI_ME_OBJS:%= && (OMCFILE=% && cp $(RUNTIMEDIR)/$$OMCFILE.c $$OMCFILE.c))
 
   fmu:
-  <%\t%>rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
-  <%\t%>cp -a "<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefixHash%>.fmutmp/sources
-  <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
+  <%
+  if stringEq(Config.simulationCodeTarget(), "msvc") then
+  <<
+  <%\t%>if exist "<%initXmlFileWin%>" del /F /Q "<%initXmlFileWin%>"<%/*Already translated to .c*/%>
+  <%\t%>xcopy "<%buildprojectSrcWin%>\*" "<%sourcesDirWin%>\" /E /I /Y /Q
+  <%\t%>copy /Y "<%fmuLibsFile%>" "<%sourcesDirWin%>\"
+  >>
+  else
+  <<
+  <%\t%>rm -f <%initXmlFile%><%/*Already translated to .c*/%>
+  <%\t%>cp -a "<%buildprojectSrc%>/"* <%sourcesDir%>
+  <%\t%>cp -a <%fmuLibsFile%> <%sourcesDir%>/
+  >>
+  %>
   <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
      match  Config.simCodeTarget()
      case "omsicpp" then

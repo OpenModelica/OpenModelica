@@ -524,6 +524,13 @@ if(MSVC)
   file(APPEND ${_msvc_env_bat} "set \"INCLUDE=$ENV{INCLUDE}\"\r\n")
   file(APPEND ${_msvc_env_bat} "set \"LIB=$ENV{LIB}\"\r\n")
   file(APPEND ${_msvc_env_bat} "set \"LIBPATH=$ENV{LIBPATH}\"\r\n")
+  # Force cl/link/nmake diagnostics to English (LCID 1033) regardless of the
+  # OS UI language: on a localized Windows they otherwise print in that
+  # language, and console/pipe codepage mismatches (cmd.exe's OEM codepage vs.
+  # whatever decodes System.systemCall's captured output) can mangle non-ASCII
+  # characters in those messages. English text is plain ASCII, so this also
+  # sidesteps the encoding problem rather than just relabeling it.
+  file(APPEND ${_msvc_env_bat} "set \"VSLANG=1033\"\r\n")
   install(FILES ${_msvc_env_bat} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/scripts)
 endif()
 

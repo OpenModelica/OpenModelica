@@ -218,9 +218,52 @@ extern const char* System_dirname(const char* str)
   char *cpy = omc_alloc_interface.malloc_strdup(str);
   char *res = NULL;
 #if defined(_MSC_VER)
-  char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
-  _splitpath(str, drive, dir, filename, extension);
-  sprintf(cpy, "%s/%s/",drive,dir);
+  /* POSIX-compatible dirname(3): strip the last path component, treating
+   * both '/' and '\' as separators (Windows paths may use either).
+   *
+   * The previous _splitpath()-based implementation returned "//" for a bare
+   * filename with no directory component (drive="" and dir="", so
+   * sprintf(cpy, "%s/%s/", drive, dir) produced just "//") instead of "."
+   * like dirname() does on every other platform. Util.createDirectoryTree()
+   * (Modelica's mkdir()) walks up the tree via dirname() until it finds an
+   * existing ancestor or a fixpoint (dirname(x) == x); "//" is neither, so
+   * a plain mkdir() from a Modelica script recursed forever and crashed
+   * with a stack overflow. */
+  {
+    size_t len = strlen(cpy);
+    /* A drive root ("C:", "C:\", "C:/") is already its own dirname. */
+    if (len >= 2 && len <= 3 && isalpha((unsigned char)cpy[0]) && cpy[1] == ':' &&
+        (len == 2 || cpy[2] == '\\' || cpy[2] == '/')) {
+      cpy[2] = '\\';
+      cpy[3] = '\0';
+    } else if (len == 0) {
+      strcpy(cpy, ".");
+    } else {
+      long i;
+      /* Trailing separators are not part of the pathname (unless the whole
+       * string is separators, i.e. already a root like "/" or "\\"). */
+      while (len > 1 && (cpy[len-1] == '/' || cpy[len-1] == '\\')) {
+        cpy[--len] = '\0';
+      }
+      i = (long)len - 1;
+      while (i >= 0 && cpy[i] != '/' && cpy[i] != '\\') i--;
+      if (i < 0) {
+        /* No separator at all: the containing directory is ".". */
+        strcpy(cpy, ".");
+      } else if (i == 0) {
+        /* Separator is the first character: an absolute root, e.g. "/foo". */
+        cpy[1] = '\0';
+      } else {
+        cpy[i] = '\0';
+        /* What's left is just a drive letter, e.g. "C:" from "C:\foo" -
+         * that means the root of the drive, not a bare relative name. */
+        if (i == 2 && cpy[1] == ':') {
+          cpy[2] = '\\';
+          cpy[3] = '\0';
+        }
+      }
+    }
+  }
   res = cpy;
 #else
   res = dirname(cpy);

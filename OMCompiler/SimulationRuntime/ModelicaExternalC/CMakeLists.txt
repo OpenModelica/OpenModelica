@@ -37,6 +37,12 @@ endif()
 # Static version
 add_library(ModelicaExternalC STATIC ${libModelicaExternalC_SOURCES})
 add_library(omc::simrt::Modelica::ExternalC ALIAS ModelicaExternalC)
+if(MSVC)
+  # MSVC's import lib for ModelicaExternalC_shared below is also named
+  # ModelicaExternalC.lib, unlike Unix (.a vs .so) or MinGW (.a vs .dll.a)
+  # where the static and shared outputs never collide.
+  set_target_properties(ModelicaExternalC PROPERTIES OUTPUT_NAME ModelicaExternalC_static)
+endif()
 
 if(UNIX)
   target_link_libraries(ModelicaExternalC PUBLIC m)
@@ -79,6 +85,10 @@ set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 # Static version
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
 add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
+if(MSVC)
+  # See the matching comment on ModelicaExternalC's OUTPUT_NAME above.
+  set_target_properties(ModelicaMatIO PROPERTIES OUTPUT_NAME ModelicaMatIO_static)
+endif()
 
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO PUBLIC omc::3rd::zlib)
@@ -113,6 +123,10 @@ set(libModelicaIO_SOURCES C-Sources/ModelicaIO.c)
 # Static version
 add_library(ModelicaIO STATIC ${libModelicaIO_SOURCES})
 add_library(omc::simrt::Modelica::IO ALIAS ModelicaIO)
+if(MSVC)
+  # See the matching comment on ModelicaExternalC's OUTPUT_NAME above.
+  set_target_properties(ModelicaIO PROPERTIES OUTPUT_NAME ModelicaIO_static)
+endif()
 
 target_link_libraries(ModelicaIO PUBLIC ModelicaMatIO)
 
@@ -140,6 +154,10 @@ set(ModelicaStandardTables_SOURCES C-Sources/ModelicaStandardTables.c
 # Static version.
 add_library(ModelicaStandardTables STATIC ${ModelicaStandardTables_SOURCES})
 add_library(omc::simrt::Modelica::StandardTables ALIAS ModelicaStandardTables)
+if(MSVC)
+  # See the matching comment on ModelicaExternalC's OUTPUT_NAME above.
+  set_target_properties(ModelicaStandardTables PROPERTIES OUTPUT_NAME ModelicaStandardTables_static)
+endif()
 
 # This seems to be needed. Otherwise we get undefined references to function 'usertab'
 target_compile_definitions(ModelicaStandardTables PRIVATE DUMMY_FUNCTION_USERTAB)

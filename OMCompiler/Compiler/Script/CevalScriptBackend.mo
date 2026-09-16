@@ -3883,6 +3883,8 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
+  Boolean isMSVC;
+  String msvcEnvSetup, rmrf;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
@@ -3890,6 +3892,17 @@ algorithm
   dquote := if isWindows then "\"" else "'";
   CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+
+  // A native MSVC build's cl/nmake only live under the Visual Studio install
+  // directory, which systemCallRestrictedEnv below strips from PATH (it only
+  // keeps the Windows system dir, the OM install dir and %OMDEV%). Source the
+  // same msvc_env.bat Compile.bat uses so this cmake sub-build can find them
+  // too, and target "NMake Makefiles" (cl/nmake) instead of "MSYS Makefiles"
+  // (there is no bundled MSYS to provide mingw32-make/sh.exe here). rm -rf
+  // does not exist either without MSYS, use rmdir instead.
+  isMSVC := isWindows and stringEq(Config.simulationCodeTarget(), "msvc");
+  msvcEnvSetup := if isMSVC then "call " + dquote + Settings.getInstallationDirectoryPath() + "/share/omc/scripts/msvc_env.bat" + dquote + " && " else "";
+  rmrf := if isMSVC then "rmdir /S /Q " else "rm -rf ";
 
   // Set build type
   if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
@@ -3923,18 +3936,21 @@ algorithm
       list<String> locations;
     case {"dynamic"}
       algorithm
-        if isWindows then
+        if isMSVC then
+          CMAKE_GENERATOR := "-G " + dquote + "NMake Makefiles" + dquote + " ";
+        elseif isWindows then
           CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnvSetup +
+               "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -3942,18 +3958,21 @@ algorithm
         then();
     case {"static"}
       algorithm
-        if isWindows then
+        if isMSVC then
+          CMAKE_GENERATOR := "-G " + dquote + "NMake Makefiles" + dquote + " ";
+        elseif isWindows then
           CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
         end if;
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnvSetup +
+               "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -4848,6 +4867,7 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
+  Boolean isMSVC;
   Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
   String platformName;
@@ -4948,6 +4968,7 @@ algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
   isWindows := Autoconf.os == "Windows_NT";
+  isMSVC := isWindows and stringEq(Config.simulationCodeTarget(), "msvc");
 
   fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
@@ -5040,7 +5061,15 @@ algorithm
     end if;
   end if;
 
-  cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  // A native MSVC build has no bundled MSYS to provide rm/zip; use CMake's
+  // portable file-removal and tar/zip-creation commands instead (CMake is
+  // already a hard build requirement, unlike zip).
+  if isMSVC then
+    cmd := Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && "
+           + Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
+  else
+    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  end if;
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");

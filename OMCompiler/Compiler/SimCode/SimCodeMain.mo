@@ -1147,8 +1147,13 @@ algorithm
             continue;
           end if;
           Util.createDirectoryTree(newdir);
-          // copy the file or directory
-          if 0 <> System.systemCall("cp -rf \"" + path + "\" \"" + newdir + "/\"") then
+          // copy the file or directory. A native MSVC build has no bundled
+          // MSYS/MinGW, so cp doesn't exist there; use xcopy (cmd.exe builtin)
+          // instead - it handles both a single file and a whole directory.
+          if 0 <> (if stringEq(Config.simulationCodeTarget(), "msvc") then
+                     System.systemCall("xcopy \"" + path + "\" \"" + newdir + "/\" /E /I /Y /Q")
+                   else
+                     System.systemCall("cp -rf \"" + path + "\" \"" + newdir + "/\"")) then
             Error.addInternalError("Failed to copy path " + path + " to " + resourcesDir + dirname, sourceInfo());
           end if;
         end for;
@@ -1160,7 +1165,7 @@ algorithm
           case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
             algorithm
             needSundials := true;
-            if 0 <> System.systemCall("cp -rf \"" + pathToFlagsJson + "\" \"" + resourcesDir + simCode.fileNamePrefix+"_flags.json\"") then
+            if not System.copyFile(pathToFlagsJson, resourcesDir + simCode.fileNamePrefix + "_flags.json") then
               Error.addInternalError("Failed to copy " + pathToFlagsJson + " to " + resourcesDir + simCode.fileNamePrefix + "_flags.json", sourceInfo());
             end if;
             then();
@@ -1172,12 +1177,12 @@ algorithm
         // annotation, plus the CAD files it references (a portable FMU cannot rely
         // on the importer having the libraries the modelica:// URIs point at).
         if Flags.isSet(Flags.VISUAL_XML) and System.regularFileExists(simCode.fileNamePrefix + "_visual.xml") then
-          if 0 <> System.systemCall("cp -f \"" + simCode.fileNamePrefix + "_visual.xml\" \"" + resourcesDir + simCode.fileNamePrefix + "_visual.xml\"") then
+          if not System.copyFile(simCode.fileNamePrefix + "_visual.xml", resourcesDir + simCode.fileNamePrefix + "_visual.xml") then
             Error.addInternalError("Failed to copy " + simCode.fileNamePrefix + "_visual.xml to " + resourcesDir, sourceInfo());
           end if;
           for cad in visualizationCadFiles(simCode.fileNamePrefix + "_visual.xml") loop
             if System.regularFileExists(cad) and
-               0 <> System.systemCall("cp -f \"" + cad + "\" \"" + resourcesDir + System.basename(cad) + "\"") then
+               not System.copyFile(cad, resourcesDir + System.basename(cad)) then
               Error.addInternalError("Failed to copy CAD file " + cad + " to " + resourcesDir, sourceInfo());
             end if;
           end for;
@@ -1186,7 +1191,7 @@ algorithm
         SerializeSparsityPattern.serialize(simCode);
         for jac in simCode.jacobianMatrices loop
           if not listEmpty(jac.sparsity) then
-            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin" + "' '" + resourcesDir + "'") then
+            if not System.rename(simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin", resourcesDir + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin") then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin file", sourceInfo());
             end if;
           end if;
@@ -1203,7 +1208,7 @@ algorithm
         else
           // Add _info.json file to resources/ directory if neither --fmiFilter=blackBox nor --fmiFilter=protected are used
           if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_PROTECTED then
-            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_info.json" + "' '" + resourcesDir + "'") then
+            if not System.rename(simCode.fileNamePrefix + "_info.json", resourcesDir + simCode.fileNamePrefix + "_info.json") then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
             end if;
           end if;

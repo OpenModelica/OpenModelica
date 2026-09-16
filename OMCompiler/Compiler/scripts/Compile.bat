@@ -156,6 +156,13 @@ goto :MSVCCOMPILE
 :MSVCCOMPILE
 set MAKE=
 set MAKEFLAGS=
+REM cl/link/nmake on a non-English Windows print their diagnostics in the OS
+REM UI language (VSLANG only affects cl/link, not nmake, and there is no env
+REM var to force nmake to English). Switching this cmd.exe session to the
+REM UTF-8 codepage at least keeps that non-ASCII text intact instead of
+REM getting corrupted when omc reads %1.log as UTF-8 later (it was written in
+REM the OEM codepage, e.g. CP850, otherwise).
+chcp 65001 >nul
 if %LOGGING%==1 (nmake /a /f %1.makefile >> %1.log 2>&1) else (nmake /a /f %1.makefile)
 set RESULT=%ERRORLEVEL%
 if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
