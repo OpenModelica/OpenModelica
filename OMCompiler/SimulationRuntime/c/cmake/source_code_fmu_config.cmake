@@ -122,6 +122,7 @@ set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
                               "simulation/solver/model_help.h"
                               "simulation/solver/nonlinearSolverHomotopy.h"
                               "simulation/solver/nonlinearSolverHybrd.h"
+                              "simulation/solver/nonlinearSolverIpopt.h"
                               "simulation/solver/nonlinearSystem.h"
                               "simulation/solver/nonlinearValuesList.h"
                               "simulation/solver/omc_math.h"
@@ -216,6 +217,7 @@ list(JOIN SOURCE_FMU_DGESV_FILES_LIST_QUOTED ",\n                               
 ## Non-linear system files
 
 set(SOURCE_FMU_NLS_FILES_LIST simulation/solver/nonlinearSolverHybrd.c
+                              simulation/solver/nonlinearSolverIpopt.c
                               simulation/solver/nonlinearSystem.c
                               simulation/solver/nonlinearValuesList.c
                               simulation/solver/nonlinearSolverHomotopy.c)
