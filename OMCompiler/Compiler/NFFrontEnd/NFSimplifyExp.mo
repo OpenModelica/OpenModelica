@@ -480,6 +480,7 @@ algorithm
         op := if isSum then Operator.makeAdd(ty) else
                             Operator.makeMul(ty);
         exp := Expression.MULTARY(args, {}, op);
+        exp := simplify(exp);
       end if;
 
       return;
