@@ -40,11 +40,11 @@ wasm-encoder = { workspace = true, features = ["wasmparser"] }
 # component via wit_component::Linker. Pure Rust → works in the browser omc too
 # (no external wasm-merge). wasmparser reads the model for the reencode. Pinned to
 # the same 0.252 wasm-tools release as wasm-encoder to avoid type skew.
-wit-component = "0.252"
-wasmparser = "0.252"
+wit-component = "0.259"
+wasmparser = "0.259"
 # Deflate for the in-process FMU ZIP writer. Pure Rust, so the browser omc
 # compresses the same way the native one does.
-miniz_oxide = "0.8"
+miniz_oxide = "0.9"
 
 [features]
 # The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit

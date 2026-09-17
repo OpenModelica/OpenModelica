@@ -194,7 +194,7 @@ fn core_modules(component: &[u8]) -> Result<Vec<CoreModule>> {
         offset += consumed;
         match payload {
             Payload::ModuleSection { parser, unchecked_range } => {
-                ranges.push(unchecked_range);
+                ranges.push(unchecked_range.start as usize..unchecked_range.end as usize);
                 stack.push(cur);
                 cur = parser;
             }

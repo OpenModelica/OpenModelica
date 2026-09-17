@@ -34,16 +34,16 @@ exclude = ["openmodelica_lapack", "openmodelica_hdf5", "../../SimulationRuntime/
 # recent wasm-bindgen. Since wasmer 7.2 the compiler's wasm build uses the same
 # recent wasm-bindgen, so they share one resolution and are ordinary members.
 [workspace.dependencies]
-anyhow = "1.0.102"
+anyhow = "1.0.104"
 arcstr = "1.2.0"
 list_comprehension_macro = "0.1.1"
 const-str = "1.1.0"
-encoding_rs = "0.8.35"
+encoding_rs = "0.8.41"
 rayon = "1"
-winnow = "0.7"
+winnow = "1.0"
 loop_unwrap = "0.2.0"
 match_deref = "0.1.2"
-ordered-float = "5.3.0"
+ordered-float = "5.5.0"
 num-traits = "0.2.19"
 libc = "0.2"
 # Dynamic foreign-function calls for FFI.callFunction (port of
@@ -59,7 +59,7 @@ curl = "0.4"
 # Read-only XML DOM for the `*_prof.xml` profiling files written by the
 # simulation runtime (HpcOmBenchmarkExt.rs, replacing the expat parser of
 # runtime/HpcOmBenchmarkExt.cpp).
-roxmltree = "0.21"
+roxmltree = "0.21.1"
 # JSON reader for the `*_prof.json` profiling files (HpcOmBenchmarkExt.rs,
 # replacing the cJSON parser of runtime/HpcOmBenchmarkExt.cpp).
 serde_json = "1"
@@ -76,14 +76,14 @@ zmq = "0.10"
 # the native `sys`/cranelift backend. wasmer errors are wrapped with
 # anyhow::anyhow! via the `wt` helper (their Debug formatting), since the
 # crate's many engine error types do not share one anyhow-convertible type.
-wasm-encoder = "0.252"
+wasm-encoder = "0.259"
 # Engine backends for the wasm-jit target, selected by feature/target in
 # openmodelica_codegen_wasm_jit: wasmtime (native default, fastest cranelift),
 # or wasmer — whose `js` backend is the only one that can JIT inside a
 # browser-wasm build of omc, and which can also be selected natively
 # (`--features engine-wasmer`) to benchmark against wasmtime.
-wasmtime = { version = "45", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation", "gc", "gc-null"] }
-wasmer = { version = "7.2.0-alpha.3", default-features = false, features = ["std", "wat"] }
+wasmtime = { version = "48", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation", "gc", "gc-null"] }
+wasmer = { version = "7.4", default-features = false, features = ["std", "wat"] }
 openmodelica_wasm_jit = {path = "openmodelica_wasm_jit"}
 openmodelica_codegen_wasm_jit = {path = "openmodelica_codegen_wasm_jit"}
 # Cycle-collecting garbage collector for reference cycles closed through
@@ -111,9 +111,9 @@ openmodelica_animation = {path = "openmodelica_animation"}
 openmodelica_mat_writer = {path = "../../SimulationRuntime/rust/openmodelica_mat_writer"}
 openmodelica_arrow_writer = {path = "../../SimulationRuntime/rust/openmodelica_arrow_writer"}
 openmodelica_hdf5_result = {path = "../../SimulationRuntime/rust/openmodelica_hdf5_result"}
-arrow-array = { version = "59", default-features = false }
-arrow-schema = { version = "59", default-features = false }
-arrow-ipc = { version = "59", default-features = false }
+arrow-array = { version = "60", default-features = false }
+arrow-schema = { version = "60", default-features = false }
+arrow-ipc = { version = "60", default-features = false }
 openmodelica_mat_reader = {path = "../../SimulationRuntime/rust/openmodelica_mat_reader", features = ["vfs"]}
 openmodelica_result_diff = {path = "../../SimulationRuntime/rust/openmodelica_result_diff"}
 openmodelica_result_files = {path = "../../SimulationRuntime/rust/openmodelica_result_files", features = ["vfs"]}
