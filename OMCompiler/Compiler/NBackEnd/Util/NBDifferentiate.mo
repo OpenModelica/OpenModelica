@@ -1274,7 +1274,10 @@ public
           // NBAdjacency.collectDependenciesCref).
           hasSetSub := false;
           for s in ComponentRef.subscriptsAllFlat(exp.cref) loop
-            if not Subscript.isScalar(s) then
+            // WHOLE (":") and SLICE (e.g. "1:3") are ordinary range subscripts, not
+            // the literal/array-valued INDEX subscript case (e.g. "{1, 2}") this is
+            // meant to catch -- see NBAdjacency.collectDependenciesCref.
+            if not Subscript.isScalar(s) and not Subscript.isSliced(s) then
               hasSetSub := true;
             end if;
           end for;

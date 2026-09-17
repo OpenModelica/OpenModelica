@@ -2738,7 +2738,11 @@ public
     Boolean hasSetSub = false;
   algorithm
     for s in ComponentRef.subscriptsAllFlat(cref) loop
-      if not Subscript.isScalar(s) then
+      // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
+      // that the exact-match check below already handles correctly -- only a
+      // literal/array-valued INDEX subscript (e.g. the "{1, 2}" in i_s[{1, 2}])
+      // is the set-subscript case this function needs to special-case.
+      if not Subscript.isScalar(s) and not Subscript.isSliced(s) then
         hasSetSub := true;
       end if;
     end for;
