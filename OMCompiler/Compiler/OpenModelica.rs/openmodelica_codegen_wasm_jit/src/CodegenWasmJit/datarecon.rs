@@ -23,7 +23,7 @@ pub(crate) const JAC_FNS: [&str; 2] = ["reconJacF", "reconJacH"];
 /// The `F`/`H` matrices the backend produced, with the shape C's `initJacobian`
 /// would report.
 pub(crate) struct ReconPlan {
-    pub(crate) jacs: [Option<(Arc<SimCode::JacobianMatrix>, u32, u32)>; 2],
+    pub(crate) jacs: [Option<(metamodelica::Ref<SimCode::JacobianMatrix>, u32, u32)>; 2],
     /// Whether the model carries data-reconciliation variables at all.
     pub(crate) present: bool,
 }
@@ -154,7 +154,7 @@ pub(crate) fn build_jac_fns(
     plan: &mut ReconPlan,
     infos: &mut [Option<ReconJacInfo>],
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<Vec<wasm_encoder::Function>> {
@@ -188,18 +188,18 @@ fn build_jac_fn(
     jm: &SimCode::JacobianMatrix,
     info: &ReconJacInfo,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<wasm_encoder::Function> {
     use crate::CodegenWasmJit::{lower_equation, sim_ctx};
     let col = lst(&jm.columns).next();
-    let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+    let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
-    let column_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+    let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.columnEqns).cloned().collect()).unwrap_or_default();
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let lower = |c: &mut FnCtx, eqs: &[Arc<SimCode::SimEqSystem>]| -> Result<()> {
+    let lower = |c: &mut FnCtx, eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]| -> Result<()> {
         for eq in eqs {
             lower_equation(c, eq, eq_index)?;
         }

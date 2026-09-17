@@ -540,10 +540,10 @@ protected
         then
           ();
 
-      case Expression.CREF(ty = ty as Type.COMPLEX(cls = cls), cref = cref)
+      case Expression.CREF(ty = ty as Type.COMPLEX(), cref = cref)
         guard(Type.isRecord(ty))
         algorithm
-          checkDiscreteRealRecord(cref, cls, discreteReals);
+          checkDiscreteRealRecord(cref, Type.complexNode(ty), discreteReals);
         then
           ();
 

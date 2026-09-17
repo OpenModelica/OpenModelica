@@ -22,9 +22,9 @@ pub(crate) fn emit_prof(ctx: &mut FnCtx, clock: Option<u32>, hook: &str) -> Resu
 /// prepended — leaving both outputs on the stack, first result deepest.
 /// `initialPoints`/`initialValues` are only used during initialization
 /// (`functionInitSpatialDistribution`), as in C.
-pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<Arc<DAE::Exp>>) -> Result<()> {
+pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamodelica::Ref<DAE::Exp>>) -> Result<()> {
     use we::Instruction as I;
-    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != 7 {
         return Err("CodegenWasmJit: `spatialDistribution` expects the backend's 7-argument form");
     }
@@ -64,7 +64,7 @@ pub(super) fn compile_call_drop(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<Vec<S
 pub(super) fn emit_math_test_fresh(
     ctx: &mut FnCtx,
     kind: crate::CodegenWasmJit::MathEventKind,
-    ops: &[Arc<DAE::Exp>],
+    ops: &[metamodelica::Ref<DAE::Exp>],
 ) -> Result<()> {
     use crate::CodegenWasmJit::MathEventKind as K;
     match kind {
@@ -114,7 +114,7 @@ pub(super) fn emit_math_test_pre(
 fn compile_math_event(
     ctx: &mut FnCtx,
     name: &str,
-    ops: &[&Arc<DAE::Exp>],
+    ops: &[&metamodelica::Ref<DAE::Exp>],
     idx: u32,
     result_wty: WTy,
 ) -> Result<SigTy> {
@@ -234,10 +234,10 @@ fn compile_math_event(
 pub(super) fn compile_math_builtin(
     ctx: &mut FnCtx,
     name: &str,
-    args: &List<Arc<DAE::Exp>>,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
     attr: &DAE::CallAttributes,
 ) -> Result<SigTy> {
-    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
 
     // Array-valued / array-reducing builtins (fill/zeros/ones, sum/product, the
     // one-array forms of min/max, ndims) take precedence over the scalar math

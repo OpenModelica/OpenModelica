@@ -4,11 +4,11 @@ use super::*;
 
 pub(super) fn compile_relation(
     ctx: &mut FnCtx,
-    e1: &Arc<DAE::Exp>,
+    e1: &metamodelica::Ref<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &Arc<DAE::Exp>,
+    e2: &metamodelica::Ref<DAE::Exp>,
     index: i32,
-    asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
+    asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
     use DAE::Operator as O;
     // String comparisons go through the runtime: equality via `rt_streq`,
@@ -58,11 +58,11 @@ pub(super) fn compile_relation(
 /// (`0 <= index < n_relations`).
 fn compile_relation_indexed(
     ctx: &mut FnCtx,
-    e1: &Arc<DAE::Exp>,
+    e1: &metamodelica::Ref<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &Arc<DAE::Exp>,
+    e2: &metamodelica::Ref<DAE::Exp>,
     index: i32,
-    asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
+    asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
     use DAE::Operator as O;
     let real_ineq = operand_type_of_relation(op)? == WTy::F64
@@ -145,9 +145,9 @@ fn compile_relation_indexed(
 /// `tolZC` is read from `SimData` (`zctol_off`).
 fn compile_relation_hyst(
     ctx: &mut FnCtx,
-    e1: &Arc<DAE::Exp>,
+    e1: &metamodelica::Ref<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &Arc<DAE::Exp>,
+    e2: &metamodelica::Ref<DAE::Exp>,
     slot: u32,
     dir_off: u32,
 ) -> Result<()> {
@@ -226,7 +226,7 @@ fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: 
 /// Leave `max(|nominal(e1)|, |nominal(e2)|)` — the scale term of the hysteresis
 /// band — on the stack as an f64, from the same `getExpNominal` derivation C's
 /// `daeExpNominalTmp` uses.
-fn emit_relation_nominal(ctx: &mut FnCtx, e1: &Arc<DAE::Exp>, e2: &Arc<DAE::Exp>) -> Result<()> {
+fn emit_relation_nominal(ctx: &mut FnCtx, e1: &metamodelica::Ref<DAE::Exp>, e2: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
     let n1 = nominal_exp(e1);
     let n2 = nominal_exp(e2);
     match (nominal_const(&n1), nominal_const(&n2)) {
@@ -244,9 +244,9 @@ fn emit_relation_nominal(ctx: &mut FnCtx, e1: &Arc<DAE::Exp>, e2: &Arc<DAE::Exp>
     Ok(())
 }
 
-fn nominal_exp(e: &Arc<DAE::Exp>) -> Arc<DAE::Exp> {
-    openmodelica_backend::SimCodeUtil::getExpNominal(Arc::clone(e))
-        .unwrap_or_else(|_| Arc::new(DAE::Exp::RCONST { real: 1.0.into() }))
+fn nominal_exp(e: &metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
+    openmodelica_backend::SimCodeUtil::getExpNominal(e.clone())
+        .unwrap_or_else(|_| metamodelica::Ref::new(DAE::Exp::RCONST { real: 1.0.into() }))
 }
 
 fn nominal_const(e: &DAE::Exp) -> Option<f64> {
@@ -328,7 +328,7 @@ fn relation_operand_sigty(op: &DAE::Operator) -> Result<SigTy> {
 pub(super) fn compile_call(
     ctx: &mut FnCtx,
     path: &Absyn::Path,
-    args: &List<Arc<DAE::Exp>>,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
     attr: &DAE::CallAttributes,
 ) -> Result<Vec<SigTy>> {
     // A call through a function-reference variable: `call_indirect` on the
@@ -348,7 +348,7 @@ pub(super) fn compile_call(
         let params = info.sig.params.clone();
         let results = info.sig.results.clone();
         let index = info.index;
-        let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+        let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
         if argv.len() != params.len() {
             return Err("CodegenWasmJit: call argument count mismatch");
         }
@@ -374,11 +374,11 @@ pub(super) fn compile_call(
         return Ok(vec![rty]);
     }
     // Otherwise it must be a (builtin) math/string function.
-    let name = AbsynUtil::pathLastIdent(Arc::new(path.clone())).to_string();
+    let name = AbsynUtil::pathLastIdent(metamodelica::Ref::new(path.clone())).to_string();
     // `print(s)`: write the String to the model's stdout via the host `rt_print`.
     // A void procedure, so it yields no result; the owned handle is released after.
     if name == "print" {
-        let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+        let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
         if argv.len() != 1 {
             return Err("CodegenWasmJit: print expects one argument");
         }

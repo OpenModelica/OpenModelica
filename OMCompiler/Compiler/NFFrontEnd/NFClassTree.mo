@@ -35,10 +35,10 @@
 
 encapsulated package NFClassTree
   import NFInstNode.InstNode;
+  import NFInstNode;
   import SCode;
   import NFType.Type;
   import Mutable;
-import MutableCyclic;
   import NFModifier.Modifier;
   import Import = NFImport;
   import NFBuiltin;
@@ -97,8 +97,8 @@ public
     record INSTANTIATED_TREE
       "Allows lookup of both local and inherited elements."
       LookupTree.Tree tree;
-      array<MutableCyclic<InstNode>> classes;
-      array<MutableCyclic<InstNode>> components;
+      array<Mutable<InstNode>> classes;
+      array<Mutable<InstNode>> components;
       list<Integer> localComponents;
       array<InstNode> exts;
       array<Import> imports;
@@ -209,7 +209,7 @@ public
           // An import, save it as it is and deal with it in initImports later.
           case SCode.IMPORT()
             algorithm
-              imps := Import.UNRESOLVED_IMPORT(e.imp, parent, e.info) :: imps;
+              imps := Import.UNRESOLVED_IMPORT(e.imp, InstNode.scopeRef(parent), e.info) :: imps;
             then
               ();
 
@@ -365,7 +365,7 @@ public
       list<tuple<Integer, Integer>> ext_idxs = {};
       Integer cls_idx, comp_idx = 1;
       DuplicateTree.Tree dups;
-      MutableCyclic<DuplicateTree.Tree> dups_ptr;
+      Mutable<DuplicateTree.Tree> dups_ptr;
     algorithm
       PARTIAL_TREE(ltree, clss, comps, exts, imps, dups) := tree;
       cls_idx := arrayLength(clss) + 1;
@@ -413,7 +413,7 @@ public
       // do correctly at this point. So we just detect them and store their
       // indices in the class tree for now, and check them for identicalness
       // later on instead.
-      dups_ptr := MutableCyclic.create(dups);
+      dups_ptr := Mutable.create(dups);
 
       // Add the names of inherited components and classes to the lookup tree.
       if not listEmpty(ext_idxs) then
@@ -427,7 +427,7 @@ public
         end for;
       end if;
 
-      tree := EXPANDED_TREE(ltree, clss, comps, exts, imps, MutableCyclic.access(dups_ptr));
+      tree := EXPANDED_TREE(ltree, clss, comps, exts, imps, Mutable.access(dups_ptr));
     end expand;
 
     function instantiate
@@ -451,7 +451,7 @@ public
       LookupTree.Tree ltree;
       array<InstNode> exts, old_clss, old_comps;
       array<Import> imps;
-      array<MutableCyclic<InstNode>> clss, comps, ext_clss;
+      array<Mutable<InstNode>> clss, comps, ext_clss;
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
       InstNode node, parent_scope, inst_scope;
@@ -466,6 +466,9 @@ public
       // Clone the class node by replacing the class in the node with itself.
       cls := InstNode.getClass(clsNode);
       clsNode := InstNode.replaceClass(cls, clsNode);
+      // The clone is a new node, not an update of the one it was made from, so
+      // it needs an identity of its own before any child points at it.
+      clsNode := InstNode.reidentify(clsNode);
 
       () := match cls
         case Class.EXPANDED_CLASS(elements = INSTANTIATED_TREE())
@@ -499,7 +502,8 @@ public
               // Update the parent of the extends to be the new instance.
               node := exts[i];
               InstNodeType.BASE_CLASS(definition = ext_def, ty = inst_ty) := InstNode.nodeType(node);
-              node := InstNode.setNodeType(InstNodeType.BASE_CLASS(instance, ext_def, inst_ty), node);
+              node := InstNode.setNodeType(
+                InstNodeType.BASE_CLASS(InstNode.identityCell(instance), ext_def, inst_ty), node);
               // Instantiate the class tree of the extends.
               (node, _, cls_count, comp_count) := instantiate(node, InstNode.EMPTY_NODE(), inst_scope);
               exts[i] := node;
@@ -510,8 +514,8 @@ public
             end for;
 
             // Create new arrays that can hold both local and inherited elements.
-            comps := arrayCreateNoInit(compCount, /*dummy*/MutableCyclic.create(InstNode.EMPTY_NODE()));
-            clss := arrayCreateNoInit(classCount, /*dummy*/MutableCyclic.create(InstNode.EMPTY_NODE()));
+            comps := arrayCreateNoInit(compCount, /*dummy*/Mutable.create(InstNode.EMPTY_NODE()));
+            clss := arrayCreateNoInit(classCount, /*dummy*/Mutable.create(InstNode.EMPTY_NODE()));
 
             // Copy the local classes into the new class array, and set the
             // class we're instantiating to be their parent.
@@ -534,7 +538,7 @@ public
                 c := linkInnerOuter(c, parent_scope);
               end if;
 
-              arrayUpdateNoBoundsChecking(clss, cls_idx, MutableCyclic.create(c));
+              arrayUpdateNoBoundsChecking(clss, cls_idx, Mutable.create(c));
               cls_idx := cls_idx + 1;
             end for;
 
@@ -581,7 +585,7 @@ public
                     end if;
 
                     // Add the node to the component array.
-                    arrayUpdateNoBoundsChecking(comps, comp_idx, MutableCyclic.create(node));
+                    arrayUpdateNoBoundsChecking(comps, comp_idx, Mutable.create(node));
                     local_comps := comp_idx :: local_comps;
                     comp_idx := comp_idx + 1;
                   then
@@ -618,7 +622,8 @@ public
         case Class.EXPANDED_DERIVED(baseClass = node)
           algorithm
             node := InstNode.setNodeType(
-              InstNodeType.BASE_CLASS(clsNode, InstNode.definition(node), InstNode.nodeType(node)), node);
+              InstNodeType.BASE_CLASS(InstNode.identityCell(clsNode),
+                InstNode.definition(node), InstNode.nodeType(node)), node);
             (node, instance, classCount, compCount) := instantiate(node, instance, scope);
             cls.baseClass := node;
           then
@@ -708,7 +713,7 @@ public
       input FuncT func;
 
       partial function FuncT
-        input list<MutableCyclic<InstNode>> chain;
+        input list<Mutable<InstNode>> chain;
       end FuncT;
     algorithm
       () := match tree
@@ -744,7 +749,7 @@ public
 
     function appendComponentsToInstTree
       "Appens a list of local components to an instantiated class tree."
-      input list<MutableCyclic<InstNode>> components;
+      input list<Mutable<InstNode>> components;
       input output ClassTree tree;
     algorithm
       if listEmpty(components) then
@@ -852,17 +857,17 @@ public
     function flattenElements
       "Copies elements from one array to another while removing the Mutable
        container for each element."
-      input array<MutableCyclic<InstNode>> elements;
+      input array<Mutable<InstNode>> elements;
       input array<InstNode> flatElements;
     algorithm
       for i in 1:arrayLength(elements) loop
         arrayUpdateNoBoundsChecking(flatElements, i,
-          MutableCyclic.access(arrayGetNoBoundsChecking(elements, i)));
+          Mutable.access(arrayGetNoBoundsChecking(elements, i)));
       end for;
     end flattenElements;
 
     function flattenElementsWithOffset
-      input array<MutableCyclic<InstNode>> elements;
+      input array<Mutable<InstNode>> elements;
       input array<InstNode> flatElements;
       input array<Integer> offsets;
     protected
@@ -873,7 +878,7 @@ public
 
         if offset >= 0 then
           arrayUpdateNoBoundsChecking(flatElements, i - offset,
-            MutableCyclic.access(arrayGetNoBoundsChecking(elements, i)));
+            Mutable.access(arrayGetNoBoundsChecking(elements, i)));
         end if;
       end for;
     end flattenElementsWithOffset;
@@ -954,7 +959,7 @@ public
     function lookupElementPtr
       input String name;
       input ClassTree tree;
-      output MutableCyclic<InstNode> element;
+      output Mutable<InstNode> element;
     protected
       LookupTree.Entry entry;
     algorithm
@@ -965,7 +970,7 @@ public
     function lookupElementsPtr
       input String name;
       input ClassTree tree;
-      output list<MutableCyclic<InstNode>> elements;
+      output list<Mutable<InstNode>> elements;
     protected
       DuplicateTree.Entry dup_entry;
     algorithm
@@ -994,7 +999,7 @@ public
       component := match tree
         case PARTIAL_TREE() then arrayGet(tree.components, index);
         case EXPANDED_TREE() then arrayGet(tree.components, index);
-        case INSTANTIATED_TREE() then MutableCyclic.access(arrayGet(tree.components, index));
+        case INSTANTIATED_TREE() then Mutable.access(arrayGet(tree.components, index));
         case FLAT_TREE() then arrayGet(tree.components, index);
       end match;
     end nthComponent;
@@ -1114,7 +1119,7 @@ public
         case INSTANTIATED_TREE()
           algorithm
             for i in tree.localComponents loop
-              func(MutableCyclic.access(arrayGetNoBoundsChecking(tree.components, i)));
+              func(Mutable.access(arrayGetNoBoundsChecking(tree.components, i)));
             end for;
           then
             ();
@@ -1165,7 +1170,7 @@ public
         case INSTANTIATED_TREE()
           algorithm
             for c in tree.components loop
-              func(MutableCyclic.access(c));
+              func(Mutable.access(c));
             end for;
           then
             ();
@@ -1212,7 +1217,7 @@ public
         case INSTANTIATED_TREE()
           algorithm
             for c in tree.components loop
-              arg := func(MutableCyclic.access(c), arg);
+              arg := func(Mutable.access(c), arg);
             end for;
           then
             ();
@@ -1266,8 +1271,8 @@ public
         case INSTANTIATED_TREE()
           algorithm
             for c in tree.components loop
-              if func(MutableCyclic.access(c)) then
-                component := SOME(MutableCyclic.access(c));
+              if func(Mutable.access(c)) then
+                component := SOME(Mutable.access(c));
                 break;
               end if;
             end for;
@@ -1566,10 +1571,10 @@ public
 
     function instExtendsComps
       input InstNode extNode;
-      input array<MutableCyclic<InstNode>> comps;
+      input array<Mutable<InstNode>> comps;
       input output Integer index "The first free index in comps";
     protected
-      array<MutableCyclic<InstNode>> ext_comps_ptrs;
+      array<Mutable<InstNode>> ext_comps_ptrs;
       array<InstNode> ext_comps;
       Integer comp_count;
     algorithm
@@ -1591,7 +1596,7 @@ public
 
             if comp_count > 0 then
               for i in index:index+comp_count-1 loop
-                arrayUpdate(comps, i, MutableCyclic.create(ext_comps[i]));
+                arrayUpdate(comps, i, Mutable.create(ext_comps[i]));
               end for;
 
               index := index + comp_count;
@@ -1804,10 +1809,10 @@ public
       input String name;
       input LookupTree.Entry duplicateEntry;
       input LookupTree.Entry keptEntry;
-      input output MutableCyclic<DuplicateTree.Tree> duplicates;
+      input output Mutable<DuplicateTree.Tree> duplicates;
     algorithm
-      MutableCyclic.update(duplicates,
-        DuplicateTree.add(MutableCyclic.access(duplicates), name,
+      Mutable.update(duplicates,
+        DuplicateTree.add(Mutable.access(duplicates), name,
           DuplicateTree.newDuplicate(keptEntry, duplicateEntry), addDuplicateConflict));
     end addDuplicate;
 
@@ -1840,9 +1845,9 @@ public
     function resolveEntryPtr
       input LookupTree.Entry entry;
       input ClassTree tree;
-      output MutableCyclic<InstNode> element;
+      output Mutable<InstNode> element;
     protected
-      array<MutableCyclic<InstNode>> elems;
+      array<Mutable<InstNode>> elems;
     algorithm
       element := match entry
         case LookupTree.Entry.CLASS()
@@ -1862,9 +1867,9 @@ public
     function resolveDuplicateEntriesPtr
       input DuplicateTree.Entry entry;
       input ClassTree tree;
-      input output list<MutableCyclic<InstNode>> elements = {};
+      input output list<Mutable<InstNode>> elements = {};
     protected
-      MutableCyclic<InstNode> node_ptr;
+      Mutable<InstNode> node_ptr;
     algorithm
       node_ptr := resolveEntryPtr(entry.entry, tree);
       elements := node_ptr :: elements;
@@ -1882,7 +1887,7 @@ public
       element := match tree
         case PARTIAL_TREE() then arrayGet(tree.classes, index);
         case EXPANDED_TREE() then arrayGet(tree.classes, index);
-        case INSTANTIATED_TREE() then MutableCyclic.access(arrayGet(tree.classes, index));
+        case INSTANTIATED_TREE() then Mutable.access(arrayGet(tree.classes, index));
         case FLAT_TREE() then arrayGet(tree.classes, index);
       end match;
     end resolveClass;
@@ -1893,7 +1898,7 @@ public
       output InstNode element;
     algorithm
       element := match tree
-        case INSTANTIATED_TREE() then MutableCyclic.access(arrayGet(tree.components, index));
+        case INSTANTIATED_TREE() then Mutable.access(arrayGet(tree.components, index));
         case FLAT_TREE() then arrayGet(tree.components, index);
       end match;
     end resolveComponent;
@@ -1993,7 +1998,7 @@ public
       input output LookupTree.Tree tree "The lookup tree to add names to";
       input Integer classOffset "The index of the first class";
       input Integer componentOffset "The index of the first component";
-      input MutableCyclic<DuplicateTree.Tree> duplicates "Duplicate elements info.";
+      input Mutable<DuplicateTree.Tree> duplicates "Duplicate elements info.";
     protected
       ClassTree cls_tree;
       LookupTree.Tree ext_tree;
@@ -2019,8 +2024,8 @@ public
         dups := DuplicateTree.map(ext_dups,
           function offsetDuplicates(classOffset = classOffset, componentOffset = componentOffset));
         // Join the two duplicate trees together.
-        dups := DuplicateTree.join(MutableCyclic.access(duplicates), dups, joinDuplicates);
-        MutableCyclic.update(duplicates, dups);
+        dups := DuplicateTree.join(Mutable.access(duplicates), dups, joinDuplicates);
+        Mutable.update(duplicates, dups);
       end if;
 
       conf_func := function addInheritedElementConflict(
@@ -2069,7 +2074,7 @@ public
       input LookupTree.Entry newEntry;
       input LookupTree.Entry oldEntry;
       input String name;
-      input MutableCyclic<DuplicateTree.Tree> duplicates;
+      input Mutable<DuplicateTree.Tree> duplicates;
       input DuplicateTree.Tree extDuplicates;
       output LookupTree.Entry entry;
     protected
@@ -2087,7 +2092,7 @@ public
         return;
       end if;
 
-      dups := MutableCyclic.access(duplicates);
+      dups := Mutable.access(duplicates);
       opt_dup_entry := DuplicateTree.getOpt(dups, name);
 
       if isNone(opt_dup_entry) then
@@ -2101,7 +2106,7 @@ public
         end if;
 
         dups := DuplicateTree.add(dups, name, dup_entry);
-        MutableCyclic.update(duplicates, dups);
+        Mutable.update(duplicates, dups);
       else
         SOME(dup_entry) := opt_dup_entry;
         ty := dup_entry.ty;
@@ -2133,7 +2138,7 @@ public
           end if;
 
           dups := DuplicateTree.update(dups, name, dup_entry);
-          MutableCyclic.update(duplicates, dups);
+          Mutable.update(duplicates, dups);
         elseif not DuplicateTree.idExistsInEntry(oldEntry, dup_entry) then
           // Same as above but we add the old entry instead.
           if ty == NFDuplicateTree.EntryType.REDECLARE or new_id < old_id then
@@ -2146,7 +2151,7 @@ public
           end if;
 
           dups := DuplicateTree.update(dups, name, dup_entry);
-          MutableCyclic.update(duplicates, dups);
+          Mutable.update(duplicates, dups);
         else
           // If both the old and the new entry already exists, which can happen if the
           // new entry was added by expandExtents, then we don't need to add anything.
@@ -2264,10 +2269,10 @@ public
       input ClassTree tree;
 
       partial function FuncT
-        input list<MutableCyclic<InstNode>> chain;
+        input list<Mutable<InstNode>> chain;
       end FuncT;
     protected
-      list<MutableCyclic<InstNode>> chain;
+      list<Mutable<InstNode>> chain;
     algorithm
       chain := getRedeclareChain(entry, tree);
 
@@ -2279,11 +2284,11 @@ public
     function getRedeclareChain
       input DuplicateTree.Entry entry;
       input ClassTree tree;
-      input output list<MutableCyclic<InstNode>> chain = {};
+      input output list<Mutable<InstNode>> chain = {};
     algorithm
       chain := match entry.ty
         local
-          MutableCyclic<InstNode> node_ptr;
+          Mutable<InstNode> node_ptr;
           InstNode node;
 
         case NFDuplicateTree.EntryType.REDECLARE
@@ -2291,7 +2296,7 @@ public
             node_ptr := resolveEntryPtr(entry.entry, tree);
 
             if listEmpty(entry.children) then
-              node := MutableCyclic.access(node_ptr);
+              node := Mutable.access(node_ptr);
 
               if SCodeUtil.isClassExtends(InstNode.definition(node)) then
                 Error.addSourceMessage(Error.CLASS_EXTENDS_TARGET_NOT_FOUND,
@@ -2322,14 +2327,14 @@ public
       input output ClassTree tree;
     protected
       InstNode kept;
-      MutableCyclic<InstNode> node_ptr;
+      Mutable<InstNode> node_ptr;
       InstNode node;
       list<DuplicateTree.Entry> entries, broken_entries;
     algorithm
       () := match entry.ty
         case NFDuplicateTree.EntryType.REDECLARE
           algorithm
-            kept := MutableCyclic.access(resolveEntryPtr(entry.entry, tree));
+            kept := Mutable.access(resolveEntryPtr(entry.entry, tree));
             entry := replaceDuplicates3(entry, kept);
           then
             ();
@@ -2343,7 +2348,7 @@ public
             // Flatten the duplicate list and update the entries.
             for e in DuplicateTree.entryToList(entry) loop
               node_ptr := resolveEntryPtr(e.entry, tree);
-              node := MutableCyclic.access(node_ptr);
+              node := Mutable.access(node_ptr);
               e.node := SOME(node);
               e.children := {};
 
@@ -2361,7 +2366,7 @@ public
             // Replace duplicate nodes with the node to keep.
             for e in entries loop
               node_ptr := resolveEntryPtr(e.entry, tree);
-              MutableCyclic.update(node_ptr, kept);
+              Mutable.update(node_ptr, kept);
             end for;
 
             // Update the duplicate entry.
@@ -2467,7 +2472,7 @@ public
     function breakComponents
       "Applies component break modifiers to the components in a base class."
       input InstNode node;
-      input array<MutableCyclic<InstNode>> components;
+      input array<Mutable<InstNode>> components;
       input LookupTree.Tree tree;
       input DuplicateTree.Tree duplicates;
     protected
@@ -2519,9 +2524,9 @@ public
           end match;
 
           // Check that it's a breakable component.
-          checkIsBreakable(MutableCyclic.access(components[index]), node, info);
+          checkIsBreakable(Mutable.access(components[index]), node, info);
           // Replace the component with an empty node.
-          MutableCyclic.update(components[index], InstNode.EMPTY_NODE());
+          Mutable.update(components[index], InstNode.EMPTY_NODE());
         end for;
       end for;
     end breakComponents;

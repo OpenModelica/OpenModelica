@@ -33,48 +33,46 @@
  *
  */
 
-encapsulated uniontype MutableCyclic<T>
-"A Mutable whose content may transitively contain the cell itself.
+encapsulated uniontype PointerWeak<T>
+"A non-owning reference to a Pointer cell.
 
-Same representation and semantics as Mutable; the two differ only in what
-the Rust port may assume. A Mutable can never be reclaimed once it is made
-cyclic, because that port frees by reference counting, so cells that close a
-cycle must be declared here instead: only these get the traced representation
-the cycle collector can reclaim. Everything reachable from a MutableCyclic is
-traced too, so prefer Mutable wherever the content cannot reach back."
+Breaks an ownership cycle so plain reference counting can reclaim it. The
+referent must be owned somewhere else -- for `VAR_NODE.varPointer` that is
+the backend's `VariablePointers`, which holds every variable.
 
-impure function create
-  input T data;
-  output MutableCyclic<T> mutable;
-external "C" mutable=mutableCreate(data) annotation(Include="
-static inline void* mutableCreate(void *data)
+In the bootstrapped C compiler a weak reference *is* the strong one (Boehm
+reclaims cycles by tracing, so there is nothing to break) and `upgrade` can
+never fail. The Rust port gives it real weak semantics, and `upgrade` fails
+if the referent is already gone."
+
+import Pointer;
+
+impure function downgrade
+  "A reference that does not keep the cell alive. Never fails."
+  input Pointer<T> pointer;
+  output PointerWeak<T> weak;
+external "C" weak=pointerWeakDowngrade(pointer) annotation(Include="
+static inline void* pointerWeakDowngrade(void *pointer)
 {
-  return mmc_mk_box1(0, data);
+  return pointer;
 }
 ");
-end create;
+end downgrade;
 
-impure function update
-  input MutableCyclic<T> mutable;
-  input T data;
-external "C" mutableUpdate(mutable, data) annotation(Include="
-static inline void mutableUpdate(void *mutable, void *data)
+impure function upgrade
+  "An owning cell again. Fails if the referent is already gone — which means
+   a weak reference outlived the structure that owned it, so the ownership
+   split is wrong somewhere. Dereferencing a cell never fails; only this
+   conversion does."
+  input PointerWeak<T> weak;
+  output Pointer<T> pointer;
+external "C" pointer=pointerWeakUpgrade(weak) annotation(Include="
+static inline void* pointerWeakUpgrade(void *weak)
 {
-  MMC_STRUCTDATA(mutable)[0] = data;
+  return weak;
 }
 ");
-end update;
-
-impure function access
-  input MutableCyclic<T> mutable;
-  output T data;
-external "C" data=mutableAccess(mutable) annotation(Include="
-static inline void* mutableAccess(void *mutable)
-{
-  return MMC_STRUCTDATA(mutable)[0];
-}
-");
-end access;
+end upgrade;
 
 annotation(__OpenModelica_Interface="util_datatypes_basic");
-end MutableCyclic;
+end PointerWeak;

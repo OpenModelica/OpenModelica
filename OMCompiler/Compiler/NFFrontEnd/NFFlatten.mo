@@ -46,6 +46,7 @@ import Binding = NFBinding;
 import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
 import Algorithm = NFAlgorithm;
@@ -1036,13 +1037,15 @@ protected
   ComponentRef cr, field_cr;
   Type ty;
   list<Expression> fields;
+  Type cls_ty;
   Expression cond;
 algorithm
   outExp := ExpandExp.expand(exp);
 
   outExp := match outExp
-    case Expression.CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
+    case Expression.CREF(ty = cls_ty as Type.COMPLEX(), cref = cr)
       algorithm
+        cls := Type.complexNode(cls_ty);
         comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
         fields := {};
 
@@ -1360,13 +1363,13 @@ protected
   Expression range;
   list<Expression> ranges;
   list<Subscript> subs;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
   DAE.ElementSource src;
 algorithm
   (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
   subs := listReverseInPlace(subs);
   vectorizedEqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
-  scope := Equation.scope(eqn);
+  scope := Equation.scopeCell(eqn);
   src := Equation.source(eqn);
 
   while not listEmpty(iters) loop
@@ -1673,7 +1676,7 @@ function replaceSplitIndices2
 algorithm
   replace := match sub
     case Subscript.SPLIT_INDEX()
-      then sub.dimIndex == index and InstNode.refEqual(sub.node, node);
+      then sub.dimIndex == index and InstNode.refEqual(InstNode.borrow(sub.node), node);
     else false;
   end match;
 end replaceSplitIndices2;
@@ -1721,7 +1724,7 @@ algorithm
 
     case Subscript.SPLIT_INDEX()
       algorithm
-        subs := UnorderedMap.getOrDefault(sub.node, subMap, {});
+        subs := UnorderedMap.getOrDefault(InstNode.borrow(sub.node), subMap, {});
       then
         if sub.dimIndex > listLength(subs) then Subscript.WHOLE() else listGet(subs, sub.dimIndex);
 
@@ -1991,7 +1994,7 @@ protected
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
   has_connect := Equation.contains(eq, Equation.isConnection);
@@ -2166,7 +2169,7 @@ protected
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
@@ -2611,7 +2614,7 @@ algorithm
         while UnorderedMap.contains(tlio_var.name, variables) loop
           tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
           tlio_var.name := match cref case ComponentRef.CREF() then
-            ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+            ComponentRef.prefixCref(tlio_node, cref.ty, cref.subscripts, ComponentRef.EMPTY());
           end match;
           name := name + "_" "append underscore until name is unique";
         end while;
@@ -2853,7 +2856,8 @@ protected
 algorithm
   () := match ty
     local
-      InstNode con, de;
+      NFInstNode.ScopeRef con, de;
+      NFInstNode.ScopeRef rec_con;
       Function fn;
 
     case Type.ARRAY()
@@ -2872,15 +2876,15 @@ algorithm
     // Collect external object structors.
     case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de))
       algorithm
-        funcs := collectStructor(con, funcs);
-        funcs := collectStructor(de, funcs);
+        funcs := collectStructor(InstNode.borrow(con), funcs);
+        funcs := collectStructor(InstNode.borrow(de), funcs);
       then
         ();
 
     // Collect record constructors.
-    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_con))
       algorithm
-        funcs := collectStructor(con, funcs);
+        funcs := collectStructor(InstNode.borrow(rec_con), funcs);
       then
         ();
 
@@ -3131,12 +3135,12 @@ algorithm
     SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);
 
-    if not InstNode.isPartial(fn.node) then
+    if not InstNode.isPartial(InstNode.fromHandle(fn.node)) then
       funcs := FunctionTree.add(funcs, Function.name(fn), fn);
-      funcs := collectClassFunctions(fn.node, funcs);
+      funcs := collectClassFunctions(InstNode.fromHandle(fn.node), funcs);
 
       for fn_der in fn.derivatives loop
-        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+        for der_fn in Function.getCachedFuncs(InstNode.borrow(fn_der.derivativeFn)) loop
           funcs := flattenFunction(der_fn, funcs);
         end for;
       end for;
@@ -3146,7 +3150,7 @@ algorithm
       end for;
 
       if Function.isPartialDerivative(fn) then
-        for f in Function.getCachedFuncs(Class.lastBaseClass(fn.node)) loop
+        for f in Function.getCachedFuncs(Class.lastBaseClass(InstNode.fromHandle(fn.node))) loop
           flattenFunction(f, funcs);
         end for;
       end if;

@@ -51,6 +51,7 @@ public
   import Class = NFClass;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import Type = NFType;
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
@@ -59,7 +60,8 @@ public
 
   record RAW_DIM
     Absyn.Subscript dim;
-    InstNode scope;
+    NFInstNode.ScopeRef scope "Weakly: the class tree owns the scope this
+      dimension was written in.";
   end RAW_DIM;
 
   record UNTYPED
@@ -357,7 +359,7 @@ public
   algorithm
     same := match (dim1, dim2)
       case (RAW_DIM(), RAW_DIM())
-        then InstNode.isSame(dim1.scope, dim2.scope) and
+        then InstNode.isSame(InstNode.borrow(dim1.scope), InstNode.borrow(dim2.scope)) and
              AbsynUtil.subscriptEqual(dim1.dim, dim2.dim);
       case (UNTYPED(), UNTYPED()) then Expression.isEqual(dim1.dimension, dim2.dimension);
       case (INTEGER(), INTEGER()) then dim1.size == dim2.size;

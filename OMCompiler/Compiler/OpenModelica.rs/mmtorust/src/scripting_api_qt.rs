@@ -128,7 +128,7 @@ fn collect_output_names(c: &Absyn::Class, out: &mut HashMap<String, Vec<String>>
 
 /// Apply `f` to each element specification in the public/protected parts.
 fn for_each_element(
-    parts: &metamodelica::List<std::sync::Arc<Absyn::ClassPart>>,
+    parts: &metamodelica::List<metamodelica::Ref<Absyn::ClassPart>>,
     mut f: impl FnMut(&Absyn::ElementSpec),
 ) {
     for part in parts {

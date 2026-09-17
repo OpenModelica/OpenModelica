@@ -6,7 +6,7 @@ use super::*;
 pub(super) fn lower_equation_inner(
     ctx: &mut FnCtx,
     eq: &SimCode::SimEqSystem,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
     if let Some(info) = eq_info(eq) {
@@ -59,7 +59,7 @@ pub(super) fn lower_equation_inner(
             if *insideNonLinearSystem {
                 return ctx.sim_stmts(statements);
             }
-            let known: Vec<Arc<DAE::ComponentRef>> = lst(knownOutputCrefs).cloned().collect();
+            let known: Vec<metamodelica::Ref<DAE::ComponentRef>> = lst(knownOutputCrefs).cloned().collect();
             let saved = backup_known_outputs(ctx, &known)?;
             ctx.sim_stmts(statements)?;
             restore_known_outputs(ctx, &known, &saved)
@@ -102,12 +102,12 @@ pub(super) fn lower_equation_inner(
 /// component. `Linear`/`Nonlinear` carry `(strict, casual)`, C's `lSystem`/`nlSystem`
 /// and its `alternativeTearing`.
 enum DtSystem<'a> {
-    Linear(&'a Arc<SimCode::LinearSystem>, &'a Arc<SimCode::LinearSystem>),
-    Nonlinear(&'a Arc<SimCode::NonlinearSystem>, &'a Arc<SimCode::NonlinearSystem>),
+    Linear(&'a metamodelica::Ref<SimCode::LinearSystem>, &'a metamodelica::Ref<SimCode::LinearSystem>),
+    Nonlinear(&'a metamodelica::Ref<SimCode::NonlinearSystem>, &'a metamodelica::Ref<SimCode::NonlinearSystem>),
 }
 
 /// Every `CONSTRAINT_DT` of an equation's constraint list, as `(condition, local)`.
-pub(crate) fn dt_constraints(cons: &List<Arc<DAE::Constraint>>) -> Vec<(Arc<DAE::Exp>, bool)> {
+pub(crate) fn dt_constraints(cons: &List<metamodelica::Ref<DAE::Constraint>>) -> Vec<(metamodelica::Ref<DAE::Exp>, bool)> {
     lst(cons)
         .filter_map(|c| match &**c {
             DAE::Constraint::CONSTRAINT_DT { constraint, localCon } => {
@@ -120,9 +120,9 @@ pub(crate) fn dt_constraints(cons: &List<Arc<DAE::Constraint>>) -> Vec<(Arc<DAE:
 
 /// Every constraint a casual tearing set's inner equations carry, in C's order
 /// (`createGlobalConstraints` over `at.eqs` / `at.residual`).
-fn dt_system_constraints(sys: &DtSystem) -> Vec<(Arc<DAE::Exp>, bool)> {
+fn dt_system_constraints(sys: &DtSystem) -> Vec<(metamodelica::Ref<DAE::Exp>, bool)> {
     use SimCode::SimEqSystem as E;
-    let inner: Vec<Arc<SimCode::SimEqSystem>> = match sys {
+    let inner: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = match sys {
         DtSystem::Linear(_, at) => lst(&at.residual).cloned().collect(),
         DtSystem::Nonlinear(_, at) => lst(&at.eqs).cloned().collect(),
     };
@@ -142,7 +142,7 @@ fn dt_system_constraints(sys: &DtSystem) -> Vec<(Arc<DAE::Exp>, bool)> {
 /// C's `solveNLS` calls `strictTearingFunctionCall`.
 fn lower_dynamic_tearing(
     ctx: &mut FnCtx,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     sys: DtSystem,
 ) -> Result<()> {
     let linear = matches!(sys, DtSystem::Linear(..));
@@ -185,7 +185,7 @@ fn lower_dynamic_tearing(
 pub(super) fn lower_linear_system(
     ctx: &mut FnCtx,
     lsystem: &SimCode::LinearSystem,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     dt_strict: i32,
 ) -> Result<()> {
     // C's `equationLinear` line; the casual variant is printed at the call site.
@@ -211,18 +211,18 @@ pub(super) fn lower_linear_system(
 fn lower_linear_system_body(
     ctx: &mut FnCtx,
     lsystem: &SimCode::LinearSystem,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
-    let mut inner: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
+    let mut inner: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = Vec::new();
     let residuals = lin_residuals(lsystem, &mut inner);
     let torn = !residuals.is_empty();
-    let vars: Vec<Arc<DAE::ComponentRef>> = lst(&lsystem.vars).map(|v| v.name.clone()).collect();
+    let vars: Vec<metamodelica::Ref<DAE::ComponentRef>> = lst(&lsystem.vars).map(|v| v.name.clone()).collect();
     let n = vars.len();
 
     // A from simJac, b from beqs. `usable` false if any entry is not an ordinary
     // scalar residual (e.g. a for-residual we can't index statically).
-    let mut a_entries: Vec<(usize, usize, &Arc<DAE::Exp>)> = Vec::new();
+    let mut a_entries: Vec<(usize, usize, &metamodelica::Ref<DAE::Exp>)> = Vec::new();
     let mut usable = true;
     for entry in lst(&lsystem.simJac) {
         let (row, col, eq) = entry;
@@ -234,7 +234,7 @@ fn lower_linear_system_body(
             }
         }
     }
-    let b_exps: Vec<&Arc<DAE::Exp>> = lst(&lsystem.beqs).collect();
+    let b_exps: Vec<&metamodelica::Ref<DAE::Exp>> = lst(&lsystem.beqs).collect();
 
     if usable && !a_entries.is_empty() && b_exps.len() == n {
         // Torn systems recover their inner variables at the solution; the non-torn
@@ -271,8 +271,8 @@ fn lower_linear_system_body(
         };
         let jm = lsystem.jacobianMatrix.as_ref().unwrap();
         let col = lst(&jm.columns).next().unwrap();
-        let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
-        let column_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
+        let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
+        let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
         let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
             for eq in &constant_eqns { lower_equation(c, eq, eq_index)?; }
             Ok(())

@@ -56,13 +56,13 @@ mmtorust/Cargo.toml
 mmtorust/src/MM.rs
 mmtorust/src/codegen.rs
 mmtorust/src/const_patterns.rs
-mmtorust/src/cyclic_fix.rs
 mmtorust/src/dep_analysis.rs
 mmtorust/src/external_c_calls.rs
 mmtorust/src/fallibility.rs
 mmtorust/src/fix.rs
 mmtorust/src/hierarchy.rs
 mmtorust/src/main.rs
+mmtorust/src/overrides.rs
 mmtorust/src/mc_disjoint.rs
 mmtorust/src/mutable_cycles.rs
 mmtorust/src/scripting_api_qt.rs
@@ -391,6 +391,7 @@ openmodelica_nf_frontend/Cargo.toml
 openmodelica_nf_frontend/build.rs
 openmodelica_nf_frontend/src/FFI.rs
 openmodelica_nf_frontend/src/FFI_wasm.rs
+openmodelica_nf_frontend/src/Globals.rs
 openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
@@ -452,10 +453,11 @@ openmodelica_util/src/unittests/util_tests.rs
 openmodelica_util_datatypes_basic/Cargo.toml
 openmodelica_util_datatypes_basic/src/GCExt.rs
 openmodelica_util_datatypes_basic/src/Mutable.rs
-openmodelica_util_datatypes_basic/src/MutableCyclic.rs
+openmodelica_util_datatypes_basic/src/MutableWeak.rs
+openmodelica_util_datatypes_basic/src/PointerWeak.rs
 openmodelica_util_datatypes_basic/src/Pointer.rs
-openmodelica_util_datatypes_basic/src/PointerCyclic.rs
 openmodelica_util_datatypes_basic/src/unittests/array_tests.rs
+openmodelica_util_datatypes_basic/src/unittests/container_cycle_drop_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/double_ended_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/list_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mod.rs
