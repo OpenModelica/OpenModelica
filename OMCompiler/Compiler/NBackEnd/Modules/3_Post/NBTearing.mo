@@ -479,47 +479,36 @@ protected
     extends Module.tearingInterface;
     input checkVarInit varFunc = noFilterVar;
     input BEquation.checkEqn eqnFunc = noFilterEqn;
+    // varFunc/eqnFunc kept for API compatibility with getModule()'s partial applications,
+    // but no longer consulted below (see comment further down).
     partial function checkVarInit extends BVariable.checkVar;
       input Boolean init;
     end checkVarInit;
   protected
     Tearing strict;
-    list<ComponentRef> vars_lst, eqns_lst, all_vars_lst, all_eqns_lst;
-    UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
-    UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
-    UnorderedMap<ComponentRef, Integer> v_all, e_all "unfiltered loop vars/equations map, used for the linearity check";
-    constant Boolean init = Partition.kindIsInitial(kind);
+    list<ComponentRef> all_vars_lst, all_eqns_lst;
+    UnorderedSet<ComponentRef> vars_set        "all loop vars, used by refine to detect self-referential (nonlinear) dependencies";
+    UnorderedMap<ComponentRef, Integer> v_all, e_all "unfiltered loop vars/equations map";
   algorithm
     (comp, full, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         index := index + 1;
         comp.idx := index;
 
-        // filter variables and equations appropriately
-        vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard varFunc(Slice.getT(var), init) in strict.iteration_vars);
-        eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard eqnFunc(Slice.getT(eqn)) in strict.residual_eqns);
-
-        // the set of all loop variables used to determine solvability
-        vars_set := UnorderedSet.fromList(vars_lst, ComponentRef.hash, ComponentRef.isEqual);
-
-        // the sets of variables and equations
-        v := UnorderedMap.subMap(variables.map, vars_lst);
-        e := UnorderedMap.subMap(equations.map, eqns_lst);
-
-        // refine the adjacency matrix by updating solvability information
-        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, Partition.kindIsInitial(kind));
-
-        // checkLinearity needs the loop's full (unfiltered) variable/equation set: varFunc/eqnFunc
-        // (e.g. omcTearing's isDiscontinuous filter) narrow vars_lst/eqns_lst down to only the
-        // discontinuous members, which is often empty for a purely continuous loop. Feeding that
-        // empty set to checkLinearity made it vacuously return "linear" for any such loop.
-        // Use a tolerant lookup here (unlike the strict subMap above): not every name in the
-        // untorn iteration_vars/residual_eqns is necessarily registered in variables.map/
-        // equations.map yet, and subMap's getSafe would crash on those.
+        // refine and checkLinearity both need the loop's full, unfiltered var/eqn set --
+        // varFunc/eqnFunc's filtered one is often EMPTY for a purely continuous loop,
+        // which silently misclassified such loops as linear (see #16463). Tolerant
+        // lookup: not every name here is necessarily registered in variables.map/
+        // equations.map yet.
         all_vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
         all_eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        vars_set := UnorderedSet.fromList(all_vars_lst, ComponentRef.hash, ComponentRef.isEqual);
         v_all := tolerantSubMap(variables.map, all_vars_lst);
         e_all := tolerantSubMap(equations.map, all_eqns_lst);
+
+        // refine the adjacency matrix by updating solvability information
+        full := Adjacency.Matrix.refine(full, funcMap, v_all, e_all, variables, equations, vars_set, Partition.kindIsInitial(kind));
+
         comp.linear := checkLinearity(full, v_all, e_all);
       then (comp, full, index);
       else (comp, full, index);
