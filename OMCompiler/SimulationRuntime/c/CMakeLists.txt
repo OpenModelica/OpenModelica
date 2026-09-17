@@ -193,8 +193,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRE
 # Add C Simulation Runtime unit tests
 # Build with target "ctestsuite-depends"
 # Run test with ctest
-add_subdirectory(
-  ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
-  ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
-  EXCLUDE_FROM_ALL
-)
+# They live in testsuite/, so they follow OM_ENABLE_TESTSUITE (see the top-level CMakeLists.txt).
+if(OM_ENABLE_TESTSUITE)
+  add_subdirectory(
+    ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
+    ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
+    EXCLUDE_FROM_ALL
+  )
+endif()
