@@ -1027,7 +1027,7 @@ pub fn raise_model_error(
     match crate::host::model_error_exception(caller)? {
         Some(exn) => {
             use wasmtime::AsContextMut;
-            caller.as_context_mut().throw::<()>(exn).map_err(wasmtime::Error::new)
+            caller.as_context_mut().throw::<()>(exn)
         }
         None => Err(wasmtime::Error::msg(format!("ModelicaError: {}", shared_cstr(caller, ptr)))),
     }

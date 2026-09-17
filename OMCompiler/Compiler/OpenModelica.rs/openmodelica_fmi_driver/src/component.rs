@@ -241,7 +241,7 @@ impl WasmArtifact {
         let resources = self.resources.lock().unwrap_or_else(|e| e.into_inner()).clone();
         if let Some(dir) = resources.filter(|d| d.is_dir()) {
             builder
-                .preopened_dir(&dir, "/", wasmtime_wasi::DirPerms::READ, wasmtime_wasi::FilePerms::READ)
+                .preopened_dir(&dir, "/", wasmtime_wasi::FsPerms::ReadOnly)
                 .map_err(|e| trap("preopening the resources directory", e))?;
         }
         Ok(Store::new(

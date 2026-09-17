@@ -10,10 +10,10 @@ workspace = "../../../Compiler/OpenModelica.rs"
 [lib]
 
 [dependencies]
-arrow-array = { version = "59", default-features = false, optional = true }
-arrow-buffer = { version = "59", default-features = false, optional = true }
-arrow-schema = { version = "59", default-features = false, optional = true }
-arrow-ipc = { version = "59", default-features = false, optional = true }
+arrow-array = { version = "60", default-features = false, optional = true }
+arrow-buffer = { version = "60", default-features = false, optional = true }
+arrow-schema = { version = "60", default-features = false, optional = true }
+arrow-ipc = { version = "60", default-features = false, optional = true }
 
 [features]
 default = ["ipc"]

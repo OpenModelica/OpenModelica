@@ -21,4 +21,4 @@ openmodelica_result_diff = { path = "../openmodelica_result_diff" }
 # The page hands over bytes, which `ResultFile` opens out of the wasi store.
 openmodelica_result_files = { path = "../openmodelica_result_files", features = ["vfs"] }
 openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi" }
-wasm-bindgen = "=0.2.125"
+wasm-bindgen = "=0.2.128"

@@ -412,7 +412,7 @@ fn new_store(engine: &Engine, res: &str, env: *mut c_void, log: Log, iu: Interme
     // What fmi3Instantiate* points at: a file-based CombiTable reads its table
     // through this preopen.
     if Path::new(res).is_dir() {
-        builder.preopened_dir(res, "/", wasmtime_wasi::DirPerms::READ, wasmtime_wasi::FilePerms::READ)?;
+        builder.preopened_dir(res, "/", wasmtime_wasi::FsPerms::ReadOnly)?;
     }
     Ok(Store::new(
         engine,

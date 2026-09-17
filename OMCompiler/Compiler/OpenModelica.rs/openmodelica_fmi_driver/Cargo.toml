@@ -31,10 +31,10 @@ openmodelica_mat_writer = { path = "../../../SimulationRuntime/rust/openmodelica
 openmodelica_arrow_writer = { path = "../../../SimulationRuntime/rust/openmodelica_arrow_writer" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-libloading = { version = "0.8", optional = true }
+libloading = { version = "0.9", optional = true }
 # The same wasmtime the wasm-jit engine and the FMU exporter use: a `.cwasm` is
 # tied to one build and one configuration, so there can only be one.
 wasmtime = { workspace = true, optional = true, features = ["component-model", "gc", "gc-null", "gc-drc"] }
 # An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
-wasmtime-wasi = { version = "45", default-features = false, optional = true, features = ["p2"] }
+wasmtime-wasi = { version = "48", default-features = false, optional = true, features = ["p2"] }
 openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }

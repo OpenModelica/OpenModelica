@@ -25,7 +25,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-wit-bindgen = { version = "0.43", default-features = false, features = ["macros"] }
+wit-bindgen = { version = "0.62", default-features = false, features = ["macros"] }
 openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false }
 openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false }
 # The result-file serializers, for the `om:sim/simulation` export: the same
