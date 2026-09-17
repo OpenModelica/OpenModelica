@@ -928,6 +928,8 @@ public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT0 = ErrorType
   "The first output of spatialDistribution may only be ignored if positiveVelocity is true.");
 public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT1 = ErrorTypes.MESSAGE(426, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "The second output of spatialDistribution may not be ignored.");
+public constant ErrorTypes.Message ELEMENT_IS_NOT_ALLOWED_IN_CONTEXT = ErrorTypes.MESSAGE(427, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "%s is not allowed in %s.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");
