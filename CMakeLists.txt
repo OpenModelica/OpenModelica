@@ -129,6 +129,21 @@ omc_add_to_report(OM_ENABLE_OMSIMULATOR)
 # 'usersguide' target. See doc/UsersGuide/CMakeLists.txt.
 omc_option(OM_ENABLE_DOCS "Enable the User's Guide target. Needs Sphinx, pandoc, inkscape and gnuplot." OFF)
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/testsuite/CMakeLists.txt")
+  set(OM_TESTSUITE_DEFAULT ON)
+else()
+  set(OM_TESTSUITE_DEFAULT OFF)
+endif()
+cmake_dependent_option(OM_ENABLE_TESTSUITE
+  "Configure the testsuite and the C runtime unit tests (testsuite-depends, ctestsuite-depends, omc-diff)."
+  ${OM_TESTSUITE_DEFAULT} "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_TESTSUITE)
+if(OM_ENABLE_TESTSUITE AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/testsuite/CMakeLists.txt")
+  message(FATAL_ERROR
+    "OM_ENABLE_TESTSUITE is ON, but ${CMAKE_CURRENT_SOURCE_DIR} has no testsuite/ "
+    "(source tarballs do not include it). Configure with -DOM_ENABLE_TESTSUITE=OFF.")
+endif()
+
 # GUI options
 omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
 # Qt version (5/6) used by the GUI clients.
@@ -409,12 +424,25 @@ endif()
 
 # The Modelica libraries and the testsuite are not part of the wasm/web bundle;
 # skip them so `make all` builds only the wasm target in that mode.
+# OM_ENABLE_TESTSUITE is forced OFF there already.
 if(NOT OM_OMC_WASM)
   omc_add_subdirectory(libraries)
+endif()
+
+if(OM_ENABLE_TESTSUITE)
   omc_add_subdirectory(testsuite)
 endif()
 
-omc_add_subdirectory(doc)
+# doc/ holds the shipped PDFs and the User's Guide, and like testsuite/ it is not in the
+# source tarballs. Unlike the testsuite it costs nothing to configure -- the expensive part,
+# the User's Guide, is already behind OM_ENABLE_DOCS -- so it needs no option of its own.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doc/CMakeLists.txt")
+  omc_add_subdirectory(doc)
+elseif(OM_ENABLE_DOCS)
+  message(FATAL_ERROR
+    "OM_ENABLE_DOCS is ON, but ${CMAKE_CURRENT_SOURCE_DIR} has no doc/ "
+    "(source tarballs do not include it). Configure with -DOM_ENABLE_DOCS=OFF.")
+endif()
 
 ## Packaging ##########################################################################################
 # Settings that hold for every package generator. These have to be set *before*

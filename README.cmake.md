@@ -103,6 +103,7 @@ OM_ENABLE_GUI_CLIENTS=ON
 OM_ENABLE_OMSIMULATOR=ON
 OM_ENABLE_ENCRYPTION=OFF
 OM_ENABLE_DOCS=OFF
+OM_ENABLE_TESTSUITE=ON             # OFF if there is no testsuite/
 OM_RUST_RESULT_READERS=ON          # OFF if cargo is not found
 OM_RUST_RESULT_WRITERS=ON          # OFF if cargo is not found
 OM_OMC_ENABLE_COMPILER=ON
@@ -134,6 +135,12 @@ their dependencies) such as the Qt libs ...
 
 `OM_ENABLE_DOCS` enables the User's Guide target. It needs Sphinx, pandoc, inkscape and
 gnuplot.
+
+`OM_ENABLE_TESTSUITE` configures the testsuite and the C runtime unit tests
+(`testsuite-depends`, `ctestsuite-depends`, `omc-diff`). It defaults to whether `testsuite/`
+exists, so a source tarball without it still configures. Turn it off in a full checkout to
+keep `omc-diff` out of `all` and out of the installation, e.g. when packaging. The shipped
+PDFs in `doc/` are likewise skipped when `doc/` is absent.
 
 `OM_ENABLE_ENCRYPTION` allows you to enable/disable building OpenModelica with library
 encryption support. Note that, for this to work, you need an additional module which is
