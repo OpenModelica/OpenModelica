@@ -121,22 +121,6 @@
     },
     "Modelica": {
       "versions": {
-        "2.2.2+maint.om": {
-          "convertFromVersion": [
-            "1.6.0",
-            "2.1.0-Beta1"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1"
-          ],
-          "sha": "8b7bcac13161a52955ac5a5a92b77b705f8e19f2",
-          "support": "obsolete",
-          "version": "2.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/8b7bcac13161a52955ac5a5a92b77b705f8e19f2.zip"
-        },
         "3.1.0+maint.om": {
           "convertFromVersion": [
             "2.1.0",

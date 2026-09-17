@@ -60,7 +60,6 @@ testing = {
     "4.1.0+maint.om"
   },
   "Modelica": {
-    "2.2.2+maint.om",
     "3.1.0+maint.om",
     "3.2.1+maint.om",
     "3.2.2+maint.om",
