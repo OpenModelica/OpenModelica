@@ -1366,15 +1366,11 @@ void buildAndRunOMEditTestsuite(stashName, qtVersion) {
   }
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
-  if (qtVersion.equals('qt6')) {
-    // OMEdit compiled with Qt6 crashes in webengine libs on ubuntu
-  } else {
-    sh label: 'RunOMEditTestsuite', script: '''
-    HOME="\$PWD/libraries"
-    cd build/bin
-    xvfb-run ./RunOMEditTestsuite.sh
-    '''
-    }
+  sh label: 'RunOMEditTestsuite', script: '''
+  HOME="\$PWD/libraries"
+  cd build/bin
+  xvfb-run ./RunOMEditTestsuite.sh
+  '''
 }
 
 void generateTemplates() {
