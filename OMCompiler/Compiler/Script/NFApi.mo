@@ -55,6 +55,8 @@ import Expression = NFExpression;
 import Import = NFImport;
 import NFClass.Class;
 import NFInstNode.InstNode;
+import NFInstNode;
+import MutableWeak;
 import NFInstNode.InstNodeType;
 import NFModifier.ModifierScope;
 import Equation = NFEquation;
@@ -516,6 +518,9 @@ algorithm
   if reuse then
     (program, top) := Util.tuple22(listHead(cache));
     InstNode.clearGeneratedInners(top);
+    // Nodes made from here on belong to the cached tree, so they have to be
+    // rooted there rather than in whatever run was last to build a top node.
+    MutableWeak.useRoots(InstNode.scopeRoots(top));
   else
     if not listEmpty(cache) then
       setGlobalRoot(Global.instNFNodeCacheIndex, {});
@@ -944,7 +949,7 @@ algorithm
   end if;
 
   if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
-    cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
+    cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(NFInstNode.NO_SCOPE, SOME(contextPath)), cls_node);
   end if;
 
   cls_node := Inst.instantiateRootClass(cls_node, context, mod);
@@ -1096,7 +1101,7 @@ function buildInstanceTreeElements
   output list<InstanceTree> elements = {};
 protected
   list<SCode.Element> scode_elems;
-  array<MutableCyclic<InstNode>> clss, comps;
+  array<Mutable<InstNode>> clss, comps;
   array<InstNode> exts;
   Integer cls_index = 1, comp_index = 1, ext_index = 1;
   InstanceTree tree;
@@ -1123,11 +1128,11 @@ algorithm
       case SCode.Element.CLASS()
         guard SCodeUtil.isElementReplaceable(e)
         algorithm
-          while InstNode.name(MutableCyclic.access(clss[cls_index])) <> e.name loop
+          while InstNode.name(Mutable.access(clss[cls_index])) <> e.name loop
             cls_index := cls_index + 1;
           end while;
 
-          tree := InstanceTree.CLASS(MutableCyclic.access(clss[cls_index]), {}, false);
+          tree := InstanceTree.CLASS(Mutable.access(clss[cls_index]), {}, false);
           cls_index := cls_index + 1;
         then
           tree :: elements;
@@ -1135,7 +1140,7 @@ algorithm
       case SCode.Element.COMPONENT()
         algorithm
           while true loop
-            node := MutableCyclic.access(comps[comp_index]);
+            node := Mutable.access(comps[comp_index]);
 
             if InstNode.name(node) == e.name and not InstNode.isGeneratedInner(node) then
               break;
@@ -1168,14 +1173,14 @@ function buildInstanceTreeGeneratedInners
   input list<InstanceTree> elements;
   output list<InstanceTree> outElements;
 protected
-  array<MutableCyclic<InstNode>> comps;
+  array<Mutable<InstNode>> comps;
   list<InstanceTree> elems = {};
 algorithm
   ClassTree.INSTANTIATED_TREE(components = comps) := classTree;
 
   for i in arrayLength(comps):-1:1 loop
-    if InstNode.isGeneratedInner(MutableCyclic.access(comps[i])) then
-      elems := buildInstanceTreeComponent(MutableCyclic.access(comps[i])) :: elems;
+    if InstNode.isGeneratedInner(Mutable.access(comps[i])) then
+      elems := buildInstanceTreeComponent(Mutable.access(comps[i])) :: elems;
     else
       break;
     end if;
@@ -2194,7 +2199,7 @@ algorithm
           case Import.RESOLVED_IMPORT()
             algorithm
               json_imp := JSON.makeNull();
-              json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(imp.node)), json_imp);
+              json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(InstNode.borrow(imp.node))), json_imp);
 
               if not stringEmpty(imp.shortName) then
                 json_imp := JSON.addPair("shortName", JSON.makeString(imp.shortName), json_imp);

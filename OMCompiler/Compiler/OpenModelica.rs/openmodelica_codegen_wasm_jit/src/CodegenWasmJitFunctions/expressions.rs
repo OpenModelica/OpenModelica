@@ -245,7 +245,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
 /// Name the expression we could not lower in a recorded message; the `Result`
 /// error is a `&'static str`.
 fn unsupported_exp(exp: &DAE::Exp) -> &'static str {
-    let shown = openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(exp.clone()))
+    let shown = openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(exp.clone()))
         .map(|s| s.to_string())
         .unwrap_or_default();
     crate::CodegenWasmJit::record_error(format!(
@@ -411,10 +411,10 @@ pub(super) fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
 /// The value expression an identity builtin wraps. C's `daeExpCall` returns the
 /// argument's own expression for these, so the call's type *is* the argument's --
 /// which matters where the frontend left the call itself untyped.
-fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
+fn identity_builtin_arg(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Exp>> {
     let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
     let name = AbsynUtil::pathLastIdent(path.clone());
-    let args: Vec<&Arc<DAE::Exp>> = (&**expLst).into_iter().collect();
+    let args: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expLst).into_iter().collect();
     match (name.as_str(), args.len()) {
         ("smooth", 2) => Some(args[1].clone()),
         ("noEvent", 1) | ("$getPart", 1) => Some(args[0].clone()),
@@ -423,7 +423,7 @@ fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
 }
 
 /// The type of a call *as a value*: its first output (`daeExpCall`).
-fn call_value_ty(ty: &Arc<DAE::Type>) -> Arc<DAE::Type> {
+fn call_value_ty(ty: &metamodelica::Ref<DAE::Type>) -> metamodelica::Ref<DAE::Type> {
     match &**ty {
         DAE::Type::T_TUPLE { types, .. } => {
             (&**types).into_iter().next().cloned().unwrap_or_else(|| ty.clone())
@@ -575,7 +575,7 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
         Ok(s) => s,
         Err(_) => operand_sigty(e1, e2).map_err(|e| {
             let show = |x: &DAE::Exp| {
-                openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(x.clone()))
+                openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(x.clone()))
                     .map(|s| s.to_string())
                     .unwrap_or_default()
             };
@@ -715,10 +715,10 @@ fn emit_div_zero_guard(
         ctx.emit(I::I32Eq);
     }
     ctx.emit(I::If(we::BlockType::Empty));
-    let exp = Arc::new(DAE::Exp::BINARY {
-        exp1: Arc::new(e1.clone()),
+    let exp = metamodelica::Ref::new(DAE::Exp::BINARY {
+        exp1: metamodelica::Ref::new(e1.clone()),
         operator: op.clone(),
-        exp2: Arc::new(e2.clone()),
+        exp2: metamodelica::Ref::new(e2.clone()),
     });
     emit_shared_str(ctx, &format!("Division by zero {} in function context", dumped_exp(&exp)?));
     ctx.emit(I::Call(rt_index("rt_throw_stream")?));
@@ -754,7 +754,7 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     ctx.emit(I::If(we::BlockType::Result(we::ValType::F64)));
     ctx.emit(I::LocalGet(ta));
     ctx.emit(I::LocalGet(tb));
-    emit_shared_str(ctx, &dumped_exp(&Arc::new(e2.clone()))?);
+    emit_shared_str(ctx, &dumped_exp(&metamodelica::Ref::new(e2.clone()))?);
     let data = ctx.sim()?.data_local;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0

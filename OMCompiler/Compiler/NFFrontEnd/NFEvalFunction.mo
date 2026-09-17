@@ -122,7 +122,7 @@ algorithm
   if call_count > limit then
     Pointer.update(call_counter, 0);
     Error.addSourceMessage(Error.EVAL_RECURSION_LIMIT_REACHED,
-      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(fn.node));
+      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(InstNode.fromHandle(fn.node)));
     fail();
   end if;
 
@@ -174,7 +174,7 @@ protected
   list<Expression> ext_args;
 algorithm
   Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
-    Class.getSections(InstNode.getClass(fn.node));
+    Class.getSections(InstNode.getClass(InstNode.fromHandle(fn.node)));
 
   result := matchcontinue lang
     case "builtin"
@@ -229,7 +229,7 @@ algorithm
 
   // Use the node of the return type to determine the order of the variables,
   // since they might be reordered in the record constructor.
-  Type.COMPLEX(cls = out_ty) := fn.returnType;
+  out_ty := Type.complexNode(fn.returnType);
 
   // Fetch the new binding expressions for all the variables, both inputs and locals.
   for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(out_ty))) loop
@@ -249,7 +249,7 @@ protected
 
 function createArgumentMap
   input list<InstNode> inputs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   input list<InstNode> locals;
   input list<Expression> args;
   input Boolean mutableParams;
@@ -271,7 +271,7 @@ algorithm
     // node to the map so we can replace calls to it with the correct function.
     if Expression.isFunctionPointer(arg) then
       for fn in Function.getCachedFuncs(i) loop
-        UnorderedMap.add(fn.node, arg, map);
+        UnorderedMap.add(InstNode.fromHandle(fn.node), arg, map);
       end for;
     end if;
   end for;
@@ -279,10 +279,14 @@ algorithm
   // Add outputs and local variables to the argument map.
   // They sometimes need to be mutable and sometimes not.
   if mutableParams then
-    List.fold(outputs, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addMutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
   else
-    List.fold(outputs, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addImmutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
   end if;
 
@@ -526,7 +530,7 @@ algorithm
   outExp := match call
     case Call.TYPED_CALL()
       algorithm
-        repl_oexp := UnorderedMap.get(call.fn.node, map);
+        repl_oexp := UnorderedMap.get(InstNode.fromHandle(call.fn.node), map);
 
         if isSome(repl_oexp) then
           SOME(repl_exp) := repl_oexp;
@@ -672,7 +676,7 @@ end optimizeStatement;
 
 function createResult
   input ArgumentMap map;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression exp;
 protected
   list<Expression> expl;
@@ -681,16 +685,17 @@ protected
   InstNode node;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(UnorderedMap.getOrFail(listHead(outputs), map));
-    node := listHead(outputs);
+    node := InstNode.fromHandle(listHead(outputs));
+    exp := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
     exp := assertAssignedOutput({InstNode.name(node)}, exp, InstNode.info(node));
   else
     expl := {};
     types := {};
 
-    for o in outputs loop
-      e := Ceval.evalExp(UnorderedMap.getOrFail(o, map));
-      e := assertAssignedOutput({InstNode.name(o)}, e, InstNode.info(o));
+    for h in outputs loop
+      node := InstNode.fromHandle(h);
+      e := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
+      e := assertAssignedOutput({InstNode.name(node)}, e, InstNode.info(node));
       expl := e :: expl;
     end for;
 
@@ -811,12 +816,12 @@ algorithm
     local
       Expression var, val;
       list<Expression> vals;
-      MutableCyclic<Expression> var_ptr;
+      Mutable<Expression> var_ptr;
 
     // variable := value
     case (Expression.MUTABLE(exp = var_ptr), _)
       algorithm
-        MutableCyclic.update(var_ptr, assignExp(MutableCyclic.access(var_ptr), value));
+        Mutable.update(var_ptr, assignExp(Mutable.access(var_ptr), value));
       then
         ();
 
@@ -853,14 +858,14 @@ end assignVariable;
 
 protected
 function assignSubscriptedVariable
-  input MutableCyclic<Expression> variable;
+  input Mutable<Expression> variable;
   input list<Subscript> subscripts;
   input Expression value;
 protected
   list<Subscript> subs;
 algorithm
   subs := list(Subscript.eval(s) for s in subscripts);
-  MutableCyclic.update(variable, assignArrayElement(MutableCyclic.access(variable), subs, value));
+  Mutable.update(variable, assignArrayElement(Mutable.access(variable), subs, value));
 end assignSubscriptedVariable;
 
 function assignArrayElement
@@ -1007,7 +1012,7 @@ function evaluateFor
   output FlowControl ctrl = FlowControl.NEXT;
 protected
   RangeIterator range_iter;
-  MutableCyclic<Expression> iter_exp;
+  Mutable<Expression> iter_exp;
   Expression range_exp, value;
   list<Statement> body = forBody;
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
@@ -1023,7 +1028,7 @@ algorithm
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, value) := RangeIterator.next(range_iter);
       // Update the mutable expression with the iteration value and evaluate the statement.
-      MutableCyclic.update(iter_exp, value);
+      Mutable.update(iter_exp, value);
       ctrl := evaluateStatements(body, context);
 
       if ctrl <> FlowControl.NEXT then
@@ -1211,10 +1216,10 @@ protected
   list<Expression> output_vals;
   Integer fn_handle;
 algorithm
-  info := InstNode.info(fn.node);
+  info := InstNode.info(InstNode.fromHandle(fn.node));
   checkExtReturnValue(outputRef, info);
 
-  pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
+  pkg_name := InstNode.name(InstNode.libraryScope(InstNode.fromHandle(fn.node)));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
   try
@@ -1598,7 +1603,7 @@ function makeExternalResult
   input list<Expression> values;
   input ComponentRef outputRef;
   input list<Expression> extArgs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression outExp;
 protected
   ArgumentMap arg_map;
@@ -1627,7 +1632,7 @@ algorithm
     end match;
   end for;
 
-  ret_vals := list(getExternalOutputResult(o, arg_map) for o in outputs);
+  ret_vals := list(getExternalOutputResult(InstNode.fromHandle(o), arg_map) for o in outputs);
   outExp := Expression.makeTuple(ret_vals);
 end makeExternalResult;
 

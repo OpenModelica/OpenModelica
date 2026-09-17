@@ -57,6 +57,7 @@ public
   import NFPrefixes.{Variability, Purity};
   import NFCeval.EvalTarget;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import ComponentRef = NFComponentRef;
 
   import Subscript = NFSubscript;
@@ -88,12 +89,12 @@ public
   // elements. Proxies are added during the instantiation and then replaced with
   // split indices during typing once the number of dimensions on elements are known.
   record SPLIT_PROXY
-    InstNode origin;
-    InstNode parent;
+    NFInstNode.ScopeRef origin "Weakly: the class tree owns both of these.";
+    NFInstNode.ScopeRef parent;
   end SPLIT_PROXY;
 
   record SPLIT_INDEX
-    InstNode node;
+    NFInstNode.ScopeRef node "Weakly: the class tree owns it.";
     Integer dimIndex;
   end SPLIT_INDEX;
 
@@ -205,7 +206,7 @@ public
   function makeSplitIndex
     input InstNode node;
     input Integer dimIndex;
-    output Subscript subscript = SPLIT_INDEX(node, dimIndex);
+    output Subscript subscript = SPLIT_INDEX(InstNode.scopeRef(node), dimIndex);
   algorithm
     if dimIndex < 1 then
       Error.terminate(getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
@@ -363,7 +364,7 @@ public
 
       case (SPLIT_INDEX(), SPLIT_INDEX())
         then subscript1.dimIndex == subscript2.dimIndex and
-             InstNode.refEqual(subscript1.node, subscript2.node);
+             InstNode.refEqual(InstNode.borrow(subscript1.node), InstNode.borrow(subscript2.node));
 
       else false;
     end match;
@@ -412,7 +413,7 @@ public
     comp := match subscript1
       local
         Expression e;
-        InstNode node;
+        NFInstNode.ScopeRef node;
         Integer index;
 
       case UNTYPED()
@@ -438,7 +439,7 @@ public
       case SPLIT_INDEX()
         algorithm
           SPLIT_INDEX(node = node, dimIndex = index) := subscript2;
-          comp := InstNode.refCompare(subscript1.node, node);
+          comp := InstNode.refCompare(InstNode.borrow(subscript1.node), InstNode.borrow(node));
         then
           if comp == 0 then Util.intCompare(subscript1.dimIndex, index) else comp;
 
@@ -789,9 +790,9 @@ public
         then List.toString(subscript.indices, toString, List.Style.FLAT_CURLY);
       case WHOLE() then ":";
       case SPLIT_PROXY()
-        then "<" + InstNode.name(subscript.origin) + ", " + InstNode.name(subscript.parent) + ">";
+        then "<" + InstNode.name(InstNode.borrow(subscript.origin)) + ", " + InstNode.name(InstNode.borrow(subscript.parent)) + ">";
       case SPLIT_INDEX()
-        then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
+        then "<" + InstNode.name(InstNode.borrow(subscript.node)) + ", " + String(subscript.dimIndex) + ">";
     end match;
   end toString;
 
@@ -816,7 +817,7 @@ public
         then List.toStringCustom(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
       case SPLIT_INDEX()
-        then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
+        then "<" + InstNode.name(InstNode.borrow(subscript.node)) + ", " + String(subscript.dimIndex) + ">";
     end match;
   end toFlatString;
 
@@ -1307,7 +1308,7 @@ public
     output Boolean res;
   algorithm
     res := match sub
-      case SPLIT_PROXY() then InstNode.isClass(sub.origin);
+      case SPLIT_PROXY() then InstNode.isClass(InstNode.borrow(sub.origin));
       else false;
     end match;
   end isSplitClassProxy;
@@ -1318,7 +1319,7 @@ public
     output Boolean res;
   algorithm
     res := match sub
-      case SPLIT_PROXY() then InstNode.refEqual(origin, sub.origin);
+      case SPLIT_PROXY() then InstNode.refEqual(origin, InstNode.borrow(sub.origin));
       else false;
     end match;
   end isSplitFromOrigin;
@@ -1334,7 +1335,7 @@ public
       () := match s
         case SPLIT_INDEX()
           algorithm
-            if List.isMemberOnTrue(s.node, indicesToKeep, InstNode.refEqual) then
+            if List.isMemberOnTrue(InstNode.borrow(s.node), indicesToKeep, InstNode.refEqual) then
               outSubs := s :: outSubs;
             else
               outSubs := WHOLE() :: outSubs;
@@ -1404,13 +1405,13 @@ public
 
       case SPLIT_PROXY()
         algorithm
-          hash := InstNode.hashContinue(sub.origin, hash);
-          hash := InstNode.hashContinue(sub.parent, hash);
+          hash := InstNode.hashContinue(InstNode.borrow(sub.origin), hash);
+          hash := InstNode.hashContinue(InstNode.borrow(sub.parent), hash);
         then hash;
 
       case SPLIT_INDEX()
         algorithm
-          hash := InstNode.hashContinue(sub.node, hash);
+          hash := InstNode.hashContinue(InstNode.borrow(sub.node), hash);
           hash := stringHashDjb2Continue(intString(sub.dimIndex), hash);
         then hash;
 
@@ -1422,11 +1423,11 @@ public
     input Subscript sub;
     output Expression exp;
   protected
-    InstNode node;
+    NFInstNode.ScopeRef node;
     Integer index;
   algorithm
     SPLIT_INDEX(node = node, dimIndex = index) := sub;
-    exp := Dimension.sizeExp(Type.nthDimension(InstNode.getType(node), index));
+    exp := Dimension.sizeExp(Type.nthDimension(InstNode.getType(InstNode.borrow(node)), index));
   end splitIndexDimExp;
 
   function isLiteral

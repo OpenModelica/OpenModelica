@@ -55,6 +55,7 @@ public
   import NBPartition.Partition;
 
 protected
+  import PointerWeak;
   // Old Frontend imports
   import Absyn.Path;
 
@@ -73,6 +74,8 @@ protected
   import FlatModel = NFFlatModel;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
+  import NFInstNode;
+  import MutableWeak;
   import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
@@ -423,8 +426,8 @@ public
     input output BackendDAE bdae;
     input Boolean init;
   protected
-    PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states = PointerCyclic.create({});
-    PointerCyclic<list<PointerCyclic<Variable>>> acc_previous = PointerCyclic.create({});
+    Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
 
     BEquation.MapFuncEqn func = function Equation.simplify(
             name = getInstanceName(),
@@ -465,8 +468,8 @@ public
     bdae := match bdae
       local
         EqData eqData;
-        PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states = PointerCyclic.create({});
-        PointerCyclic<list<PointerCyclic<Variable>>> acc_previous = PointerCyclic.create({});
+        Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+        Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
 
       case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
         eqData.equations := EquationPointers.map(
@@ -489,16 +492,16 @@ public
   function updateDiscreteStates
     "update varData with accs obtained from mapping"
     input output VarData varData;
-    input PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states;
-    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
   algorithm
     varData := match varData
       local
-        list<PointerCyclic<Variable>> ads_accessed, ap_accessed;
+        list<Pointer<Variable>> ads_accessed, ap_accessed;
 
       case VarData.VAR_DATA_SIM() algorithm
-        ads_accessed := PointerCyclic.access(acc_discrete_states);
-        ap_accessed  := PointerCyclic.access(acc_previous);
+        ads_accessed := Pointer.access(acc_discrete_states);
+        ap_accessed  := Pointer.access(acc_previous);
 
         if not (listEmpty(ads_accessed) and listEmpty(ap_accessed)) then
           VariablePointers.removeList(ads_accessed, varData.unknowns);
@@ -527,7 +530,7 @@ public
   algorithm
     residuals := match bdae
       local
-        list<PointerCyclic<Variable>> var_lst = {};
+        list<Pointer<Variable>> var_lst = {};
 
       case MAIN() algorithm
         for syst in bdae.ode loop
@@ -563,17 +566,17 @@ protected
   protected
     Variable lowVar;
     list<Variable> vars;
-    PointerCyclic<Variable> lowVar_ptr, time_ptr, dummy_ptr;
-    list<PointerCyclic<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
-    list<PointerCyclic<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, clocked_states_lst = {}, previous_lst = {}, clocks_lst = {};
-    list<PointerCyclic<Variable>> inputs_lst = {}, resizables_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
+    Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
+    list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
+    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, clocked_states_lst = {}, previous_lst = {}, clocks_lst = {};
+    list<Pointer<Variable>> inputs_lst = {}, resizables_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks;
     VariablePointers inputs, resizables, parameters, constants, records, external_objects, artificials;
     UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    list<PointerCyclic<Variable>> binding_iter_lst;
+    list<Pointer<Variable>> binding_iter_lst;
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
-    list<PointerCyclic<Variable>> forced_states = {};
+    list<Pointer<Variable>> forced_states = {};
   algorithm
     vars := List.flatten(list(Variable.expandChildren(v) for v in varList));
 
@@ -582,7 +585,7 @@ protected
 
     // create dummy and time var and add then
     // needed to make function BVariable.getVarPointer() more universally applicable
-    dummy_ptr := PointerCyclic.create(NBVariable.DUMMY_VARIABLE);
+    dummy_ptr := Pointer.create(NBVariable.DUMMY_VARIABLE);
     time_ptr := BVariable.createTimeVar();
     variables := VariablePointers.add(dummy_ptr, variables);
     variables := VariablePointers.add(time_ptr, variables);
@@ -591,12 +594,12 @@ protected
     // routine to prepare the lists for pointer arrays
     for var in listReverse(vars) loop
       lowVar_ptr := lowerVariable(var);
-      lowVar := PointerCyclic.access(lowVar_ptr);
+      lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
       () := match lowVar.backendinfo.varKind
         local
           Boolean natural;
-          PointerCyclic<Variable> der_ptr;
+          Pointer<Variable> der_ptr;
           ComponentRef der_cref;
 
         // do nothing for size 0 variables, they get removed
@@ -767,7 +770,7 @@ protected
 
   function lowerVariable
     input Variable var;
-    output PointerCyclic<Variable> var_ptr;
+    output Pointer<Variable> var_ptr;
   protected
     VariableKind varKind;
     VariableAttributes attributes;
@@ -789,7 +792,7 @@ protected
       var.typeAttributes := {};
 
       // This creates a cyclic dependency, be aware of that!
-      (var_ptr, _) := BVariable.makeVarPtrCyclic(var, var.name);
+      (var_ptr, _) := BVariable.makeVarPtr(var, var.name);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
       fail();
@@ -827,7 +830,7 @@ protected
     varKind := match(variability, attributes, ty)
       local
         Type elemTy;
-        list<PointerCyclic<Variable>> children = {};
+        list<Pointer<Variable>> children = {};
 
       // clocks and clocked signals
       case (_, _, Type.CLOCK())                                           then VariableKind.CLOCK();
@@ -840,9 +843,9 @@ protected
 
       // get external object class
       case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(ty)));
       case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(elemTy)));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX()) algorithm
@@ -892,29 +895,32 @@ protected
   end collectVariableBindingIterators;
 
   public function lowerRecordChildren
-    input PointerCyclic<Variable> var_ptr;
+    input Pointer<Variable> var_ptr;
     input VariablePointers variables;
   protected
-    Variable var = PointerCyclic.access(var_ptr);
+    Variable var = Pointer.access(var_ptr);
   algorithm
     var := match var
       local
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())) for child in var.children);
+        varKind.children := list(PointerWeak.downgrade(
+          VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())))
+          for child in var.children);
         // set parent for all children
-        varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
+        varKind.children := list(PointerWeak.downgrade(
+          BVariable.setParent(PointerWeak.upgrade(child), var_ptr)) for child in varKind.children);
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
       else var;
     end match;
-    PointerCyclic.update(var_ptr, var);
+    Pointer.update(var_ptr, var);
   end lowerRecordChildren;
 
   public function lowerUnkownRecordChildren
-    input PointerCyclic<Variable> var_ptr;
+    input Pointer<Variable> var_ptr;
     input VariablePointers variables;
   algorithm
     if BVariable.isUnknownRecord(var_ptr) then
@@ -935,7 +941,7 @@ protected
     input output VarData varData;
   protected
     UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    list<PointerCyclic<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+    list<Pointer<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     EquationPointers equations;
     Pointer<Integer> idx = Pointer.create(0);
   algorithm
@@ -945,7 +951,7 @@ protected
       Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
       // make all iterators the same and lower them
       Equation.renameIterators(eqn_ptr, "$i");
-      lowerEquationIterators(PointerCyclic.access(eqn_ptr), VarData.getVariables(varData), set);
+      lowerEquationIterators(Pointer.access(eqn_ptr), VarData.getVariables(varData), set);
     end for;
     varData   := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
@@ -977,7 +983,7 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    output list<PointerCyclic<Equation>> equations = {};
+    output list<Pointer<Equation>> equations = {};
   algorithm
     // ---------------------------
     // convert all equations
@@ -1014,7 +1020,7 @@ protected
     input FEquation frontend_equation                 "Original Frontend equation.";
     input Boolean init                                "True if an initial equation should be created.";
     input Boolean in_for = false;
-    output list<PointerCyclic<Equation>> backend_equations  "Resulting Backend equations.";
+    output list<Pointer<Equation>> backend_equations  "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local
@@ -1028,10 +1034,10 @@ protected
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
         backend_equations := match ty
-          case Type.ARRAY()   then {PointerCyclic.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
-          case Type.COMPLEX() then {PointerCyclic.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.recordFieldCount(ty)))};
-          case Type.TUPLE()   then {PointerCyclic.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.tupleFieldCount(ty)))};
-                              else {PointerCyclic.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+          case Type.ARRAY()   then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
+          case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.recordFieldCount(ty)))};
+          case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.tupleFieldCount(ty)))};
+                              else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
         end match;
       then backend_equations;
 
@@ -1043,7 +1049,7 @@ protected
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
         stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
-        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), NFInstNode.NO_SCOPE, frontend_equation.source);
         alg  := Algorithm.setInputsOutputs(alg);
       then {lowerAlgorithm(alg, init)};
 
@@ -1065,10 +1071,10 @@ protected
   function lowerForEquation
     input FEquation frontend_equation;
     input Boolean init;
-    output list<PointerCyclic<Equation>> backend_equations = {};
+    output list<Pointer<Equation>> backend_equations = {};
   protected
     Expression range;
-    list<PointerCyclic<Equation>> new_body = {};
+    list<Pointer<Equation>> new_body = {};
     Equation body_elem;
     list<FEquation> body;
     list<IfEquationBody> bodies;
@@ -1085,12 +1091,12 @@ protected
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
           for eq in frontend_equation.body loop
             for body_elem_ptr in lowerEquation(eq, init, true) loop
-              body_elem := PointerCyclic.access(body_elem_ptr);
+              body_elem := Pointer.access(body_elem_ptr);
               new_body := match body_elem
                 case Equation.IF_EQUATION() algorithm
                   bodies := IfEquationBody.split(body_elem.body);
                   for body in bodies loop
-                    new_body := PointerCyclic.create(BEquation.IF_EQUATION(IfEquationBody.size(body), body, body_elem.source, body_elem.attr)) :: new_body;
+                    new_body := Pointer.create(BEquation.IF_EQUATION(IfEquationBody.size(body), body, body_elem.source, body_elem.attr)) :: new_body;
                   end for;
                 then new_body;
                 else body_elem_ptr :: new_body;
@@ -1098,7 +1104,7 @@ protected
             end for;
           end for;
           for body_elem_ptr in new_body loop
-            body_elem   := PointerCyclic.access(body_elem_ptr);
+            body_elem   := Pointer.access(body_elem_ptr);
             isAlgorithm := Equation.isAlgorithm(body_elem_ptr);
             body_elem   := BEquation.FOR_EQUATION(
               size    = Expression.rangeSize(range) * Equation.size(body_elem_ptr),
@@ -1115,13 +1121,13 @@ protected
 
             // if the body was an algorithm (asserts) merge it back to an algorithm
             if isAlgorithm then
-              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), NFInstNode.NO_SCOPE, frontend_equation.source);
               alg       := Algorithm.setInputsOutputs(alg);
               size      := sum(ComponentRef.size(out, false) for out in alg.outputs);
               body_elem := Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), Equation.getAttributes(body_elem));
             end if;
 
-            PointerCyclic.update(body_elem_ptr, body_elem);
+            Pointer.update(body_elem_ptr, body_elem);
             backend_equations := body_elem_ptr :: backend_equations;
           end for;
         else
@@ -1142,7 +1148,7 @@ protected
     input FEquation frontend_equation;
     input Boolean init;
     input Boolean in_for;
-    output list<PointerCyclic<Equation>> backend_equations;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
     backend_equations := match frontend_equation
       local
@@ -1187,7 +1193,7 @@ protected
       local
         FEquation.Branch branch;
         list<FEquation.Branch> rest;
-        list<PointerCyclic<Equation>> eqns;
+        list<Pointer<Equation>> eqns;
         Expression condition;
         IfEquationBody result;
 
@@ -1224,7 +1230,7 @@ protected
   function lowerIfBranch
     input FEquation.Branch branch;
     input Boolean init;
-    output list<PointerCyclic<Equation>> eqns;
+    output list<Pointer<Equation>> eqns;
     output Expression cond;
   algorithm
     (eqns, cond) := match branch
@@ -1252,7 +1258,7 @@ protected
   function lowerIfBranchBody
     input list<FEquation.Equation> body;
     input Boolean init;
-    input output list<PointerCyclic<Equation>> eqns = {};
+    input output list<Pointer<Equation>> eqns = {};
   algorithm
     eqns := match body
       local
@@ -1266,7 +1272,7 @@ protected
   function lowerAssert
     input FEquation frontend_eq;
     input Boolean init;
-    output list<PointerCyclic<Equation>> backend_equations;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
     backend_equations := match frontend_eq
       local
@@ -1293,7 +1299,7 @@ protected
   function lowerWhenEquation
     input FEquation frontend_eq;
     input Boolean init;
-    output list<PointerCyclic<Equation>> backend_equations;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
     backend_equations := match frontend_eq
       local
@@ -1304,7 +1310,7 @@ protected
         // When equation inside initial actually not allowed. Throw error?
         SOME(whenEqBody) := lowerWhenEquationBody(frontend_eq.branches);
         bodies := BEquation.WhenEquationBody.split(whenEqBody);
-      then list(PointerCyclic.create(BEquation.WHEN_EQUATION(
+      then list(Pointer.create(BEquation.WHEN_EQUATION(
         size    = BEquation.WhenEquationBody.size(b),
         body    = b,
         source  = frontend_eq.source,
@@ -1477,7 +1483,7 @@ protected
   public function lowerAlgorithm
     input Algorithm alg;
     input Boolean init;
-    output PointerCyclic<Equation> eq;
+    output Pointer<Equation> eq;
   protected
     Integer size;
     list<ComponentRef> outputs;
@@ -1492,7 +1498,7 @@ protected
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
     end if;
-    eq := PointerCyclic.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
+    eq := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
   function lowerEquationAttributes
@@ -1551,7 +1557,7 @@ protected
     input VariablePointers variables;
     input Boolean complete = true       "if false it will not report lowering errors";
   protected
-    PointerCyclic<Variable> var;
+    Pointer<Variable> var;
   algorithm
     try
       if not ComponentRef.isWild(cref) then
@@ -1638,11 +1644,11 @@ protected
     input Boolean complete = true;
   protected
     ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
-    PointerCyclic<Variable> var;
+    Pointer<Variable> var;
   algorithm
     try
       var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
-      node := InstNode.VAR_NODE(InstNode.name(node), var);
+      node := InstNode.VAR_NODE(InstNode.name(node), PointerWeak.downgrade(var));
     else
     end try;
   end lowerInstNode;
@@ -1653,7 +1659,7 @@ public
     to be public since it is needed whenever a component reference is extracted
     from a variable."
     input output ComponentRef cref;
-    input PointerCyclic<Variable> var;
+    input Pointer<Variable> var;
   algorithm
     cref := match cref
       local
@@ -1661,7 +1667,8 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), var);
+          qual.node := ComponentRef.storeNode(InstNode.VAR_NODE(
+            InstNode.name(ComponentRef.node(qual)), PointerWeak.downgrade(var)));
       then qual;
 
       else cref;
@@ -1690,7 +1697,7 @@ public
 
   function lowerIterator
     input ComponentRef iterator;
-    output PointerCyclic<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
+    output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
   end lowerIterator;
 
   function lowerIteratorCref
@@ -1859,7 +1866,7 @@ public
   end debugLowering;
 
   function checkLoweredCrefVar
-    input PointerCyclic<Variable> var;
+    input Pointer<Variable> var;
   protected
     UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
@@ -1899,8 +1906,8 @@ public
     input UnorderedSet<ComponentRef> set;
   algorithm
     () := match cref
-      case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
-      case ComponentRef.CREF(node = InstNode.NAME_NODE()) then ();
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) then ();
+      case ComponentRef.CREF() guard InstNode.isName(ComponentRef.node(cref)) then ();
       case ComponentRef.CREF() algorithm
         UnorderedSet.add(cref, set);
       then ();

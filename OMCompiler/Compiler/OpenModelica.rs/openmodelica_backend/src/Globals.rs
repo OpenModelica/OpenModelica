@@ -10,7 +10,6 @@
 #![allow(non_snake_case, non_upper_case_globals, clippy::type_complexity)]
 
 use std::cell::RefCell;
-use std::sync::Arc;
 
 // ── Thread-local roots (process-global by MetaModelica semantics) ─────────────
 
@@ -24,8 +23,8 @@ thread_local! {
     // before `reset()` could store anything. Seed with the default empty
     // `SymbolTable` (same shape `reset()` builds) so the slot is valid on
     // first touch; it is overwritten by `reset()`/`update()` as before.
-    pub static symbolTable: RefCell<Arc<crate::SymbolTable::SymbolTable>> =
-        RefCell::new(Arc::new(<crate::SymbolTable::SymbolTable as ::std::default::Default>::default()));
+    pub static symbolTable: RefCell<metamodelica::Ref<crate::SymbolTable::SymbolTable>> =
+        RefCell::new(metamodelica::Ref::new(<crate::SymbolTable::SymbolTable as ::std::default::Default>::default()));
 
     // Index 19 — rewriteRulesIndex
     //

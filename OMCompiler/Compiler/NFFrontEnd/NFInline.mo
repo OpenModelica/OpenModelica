@@ -91,7 +91,8 @@ protected
   Function fn;
   Expression arg;
   list<Expression> args;
-  list<InstNode> inputs, outputs, locals;
+  list<InstNode> inputs, locals;
+  list<NFInstNode.NodeHandle> outputs;
   list<Statement> body;
   Statement stmt;
   Binding binding;
@@ -101,7 +102,7 @@ algorithm
   exp := match call
     // Record constructor
     case Call.TYPED_CALL(fn = fn, arguments = args)
-        guard not InstNode.isEmpty(fn.node) and InstNode.isNamed(InstNode.parentScope(fn.node), "'constructor'")
+        guard not InstNode.isEmpty(InstNode.fromHandle(fn.node)) and InstNode.isNamed(InstNode.parentScope(InstNode.fromHandle(fn.node)), "'constructor'")
       algorithm
         body := Function.getBody(fn);
 
@@ -110,13 +111,13 @@ algorithm
           return;
         end if;
 
-        binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
+        binding := Component.getBinding(InstNode.component(InstNode.fromHandle(listHead(fn.outputs))));
 
         if Binding.hasExp(binding) then
           exp := Binding.getExp(binding);
           true := Expression.isRecord(exp);
         else
-          exp := Class.makeRecordExp(listHead(fn.outputs), fn.node, typed = true);
+          exp := Class.makeRecordExp(InstNode.fromHandle(listHead(fn.outputs)), InstNode.fromHandle(fn.node), typed = true);
         end if;
 
         for i in fn.inputs loop
@@ -143,7 +144,7 @@ algorithm
         end if;
 
         if listEmpty(body) then
-          stmt := makeOutputStatement(listHead(outputs));
+          stmt := makeOutputStatement(InstNode.fromHandle(listHead(outputs)));
         else
           stmt := convertToAssignment(listHead(body));
         end if;
@@ -168,7 +169,7 @@ algorithm
               function Expression.map(func = function replaceCrefNode(node = i, value = arg)));
           end for;
 
-          exp := getOutputExp(stmt, listHead(outputs), call);
+          exp := getOutputExp(stmt, InstNode.fromHandle(listHead(outputs)), call);
           exp := Expression.map(exp, function inlineCallExp(forceInline = forceInline));
         else
           exp := callExp;
@@ -354,12 +355,12 @@ function getOutputExp
 algorithm
   exp := match stmt
     local
-      InstNode cr_node;
-      ComponentRef rest_cr;
+      ComponentRef cr, rest_cr;
 
     case Statement.ASSIGNMENT(lhs = Expression.CREF(
-        cref = ComponentRef.CREF(node = cr_node, subscripts = {}, restCref = rest_cr)))
-      guard InstNode.refEqual(outputNode, cr_node) and not ComponentRef.isFromCref(rest_cr)
+        cref = cr as ComponentRef.CREF(subscripts = {}, restCref = rest_cr)))
+      guard InstNode.refEqual(outputNode, ComponentRef.node(cr)) and
+            not ComponentRef.isFromCref(rest_cr)
       then stmt.rhs;
 
     else Expression.CALL(call);

@@ -32,7 +32,7 @@ pub(crate) fn external_known(f: &SimCodeFunction::Function::Function) -> bool {
     supported_external(extName, &ins, &outs[0])
 }
 
-pub(super) fn var_sigtys(vars: &List<Arc<SimCodeFunction::Variable::Variable>>) -> Result<Vec<SigTy>> {
+pub(super) fn var_sigtys(vars: &List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>) -> Result<Vec<SigTy>> {
     let mut out = Vec::new();
     for v in &**vars {
         out.push(match &**v {
@@ -51,7 +51,7 @@ pub(super) fn var_sigtys(vars: &List<Arc<SimCodeFunction::Variable::Variable>>) 
 /// is the scalar element type with the dimensions in `instDims`. So a `T_ARRAY`
 /// `ty` is authoritative (its `dims` are complete); otherwise a non-empty
 /// `instDims` makes the scalar `ty` the element type of a rank-`|instDims|` array.
-pub(super) fn variable_sigty(ty: &DAE::Type, inst_dims: &List<Arc<DAE::Dimension>>) -> Result<SigTy> {
+pub(super) fn variable_sigty(ty: &DAE::Type, inst_dims: &List<metamodelica::Ref<DAE::Dimension>>) -> Result<SigTy> {
     // Quiet: `external_known`/`external_general` map a function's variables only to
     // decide whether they can lower the call at all.
     let base = sig_ty_quiet(ty)?;
@@ -139,7 +139,7 @@ pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
 /// The wasm signature type of a DAE type, reporting the type it cannot handle.
 pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
     sig_ty_quiet(ty).inspect_err(|_| {
-        let name = openmodelica_frontend_dump::TypesDump::unparseType(Arc::new(ty.clone()))
+        let name = openmodelica_frontend_dump::TypesDump::unparseType(metamodelica::Ref::new(ty.clone()))
             .map(|s| s.to_string())
             .unwrap_or_default();
         crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: type not supported: {name}"));

@@ -49,6 +49,7 @@ import BaseAvlTree;
 import BaseModelica;
 import Binding = NFBinding;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import SCode;
 import Inst = NFInst;
 import Subscript = NFSubscript;
@@ -450,7 +451,7 @@ public
     input Modifier mod;
     input InstNode origin;
     input InstNode parent;
-    output Modifier outMod = propagateSubs(mod, {Subscript.SPLIT_PROXY(origin, parent)});
+    output Modifier outMod = propagateSubs(mod, {Subscript.SPLIT_PROXY(InstNode.scopeRef(origin), InstNode.scopeRef(parent))});
   end propagate;
 
   function propagateSubs
@@ -478,7 +479,7 @@ public
     () := match mod
       case MODIFIER()
         algorithm
-          subs := {Subscript.SPLIT_PROXY(origin, parent)};
+          subs := {Subscript.SPLIT_PROXY(InstNode.scopeRef(origin), InstNode.scopeRef(parent))};
           mod.binding := Binding.propagate(mod.binding, subs);
         then
           ();

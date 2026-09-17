@@ -47,6 +47,10 @@ pub mod heap_limit;
 /// MetaModelica `array<T>`. See module-level docs for rationale.
 pub type Array<A> = Rc<RefCell<Vec<A>>>;
 
+/// The box codegen puts around a recursive uniontype, and the one place to
+/// change if that boxing ever has to differ.
+pub type Ref<T> = std::sync::Arc<T>;
+
 /// MetaModelica `Real`. Wraps `f64` with `OrderedFloat` so that values
 /// containing `Real` can implement `Ord` / `Eq` / `Hash` — required for
 /// derived `valueCompare` on enums such as `DAE::Exp` and `DAE::Type`.

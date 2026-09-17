@@ -379,7 +379,11 @@ ExternalProject_Add(rust_wasi_pic_sysroot
     -DBUILTINS_LIB=${_wasi_builtins}
   BUILD_ALWAYS ON
   BUILD_COMMAND ${CMAKE_COMMAND} --build ${_wasi_libc_ep_build} --parallel
-  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+  # _if_different, not copy_directory: the latter rewrites every file's mtime
+  # on every build, and `libc.so` is a `cargo:rerun-if-changed` of
+  # openmodelica_wasi_libc's build script. That rebuilt it, wasm_jit,
+  # codegen_wasm_jit, backend_main, the cdylib and omc on every no-op build.
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${_wasi_libc_ep_build}/sysroot ${RUST_WASI_PIC_SYSROOT}
   EXCLUDE_FROM_ALL ON)
 endif()
@@ -1159,6 +1163,17 @@ function(omc_rust_setup_codegen)
       list(APPEND RUST_MO_SOURCES ${_f})
     endif()
   endforeach()
+  # Per-target declarations: `X.rust.mo` beside `X.mo` replaces the items the
+  # Rust port declares differently (see mmtorust/src/overrides.rs). They are not
+  # in the source list -- the C compiler must never see them -- so list them as
+  # dependencies explicitly, or editing one would not re-run codegen.
+  set(RUST_MO_OVERRIDES "")
+  foreach(_mo ${RUST_MO_SOURCES})
+    string(REGEX REPLACE "\\.mo$" ".rust.mo" _ovr "${_mo}")
+    if(EXISTS ${_ovr})
+      list(APPEND RUST_MO_OVERRIDES ${_ovr})
+    endif()
+  endforeach()
   # copy_if_different so the mtime (which rust_codegen DEPENDS on) only moves on
   # a real change — a plain file(WRITE) would rewrite it every reconfigure.
   file(WRITE ${RUST_SOURCES_FILE}.tmp "${_rust_src_content}")
@@ -1232,7 +1247,7 @@ function(omc_rust_setup_codegen)
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
     DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-            ${RUST_MO_SOURCES} ${MMTORUST_SOURCES}
+            ${RUST_MO_SOURCES} ${RUST_MO_OVERRIDES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
   endif()

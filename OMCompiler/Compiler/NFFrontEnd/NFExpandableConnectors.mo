@@ -55,6 +55,7 @@ import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import NFPrefixes.ConnectorType;
 import NFPrefixes.Visibility;
 import NFTypeCheck.MatchKind;
@@ -212,7 +213,8 @@ function getExpandableConnectorsInConnector
   input Connector c1;
   output list<Connector> ecl;
 protected
-  list<InstNode> nodes;
+  list<NFInstNode.ScopeRef> nodes;
+  InstNode n;
   ComponentRef par_name, name;
   Type ty;
 algorithm
@@ -222,7 +224,8 @@ algorithm
       algorithm
         ecl := {};
 
-        for n in nodes loop
+        for n_ref in nodes loop
+          n := InstNode.borrow(n_ref);
           ty := InstNode.getType(n);
           name := ComponentRef.prefixCref(n, ty, {}, par_name);
           ecl := Connector.fromCref(name, ty, ElementSource.createElementSource(InstNode.info(n))) :: ecl;
@@ -414,7 +417,7 @@ algorithm
 
   // Create a normal non-expandable complex type for the augmented expandable connector.
   complex_ty := Typing.makeConnectorType(cls_tree, isExpandable = false);
-  ty := Type.COMPLEX(cls_node, complex_ty);
+  ty := Type.COMPLEX(InstNode.identityCell(cls_node), complex_ty);
   ty := Type.liftArrayLeftList(ty, Type.arrayDims(InstNode.getType(exp_node)));
   cls := Class.setType(ty, cls);
   InstNode.updateClass(cls, cls_node);

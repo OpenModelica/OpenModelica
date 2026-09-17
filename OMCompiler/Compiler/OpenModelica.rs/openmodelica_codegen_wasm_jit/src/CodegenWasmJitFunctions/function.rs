@@ -54,7 +54,7 @@ fn compile_function_body(
     // Array locals/outputs to allocate at function entry (see `emit_array_alloc`):
     // (local index, element type, dimension specs). Inputs are excluded — they
     // are passed in already built.
-    let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)> = Vec::new();
+    let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<metamodelica::Ref<DAE::Dimension>>)> = Vec::new();
     // Outputs next, then local declarations. An output is often also listed in
     // `variableDeclarations` (the function body assigns to it through the same
     // name); it must map to a single local, so a name already allocated as an
@@ -125,7 +125,7 @@ fn compile_external_function(
     let mut outputs: Vec<(u32, SigTy)> = Vec::new();
     // Output arrays are pre-allocated at entry and passed to the C call as a pointer
     // (filled in place natively / copied back on web); collect them for allocation.
-    let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)> = Vec::new();
+    let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<metamodelica::Ref<DAE::Dimension>>)> = Vec::new();
     for v in &**outVars {
         let slot = intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
         outputs.push(slot);
@@ -139,7 +139,7 @@ fn compile_external_function(
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
     // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
     let lang = external_import_sig(f).map(|s| s.lang).unwrap_or(ExtLang::C);
-    let ordered: Vec<&Arc<SimCodeFunction::Variable::Variable>> = match lang {
+    let ordered: Vec<&metamodelica::Ref<SimCodeFunction::Variable::Variable>> = match lang {
         ExtLang::Fortran77 => (&**biVars).into_iter().chain(&**outVars).collect(),
         ExtLang::C => (&**outVars).into_iter().chain(&**biVars).collect(),
     };
@@ -165,12 +165,12 @@ fn compile_external_function(
     // Lower an extArg to the argument expression it contributes to the C call.
     // A scalar/String `_Out_` arg contributes none — its value comes back as a
     // call result — so `None` skips it.
-    let lower_arg = |a: &A| -> Result<Option<Arc<DAE::Exp>>> {
+    let lower_arg = |a: &A| -> Result<Option<metamodelica::Ref<DAE::Exp>>> {
         let is_out = ext_arg_output_index(a) != 0;
         Ok(match a {
             // An output array is pre-allocated and passed by pointer, like an input.
             A::SIMEXTARG { cref, type_, .. } if !is_out || matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })) => {
-                Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
+                Some(metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
             }
             A::SIMEXTARG { .. } => None,
             A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
@@ -179,15 +179,15 @@ fn compile_external_function(
             // expression → `rt_array_dim`. (Pushing `exp` alone would pass the
             // dimension index itself as the C `int`, not the size.)
             A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
-                let arr = Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
-                Some(Arc::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+                let arr = metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
+                Some(metamodelica::Ref::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
             }
             other => return Err("CodegenWasmJit: unsupported external-call argument"),
         })
     };
 
     // Input-side arguments (both known and general externals pass these by value).
-    let mut input_args: Vec<Arc<DAE::Exp>> = Vec::new();
+    let mut input_args: Vec<metamodelica::Ref<DAE::Exp>> = Vec::new();
     for a in &**extArgs {
         if let Some(e) = lower_arg(&**a)? {
             input_args.push(e);
@@ -310,7 +310,7 @@ fn var_slot(ctx: &FnCtx, v: &SimCodeFunction::Variable::Variable) -> Option<u32>
 fn init_var(
     ctx: &mut FnCtx,
     v: &SimCodeFunction::Variable::Variable,
-    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
+    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<metamodelica::Ref<DAE::Dimension>>)>,
     done: &mut Vec<u32>,
 ) -> Result<()> {
     let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, kind, bind_from_outside, .. } = v else {
@@ -363,7 +363,7 @@ fn init_var(
 /// The dimension list of an array `VARIABLE`, consistent with [`variable_sigty`]:
 /// a `T_ARRAY` `ty` carries the dimensions (flattened across nesting); otherwise
 /// they live in `instDims`.
-pub(super) fn var_array_dims(v: &SimCodeFunction::Variable::Variable) -> Result<Vec<Arc<DAE::Dimension>>> {
+pub(super) fn var_array_dims(v: &SimCodeFunction::Variable::Variable) -> Result<Vec<metamodelica::Ref<DAE::Dimension>>> {
     let SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } = v else {
         return Err("CodegenWasmJit: function-pointer variables not supported");
     };
@@ -373,10 +373,10 @@ pub(super) fn var_array_dims(v: &SimCodeFunction::Variable::Variable) -> Result<
 
 /// The dimensions carried by a `T_ARRAY` type, flattening nested `T_ARRAY`s
 /// (outer dims first). Empty for a non-array type.
-pub(super) fn type_array_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
+pub(super) fn type_array_dims(ty: &DAE::Type) -> Vec<metamodelica::Ref<DAE::Dimension>> {
     match ty {
         DAE::Type::T_ARRAY { ty, dims } => {
-            let mut out: Vec<Arc<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
+            let mut out: Vec<metamodelica::Ref<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
             out.extend(type_array_dims(ty));
             out
         }
@@ -387,7 +387,7 @@ pub(super) fn type_array_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
 /// Allocate an array local at function entry: evaluate each dimension to an
 /// `i32` (unknown `:` dims start at 0), build the runtime array of the right
 /// element kind, set the dimension sizes, and store the handle in `slot`.
-pub(super) fn emit_array_alloc(ctx: &mut FnCtx, slot: u32, elem: &SigTy, dims: &[Arc<DAE::Dimension>]) -> Result<()> {
+pub(super) fn emit_array_alloc(ctx: &mut FnCtx, slot: u32, elem: &SigTy, dims: &[metamodelica::Ref<DAE::Dimension>]) -> Result<()> {
     if dims.is_empty() {
         return Err("CodegenWasmJit: array local with no dimensions");
     }

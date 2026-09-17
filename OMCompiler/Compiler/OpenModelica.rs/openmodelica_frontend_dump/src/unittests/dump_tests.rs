@@ -26,35 +26,35 @@ fn init_flags() {
     });
 }
 
-fn ident_cref(name: &str) -> Arc<Absyn::ComponentRef> {
-    Arc::new(Absyn::ComponentRef::CREF_IDENT {
+fn ident_cref(name: &str) -> metamodelica::Ref<Absyn::ComponentRef> {
+    metamodelica::Ref::new(Absyn::ComponentRef::CREF_IDENT {
         name: arcstr::format!("{}", name),
         subscripts: metamodelica::nil(),
     })
 }
 
-fn qual_cref(name: &str, rest: Arc<Absyn::ComponentRef>) -> Arc<Absyn::ComponentRef> {
-    Arc::new(Absyn::ComponentRef::CREF_QUAL {
+fn qual_cref(name: &str, rest: metamodelica::Ref<Absyn::ComponentRef>) -> metamodelica::Ref<Absyn::ComponentRef> {
+    metamodelica::Ref::new(Absyn::ComponentRef::CREF_QUAL {
         name: arcstr::format!("{}", name),
         subscripts: metamodelica::nil(),
         componentRef: rest,
     })
 }
 
-fn fully_qualified_cref(cr: Arc<Absyn::ComponentRef>) -> Arc<Absyn::ComponentRef> {
-    Arc::new(Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef: cr })
+fn fully_qualified_cref(cr: metamodelica::Ref<Absyn::ComponentRef>) -> metamodelica::Ref<Absyn::ComponentRef> {
+    metamodelica::Ref::new(Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef: cr })
 }
 
-fn integer_exp(v: i32) -> Arc<Absyn::Exp> {
-    Arc::new(Absyn::Exp::INTEGER { value: v })
+fn integer_exp(v: i32) -> metamodelica::Ref<Absyn::Exp> {
+    metamodelica::Ref::new(Absyn::Exp::INTEGER { value: v })
 }
 
-fn binary_exp(e1: Arc<Absyn::Exp>, op: Absyn::Operator, e2: Arc<Absyn::Exp>) -> Arc<Absyn::Exp> {
-    Arc::new(Absyn::Exp::BINARY { exp1: e1, op, exp2: e2 })
+fn binary_exp(e1: metamodelica::Ref<Absyn::Exp>, op: Absyn::Operator, e2: metamodelica::Ref<Absyn::Exp>) -> metamodelica::Ref<Absyn::Exp> {
+    metamodelica::Ref::new(Absyn::Exp::BINARY { exp1: e1, op, exp2: e2 })
 }
 
-fn unary_exp(op: Absyn::Operator, e: Arc<Absyn::Exp>) -> Arc<Absyn::Exp> {
-    Arc::new(Absyn::Exp::UNARY { op, exp: e })
+fn unary_exp(op: Absyn::Operator, e: metamodelica::Ref<Absyn::Exp>) -> metamodelica::Ref<Absyn::Exp> {
+    metamodelica::Ref::new(Absyn::Exp::UNARY { op, exp: e })
 }
 
 // ---------------------------------------------------------------------------
@@ -290,7 +290,7 @@ fn print_component_ref_str_fully_qualified() -> Result<()> {
 
 #[test]
 fn print_component_ref_str_allwild() -> Result<()> {
-    let aw = Arc::new(Absyn::ComponentRef::ALLWILD);
+    let aw = metamodelica::Ref::new(Absyn::ComponentRef::ALLWILD);
     assert_eq!(Dump::printComponentRefStr(aw)?, "__");
     Ok(())
 }
@@ -300,7 +300,7 @@ fn print_component_ref_str_allwild() -> Result<()> {
 #[test]
 fn print_component_ref_str_wild_with_default_flags() -> Result<()> {
     init_flags();
-    let wild = Arc::new(Absyn::ComponentRef::WILD);
+    let wild = metamodelica::Ref::new(Absyn::ComponentRef::WILD);
     assert_eq!(Dump::printComponentRefStr(wild)?, "");
     Ok(())
 }

@@ -3,7 +3,7 @@
 
 use super::*;
 
-pub(super) fn compile_stmts(ctx: &mut FnCtx, stmts: &List<Arc<DAE::Statement>>) -> Result<()> {
+pub(super) fn compile_stmts(ctx: &mut FnCtx, stmts: &List<metamodelica::Ref<DAE::Statement>>) -> Result<()> {
     for s in &**stmts {
         compile_stmt(ctx, s)?;
     }
@@ -20,7 +20,7 @@ pub(super) fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) ->
     let DAE::Exp::CREF { componentRef, .. } = lhs else {
         crate::CodegenWasmJit::record_error(format!(
             "CodegenWasmJit: assignment to non-cref lhs `{}`",
-            dumped_exp(&Arc::new(lhs.clone()))?
+            dumped_exp(&metamodelica::Ref::new(lhs.clone()))?
         ));
         return Err("CodegenWasmJit: assignment to non-cref lhs not supported");
     };
@@ -133,7 +133,7 @@ pub(super) fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(A
 /// Store a freshly-owned value held in temp `vt` into array element
 /// `arr[idx_exps...]` (the array local privately owns its buffer), releasing the
 /// previous element first. The value is already owned, so no copy is made.
-fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], vt: u32) -> Result<()> {
+fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>], vt: u32) -> Result<()> {
     emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
@@ -204,11 +204,11 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
 /// generated function (which leaves its results on the stack, first result
 /// deepest), then move each owned result into its target local. A `_` (wildcard)
 /// target discards its value (releasing it if heap).
-pub(super) fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &List<Arc<DAE::Exp>>, call: &DAE::Exp) -> Result<()> {
+pub(super) fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &List<metamodelica::Ref<DAE::Exp>>, call: &DAE::Exp) -> Result<()> {
     let DAE::Exp::CALL { path, expLst, attr } = call else {
         return Err("CodegenWasmJit: tuple assignment rhs is not a function call");
     };
-    let lhs_v: Vec<&Arc<DAE::Exp>> = (&**lhs).into_iter().collect();
+    let lhs_v: Vec<&metamodelica::Ref<DAE::Exp>> = (&**lhs).into_iter().collect();
     let results = compile_call(ctx, path, expLst, attr)?;
     // Trailing outputs the statement does not name are dropped, as in
     // `algStmtTupleAssign`.
@@ -299,14 +299,14 @@ fn store_fresh_into_tuple_target(ctx: &mut FnCtx, target: &DAE::Exp, sty: &SigTy
 /// declaration order), then release it.
 fn scatter_record_target(
     ctx: &mut FnCtx,
-    targets: &List<Arc<DAE::Exp>>,
+    targets: &List<metamodelica::Ref<DAE::Exp>>,
     sty: &SigTy,
     vt: u32,
 ) -> Result<()> {
     let SigTy::Record { fields, .. } = sty else {
         return Err("CodegenWasmJit: record-destructuring tuple target for a non-record output");
     };
-    let targets: Vec<&Arc<DAE::Exp>> = targets.into_iter().collect();
+    let targets: Vec<&metamodelica::Ref<DAE::Exp>> = targets.into_iter().collect();
     if targets.len() != fields.len() {
         return Err("CodegenWasmJit: record-destructuring tuple target has the wrong field count");
     }

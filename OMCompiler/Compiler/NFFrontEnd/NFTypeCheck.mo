@@ -46,6 +46,7 @@ import Absyn;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import Binding = NFBinding;
 import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;
@@ -938,7 +939,7 @@ algorithm
   if mk == MatchKind.EXACT then
     fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}),
       scope, NFInstContext.NO_CONTEXT, paramInfo2);
-    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
+    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, InstNode.scopeRef(scope)));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2);
 
@@ -1842,8 +1843,8 @@ protected
   MatchOptions opt = options;
   list<Dimension> dims;
 algorithm
-  Type.COMPLEX(cls = anode) := actualType;
-  Type.COMPLEX(cls = enode) := expectedType;
+  anode := Type.complexNode(actualType);
+  enode := Type.complexNode(expectedType);
 
   if InstNode.isSame(anode, enode) then
     matchKind := MatchKind.EXACT;
@@ -2037,20 +2038,23 @@ algorithm
 end typeCastRecord;
 
 function matchComponentList
-  input list<InstNode> comps1;
-  input list<InstNode> comps2;
+  input list<NFInstNode.ScopeRef> comps1;
+  input list<NFInstNode.ScopeRef> comps2;
   input MatchOptions options;
   output MatchKind matchKind;
 protected
-  InstNode c2;
-  list<InstNode> rest_c2 = comps2;
+  InstNode c1, c2;
+  NFInstNode.ScopeRef c2_ref;
+  list<NFInstNode.ScopeRef> rest_c2 = comps2;
   Expression dummy = Expression.INTEGER(0);
 algorithm
   if listLength(comps1) <> listLength(comps2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
   else
-    for c1 in comps1 loop
-      c2 :: rest_c2 := rest_c2;
+    for c1_ref in comps1 loop
+      c2_ref :: rest_c2 := rest_c2;
+      c1 := InstNode.borrow(c1_ref);
+      c2 := InstNode.borrow(c2_ref);
 
       if InstNode.name(c1) <> InstNode.name(c2) then
         matchKind := MatchKind.NOT_COMPATIBLE;
@@ -2076,7 +2080,8 @@ function matchFunctionTypes
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
-  list<InstNode> inputs1, inputs2, outputs1, outputs2;
+  list<InstNode> inputs1, inputs2;
+  list<NFInstNode.NodeHandle> outputs1, outputs2;
   list<Slot> slots1, slots2;
   Slot slot1, slot2;
 algorithm
@@ -2091,7 +2096,8 @@ algorithm
     return;
   end if;
 
-  if not matchFunctionParameters(outputs1, outputs2, options) then
+  if not matchFunctionParameters(list(InstNode.fromHandle(o) for o in outputs1),
+                                 list(InstNode.fromHandle(o) for o in outputs2), options) then
     matchKind := MatchKind.NOT_COMPATIBLE;
     return;
   end if;
@@ -2999,13 +3005,13 @@ protected
     output Boolean res;
   protected
     InstNode n = InstNode.getDerivedNode(node);
-    InstNode p;
+    NFInstNode.ScopeRef p;
   algorithm
     res := match n
       case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = p))
-        then InstNode.refEqual(parent, n) or isParent(parent, p);
+        then InstNode.refEqual(parent, n) or isParent(parent, InstNode.borrow(p));
       case InstNode.COMPONENT_NODE()
-        then InstNode.refEqual(parent, n) or isParent(parent, n.parent);
+        then InstNode.refEqual(parent, n) or isParent(parent, InstNode.parent(n));
       else false;
     end match;
   end isParent;
@@ -3021,8 +3027,8 @@ algorithm
           dims := match s
             case Subscript.SPLIT_INDEX()
               algorithm
-                if isParent(s.node, component) then
-                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                if isParent(InstNode.borrow(s.node), component) then
+                  dims := Type.nthDimension(InstNode.getType(InstNode.borrow(s.node)), s.dimIndex) :: dims;
                 end if;
               then
                 dims;
@@ -3045,8 +3051,8 @@ algorithm
           dims := match s
             case Subscript.SPLIT_INDEX()
               algorithm
-                if isParent(s.node, component) then
-                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                if isParent(InstNode.borrow(s.node), component) then
+                  dims := Type.nthDimension(InstNode.getType(InstNode.borrow(s.node)), s.dimIndex) :: dims;
                 end if;
               then
                 dims;
@@ -3187,7 +3193,7 @@ protected
   InstNode cls_node;
   Class cls;
 algorithm
-  Type.COMPLEX(cls = cls_node) := ty;
+  cls_node := Type.complexNode(ty);
   cls := InstNode.getClass(cls_node);
 
   for op in {"'+'", "'0'"} loop

@@ -172,15 +172,15 @@ fn unparse_str_within_clause_present() -> Result<()> {
         columnNumberEnd: 1,
         lastModification: metamodelica::OrderedFloat(0.0),
     };
-    let within_path = Arc::new(Absyn::Path::IDENT { name: arcstr::literal!("Foo") });
+    let within_path = metamodelica::Ref::new(Absyn::Path::IDENT { name: arcstr::literal!("Foo") });
     let prog = Absyn::Program {
-        classes: metamodelica::list![Arc::new(Absyn::Class {
+        classes: metamodelica::list![metamodelica::Ref::new(Absyn::Class {
             name: arcstr::literal!("Bar"),
             partialPrefix: false,
             finalPrefix: false,
             encapsulatedPrefix: false,
             restriction: Absyn::Restriction::R_MODEL,
-            body: Arc::new(Absyn::ClassDef::PARTS {
+            body: metamodelica::Ref::new(Absyn::ClassDef::PARTS {
                 typeVars: metamodelica::nil(),
                 classAttrs: metamodelica::nil(),
                 classParts: metamodelica::nil(),

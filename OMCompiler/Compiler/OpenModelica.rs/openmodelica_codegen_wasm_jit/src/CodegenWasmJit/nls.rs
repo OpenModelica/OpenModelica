@@ -9,9 +9,9 @@ use super::*;
 /// [`build_nls_fns`] (which emits the callbacks).
 pub(super) fn nls_parts(
     nlsystem: &SimCode::NonlinearSystem,
-) -> Result<(Vec<Arc<SimCode::SimEqSystem>>, NlsResiduals, Vec<Arc<DAE::ComponentRef>>)> {
+) -> Result<(Vec<metamodelica::Ref<SimCode::SimEqSystem>>, NlsResiduals, Vec<metamodelica::Ref<DAE::ComponentRef>>)> {
     use SimCode::SimEqSystem as E;
-    let mut inner: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
+    let mut inner: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = Vec::new();
     let mut residuals: Vec<NlsResidual> = Vec::new();
     for e in lst(&nlsystem.eqs) {
         match &**e {
@@ -39,7 +39,7 @@ pub(super) fn nls_parts(
             _ => inner.push(e.clone()),
         }
     }
-    let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
+    let iter_vars: Vec<metamodelica::Ref<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
     if residuals.is_empty() {
         // An inverse algorithm is the system's lone equation and its own residual.
         if let [e] = inner.as_slice() {
@@ -66,14 +66,14 @@ pub(super) fn nls_parts(
 }
 
 /// The element count of an array-typed expression; `None` for a scalar.
-pub(super) fn exp_array_rows(exp: &Arc<DAE::Exp>) -> Option<usize> {
+pub(super) fn exp_array_rows(exp: &metamodelica::Ref<DAE::Exp>) -> Option<usize> {
     let ty = openmodelica_frontend_base::Expression::r#typeof(exp.clone()).ok()?;
     let dims = type_dims(&ty)?;
     (!dims.is_empty()).then(|| dims.iter().product())
 }
 
 /// Dynamic tearing: each casual tearing set's equation index -> its strict set's.
-pub(super) fn nls_strict_map(eq_lists: &[&[Arc<SimCode::SimEqSystem>]]) -> HashMap<i32, i32> {
+pub(super) fn nls_strict_map(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]]) -> HashMap<i32, i32> {
     use SimCode::SimEqSystem as E;
     let mut out = HashMap::new();
     for list in eq_lists {
@@ -88,7 +88,7 @@ pub(super) fn nls_strict_map(eq_lists: &[&[Arc<SimCode::SimEqSystem>]]) -> HashM
 
 /// The `__HOM_LAMBDA` unknown `generateHomotopyComponents` appends under an
 /// adaptive approach. C maps the cref to `simulationInfo->lambda`.
-pub(super) fn is_homotopy_lambda(cr: Option<&Arc<DAE::ComponentRef>>) -> bool {
+pub(super) fn is_homotopy_lambda(cr: Option<&metamodelica::Ref<DAE::ComponentRef>>) -> bool {
     matches!(cr.map(|c| &**c),
         Some(DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. })
             if subscriptLst.is_empty()
@@ -100,12 +100,12 @@ pub(super) fn is_homotopy_lambda(cr: Option<&Arc<DAE::ComponentRef>>) -> bool {
 /// ordered systems (for [`build_nls_fns`]) and the index -> job map, which is
 /// threaded to the equation lowering via `SimVarMap`/`SimCtx`.
 pub(super) fn collect_nls_jobs(
-    eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
+    eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, (f64, f64, f64)>,
     attr_targets: &mut HashMap<String, AttrTargets>,
-) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
+) -> (Vec<metamodelica::Ref<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
     use SimCode::SimEqSystem as E;
-    let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
+    let mut systems: Vec<metamodelica::Ref<SimCode::NonlinearSystem>> = Vec::new();
     // Numbered and ordered by `indexNonLinearSystem`, as C's `sysNum` loop is.
     let mut warnings: Vec<(i32, String)> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
@@ -124,7 +124,7 @@ pub(super) fn collect_nls_jobs(
         for e in *list {
             // A dynamically torn component registers both sets: the strict one (whose
             // function the casual set falls back to) and the casual one.
-            let both: Vec<(&Arc<SimCode::NonlinearSystem>, bool)> = match &**e {
+            let both: Vec<(&metamodelica::Ref<SimCode::NonlinearSystem>, bool)> = match &**e {
                 E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } => {
                     vec![(nlSystem, false), (at, true)]
                 }

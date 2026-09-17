@@ -308,7 +308,7 @@ fn sbinterval_intersection_misaligned_step_is_empty() {
 // ===========================================================================
 
 /// Helper: create a 1D SBMultiInterval from a single SBInterval.
-fn mi1d(lo: i32, step: i32, hi: i32) -> Arc<SBMultiInterval::SBMultiInterval> {
+fn mi1d(lo: i32, step: i32, hi: i32) -> metamodelica::Ref<SBMultiInterval::SBMultiInterval> {
     SBMultiInterval::fromList(metamodelica::list![SBInterval::new(lo, step, hi)]).unwrap()
 }
 
@@ -316,7 +316,7 @@ fn mi1d(lo: i32, step: i32, hi: i32) -> Arc<SBMultiInterval::SBMultiInterval> {
 fn mi2d(
     lo1: i32, s1: i32, hi1: i32,
     lo2: i32, s2: i32, hi2: i32,
-) -> Arc<SBMultiInterval::SBMultiInterval> {
+) -> metamodelica::Ref<SBMultiInterval::SBMultiInterval> {
     SBMultiInterval::fromList(metamodelica::list![
         SBInterval::new(lo1, s1, hi1),
         SBInterval::new(lo2, s2, hi2)
@@ -458,7 +458,7 @@ fn sbmultiinterval_is_equal_different() -> Result<()> {
 // SBAtomicSet
 // ===========================================================================
 
-fn aset1d(lo: i32, step: i32, hi: i32) -> Arc<SBAtomicSet::SBAtomicSet> {
+fn aset1d(lo: i32, step: i32, hi: i32) -> metamodelica::Ref<SBAtomicSet::SBAtomicSet> {
     SBAtomicSet::new(mi1d(lo, step, hi))
 }
 
@@ -590,12 +590,12 @@ fn sbatomicset_copy_is_independent() {
 // ===========================================================================
 
 /// Helper: construct an SBInterval directly, bypassing SBInterval::new().
-fn raw_interval(lo: i32, step: i32, hi: i32) -> Arc<SBInterval::SBInterval> {
-    Arc::new(SBInterval::SBInterval { lo, step, hi })
+fn raw_interval(lo: i32, step: i32, hi: i32) -> metamodelica::Ref<SBInterval::SBInterval> {
+    metamodelica::Ref::new(SBInterval::SBInterval { lo, step, hi })
 }
 
 /// Helper: build a 1D SBMultiInterval directly.
-fn raw_mi1d(lo: i32, step: i32, hi: i32) -> Arc<SBMultiInterval::SBMultiInterval> {
+fn raw_mi1d(lo: i32, step: i32, hi: i32) -> metamodelica::Ref<SBMultiInterval::SBMultiInterval> {
     SBMultiInterval::fromList(metamodelica::list![raw_interval(lo, step, hi)]).unwrap()
 }
 
@@ -789,7 +789,7 @@ fn partb_sbmi_cardinality_2d_sums_not_product() {
 /// `arrayCreateNoInit(size, dummy)` calls. Slots stayed uninitialised, and
 /// when `intersection` returned early after computing an empty
 /// inner-interval intersection, `Vec::drop` interpreted garbage bytes as live
-/// `Arc<SBInterval>` values, corrupting the heap. The fix forwards the MM
+/// `metamodelica::Ref<SBInterval>` values, corrupting the heap. The fix forwards the MM
 /// dummy to the safe runtime variant `arrayCreateNoInitWithDummy` when the
 /// dummy expression is known-initialised (here, `arrayGet(mi1.intervals, 1)`).
 #[test]
@@ -825,7 +825,7 @@ fn partb_sbmi_is_equal_different() {
 // Part B: SBAtomicSet — logic tests with direct construction
 // ---------------------------------------------------------------------------
 
-fn raw_aset1d(lo: i32, step: i32, hi: i32) -> Arc<SBAtomicSet::SBAtomicSet> {
+fn raw_aset1d(lo: i32, step: i32, hi: i32) -> metamodelica::Ref<SBAtomicSet::SBAtomicSet> {
     SBAtomicSet::new(raw_mi1d(lo, step, hi))
 }
 

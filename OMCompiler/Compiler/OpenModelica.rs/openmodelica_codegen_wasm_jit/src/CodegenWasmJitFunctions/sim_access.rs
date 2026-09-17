@@ -6,7 +6,7 @@ use super::*;
 /// Gather the contiguous sub-array `group[leading, :, …]` from `SimData` into a
 /// fresh (refcount-1) runtime array of the trailing dimensions, leaving the
 /// owned handle on the stack.
-fn emit_sim_slice_gather(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<()> {
+fn emit_sim_slice_gather(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     let (ek, stride) = sim_array_elem_kind_stride(group.wty);
     let trailing: Vec<u32> = group.dims[leading.len()..].to_vec();
     let trailing_total: u32 = trailing.iter().product();
@@ -35,7 +35,7 @@ fn emit_sim_slice_gather(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE
 
 /// Scatter a runtime array `rhs` into the contiguous sub-array
 /// `group[leading, :, …]` of `SimData` (the reverse of [`emit_sim_slice_gather`]).
-fn emit_sim_slice_scatter(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>], rhs: RhsSource) -> Result<()> {
+fn emit_sim_slice_scatter(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>], rhs: RhsSource) -> Result<()> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let trailing_total: u32 = group.dims[leading.len()..].iter().product();
     let h = ctx.alloc_temp(WTy::I32);
@@ -59,7 +59,7 @@ fn emit_sim_slice_scatter(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DA
 /// The value type of a component reference's leaf, after applying its final
 /// subscripts (so `states[2]` of `states : ThermodynamicState[2]` yields the
 /// record element type). Array dims are peeled one per index subscript.
-fn cref_leaf_value_type(cr: &DAE::ComponentRef) -> Result<Arc<DAE::Type>> {
+fn cref_leaf_value_type(cr: &DAE::ComponentRef) -> Result<metamodelica::Ref<DAE::Type>> {
     use DAE::ComponentRef as C;
     let (identType, nsubs) = match cr {
         C::CREF_QUAL { componentRef, .. } => return cref_leaf_value_type(componentRef),
@@ -87,27 +87,27 @@ fn cref_leaf_value_type(cr: &DAE::ComponentRef) -> Result<Arc<DAE::Type>> {
 fn cref_append_field(
     cr: &DAE::ComponentRef,
     field: &DAE::Ident,
-    field_ty: Arc<DAE::Type>,
-) -> Arc<DAE::ComponentRef> {
+    field_ty: metamodelica::Ref<DAE::Type>,
+) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     match cr {
-        C::CREF_IDENT { ident, identType, subscriptLst } => Arc::new(C::CREF_QUAL {
+        C::CREF_IDENT { ident, identType, subscriptLst } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
-            componentRef: Arc::new(C::CREF_IDENT {
+            componentRef: metamodelica::Ref::new(C::CREF_IDENT {
                 ident: field.clone(),
                 identType: field_ty,
                 subscriptLst: metamodelica::nil(),
             }),
         }),
-        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
             componentRef: cref_append_field(componentRef, field, field_ty),
         }),
-        other => Arc::new(other.clone()),
+        other => metamodelica::Ref::new(other.clone()),
     }
 }
 
@@ -119,7 +119,7 @@ fn cref_append_field(
 fn emit_sim_array_elem_addr(
     ctx: &mut FnCtx,
     group: &ArrayGroup,
-    sub_exps: &[Arc<DAE::Exp>],
+    sub_exps: &[metamodelica::Ref<DAE::Exp>],
 ) -> Result<WTy> {
     if sub_exps.len() != group.dims.len() {
         return Err("error");
@@ -139,7 +139,7 @@ fn emit_sim_array_elem_addr(
 
 /// Push the 0-based row-major index of element `[e1,…,en]` of an array shaped
 /// `dims`, built at run time (Horner: `acc = acc*dims[k] + (e_k - 1)`).
-fn emit_sim_flat_index(ctx: &mut FnCtx, dims: &[u32], sub_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+fn emit_sim_flat_index(ctx: &mut FnCtx, dims: &[u32], sub_exps: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     ctx.emit(we::Instruction::I32Const(0));
     for (k, exp) in sub_exps.iter().enumerate() {
         ctx.emit(we::Instruction::I32Const(dims[k] as i32));
@@ -180,7 +180,7 @@ fn emit_neg(ctx: &mut FnCtx, wty: WTy, neg: Neg) {
 fn emit_sim_scatter_elem(
     ctx: &mut FnCtx,
     group: &ScatterGroup,
-    sub_exps: &[Arc<DAE::Exp>],
+    sub_exps: &[metamodelica::Ref<DAE::Exp>],
     addr_only: bool,
 ) -> Result<WTy> {
     use we::Instruction as I;
@@ -581,7 +581,7 @@ fn emit_extobj_construct(
     ctx: &mut FnCtx,
     off: u32,
     dtor: &str,
-    args: &List<Arc<DAE::Exp>>,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
     rhs: RhsSource,
 ) -> Result<bool> {
     use we::Instruction as I;
@@ -840,7 +840,7 @@ fn try_emit_sim_array_box(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<O
         Ok(s @ (SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Record { .. })) => s,
         _ => return Ok(None),
     };
-    let subs: Vec<&Arc<DAE::Subscript>> = (&**leaf_subs).into_iter().collect();
+    let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = (&**leaf_subs).into_iter().collect();
     if dims.is_empty() || subs.len() > dims.len() {
         return Ok(None);
     }
@@ -873,7 +873,7 @@ fn box_then_select(
     cref: &DAE::ComponentRef,
     dims: &[u32],
     elem: &SigTy,
-    subs: &List<Arc<DAE::Subscript>>,
+    subs: &List<metamodelica::Ref<DAE::Subscript>>,
 ) -> Result<Option<WTy>> {
     let axes: Vec<(Vec<i32>, bool)> = dims.iter().map(|&d| ((1..=d as i32).collect(), true)).collect();
     emit_sim_array_box(ctx, cref, &axes, elem)?;
@@ -958,7 +958,7 @@ fn emit_sim_array_box(
     Ok(())
 }
 
-fn cref_leaf(cr: &DAE::ComponentRef) -> Option<(&DAE::Type, &List<Arc<DAE::Subscript>>)> {
+fn cref_leaf(cr: &DAE::ComponentRef) -> Option<(&DAE::Type, &List<metamodelica::Ref<DAE::Subscript>>)> {
     use DAE::ComponentRef as C;
     match cr {
         C::CREF_QUAL { componentRef, .. } => cref_leaf(componentRef),
@@ -975,24 +975,24 @@ fn array_elem_type(ty: &DAE::Type) -> &DAE::Type {
 }
 
 /// `cr` with its leaf subscripts replaced by the constant element index.
-fn cref_with_leaf_subs(cr: &DAE::ComponentRef, index: &[i32]) -> Arc<DAE::ComponentRef> {
+fn cref_with_leaf_subs(cr: &DAE::ComponentRef, index: &[i32]) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     match cr {
-        C::CREF_IDENT { ident, identType, .. } => Arc::new(C::CREF_IDENT {
+        C::CREF_IDENT { ident, identType, .. } => metamodelica::Ref::new(C::CREF_IDENT {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: index
                 .iter()
-                .map(|i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: *i }) }))
+                .map(|i| metamodelica::Ref::new(DAE::Subscript::INDEX { exp: metamodelica::Ref::new(DAE::Exp::ICONST { integer: *i }) }))
                 .collect(),
         }),
-        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
             componentRef: cref_with_leaf_subs(componentRef, index),
         }),
-        other => Arc::new(other.clone()),
+        other => metamodelica::Ref::new(other.clone()),
     }
 }
 
