@@ -6107,24 +6107,49 @@ match row
         else
           match listReverse(crefSubs(sc))
           case WHOLEDIM() :: {WHOLEDIM()} then
-            // 2D array sc, both dims whole: must match the fill template which generates two nested loops.
+            // 2D array sc, both dims whole.
             match context
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
-                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                <<
-                {
-                  unsigned int _wo<%k%>;
-                  for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
-                    unsigned int _wr<%k%>;
-                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
-                      <%depsCodeReduced%>
+                if not listEmpty(equation_iterators) then
+                  // Both dims are ALREADY iterated by the outer equation_iterators
+                  // for-loop nest generated above (forIter/forTail) -- this is a
+                  // synthetic residual var (e.g. NBTearing's $RES_SIM_xxx) whose
+                  // WHOLEDIM dimensions mark "driven by the enclosing loop", not a
+                  // literal per-element subscript (that shape instead falls through to
+                  // the generic INDEX-subscript case below, via indexSubRecursive).
+                  // Do NOT unroll again internally with an extra loop keyed off only
+                  // sc's last dimension: that visits each row far more than once (and,
+                  // worse, computes a row index disconnected from the actual
+                  // per-iteration position), producing out-of-range rows and a
+                  // corrupted sparsity pattern (see the LSGreenH2Production.Plant
+                  // windTurbine NLS). flatIdx is sc's own flattened position from ALL
+                  // of its iterators, exactly like the single-WHOLEDIM case.
+                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                  <<
+                  {
+                    unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
+                    <%depsCodeReduced%>
+                  }
+                  >>
+                else
+                  // no enclosing for-equation iterators (e.g. a genuine dense array
+                  // equation): must match the fill template which generates two
+                  // nested loops.
+                  let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  <<
+                  {
+                    unsigned int _wo<%k%>;
+                    for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                      unsigned int _wr<%k%>;
+                      for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
+                        <%depsCodeReduced%>
+                      }
                     }
                   }
-                }
-                >>
+                  >>
               else depsCodeReduced
             else depsCodeReduced
           case WHOLEDIM() :: _ then
@@ -6132,15 +6157,26 @@ match row
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
-                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                <<
-                {
-                  unsigned int _wr<%k%>;
-                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                if not listEmpty(equation_iterators) then
+                  // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard
+                  // is needed and what flatIdx computes.
+                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                  <<
+                  {
+                    unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
                     <%depsCode%>
                   }
-                }
-                >>
+                  >>
+                else
+                  let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  <<
+                  {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                      <%depsCode%>
+                    }
+                  }
+                  >>
               else depsCode
             else depsCode
           else depsCodeReduced
@@ -6472,44 +6508,78 @@ match row
       else
         match listReverse(crefSubs(sc))
         case WHOLEDIM() :: {WHOLEDIM()} then
-          // 2D array sc, both dims whole (e.g. module[:].T[:])
+          // 2D array sc, both dims whole (e.g. module[:].T[:]).
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
-            case SIMVAR() then
-              let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-              let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-              <<
-              {
-                unsigned int _wo<%k%>;
-                for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
-                  unsigned int _wr<%k%>;
-                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
-                    unsigned int row_<%k%> = local_row_base + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
-                    <%depsWholeReduced%>
-                  }
+            case v as SIMVAR() then
+              if not listEmpty(iters) then
+                // Both dims are ALREADY iterated by the outer equation_iterators
+                // for-loop nest (see the matching guard in resizableSparsityRowCount
+                // for the full rationale: this is a synthetic residual var, e.g.
+                // NBTearing's $RES_SIM_xxx, whose WHOLEDIM dims mark "driven by the
+                // enclosing loop" -- a literal per-element subscript instead falls
+                // through to the generic INDEX-subscript case below, via
+                // indexSubRecursive). A `local_row_base` counter bumped by one
+                // dimension's size on every outer-loop iteration overruns the true
+                // row count and corrupts the sparsity pattern (see the
+                // LSGreenH2Production.Plant windTurbine NLS); compute sc's own
+                // flattened row directly from its iterators instead, exactly like
+                // the single-WHOLEDIM-with-iterators case.
+                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+                <<
+                {
+                  unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
+                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  <%depsWholeReduced%>
                 }
-                local_row_base += (unsigned int)(<%szOuter%>) * (unsigned int)(<%szInner%>);
-              }
-              >>
+                >>
+              else
+                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wo<%k%>;
+                  for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
+                      unsigned int row_<%k%> = local_row_base + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
+                      <%depsWholeReduced%>
+                    }
+                  }
+                  local_row_base += (unsigned int)(<%szOuter%>) * (unsigned int)(<%szInner%>);
+                }
+                >>
             else ''
           else ''
         case WHOLEDIM() :: outer_rev_subs then
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
-            case SIMVAR() then
-              let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-              <<
-              {
-                unsigned int _wr<%k%>;
-                for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
-                  unsigned int row_<%k%> = local_row_base + _wr<%k%>;
+            case v as SIMVAR() then
+              if not listEmpty(iters) then
+                // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard is
+                // needed and what flatIdx computes.
+                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+                <<
+                {
+                  unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
+                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
-                local_row_base += (unsigned int)(<%sz%>);
-              }
-              >>
+                >>
+              else
+                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wr<%k%>;
+                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                    unsigned int row_<%k%> = local_row_base + _wr<%k%>;
+                    <%depsWholeDep%>
+                  }
+                  local_row_base += (unsigned int)(<%sz%>);
+                }
+                >>
             else ''
           else ''
         case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
