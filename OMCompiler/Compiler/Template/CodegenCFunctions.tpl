@@ -6442,11 +6442,12 @@ case rel as RELATION(__) then
             res
         case SOME((exp,i,j)) then
           if isReal then
+            let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
             let tmp1 = tempDecl("modelica_real", &varDecls)
             let tmp2 = tempDecl("modelica_real", &varDecls)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
-            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);<%\n%>'
             res
           else
             let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
