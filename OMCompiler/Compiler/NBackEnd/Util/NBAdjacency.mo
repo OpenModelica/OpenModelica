@@ -1494,7 +1494,10 @@ public
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
             eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
-            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
+            // ALGORITHM equations have no simple scalar residual for getResidualExp --
+            // treat them like discrete equations (solveSimple fallback below) instead of
+            // crashing, now that NBTearing.mo's initialize can pass them in here.
+            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or Equation.isAlgorithm(eqn_ptr);
             eqnIsIf := Equation.isIfEquation(eqn_ptr);
             if not (eqnIsDiscrete or eqnIsIf) then
               residual := Equation.getResidualExp(Pointer.access(eqn_ptr));

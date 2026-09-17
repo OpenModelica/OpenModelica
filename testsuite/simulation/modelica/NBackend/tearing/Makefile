@@ -6,6 +6,7 @@ minimalTearing_simple.mos \
 loopSizeOne.mos \
 guruTearing1.mos \
 impliedInner.mos \
+nonlinearContinuousLoop.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
