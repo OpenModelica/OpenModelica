@@ -2651,7 +2651,7 @@ protected
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
     InstContext.Type next_context;
-    Boolean is_structural;
+    Boolean is_structural, has_iterator;
   algorithm
     (call, ty, variability, purity) := match call
       case UNTYPED_ARRAY_CONSTRUCTOR()
@@ -2671,7 +2671,10 @@ protected
 
             (range, iter_ty, iter_var, iter_pur) := Typing.typeIterator(iter, range, next_context, is_structural);
 
-            if is_structural then
+            // Don't try to evaluate the range if it contains an iterator.
+            has_iterator := iter_pur == Purity.IMPURE and Expression.contains(range, Expression.isIterator);
+
+            if is_structural and not has_iterator then
               if InstContext.inRelaxed(context) then
                 range := Ceval.tryEvalExp(range);
               else
