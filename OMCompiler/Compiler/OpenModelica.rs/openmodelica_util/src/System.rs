@@ -527,9 +527,9 @@ pub fn winGetSystemDirectory() -> ArcStr {
 }
 
 pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
-    // Spawn /bin/sh -c <command>; if outFile is non-empty, redirect both
-    // stdout and stderr there. Returns the child's exit code, or -1 on
-    // spawn failure.
+    // Spawn the command through the platform shell; if outFile is non-empty,
+    // redirect both stdout and stderr there. Returns the child's exit code, or
+    // -1 on spawn failure.
     use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
@@ -538,10 +538,31 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         let _ = std::io::stdout().flush();
     };
     flush();
-    let mut cmd = Command::new("/bin/sh");
-    cmd.arg("-c").arg(command.as_str());
+    #[cfg(windows)]
+    let mut cmd = {
+        use std::os::windows::process::CommandExt;
+        // `SystemImpl__runProcess`. The command is a cmd.exe line
+        // (`set X=Y&& prog args`), so it must reach cmd unquoted.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let mut cmd = Command::new("cmd.exe");
+        cmd.raw_arg(format!("/c \"{}\"", command.as_str()));
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd
+    };
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut cmd = Command::new("/bin/sh");
+        cmd.arg("-c").arg(command.as_str());
+        cmd
+    };
     if !outFile.is_empty() {
-        match fs::File::create(outFile.as_str()) {
+        // C appends on both; unix here has always truncated, so only the new
+        // path follows the C runtime.
+        #[cfg(windows)]
+        let opened = fs::OpenOptions::new().append(true).create(true).open(outFile.as_str());
+        #[cfg(not(windows))]
+        let opened = fs::File::create(outFile.as_str());
+        match opened {
             Ok(f) => {
                 let f2 = match f.try_clone() {
                     Ok(c) => c,
@@ -1758,9 +1779,12 @@ const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
     "linux32"
 };
 
-/// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows
-/// where it names the toolchain. The Rust port targets windows-msvc.
-const OPENMODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
+/// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows where
+/// it names the toolchain, as the table in OMCompiler/omc_config.h does. The
+/// MinGW distribution is MSYS2's UCRT64.
+const OPENMODELICA_SPEC_PLATFORM: &str = if cfg!(all(windows, target_env = "gnu")) {
+    if Autoconf::is64Bit { "ucrt64" } else { "mingw32" }
+} else if Autoconf::isWindows {
     if Autoconf::is64Bit { "msvc64" } else { "msvc32" }
 } else {
     const_str::concat!(Autoconf::target_arch_str, "-", Autoconf::os)
@@ -1776,7 +1800,9 @@ pub fn openModelicaPlatform() -> ArcStr {
 
 /// `@OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE@`: a second spelling to search,
 /// for Windows' ucrt64/mingw64 and for CMake's arm64 vs config.guess' aarch64.
-const OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE: &str = if Autoconf::isWindows {
+const OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE: &str = if cfg!(all(windows, target_env = "gnu")) {
+    if Autoconf::is64Bit { "mingw64" } else { "" }
+} else if Autoconf::isWindows {
     ""
 } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
     "arm64-darwin"

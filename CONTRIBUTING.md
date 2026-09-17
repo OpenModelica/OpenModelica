@@ -2,8 +2,66 @@
 
 Note that your contributions are assumed to follow the [contributor license agreement](https://openmodelica.org/osmc-pl/osmc-pl-1.8.txt) (which means the [Open Source Modelica Consortium](https://openmodelica.org) holds the copyright).
 
-Contributions are primarily in the form of pull requests.
-To learn more about [collaboration, see the github articles](https://help.github.com/categories/collaborating/).
+## Working with the repository
+
+OpenModelica.git is a superproject with several submodules. Clone it with:
+
+```bash
+git clone --recurse-submodules https://github.com/OpenModelica/OpenModelica.git
+cd OpenModelica
+```
+
+To push your changes, fork OpenModelica on GitHub and add your fork as a remote:
+
+```bash
+git remote add fork git@github.com:<MyGitHubUserName>/OpenModelica.git
+git push fork <my-branch>
+```
+
+If you change a submodule, e.g. OMSimulator, fork that repository as well and add the
+remote inside the submodule directory.
+
+If you are a developer and want to update your local git repository to the latest
+developments use:
+
+```bash
+# After cloning
+cd OpenModelica
+git checkout master
+git pull
+git submodule update --force --init --recursive
+```
+
+To checkout a specific version of OpenModelica, say tag `v1.27.1` do:
+
+```bash
+git clone --recurse-submodules https://github.com/OpenModelica/OpenModelica.git
+cd OpenModelica
+git checkout v1.27.1
+git submodule update --force --init --recursive
+```
+
+If you have issues building you can try to clean and reset the repository using:
+
+```bash
+git clean -fdx
+git submodule foreach --recursive git clean -fdx
+git reset --hard
+git submodule foreach --recursive git reset --hard
+git submodule update --init --recursive
+```
+
+To check your working copy status and the hashes of the submodules, use:
+
+```bash
+git status
+git submodule status --recursive
+```
+
+## Pull requests
+
+Contributions are primarily in the form of pull requests (PRs).
+To learn more about [collaboration, see the GitHub documentation on pull requests](https://docs.github.com/en/pull-requests).
 Fork the OpenModelica repositories into your user account, create a
 topic branch (not master) which you make your changes in and push to
 your own fork. The reason for the topic branch is to isolate your changes.
@@ -20,7 +78,7 @@ git pull && git rebase
 git fetch origin && git rebase origin/master
 ```
 
-Commits that are pushed to this repository should pass the [test suite](https://github.com/OpenModelica/OpenModelica-testsuite),
+Commits that are pushed to this repository should pass the [test suite](testsuite/),
 and our CI server [@OpenModelica-Jenkins](https://test.openmodelica.org/jenkins/) makes sure this is true.
 
 Pull requests are automatically checked:
@@ -33,13 +91,13 @@ One of our developers will review and merge the PR.
 
 All commits should adhere to the following simple guidelines (the Jenkins job checks some of these restrictions, and will not pass your submission):
 
-* Use UTF-8 as file encoding.
+* Use `UTF-8` as file encoding.
 * No trailing whitespace in text-files.
 * No binary files added (object files, etc). Images are fine for icons in the graphical clients. Note that images should use vector graphics (SVG) as far as it is possible to do so.
 * No automatically generated code or build artifacts added. This includes documentation such as Doxygen.
 * No adding+deleting the same file or line (debug lines/etc). Do an interactive rebase to squash the commits into one.
 * If you have many added+deleted files/etc - squash all commits into a single commit instead.
-* For OpenModelica-testsuite: Any added or modified reference file needs to use [filterSimulationResults](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html#filtersimulationresults) to create a file with a minimal number of trajectories and output points in order to reduce the file size. It is often possible to reduce a file from 20MB to 10kB without significant losses.
+* For the test suite: Any added or modified reference file needs to use [filterSimulationResults](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html#filtersimulationresults) to create a file with a minimal number of trajectories and output points in order to reduce the file size. It is often possible to reduce a file from 20MB to 10kB without significant losses.
 * Use short lines in commit messages in order for github and git tools to display properly in terminal / web GUI.
 
 ## Working with the OpenModelica/OMCompiler/3rdParty submodule

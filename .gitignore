@@ -37,6 +37,11 @@
 /testsuite/libraries-for-testing/.ccache/
 trace.txt
 
+# gcov's per-source annotations. gcovr writes these in whatever directory it
+# runs gcov from and normally deletes them again, but a failed run - or gcov
+# invoked by hand - leaves them behind, including in the source tree.
+*.gcov
+
 # Claude handoffs
 **/HANDOFF*.md
 

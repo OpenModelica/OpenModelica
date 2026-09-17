@@ -5337,14 +5337,15 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetBuildLabel = new Label(tr("Target Build:"));
   mpTargetBuildComboBox = new ComboBox;
 #ifdef Q_OS_WIN
+  // Whichever toolchain this was built with: the simulation runtime it ships
+  // is that toolchain's ABI, so the other one could not link a model anyway.
+  // No versioned msvc10..msvc19 - Compile.bat builds with whichever Visual
+  // Studio vswhere reports.
+#ifdef __MINGW32__
   mpTargetBuildComboBox->addItem("MinGW", "gcc");
-  // We do not support any of the MSVC targets anymore
-  // mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
+#else
+  mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
+#endif
 #else
   mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif

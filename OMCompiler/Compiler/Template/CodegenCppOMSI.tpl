@@ -1615,54 +1615,27 @@ end simulationMainRunScript;
 template simulationLibDir(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
-  match getGeneralTarget(target)
-    case "debugrt"
-    case "msvc" then
-      match simCode
-        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-          '<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc'
-      end match
-    else
-      match simCode
-        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-          '<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/'
-      end match
+  match simCode
+    case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+      '<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp/'
   end match
 end simulationLibDir;
 
 template simulationLibDirs(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
-  match getGeneralTarget(target)
-    case "debugrt"
-    case "msvc" then
-      match simCode
-        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-          '<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc;<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc;<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc//'
-      end match
-    else
-      match simCode
-        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-          '<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/;<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc//'
-      end match
+  match simCode
+    case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+      '<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp/;<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc//'
   end match
 end simulationLibDirs;
 
 template simulationBinDir(String target, SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
-  match getGeneralTarget(target)
-    case "debugrt"
-    case "msvc" then
-      match simCode
-        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-          '<%makefileParams.omhome%>/bin/msvc'
-      end match
-    else
-      match simCode
-        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-          '<%makefileParams.omhome%>/bin'
-      end match
+  match simCode
+    case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+      '<%makefileParams.omhome%>/bin'
   end match
 end simulationBinDir;
 
@@ -3178,11 +3151,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CDFLAGS = /ZI
   !IF "$(PCH_FILE)" == ""
 
-  LDSYSTEMFLAGS=  /link /DLL  /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystemBase.lib  OMCppExtendedSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
-  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib  <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  LDSYSTEMFLAGS=  /link /DLL  /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystemBase.lib  OMCppExtendedSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib  <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   !ELSE
-  LDSYSTEMFLAGS=  /link /DLL /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystemBase.lib OMCppExtendedSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
-  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(PCH_LIB) <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  LDSYSTEMFLAGS=  /link /DLL /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystemBase.lib OMCppExtendedSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/omsicpp" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(PCH_LIB) <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
 
   !ENDIF
   # lib names should not be appended with a d just switch to lib/omc/omsicpp
@@ -3268,8 +3241,8 @@ case "gcc" then
             MINGW_EXTRA_LIBS=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lz -lhdf5 ' else ''%>
             MODELICA_EXTERNAL_LIBS=-L$(LAPACK_LIBS) $(LAPACK_LIBRARIES) $(MINGW_EXTRA_LIBS)
 
-            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
-            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" <%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lwsock32 -lws2_32 ' else ''%>
+            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/omsicpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/omsicpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/omsicpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/omsicpp" <%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lwsock32 -lws2_32 ' else ''%>
 
             ifeq ($(USE_PAPI),ON)
             $(eval LDMAINFLAGS_COMMON=$(LDMAINFLAGS_COMMON) <%papiLibs%>)

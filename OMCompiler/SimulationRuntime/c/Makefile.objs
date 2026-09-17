@@ -370,4 +370,4 @@ ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*
 
 BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) meta/meta_modelica_catch$(OBJ_EXT)
 
-COMMON_HEADERS = util/omc_msvc.h util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h
+COMMON_HEADERS = util/omc_msvc.h util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_dll.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h

@@ -7,7 +7,7 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
-omc_option(OM_OMEDIT_ANIMATION_QUICK3D "Use the Qt Quick 3D animation backend instead of OpenSceneGraph." OFF)
+omc_option(OM_OMEDIT_ENABLE_ANIMATION "Enable the 3D animation windows. Needs Qt Quick 3D, which Qt5 does not ship." ON)
 
 find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml OpenGL Network Svg REQUIRED)
 
@@ -21,10 +21,8 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6 AND Qt6_VERSION_MINOR GREATER_EQ
   find_package(Qt6 OPTIONAL_COMPONENTS HttpServer)
 endif ()
 
-if(OM_OMEDIT_ANIMATION_QUICK3D)
+if(OM_OMEDIT_ENABLE_ANIMATION)
   find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Quick Quick3D Qml QuickWidgets REQUIRED)
-else()
-  find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)
 endif()
 find_package(OpenGL REQUIRED)
 

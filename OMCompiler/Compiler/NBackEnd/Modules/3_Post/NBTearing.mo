@@ -45,7 +45,7 @@ public
   import Module = NBModule;
   import Slice = NBSlice;
   import NBVariable.{VarSlice, VariablePointer, VariablePointers, VarData};
-  import NBEquation.{Equation, EqnSlice, EquationPointer, EquationPointers, EqData};
+  import NBEquation.{Equation, EqnSlice, EquationPointer, EquationPointers, EqData, EquationAttributes};
   import StrongComponent = NBStrongComponent;
 
 protected
@@ -62,6 +62,8 @@ protected
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
   import Subscript = NFSubscript;
+  import Type = NFType;
+  import NFBackendExtension.{BackendInfo, VariableKind};
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -227,6 +229,25 @@ public
         index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
+      // a component matched to a genuine partial array slice (comp.var/comp.eqn already
+      // carry the correct .indices) that could not be solved explicitly, e.g. a torn
+      // matrix-shaped subsystem for i_s[{1, 2}]. Same treatment as
+      // SINGLE_COMPONENT/RESIZABLE_COMPONENT, keeping the slice instead of wrapping a
+      // whole variable/equation. Was previously missing, falling through to "do nothing".
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        new_comp := StrongComponent.ALGEBRAIC_LOOP(
+          idx     = index,
+          strict  = slicedImplicit(comp.var, comp.eqn),
+          casual  = NONE(),
+          linear  = isLinearSlice(Slice.getT(comp.eqn), ComponentRef.scalarize(comp.var_cref, false), funcMap),
+          mixed   = false,
+          homotopy = Pointer.access(homotopy),
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
+        index := index + 1;
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+
       // do nothing otherwise
       else (comp, dummy, index);
     end match;
@@ -241,6 +262,110 @@ public
       innerEquations  = listArray({}),
       jac             = NONE());
   end singleImplicit;
+
+  function slicedImplicit
+    "same as singleImplicit, but var already carries the correct .indices (see the
+    SLICED_COMPONENT case in implicit()) and must not be re-wrapped as a whole slice.
+    eqn is expanded to one residual_eqns entry per scalar row (see scalarSlices):
+    NBJacobian.compJacobian pulls one residual variable per residual_eqns entry
+    (Equation.getResidualVar), so a single entry covering all rows of a multi-row
+    array equation undercounts the residual side against a per-element iteration_vars
+    seed list, producing an empty/mismatched Jacobian sparsity pattern."
+    input Slice<VariablePointer> var;
+    input Slice<EquationPointer> eqn;
+    output NBTearing tearingSet = Tearing.TEARING_SET(
+      iteration_vars  = {var},
+      residual_eqns   = scalarSlices(eqn),
+      innerEquations  = listArray({}),
+      jac             = NONE());
+  end slicedImplicit;
+
+  function scalarSlices
+    "expands a (possibly whole, .indices={}) equation slice into one Slice entry per
+    scalar row, each wrapping its OWN, newly created scalar residual equation with a
+    distinct residual variable -- NOT just the same underlying equation pointer
+    re-sliced. Equations are keyed by their residual variable's name throughout this
+    codebase (Equation.getEqnName/getResidualVar), which is a whole-variable property
+    like everything else keyed that way here; multiple slices of one multi-row array
+    equation would all resolve back to the SAME residual variable and collapse to one
+    entry in any name-keyed collection built from them (e.g. EquationPointers.fromList
+    in NBJacobian.jacobianNumeric's adjacency-matrix build), silently undercounting
+    rows and producing an empty/wrong Jacobian sparsity pattern."
+    input Slice<EquationPointer> eqn;
+    output list<Slice<EquationPointer>> slices;
+  protected
+    PointerCyclic<Equation> eqn_ptr = Slice.getT(eqn);
+    Equation e = PointerCyclic.access(eqn_ptr);
+    list<Integer> indices = eqn.indices;
+    ComponentRef base_cref;
+    Expression residual;
+    Type elem_ty;
+    EquationAttributes attr;
+    list<Subscript> subs;
+    ComponentRef row_cref;
+    PointerCyclic<Variable> row_var;
+    Variable row_var_data;
+    Expression row_residual;
+    Equation row_eqn;
+  algorithm
+    if listEmpty(indices) then
+      indices := list(i for i in 0:(Equation.size(eqn_ptr) - 1));
+    end if;
+    if List.hasOneElement(indices) then
+      // already scalar (or a genuinely single-row slice): no row-collapse risk.
+      slices := {eqn};
+    else
+      base_cref := Equation.getEqnName(eqn_ptr);
+      residual  := Equation.getResidualExp(e);
+      elem_ty   := Type.arrayElementType(Expression.typeOf(residual));
+      attr      := Equation.getAttributes(e);
+      attr.residual := true;
+      slices := {};
+      for i in indices loop
+        subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
+        row_residual := Expression.applySubscripts(subs, residual);
+        (row_var, row_cref) := BVariable.makeAuxVar(ComponentRef.toString(base_cref), i, elem_ty, false);
+        // makeAuxVar tags the new var with a plain VariableKind derived from its type;
+        // it must instead be marked RESIDUAL_VAR like any other residual variable, or
+        // downstream Jacobian construction (NBJacobian.getTmpFilterFunction's
+        // BVariable.isResidual check for LS/NLS/DAE) won't recognize it as a result row
+        // and the Jacobian's sparsity pattern will come out empty for this equation.
+        row_var_data := PointerCyclic.access(row_var);
+        row_var_data.backendinfo := BackendInfo.setVarKind(row_var_data.backendinfo, VariableKind.RESIDUAL_VAR());
+        PointerCyclic.update(row_var, row_var_data);
+        attr.residualVar := SOME(row_var);
+        row_eqn := Equation.SCALAR_EQUATION(elem_ty, Expression.fromCref(row_cref), row_residual, Equation.getSource(e), attr);
+        slices := Slice.SLICE(PointerCyclic.create(row_eqn), {}) :: slices;
+      end for;
+      slices := listReverse(slices);
+    end if;
+  end scalarSlices;
+
+  function isLinearSlice
+    "local, differentiation-based linearity check for a single equation against a
+    list of crefs, for use where no adjacency-matrix solvability info is available
+    (see checkLinearity for the normal, matrix-based version). Linear iff no
+    partial derivative w.r.t. one of the crefs still contains any of them --
+    catches both self- (x^2) and cross- (x*y) nonlinearity."
+    input PointerCyclic<Equation> eqn_ptr;
+    input list<ComponentRef> crefs;
+    input UnorderedMap<Path, Function> funcMap;
+    output Boolean linear = true;
+  protected
+    Expression residual = Equation.getResidualExp(PointerCyclic.access(eqn_ptr));
+    Differentiate.DifferentiationArguments diffArgs;
+    Expression derivative;
+  algorithm
+    for cref in crefs loop
+      diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
+      (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+      for other in crefs loop
+        if Expression.containsCref(derivative, other) then
+          linear := false;
+        end if;
+      end for;
+    end for;
+  end isLinearSlice;
 
   function getModule
     "Returns the module function that was chosen by the user."

@@ -41,7 +41,15 @@ endif()
 
 omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack." ON)
 
-omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
+# Off when cross-compiling: the runtime libraries build against Boost, so a cross
+# build has to fetch and build it (OM_FETCH_BOOST). Generated Cpp code needs no
+# Boost headers, so nothing has to ship them.
+if(CMAKE_CROSSCOMPILING)
+  set(_om_cpp_runtime_default OFF)
+else()
+  set(_om_cpp_runtime_default ON)
+endif()
+omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ${_om_cpp_runtime_default})
 
 # Its own switch because it is the last thing in the C runtime tree needing
 # oneTBB, which a cross build has no reason to acquire.

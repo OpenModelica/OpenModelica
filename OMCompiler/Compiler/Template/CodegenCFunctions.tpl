@@ -97,7 +97,7 @@ static int rml_execution_failed()
   return 1;
 }
 
-DLLDirection int __omc_main(int argc, char **argv)
+DLLModelDirection int __omc_main(int argc, char **argv)
 {
   MMC_INIT(0);
   {
@@ -292,7 +292,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
   OMC_LDFLAGS_LINK_TYPE=dynamic
   RUNTIME_LIBS=<%makefileParams.runtimelibs%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,<%ExtraStack%>-rpath,'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc' <%ParModelicaExpLibs%> <%WinMingwExtraLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS)
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" -Wl,<%ExtraStack%>-rpath,'<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc' <%ParModelicaExpLibs%> <%WinMingwExtraLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS)
   PERL=perl
   MAINFILE=<%name%>.c
 
@@ -401,7 +401,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
-      let vis = (match visibility case PUBLIC() then "DLLDirection")
+      let vis = (match visibility case PUBLIC() then "DLLModelDirection")
       <<
       <% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)
         then
@@ -1020,7 +1020,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility, isSimulation, true, dummy)
   let inFnStr = if boolAnd(boxed,inFunc) then
     <<
-    DLLDirection
+    DLLModelDirection
     int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar);
     >>
   match visibility
@@ -1033,7 +1033,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     else
       <<
       <%inFnStr%>
-      <%if dynamicLoad then '' else 'DLLDirection<%\n%><%prototype%>;'%>
+      <%if dynamicLoad then '' else 'DLLModelDirection<%\n%><%prototype%>;'%>
       >>
 end functionHeaderImpl;
 
@@ -1550,7 +1550,7 @@ case FUNCTION(__) then
     >>
   <<
   <%auxFunction%>
-  <% match visibility case PUBLIC(__) then "DLLDirection" %>
+  <% match visibility case PUBLIC(__) then "DLLModelDirection" %>
   <%prototype%>
   {
     <%varDecls%>
@@ -1615,7 +1615,7 @@ end functionHasExternalObject;
 template generateInFunc(Text fname, list<Variable> functionArguments, list<Variable> outVars)
 ::=
   <<
-  DLLDirection
+  DLLModelDirection
   int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar)
   {
     //if (!mmc_GC_state) mmc_GC_init();

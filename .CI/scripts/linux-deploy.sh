@@ -38,21 +38,37 @@ is_system() { [[ $(basename "$1") =~ $SYSTEM_LIBS ]]; }
 # files instead of deploying them.
 is_elf() { [ "$(od -An -tx1 -N4 "$1" 2>/dev/null | tr -d ' \n')" = 7f454c46 ]; }
 
+# The rpath patching below is `|| true`, so without this a missing patchelf
+# deploys a tree that looks complete and resolves nothing.
+command -v patchelf >/dev/null || { echo "ERROR: patchelf not installed" >&2; exit 1; }
+
 mkdir -p "$LIBDIR"
 if [ -n "$QT" ]; then
 mkdir -p "$QTOUT/lib" "$QTOUT/plugins" "$QTOUT/libexec"
 
 # Qt plugins OMEdit loads at runtime; they are in no import table, so they seed
 # the closure rather than being found by it.
-for p in platforms/libqxcb.so platforms/libqminimal.so platforms/libqoffscreen.so \
+# Without libqwayland.so and the three wayland-* directories below, a Wayland
+# session gets `Could not find the Qt platform plugin "wayland"`.
+for p in platforms/libqxcb.so platforms/libqwayland.so platforms/libqminimal.so \
+         platforms/libqoffscreen.so \
          xcbglintegrations/libqxcb-glx-integration.so \
+         xcbglintegrations/libqxcb-egl-integration.so \
          imageformats/libqjpeg.so imageformats/libqsvg.so imageformats/libqgif.so \
          imageformats/libqico.so iconengines/libqsvgicon.so \
          tls/libqopensslbackend.so platforminputcontexts/libqtvirtualkeyboardplugin.so \
+         platforminputcontexts/libcomposeplatforminputcontextplugin.so \
          networkinformation/libqnetworkmanager.so sqldrivers/libqsqlite.so; do
   if [ -f "$QT/plugins/$p" ]; then
     mkdir -p "$QTOUT/plugins/$(dirname "$p")"
     cp -a "$QT/plugins/$p" "$QTOUT/plugins/$p"
+  fi
+done
+
+for d in wayland-shell-integration wayland-decoration-client \
+         wayland-graphics-integration-client; do
+  if [ -d "$QT/plugins/$d" ]; then
+    cp -a "$QT/plugins/$d" "$QTOUT/plugins/$d"
   fi
 done
 

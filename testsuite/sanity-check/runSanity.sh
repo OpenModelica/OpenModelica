@@ -139,11 +139,23 @@ print("%s (FMI %s): %d source files declared in %s, all present"
 PYEOF
 }
 
+# On Windows only the generated <model>.bat puts the runtime's lib/<triple>/omc
+# on the PATH, so run that rather than the executable, as a user would.
+run_model() {
+  local model="$1"
+  shift
+  if [ -f "$model.bat" ]; then
+    cmd.exe //c "$model.bat" "$@"
+  else
+    "./$model" "$@"
+  fi
+}
+
 # Run sanity MOS script with sim Code target
 if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
   set -x # echo on
   "$OMC" --simCodeTarget=Cpp testSanity.mos
-  ./M
+  run_model M
   set +x # echo off
   test -f OMCppM.cpp || { echo "Error: Expected file OMCppM.cpp not found"; exit 1; }
   test -f M.fmu || { echo "Error: Expected file M.fmu (FMI 2.0) not found"; exit 1; }
@@ -153,8 +165,8 @@ if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
 else
   set -x # echo on
   "$OMC" --linearizationDumpLanguage=matlab testSanity.mos
-  ./M
-  ./M -l=1.0
+  run_model M
+  run_model M -l=1.0
   set +x # echo off
   test -f linearized_model.m || { echo "Error: Expected file linearized_model.m not found"; exit 1; }
   test -f M.fmu || { echo "Error: Expected file M.fmu (FMI 2.0) not found"; exit 1; }

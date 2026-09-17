@@ -154,21 +154,22 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       MCP/MCPToolsSimulation.cpp
                       MCP/MCPToolsDiagram.cpp
                       Search/FindUsageWidget.cpp
-                      Animation/OpenGLWidget.cpp
-                      Animation/AbstractAnimationWindow.cpp
-                      Animation/ViewerWidget.cpp
-                      Animation/AnimationWindow.cpp
-                      Animation/ExtraShapes.cpp
-                      Animation/Visualization.cpp
-                      Animation/VisualizationMAT.cpp
-                      Animation/VisualizationCSV.cpp
-                      Animation/VisualizationFMU.cpp
-                      Animation/FMUSettingsDialog.cpp
-                      Animation/FMUWrapper.cpp
-                      Animation/AbstractVisualizer.cpp
-                      Animation/Shape.cpp
-                      Animation/Vector.cpp
                       resource_omedit.qrc)
+
+set(OMEDITLIB_ANIMATION_SOURCES Animation/AbstractAnimationWindow.cpp
+                                Animation/AnimationWindow.cpp
+                                Animation/Visualization.cpp
+                                Animation/Quick3D/Quick3DScene.cpp
+                                Animation/Quick3D/Quick3DViewerWidget.cpp
+                                Animation/Quick3D/Quick3DGeometry.cpp
+                                Animation/VisualizationMAT.cpp
+                                Animation/VisualizationCSV.cpp
+                                Animation/VisualizationFMU.cpp
+                                Animation/FMUSettingsDialog.cpp
+                                Animation/FMUWrapper.cpp
+                                Animation/AbstractVisualizer.cpp
+                                Animation/Shape.cpp
+                                Animation/Vector.cpp)
 
 set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       LSP/LSPFileWatcher.h
@@ -312,23 +313,29 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       FlatModelica/Parser.h
                       MCP/MCPServer.h
                       MCP/MCPServerPrivate.h
-                      Search/FindUsageWidget.h
-                      Animation/OpenGLWidget.h
-                      Animation/AbstractAnimationWindow.h
-                      Animation/ViewerWidget.h
-                      Animation/AnimationWindow.h
-                      Animation/AnimationUtil.h
-                      Animation/ExtraShapes.h
-                      Animation/Visualization.h
-                      Animation/VisualizationMAT.h
-                      Animation/VisualizationCSV.h
-                      Animation/VisualizationFMU.h
-                      Animation/FMUSettingsDialog.h
-                      Animation/FMUWrapper.h
-                      Animation/AbstractVisualizer.h
-                      Animation/Shape.h
-                      Animation/Vector.h
-                      Animation/rapidxml.hpp)
+                      Search/FindUsageWidget.h)
+
+set(OMEDITLIB_ANIMATION_HEADERS Animation/AbstractAnimationWindow.h
+                                Animation/AnimationWindow.h
+                                Animation/AnimationUtil.h
+                                Animation/Visualization.h
+                                Animation/Quick3D/Quick3DScene.h
+                                Animation/Quick3D/Quick3DViewerWidget.h
+                                Animation/Quick3D/Quick3DGeometry.h
+                                Animation/VisualizationMAT.h
+                                Animation/VisualizationCSV.h
+                                Animation/VisualizationFMU.h
+                                Animation/FMUSettingsDialog.h
+                                Animation/FMUWrapper.h
+                                Animation/AbstractVisualizer.h
+                                Animation/Shape.h
+                                Animation/Vector.h
+                                Animation/rapidxml.hpp)
+
+if(OM_OMEDIT_ENABLE_ANIMATION)
+  list(APPEND OMEDITLIB_SOURCES ${OMEDITLIB_ANIMATION_SOURCES})
+  list(APPEND OMEDITLIB_HEADERS ${OMEDITLIB_ANIMATION_HEADERS})
+endif()
 
 set(TS_FILES Resources/nls/OMEdit_de.ts
              Resources/nls/OMEdit_es.ts
@@ -359,22 +366,6 @@ set(OMEDITLIB_SOURCES ${OMEDITLIB_SOURCES} ${OMC_SCRIPTING_API_QT_DIR}/OpenModel
 set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp GENERATED)
 set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h GENERATED)
 
-# Quick 3D backend: ViewerWidget/ExtraShapes/OpenGLWidget have unguarded osg includes,
-# so swap them for the Quick 3D sources (the shared Visualization* sources keep their
-# osg parts behind OMEDIT_ANIMATION_QUICK3D guards). Mirrors the wasm source set.
-if(OM_OMEDIT_ANIMATION_QUICK3D)
-  list(REMOVE_ITEM OMEDITLIB_SOURCES
-       Animation/ViewerWidget.cpp Animation/ExtraShapes.cpp Animation/OpenGLWidget.cpp)
-  list(REMOVE_ITEM OMEDITLIB_HEADERS
-       Animation/ViewerWidget.h Animation/ExtraShapes.h Animation/OpenGLWidget.h)
-  list(APPEND OMEDITLIB_SOURCES
-       Animation/Quick3D/Quick3DScene.cpp Animation/Quick3D/Quick3DViewerWidget.cpp
-       Animation/Quick3D/Quick3DGeometry.cpp)
-  list(APPEND OMEDITLIB_HEADERS
-       Animation/Quick3D/Quick3DScene.h Animation/Quick3D/Quick3DViewerWidget.h
-       Animation/Quick3D/Quick3DGeometry.h)
-endif()
-
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
 # Wait for the generated Qt API (rust_codegen); AUTOGEN_TARGET_DEPENDS so AUTOMOC waits too.
@@ -386,10 +377,6 @@ if(OM_OMC_ENABLE_RUST AND TARGET rust_codegen)
 endif()
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-if(NOT OM_OMEDIT_ANIMATION_QUICK3D)
-  # OpenSceneGraph does not provide imported targets yet. Add includes manually.
-  target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
-endif()
 
 # qmake adds -DUNICODE by defult (As far as I can gather).
 # So add it for CMake as well to avoid having to modify the code.
@@ -458,13 +445,12 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::libzmq)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
-if(OM_OMEDIT_ANIMATION_QUICK3D)
-  target_compile_definitions(OMEditLib PUBLIC OMEDIT_ANIMATION_QUICK3D)
+if(OM_OMEDIT_ENABLE_ANIMATION)
   target_link_libraries(OMEditLib PUBLIC
     Qt${OM_QT_MAJOR_VERSION}::Quick Qt${OM_QT_MAJOR_VERSION}::Quick3D
     Qt${OM_QT_MAJOR_VERSION}::Qml Qt${OM_QT_MAJOR_VERSION}::QuickWidgets)
 else()
-  target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
+  target_compile_definitions(OMEditLib PUBLIC WITHOUT_ANIMATION)
 endif()
 target_link_libraries(OMEditLib PUBLIC OpenGL::GL)
 
@@ -638,15 +624,22 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
         list(GET _ls_parts 1 _ls_hash)
       endif()
       set(_ls_file "${_ls_cache}/${_ls_name}")
+      if(EXISTS "${_ls_file}" AND _ls_hash)
+        file(SHA256 "${_ls_file}" _ls_existing_hash)
+        if(NOT _ls_existing_hash STREQUAL _ls_hash)
+          message(WARNING "Cached Modelica language server file ${_ls_name} is incomplete or corrupt; downloading it again")
+          file(REMOVE "${_ls_file}")
+        endif()
+      endif()
       if(NOT EXISTS "${_ls_file}")
         set(_ls_url "https://github.com/OpenModelica/modelica-language-server/releases/download/v${MODELICA_LS_VERSION}/${_ls_name}")
         if(_ls_hash)
           message(STATUS "Modelica language server: downloading ${_ls_name} (v${MODELICA_LS_VERSION})…")
           file(DOWNLOAD "${_ls_url}" "${_ls_file}" EXPECTED_HASH SHA256=${_ls_hash}
-               TLS_VERIFY ON SHOW_PROGRESS STATUS _ls_dl)
+               TLS_VERIFY ON TIMEOUT 300 SHOW_PROGRESS STATUS _ls_dl)
         else()
           message(STATUS "Modelica language server: downloading ${_ls_name} (v${MODELICA_LS_VERSION}, unverified)…")
-          file(DOWNLOAD "${_ls_url}" "${_ls_file}" TLS_VERIFY ON SHOW_PROGRESS STATUS _ls_dl)
+          file(DOWNLOAD "${_ls_url}" "${_ls_file}" TLS_VERIFY ON TIMEOUT 300 SHOW_PROGRESS STATUS _ls_dl)
         endif()
         list(GET _ls_dl 0 _ls_dl_code)
         if(NOT _ls_dl_code EQUAL 0)

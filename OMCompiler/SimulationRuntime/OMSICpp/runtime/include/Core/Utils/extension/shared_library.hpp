@@ -20,7 +20,6 @@
 
 #include <Core/Utils/extension/common.hpp>
 #include <Core/Utils/extension/impl/library_impl.hpp>
-#include <boost/preprocessor/iteration/iterate.hpp>
 
 namespace boost
 {
@@ -152,10 +151,13 @@ namespace boost
 				get(const std::string& name) const {
 			}
 #else
-#define BOOST_PP_ITERATION_LIMITS (0, \
-	BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
-#define BOOST_PP_FILENAME_1 "Core/Utils/extension/impl/shared_library.hpp"
-#include BOOST_PP_ITERATE()
+			template <class ReturnValue, class... Params>
+			ReturnValue (*get(const std::string& name) const)(Params...) {
+				// Cast the handle or pointer to the function to the correct type.
+				// This is NOT typesafe. See the documentation of shared_library::get
+				return reinterpret_cast<ReturnValue (*)(Params...)>
+					(impl::get_function(handle_, name.c_str()));
+			}
 #endif
         protected:
             std::string location_;

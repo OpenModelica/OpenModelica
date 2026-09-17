@@ -19,7 +19,9 @@ set(Boost_INCLUDE_ ".")
 # This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
 set(Boost_LIBS_ ".")
 # The actual boost libraries needed to be linked.
-if (NOT Boost_LIBRARIES_)
+# DEFINED, not truthiness: Boost_LIBRARIES holds CMake target names, which mean
+# nothing in a makefile.
+if (NOT DEFINED Boost_LIBRARIES_)
 set(Boost_LIBRARIES_ ${Boost_LIBRARIES})
 endif()
 
@@ -46,7 +48,13 @@ set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 # Some common flags for the generated simulation code. It is not clear why OMC_BUILD is defined
 # by the old system. It is always defined for some reason. USE_THREAD means use the C++ standard
 # library's thread library (instead of something like boost threads).
-set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC")
+# The generated model is built with the same optimization as the runtime; the
+# autotools build forwarded CMAKE_CXX_FLAGS here and this replaces that.
+if(MSVC)
+  set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "/DOMC_BUILD /DUSE_THREAD /O2 /DNDEBUG")
+else()
+  set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC -O2 -DNDEBUG")
+endif()
 
 # Compile the generated model code with -DUSE_LOGGER, like the runtime libraries
 # themselves (see cmake_3.14.cmake). The generated makefile turns this into that
@@ -57,7 +65,16 @@ message(STATUS "configuring ModelicaConfig_gcc.inc in OMCompiler/SimulationRunti
 message(STATUS "boost include: ${Boost_INCLUDE_DIR}")
 message(STATUS "boost libraries implict / explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
 
-# Configure the files.
+# A coverage build instruments the runtime libraries, so generated code that
+# statically links them (the FMUs, which pull in the OMCpp*_static variants)
+# needs the gcov runtime too, or it fails with undefined references to
+# __gcov_*/llvm_gcda_*. See SYSTEM_LDFLAGS in ModelicaConfig_gcc.inc.in.
+if(OM_ENABLE_COVERAGE)
+  set(SYSTEM_LDFLAGS "--coverage")
+endif()
+
+# Configure the files. The generated makefile includes the pair matching its
+# own dialect, so MSVC needs the _msvc variants alongside the _gcc ones.
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)
 configure_file(Modelica/ModelicaConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaConfig_gcc.inc)
 
@@ -65,6 +82,14 @@ configure_file(Modelica/ModelicaConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/Mo
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc
                ${CMAKE_CURRENT_BINARY_DIR}/ModelicaConfig_gcc.inc
          TYPE INCLUDE)
+
+if(MSVC)
+  configure_file(Modelica/ModelicaLibraryConfig_msvc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_msvc.inc)
+  configure_file(Modelica/ModelicaConfig_msvc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaConfig_msvc.inc)
+  install (FILES ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_msvc.inc
+                 ${CMAKE_CURRENT_BINARY_DIR}/ModelicaConfig_msvc.inc
+           TYPE INCLUDE)
+endif()
 
 
 
@@ -355,5 +380,3 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         FILES_MATCHING
         PATTERN System/*.h
 )
-
-

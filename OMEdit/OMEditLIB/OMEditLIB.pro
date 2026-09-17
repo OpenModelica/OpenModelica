@@ -67,8 +67,6 @@ win32 {
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
-
-  CONFIG += osg
 } else { # Unix libraries and includes
   include(OMEditLIB.unix.config.pri)
 }
@@ -370,14 +368,14 @@ HEADERS  += Util/Helper.h \
   LSP/ModelicaLSPClient.h \
   LSP/LSPProtocol.h \
 
-CONFIG(osg) {
+CONFIG(animation) {
 
-  SOURCES += Animation/OpenGLWidget.cpp \
-    Animation/AbstractAnimationWindow.cpp \
-    Animation/ViewerWidget.cpp \
+  SOURCES += Animation/AbstractAnimationWindow.cpp \
     Animation/AnimationWindow.cpp \
-    Animation/ExtraShapes.cpp \
     Animation/Visualization.cpp \
+    Animation/Quick3D/Quick3DScene.cpp \
+    Animation/Quick3D/Quick3DViewerWidget.cpp \
+    Animation/Quick3D/Quick3DGeometry.cpp \
     Animation/VisualizationMAT.cpp \
     Animation/VisualizationCSV.cpp \
     Animation/VisualizationFMU.cpp \
@@ -387,13 +385,13 @@ CONFIG(osg) {
     Animation/Shape.cpp \
     Animation/Vector.cpp
 
-  HEADERS += Animation/OpenGLWidget.h \
-    Animation/AbstractAnimationWindow.h \
-    Animation/ViewerWidget.h \
+  HEADERS += Animation/AbstractAnimationWindow.h \
     Animation/AnimationWindow.h \
     Animation/AnimationUtil.h \
-    Animation/ExtraShapes.h \
     Animation/Visualization.h \
+    Animation/Quick3D/Quick3DScene.h \
+    Animation/Quick3D/Quick3DViewerWidget.h \
+    Animation/Quick3D/Quick3DGeometry.h \
     Animation/VisualizationMAT.h \
     Animation/VisualizationCSV.h \
     Animation/VisualizationFMU.h \

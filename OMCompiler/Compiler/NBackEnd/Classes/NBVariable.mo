@@ -112,6 +112,7 @@ public
   constant String PREVIOUS_STR            = "$PRE";
   constant String AUXILIARY_STR           = "$AUX";
   constant String STATE_ALIAS_STR         = "$STA";
+  constant String DUMMY_ALIAS_STR         = "$DUM";
   constant String START_STR               = "$START";
   constant String RESIDUAL_STR            = "$RES";
   constant String TEMPORARY_STR           = "$TMP";

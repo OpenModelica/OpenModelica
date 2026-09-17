@@ -38,7 +38,6 @@
  */
 
 #include "MainWindow.h"
-/* Keep PlotWindowContainer on top to include OSG first */
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
@@ -103,7 +102,6 @@
 #include <QUrl>
 #include <QDir>
 #include <QFileInfo>
-#include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
 #include <QRegularExpression>
 
@@ -166,19 +164,6 @@ namespace ToolBars {
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
 {
-  /* TRICK: Forces the top-level window surface to initialize
-   * as QSurface::OpenGLSurface immediately, preventing later recreation flicker.
-   * See issue #15830.
-   *
-   * Not on macOS: Qt cannot mix a QOpenGLWidget and a QQuickWidget in one window
-   * unless they agree on the graphics API, and there the QQuickWidgets are Metal.
-   * Forcing OpenGL leaves both the Quick3D animation view and the documentation
-   * view (a QQuickWidget underneath) with no QRhi, rendering nothing.
-   */
-#ifndef Q_OS_MACOS
-  QOpenGLWidget *dummyGL = new QOpenGLWidget(this);
-  dummyGL->hide();
-#endif // #ifndef Q_OS_MACOS
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
   // Default system font
@@ -1471,7 +1456,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
   mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false, false);
 }
 
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
 void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!mpSimulationDialog) {
@@ -3303,7 +3288,7 @@ void MainWindow::simulateModel()
  */
 void MainWindow::simulateModelWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     simulateWithAnimation(pModelWidget->getLibraryTreeItem());
@@ -3826,7 +3811,7 @@ void MainWindow::runOMSensPlugin()
   }
 #else
 #ifdef Q_OS_WIN
-    QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
+    QPluginLoader loader(QString("%1/lib/%2/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #else
     QPluginLoader loader(QString("%1/lib/%2/omc/libomsensplugin.so").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #endif
@@ -4877,7 +4862,7 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // simulate with animation action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
@@ -5092,7 +5077,7 @@ void MainWindow::createActions()
   mpNewArrayParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-parametric-plot-window.svg"), tr("New Array Parametric Plot Window"), this);
   mpNewArrayParametricPlotWindowAction->setStatusTip(tr("Inserts new array parametric plot window"));
   connect(mpNewArrayParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayParametricPlotWindow()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // new mpAnimationWindowAction plot action
   mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
@@ -5313,7 +5298,7 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
 //  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
@@ -5758,7 +5743,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
 //  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
@@ -5780,7 +5765,7 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpNewArrayPlotWindowAction);
   mpPlotToolBar->addAction(mpNewArrayParametricPlotWindowAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpPlotToolBar->addAction(mpNewAnimationWindowAction);
 #endif
   mpPlotToolBar->addAction(mpDiagramWindowAction);
@@ -5969,7 +5954,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
-#if defined(WITHOUT_OSG)
+#if defined(WITHOUT_ANIMATION)
      "<br /><em>Compiled without 3D animation support</em>."
 #endif
      "")

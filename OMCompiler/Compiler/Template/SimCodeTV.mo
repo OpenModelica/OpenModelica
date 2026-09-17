@@ -4354,6 +4354,10 @@ package Config
     output String target;
   end simCodeTarget;
 
+  function targetTriple
+    output String triple;
+  end targetTriple;
+
   function simCodeRustRuntime
     output Boolean rust;
   end simCodeRustRuntime;

@@ -309,7 +309,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   if (terminate) {
-    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+    omc_terminate(omc_dummyFileInfo, "The embedded server received command to terminate.");
   }
 
   if (data->real_time_sync.enabled) {

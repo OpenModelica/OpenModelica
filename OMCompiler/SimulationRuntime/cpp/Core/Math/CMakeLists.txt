@@ -24,5 +24,6 @@ install(FILES ${CMAKE_SOURCE_DIR}/Core/Math/Functions.h
   ${CMAKE_SOURCE_DIR}/Core/Math/ILapack.h
   ${CMAKE_SOURCE_DIR}/Core/Math/OMAPI.h
   ${CMAKE_SOURCE_DIR}/Core/Math/Array.h
+  ${CMAKE_SOURCE_DIR}/Core/Math/Matrix.h
   ${CMAKE_SOURCE_DIR}/Core/Math/ArraySlice.h
   DESTINATION include/omc/cpp/Core/Math)

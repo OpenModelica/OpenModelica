@@ -39,7 +39,9 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#if defined(__EMSCRIPTEN__)
 #include "PersistentStorage.h"
+#endif
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
 #include "Editors/BaseEditor.h"
@@ -54,6 +56,7 @@
 #include <QColorDialog>
 #include <QDir>
 #include <QRegularExpression>
+#include <QDesktopServices>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -241,15 +244,6 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpCollapseAllButton->setIcon(QIcon(":/Resources/icons/top.svg"));
   mpCollapseAllButton->setToolTip(Helper::collapseAll);
   mpCollapseAllButton->setAutoRaise(true);
-  // show hide button
-  mpShowHideButton = new QToolButton;
-  QString showHideButtonText = tr("Show/hide filters");
-  mpShowHideButton->setText(showHideButtonText);
-  mpShowHideButton->setIcon(QIcon(":/Resources/icons/down.svg"));
-  mpShowHideButton->setToolTip(showHideButtonText);
-  mpShowHideButton->setAutoRaise(true);
-  mpShowHideButton->setCheckable(true);
-  connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
   // filters widget
   mpFiltersWidget = new QWidget;
   // create the case sensitivity checkbox
@@ -264,14 +258,19 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
   mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
+  // filter help button, opens the users guide link for
+  mpFiltersHelpButton = new QToolButton;
+  mpFiltersHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpFiltersHelpButton->setToolTip(tr("Filters help"));
+  connect(mpFiltersHelpButton, SIGNAL(clicked()), SLOT(showFiltersHelp()));
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pFiltersWidgetLayout->setAlignment(Qt::AlignTop);
   pFiltersWidgetLayout->addWidget(mpCaseSensitiveCheckBox, 0, 0);
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
+  pFiltersWidgetLayout->addWidget(mpFiltersHelpButton, 0, 2);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
-  mpFiltersWidget->hide();
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -281,18 +280,18 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
   pMainLayout->addWidget(mpExpandAllButton, 0, 2);
   pMainLayout->addWidget(mpCollapseAllButton, 0, 3);
-  pMainLayout->addWidget(mpShowHideButton, 0, 4);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 4);
   setLayout(pMainLayout);
 }
 
-void TreeSearchFilters::showHideFilters(bool On)
+/*!
+ * \brief TreeSearchFilters::showFiltersHelp
+ * Opens the OpenModelica Users Guide link for filters help.
+ */
+void TreeSearchFilters::showFiltersHelp()
 {
-  if (On) {
-    mpFiltersWidget->show();
-  } else {
-    mpFiltersWidget->hide();
-  }
+  QUrl filtersHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#variables-browser").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(filtersHelpPath);
 }
 
 /*!

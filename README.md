@@ -18,79 +18,25 @@ In addition there are interactive environments
 [OMNotebook](OMNotebook/README.md), [OMPlot](OMPlot/README.md) and [OMShell](OMShell/README.md)
 interaction with the OMCompiler as well as various other tools:
 [OMOptim](OMOptim/README.md), [OMParser](OMParser/README.md),
-[OMSense_Qt](OMSens_Qt/README.md).
+[OMSens_Qt](OMSens_Qt/README.md).
 
 ## Working with the repository
 
-OpenModelica.git is a superproject. Clone the project using one of:
+See [CONTRIBUTING.md](CONTRIBUTING.md#working-with-the-repository) for how to clone,
+update, and clean the repository and its submodules.
 
-```bash
-# Faster pulling by using openmodelica.org read-only mirror (low latency in Europe; very important when updating all submodules)
-# Replace the openmodelica.org pull URL with https://github.com/OpenModelica/OpenModelica.git if you want to pull directly from github
-# The default choice is to push to your fork on github.com (SSH). Replace MY_FORK with OpenModelica to push directly to the OpenModelica repositories (if you have access)
-MY_FORK=<MyGitHubUserName>
-git clone --recurse-submodules https://openmodelica.org/git-readonly/OpenModelica.git
-cd OpenModelica
-git remote set-url --push origin git@github.com:$MY_FORK/OpenModelica.git
-git submodule foreach --recursive 'git remote set-url --push origin `git config --get remote.origin.url | sed s,^.*/,git@github.com:'$MY_FORK'/,`'
-```
-
-If you are a developer and want to update your local git repository to the latest
-developments use:
-
-```bash
-# After cloning
-cd OpenModelica
-git checkout master
-git pull
-git submodule update --force --init --recursive
-```
-
-In order to push to the repository, you will push to your own fork of OpenModelica.git,
-etc. You will need to create a fork of each repository that you want to push to (by
-clicking the Fork button in the GitHub web interface).
-
-If you do not checkout the repositories for some GUI clients (such as OMOptim.git), these
-directories will be ignored by autoconf and skipped during compilation.
-
-To checkout a specific version of OpenModelica, say tag `v1.16.2` do:
+TL;DR:
 
 ```bash
 git clone --recurse-submodules https://github.com/OpenModelica/OpenModelica.git
-cd OpenModelica
-git checkout v1.16.2
-git submodule update --force --init --recursive
-```
-
-If you have issues building you can try to clean and reset the repository using:
-
-```bash
-git clean -fdx
-git submodule foreach --recursive git clean -fdx
-git reset --hard
-git submodule foreach --recursive git reset --hard
-git submodule update --init --recursive
-```
-
-To check your working copy status and the hashes of the submodules, use:
-
-```bash
-git status
-git submodule status --recursive
-```
-
-### To checkout a minimal version of OpenModelica
-
-```bash
-git clone https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica-minimal
-cd OpenModelica-minimal
-git submodule update --init --recursive libraries
 ```
 
 ## Build OpenModelica
 
-* [Linux/WSL/OSX Instructions](OMCompiler/README.Linux.md)
+* [Linux/WSL Instructions](OMCompiler/README.Linux.md)
 * [Windows Instructions](OMCompiler/README.Windows.md)
+* [macOS Instructions](OMCompiler/README-macOS.md)
+* [CMake configuration options, tests and packaging](README.cmake.md)
 
 We automatically generate nightly builds for
 [Windows](https://openmodelica.org/download/download-windows/) and for various flavours of
@@ -118,6 +64,3 @@ See the [CITATIONS](CITATION.cff) file for information on how to cite OpenModeli
 any publications reporting work done using OpenModelica.
 For a complete list of all publications related to OpenModelica see
 [doc/bibliography/openmodelica.bib](./doc/bibliography/openmodelica.bib).
-
-------------
-Last updated: 2026-09-08

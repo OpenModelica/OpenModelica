@@ -27,8 +27,9 @@
 
 #ifndef MODELICAUTILITITES_EXTRA_H
 #define MODELICAUTILITITES_EXTRA_H
+#include "../omc_dll.h"
 
-extern void (*OpenModelica_ModelicaError)(const char*);
-extern void (*OpenModelica_ModelicaVFormatError)(const char*,va_list);
+DLLDataDirection extern void (*OpenModelica_ModelicaError)(const char*);
+DLLDataDirection extern void (*OpenModelica_ModelicaVFormatError)(const char*,va_list);
 
 #endif

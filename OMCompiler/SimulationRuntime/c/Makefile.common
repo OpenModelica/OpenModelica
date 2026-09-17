@@ -69,6 +69,7 @@ COLPACK_HEADERS = inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphB
 COLPACK_INCLUDES = $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
 
 RUNTIME_HEADERS = \
+omc_dll.h \
 omc_inline.h \
 openmodelica_func.h \
 openmodelica.h \

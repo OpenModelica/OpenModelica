@@ -3054,7 +3054,8 @@ algorithm
 
     case DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest algorithm
       cr := ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-    then createTempVars(rest, cr, itempvars);
+      ttmpvars := createTempVars(ty.varLst, cr, itempvars);
+    then createTempVars(rest, inCrefPrefix, ttmpvars);
 
     case DAE.TYPES_VAR(name=name, ty=ty)::rest
       algorithm
@@ -3386,6 +3387,7 @@ algorithm
     local
       DAE.Exp left, right;
       list<DAE.Exp> elems;
+      list<DAE.Var> varLst;
 
     // parse arrays
     case(left as DAE.ARRAY(), right as DAE.CREF()) algorithm
@@ -3404,6 +3406,14 @@ algorithm
       end try;
     then (outSimEqn, ouniqueEqIndex);
 
+    // parse records: a record inside a record is a record expression on the
+    // left while the right hand side is still a cref
+    case(DAE.RECORD(exps = elems, ty = DAE.T_COMPLEX(varLst = varLst)), right as DAE.CREF())
+    then assignRecordElements(elems, varLst, right.componentRef, source, eqAttr, ouniqueEqIndex);
+
+    case(DAE.CALL(expLst = elems, attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = varLst))), right as DAE.CREF())
+    then assignRecordElements(elems, varLst, right.componentRef, source, eqAttr, ouniqueEqIndex);
+
     // kabdelhak: is this case needed? probably handled fine by simple assign
     // case(_, DAE.ARRAY()) algorithm
 
@@ -3412,6 +3422,31 @@ algorithm
     then ({eqn}, ouniqueEqIndex);
   end match;
 end makeSES_SIMPLE_ASSIGNwithArray;
+
+protected function assignRecordElements
+  "Assigns each element of a record expression from the matching element of the
+   record the given cref names. Neither side is a cref that could be assigned as
+   a whole, since the left hand side is an expression over scalarized variables."
+  input list<DAE.Exp> elems;
+  input list<DAE.Var> varLst;
+  input DAE.ComponentRef cref;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
+  input Integer iuniqueEqIndex;
+  output list<SimCode.SimEqSystem> outSimEqn = {};
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+protected
+  list<SimCode.SimEqSystem> eqns;
+  SimCode.SimEqSystem eqn;
+algorithm
+  for tpl in List.zip(elems, list(Expression.generateCrefsExpFromExpVar(v, cref) for v in varLst)) loop
+    (eqns, ouniqueEqIndex) := makeSES_SIMPLE_ASSIGNwithArray(tpl, source, eqAttr, ouniqueEqIndex);
+    for eqn in eqns loop
+      outSimEqn := eqn :: outSimEqn;
+    end for;
+  end for;
+  outSimEqn := listReverse(outSimEqn);
+end assignRecordElements;
 
 protected function makeSolved
   input BackendDAE.Equation eq;
@@ -17405,7 +17440,8 @@ algorithm
 
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
         locations := stringDelimitList(locations_lst, ";");
-        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
+        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/"
+                               + ";" + Settings.getInstallationDirectoryPath() + "/lib/" + Config.targetTriple() + "/omc";
         str := "@echo off\n"
                 + "SET PATH=" + locations + ";%PATH%;\n"
                 + "SET ERRORLEVEL=\n"
