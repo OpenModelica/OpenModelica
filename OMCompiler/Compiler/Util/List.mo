@@ -101,7 +101,7 @@ encapsulated package List
 
 public
   // these styles can be used with List.toString() to get predefined behaviour. Use List.toStringCustom for full control.
-  type Style = enumeration(NONE, FLAT, FLAT_BRACKETS, FLAT_CURLY, FLAT_CURLY_SHORT, NEWLINE, NEWLINE_INDENT, NEWLINE_TAB);
+  type Style = enumeration(NONE, FLAT, ROUND, SQUARE, CURLY, CURLY_SHORT, ANGLE, NEWLINE, NEWLINE_INDENT, NEWLINE_TAB);
 
 protected
   import Array;
@@ -4594,7 +4594,7 @@ end replaceAtWithList;
 public function toString<T>
   input list<T> inList;
   input FuncType inPrintFunc;
-  input Style style = Style.FLAT_CURLY;
+  input Style style = Style.CURLY;
   output String s;
 
   partial function FuncType
@@ -4603,14 +4603,16 @@ public function toString<T>
   end FuncType;
 algorithm
   s := match style
-    case Style.NONE              then toStringCustom(inList, inPrintFunc, "", "", "", "", true, 0);
-    case Style.FLAT              then toStringCustom(inList, inPrintFunc, "", "", ", ", "", true, 0);
-    case Style.FLAT_BRACKETS     then toStringCustom(inList, inPrintFunc, "", "(", ", ", ")", true, 0);
-    case Style.FLAT_CURLY        then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 0);
-    case Style.FLAT_CURLY_SHORT  then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 10);
-    case Style.NEWLINE           then toStringCustom(inList, inPrintFunc, "", "", "\n", "", true, 0);
-    case Style.NEWLINE_INDENT    then toStringCustom(inList, inPrintFunc, "", "  ", "\n  ", "", true, 0);
-    case Style.NEWLINE_TAB       then toStringCustom(inList, inPrintFunc, "", "\t", "\n\t", "", true, 0);
+    case Style.NONE           then toStringCustom(inList, inPrintFunc, "", "", "", "", true, 0);
+    case Style.FLAT           then toStringCustom(inList, inPrintFunc, "", "", ", ", "", true, 0);
+    case Style.ROUND          then toStringCustom(inList, inPrintFunc, "", "(", ", ", ")", true, 0);
+    case Style.SQUARE         then toStringCustom(inList, inPrintFunc, "", "[", ", ", "]", true, 0);
+    case Style.CURLY          then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 0);
+    case Style.CURLY_SHORT    then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 10);
+    case Style.ANGLE          then toStringCustom(inList, inPrintFunc, "", "<", ", ", ">", true, 0);
+    case Style.NEWLINE        then toStringCustom(inList, inPrintFunc, "", "", "\n", "", true, 0);
+    case Style.NEWLINE_INDENT then toStringCustom(inList, inPrintFunc, "", "  ", "\n  ", "", true, 0);
+    case Style.NEWLINE_TAB    then toStringCustom(inList, inPrintFunc, "", "\t", "\n\t", "", true, 0);
     else algorithm
       print(getInstanceName() + " failed because of unknown list style.\n");
     then fail();

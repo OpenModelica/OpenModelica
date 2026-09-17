@@ -2166,7 +2166,7 @@ uniontype Function
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because the body of the function is not a single assignment:\n"
-          + List.toStringCustom(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
+          + List.toString(body, function Statement.toString(indent = "\t"), List.Style.NEWLINE)});
       then fail();
     end match;
   end getSingleBodyExp;
@@ -2842,7 +2842,7 @@ protected
 
     if not listEmpty(cycles) then
       cycles_str := stringDelimitList(
-        list(List.toString(cycle, InstNode.name, List.Style.FLAT_CURLY)
+        list(List.toString(cycle, InstNode.name, List.Style.CURLY)
           for cycle in Graph.findCycles(cycles, InstNode.refEqual)), ", ");
 
       Error.addSourceMessage(Error.CYCLIC_FUNCTION_COMPONENTS, {cycles_str}, info);

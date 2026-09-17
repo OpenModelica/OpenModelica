@@ -278,7 +278,7 @@ algorithm
       DAE.ExtArg retty;
     case DAE.EXTERNALDECL(name = id,args = extargs,returnArg = retty,language = lang)
       algorithm
-        extargsstr := List.toStringCustom(extargs, dumpExtArgStr, "", "", ", ", "");
+        extargsstr := List.toString(extargs, dumpExtArgStr, List.Style.FLAT);
         rettystr := dumpExtArgStr(retty);
         rettystr := if stringEq(rettystr, "") then rettystr else (rettystr + " = ");
         str := stringAppendList({"external \"", lang, "\" ", rettystr, id,"(",extargsstr,");"});
