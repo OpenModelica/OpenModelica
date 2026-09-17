@@ -20,6 +20,7 @@ Bug3500.mos \
 Bug3687.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
+CombiTimeTableTest.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \

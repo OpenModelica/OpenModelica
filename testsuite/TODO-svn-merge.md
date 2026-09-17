@@ -14,7 +14,5 @@ variable passing the path to each test case (started: msl32 files were moved).
 
 ## List of stupid directories
 
-- flattening/libraries/msl22
-- flattening/libraries/msl22/modelicaAdditions
 - flattening/libraries/msl31
 - flattening/libraries/3rdParty/HumMod

@@ -72,13 +72,6 @@ if not installPackage(Complex, "4.1.0+maint.om", exactMatch=true) then
 else
   print("Installed: Complex 4.1.0+maint.om\n");
 end if;
-if not installPackage(Modelica, "2.2.2+maint.om", exactMatch=true) then
-  print("Modelica 2.2.2+maint.om failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: Modelica 2.2.2+maint.om\n");
-end if;
 if not installPackage(Modelica, "3.1.0+maint.om", exactMatch=true) then
   print("Modelica 3.1.0+maint.om failed.\n");
   print(getErrorString());
@@ -282,4 +275,4 @@ if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
 else
   print("Installed: WasteWater 2.1.0\n");
 end if;
-system("touch .openmodelica/20260908172220.stamp")
+system("touch .openmodelica/20260917174058.stamp")
