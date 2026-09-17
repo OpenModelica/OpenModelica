@@ -1845,10 +1845,21 @@ void coverageReportStage(int shardCount) {
   // The browsable HTML, kept per build.
   archiveArtifacts artifacts: 'build_cmake/coverage/**', allowEmptyArchive: false
 
+  // Pick the build recordCoverage below compares against (Git Forensics
+  // plugin). For a PR that is the build of the target branch (master) at the
+  // commit the PR is based on, so the deltas show what the PR changes and not
+  // what master did since. On master itself it is the previous build. Without
+  // this, the Coverage plugin falls back to the previous build of the same job,
+  // i.e. the PR's own previous run. Commits older than maxCommits have no build
+  // left anyway (buildDiscarder keeps 14 days); rather than comparing against
+  // an unrelated master build, the delta is then left out.
+  discoverGitReferenceBuild(maxCommits: 500)
+
   // Publish to Jenkins itself (Coverage plugin), which keeps the numbers per
-  // build and draws the trend. In a multibranch job it also picks the primary
-  // branch's last good build as the reference, so a PR shows its delta
-  // against master rather than just an absolute number.
+  // build and draws the trend. With the reference build above it also shows
+  // the delta of the whole project, the coverage of the modified lines and the
+  // indirect coverage changes: lines the PR did not touch whose coverage
+  // changed, e.g. because tests were added or removed.
   recordCoverage(tools: [[parser: 'COBERTURA',
                           pattern: 'build_cmake/coverage/coverage.xml']],
                  id: 'omc-coverage',
