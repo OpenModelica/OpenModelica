@@ -483,7 +483,7 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
     for (column = 0; column < nCols; column++) {
       if ((int)sp->colorCols[column] - 1 == color) {
         for (nz = (int)sp->leadindex[column]; nz < (int)sp->leadindex[column + 1]; nz++) {
-          if (jacobian->recoverMask[nz]) {
+          if (jacobian->recoverMask[nz] & 0x01) { // check if forward-recoverable
             row = (int)sp->index[nz];
             if (isDense)
               jac[column * nRows + row] = jacobian->resultVars[row];
@@ -507,7 +507,7 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
     for (row = 0; row < nRows; row++) {
       if ((int)spT->colorCols[row] - 1 == color) {
         for (nz = (int)spT->leadindex[row]; nz < (int)spT->leadindex[row + 1]; nz++) {
-          if (jacobian->recoverMask[nz]) {
+          if (jacobian->recoverMask[nz] & 0x02) { // check if adjoint-recoverable
             column = (int)spT->index[nz];
             if (isDense)
               jac[column * nRows + row] = jacobian->resultVarsAdj[column];
@@ -606,16 +606,16 @@ void vjp(DATA* data, threadData_t *threadData,
   }
 
   /* Ensure seeds are zeroed before use */
-  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+  memset(jacobian->seedVarsAdj, 0, nRows * sizeof(modelica_real));
 
   /* Evaluate constant equations (if any) */
-  if (jacobian->constColEqns) {
-    jacobian->constColEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constRowEqns) {
+    jacobian->constRowEqns(data, threadData, jacobian, parentJacobian);
   }
 
   /* Set all seeds */
   for (unsigned int row = 0; row < nRows; row++) {
-      jacobian->seedVars[row] = seed[row];
+      jacobian->seedVarsAdj[row] = seed[row];
   }
 
   /* Evaluate J * s into resultVars */
@@ -624,7 +624,7 @@ void vjp(DATA* data, threadData_t *threadData,
 
   /* Accumulate results into out */
   for (unsigned int col = 0; col < nCols; col++) {
-    out[col] += jacobian->resultVars[col];
+    out[col] += jacobian->resultVarsAdj[col];
   }
 }
 
