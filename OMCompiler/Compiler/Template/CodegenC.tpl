@@ -5213,6 +5213,7 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text
 end zeroCrossingsTpl;
 
 
+
 template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
@@ -5232,7 +5233,18 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   let forTail = match iter
     case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
-  match relation
+  // A RELATION's optionExpisASUB (see NBEvents.mo's asubTuple) records the for-loop
+  // iterator a state-event condition was originally wrapped in, so CodegenCFunctions.tpl
+  // can offset storedRelations[] per iteration. That iterator is only a genuine, in-scope
+  // C variable here when THIS zero-crossing still has its own regenerated for-loop (iter
+  // = SOME, via forHead above, using the very same iterator). When SimCode has already
+  // fully unrolled this zero-crossing into an independent scalar occurrence (iter = NONE)
+  // -- its own rel.index is then already correct on its own -- the stored iterator cref
+  // has no corresponding loop variable to reference at all, and daeExp falls back to
+  // printing the cref's bare (often source-level, e.g. "i") name, which doesn't compile
+  // (see PNlib.Test2.mos and friends). Strip it in that case; rel.index alone matches the
+  // pre-existing (working) behavior for a scalar occurrence.
+  match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
@@ -5418,7 +5430,8 @@ template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> ite
   let forTail = match iter
     case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
-  match relation
+  // See zeroCrossingTpl above for why this strip is needed.
+  match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<

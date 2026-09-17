@@ -732,8 +732,14 @@ public
         (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, UnorderedMap.size(bucket.state_map), Expression.typeOf(exp), iter);
         exp := Expression.fromCref(aux_cref);
 
-        // add the new event to the map
-        sev := STATE_EVENT(UnorderedMap.size(bucket.state_map), aux_var, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
+        // add the new event to the map. sev.index is the BASE of a reserved, consecutive
+        // block of storedRelations[] slots sized to the condition's own scalar iteration
+        // count (Condition.size) -- not just +1 per distinct condition -- so a for-loop-
+        // wrapped relation (e.g. v_abc[i] > a for i in 1:3) gets one slot per iteration
+        // instead of every iteration colliding on the same slot (see StateEvent.convert,
+        // which reads this back out to build DAE.RELATION's optionExpisASUB).
+        sev := STATE_EVENT(bucket.relation_index, aux_var, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
+        bucket.relation_index := bucket.relation_index + Condition.size(condition);
         condition := Condition.setRelationIndex(condition, sev.index);
         UnorderedMap.add(condition, sev, bucket.state_map);
       end if;
@@ -742,6 +748,30 @@ public
         bucket.aux_stmts := SOME((condition, aux_cref) :: Util.getOptionOrDefault(bucket.aux_stmts, {}));
       end if;
     end create;
+
+    function asubTuple
+      "for a SINGLE for-loop iterator with a literal-integer range (the common case, e.g.
+      1:3), builds the (iterator, istart, istep) tuple DAE.RELATION's optionExpisASUB
+      needs so CodegenCFunctions.tpl's zero-crossing template can compute a for-loop-body
+      relation's actual, per-iteration storedRelations[] slot at runtime as
+      rel.index + (iterator - istart)/istep, instead of every iteration colliding on the
+      relation's single base index (see StateEvent.create). Anything else (EMPTY, NESTED,
+      or a non-literal-integer range) is left unhandled (NONE()) -- matching the scope of
+      the analogous case in the old backend's FindZeroCrossings.mo, which likewise only
+      ever handles a single literal-integer DAE.RANGE iterator."
+      input Iterator iter;
+      output Option<tuple<DAE.Exp, Integer, Integer>> asub;
+    algorithm
+      asub := match iter
+        local
+          Expression start, step_exp;
+        case Iterator.SINGLE(range = Expression.RANGE(start = start as Expression.INTEGER(), step = SOME(step_exp as Expression.INTEGER())))
+          then SOME((Expression.toDAE(Expression.fromCref(iter.name)), start.value, step_exp.value));
+        case Iterator.SINGLE(range = Expression.RANGE(start = start as Expression.INTEGER(), step = NONE()))
+          then SOME((Expression.toDAE(Expression.fromCref(iter.name)), start.value, 1));
+        else NONE();
+      end match;
+    end asubTuple;
 
     function convert
       input tuple<Condition, StateEvent> sev_tpl;
@@ -753,14 +783,20 @@ public
       Option<list<OldSimIterator>> iter;
       list<ComponentRef> eqn_names;
       list<Integer> eqn_indices;
+      DAE.Exp relExp;
     algorithm
       (cond, sev) := sev_tpl;
       iter        := convertEventIterator(cond.iter);
       eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(PointerCyclic.access(eqn))) in UnorderedSet.toList(sev.eqns));
       eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names);
+      relExp      := Expression.toDAE(cond.exp);
+      relExp      := match relExp
+        case DAE.RELATION() then DAE.RELATION(relExp.exp1, relExp.operator, relExp.exp2, relExp.index, asubTuple(cond.iter));
+        else relExp;
+      end match;
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
-        relation_   = Expression.toDAE(cond.exp),
+        relation_   = relExp,
         occurEquLst = eqn_indices,
         iter        = iter
       );
@@ -1118,6 +1154,11 @@ protected
       UnorderedMap<Condition, StateEvent> state_map         "tracks full state events of the form $SEV_4 = ...";
       Option<list<tuple<Condition, ComponentRef>>> aux_stmts "optional statement conditions in algorithms";
       Integer stmt_index                                    "index to be used for unique statement auxiliaries";
+      Integer relation_index                                "next free storedRelations[] slot; unlike state_map's
+        size (one entry per distinct, possibly for-loop-wrapped condition), this is incremented by
+        Condition.size(condition) -- the condition's scalar iteration count -- so a for-loop-wrapped
+        relation (e.g. v_abc[i] > a for i in 1:3) reserves one storedRelations slot per iteration
+        instead of all iterations colliding on a single shared slot (see StateEvent.create/convert)";
     end BUCKET;
   end Bucket;
 
@@ -1128,7 +1169,8 @@ protected
       time_map    = UnorderedMap.new<CompositeEvent>(Condition.hash, Condition.isEqual),
       state_map   = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
       aux_stmts   = NONE(),
-      stmt_index  = 1);
+      stmt_index  = 1,
+      relation_index = 0);
     Pointer<Bucket> bucket_ptr;
     list<PointerCyclic<Variable>> auxiliary_vars;
     list<PointerCyclic<Equation>> auxiliary_eqns;

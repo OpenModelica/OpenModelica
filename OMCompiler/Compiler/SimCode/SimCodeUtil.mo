@@ -1529,6 +1529,35 @@ algorithm
   end for;
 end jacobianColumnsAreEmpty;
 
+public function stripAsubIfNoIter
+  "Strips a RELATION's optionExpisASUB (see the comment on DAE.RELATION, and
+  NBEvents.mo's asubTuple) whenever the caller has no regenerated for-loop of its
+  own around this expression (hasIter = false). optionExpisASUB names the iterator
+  cref a state-event condition was originally wrapped in, so CodegenCFunctions.tpl's
+  zero-crossing template can offset storedRelations[] per iteration -- but that only
+  compiles when the SAME for-loop is regenerated at the call site, giving the
+  iterator an actual in-scope C variable. When the caller has already fully unrolled
+  this expression into an independent scalar occurrence (hasIter = false), the
+  RELATION's own index is already correct standalone, and the stored iterator cref
+  has no corresponding loop variable to reference: codegen falls back to emitting
+  its bare (often source-level, e.g. \"i\") name, which doesn't compile (see
+  PNlib.Test2.mos and the other tests this fixes in CodegenC.tpl's zeroCrossingTpl/
+  relationTpl, the only current callers)."
+  input DAE.Exp exp;
+  input Boolean hasIter;
+  output DAE.Exp outExp;
+algorithm
+  outExp := if hasIter then exp else match exp
+    case DAE.RELATION(optionExpisASUB = SOME(_))
+      then DAE.RELATION(exp.exp1, exp.operator, exp.exp2, exp.index, NONE());
+    case DAE.LBINARY()
+      then DAE.LBINARY(stripAsubIfNoIter(exp.exp1, hasIter), exp.operator, stripAsubIfNoIter(exp.exp2, hasIter));
+    case DAE.LUNARY()
+      then DAE.LUNARY(exp.operator, stripAsubIfNoIter(exp.exp, hasIter));
+    else exp;
+  end match;
+end stripAsubIfNoIter;
+
 // =============================================================================
 // section to create SimCode.Equations from BackendDAE.Equation
 //
