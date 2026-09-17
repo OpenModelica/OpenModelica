@@ -33,6 +33,7 @@ eventTest2.mos \
 filterBlock1.mos \
 fullRobot.mos \
 gaspropreties.mos \
+HeatExchangerHomotopyFallback.mos \
 homotopy1.mos \
 homotopy2.mos \
 homotopy3.mos \
