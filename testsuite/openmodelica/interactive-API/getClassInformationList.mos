@@ -1,0 +1,93 @@
+// name: getClassInformationList.mos
+// keywords: getClassInformationList getClassInformation
+// status: correct
+//
+// Bulk form of getClassInformation. The middle name is a constant, not a class,
+// so it exercises the default-record fallback that keeps the result aligned with
+// the query.
+//
+
+loadString("package P
+  model M \"a model\"
+    Real x;
+  end M;
+  constant Real c = 1.0;
+end P;"); getErrorString();
+
+getClassInformationList({"P.M", "P.c", "P"}); getErrorString();
+
+// Result:
+// true
+// ""
+// {record OpenModelica.Scripting.getClassInformationList.ClassInformation
+//     restriction = "model",
+//     comment = "a model",
+//     partialPrefix = false,
+//     finalPrefix = false,
+//     encapsulatedPrefix = false,
+//     fileName = "<interactive>",
+//     fileReadOnly = false,
+//     lineNumberStart = 2,
+//     columnNumberStart = 3,
+//     lineNumberEnd = 4,
+//     columnNumberEnd = 8,
+//     dimensions = {},
+//     isProtectedClass = false,
+//     isDocumentationClass = false,
+//     version = "",
+//     preferredView = "",
+//     state = false,
+//     access = "",
+//     versionDate = "",
+//     versionBuild = "",
+//     dateModified = "",
+//     revisionId = ""
+// end OpenModelica.Scripting.getClassInformationList.ClassInformation;, record OpenModelica.Scripting.getClassInformationList.ClassInformation
+//     restriction = "",
+//     comment = "",
+//     partialPrefix = false,
+//     finalPrefix = false,
+//     encapsulatedPrefix = false,
+//     fileName = "",
+//     fileReadOnly = false,
+//     lineNumberStart = 0,
+//     columnNumberStart = 0,
+//     lineNumberEnd = 0,
+//     columnNumberEnd = 0,
+//     dimensions = {},
+//     isProtectedClass = false,
+//     isDocumentationClass = false,
+//     version = "",
+//     preferredView = "",
+//     state = false,
+//     access = "",
+//     versionDate = "",
+//     versionBuild = "",
+//     dateModified = "",
+//     revisionId = ""
+// end OpenModelica.Scripting.getClassInformationList.ClassInformation;, record OpenModelica.Scripting.getClassInformationList.ClassInformation
+//     restriction = "package",
+//     comment = "",
+//     partialPrefix = false,
+//     finalPrefix = false,
+//     encapsulatedPrefix = false,
+//     fileName = "<interactive>",
+//     fileReadOnly = false,
+//     lineNumberStart = 1,
+//     columnNumberStart = 1,
+//     lineNumberEnd = 6,
+//     columnNumberEnd = 6,
+//     dimensions = {},
+//     isProtectedClass = false,
+//     isDocumentationClass = false,
+//     version = "",
+//     preferredView = "",
+//     state = false,
+//     access = "",
+//     versionDate = "",
+//     versionBuild = "",
+//     dateModified = "",
+//     revisionId = ""
+// end OpenModelica.Scripting.getClassInformationList.ClassInformation;}
+// ""
+// endResult
