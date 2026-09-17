@@ -1781,6 +1781,12 @@ package SimCodeUtil
     output Boolean b ;
   end jacobianColumnsAreEmpty;
 
+  function stripAsubIfNoIter
+    input DAE.Exp exp;
+    input Boolean hasIter;
+    output DAE.Exp outExp;
+  end stripAsubIfNoIter;
+
   function getFmiInitialAttributeStr
     input SimCodeVar.SimVar simVar;
     output String out_string;
