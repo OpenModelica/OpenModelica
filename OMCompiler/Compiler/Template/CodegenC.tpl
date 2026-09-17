@@ -6835,19 +6835,6 @@ match sparsepattern
       <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
 
       omc_fclose(pFile);
-
-      <%if isBidirectional then <<
-      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
-       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
-       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
-      {
-        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
-        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
-        jacobian->adjointJacobian = adjJac;
-        initBidirectionalRecovery(jacobian);
-      }
-      >> %>
-
       return 0;
     }
     >>
