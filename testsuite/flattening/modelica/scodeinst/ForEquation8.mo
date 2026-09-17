@@ -20,6 +20,6 @@ end ForEquation8;
 // equation
 //   x[1] = 0.0;
 //   x[2] = 1.0;
-//   x[3] = /*Real*/(1 + 2);
+//   x[3] = 3.0;
 // end ForEquation8;
 // endResult
