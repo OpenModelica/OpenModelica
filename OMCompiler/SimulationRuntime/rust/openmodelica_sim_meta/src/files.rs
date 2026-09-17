@@ -48,3 +48,24 @@ pub fn read(path: &str) -> Option<alloc::vec::Vec<u8>> {
     #[cfg(not(feature = "std"))]
     None
 }
+
+static ENV: AtomicUsize = AtomicUsize::new(0);
+
+/// Install the reader an environment variable goes through. Unset, a `std` build
+/// reads the process environment and the in-wasm runtime has none.
+pub fn set_env_reader(f: fn(&str) -> Option<alloc::string::String>) {
+    ENV.store(f as usize, Ordering::Relaxed);
+}
+
+/// C's `getenv`; `None` when it is not set.
+pub fn env(name: &str) -> Option<alloc::string::String> {
+    let p = ENV.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&str) -> Option<alloc::string::String> = unsafe { core::mem::transmute(p) };
+        return f(name);
+    }
+    #[cfg(feature = "std")]
+    return std::env::var(name).ok();
+    #[cfg(not(feature = "std"))]
+    None
+}

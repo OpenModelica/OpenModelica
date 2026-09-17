@@ -581,6 +581,7 @@ pub extern "C" fn solve_nonlinear_system(
     thread_data: *mut threadData_t,
     sys_number: c_int,
 ) -> c_int {
+    let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let sys = unsafe { &mut *si.nonlinearSystemData.add(sys_number as usize) };
     let size = sys.size.max(0) as usize;
@@ -776,7 +777,12 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
         if data.is_null() { Vec::new() } else { crate::info_json::equation_vars(data, eq) }
     });
     nls::host::set_trap(|| {
-        let td = THREAD_DATA.load(core::sync::atomic::Ordering::Relaxed) as *mut threadData_t;
+        // A `--parmodauto` worker has its own jump buffers; the run's threadData is
+        // the main thread's and is only right for the thread that owns it.
+        let mut td = crate::parmod::current_thread_data();
+        if td.is_null() {
+            td = THREAD_DATA.load(core::sync::atomic::Ordering::Relaxed) as *mut threadData_t;
+        }
         crate::throw(td, "a model error was raised where nothing could absorb it")
     });
     // Both names are the path the flag gave; only the wasm host needs a second one.

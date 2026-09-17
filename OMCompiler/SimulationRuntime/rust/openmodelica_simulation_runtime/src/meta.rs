@@ -444,7 +444,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         dae: dae_info(data, layout),
         clocks: crate::sync::describe(data),
         lin: crate::linearize::describe(data, layout),
-        parmod: None,
+        parmod: crate::parmod::describe(),
         inputs: input_vars(data, md, si, layout, &real_names),
         opt: crate::optimization::describe(data, layout, real_names),
         recon: crate::datarecon::describe(data, layout, &version),

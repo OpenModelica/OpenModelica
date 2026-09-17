@@ -1176,16 +1176,38 @@ pub const AVAILABLE: bool = cfg!(sundials);
 /// setup. Keyed, not scanned: a model can have one system per discretization
 /// volume. Single-threaded, as the rest of this crate's rosters are.
 #[cfg(sundials)]
-struct Cache<T>(core::cell::UnsafeCell<alloc::collections::BTreeMap<u32, T>>);
+struct Cache<T> {
+    map: core::cell::UnsafeCell<alloc::collections::BTreeMap<u32, T>>,
+    /// The map is shared, where the solve itself runs detached from it: two
+    /// `--parmodauto` tasks can be inside two sparse systems at the same time.
+    lock: core::sync::atomic::AtomicU32,
+}
 #[cfg(sundials)]
 unsafe impl<T> Sync for Cache<T> {}
 
 #[cfg(sundials)]
 impl<T> Cache<T> {
+    const fn new() -> Cache<T> {
+        Cache {
+            map: core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()),
+            lock: core::sync::atomic::AtomicU32::new(0),
+        }
+    }
+
+    fn locked<R>(&self, f: impl FnOnce(&mut alloc::collections::BTreeMap<u32, T>) -> R) -> R {
+        use core::sync::atomic::Ordering;
+        while self.lock.compare_exchange_weak(0, 1, Ordering::Acquire, Ordering::Relaxed).is_err() {
+            core::hint::spin_loop();
+        }
+        let out = f(unsafe { &mut *self.map.get() });
+        self.lock.store(0, Ordering::Release);
+        out
+    }
+
     /// Detach the solver for `handle` so a model callback can re-enter for a nested
     /// system, run `f`, then put it back.
     fn with(&self, handle: u32, new: impl FnOnce() -> Option<T>, f: impl FnOnce(&mut T) -> bool) -> bool {
-        let mut solver = match unsafe { &mut *self.0.get() }.remove(&handle) {
+        let mut solver = match self.locked(|m| m.remove(&handle)) {
             Some(s) => s,
             None => match new() {
                 Some(s) => s,
@@ -1193,24 +1215,24 @@ impl<T> Cache<T> {
             },
         };
         let ok = f(&mut solver);
-        unsafe { &mut *self.0.get() }.insert(handle, solver);
+        self.locked(|m| m.insert(handle, solver));
         ok
     }
 }
 
 #[cfg(sundials)]
 static KIN_CACHE: Cache<sun::Solver> =
-    Cache(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
+    Cache::new();
 /// [`KIN_CACHE`] for `-nls=kinsol_b`.
 #[cfg(sundials)]
 static KIN_B_CACHE: Cache<sun::BSolver> =
-    Cache(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
+    Cache::new();
 
 /// Drop every per-system KINSOL/KLU memory; they belong to one run.
 #[cfg(sundials)]
 pub fn reset_caches() {
-    unsafe { &mut *KIN_CACHE.0.get() }.clear();
-    unsafe { &mut *KIN_B_CACHE.0.get() }.clear();
+    KIN_CACHE.locked(|m| m.clear());
+    KIN_B_CACHE.locked(|m| m.clear());
 }
 
 /// [`solve`] for `-nls=kinsol_b` (C's `B_nlsKinsolSolve`). `start` is C's

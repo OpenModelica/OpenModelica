@@ -19,6 +19,7 @@ mod meta;
 mod mixed;
 mod model_data;
 mod operators;
+mod parmod;
 mod optimization;
 mod run;
 mod nls;
