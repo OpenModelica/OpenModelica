@@ -1028,7 +1028,8 @@ void buildRustNightlyOMC(String name) {
   standardSetup()
   restoreNightlyShared()
   List flags = nightlyCommonFlags(t) + nightlyHandoverFlags() +
-               ['-DOM_ENABLE_GUI_CLIENTS=OFF', '-DRUST_OMC_SCRIPTING_API=ON']
+               ['-DOM_ENABLE_GUI_CLIENTS=OFF', '-DRUST_OMC_SCRIPTING_API=ON',
+                '-DOM_OMC_ENABLE_CPP_RUNTIME=ON']
   sh "cmake -S . -B build_cmake ${flags.join(' ')}"
   withSccache {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
