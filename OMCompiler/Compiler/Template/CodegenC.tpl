@@ -5995,7 +5995,7 @@ match sparsity
       }
       >> %>
 
-      /* Compute coloring at runtime from the actual <%if isAdjoint then 'CSR (treated as CSC of the transpose)' else 'CSC'%> pattern.
+      /* Compute coloring at runtime from the actual sparse pattern.
        * The WHOLEDIM-based C loops over-approximate array equations as dense
        * blocks, so a compile-time coloring (derived from the exact symbolic
        * sparsity) would be invalid for the runtime pattern.  Re-deriving it
