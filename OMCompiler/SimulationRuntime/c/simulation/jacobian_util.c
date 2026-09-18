@@ -47,7 +47,7 @@
  *                                  NULL if not available.
  * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
  */
-void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern)
+void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, modelica_boolean isAdjoint)
 {
   /* isRowEval is only known after this call, so make both vectors large enough for
    * either orientation. For square Jacobians (the common case) this is exact. */
@@ -55,15 +55,60 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
 
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
-  jacobian->sizeTmpVars = sizeTmpVars;
-  jacobian->seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-  jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-  jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
-  jacobian->dag = dag;
+
+  if (isAdjoint) {
+    jacobian->seedVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->seedVars = NULL;
+
+    jacobian->resultVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->resultVars = NULL;
+
+    jacobian->sizeTmpVars = 0;
+    jacobian->sizeTmpVarsAdj = sizeTmpVars;
+
+    jacobian->tmpVars = NULL;
+    jacobian->tmpVarsAdj = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+
+    jacobian->dag = NULL;
+    jacobian->dagT = NULL;
+
+    jacobian->evalColumn = NULL;
+    jacobian->evalRow = evalColumn;
+
+    jacobian->constColEqns = NULL;
+    jacobian->constRowEqns = constantEqns;
+
+    jacobian->sparsePattern = NULL;
+    jacobian->sparsePatternT = sparsePattern;
+  } else {
+    jacobian->seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->seedVarsAdj = NULL;
+
+    jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->resultVarsAdj = NULL;
+
+    jacobian->sizeTmpVars = sizeTmpVars;
+    jacobian->sizeTmpVarsAdj = 0;
+
+    jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+    jacobian->tmpVarsAdj = NULL;
+
+    jacobian->dag = dag;
+    jacobian->dagT = NULL;
+
+    jacobian->evalColumn = evalColumn;
+    jacobian->evalRow = NULL;
+
+    jacobian->constColEqns = constantEqns;
+    jacobian->constRowEqns = NULL;
+
+    jacobian->sparsePattern = sparsePattern;
+    jacobian->sparsePatternT = NULL;
+  }
+
   jacobian->evalSelectionCol = NULL;
-  jacobian->evalColumn = evalColumn;
-  jacobian->constColEqns = constantEqns;
-  jacobian->sparsePattern = sparsePattern;
+  jacobian->evalSelectionRow = NULL;
+
   jacobian->dae_cj = 0;
   jacobian->recoverMask = NULL;
   jacobian->csrToCscMap = NULL;
@@ -88,10 +133,11 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
     source->dag,
     source->evalColumn,
     source->constColEqns,
-    source->sparsePattern);
+    source->sparsePattern,
+    source->evalRow != NULL /* isAdjoint */);
 
-  jacobian->recoverMask = source->recoverMask;           /* shared pointer, not deep copy */
-  jacobian->csrToCscMap = source->csrToCscMap;           /* shared pointer, not deep copy */
+  jacobian->recoverMask = source->recoverMask;
+  jacobian->csrToCscMap = source->csrToCscMap;
   return jacobian;
 }
 
@@ -150,10 +196,25 @@ void freeJacobianCopy(JACOBIAN *jac)
 
 static void prepareAdjointJacobianForRowEvaluation(JACOBIAN* jacobian)
 {
-  jacobian->evalRow = jacobian->evalColumn;
-  jacobian->constRowEqns = jacobian->constColEqns;
+  jacobian->sizeTmpVarsAdj = jacobian->sizeTmpVars;
+  jacobian->sparsePatternT = jacobian->sparsePattern;
+  jacobian->seedVarsAdj = jacobian->seedVars;
+  jacobian->tmpVarsAdj = jacobian->tmpVars;
+  jacobian->resultVarsAdj = jacobian->resultVars;
   jacobian->dagT = jacobian->dag;
   jacobian->evalSelectionRow = jacobian->evalSelectionCol;
+  jacobian->evalRow = jacobian->evalColumn;
+  jacobian->constRowEqns = jacobian->constColEqns;
+
+  jacobian->sizeTmpVars = 0;
+  jacobian->sparsePattern = NULL;
+  jacobian->seedVars = NULL;
+  jacobian->tmpVars = NULL;
+  jacobian->resultVars = NULL;
+  jacobian->dag = NULL;
+  jacobian->evalSelectionCol = NULL;
+  jacobian->evalColumn = NULL;
+  jacobian->constColEqns = NULL;
 }
 
 static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, JACOBIAN* adjointJacobian)
@@ -798,36 +859,29 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
     return NULL;
   }
 
-  /* Forward and bidirectional Jacobians already carry CSC in sparsePattern.
-   * Standalone adjoint Jacobians evaluate rows and store CSR in sparsePattern;
-   * transpose once and cache as sparsePatternT. */
-  if (!jac->evalRow) {
+  // forward mode Jacobians and bidirectional Jacobians already have a CSC pattern; return it directly
+  if (!jac->evalRow || (jac->evalColumn && jac->evalRow)) {
     return jac->sparsePattern;
   }
 
-  if (jac->sparsePatternT != NULL) {
-    return jac->sparsePatternT;
+  // in the adjoint case transpose the CSR pattern to get CSC, and build the CSR->CSC mapping for sparse output
+  unsigned int* map = NULL;
+  SPARSE_PATTERN* csc = transposeSparsePattern(jac->sparsePatternT,
+                                                (unsigned int) jac->sizeCols,
+                                                (unsigned int) jac->sizeRows,
+                                                &map);
+  if (csc == NULL) {
+    free(map);
+    return jac->sparsePattern;
   }
 
-  {
-    unsigned int* map = NULL;
-    SPARSE_PATTERN* csc = transposeSparsePattern(jac->sparsePattern,
-                                                 (unsigned int) jac->sizeCols,
-                                                 (unsigned int) jac->sizeRows,
-                                                 &map);
-    if (csc == NULL) {
-      free(map);
-      return jac->sparsePattern;
-    }
-
-    jac->sparsePatternT = csc;
-    if (jac->csrToCscMap == NULL) {
-      jac->csrToCscMap = map;
-    } else {
-      free(map);
-    }
-    return jac->sparsePatternT;
+  jac->sparsePattern = csc;
+  if (jac->csrToCscMap == NULL) {
+    jac->csrToCscMap = map;
+  } else {
+    free(map);
   }
+  return jac->sparsePattern;
 }
 
 
