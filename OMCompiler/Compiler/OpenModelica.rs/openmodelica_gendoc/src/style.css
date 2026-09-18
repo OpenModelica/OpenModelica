@@ -1,0 +1,470 @@
+/* Light is the default: much of the Modelica documentation embeds images drawn
+   for a white page. Dark is opt-in and puts a white mat behind those images. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-soft: #f6f7f9;
+  --bg-code: #f2f4f7;
+  --bg-sidebar: #fafbfc;
+  --fg: #1d2127;
+  --fg-soft: #5b6472;
+  --accent: #a6231f;
+  --border: #d9dde3;
+  --link: #0b5ea8;
+  --hover: #eef1f5;
+  --mat: transparent;
+  --measure: 46rem;
+  --sidebar: 19rem;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14171b;
+  --bg-soft: #1b1f25;
+  --bg-code: #1f242b;
+  --bg-sidebar: #171b20;
+  --fg: #e4e7ec;
+  --fg-soft: #a2acba;
+  --accent: #ef8a86;
+  --border: #2c323a;
+  --link: #6fb3f2;
+  --hover: #232830;
+  --mat: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #14171b;
+    --bg-soft: #1b1f25;
+    --bg-code: #1f242b;
+    --bg-sidebar: #171b20;
+    --fg: #e4e7ec;
+    --fg-soft: #a2acba;
+    --accent: #ef8a86;
+    --border: #2c323a;
+    --link: #6fb3f2;
+    --hover: #232830;
+    --mat: #ffffff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── shell ────────────────────────────────────────────────────────────────── */
+
+.om-shell { display: flex; align-items: flex-start; }
+
+.om-sidebar {
+  flex: 0 0 var(--sidebar);
+  width: var(--sidebar);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.9rem 0.6rem 2rem;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+}
+
+.om-content { flex: 1 1 auto; min-width: 0; }
+
+.om-brand {
+  display: block;
+  padding: 0 0.4rem 0.7rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--fg);
+}
+
+.om-search {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.om-search:focus { outline: 2px solid var(--link); outline-offset: -1px; }
+
+.om-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.25rem;
+}
+
+.om-iconbutton {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--fg-soft);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.om-iconbutton:hover { background: var(--hover); border-color: var(--border); }
+
+#om-sidebar-toggle { display: none; }
+#om-theme { margin-left: auto; }
+
+.om-crumbs {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 0.85rem/1.5 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  word-break: break-word;
+}
+
+.om-crumbs .om-sep { color: var(--fg-soft); }
+.om-crumbs .om-current { color: var(--accent); font-weight: 600; }
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+/* ── tree ─────────────────────────────────────────────────────────────────── */
+
+.om-nav { margin-top: 0.8rem; font-size: 0.85rem; }
+
+.om-tree { list-style: none; margin: 0; padding: 0; }
+.om-tree .om-tree { padding-left: 0.85rem; }
+.om-collapsed { display: none; }
+
+.om-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  border-radius: 5px;
+  padding: 0.05rem 0.2rem;
+}
+
+.om-row:hover { background: var(--hover); }
+
+.om-row > a {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg);
+  padding: 0.1rem 0;
+}
+
+.om-row > a.om-here { color: var(--accent); font-weight: 600; }
+
+.om-twisty {
+  flex: none;
+  width: 1.1rem;
+  font-size: 0.65rem;
+  line-height: 1;
+  color: var(--fg-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.om-twisty:disabled { cursor: default; opacity: 0; }
+
+.om-tree-version { flex: none; font-size: 0.7rem; color: var(--fg-soft); }
+
+.om-loading { color: var(--fg-soft); font-size: 0.8rem; padding: 0.3rem 0.4rem; margin: 0; }
+
+/* ── search results ───────────────────────────────────────────────────────── */
+
+.om-results-heading {
+  margin: 1rem 0 0.3rem;
+  padding: 0 0.2rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--fg-soft);
+  border: 0;
+}
+
+.om-results { list-style: none; margin: 0; padding: 0; }
+
+.om-results a {
+  display: block;
+  padding: 0.3rem 0.4rem;
+  border-radius: 5px;
+  color: var(--fg);
+}
+
+.om-results a:hover { background: var(--hover); text-decoration: none; }
+
+.om-result-name { display: block; font-weight: 600; }
+
+.om-result-path,
+.om-result-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--fg-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.om-result-path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.om-more {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.45rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.om-more:hover:not(:disabled) { background: var(--hover); }
+
+/* ── page ─────────────────────────────────────────────────────────────────── */
+
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 0.4rem 0 0.6rem; }
+
+h2 {
+  font-size: 1.2rem;
+  margin: 2.2rem 0 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+h3 { font-size: 1.05rem; margin: 1.6rem 0 0.4rem; }
+
+.om-restriction {
+  display: block;
+  font: 600 0.7rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fg-soft);
+  margin-bottom: 0.35rem;
+}
+
+.om-summary { font-size: 1.05rem; color: var(--fg-soft); margin: 0 0 0.6rem; }
+.om-version { font-size: 0.85rem; color: var(--fg-soft); margin: 0; }
+
+/* The icon belongs beside the name, the way a class is shown everywhere else. */
+.om-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0.4rem 0 0.6rem;
+}
+
+.om-title h1 { margin: 0; }
+
+.om-icon {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+  margin-top: 0.5rem;
+}
+
+.om-graphics { margin: 1.5rem 0; }
+
+.om-diagram {
+  display: block;
+  max-width: 100%;
+  max-height: 32rem;
+  padding: 0.75rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.om-icon-small {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+  vertical-align: -0.22rem;
+  margin-right: 0.35rem;
+}
+
+.om-row .om-icon-small { width: 1rem; height: 1rem; margin-right: 0.3rem; }
+
+/* Library artwork is drawn for a white page; in dark mode give it one. */
+main img, .om-icon, .om-icon-small { background: var(--mat); border-radius: 2px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.95rem;
+}
+
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-soft);
+}
+
+tbody tr:hover { background: var(--bg-soft); }
+
+.om-contents .om-name { white-space: nowrap; }
+
+.om-extends {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
+  color: var(--fg-soft);
+}
+
+.om-members { font-size: 0.9rem; }
+
+/* Type, Name and Default are all Modelica identifiers, so they share one
+   monospace face. A fixed line-height keeps that face's smaller size from
+   shifting the row: every cell gets the same line box, and `baseline` then
+   lines the first lines up exactly. */
+.om-members td {
+  line-height: 1.45rem;
+  vertical-align: baseline;
+}
+
+.om-members .om-type,
+.om-members .om-name,
+.om-members .om-default {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  /* A qualified type or a call-shaped default is long; wrap it rather than let
+     the table scroll sideways. */
+  overflow-wrap: break-word;
+}
+
+.om-members .om-name { font-weight: 400; }
+
+.om-members .om-group td {
+  padding-top: 1rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-soft);
+  border-bottom: 0;
+}
+
+.om-from { font-weight: 400; font-size: 0.75rem; color: var(--fg-soft); }
+
+.om-source { white-space: nowrap; }
+
+.om-mark {
+  width: 1.1rem;
+  height: 1.1rem;
+  vertical-align: -0.2rem;
+  color: var(--fg-soft);
+}
+
+.om-source a:hover .om-mark { color: var(--fg); }
+
+.om-badge {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-soft);
+}
+
+/* Library documentation writes its own tables, which can be any width; keep
+   those inside the measure. Ours lay out as tables so their columns line up. */
+:is(#info, #revisions) :is(table, pre) { overflow-x: auto; display: block; }
+
+img { max-width: 100%; height: auto; }
+
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+code { background: var(--bg-code); border-radius: 4px; padding: 0.1em 0.3em; }
+pre code { background: none; padding: 0; }
+
+blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--fg-soft);
+}
+
+hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+.om-footer {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 1rem 1.25rem 3rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--fg-soft);
+}
+
+/* ── narrow ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 64rem) {
+  .om-sidebar {
+    position: fixed;
+    z-index: 20;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform 0.15s ease-out;
+    box-shadow: 0 0 2rem rgb(0 0 0 / 0.25);
+  }
+  .om-sidebar-open .om-sidebar { transform: none; }
+  #om-sidebar-toggle { display: block; }
+}
+
+@media (max-width: 30rem) {
+  body { font-size: 15px; }
+  h1 { font-size: 1.5rem; }
+  .om-contents .om-name { white-space: normal; }
+}

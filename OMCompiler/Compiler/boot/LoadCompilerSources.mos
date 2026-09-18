@@ -416,6 +416,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFInline.mo",
     "../NFFrontEnd/NFInstContext.mo",
     "../NFFrontEnd/NFInst.mo",
+    "../NFFrontEnd/NFInstanceAPI.mo",
     "../NFFrontEnd/NFInstNode.mo",
     "../NFFrontEnd/NFInstUtil.mo",
     "../NFFrontEnd/NFLookup.mo",

@@ -76,6 +76,17 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the arrow result
     // file's `modelica.units` needs the unit database's display conversions.
     "SimCodeUtil.unitConversion",
+    // openmodelica_gendoc/src/{icons,main}.rs → the documentation generator
+    // instantiates a library once and renders each class' icon from the model
+    // instance, then drops the top scope.
+    "BackendInterface.initializeWithoutBackend",
+    "NFInstanceAPI.mkTop",
+    "NFInstanceAPI.universeSCode",
+    "NFInstanceAPI.topFromSCode",
+    "NFInstanceAPI.iconJSONFromTop",
+    "NFInstanceAPI.resolveNamesFromTop",
+    "NFInstanceAPI.diagramJSONFromTop",
+    "NFInstanceAPI.clearTopScopeCache",
 ];
 
 /// Result of [`analyze`]: the set of function FQNs that must keep full `pub`

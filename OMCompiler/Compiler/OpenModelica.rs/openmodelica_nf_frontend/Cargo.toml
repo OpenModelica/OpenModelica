@@ -24,7 +24,16 @@ libc.workspace=true
 # assembles the GNU-syntax win64.S with clang-cl instead of the MASM trampoline
 # (which needs the unavailable ml64) — see the root Cargo.toml.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-libffi.workspace=true
+libffi = { workspace = true, optional = true }
 
 [build-dependencies]
 cc.workspace=true
+
+
+[features]
+# Compile-time evaluation of `external "C"` functions (dlopen + libffi). On by
+# default; without it FFI.callFunction reports the path unavailable, as it
+# already does on wasm, and neither libffi nor the C++ exception barrier is
+# built.
+default = ["ffi"]
+ffi = ["dep:libffi"]

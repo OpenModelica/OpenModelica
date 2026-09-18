@@ -31,7 +31,6 @@ impl Ord for ArgSpec {
 impl Default for ArgSpec {
     fn default() -> Self { Self::INPUT }
 }
-
 pub fn callFunction(
     _fnHandle: i32,
     _args: metamodelica::Array<metamodelica::Ref<Expression::NFExpression>>,

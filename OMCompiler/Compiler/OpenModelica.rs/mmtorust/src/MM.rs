@@ -296,6 +296,7 @@ fn interface_to_crate(interface: &str) -> Option<String> {
         "backend_util" => Some("openmodelica_backend_util".to_owned()),
         "nbackend" => Some("openmodelica_nbackend".to_owned()),
         "nf_frontend" => Some("openmodelica_nf_frontend".to_owned()),
+        "nf_api" => Some("openmodelica_nf_api".to_owned()),
         "frontend" => Some("openmodelica_frontend".to_owned()),
         "frontend_base" => Some("openmodelica_frontend_base".to_owned()),
         "parser" => Some("openmodelica_ast".to_owned()),
@@ -327,6 +328,7 @@ fn interface_to_crate(interface: &str) -> Option<String> {
         "backend_main" => Some("openmodelica_backend_main".to_owned()),
         "codegen_wasm_jit" => Some("openmodelica_codegen_wasm_jit".to_owned()),
         "omgraphics" => Some("openmodelica_omgraphics".to_owned()),
+        "loader" => Some("openmodelica_loader".to_owned()),
         _ => None,
     }
 }
