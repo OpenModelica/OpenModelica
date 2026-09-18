@@ -2554,6 +2554,15 @@ fn note_jac_eval() {
     flags().jac_evals.fetch_add(1, Ordering::Relaxed);
 }
 
+/// The iterations a KINSOL solve took, which SUNDIALS counts rather than
+/// [`nls_stat_inc`] (C reads them back with `KINGetNumNonlinSolvIters`).
+fn note_nls_iters(n: u64) {
+    for _ in 0..n {
+        stat_inc(STAT_NLS_ITER);
+    }
+    flags().iters.fetch_add(n, Ordering::Relaxed);
+}
+
 /// C's `numberOfIterations`, `numberOfFEval` and `numberOfJEval` as this thread's
 /// totals; a solve's own share is the difference across it, less what a nested
 /// solve took.
@@ -2692,7 +2701,12 @@ fn log_nls_leave(eq_index: u32, solved: bool, x: &[f64]) {
         true,
         if solved { "Solution status: SOLVED" } else { "Solution status: FAILED" },
     );
-    omclog::info!(omclog::NLS, false, " number of iterations : {}", c[0].load(Ordering::Relaxed));
+    omclog::info!(
+        omclog::NLS,
+        false,
+        " number of iterations           : {}",
+        c[0].load(Ordering::Relaxed)
+    );
     omclog::info!(omclog::NLS, false, " number of function evaluations : {}", c[1].load(Ordering::Relaxed));
     omclog::info!(omclog::NLS, false, " number of jacobian evaluations : {}", c[2].load(Ordering::Relaxed));
     omclog::info(omclog::NLS, false, "solution values:");
