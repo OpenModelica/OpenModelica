@@ -4182,6 +4182,11 @@ package Expression
     output Boolean outIsCref;
   end isCref;
 
+  function containsAnyCall
+    input DAE.Exp inExp;
+    output Boolean outContainsCall;
+  end containsAnyCall;
+
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
     input list<DAE.Subscript> inSubs;
