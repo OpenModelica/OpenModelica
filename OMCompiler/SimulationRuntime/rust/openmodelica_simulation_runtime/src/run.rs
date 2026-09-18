@@ -304,6 +304,12 @@ fn start_non_interactive_simulation(
             ) {
                 omclog::error(omclog::STDOUT, false, e);
             }
+            // C's statistics step runs whatever `performSimulation` returned.
+            if omclog::active(omclog::STATS)
+                && let Some(stats) = driver::take_failed_stats()
+            {
+                print_line(&openmodelica_sim_meta::stats::log_stats_block(&stats));
+            }
             unsafe { (*(*data).simulationInfo).simulationSuccess = 1 };
             // C's `_main_SimulationRuntime` leaves `retVal` at -1 when the run
             // left through the global jump buffer, which is what a model error

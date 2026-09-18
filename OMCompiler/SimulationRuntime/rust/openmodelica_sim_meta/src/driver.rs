@@ -1878,6 +1878,48 @@ mod solver_fail_store {
     pub use imp::{set, take};
 }
 
+/// The counters of a run that ended in an error: C prints `### STATISTICS ###`
+/// whatever `performSimulation` returned, and [`drive`] can only return a
+/// `&'static str`.
+mod failed_stats {
+    use crate::SolveStats;
+    use alloc::boxed::Box;
+    #[cfg(feature = "std")]
+    mod imp {
+        use super::*;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static STATS: RefCell<Option<Box<SolveStats>>> = const { RefCell::new(None) };
+        }
+        pub fn set(s: SolveStats) {
+            STATS.with(|c| *c.borrow_mut() = Some(Box::new(s)));
+        }
+        pub fn take() -> Option<Box<SolveStats>> {
+            STATS.with(|c| c.borrow_mut().take())
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use super::*;
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<Option<Box<SolveStats>>>);
+        unsafe impl Sync for Store {}
+        static STATS: Store = Store(UnsafeCell::new(None));
+        pub fn set(s: SolveStats) {
+            unsafe { *STATS.0.get() = Some(Box::new(s)) };
+        }
+        pub fn take() -> Option<Box<SolveStats>> {
+            unsafe { (*STATS.0.get()).take() }
+        }
+    }
+    pub use imp::{set, take};
+}
+
+/// The counters of the run that just failed, once.
+pub fn take_failed_stats() -> Option<alloc::boxed::Box<SolveStats>> {
+    failed_stats::take()
+}
+
 /// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
 /// before a run (the driver can only return a `&'static str`).
 mod chatter_store {
@@ -4908,6 +4950,8 @@ pub fn drive(
                 Err(err) => match is_model_throw(err) && driver.retry_step(e, model)? {
                     true => continue,
                     false => {
+                        // C reports the counters of a failed run too.
+                        driver.fill_stats(model, &mut stats);
                         // C reaches `simulationUpdate` even on a failed step: one
                         // more evaluation where the integrator stopped, then the line.
                         if let Some(t) = solver_fail_store::take() {
@@ -4959,9 +5003,14 @@ pub fn drive(
         Ok(rows) => rows,
         // C's `dataReconciliation(data, threadData, status)` with a non-zero status:
         // the run failed, so the procedure writes its error report and exits.
-        Err(e) => {
+        Err(err) => {
             report_run_failure(model);
-            return Err(e);
+            stats.method = label;
+            rtclock::accumulate(rtclock::TOTAL);
+            (stats.timers, stats.tcalls) = rtclock::snapshot();
+            stats.systems = e.sys_stats();
+            failed_stats::set(stats);
+            return Err(err);
         }
     };
     stats.method = label;
