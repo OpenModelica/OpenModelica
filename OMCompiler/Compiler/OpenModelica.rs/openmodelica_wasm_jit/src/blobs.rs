@@ -2,8 +2,8 @@
 //! external "C" on top of. Shipped as files under `lib/wasm32-wasip1/omc` and read
 //! on first use: 30 MB of an omc, identical on every platform, and carried twice
 //! over by a macOS universal build. The browser build has no filesystem and embeds
-//! them instead. A blob that was not built, or whose file is missing, is an empty
-//! slice -- which the callers already read as "cannot".
+//! them instead, all but the [`ondemand`] ones. A blob that was not built, or whose
+//! file is missing, is an empty slice -- which the callers already read as "cannot".
 
 #![allow(non_snake_case)]
 
@@ -55,6 +55,92 @@ macro_rules! blobs {
             blob_bytes!($dir, $file)
         }
     )*};
+}
+
+/// Blobs the browser build does not embed; its bundle ships them as files.
+#[cfg(target_arch = "wasm32")]
+pub mod ondemand {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+
+    thread_local! {
+        static SOURCE: RefCell<Option<fn(&str) -> Option<Vec<u8>>>> = const { RefCell::new(None) };
+        static CACHE: RefCell<HashMap<&'static str, &'static [u8]>> = RefCell::new(HashMap::new());
+    }
+
+    pub fn set_source(f: fn(&str) -> Option<Vec<u8>>) {
+        SOURCE.with(|s| *s.borrow_mut() = Some(f));
+    }
+
+    /// A failed fetch is not cached, so the next simulation tries again.
+    pub fn get(file: &'static str) -> &'static [u8] {
+        if let Some(b) = CACHE.with(|c| c.borrow().get(file).copied()) {
+            return b;
+        }
+        let Some(src) = SOURCE.with(|s| *s.borrow()) else { return &[] };
+        let Some(bytes) = src(file).filter(|v| !v.is_empty()) else { return &[] };
+        let bytes: &'static [u8] = Vec::leak(bytes);
+        CACHE.with(|c| c.borrow_mut().insert(file, bytes));
+        bytes
+    }
+}
+
+macro_rules! blobs_ondemand {
+    ($dir:expr, $($(#[$doc:meta])* $name:ident = $file:literal;)*) => {$(
+        $(#[$doc])*
+        pub fn $name() -> &'static [u8] {
+            #[cfg(target_arch = "wasm32")]
+            {
+                ondemand::get($file)
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                blob_bytes!($dir, $file)
+            }
+        }
+    )*};
+}
+
+blobs_ondemand! {env!("OUT_DIR"),
+    /// `openmodelica_lapack` with its own memory, for a host that cannot link the PIC
+    /// [`LAPACK_DYLINK`].
+    LAPACK_WASI = "lapack_wasi.wasm";
+
+    /// `[{"file": …, "exports": […]}]`, so a name is looked up before anything is fetched.
+    ONDEMAND_INDEX = "index.json";
+}
+
+/// Symbol -> blob file. Cached even when it fails, so a bundle with no index is not
+/// fetched again for every name.
+fn ondemand_index() -> Option<&'static std::collections::HashMap<String, String>> {
+    static MAP: std::sync::OnceLock<Option<std::collections::HashMap<String, String>>> =
+        std::sync::OnceLock::new();
+    MAP.get_or_init(|| {
+        let json = serde_json::from_slice::<serde_json::Value>(ONDEMAND_INDEX()).ok()?;
+        let mut map = std::collections::HashMap::new();
+        for entry in json.as_array()? {
+            let (Some(file), Some(exports)) = (
+                entry.get("file").and_then(|f| f.as_str()),
+                entry.get("exports").and_then(|e| e.as_array()),
+            ) else {
+                continue;
+            };
+            for name in exports.iter().filter_map(|n| n.as_str()) {
+                map.insert(name.to_owned(), file.to_owned());
+            }
+        }
+        Some(map)
+    })
+    .as_ref()
+}
+
+pub fn ondemand_library_for(symbol: &str) -> Option<&'static str> {
+    ondemand_index()?.get(symbol).map(String::as_str)
+}
+
+/// No index means no on-demand libraries: not the same as a name none exports.
+pub fn ondemand_index_read() -> bool {
+    ondemand_index().is_some()
 }
 
 blobs! {env!("OUT_DIR"),

@@ -324,40 +324,31 @@ struct ExtEnv {
     sig: crate::sig::ExtCallSig,
 }
 
-/// Wire the `ext.*` external "C" imports for the web target by instantiating the
-/// ModelicaExternalC WASI side module (`EXTERNAL_C_WASM`, its own memory) and
-/// binding each `ext.<name>` to a host trampoline that marshals String/array
-/// arguments from the sim memory into the side module's memory (via its `malloc`),
-/// calls the corresponding export, and copies the C return value and any `_Out_`
-/// pointer outputs (scalars, and `char*`/`char**` strings) back — the latter into
-/// fresh in-wasm strings (`rt_str_new`/`rt_str_data`). External-object handles
-/// (`tableID`) are the side module's own pointers, passed straight through as `i32`.
-/// A `ModelicaError` goes to the runtime's `rt_ext_error`, bound wasm→wasm so the
-/// throw it ends in reaches the model's `try_table`; a marshalled call has a host
-/// frame in the way and recovers by [`recover_trial`] instead. Mirrors
-/// `sim_runtime_wasmtime::define_external_imports`.
-fn define_external_imports(
+/// An own-memory side module an `ext.*` import is served from.
+struct SideModule {
+    inst: wasmer::Instance,
+    mem: wasmer::Memory,
+    malloc: wasmer::TypedFunction<u32, u32>,
+    free: wasmer::TypedFunction<u32, ()>,
+    sp: Option<wasmer::Global>,
+}
+
+/// Libraries for a name ModelicaExternalC lacks, keyed as `crate::ONDEMAND_INDEX` is.
+const FALLBACK_SIDE_MODULES: &[(&str, fn() -> &'static [u8])] =
+    &[("lapack_wasi.wasm", crate::LAPACK_WASI)];
+
+/// With ModelicaExternalC's `env.*` imports (a module declaring fewer ignores them).
+fn instantiate_side_module(
     store: &mut Store,
-    imports: &mut wasmer::Imports,
-    model: &SimModel,
-    sim_mem: &wasmer::Memory,
     rt_inst: &wasmer::Instance,
-    host_mem: &crate::host::HostMem,
-    rt_str_new: &wasmer::TypedFunction<u32, u32>,
-    rt_str_data: &wasmer::TypedFunction<u32, u32>,
-    rt_release: &wasmer::TypedFunction<u32, ()>,
-) -> Result<()> {
-    use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, Value};
+    bytes: &'static [u8],
+) -> Result<SideModule> {
+    use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut, RuntimeError};
 
-    if EXTERNAL_C_WASM().is_empty() {
-        return Err("error");
-    }
-
-    // Instantiate the side module with its `env.rt_ext_*`/`usertab`/
-    // `ModelicaAllocateString` imports. The `Modelica*` entry points themselves
-    // are inside it (`external_c_callbacks.c`), so what arrives here has already
+    // The `Modelica*` entry points are inside the module
+    // (`external_c_callbacks.c`), so what arrives at the hooks below has already
     // been through `vsnprintf`.
-    let side_module = wasmer::Module::from_binary(store.engine(), EXTERNAL_C_WASM()).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+    let side_module = wasmer::Module::from_binary(store.engine(), bytes).map_err(|_| "CodegenWasmJit: wasm engine error")?;
     let err_env = FunctionEnv::new(&mut *store, SideErrEnv { mem: None });
     let side_msg = |env: &FunctionEnvMut<SideErrEnv>, ptr: i32| -> String {
         let mem = env.data().mem.clone();
@@ -440,7 +431,6 @@ fn define_external_imports(
     err_env.as_mut(&mut *store).mem = Some(side_mem.clone());
     wasi_env.as_mut(&mut *store).set_memory(side_mem.clone());
     let side_sp = side_inst.exports.get_global("__stack_pointer").ok().cloned();
-    host_mem.set_side(&mut *store, &side_mem, side_sp.clone());
     // WASI reactor initialization (sets up the C runtime state).
     if let Ok(init) = side_inst.exports.get_typed_function::<(), ()>(&*store, "_initialize") {
         wt(init.call(&mut *store))?;
@@ -449,22 +439,81 @@ fn define_external_imports(
     let free: wasmer::TypedFunction<u32, ()> = wt(side_inst.exports.get_typed_function(&*store, "free"))?;
     // Now the allocator import can reach the side module's `malloc`.
     alloc_env.as_mut(&mut *store).malloc = Some(malloc.clone());
+    Ok(SideModule { inst: side_inst, mem: side_mem, malloc, free, sp: side_sp })
+}
+
+/// Wire the `ext.*` external "C" imports for the web target by instantiating the
+/// ModelicaExternalC WASI side module (`EXTERNAL_C_WASM`, its own memory) -- plus,
+/// for a name it does not export, the first of [`FALLBACK_SIDE_MODULES`] that does
+/// -- and binding each `ext.<name>` to a host trampoline that marshals String/array
+/// arguments from the sim memory into the side module's memory (via its `malloc`),
+/// calls the corresponding export, and copies the C return value and any `_Out_`
+/// pointer outputs (scalars, and `char*`/`char**` strings) back — the latter into
+/// fresh in-wasm strings (`rt_str_new`/`rt_str_data`). External-object handles
+/// (`tableID`) are the side module's own pointers, passed straight through as `i32`.
+/// A `ModelicaError` goes to the runtime's `rt_ext_error`, bound wasm→wasm so the
+/// throw it ends in reaches the model's `try_table`; a marshalled call has a host
+/// frame in the way and recovers by [`recover_trial`] instead. Mirrors
+/// `sim_runtime_wasmtime::define_external_imports`.
+fn define_external_imports(
+    store: &mut Store,
+    imports: &mut wasmer::Imports,
+    model: &SimModel,
+    sim_mem: &wasmer::Memory,
+    rt_inst: &wasmer::Instance,
+    host_mem: &crate::host::HostMem,
+    rt_str_new: &wasmer::TypedFunction<u32, u32>,
+    rt_str_data: &wasmer::TypedFunction<u32, u32>,
+    rt_release: &wasmer::TypedFunction<u32, ()>,
+) -> Result<()> {
+    use wasmer::{Function, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, Value};
+
+    if EXTERNAL_C_WASM().is_empty() {
+        return Err("error");
+    }
+
+    let primary = instantiate_side_module(&mut *store, rt_inst, EXTERNAL_C_WASM())?;
+    host_mem.set_side(&mut *store, &primary.mem, primary.sp.clone());
+    // `tried` keeps a library that could not be fetched from being asked for again.
+    let mut fallback: Vec<Option<SideModule>> = FALLBACK_SIDE_MODULES.iter().map(|_| None).collect();
+    let mut tried = vec![false; FALLBACK_SIDE_MODULES.len()];
+
     let nls_recovering: wasmer::TypedFunction<(), i32> = wt(rt_inst.exports.get_typed_function(&*store, "rt_nls_recovering"))?;
     let nls_note: wasmer::TypedFunction<(), ()> = wt(rt_inst.exports.get_typed_function(&*store, "rt_nls_note_assert"))?;
 
     for sig in &model.ext_imports {
         let name = &sig.name;
-        let func = side_inst
-            .exports
-            .get_function(name)
-            .map_err(|e| {
-                crate::set_engine_error_detail(format!(
-                    "  the ModelicaExternalC side module exports no `{name}` — the web \
-                     target only has the libraries built into it"
-                ));
-                "CodegenWasmJit: external \"C\" function not in the side module"
-            })?
-            .clone();
+        let mut owner: Option<usize> = None;
+        let mut found = primary.inst.exports.get_function(name).ok().cloned();
+        if found.is_none()
+            && let Some(file) = crate::ondemand_library_for(name)
+            && let Some(i) = FALLBACK_SIDE_MODULES.iter().position(|(f, _)| *f == file)
+        {
+            if !std::mem::replace(&mut tried[i], true) {
+                let bytes = (FALLBACK_SIDE_MODULES[i].1)();
+                if !bytes.is_empty() {
+                    fallback[i] = Some(instantiate_side_module(&mut *store, rt_inst, bytes)?);
+                }
+            }
+            if let Some(m) = &fallback[i] {
+                found = m.inst.exports.get_function(name).ok().cloned();
+                owner = found.is_some().then_some(i);
+            }
+        }
+        let Some(func) = found else {
+            let why = match crate::ondemand_library_for(name) {
+                Some(file) => format!("; the bundle has no readable `{file}`"),
+                None if !crate::ondemand_index_read() =>
+                    "; the bundle's `wasm-blobs/index.json` could not be read".to_owned(),
+                None => String::new(),
+            };
+            crate::set_engine_error_detail(format!(
+                "  no side module exports `{name}` — the web target has ModelicaExternalC \
+                 built in and fetches the rest on demand{why}"
+            ));
+            return Err("CodegenWasmJit: external \"C\" function not in the side module");
+        };
+        let side = owner.map_or(&primary, |i| fallback[i].as_ref().expect("the owner is instantiated"));
         // Nothing to marshal: bind the export straight in, so the engine calls it
         // wasm->wasm instead of through a host trampoline.
         if is_passthrough(sig) {
@@ -477,15 +526,15 @@ fn define_external_imports(
         );
         let env = FunctionEnv::new(&mut *store, ExtEnv {
             sim_mem: sim_mem.clone(),
-            side_mem: side_mem.clone(),
-            malloc: malloc.clone(),
-            free: free.clone(),
+            side_mem: side.mem.clone(),
+            malloc: side.malloc.clone(),
+            free: side.free.clone(),
             rt_str_new: rt_str_new.clone(),
             rt_str_data: rt_str_data.clone(),
             rt_release: rt_release.clone(),
             nls_recovering: nls_recovering.clone(),
             nls_note: nls_note.clone(),
-            side_sp: side_sp.clone(),
+            side_sp: side.sp.clone(),
             func,
             sig: sig.clone(),
         });

@@ -16,6 +16,8 @@ openmodelica_error.workspace = true
 openmodelica_wasi.workspace = true
 # The PIC wasi-libc a model's own external "C" library is loaded on top of.
 openmodelica_wasi_libc.workspace = true
+# The on-demand blob index (blobs::ondemand_library_for).
+serde_json.workspace = true
 # Native DAE solver for the DASSL driver; only with the engine (jit).
 daskr = { path = "../../../SimulationRuntime/rust/daskr", optional = true }
 

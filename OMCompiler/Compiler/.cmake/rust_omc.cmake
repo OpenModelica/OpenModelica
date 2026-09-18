@@ -1475,7 +1475,7 @@ function(omc_rust_setup_codegen)
   # imports against.
   install(DIRECTORY ${RUST_OMC_WASM_BLOB_DIR}/
           DESTINATION lib/wasm32-wasip1/omc COMPONENT omc
-          FILES_MATCHING PATTERN "*.wasm")
+          FILES_MATCHING PATTERN "*.wasm" PATTERN "index.json")
 
   install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
           DESTINATION lib/wasm32-wasip1/omc/sysroot COMPONENT omc)
@@ -2179,6 +2179,7 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/ui.js
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+        ${RUST_OMC_DIR}/wasm/wasm-blobs.js
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -2224,6 +2225,7 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/ui.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+                ${RUST_OMC_DIR}/wasm/wasm-blobs.js
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -2328,6 +2330,12 @@ function(omc_rust_setup_wasm)
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
+    # The side modules the wasm omc does not embed, with the index naming what each
+    # exports; fetched from here on the first call that needs one (wasm-blobs.js).
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/wasm-blobs
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_WASM_BLOB_DIR}/lapack_wasi.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/index.json
+            ${_web_dir}/wasm-blobs/
     ${_web_launcher_extra}
     DEPENDS ${_wasm_artifact} rust_wasm_cargo ${WASM_BINDGEN_EXECUTABLE}
             ${_web_launcher} ${_web_launcher_deps}

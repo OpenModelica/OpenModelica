@@ -546,3 +546,4 @@ wasm/simulator/omc-worker.js
 wasm/theme.css
 wasm/units.js
 wasm/ui.js
+wasm/wasm-blobs.js
