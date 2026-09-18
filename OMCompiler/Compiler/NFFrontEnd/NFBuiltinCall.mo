@@ -2277,9 +2277,17 @@ protected
     output Purity purity;
   protected
     Call ty_call;
+    String context_str;
   algorithm
     if InstContext.inSubexpression(context) or InstContext.inAlgorithm(context) then
       Error.addSourceMessage(Error.SPATIAL_DISTRIBUTION_CONTEXT, {}, info);
+      fail();
+    end if;
+
+    if InstContext.inIf(context) or InstContext.inWhen(context) then
+      context_str := if InstContext.inIf(context) then "an if-equation" else "a when-equation";
+      Error.addSourceMessage(Error.ELEMENT_IS_NOT_ALLOWED_IN_CONTEXT,
+        {"spatialDistribution", context_str}, info);
       fail();
     end if;
 

@@ -7,7 +7,6 @@ hybridSys.mos \
 algorithmWhen.mos\
 AssertNoEvent.mos\
 integerIteratorNoEvent.mos\
-SpatialDistribution.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
