@@ -55,3 +55,8 @@ pub fn run(
 pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
     Ok(Vec::new())
 }
+
+/// No artifacts to keep, so nowhere to keep them.
+pub fn aot_cache_dir() -> std::path::PathBuf {
+    std::env::temp_dir()
+}
