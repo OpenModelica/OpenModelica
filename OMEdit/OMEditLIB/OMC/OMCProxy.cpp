@@ -654,6 +654,21 @@ int omcWorkerWriteFiles(const QList<QPair<QString, QByteArray> > &files)
   return omedit_take_vfs_written(id);
 }
 
+// Expand a zip into the worker store (omc_vfs_load_zip), so a library picked as an
+// archive lands with its directory structure. Returns the file count, -1 on failure.
+EM_JS(int, omedit_post_vfs_load_zip, (const char *mount, const char *bytes, int len), {
+  return Module.__omcPostCall({ cmd: "vfsLoadZip", mount: UTF8ToString(mount),
+                                bytes: HEAPU8.slice(bytes, bytes + len) });
+});
+
+int omcWorkerLoadZip(const char *mount, const QByteArray &data)
+{
+  if (!omedit_worker_ready()) return -1;
+  int id = omedit_post_vfs_load_zip(mount, data.constData(), data.size());
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_written(id);
+}
+
 // Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.
 // Returns the immediate child names of dir; directories carry a trailing '/'.
 EM_JS(int, omedit_post_vfs_list, (const char *path), {

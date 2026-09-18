@@ -290,6 +290,17 @@ self.onmessage = async (e) => {
       let written = 0;
       try { written = wasi_write_files(msg.entries); } catch (e) { written = -1; }
       self.postMessage({ kind: "vfsPutManyResult", id: msg.id, written });
+    } else if (msg.cmd === "vfsLoadZip") {
+      // A zipped library the GUI picked: unzipped straight into this store, so
+      // loadFile finds the Resources/ next to the .mo.
+      let written = -1;
+      let error = "";
+      try {
+        written = OmcModule.omc_vfs_load_zip(msg.mount, msg.bytes);
+      } catch (e) {
+        error = String(e);
+      }
+      self.postMessage({ kind: "vfsLoadZipResult", id: msg.id, written, error });
     } else if (msg.cmd === "vfsRemove") {
       // File or whole subtree; the store's directories are implicit.
       let ok = false;
