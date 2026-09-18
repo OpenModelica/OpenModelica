@@ -2030,5 +2030,19 @@ function wrapToTerminal
   output String outStr = stringAppendList(StringUtil.wordWrap(str, System.getTerminalWidth(), "\n"));
 end wrapToTerminal;
 
+public function applyNumProcEnvironment
+  "Bound OpenBLAS's thread pool, which it sizes from the environment when it
+   loads and which costs 128 MiB of address space per thread. An OpenMP build
+   (the MSYS2 package used on Windows) ignores OPENBLAS_NUM_THREADS and reads
+   only OMP_NUM_THREADS, so both are set. Called wherever -n is applied rather
+   than from Main.init alone: a setCommandLineOptions is still ahead of whatever
+   first loads the library."
+algorithm
+  if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
+    System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
+    System.setEnv("OMP_NUM_THREADS", "1", false);
+  end if;
+end applyNumProcEnvironment;
+
 annotation(__OpenModelica_Interface="util");
 end FlagsUtil;

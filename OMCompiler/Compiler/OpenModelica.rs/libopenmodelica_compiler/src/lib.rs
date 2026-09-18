@@ -213,14 +213,22 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     use std::io::Write;
     set_revision();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
-    // and stop. For the build; not a user-facing flag.
+    // and stop; empty means the per-user cache, which an installer or a test run
+    // warms. For the build and for CI; not a user-facing flag.
     #[cfg(not(target_arch = "wasm32"))]
     if let Some(dir) = std::env::var_os("OMC_WASM_PRECOMPILE_CACHE") {
-        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(
-            std::path::Path::new(&dir),
-        ) {
+        // Bulk allocation with no translation to abandon: a genuine exhaustion
+        // should come back as wasmtime's error, not an unwind from a destructor.
+        metamodelica::heap_limit::set_max_heap_size(0);
+        let dir = std::path::PathBuf::from(&dir);
+        let dir = if dir.as_os_str().is_empty() {
+            openmodelica_wasm_jit::sim_runtime::aot_cache_dir()
+        } else {
+            dir
+        };
+        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir) {
             Ok(names) => {
-                println!("precompiled {} wasm artifacts into {}", names.len(), std::path::Path::new(&dir).display());
+                println!("precompiled {} wasm artifacts into {}", names.len(), dir.display());
                 0
             }
             Err(e) => {

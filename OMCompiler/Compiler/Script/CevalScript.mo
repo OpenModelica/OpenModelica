@@ -989,6 +989,7 @@ algorithm
         b := Flags.isSet(Flags.SCODE_INST);
         strs := System.strtok(str, " ");
         {} := FlagsUtil.readArgs(strs);
+        FlagsUtil.applyNumProcEnvironment();
         outCache := FCore.emptyCache();
 
         if b <> Flags.isSet(Flags.SCODE_INST) then
