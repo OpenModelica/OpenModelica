@@ -60,16 +60,11 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
   jacobian->dag = dag;
-  jacobian->evalSelection = NULL;
+  jacobian->evalSelectionCol = NULL;
   jacobian->evalColumn = evalColumn;
-  jacobian->constantEqns = constantEqns;
+  jacobian->constColEqns = constantEqns;
   jacobian->sparsePattern = sparsePattern;
-  jacobian->availability = JACOBIAN_UNKNOWN;
   jacobian->dae_cj = 0;
-  jacobian->isRowEval = FALSE;
-  jacobian->cscPattern = NULL;
-  jacobian->isBidirectional = FALSE;
-  jacobian->adjointJacobian = NULL;
   jacobian->recoverMask = NULL;
   jacobian->csrToCscMap = NULL;
 }
@@ -92,16 +87,11 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
     source->sizeTmpVars,
     source->dag,
     source->evalColumn,
-    source->constantEqns,
+    source->constColEqns,
     source->sparsePattern);
 
-  jacobian->isRowEval = source->isRowEval;
-  jacobian->isBidirectional = source->isBidirectional;
-  jacobian->adjointJacobian = source->adjointJacobian;  /* shared pointer, not deep copy */
   jacobian->recoverMask = source->recoverMask;           /* shared pointer, not deep copy */
   jacobian->csrToCscMap = source->csrToCscMap;           /* shared pointer, not deep copy */
-  jacobian->cscPattern = NULL;                           /* not owned by the copy, rebuild on demand */
-
   return jacobian;
 }
 
@@ -118,15 +108,20 @@ void freeJacobian(JACOBIAN *jac)
     free(jac->seedVars); jac->seedVars = NULL;
     free(jac->tmpVars); jac->tmpVars = NULL;
     free(jac->resultVars); jac->resultVars = NULL;
+    free(jac->seedVarsAdj); jac->seedVarsAdj = NULL;
+    free(jac->tmpVarsAdj); jac->tmpVarsAdj = NULL;
+    free(jac->resultVarsAdj); jac->resultVarsAdj = NULL;
     freeSparsePattern(jac->sparsePattern); jac->sparsePattern = NULL;
-    freeSparsePattern(jac->cscPattern); jac->cscPattern = NULL;
+    freeSparsePattern(jac->sparsePatternT); jac->sparsePatternT = NULL;
     freeEvalDAG(jac->dag); jac->dag = NULL;
-    freeEvalSelection(jac->evalSelection); jac->evalSelection = NULL;
+    freeEvalDAG(jac->dagT); jac->dagT = NULL;
+    freeEvalSelection(jac->evalSelectionCol); jac->evalSelectionCol = NULL;
+    freeEvalSelection(jac->evalSelectionRow); jac->evalSelectionRow = NULL;
+    jac->evalRow = NULL;
+    jac->constRowEqns = NULL;
+    jac->sizeTmpVarsAdj = 0;
     free(jac->recoverMask); jac->recoverMask = NULL;
     free(jac->csrToCscMap); jac->csrToCscMap = NULL;
-    /* adjointJacobian is not owned; do not free */
-    jac->adjointJacobian = NULL;
-    jac->availability = JACOBIAN_UNKNOWN;
   }
 }
 
@@ -144,27 +139,60 @@ void freeJacobianCopy(JACOBIAN *jac)
     free(jac->seedVars);
     free(jac->tmpVars);
     free(jac->resultVars);
-    freeSparsePattern(jac->cscPattern);
-    freeEvalSelection(jac->evalSelection);
+    free(jac->seedVarsAdj);
+    free(jac->tmpVarsAdj);
+    free(jac->resultVarsAdj);
+    freeEvalSelection(jac->evalSelectionCol);
+    freeEvalSelection(jac->evalSelectionRow);
     free(jac);
   }
 }
 
+static void prepareAdjointJacobianForRowEvaluation(JACOBIAN* jacobian)
+{
+  jacobian->evalRow = jacobian->evalColumn;
+  jacobian->constRowEqns = jacobian->constColEqns;
+  jacobian->dagT = jacobian->dag;
+  jacobian->evalSelectionRow = jacobian->evalSelectionCol;
+}
+
+static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, JACOBIAN* adjointJacobian)
+{
+  forwardJacobian->sizeTmpVarsAdj = adjointJacobian->sizeTmpVars;
+  forwardJacobian->sparsePatternT = adjointJacobian->sparsePattern;
+  forwardJacobian->seedVarsAdj = adjointJacobian->seedVars;
+  forwardJacobian->tmpVarsAdj = adjointJacobian->tmpVars;
+  forwardJacobian->resultVarsAdj = adjointJacobian->resultVars;
+  forwardJacobian->dagT = adjointJacobian->dag;
+  forwardJacobian->evalSelectionRow = adjointJacobian->evalSelectionCol;
+  forwardJacobian->evalRow = adjointJacobian->evalColumn;
+  forwardJacobian->constRowEqns = adjointJacobian->constColEqns;
+
+  adjointJacobian->sizeTmpVars = 0;
+  adjointJacobian->sparsePattern = NULL;
+  adjointJacobian->seedVars = NULL;
+  adjointJacobian->tmpVars = NULL;
+  adjointJacobian->resultVars = NULL;
+  adjointJacobian->dag = NULL;
+  adjointJacobian->evalSelectionCol = NULL;
+  adjointJacobian->evalColumn = NULL;
+  adjointJacobian->constColEqns = NULL;
+}
 
 /*!
- * \brief Row-wise (adjoint / reverse mode) Jacobian evaluation.
+ * \brief Row-wise Jacobian evaluation.
  *
- * Assumptions (see JACOBIAN::isRowEval):
- *  - jacobian->evalColumn evaluates a row-direction seed, i.e. it computes s^T * J
- *  - the struct describes J^T: sizeCols == number of rows of J, sizeRows == number of columns of J
- *  - sparsePattern is CSC of J^T (== CSR of J) with row coloring in colorCols
+ * Assumptions:
+ *  - jacobian->evalColumn evaluates a row-direction seed (i.e., is a row evaluator)
+ *  - sparsePattern is in CSR format:
+ *      leadindex: sizeRows + 1 (row pointers)
+ *      index:     nnz (column indices)
+ *  - colorCols encodes row coloring (1-based color ids)
  *
  * Output:
- *  - If isDense == false: jac is an nnz-sized buffer. If jacobian->csrToCscMap is set
- *                         (see getJacobianCscPattern) the values are written in the CSC
- *                         order of J, otherwise in the pattern's own (CSR) order.
- *  - If isDense == true:  jac is a dense column-major buffer of J with
- *                         J(row, col) stored at jac[col * nRowsJ + row].
+ *  - If isDense == false: jac is nnz-sized buffer aligned with CSR index order.
+ *  - If isDense == true:  jac is dense column-major buffer of size sizeRows*sizeCols
+ *                         with J(row, col) stored at jac[col*sizeRows + row].
  */
 void evalJacobianRow(DATA* data, threadData_t *threadData,
                      JACOBIAN* jacobian, JACOBIAN* parentJacobian,
@@ -172,60 +200,66 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
 {
   int color, row, col, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  const unsigned int nRowsJ = jacobian->sizeCols;
-  const unsigned int nColsJ = jacobian->sizeRows;
-  const unsigned int* csrToCsc = jacobian->csrToCscMap;
+  const unsigned int nRows = jacobian->sizeRows;
+  const unsigned int nCols = jacobian->sizeCols;
+  const modelica_boolean writeSparseCSC = !isDense;
 
-  if (!jacobian->isRowEval) {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform row-wise evaluation on column-evaluation Jacobian\n");
+  if (!jacobian->evalRow) {
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform row-wise evaluation without adjoint derivatives available.\n");
     return;
   }
 
   /* evaluate constant equations of Jacobian (if any) */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constRowEqns) {
+    jacobian->constRowEqns(data, threadData, jacobian, parentJacobian);
   }
 
   /* memset to zero for dense, since solvers might destroy "hard zeros" */
   if (isDense) {
-    memset(jac, 0, (size_t)nRowsJ * (size_t)nColsJ * sizeof(modelica_real));
+    memset(jac, 0, nRows * nCols * sizeof(modelica_real));
   }
 
-  /* Ensure seeds are zeroed before use (one seed per row of J) */
-  memset(jacobian->seedVars, 0, nRowsJ * sizeof(modelica_real));
+  /* Ensure seeds are zeroed before use (row seeds) */
+  memset(jacobian->seedVarsAdj, 0, nRows * sizeof(modelica_real));
+
+  if (writeSparseCSC) {
+    (void) getJacobianCscPattern(jacobian);
+  }
 
   /* evaluate Jacobian row-wise using row-coloring */
   for (color = 0; color < (int)sp->maxColors; color++) {
     /* activate seed variable(s) for the corresponding color (rows) */
-    for (row = 0; row < (int)nRowsJ; row++) {
+    for (row = 0; row < (int)nRows; row++) {
       if ((int)sp->colorCols[row] - 1 == color) {
-        jacobian->seedVars[row] = 1.0;
+        jacobian->seedVarsAdj[row] = 1.0;
       }
     }
 
     /* evaluate all active rows at once (evalColumn acts as evalRow here) */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+    jacobian->evalRow(data, threadData, jacobian, parentJacobian);
 
     /* scatter results */
-    for (row = 0; row < (int)nRowsJ; row++) {
+    for (row = 0; row < (int)nRows; row++) {
       if ((int)sp->colorCols[row] - 1 == color) {
         for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
           col = sp->index[nz];
-          if (!isDense) {
-            jac[csrToCsc ? (int)csrToCsc[nz] : nz] = jacobian->resultVars[col];
+          if (writeSparseCSC && jacobian->csrToCscMap != NULL) {
+            jac[jacobian->csrToCscMap[nz]] = jacobian->resultVarsAdj[col];
+          } else if (writeSparseCSC) {
+            jac[nz] = jacobian->resultVarsAdj[col];
           } else {
-            /* dense case, column-major of J */
-            jac[col * nRowsJ + row] = jacobian->resultVars[col];
+            /* dense case */
+            jac[col * nRows + row] = jacobian->resultVarsAdj[col];
           }
         }
         /* de-activate seed variable for the corresponding color (row) */
-        jacobian->seedVars[row] = 0.0;
+        jacobian->seedVarsAdj[row] = 0.0;
       }
     }
 
     /* Row evaluators accumulate adjoints; reset between colors. */
-    memset(jacobian->resultVars, 0, nColsJ * sizeof(modelica_real));
-    memset(jacobian->tmpVars, 0, jacobian->sizeTmpVars * sizeof(modelica_real));
+    memset(jacobian->resultVarsAdj, 0, nCols * sizeof(modelica_real));
+    memset(jacobian->tmpVarsAdj, 0, jacobian->sizeTmpVarsAdj * sizeof(modelica_real));
   }
 }
 
@@ -247,19 +281,19 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   /* Dispatch to bidirectional evaluation if applicable */
-  if (jacobian->isBidirectional && jacobian->adjointJacobian) {
+  if (jacobian->evalColumn && jacobian->evalRow) {
     evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
     return;
   }
 
-  if (jacobian->isRowEval) {
+  if (jacobian->evalRow) {
     evalJacobianRow(data, threadData, jacobian, parentJacobian, jac, isDense);
     return;
   }
 
   /* evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, parentJacobian);
   }
 
   /* Dense buffer callers use two different conventions:
@@ -330,19 +364,16 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
  */
 void initBidirectionalRecovery(JACOBIAN* fwd)
 {
-  JACOBIAN* adj = fwd->adjointJacobian;
-  if (!adj) return;
-
   const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
-  const SPARSE_PATTERN* adjsp = adj->sparsePattern;
+  const SPARSE_PATTERN* adjsp = fwd->sparsePatternT;
   const unsigned int nCols = fwd->sizeCols;
   const unsigned int nRows = fwd->sizeRows;
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
+  // FIXME why do we need two recoverMasks here? Can we merge them (values 0b00,0b01,0b10,0b11)?
   fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
-  adj->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
-  adj->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
+  fwd->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
    * column with its column color among all columns having a nonzero in row i. */
@@ -384,7 +415,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
           break;
         }
       }
-      adj->recoverMask[nz] = (unsigned char)unique;
+      fwd->recoverMask[nz] |= (unsigned char)unique << 1;
     }
   }
 
@@ -394,13 +425,13 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     // iterate over all nonzeros in this row via adjoint CSR pattern
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
       j = adjsp->index[nz]; // get column index of current nonzero
-      adj->csrToCscMap[nz] = 0;
+      fwd->csrToCscMap[nz] = 0;
       // iterate over all nonzeros in this column via forward CSC pattern, so the nonzero rows
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
         // if row index matches, we found the same nonzero in forward pattern
         // and can record its position k for later indexing into forward result vector when recovering this nonzero from adjoint evaluation
         if (fwdsp->index[k] == i) {
-          adj->csrToCscMap[nz] = k;
+          fwd->csrToCscMap[nz] = k;
           break;
         }
       }
@@ -425,73 +456,71 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
  * @param isDense         TRUE for dense, FALSE for sparse CSC.
  */
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
-                               JACOBIAN* fwd, JACOBIAN* parentJacobian,
+                               JACOBIAN* jacobian, JACOBIAN* parentJacobian,
                                modelica_real* jac, modelica_boolean isDense)
 {
-  JACOBIAN* adj = fwd->adjointJacobian;
-  const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
-  const SPARSE_PATTERN* adjsp = adj->sparsePattern;
-  const int nRows = (int)fwd->sizeRows;
-  const int nCols = (int)fwd->sizeCols;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  const SPARSE_PATTERN* spT = jacobian->sparsePatternT;
+  const int nRows = (int)jacobian->sizeRows;
+  const int nCols = (int)jacobian->sizeCols;
   int color, column, row, nz, j;
 
-  if (fwd->constantEqns) fwd->constantEqns(data, threadData, fwd, parentJacobian);
-  if (adj->constantEqns) adj->constantEqns(data, threadData, adj, parentJacobian);
+  if (jacobian->constColEqns) jacobian->constColEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constRowEqns) jacobian->constRowEqns(data, threadData, jacobian, parentJacobian);
 
   if (isDense) {
     memset(jac, 0, (size_t)nRows * (size_t)nCols * sizeof(modelica_real));
   }
 
   /* Column phase (forward mode, CSC + column coloring) */
-  for (color = 0; color < (int)fwdsp->maxColors; color++) {
+  for (color = 0; color < (int)sp->maxColors; color++) {
     for (column = 0; column < nCols; column++)
-      if ((int)fwdsp->colorCols[column] - 1 == color)
-        fwd->seedVars[column] = 1.0;
+      if ((int)sp->colorCols[column] - 1 == color)
+        jacobian->seedVars[column] = 1.0;
 
-    fwd->evalColumn(data, threadData, fwd, parentJacobian);
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
     for (column = 0; column < nCols; column++) {
-      if ((int)fwdsp->colorCols[column] - 1 == color) {
-        for (nz = (int)fwdsp->leadindex[column]; nz < (int)fwdsp->leadindex[column + 1]; nz++) {
-          if (fwd->recoverMask[nz]) {
-            row = (int)fwdsp->index[nz];
+      if ((int)sp->colorCols[column] - 1 == color) {
+        for (nz = (int)sp->leadindex[column]; nz < (int)sp->leadindex[column + 1]; nz++) {
+          if (jacobian->recoverMask[nz]) {
+            row = (int)sp->index[nz];
             if (isDense)
-              jac[column * nRows + row] = fwd->resultVars[row];
+              jac[column * nRows + row] = jacobian->resultVars[row];
             else
-              jac[nz] = fwd->resultVars[row];
+              jac[nz] = jacobian->resultVars[row];
           }
         }
-        fwd->seedVars[column] = 0.0;
+        jacobian->seedVars[column] = 0.0;
       }
     }
   }
 
   /* Row phase (adjoint mode, CSR + row coloring) */
-  for (color = 0; color < (int)adjsp->maxColors; color++) {
+  for (color = 0; color < (int)spT->maxColors; color++) {
     for (row = 0; row < nRows; row++)
-      if ((int)adjsp->colorCols[row] - 1 == color)
-        adj->seedVars[row] = 1.0;
+      if ((int)spT->colorCols[row] - 1 == color)
+        jacobian->seedVarsAdj[row] = 1.0;
 
-    adj->evalColumn(data, threadData, adj, parentJacobian);
+    jacobian->evalRow(data, threadData, jacobian, parentJacobian);
 
     for (row = 0; row < nRows; row++) {
-      if ((int)adjsp->colorCols[row] - 1 == color) {
-        for (nz = (int)adjsp->leadindex[row]; nz < (int)adjsp->leadindex[row + 1]; nz++) {
-          if (adj->recoverMask[nz]) {
-            column = (int)adjsp->index[nz];
+      if ((int)spT->colorCols[row] - 1 == color) {
+        for (nz = (int)spT->leadindex[row]; nz < (int)spT->leadindex[row + 1]; nz++) {
+          if (jacobian->recoverMask[nz]) {
+            column = (int)spT->index[nz];
             if (isDense)
-              jac[column * nRows + row] = adj->resultVars[column];
+              jac[column * nRows + row] = jacobian->resultVarsAdj[column];
             else
-              jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
+              jac[jacobian->csrToCscMap[nz]] = jacobian->resultVarsAdj[column];
           }
         }
-        adj->seedVars[row] = 0.0;
+        jacobian->seedVarsAdj[row] = 0.0;
       }
     }
-    /* Reset adjoint result vars to zero after reading to prevent accumulation across colors */
-    memset(adj->resultVars, 0, (size_t)nCols * sizeof(modelica_real));
-    // also for tmp vars
-    memset(adj->tmpVars, 0, (size_t)adj->sizeTmpVars * sizeof(modelica_real));
+    /* Reset adjoint result vars and adjoint tmp vars to zero after reading to prevent accumulation across colors */
+    memset(jacobian->resultVarsAdj, 0, (size_t)nCols * sizeof(modelica_real));
+    memset(jacobian->tmpVarsAdj, 0, jacobian->sizeTmpVarsAdj * sizeof(modelica_real));
   }
 }
 
@@ -511,9 +540,9 @@ void jvp(DATA* data, threadData_t *threadData,
          const modelica_real* seed, modelica_real* out,
          modelica_boolean zero_out)
 {
-  if (jacobian->isRowEval) {
+  if (!jacobian->evalColumn) {
     /* Error: jvp called on row-evaluation Jacobian */
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform jvp on row-evaluation Jacobian\n");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform jvp without column-evaluation\n");
     return;
   }
   const unsigned int nCols = jacobian->sizeCols;
@@ -528,13 +557,13 @@ void jvp(DATA* data, threadData_t *threadData,
   memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
 
   /* Evaluate constant equations (if any) */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, parentJacobian);
   }
 
   /* Set all seeds */
   for (unsigned int col = 0; col < nCols; col++) {
-      jacobian->seedVars[col] = seed[col];
+    jacobian->seedVars[col] = seed[col];
   }
 
   /* Evaluate J * s into resultVars */
@@ -563,9 +592,9 @@ void vjp(DATA* data, threadData_t *threadData,
          const modelica_real* seed, modelica_real* out,
          modelica_boolean zero_out)
 {
-  if (!jacobian->isRowEval) {
+  if (!jacobian->evalRow) {
     /* Error: vjp called on column-evaluation Jacobian */
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform vjp on column-evaluation Jacobian\n");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform vjp without row-evaluation\n");
     return;
   }
   const unsigned int nCols = jacobian->sizeCols;
@@ -580,8 +609,8 @@ void vjp(DATA* data, threadData_t *threadData,
   memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
 
   /* Evaluate constant equations (if any) */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, parentJacobian);
   }
 
   /* Set all seeds */
@@ -591,7 +620,7 @@ void vjp(DATA* data, threadData_t *threadData,
 
   /* Evaluate J * s into resultVars */
   // this is actually evalRow
-  jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+  jacobian->evalRow(data, threadData, jacobian, parentJacobian);
 
   /* Accumulate results into out */
   for (unsigned int col = 0; col < nCols; col++) {
@@ -768,34 +797,37 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
   if (jac == NULL || jac->sparsePattern == NULL) {
     return NULL;
   }
-  // If the Jacobian is not row-evaluated, it already has a CSC pattern.
-  if (!jac->isRowEval) {
+
+  /* Forward and bidirectional Jacobians already carry CSC in sparsePattern.
+   * Standalone adjoint Jacobians evaluate rows and store CSR in sparsePattern;
+   * transpose once and cache as sparsePatternT. */
+  if (!jac->evalRow) {
     return jac->sparsePattern;
   }
-  // If the Jacobian is row-evaluated, we need to transpose the CSR pattern to get CSC and store it in jac->cscPattern.
-  if (jac->cscPattern == NULL) {
+
+  if (jac->sparsePatternT != NULL) {
+    return jac->sparsePatternT;
+  }
+
+  {
     unsigned int* map = NULL;
-    jac->cscPattern = transposeSparsePattern(jac->sparsePattern,
-                                             (unsigned int) jac->sizeRows,
-                                             (unsigned int) jac->sizeCols,
-                                             &map);
-    if (jac->cscPattern == NULL) {
+    SPARSE_PATTERN* csc = transposeSparsePattern(jac->sparsePattern,
+                                                 (unsigned int) jac->sizeCols,
+                                                 (unsigned int) jac->sizeRows,
+                                                 &map);
+    if (csc == NULL) {
       free(map);
       return jac->sparsePattern;
     }
+
+    jac->sparsePatternT = csc;
     if (jac->csrToCscMap == NULL) {
       jac->csrToCscMap = map;
     } else {
-      /* Already set up by initBidirectionalRecovery, keep it. */
       free(map);
     }
-    /* The transposed pattern has no coloring yet; derive one so that the pattern is
-     * usable wherever a fully featured column oriented pattern is expected. */
-    computeColumnColoring(jac->cscPattern,
-                          (unsigned int) jac->sizeCols,
-                          (unsigned int) jac->sizeRows);
+    return jac->sparsePatternT;
   }
-  return jac->cscPattern;
 }
 
 
@@ -1005,7 +1037,6 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
 JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
-
   // Check if the user requested a specific Jacobian method via the `-jacobian` flag
   // if not the colored numerical Jacobian is used by default
   if (!omc_flag[FLAG_JACOBIAN]) {
@@ -1039,38 +1070,107 @@ JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
  * @param jacobianMethod          Requested method, JAC_UNKNOWN selects the default for `availability`.
  * @return JACOBIAN_METHOD        Jacobian method that will be used.
  */
-JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, JACOBIAN_METHOD jacobianMethod)
+JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian, JACOBIAN_METHOD jacobianMethod)
 {
-  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
+  assertStreamPrint(threadData, jacobian, "No Jacobian given.");
+  const JACOBIAN_METHOD requestedJacobianMethod = jacobianMethod;
+  const modelica_boolean hasColumn = jacobian->evalColumn != NULL;
+  const modelica_boolean hasRow = jacobian->evalRow != NULL;
+  const modelica_boolean hasSparse = jacobian->sparsePattern != NULL;
+  const modelica_boolean hasSparseT = jacobian->sparsePatternT != NULL;
+  const modelica_boolean hasAnySparse = hasSparse || hasSparseT;
 
-  /* Check if method is available. If all is fine then no case gets triggered. */
-  switch (availability)
-  {
-  case JACOBIAN_NOT_AVAILABLE:
-    if (jacobianMethod != INTERNALNUMJAC && jacobianMethod != JAC_UNKNOWN) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian not available, switching to internal numerical Jacobian.");
-    }
-    jacobianMethod = INTERNALNUMJAC;
-    break;
-  case JACOBIAN_ONLY_SPARSITY:
-    if (jacobianMethod == COLOREDSYMJAC || jacobianMethod == COLOREDSYMJACADJ || jacobianMethod == BICOLOREDSYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
-      jacobianMethod = COLOREDNUMJAC;
-    } else if(jacobianMethod == SYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to uncolored numerical Jacobian.");
-      jacobianMethod = NUMJAC;
-    } else if(jacobianMethod == JAC_UNKNOWN) {
-      jacobianMethod = COLOREDNUMJAC;
-    }
-    break;
-  case JACOBIAN_AVAILABLE:
-    if (jacobianMethod == JAC_UNKNOWN) {
+  /* Choose the best method that is actually backed by generated data. */
+  if (jacobianMethod == JAC_UNKNOWN) {
+    if (hasColumn && hasSparse) {
       jacobianMethod = COLOREDSYMJAC;
+    } else if (hasColumn) {
+      jacobianMethod = SYMJAC;
+    } else if (hasRow && hasSparse) {
+      jacobianMethod = COLOREDSYMJACADJ;
+    } else if (hasSparse) {
+      jacobianMethod = COLOREDNUMJAC;
+    } else {
+      jacobianMethod = INTERNALNUMJAC;
     }
-    break;
-  default:
-    throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
-    break;
+  } else {
+    switch (jacobianMethod)
+    {
+    case BICOLOREDSYMJAC:
+      if (!(hasColumn && hasRow && hasAnySparse)) {
+        if (hasColumn && hasSparse) {
+          jacobianMethod = COLOREDSYMJAC;
+        } else if (hasRow && hasSparse) {
+          jacobianMethod = COLOREDSYMJACADJ;
+        } else if (hasColumn) {
+          jacobianMethod = SYMJAC;
+        } else if (hasSparse) {
+          jacobianMethod = COLOREDNUMJAC;
+        } else {
+          jacobianMethod = INTERNALNUMJAC;
+        }
+      }
+      break;
+    case COLOREDSYMJACADJ:
+      if (!(hasRow && hasSparse)) {
+        if (hasColumn && hasSparse) {
+          jacobianMethod = COLOREDSYMJAC;
+        } else if (hasColumn) {
+          jacobianMethod = SYMJAC;
+        } else if (hasSparse) {
+          jacobianMethod = COLOREDNUMJAC;
+        } else {
+          jacobianMethod = INTERNALNUMJAC;
+        }
+      }
+      break;
+    case COLOREDSYMJAC:
+      if (!(hasColumn && hasSparse)) {
+        if (hasRow && hasSparse) {
+          jacobianMethod = COLOREDSYMJACADJ;
+        } else if (hasColumn) {
+          jacobianMethod = SYMJAC;
+        } else if (hasSparse) {
+          jacobianMethod = COLOREDNUMJAC;
+        } else {
+          jacobianMethod = INTERNALNUMJAC;
+        }
+      }
+      break;
+    case COLOREDNUMJAC:
+      if (!hasSparse) {
+        if (hasColumn) {
+          jacobianMethod = SYMJAC;
+        } else if (hasRow && hasSparse) {
+          jacobianMethod = COLOREDSYMJACADJ;
+        } else {
+          jacobianMethod = NUMJAC;
+        }
+      }
+      break;
+    case SYMJAC:
+      if (!hasColumn) {
+        if (hasRow && hasSparse) {
+          jacobianMethod = COLOREDSYMJACADJ;
+        } else if (hasSparse) {
+          jacobianMethod = COLOREDNUMJAC;
+        } else {
+          jacobianMethod = INTERNALNUMJAC;
+        }
+      }
+      break;
+    case NUMJAC:
+    case INTERNALNUMJAC:
+      break;
+    default:
+      throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
+      break;
+    }
+  }
+
+  if (requestedJacobianMethod != jacobianMethod && requestedJacobianMethod != JAC_UNKNOWN) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian method %s is not available for this generated Jacobian, switching to %s.",
+                       JACOBIAN_METHOD_NAME[requestedJacobianMethod], JACOBIAN_METHOD_NAME[jacobianMethod]);
   }
 
   /* Log Jacobian method */
@@ -1111,9 +1211,9 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
  * @param availability            Is the Jacobian available, only the sparsity pattern available or nothing available.
  * @return JACOBIAN_METHOD        Returns jacobian method that is availble.
  */
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian)
 {
-  return checkJacobianMethod(threadData, availability, getRequestedJacobianMethod(threadData));
+  return checkJacobianMethod(threadData, jacobian, getRequestedJacobianMethod(threadData));
 }
 
 /**
@@ -1149,57 +1249,58 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
 {
   JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   JACOBIAN* adjointJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
-  JACOBIAN* jacobian;
+  JACOBIAN* jacobian = forwardJacobian;
+  const modelica_boolean wantAdjoint = (*jacobianMethod == COLOREDSYMJACADJ);
+  const modelica_boolean wantBidirectional = (*jacobianMethod == BICOLOREDSYMJAC);
+  const modelica_boolean needForwardJacobian = requireForwardJacobian || !wantAdjoint;
+  int forwardStatus = 1;
+  int adjointStatus = 1;
 
-  if (requireForwardJacobian || *jacobianMethod != COLOREDSYMJACADJ) {
-    data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
+  if (needForwardJacobian) {
+    forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
   }
 
-  if (*jacobianMethod == COLOREDSYMJACADJ) {
-    /* If the model was compiled bidirectionally and A was initialized, the adjoint
-     * Jacobian is already initialized and linked by initialAnalyticJacobianA().
-     * So this check is true if the adjoint Jacobian was not already initialized but is requested. */
-    if (forwardJacobian->adjointJacobian != adjointJacobian) {
-      data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
+  if (wantAdjoint || wantBidirectional) {
+    adjointStatus = data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
+  }
+
+  if (wantBidirectional) {
+    if (forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalColumn) {
+      transferAdjointJacobianToUnifiedStorage(forwardJacobian, adjointJacobian);
+      initBidirectionalRecovery(forwardJacobian);
+      jacobian = forwardJacobian;
+    } else {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
+                                            "(compile with --generateDynamicJacobian=bidirectional). "
+                                            "Switching to the forward symbolic Jacobian.");
+      *jacobianMethod = COLOREDSYMJAC;
+      jacobian = forwardJacobian;
     }
-    if (adjointJacobian->availability == JACOBIAN_AVAILABLE) {
+  } else if (wantAdjoint) {
+    if (adjointStatus == 0 && adjointJacobian->evalColumn) {
+      prepareAdjointJacobianForRowEvaluation(adjointJacobian);
       jacobian = adjointJacobian;
     } else {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=symbolicAdjoint or =bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
-      *jacobianMethod = JAC_UNKNOWN;
-      /* The fallback needs A, which may have been skipped above. */
-      if (forwardJacobian->availability == JACOBIAN_UNKNOWN) {
-        data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
+      if (!needForwardJacobian) {
+        forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
       }
+      *jacobianMethod = COLOREDSYMJAC;
       jacobian = forwardJacobian;
     }
-  } else {
-    jacobian = forwardJacobian;
-    if (*jacobianMethod == BICOLOREDSYMJAC
-        && !(forwardJacobian->adjointJacobian != NULL && forwardJacobian->availability == JACOBIAN_AVAILABLE)) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
-                                            "(compile with --generateDynamicJacobian=bidirectional). "
-                                            "Switching to the forward symbolic Jacobian.");
-      *jacobianMethod = JAC_UNKNOWN;
-    }
   }
-  /* Runtime switch for the bidirectional evaluation path in evalJacobian() */
-  forwardJacobian->isBidirectional = (*jacobianMethod == BICOLOREDSYMJAC);
 
   if (jacobian->sparsePattern != NULL) {
     /* KLU and the sparse pattern printers require ascending secondary indices. */
     sortSparseColumns(jacobian->sparsePattern, (unsigned int) jacobian->sizeCols);
-    /* Build the column oriented view (and the CSR->CSC value mapping) once up front,
-     * so that evalJacobian() emits sparse values in CSC order for every method. */
-    getJacobianCscPattern(jacobian);
   }
 
   // Check that the requested Jacobian method can be used and log it.
-  *jacobianMethod = checkJacobianMethod(threadData, jacobian->availability, *jacobianMethod);
+  *jacobianMethod = checkJacobianMethod(threadData, jacobian, *jacobianMethod);
 
-  if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+  if (jacobian->sparsePattern != NULL) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
@@ -1237,12 +1338,9 @@ void freeSymbolicOdeJacobian(DATA* data)
   JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   JACOBIAN* adjointJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
 
-  if (adjointJacobian->availability != JACOBIAN_UNKNOWN) {
-    freeJacobian(adjointJacobian);
-  }
-  if (forwardJacobian->availability != JACOBIAN_UNKNOWN) {
-    freeJacobian(forwardJacobian);
-  }
+  freeJacobian(adjointJacobian);
+  freeJacobian(forwardJacobian);
+
   data->simulationInfo->odeJacobian = NULL;
 }
 
