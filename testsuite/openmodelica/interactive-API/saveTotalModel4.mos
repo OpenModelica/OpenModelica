@@ -1,0 +1,140 @@
+// name: saveTotalModel4
+// keywords: saveTotalModel #5248
+// status: correct
+// teardown_command: rm -f SaveTotalPackage_total.mo SaveTotalBroken_total.mo
+//
+// saveTotalModel on a package keeps the whole package and what its classes
+// use. On a model that fails to instantiate it keeps what was used up to the
+// failure, so the saved model fails the same way.
+//
+
+loadString("
+  package Lib
+    connector Pin
+      Real v;
+      flow Real i;
+    end Pin;
+
+    partial model TwoPin
+      Pin p, n;
+      Real v = p.v - n.v;
+    end TwoPin;
+
+    model Resistor
+      extends TwoPin;
+      parameter Real R = 1;
+    equation
+      v = R * p.i;
+      p.i + n.i = 0;
+    end Resistor;
+
+    model Unused
+      Real x;
+    end Unused;
+  end Lib;
+
+  package SaveTotalPackage
+    model Circuit
+      Lib.Resistor r;
+    equation
+      connect(r.p, r.n);
+    end Circuit;
+  end SaveTotalPackage;
+
+  model SaveTotalBroken
+    Lib.Resistor r(R = true);
+  end SaveTotalBroken;
+"); getErrorString();
+
+saveTotalModel("SaveTotalPackage_total.mo", SaveTotalPackage); getErrorString();
+readFile("SaveTotalPackage_total.mo");
+saveTotalModel("SaveTotalBroken_total.mo", SaveTotalBroken); getErrorString();
+readFile("SaveTotalBroken_total.mo");
+
+clearProgram();
+setCommandLineOptions("--loadMissingLibraries=false");
+loadFile("SaveTotalPackage_total.mo"); getErrorString();
+checkModel(SaveTotalPackage.Circuit); getErrorString();
+loadFile("SaveTotalBroken_total.mo"); getErrorString();
+checkModel(SaveTotalBroken_total); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "package Lib
+//   connector Pin
+//     Real v;
+//     flow Real i;
+//   end Pin;
+//
+//   partial model TwoPin
+//     Pin p;
+//     Pin n;
+//     Real v = p.v - n.v;
+//   end TwoPin;
+//
+//   model Resistor
+//     extends TwoPin;
+//     parameter Real R = 1;
+//   equation
+//     v = R*p.i;
+//     p.i + n.i = 0;
+//   end Resistor;
+// end Lib;
+//
+// package SaveTotalPackage
+//   model Circuit
+//     Lib.Resistor r;
+//   equation
+//     connect(r.p, r.n);
+//   end Circuit;
+// end SaveTotalPackage;
+// "
+// true
+// ""
+// "package Lib
+//   connector Pin
+//     Real v;
+//     flow Real i;
+//   end Pin;
+//
+//   partial model TwoPin
+//     Pin p;
+//     Pin n;
+//     Real v = p.v - n.v;
+//   end TwoPin;
+//
+//   model Resistor
+//     extends TwoPin;
+//     parameter Real R = 1;
+//   equation
+//     v = R*p.i;
+//     p.i + n.i = 0;
+//   end Resistor;
+// end Lib;
+//
+// model SaveTotalBroken
+//   Lib.Resistor r(R = true);
+// end SaveTotalBroken;
+//
+// model SaveTotalBroken_total
+//   extends SaveTotalBroken;
+// end SaveTotalBroken_total;
+// "
+// true
+// true
+// true
+// ""
+// "Check of SaveTotalPackage.Circuit completed successfully.
+// Class SaveTotalPackage.Circuit has 5 equation(s) and 5 variable(s).
+// 3 of these are trivial equation(s)."
+// ""
+// true
+// ""
+// ""
+// "[openmodelica/interactive-API/SaveTotalBroken_total.mo:23:18-23:26:writable] Notification: From here:
+// [openmodelica/interactive-API/SaveTotalBroken_total.mo:15:5-15:25:writable] Error: Type mismatch in binding R = true, expected subtype of Real, got type Boolean.
+// "
+// endResult

@@ -936,6 +936,8 @@ algorithm
       then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
   end match;
 
+  Inst.markComponentUsed(node);
+
   if is_import then
     foundScope := InstNode.parent(node);
   elseif InstNode.isInnerOuterNode(node) then
@@ -1009,6 +1011,7 @@ algorithm
 
   try
     (n, is_import) := Class.lookupElement(name, cls);
+    Inst.markComponentUsed(n);
   else
     true := InstNode.isComponent(node);
     true := Class.isExpandableConnectorClass(cls) or InstContext.inInstanceAPI(context);

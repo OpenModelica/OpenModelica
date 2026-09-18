@@ -105,6 +105,11 @@ constant Integer nfTopScope = 38;
 // owns the variables until they reach `VariablePointers`.
 constant Integer nbCreatedVars = 39;
 
+// Classes the new frontend instantiated and components it looked up while
+// saveTotalModel records them: SOME(UnorderedSet<String>) of element source
+// positions, NONE() otherwise. See NFInst.startRecordingUsedClasses.
+constant Integer nfUsedClassesIndex = 40;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -147,6 +152,7 @@ algorithm
   setGlobalRoot(adjacencyIfCondCache, NONE());
   setGlobalRoot(nfTopScope, {});
   setGlobalRoot(nbCreatedVars, {});
+  setGlobalRoot(nfUsedClassesIndex, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");
