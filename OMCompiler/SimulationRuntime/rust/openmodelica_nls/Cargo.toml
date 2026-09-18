@@ -23,6 +23,11 @@ std = ["openmodelica_solvers/std"]
 # `cfg(sundials)` without linking anything: the FMI3 adapter's PIC build leaves the
 # KINSOL/KLU calls undefined, as imports the FMU's SUNDIALS side module resolves.
 sundials_extern = ["openmodelica_solvers/sundials_extern"]
+# Factor the Newton step with the system LAPACK, which is what
+# `--simCodeTarget=C` links. The port rounds differently, and on an
+# ill-conditioned iterate that picks a different root. Only a host that links
+# LAPACK may set it; wasm keeps the port.
+system-lapack = []
 # PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. The wasm
 # archive already carries `src/primme_svds.c`; a native host names
 # `OMC_PRIMME_NATIVE_DIR` and build.rs compiles the shim there.
