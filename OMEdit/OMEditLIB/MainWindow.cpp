@@ -2591,6 +2591,29 @@ void MainWindow::openModelicaFile()
   if (fileNames.isEmpty()) {
     return;
   }
+#if defined(__EMSCRIPTEN__)
+  // A file picker cannot hand over a directory, so a zipped library is unpacked
+  // and what it holds is loaded instead of the archive.
+  QStringList pickedFiles;
+  foreach (const QString &file, fileNames) {
+    if (QFileInfo(file).suffix().compare("zip", Qt::CaseInsensitive) == 0) {
+      const QString dir = WasmLocalFiles::expandArchive(file);
+      const QStringList files = dir.isEmpty() ? QStringList() : WasmLocalFiles::libraryFiles(dir);
+      if (files.isEmpty()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+      pickedFiles << files;
+    } else {
+      pickedFiles << file;
+    }
+  }
+  fileNames = pickedFiles;
+  if (fileNames.isEmpty()) {
+    return;
+  }
+#endif
   int progressValue = 0;
   mpProgressBar->setRange(0, fileNames.size());
   showProgressBar();
@@ -2767,11 +2790,32 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
  */
 void MainWindow::openDirectory()
 {
+#if defined(__EMSCRIPTEN__)
+  // The browser uploads the picked folder, structure and all, and the library in it
+  // is loaded. The directory is deliberately not added to the Library Browser: QDir
+  // enumerates nothing through the worker-VFS engine, so that node comes up childless,
+  // and painting it traps in Qt's raster engine.
+  const QString dir = WasmLocalFiles::openFolder();
+  if (dir.isEmpty()) {
+    return;
+  }
+  const QStringList files = WasmLocalFiles::libraryFiles(dir);
+  if (files.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(dir),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  foreach (const QString &file, files) {
+    mpLibraryWidget->openFile(file, Helper::utf8, false);
+  }
+#else
   QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (dir.isEmpty()) {
     return;
   }
   mpLibraryWidget->openFile(dir, Helper::utf8, true);
+#endif
 }
 
 /*!

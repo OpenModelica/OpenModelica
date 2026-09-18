@@ -51,6 +51,9 @@ class QWidget;
 namespace WasmLocalFiles
 {
   QStringList openFiles(const QString &nameFilter, bool multiple);
+  QString openFolder();
+  QString expandArchive(const QString &archivePath);
+  QStringList libraryFiles(const QString &dir);
   QString saveFileName(QWidget *parent, const QString &caption, const QString &dir, const QString &proposedName);
   bool download(const QString &path);
 }
