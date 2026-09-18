@@ -3311,7 +3311,7 @@ template generateResizableEmptySparseData(String indexName, String systemType)
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
   <<
-  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
+  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
   {
     /* no sparsity pattern available */
     inSysData->sparsePattern = NULL;
@@ -3327,7 +3327,7 @@ match sparsity
   case EMPTY() then
     <<
 
-    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       inSysData->sparsePattern = NULL;
     }
@@ -3343,7 +3343,7 @@ match sparsity
     <<
 
     OMC_DISABLE_OPT
-    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
@@ -3531,7 +3531,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
 
   ;separator="\n")
   let sparsityInitCall = if useResizableSparsity
-    then 'initializeResizableSparsityPattern<%indexName%>(sysData, threadData);'
+    then 'initializeResizableSparsityPattern<%indexName%>(sysData, threadData, data);'
     else 'initializeSparsePattern<%indexName%>(sysData);'
   <<
 
