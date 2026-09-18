@@ -42,6 +42,7 @@ import init, {
 // OMEdit web client). A named import of a missing export would break the worker
 // for OMShell/OMNotebook, so reach it through the namespace and feature-detect it.
 import * as OmcModule from "./omc/OpenModelicaCompiler.js";
+import { installWasmBlobs } from "./wasm-blobs.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
@@ -191,6 +192,11 @@ async function doInit(installMsl) {
   // Route omc progress reports into the control block (feature-detected).
   if (typeof OmcModule.omc_enable_progress_sink === "function") {
     OmcModule.omc_enable_progress_sink();
+  }
+  // The bundle's side modules (feature-detected).
+  if (typeof OmcModule.omc_enable_wasm_blobs === "function") {
+    installWasmBlobs();
+    OmcModule.omc_enable_wasm_blobs();
   }
   // The browser omc has no pre-installed library, so install the MSL to make the
   // shell immediately usable. Best-effort: a failure (e.g. no network) only

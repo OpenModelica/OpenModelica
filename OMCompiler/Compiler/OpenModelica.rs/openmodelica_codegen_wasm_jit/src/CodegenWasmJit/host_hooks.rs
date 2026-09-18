@@ -56,6 +56,12 @@ pub fn set_fmu_loaders(fetch: fn(&str) -> Option<Vec<u8>>, platforms: Vec<String
     native_fmu::set_loader_source(fetch, platforms);
 }
 
+/// The host's source for the side modules a browser omc does not embed.
+#[cfg(target_arch = "wasm32")]
+pub fn set_wasm_blob_source(fetch: fn(&str) -> Option<Vec<u8>>) {
+    openmodelica_wasm_jit::blobs::ondemand::set_source(fetch);
+}
+
 #[cfg(not(feature = "jit"))]
 pub fn sim_start(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
     return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")

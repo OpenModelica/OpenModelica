@@ -41,6 +41,8 @@ extern "C" {
     fn omc_fmu_platforms_js() -> Vec<String>;
     #[wasm_bindgen(js_namespace = globalThis, js_name = __omcFmuLoader)]
     fn omc_fmu_loader_js(platform: &str) -> Option<Vec<u8>>;
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcWasmBlob)]
+    fn omc_wasm_blob_js(file: &str) -> Option<Vec<u8>>;
 }
 
 fn wall_ms() -> f64 {
@@ -79,6 +81,13 @@ fn aot_preload() {
 fn aot_compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
     omc_aot_compile_js(component, triple)
         .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+}
+
+/// Let a model's externals reach a library this omc does not embed, through
+/// `globalThis.__omcWasmBlob(file)`. The host defines it — see `wasm/wasm-blobs.js`.
+#[wasm_bindgen]
+pub fn omc_enable_wasm_blobs() {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_wasm_blob_source(omc_wasm_blob_js);
 }
 
 /// Let `buildModelFMU(..., platforms={"wasm", "linux64"})` serve native platforms

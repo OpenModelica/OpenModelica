@@ -11,6 +11,7 @@ import init, {
   omc_enable_cancel_poll, omc_enable_fmu_aot, omc_fmu_platforms,
   omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
   omc_fmu_cs_solvers,
+  omc_enable_wasm_blobs,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters, omc_sim_units,
@@ -21,6 +22,7 @@ import init, {
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 // Compiles an exported FMU's component for a native platform, in its own worker.
 import { installFmuAot } from '../fmu-aot.js';
+import { installWasmBlobs } from '../wasm-blobs.js';
 
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
@@ -316,6 +318,8 @@ self.onmessage = async (ev) => {
         // 0 (no cancel) until the page shares a control block, so it is a no-op then.
         globalThis.__omcPollCancel = () => (cancelFlag ? Atomics.load(cancelFlag, 0) : 0);
         omc_enable_cancel_poll();
+        installWasmBlobs();
+        omc_enable_wasm_blobs();
         if (fmuAot) omc_enable_fmu_aot();
         if (driverMode !== null) omc_set_inwasm_driver(driverMode);
         // Emit the MultiBody visualization scene (<model>_visual.xml) for every

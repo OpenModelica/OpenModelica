@@ -129,8 +129,10 @@ fn main() {
         s.spawn(|| build_wasip1_fused_adapter(&crate_dir, &out_dir, &hash, sundials_dir));
         s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
         s.spawn(|| build_lapack_dylink(&crate_dir, &out_dir));
+        s.spawn(|| build_lapack_wasi(&crate_dir, &out_dir));
     });
 
+    write_ondemand_index(&out_dir);
     publish_prebuilt(&out_dir);
 
     // openmodelica_wasi_libc's OUT_DIR, handed over by its `links` metadata.
@@ -669,6 +671,139 @@ fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, Strin
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
     }
     Ok(produced)
+}
+
+/// `openmodelica_lapack` again, with its own memory (the shape `modelicaexternalc.wasm`
+/// has). wasmer, which the browser runs the simulation on, has no dynamic linker and so
+/// cannot load the PIC [`build_lapack_dylink`] module. Shipped as a bundle file.
+fn build_lapack_wasi(crate_dir: &Path, out_dir: &Path) {
+    let dest = out_dir.join("lapack_wasi.wasm");
+    let stamp = out_dir.join("lapack_wasi.wasm.hash");
+    let lapack_dir = crate_dir.parent().expect("crate has a parent dir").join("openmodelica_lapack");
+
+    println!("cargo:rerun-if-env-changed=OMC_LAPACK_WASI");
+    if let Ok(path) = std::env::var("OMC_LAPACK_WASI") {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
+        return;
+    }
+
+    let (hash, _files) = hash_inputs(&lapack_dir, &[]);
+    let hash = format!("{hash}-wasi-{}", wasm_opt_key());
+    // The sources are already tracked by build_lapack_dylink's rerun-if-changed.
+    if dest.exists()
+        && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
+        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
+    {
+        return;
+    }
+
+    match build_lapack_wasi_wasm(&lapack_dir, out_dir) {
+        Ok(produced) => {
+            copy(&produced, &dest);
+            wasm_opt(&dest);
+            std::fs::write(&stamp, &hash).ok();
+        }
+        Err(e) => panic!(
+            "failed to build the LAPACK WASI side module: {e}\n\
+             The web target needs it for a model calling Modelica.Math.Matrices. Needs \
+             `rustup target add wasm32-wasip1`; set OMC_LAPACK_WASI to a prebuilt .wasm \
+             to skip the build."
+        ),
+    }
+}
+
+/// Nothing here references wasi-libc's `malloc`, which the host marshals through.
+fn build_lapack_wasi_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, String> {
+    let target = "wasm32-wasip1";
+    let target_dir = out_dir.join("lapack-wasi-target");
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let rustflags = "-Ctarget-feature=+simd128 \
+        -Clink-arg=--export=malloc -Clink-arg=--export=free";
+    let mut cmd = Command::new(cargo);
+    cmd.current_dir(lapack_dir)
+        .args(["build", "--release", "--target", target])
+        .args(["--features", "fortran-abi"])
+        .arg("--target-dir")
+        .arg(&target_dir)
+        .env("RUSTFLAGS", rustflags);
+    detach_cargo_env(&mut cmd);
+    run(&mut cmd, "cargo build (LAPACK WASI side module)")?;
+    let produced = target_dir.join(target).join("release").join("openmodelica_lapack.wasm");
+    if !produced.exists() {
+        return Err(format!("expected wasm not found at {}", produced.display()));
+    }
+    Ok(produced)
+}
+
+/// What `blobs_ondemand!` in src/blobs.rs declares.
+const ONDEMAND_BLOBS: &[&str] = &["lapack_wasi.wasm"];
+
+/// Read off the modules, so the index cannot drift from what they export.
+fn write_ondemand_index(out_dir: &Path) {
+    let mut out = String::from("[");
+    let mut written = 0;
+    for file in ONDEMAND_BLOBS {
+        let Ok(bytes) = std::fs::read(out_dir.join(file)) else { continue };
+        if written > 0 {
+            out.push(',');
+        }
+        written += 1;
+        out.push_str(&format!("\n  {{\"file\": {}, \"exports\": [", json_str(file)));
+        // The marshalling host's ABI with the module, never a name a model imports.
+        let names: Vec<String> = exported_functions(&bytes)
+            .into_iter()
+            .filter(|n| !matches!(n.as_str(), "malloc" | "free" | "_initialize"))
+            .collect();
+        for (k, n) in names.iter().enumerate() {
+            out.push_str(if k == 0 { "\n    " } else { ",\n    " });
+            out.push_str(&json_str(n));
+        }
+        out.push_str("\n  ]}");
+    }
+    out.push_str("\n]\n");
+    std::fs::write(out_dir.join("index.json"), out).expect("write the on-demand blob index");
+}
+
+fn json_str(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' | '\\' => {
+                out.push('\\');
+                out.push(c);
+            }
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Exported functions only; [`exported_names`] keeps memories and globals too.
+fn exported_functions(module: &[u8]) -> std::collections::BTreeSet<String> {
+    let mut out = std::collections::BTreeSet::new();
+    sections(module, |id, start| {
+        if id != 7 {
+            return;
+        }
+        let mut p = start;
+        for _ in 0..leb(module, &mut p) {
+            let n = name(module, &mut p);
+            let kind = module[p];
+            p += 1;
+            leb(module, &mut p); // index
+            if kind == 0 {
+                out.insert(n);
+            }
+        }
+    });
+    out
 }
 
 /// Build + embed the model-agnostic FMI3 ME adapter (`openmodelica_fmi3_wasm`) as
@@ -2072,7 +2207,8 @@ fn publish_prebuilt(out_dir: &Path) {
             let p = e.path();
             // The blobs only: not the nested cargo target directories, and not the
             // FMU loaders (OMC_FMU_LOADERS_OUT's job).
-            let take = p.extension().is_some_and(|x| x == "wasm");
+            let take = p.extension().is_some_and(|x| x == "wasm")
+                || p.file_name().is_some_and(|x| x == "index.json");
             if take && p.is_file() {
                 copy(&p, &dir.join(p.file_name().expect("a blob has a file name")));
             }
