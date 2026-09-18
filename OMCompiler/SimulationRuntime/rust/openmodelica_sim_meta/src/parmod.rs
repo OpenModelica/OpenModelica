@@ -1,8 +1,10 @@
 //! C's `ParModelica/auto` runtime (`--parmodauto`): the ODE task graph, its
 //! clustering passes, the two schedulers and the JSON export/import, ported from
 //! `SimulationRuntime/ParModelica/auto/pm_*.hpp`. The graph, costs, clusters and
-//! files are the C ones; the clusters are evaluated in dependency order on the
-//! runtime's single thread, where C hands them to a TBB thread pool.
+//! files are the C ones. Where C hands the clusters to a TBB thread pool, the
+//! scheduler hands a [`Plan`] to the engine's [`Exec::parallel`]; an engine without
+//! worker threads evaluates the sequential `functionODE` instead, the natural
+//! order being a valid schedule.
 
 use openmodelica_solvers::fmath;
 use alloc::collections::BTreeSet;
@@ -17,7 +19,7 @@ use openmodelica_solvers::log_line;
 
 use crate::driver::{Result, leak_error, now_ms_host};
 use crate::omclog;
-use crate::{ParmodInfo, SimMeta};
+use crate::{ParmodInfo, ParmodTask, SimMeta};
 
 /// `PM_Model_create`'s cap on the default thread count.
 const DEFAULT_THREAD_CAP: usize = 6;
@@ -277,7 +279,7 @@ impl TaskSystem {
         for i in 0..n {
             let id = self.cluster(v).tasks[i].task_id;
             let t0 = now_ms_host();
-            call(Op::Task(id))?;
+            call.op(Op::Task(id))?;
             let elapsed = now_ms_host() - t0;
             self.cluster_mut(v).tasks[i].cost = elapsed;
             total += elapsed;
@@ -290,11 +292,46 @@ impl TaskSystem {
     /// (every edge points forward), and with one thread nothing is gained from the
     /// clustered order, so this is the sequential entry point in one call.
     fn execute_all(&self, call: Call) -> Result<()> {
-        call(Op::All)
+        call.op(Op::All)
+    }
+
+    /// One evaluation through the engine's worker threads when it has them
+    /// (`functionLocalKnownVars` first, as the sequential entry point runs it), else
+    /// [`TaskSystem::execute_all`]. `true` when it did go through the threads.
+    fn execute_plan(&self, plan: &Plan, call: Call, settled: bool) -> Result<bool> {
+        if !call.can_parallel() {
+            self.execute_all(call)?;
+            return Ok(false);
+        }
+        call.op(Op::LocalKnown)?;
+        call.parallel(plan, settled)?;
+        Ok(true)
+    }
+
+    /// The clustered graph as the engine evaluates it: clusters in topological
+    /// order, each with the clusters it waits for; `levels` too when asked (the
+    /// level scheduler's barrier-synchronous order).
+    fn plan(&mut self, with_levels: bool) -> Plan {
+        self.ensure_levels();
+        let order: Vec<usize> = self.topological_order().into_iter().filter(|&v| v != ROOT).collect();
+        let mut index = vec![u32::MAX; self.nodes.len()];
+        for (i, &v) in order.iter().enumerate() {
+            index[v] = i as u32;
+        }
+        let clusters = order.iter().map(|&v| self.cluster(v).tasks.iter().map(|t| t.task_id).collect()).collect();
+        let parents = order
+            .iter()
+            .map(|&v| self.parents[v].iter().filter(|&&p| p != ROOT).map(|&p| index[p]).collect())
+            .collect();
+        let levels = match with_levels {
+            true => self.levels[1..].iter().map(|l| l.iter().map(|&v| index[v]).collect()).collect(),
+            false => Vec::new(),
+        };
+        Plan { id: PLAN_IDS.fetch_add(1, Ordering::Relaxed) as u64, clusters, parents, levels }
     }
 
     fn profile_all(&mut self, call: Call) -> Result<()> {
-        call(Op::LocalKnown)?;
+        call.op(Op::LocalKnown)?;
         let vs: Vec<usize> = self.vertices().collect();
         for v in vs {
             self.profile_execute(v, call)?;
@@ -598,6 +635,12 @@ impl Json {
         match self {
             Json::Int(i) => Some(*i),
             Json::Float(f) if fmath::trunc(*f) == *f => Some(*f as i64),
+            _ => None,
+        }
+    }
+    fn as_str(&self) -> Option<&str> {
+        match self {
+            Json::Str(s) => Some(s),
             _ => None,
         }
     }
@@ -995,6 +1038,132 @@ fn import_clustering_json(s: &mut TaskSystem, path: &str) -> Result<()> {
     Ok(())
 }
 
+// ───────────────────────────── the task graph file ─────────────────────────────
+
+/// A node while the graph is read: what the equation defines and what it reads.
+struct Node {
+    index: i32,
+    lhs: BTreeSet<String>,
+    rhs: BTreeSet<String>,
+}
+
+fn eq_fatal(index: i32, what: &str) -> &'static str {
+    leak_error(format!("{index} : {what}"))
+}
+
+fn strings<'a>(eq: &'a Json, key: &str) -> impl Iterator<Item = &'a str> {
+    eq.get(key).and_then(Json::as_array).unwrap_or(&[]).iter().filter_map(Json::as_str)
+}
+
+/// `load_simple_assign`.
+fn load_assign(n: &mut Node, eq: &Json) -> Result<()> {
+    let mut defines = strings(eq, "defines");
+    let (Some(d), None) = (defines.next(), defines.next()) else {
+        return Err(eq_fatal(n.index, "Assign with more than one define!"));
+    };
+    n.lhs.insert(d.to_string());
+    n.rhs.extend(strings(eq, "uses").map(String::from));
+    Ok(())
+}
+
+/// `load_simple_assign_check_local_define`: a use the node itself already defines
+/// is not a dependency.
+fn load_assign_local(n: &mut Node, eq: &Json) {
+    if let Some(d) = strings(eq, "defines").next() {
+        n.lhs.insert(d.to_string());
+    }
+    for u in strings(eq, "uses") {
+        if !n.lhs.contains(u) {
+            n.rhs.insert(u.to_string());
+        }
+    }
+}
+
+/// `load_linear_system`, which serves the non-linear containers too: the system's
+/// own unknowns plus whatever its inner equations read from outside.
+fn load_system(n: &mut Node, eq: &Json) -> Result<()> {
+    match eq.get("display").and_then(Json::as_str) {
+        Some("linear") | Some("non-linear") => {}
+        other => {
+            let d = other.unwrap_or("");
+            let tag = eq.get("tag").and_then(Json::as_str).unwrap_or("");
+            return Err(eq_fatal(n.index, &format!("System ({tag}) Equation display not yet handled: {d}")));
+        }
+    }
+    n.lhs.extend(strings(eq, "defines").map(String::from));
+    for int_eq in eq.get("internal-equations").and_then(Json::as_array).unwrap_or(&[]) {
+        let i_index = int_eq.get("eqIndex").and_then(Json::as_i64).unwrap_or(-1) as i32;
+        match int_eq.get("tag").and_then(Json::as_str).unwrap_or("") {
+            "assign" | "torn" => load_assign_local(n, int_eq),
+            "residual" => n.rhs.extend(strings(int_eq, "uses").map(String::from)),
+            t => return Err(eq_fatal(i_index, &format!("Internal Equation type not yet handled: {t}"))),
+        }
+    }
+    Ok(())
+}
+
+/// `load_equation`.
+fn load_equation(n: &mut Node, eq: &Json) -> Result<()> {
+    match eq.get("tag").and_then(Json::as_str).unwrap_or("") {
+        "assign" => load_assign(n, eq),
+        "residual" => {
+            n.rhs.extend(strings(eq, "uses").map(String::from));
+            Ok(())
+        }
+        "algorithm" => {
+            n.lhs.extend(strings(eq, "defines").map(String::from));
+            n.rhs.extend(strings(eq, "uses").map(String::from));
+            Ok(())
+        }
+        "tornsystem" | "system" => load_system(n, eq),
+        t => Err(eq_fatal(n.index, &format!("Equation type not yet handled: {t}"))),
+    }
+}
+
+/// `OMModel::load_from_json`: the `--parmodauto` task graph the compiler wrote to
+/// `<prefix>_ode.json`, one task per ODE equation in the order the model's own
+/// `functionODE_systems` array holds them, with an edge from every earlier task
+/// defining something this one reads (`TaskSystem_v2::add_node`).
+pub fn load_ode_json(path: &str) -> Result<ParmodInfo> {
+    let Some(bytes) = crate::files::read(path) else {
+        return Err(leak_error(format!(
+            "Fatal : Could not open dependency json file '{path}'. Please make sure the file is generated in the correct place and is readable."
+        )));
+    };
+    let text = String::from_utf8_lossy(&bytes);
+    let j = Json::parse(&text)
+        .map_err(|e| leak_error(format!("Fatal : Could not parse dependency json file '{path}': {e}")))?;
+    let mut nodes: Vec<Node> = Vec::new();
+    for eq in j.get("ode-equations").and_then(Json::as_array).unwrap_or(&[]) {
+        let index = eq.get("eqIndex").and_then(Json::as_i64).unwrap_or(0) as i32;
+        // The 'dummy' node OpenModelica writes first.
+        if index == 0 {
+            continue;
+        }
+        match eq.get("section").and_then(Json::as_str) {
+            Some("regular") => {}
+            other => return Err(eq_fatal(index, &format!("Unkown section!{}", other.unwrap_or("")))),
+        }
+        let mut n = Node { index, lhs: BTreeSet::new(), rhs: BTreeSet::new() };
+        load_equation(&mut n, eq)?;
+        nodes.push(n);
+    }
+    let tasks = nodes
+        .iter()
+        .enumerate()
+        .map(|(j, n)| ParmodTask {
+            eq_index: n.index,
+            parents: nodes[..j]
+                .iter()
+                .enumerate()
+                .filter(|(_, p)| n.rhs.iter().any(|u| p.lhs.contains(u)))
+                .map(|(i, _)| i as u32)
+                .collect(),
+        })
+        .collect();
+    Ok(ParmodInfo { tasks })
+}
+
 // ───────────────────────────── schedulers ─────────────────────────────
 
 /// What the scheduler asks the model for: the whole sequential `functionODE`,
@@ -1005,13 +1174,149 @@ pub enum Op {
     Task(u32),
 }
 
-type Call<'a> = &'a mut dyn FnMut(Op) -> Result<()>;
+/// One evaluation's clusters: `clusters[i]` is its tasks in order, `parents[i]` the
+/// clusters it waits for (indices into `clusters`, all smaller), and `levels` —
+/// filled by the level scheduler only — the level-synchronous order, every cluster
+/// of a level independent of the others.
+pub struct Plan {
+    /// Distinct per plan built, so an executor can cache what it derives from one.
+    pub id: u64,
+    pub clusters: Vec<Vec<u32>>,
+    pub parents: Vec<Vec<u32>>,
+    pub levels: Vec<Vec<u32>>,
+}
+
+static PLAN_IDS: AtomicUsize = AtomicUsize::new(1);
+
+/// What the scheduler drives: the model's entry points one at a time, and the
+/// engine's worker threads when it has them.
+pub trait Exec {
+    fn op(&mut self, op: Op) -> Result<()>;
+    fn can_parallel(&self) -> bool {
+        false
+    }
+    /// Evaluate every cluster of `plan`, respecting `parents` (or, level by level,
+    /// `levels` when present), on the worker threads plus the calling one.
+    /// `settled` says the scheduler has stopped alternating with the sequential
+    /// evaluation, so idle workers may wait more eagerly for the next round.
+    fn parallel(&mut self, _plan: &Plan, _settled: bool) -> Result<()> {
+        Err("parmodauto: this engine has no worker threads")
+    }
+}
+
+type Call<'a> = &'a mut dyn Exec;
+
+/// Evaluating the clustered graph on threads is not free: every cluster is a
+/// hand-off, and a graph whose tasks are microseconds long is cheaper evaluated in
+/// one go — C's own runtime is slower than sequential on CauerLowPassSC too. So the
+/// two evaluations are alternated and the faster one kept, and the comparison is
+/// repeated now and then: what a model's ODE costs is not the same at the start of
+/// a run as in the middle of it.
+struct ParTrial {
+    par: Vec<f64>,
+    seq: Vec<f64>,
+    decided: Option<bool>,
+    /// Rounds since the last decision, and whether one has been announced.
+    since: u32,
+    announced: Option<bool>,
+    forced: bool,
+}
+
+/// Rounds timed per evaluation before deciding, and how long a decision stands.
+const TRIAL_ROUNDS: usize = 100;
+const RETRIAL_AFTER: u32 = 20_000;
+
+impl ParTrial {
+    fn new() -> ParTrial {
+        let forced = ParTrial::forced();
+        ParTrial {
+            par: Vec::new(),
+            seq: Vec::new(),
+            decided: forced,
+            since: 0,
+            announced: None,
+            forced: forced.is_some(),
+        }
+    }
+
+    /// `OMC_PARMOD_TRIAL=force` keeps the clustered evaluation whatever it costs
+    /// and `=off` never takes it; unset, the two are timed against each other.
+    fn forced() -> Option<bool> {
+        match crate::files::env("OMC_PARMOD_TRIAL").as_deref() {
+            Some("force") => Some(true),
+            Some("off") => Some(false),
+            _ => None,
+        }
+    }
+
+    /// Whether the two evaluations have been timed against each other and one of
+    /// them chosen.
+    fn settled(&self) -> bool {
+        self.decided.is_some()
+    }
+
+    /// Which evaluation this round takes.
+    fn use_plan(&self) -> bool {
+        match self.decided {
+            Some(keep) => keep,
+            None => self.par.len() <= self.seq.len(),
+        }
+    }
+
+    fn record(&mut self, ms: f64, went_parallel: bool, threads: usize) {
+        if self.forced {
+            return;
+        }
+        if self.decided.is_some() {
+            self.since += 1;
+            if self.since >= RETRIAL_AFTER {
+                self.decided = None;
+                self.since = 0;
+                self.par.clear();
+                self.seq.clear();
+            }
+            return;
+        }
+        match went_parallel {
+            true => self.par.push(ms),
+            false => self.seq.push(ms),
+        }
+        if self.par.len() < TRIAL_ROUNDS || self.seq.len() < TRIAL_ROUNDS {
+            return;
+        }
+        let (p, s) = (median(&mut self.par), median(&mut self.seq));
+        // A margin, not a tie-break: threads that buy less than 5% are not worth
+        // the cores they burn.
+        let keep = p < s * 0.95;
+        self.decided = Some(keep);
+        if self.announced != Some(keep) {
+            self.announced = Some(keep);
+            let what = match keep {
+                true => "faster than",
+                false => "no faster than",
+            };
+            stdout(&format!(
+                " : Evaluating the task graph on {threads} threads takes {} ms, {what} the {} ms it takes sequentially; {}\n",
+                g(p),
+                g(s),
+                if keep { "keeping the threads" } else { "continuing sequentially" },
+            ));
+        }
+    }
+}
+
+fn median(v: &mut [f64]) -> f64 {
+    v.sort_by(|a, b| a.partial_cmp(b).unwrap_or(core::cmp::Ordering::Equal));
+    v[v.len() / 2]
+}
 
 /// `StepLevels`: level-synchronous; re-profiles and re-clusters when the
 /// evaluation time drifts by more than half.
 struct LevelScheduler {
     org: TaskSystem,
     sys: TaskSystem,
+    plan: Option<Plan>,
+    trial: ParTrial,
     schedule_available: bool,
     total_evaluations: u32,
     parallel_evaluations: u32,
@@ -1019,6 +1324,11 @@ struct LevelScheduler {
     par_avg_at_last_sch: f64,
     par_current_avg: f64,
     total_parallel_cost: f64,
+    /// Rounds `par_current_avg` averages over. Not `parallel_evaluations`: while the
+    /// trial is alternating the two evaluations, their costs differ by far more than
+    /// the 50% that asks for a reschedule, and the scheduler would re-cluster on
+    /// every round.
+    drift_evals: u32,
     has_run_parallel: bool,
     execution_time: f64,
     clustering_time: f64,
@@ -1029,6 +1339,8 @@ impl LevelScheduler {
         LevelScheduler {
             org: sys.clone(),
             sys,
+            plan: None,
+            trial: ParTrial::new(),
             schedule_available: false,
             total_evaluations: 0,
             parallel_evaluations: 0,
@@ -1036,6 +1348,7 @@ impl LevelScheduler {
             par_avg_at_last_sch: 0.0,
             par_current_avg: 0.0,
             total_parallel_cost: 0.0,
+            drift_evals: 0,
             has_run_parallel: false,
             execution_time: 0.0,
             clustering_time: 0.0,
@@ -1060,16 +1373,26 @@ impl LevelScheduler {
             return Ok(());
         }
         let t0 = now_ms_host();
-        self.sys.execute_all(call)?;
+        let went_parallel = match &self.plan {
+            Some(plan) if self.trial.use_plan() => self.sys.execute_plan(plan, call, self.trial.settled())?,
+            _ => {
+                self.sys.execute_all(call)?;
+                false
+            }
+        };
         let step_cost = now_ms_host() - t0;
+        self.trial.record(step_cost, went_parallel, cfg.num_threads);
         self.execution_time += step_cost;
         self.total_evaluations += 1;
         self.parallel_evaluations += 1;
-        self.total_parallel_cost += step_cost;
-        self.par_current_avg = self.total_parallel_cost / self.parallel_evaluations as f64;
-        if !self.has_run_parallel {
-            self.par_avg_at_last_sch = self.par_current_avg;
-            self.has_run_parallel = true;
+        if self.trial.settled() {
+            self.total_parallel_cost += step_cost;
+            self.drift_evals += 1;
+            self.par_current_avg = self.total_parallel_cost / self.drift_evals as f64;
+            if !self.has_run_parallel {
+                self.par_avg_at_last_sch = self.par_current_avg;
+                self.has_run_parallel = true;
+            }
         }
         Ok(())
     }
@@ -1109,6 +1432,7 @@ impl LevelScheduler {
             self.sys.sort_decreasing(&mut level);
             self.sys.levels[l] = level;
         }
+        self.plan = Some(self.sys.plan(true));
         self.clustering_time += now_ms_host() - t0;
         Ok(())
     }
@@ -1117,6 +1441,8 @@ impl LevelScheduler {
 /// `ClusterDynamicScheduler`: clusters as a dependency graph, scheduled once.
 struct FlowScheduler {
     sys: TaskSystem,
+    plan: Option<Plan>,
+    trial: ParTrial,
     flow_graph_created: bool,
     total_evaluations: u32,
     parallel_evaluations: u32,
@@ -1129,6 +1455,8 @@ impl FlowScheduler {
     fn new(sys: TaskSystem) -> FlowScheduler {
         FlowScheduler {
             sys,
+            plan: None,
+            trial: ParTrial::new(),
             flow_graph_created: false,
             total_evaluations: 0,
             parallel_evaluations: 0,
@@ -1143,8 +1471,16 @@ impl FlowScheduler {
             self.schedule(cfg, call)?;
         }
         let t0 = now_ms_host();
-        self.sys.execute_all(call)?;
-        self.execution_time += now_ms_host() - t0;
+        let went_parallel = match &self.plan {
+            Some(plan) if self.trial.use_plan() => self.sys.execute_plan(plan, call, self.trial.settled())?,
+            _ => {
+                self.sys.execute_all(call)?;
+                false
+            }
+        };
+        let step_cost = now_ms_host() - t0;
+        self.trial.record(step_cost, went_parallel, cfg.num_threads);
+        self.execution_time += step_cost;
         self.total_evaluations += 1;
         self.parallel_evaluations += 1;
         Ok(())
@@ -1184,6 +1520,7 @@ impl FlowScheduler {
             collect_clusters_json(&self.sys, &mut graph_dump);
             write_json_file(path, &graph_dump, "task graph")?;
         }
+        self.plan = Some(self.sys.plan(false));
         self.flow_graph_created = true;
         self.clustering_time += now_ms_host() - t0;
         Ok(())
@@ -1208,6 +1545,12 @@ static STATE: Store = Store(UnsafeCell::new(None));
 // The driver is single-threaded per run (as is the in-wasm session).
 fn state() -> &'static mut Option<State> {
     unsafe { &mut *STATE.0.get() }
+}
+
+/// The run's `-parmodNumThreads` (C's `max_num_threads`), which an engine's worker
+/// pool is sized from before the task system exists.
+pub fn num_threads() -> usize {
+    Config::from_flags().num_threads
 }
 
 /// `PM_Model_create` + `PM_Model_load_ODE_system`, for a model translated with

@@ -133,6 +133,7 @@ openmodelica_simulation_runtime/src/model_data.rs
 openmodelica_simulation_runtime/src/nls.rs
 openmodelica_simulation_runtime/src/operators.rs
 openmodelica_simulation_runtime/src/optimization.rs
+openmodelica_simulation_runtime/src/parmod.rs
 openmodelica_simulation_runtime/src/run.rs
 openmodelica_simulation_runtime/src/shim.c
 openmodelica_simulation_runtime/src/spatial.rs

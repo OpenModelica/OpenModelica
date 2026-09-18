@@ -494,8 +494,33 @@ impl SimEngine for CEngine {
                 });
                 self.absorb(if ok { 0 } else { -1 })
             }
+            // `--parmodauto`: one ODE task out of the model's `functionODE_systems`.
+            "parmodTask" => {
+                self.publish();
+                let (thread_data, stage) = (self.rt.thread_data, self.stage);
+                let ok = crate::support::protected(thread_data, stage, || crate::parmod::call_task(b, thread_data));
+                self.absorb(if ok { 0 } else { -1 })
+            }
             _ => Err("the C model has no such two-argument entry point"),
         }
+    }
+
+    fn parmod_can_parallel(&self) -> bool {
+        crate::parmod::can_parallel()
+    }
+
+    /// The plan's clusters across the worker pool, the calling thread included.
+    /// `publish` happens once: every task sees the state this evaluation was
+    /// entered with.
+    fn parmod_parallel(
+        &mut self,
+        plan: &openmodelica_sim_meta::parmod::Plan,
+        _sim_data: u32,
+        settled: bool,
+    ) -> Result<()> {
+        self.publish();
+        let jumped = crate::parmod::run_plan(plan, self.stage, self.rt.thread_data, settled);
+        self.absorb(if jumped { -1 } else { 0 })
     }
 
     fn call_simulate(&mut self, _sim_data: u32, _start: f64, _stop: f64, _n: u32) -> Result<u32> {

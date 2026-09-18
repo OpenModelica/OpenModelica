@@ -34,6 +34,13 @@ fn link_runtime_c() {
     let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
     println!("cargo:rustc-link-search=native={dir}");
     println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
+    // libomcgc: `--parmodauto`'s worker threads register with the Boehm GC before
+    // they run model code that allocates (src/parmod.rs).
+    println!("cargo:rerun-if-env-changed=OMC_GC_DIR");
+    if let Ok(gc) = std::env::var("OMC_GC_DIR") {
+        println!("cargo:rustc-link-search=native={gc}");
+        println!("cargo:rustc-link-lib=dylib=omcgc");
+    }
     if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "ios")) {
         println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined");
     }

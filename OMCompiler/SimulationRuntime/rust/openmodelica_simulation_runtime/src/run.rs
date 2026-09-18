@@ -192,6 +192,10 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     si.OPENMODELICAHOME = model_data::strdup(xml.md("OPENMODELICAHOME"));
     let _ = HOME.set(xml.md("OPENMODELICAHOME").to_string());
     openmodelica_sim_meta::profiling::set_home(|| HOME.get().cloned().filter(|h| !h.is_empty()));
+    // `--parmodauto`'s default thread count is capped at the machine's.
+    openmodelica_sim_meta::parmod::set_hw_threads(
+        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0),
+    );
     model_data::read_variables(&xml, md);
     // C's `initializeOutputFilter`: `-variableFilter` else the model's own.
     let filter = flag_value(FLAG_VARIABLE_FILTER).unwrap_or_else(|| cstr(si.variableFilter));

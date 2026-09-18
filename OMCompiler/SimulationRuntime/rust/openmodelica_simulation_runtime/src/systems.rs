@@ -330,6 +330,7 @@ pub extern "C" fn solve_linear_system(
     sys_number: c_int,
     aux_x: *mut f64,
 ) -> c_int {
+    let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let ls = unsafe { &mut *si.linearSystemData.add(sys_number as usize) };
     // C's `rt_ext_tp_tick(&linsys->totalTimeClock)`; `A` and `b` are assembled
