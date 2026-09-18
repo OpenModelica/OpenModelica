@@ -376,20 +376,25 @@ algorithm
   end for;
 end dumpJSONDiagramParts;
 
-public function universeSCode
-  "The SCode of a program with the builtin classes prepended: the half of
-   building a top scope that does not depend on which class is looked up. A
-   caller working through many libraries translates once, because translating
-   the shared dependencies again for each of them is what makes a per-library
-   scope expensive."
+public function builtinSCode
+  "The builtin classes every top scope needs, so a caller assembling a universe
+   from separately translated libraries prepends them once."
+  output SCode.Program program;
+algorithm
+  (_, program) := FBuiltin.getInitialFunctions();
+end builtinSCode;
+
+public function programSCode
+  "One program's SCode. translateAbsyn2SCode maps over the top-level classes
+   with nothing carried between them, so a caller holding many libraries
+   translates each on the thread that parsed it and concatenates the results;
+   each library is still translated once, which is what keeps a shared
+   dependency like MSL from being translated per library."
   input Absyn.Program absynProgram;
   output SCode.Program program;
-protected
-  SCode.Program scode_builtin;
 algorithm
-  (_, scode_builtin) := FBuiltin.getInitialFunctions();
-  program := listAppend(scode_builtin, AbsynToSCode.translateAbsyn2SCode(absynProgram));
-end universeSCode;
+  program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
+end programSCode;
 
 public function topFromSCode
   "A fresh top scope over already translated SCode, bypassing mkTop's reuse

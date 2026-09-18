@@ -35,6 +35,10 @@ pub struct Derived {
     pub base_class: Option<usize>,
     pub dims: String,
     pub modifiers: Vec<Modifier>,
+    /// An `Icon` or `Diagram` annotation on the short class definition itself.
+    /// Without one its graphics are the base class' unchanged, and it does not
+    /// have to be instantiated to find that out.
+    pub own_graphics: bool,
 }
 
 pub struct Modifier {
@@ -145,7 +149,10 @@ fn collect_class(
         extends: Vec::new(),
         imports: Vec::new(),
         is_function: matches!(class.restriction, Absyn::Restriction::R_FUNCTION { .. }),
-        derived: derived(&class.body),
+        derived: derived(&class.body).map(|d| Derived {
+            own_graphics: has_annotation(class, "Icon") || has_annotation(class, "Diagram"),
+            ..d
+        }),
         enumeration: enumeration(&class.body),
         uses: if parent.is_none() { uses(class) } else { Vec::new() },
     });
@@ -184,6 +191,13 @@ fn nested_classes(class: &Ref<Absyn::Class>) -> Vec<(Ref<Absyn::Class>, bool)> {
         }
     }
     out
+}
+
+fn has_annotation(class: &Ref<Absyn::Class>, name: &str) -> bool {
+    matches!(
+        AbsynUtil::lookupClassAnnotation(class.clone(), arcstr::ArcStr::from(name)),
+        Ok(Some(_))
+    )
 }
 
 /// `annotation(Documentation(info=…, revisions=…, __OpenModelica_infoHeader=…))`.
@@ -520,6 +534,7 @@ fn derived(body: &Ref<Absyn::ClassDef>) -> Option<Derived> {
         base_class: None,
         dims,
         modifiers,
+        own_graphics: false,
     })
 }
 
