@@ -1379,6 +1379,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
+    <%fmiAliasIndexTables(simCode, modelInfo, modelNamePrefixStr)%>
+
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
@@ -1465,7 +1467,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
-      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
+      <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>
     <%\n%>
     };
 
@@ -1735,6 +1738,59 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   }
   >>
 end functionInitializeDataStruc;
+
+template fmiAliasIndexTables(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
+ "The alias tables the FMI value references resolve through; see
+  OpenModelicaGeneratedFunctionCallbacks."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(__)) then
+  <<
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "Real", varInfo.numAlgAliasVars, vars.aliasVars)%>
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "Integer", varInfo.numIntAliasVars, vars.intAliasVars)%>
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "Boolean", varInfo.numBoolAliasVars, vars.boolAliasVars)%>
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "String", varInfo.numStringAliasVars, vars.stringAliasVars)%>
+  >>
+end fmiAliasIndexTables;
+
+/* `n` is the scalar element count and the list is of array variables, so a
+   non-scalarized alias array leaves the tail zero-initialized -- as the table
+   this replaces did. */
+template fmiAliasIndexTable(SimCode simCode, Text modelNamePrefixStr, String ty, Integer n, list<SimVar> aliasVars)
+::=
+  if boolAnd(SimCodeUtil.isFMUSimCode(simCode), intGt(n, 0)) then
+  <<
+  static const int <%symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes')%>[<%n%>] = {
+    <%aliasVars |> v as SIMVAR(__) => fmiAliasIndex(simCode, aliasvar) ; separator=", " %>
+  };<%\n%>
+  >>
+end fmiAliasIndexTable;
+
+template fmiAliasIndex(SimCode simCode, AliasVariable v)
+::=
+  match v
+  case NOALIAS(__) then error(sourceInfo(), "fmiAliasIndex expected an alias")
+  case ALIAS(__) then SimCodeUtil.lookupVR(varName,simCode)
+  /* -1 - vr, so that a negated alias of vr=0 is still negative */
+  case NEGATEDALIAS(__) then intSub(-1, SimCodeUtil.lookupVR(varName,simCode))
+end fmiAliasIndex;
+
+template fmiAliasIndexTableRefs(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+  <<
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "Real", varInfo.numAlgAliasVars)%>,
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "Integer", varInfo.numIntAliasVars)%>,
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "Boolean", varInfo.numBoolAliasVars)%>,
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "String", varInfo.numStringAliasVars)%>
+  >>
+end fmiAliasIndexTableRefs;
+
+template fmiAliasIndexTableRef(SimCode simCode, Text modelNamePrefixStr, String ty, Integer n)
+::=
+  if boolAnd(SimCodeUtil.isFMUSimCode(simCode), intGt(n, 0)) then symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes') else "NULL"
+end fmiAliasIndexTableRef;
 
 template functionSimProfDef(SimEqSystem eq, Integer value, Text &reverseProf)
   "Generates function in simulation file."

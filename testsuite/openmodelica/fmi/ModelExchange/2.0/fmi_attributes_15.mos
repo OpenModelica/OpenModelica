@@ -4,7 +4,7 @@
 // status: correct
 // teardown_command: rm -rf fmi_attributes_15.fmu fmi_attributes_15.log fmi_attributes_15_tmp.xml fmi_attributes_15.fmutmp/ fmi_attributes_15_info.json
 
-setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental --fmiSources=true");
 getErrorString();
 
 loadString("

@@ -400,9 +400,20 @@ fn string_roots(n: usize) -> *mut modelica_string {
     p as *mut modelica_string
 }
 
-/// C's `initializeDataStruc`: allocate every array `DATA` points at, then lay the
-/// driver's flat address space over them.
+/// C's `initializeDataStruc`, the systems' own allocation and the region map, in
+/// the order a simulation executable wants them. An FMU asks for the three
+/// separately, because the importer sets the parameters in between; see
+/// `src/fmi.rs`.
 pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
+    initialize_data_struc(data, thread_data);
+    initialize_systems(data, thread_data);
+    build_rt(data, thread_data)
+}
+
+/// C's `initializeDataStruc`: allocate every array `DATA` points at. The values
+/// behind them are still the model's start attributes; nothing here evaluates an
+/// equation.
+pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
     let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
 
@@ -599,12 +610,25 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     // `-ls`/`-lss`/`-nls` before the systems are allocated: the choice of a sparse
     // or a dense solver is made there, as C's `readFlag`s precede its `initialize*`.
     openmodelica_sim_meta::simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
-    // The systems' own allocation, once `analyticJacobians` exists for a torn
-    // system's Jacobian to be initialized into.
+}
+
+/// The systems' own allocation, once `analyticJacobians` exists for a torn
+/// system's Jacobian to be initialized into. C's `initializeLinearSystems` and
+/// friends, which an FMU calls one by one.
+pub fn initialize_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     crate::systems::initialize_linear_systems(data, thread_data);
     crate::nls::initialize_nonlinear_systems(data, thread_data);
     crate::stateset::initialize_state_sets(data, thread_data);
     crate::mixed::initialize_mixed_systems(data, thread_data);
+}
+
+/// The flat address space the shared driver addresses the model through, and what
+/// has to exist before it can be laid out. No C counterpart: a C runtime reads
+/// `DATA` directly.
+pub fn build_rt(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
+    let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
+    let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
+    let cb = unsafe { &*(*data).callback };
     init_jac_a(data, thread_data);
     crate::linearize::initialize(data, thread_data);
     crate::datarecon::initialize(data, thread_data);
@@ -906,23 +930,7 @@ fn array_index_maps(md: &mut MODEL_DATA, si: &mut SIMULATION_INFO) {
     let sb = core::mem::size_of::<STATIC_BOOLEAN_DATA>();
     let ss = core::mem::size_of::<STATIC_STRING_DATA>();
 
-    // C's `calculateAllScalarLength`: the integer parameters' start values are the
-    // structural parameters a dimension may be given by, and they are known here.
-    for (data, stride, count) in [
-        (md.realVarsData.cast::<u8>(), sr, md.nVariablesRealArray),
-        (md.integerVarsData.cast::<u8>(), sint, md.nVariablesIntegerArray),
-        (md.booleanVarsData.cast::<u8>(), sb, md.nVariablesBooleanArray),
-        (md.stringVarsData.cast::<u8>(), ss, md.nVariablesStringArray),
-        (md.realParameterData.cast::<u8>(), sr, md.nParametersRealArray),
-        (md.integerParameterData.cast::<u8>(), sint, md.nParametersIntegerArray),
-        (md.booleanParameterData.cast::<u8>(), sb, md.nParametersBooleanArray),
-        (md.stringParameterData.cast::<u8>(), ss, md.nParametersStringArray),
-    ] {
-        for i in 0..count as usize {
-            let dim = unsafe { &mut *(data.add(i * stride) as *mut DIMENSION_INFO) };
-            dim.scalar_length = calculate_length(dim, md);
-        }
-    }
+    calculate_all_scalar_length(md);
 
     let index = |data: *const u8, stride: usize, n: c_long| -> *mut usize {
         let out: *mut usize = calloc(n as usize + 1);
@@ -981,6 +989,30 @@ fn array_index_maps(md: &mut MODEL_DATA, si: &mut SIMULATION_INFO) {
     si.integerAliasReverseIndex = reverse(si.integerAliasIndex, md.nAliasIntegerArray);
     si.booleanAliasReverseIndex = reverse(si.booleanAliasIndex, md.nAliasBooleanArray);
     si.stringAliasReverseIndex = reverse(si.stringAliasIndex, md.nAliasStringArray);
+}
+
+/// C's `calculateAllScalarLength`: the integer parameters' start values are the
+/// structural parameters a dimension may be given by, and they are known here.
+pub fn calculate_all_scalar_length(md: &mut MODEL_DATA) {
+    let sr = core::mem::size_of::<STATIC_REAL_DATA>();
+    let sint = core::mem::size_of::<STATIC_INTEGER_DATA>();
+    let sb = core::mem::size_of::<STATIC_BOOLEAN_DATA>();
+    let ss = core::mem::size_of::<STATIC_STRING_DATA>();
+    for (data, stride, count) in [
+        (md.realVarsData.cast::<u8>(), sr, md.nVariablesRealArray),
+        (md.integerVarsData.cast::<u8>(), sint, md.nVariablesIntegerArray),
+        (md.booleanVarsData.cast::<u8>(), sb, md.nVariablesBooleanArray),
+        (md.stringVarsData.cast::<u8>(), ss, md.nVariablesStringArray),
+        (md.realParameterData.cast::<u8>(), sr, md.nParametersRealArray),
+        (md.integerParameterData.cast::<u8>(), sint, md.nParametersIntegerArray),
+        (md.booleanParameterData.cast::<u8>(), sb, md.nParametersBooleanArray),
+        (md.stringParameterData.cast::<u8>(), ss, md.nParametersStringArray),
+    ] {
+        for i in 0..count as usize {
+            let dim = unsafe { &mut *(data.add(i * stride) as *mut DIMENSION_INFO) };
+            dim.scalar_length = calculate_length(dim, md);
+        }
+    }
 }
 
 /// C's `calculateLength`: the product of the declared dimensions, a dimension

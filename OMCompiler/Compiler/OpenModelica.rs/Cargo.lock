@@ -7554,6 +7554,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_fmi3_wasm"
+version = "0.1.0"
+dependencies = [
+ "openmodelica_sim_meta",
+]
+
+[[package]]
 name = "openmodelica_fmi_driver"
 version = "0.1.0"
 dependencies = [
@@ -7991,6 +7998,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "libc",
+ "openmodelica_fmi3_wasm",
  "openmodelica_lapack",
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",

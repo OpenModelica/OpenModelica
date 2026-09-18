@@ -402,11 +402,13 @@ sourcedist_internal:
 
 RuntimeSources.mo: Makefile.common Makefile.objs RuntimeSources.mo.tpl
 	$(MAKE) -f $(defaultMakefileTarget) sources.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
+	$(MAKE) -f $(defaultMakefileTarget) runtime_c_sources.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
 	$(MAKE) -f $(defaultMakefileTarget) headers.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
 	$(MAKE) -f $(defaultMakefileTarget) headers.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
 	sed \
 	    -e "s#COMMON_HEADERS#`cat headers.tmp`#" \
 	    -e "s#COMMON_FILES#`cat sources.tmp`#" \
+	    -e "s#RUNTIME_C_FILES#`cat runtime_c_sources.tmp`#" \
 	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"external_solvers/%.c\\\") | tr " " ,`#" \
 	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
 	    -e "s#CMINPACK_FILES#`echo $(CMINPACK_OBJS:%=\\\"external_solvers/%.c\\\") | tr " " ,`#" \
@@ -416,5 +418,7 @@ RuntimeSources.mo: Makefile.common Makefile.objs RuntimeSources.mo.tpl
 	mv $@.tmp $@
 sources.tmp: Makefile.common Makefile.objs
 	echo "$(FMI_ME_OBJS_BUILDPATH:%.o=\"%.c\")" | tr " " , > $@
+runtime_c_sources.tmp: Makefile.common Makefile.objs
+	echo "$(FMI_ME_RUNTIME_C_OBJS:%.o=\"%.c\")" | tr " " , > $@
 headers.tmp: Makefile.common Makefile.objs
 	echo "$(ALL_RUNTIME_HEADERS:%=\"%\")" | tr " " , > $@

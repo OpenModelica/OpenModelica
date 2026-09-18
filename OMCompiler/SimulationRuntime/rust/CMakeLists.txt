@@ -80,6 +80,16 @@ if(RUST_OMC_TARGET)
 endif()
 
 set(_simrt_so ${_simrt_target_dir}/${_simrt_artifact_subdir}/${CMAKE_SHARED_LIBRARY_PREFIX}SimulationRuntimeRust${CMAKE_SHARED_LIBRARY_SUFFIX})
+# The same runtime as an archive, which a source-code FMU links. Its own cargo
+# invocation and target directory, because two things must differ:
+#
+#  * no libOpenModelicaRuntimeC -- the FMU compiles that half from its own sources,
+#    so the archive must leave those symbols undefined.
+#  * no Ipopt and no PRIMME. `rustc` bundles a native static library into a
+#    `staticlib`, so `-moo` would put Ipopt and MUMPS into every FMU (and with them
+#    libgfortran), and PRIMME would make every FMU need a system LAPACK.
+set(_simrt_fmu_target_dir ${_simrt_target_dir}-fmu)
+set(_simrt_a ${_simrt_fmu_target_dir}/${_simrt_artifact_subdir}/${CMAKE_STATIC_LIBRARY_PREFIX}SimulationRuntimeRust${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 # The headers tests/abi_layout.rs compiles to check the ABI mirror against the
 # real `simulation_data.h`; the test cannot find them from a mirrored working
@@ -183,6 +193,32 @@ add_custom_target(SimulationRuntimeRust ALL
 if(TARGET rust_src_sync)
   add_dependencies(SimulationRuntimeRust rust_src_sync)
 endif()
+
+# The archive a source-code FMU links. `_simrt_env` minus the two entries above;
+# everything else (SUNDIALS, PRIMME, the cross-compilation driver) is the same.
+set(_simrt_fmu_env "")
+foreach(_e IN LISTS _simrt_env)
+  if(NOT _e MATCHES "^OMC_RUNTIME_C_(DIR|LINK|DEF)=" AND NOT _e MATCHES "^OMC_IPOPT_NATIVE_DIR="
+     AND NOT _e MATCHES "^OMC_PRIMME_(NATIVE_DIR|INCLUDE_DIR)=")
+    list(APPEND _simrt_fmu_env "${_e}")
+  endif()
+endforeach()
+list(APPEND _simrt_fmu_env "OMC_SIMRT_FMI=1")
+add_custom_target(SimulationRuntimeRustFmu ALL
+  WORKING_DIRECTORY ${_simrt_workspace}
+  JOB_SERVER_AWARE TRUE
+  # --no-default-features drops `standalone`: the `_main_*` entry points, the
+  # result file, `-variableFilter` and `-iif`, none of which an FMU has. It takes
+  # the Arrow, regex and mat/plt writer crates out of the archive with it. `fmi`
+  # adds the FMI state machine, which only an FMU has a use for.
+  COMMAND ${_simrt_fmu_env} ${CARGO_EXECUTABLE} ${_simrt_cargo_cmd} --target-dir ${_simrt_fmu_target_dir}
+          ${_simrt_target_flag} ${_simrt_profile_flag}
+          --no-default-features --features fmu-lapack,fmi
+          -p openmodelica_simulation_runtime
+  BYPRODUCTS ${_simrt_a}
+  COMMENT "Rust: building libSimulationRuntimeRust.a for source-code FMUs"
+  VERBATIM)
+add_dependencies(SimulationRuntimeRustFmu SimulationRuntimeRust)
 if(TARGET rust_sundials_native_collect)
   add_dependencies(SimulationRuntimeRust rust_sundials_native_collect)
 endif()
@@ -205,3 +241,22 @@ if(WIN32)
 else()
   install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
 endif()
+# Component fmu: it travels with the rest of what a source-code FMU is built from.
+install(FILES ${_simrt_a} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT fmu)
+
+# The crates themselves, for `--fmiSources=slim` / `=full` to put in the FMU.
+# The layout is the checkout's, because the manifests reach openmodelica_lapack by
+# a relative path: <root>/SimulationRuntime/rust beside <root>/Compiler/OpenModelica.rs.
+set(_simrt_fmu_sources ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+        DESTINATION ${_simrt_fmu_sources}/SimulationRuntime/rust
+        COMPONENT fmu
+        PATTERN "target" EXCLUDE
+        PATTERN "CMakeLists.txt" EXCLUDE
+        PATTERN "*.cmake" EXCLUDE)
+foreach(_simrt_fmu_crate openmodelica_lapack openmodelica_fmi3_wasm)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/OpenModelica.rs/${_simrt_fmu_crate}/
+          DESTINATION ${_simrt_fmu_sources}/Compiler/OpenModelica.rs/${_simrt_fmu_crate}
+          COMPONENT fmu
+          PATTERN "target" EXCLUDE)
+endforeach()

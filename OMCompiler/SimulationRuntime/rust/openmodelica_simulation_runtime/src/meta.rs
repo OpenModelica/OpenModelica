@@ -325,7 +325,10 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             }
         }
     };
-    for a in 0..md.nAliasRealArray as usize {
+    // An FMU allocates no alias data (`allocModelDataVars(.., allocAlias=false)`):
+    // it resolves aliases through the model description, and writes no result file
+    // for them to be a signal in.
+    for a in 0..if md.realAlias.is_null() { 0 } else { md.nAliasRealArray as usize } {
         let al = unsafe { &*md.realAlias.add(a) };
         let is_der = al.aliasType == 0
             && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as c_long));
@@ -355,7 +358,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     .into_iter()
     .enumerate()
     {
-        for a in 0..count as usize {
+        for a in 0..if arr.is_null() { 0 } else { count as usize } {
             let al = unsafe { &*arr.add(a) };
             let neg = if al.negate != 0 {
                 if kind_ix == 1 { Neg::Not } else { Neg::Arith }

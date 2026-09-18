@@ -7,11 +7,19 @@
 //! through `data->callback` (src/engine.rs).
 
 #![allow(non_snake_case)]
+// Without `standalone` the executable's half is gated out, and what only it
+// reached is unused rather than deleted.
+#![cfg_attr(not(feature = "standalone"), allow(dead_code))]
 
 pub mod abi;
 mod data;
 mod datarecon;
 mod engine;
+mod fmi;
+#[cfg(feature = "fmi")]
+mod fmi_host;
+mod fmi_vrs;
+#[cfg(feature = "standalone")]
 mod iif;
 mod info_json;
 mod linearize;
@@ -21,6 +29,7 @@ mod model_data;
 mod operators;
 mod parmod;
 mod optimization;
+#[cfg(feature = "standalone")]
 mod run;
 mod nls;
 mod spatial;

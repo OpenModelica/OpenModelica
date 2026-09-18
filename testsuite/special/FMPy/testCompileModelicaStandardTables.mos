@@ -2,6 +2,7 @@
 //
 // Build TableTest.fmu
 
+setCommandLineOptions("--fmiSources=true"); getErrorString();
 loadModel(Modelica); getErrorString();
 
 loadString("

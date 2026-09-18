@@ -34,6 +34,18 @@ set(CVODE_DIRECTORY
     @CVODE_DIRECTORY@
     CACHE STRING
     "IF CVODE is needed provide a directory where to find it.")
+# --simCodeTarget=C+Rust: the sources under simulation/ and external_solvers/ are
+# not in this FMU. libSimulationRuntimeRust provides what they did, and is either
+# a prebuilt archive the exporting installation pointed at, or built from the
+# crates under rust/ (--fmiSources=slim or full).
+set(OMC_RUST_SIMULATION_RUNTIME
+    @OMC_RUST_SIMULATION_RUNTIME@
+    CACHE BOOL
+    "Link the Rust simulation runtime instead of compiling the C one from these sources.")
+set(RUST_SIM_RUNTIME_LIBRARY
+    @RUST_SIM_RUNTIME_LIBRARY@
+    CACHE FILEPATH
+    "Prebuilt libSimulationRuntimeRust archive. Empty, or missing, builds it from rust/.")
 
 if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
   cmake_policy(SET CMP0207 NEW)
@@ -221,6 +233,42 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
   if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     target_link_options(${FMU_NAME_HASH} PRIVATE "LINKER:SHELL:--no-undefined")
   endif()
+
+  # An FMU is loaded for its `fmi2*`/`fmi3*` entry points and nothing else, so
+  # everything they do not reach can go. That is what decides how much of a Rust
+  # simulation runtime an FMU carries: the archive holds Model Exchange and
+  # Co-Simulation both, and an ME FMU, naming no `fmi3DoStep`, drops the
+  # Co-Simulation driver and with it every integrator. One archive serves both.
+  # FMI 1.0 is excluded: it spells its entry points `<modelIdentifier>_fmiXxx`,
+  # which no fixed pattern matches.
+  if(BUILD_SHARED_LIBS AND UNIX AND NOT APPLE
+     AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi1"
+     AND (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang"))
+    set(OM_FMU_VERSION_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/fmu-exports.map")
+    file(WRITE "${OM_FMU_VERSION_SCRIPT}" "{ global: fmi2*; fmi3*; local: *; };\n")
+    target_link_options(${FMU_NAME_HASH} PRIVATE
+                        "LINKER:SHELL:--version-script=${OM_FMU_VERSION_SCRIPT}"
+                        "LINKER:SHELL:--gc-sections")
+    # A prebuilt Rust runtime carries its own DWARF, which a C FMU has none of and
+    # no importer reads: 4.5 MB of a 10 MB FMU. `--fmuDebug` (CMAKE_BUILD_TYPE
+    # Debug) keeps it. `-s` rather than `--strip-debug`: the static symbol table is
+    # another 1 MB, and an FMU exports only its `fmi*` entry points, which live in
+    # `.dynsym`.
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+      target_link_options(${FMU_NAME_HASH} PRIVATE "LINKER:SHELL:-s")
+    endif()
+    set_target_properties(${FMU_NAME_HASH} PROPERTIES
+                          C_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+  elseif(APPLE AND BUILD_SHARED_LIBS AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi1")
+    set(OM_FMU_EXPORT_LIST "${CMAKE_CURRENT_BINARY_DIR}/fmu-exports.txt")
+    file(WRITE "${OM_FMU_EXPORT_LIST}" "_fmi2*\n_fmi3*\n")
+    target_link_options(${FMU_NAME_HASH} PRIVATE
+                        "LINKER:SHELL:-exported_symbols_list,${OM_FMU_EXPORT_LIST}"
+                        "LINKER:SHELL:-dead_strip")
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+      target_link_options(${FMU_NAME_HASH} PRIVATE "LINKER:SHELL:-S")
+    endif()
+  endif()
   # A cross compiled Windows FMU cannot collect the MinGW runtime DLLs (libgcc,
   # libwinpthread) the way install(TARGETS ... RUNTIME_DEPENDENCIES) would, so link
   # them statically. Otherwise the FMU only loads on machines that have MinGW installed.
@@ -238,6 +286,65 @@ endif()
 # If not using MSVC, link to the math library libm.
 if(NOT MSVC)
   target_link_libraries(${FMU_NAME_HASH} PRIVATE m)
+endif()
+
+if(OMC_RUST_SIMULATION_RUNTIME)
+  target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_RUST_SIMULATION_RUNTIME=1)
+
+  if(RUST_SIM_RUNTIME_LIBRARY AND EXISTS "${RUST_SIM_RUNTIME_LIBRARY}")
+    message(STATUS "Rust simulation runtime: ${RUST_SIM_RUNTIME_LIBRARY}")
+  else()
+    # Recompiling the FMU somewhere else: build the runtime from the crates the
+    # FMU carries. `vendor/` beside them means the dependencies are in the FMU
+    # too and cargo needs no network (--fmiSources=full).
+    set(OM_RUST_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/rust/SimulationRuntime/rust/Cargo.toml")
+    if(NOT EXISTS "${OM_RUST_MANIFEST}")
+      message(FATAL_ERROR
+              "This FMU was built with --simCodeTarget=C+Rust but carries neither a prebuilt "
+              "libSimulationRuntimeRust nor its sources. Re-export it with --fmiSources=slim "
+              "or --fmiSources=full, or point -DRUST_SIM_RUNTIME_LIBRARY at an archive.")
+    endif()
+    find_program(CARGO_EXECUTABLE cargo)
+    if(NOT CARGO_EXECUTABLE)
+      message(FATAL_ERROR "cargo was not found, and this FMU's simulation runtime is Rust. "
+                          "Install a Rust toolchain, or point -DRUST_SIM_RUNTIME_LIBRARY at an archive.")
+    endif()
+    # Shared between FMUs so a second build of the same runtime is a no-op.
+    set(OM_RUST_TARGET_DIR "${CMAKE_BINARY_DIR}/rust-target"
+        CACHE PATH "Cargo target directory for the FMU's Rust runtime.")
+    set(OM_RUST_CARGO_FLAGS "")
+    if(CMAKE_CROSSCOMPILING AND OM_RUST_TARGET_TRIPLE)
+      list(APPEND OM_RUST_CARGO_FLAGS --target ${OM_RUST_TARGET_TRIPLE})
+      set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/${OM_RUST_TARGET_TRIPLE}/release/libSimulationRuntimeRust.a")
+    else()
+      set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/release/libSimulationRuntimeRust.a")
+    endif()
+    add_custom_command(
+      OUTPUT "${RUST_SIM_RUNTIME_LIBRARY}"
+      COMMAND ${CMAKE_COMMAND} -E env OMC_SIMRT_FMI=1
+              ${CARGO_EXECUTABLE} build --release -p openmodelica_simulation_runtime
+              --manifest-path "${OM_RUST_MANIFEST}"
+              --target-dir "${OM_RUST_TARGET_DIR}" ${OM_RUST_CARGO_FLAGS}
+      # cargo finds .cargo/config.toml by walking up from here, and
+      # --fmiSources=full puts one beside the crates pointing at vendor/.
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/rust"
+      COMMENT "Rust: building the FMU's simulation runtime"
+      VERBATIM)
+    add_custom_target(om_rust_simulation_runtime DEPENDS "${RUST_SIM_RUNTIME_LIBRARY}")
+    add_dependencies(${FMU_NAME_HASH} om_rust_simulation_runtime)
+  endif()
+
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE "${RUST_SIM_RUNTIME_LIBRARY}")
+  # What the Rust standard library needs of the system.
+  if(UNIX)
+    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${CMAKE_DL_LIBS})
+    find_package(Threads)
+    if(Threads_FOUND)
+      target_link_libraries(${FMU_NAME_HASH} PRIVATE Threads::Threads)
+    endif()
+  elseif(WIN32)
+    target_link_libraries(${FMU_NAME_HASH} PRIVATE ws2_32 userenv bcrypt ntdll advapi32)
+  endif()
 endif()
 
 # Directory names Modelica libraries use for platform specific binaries, both the

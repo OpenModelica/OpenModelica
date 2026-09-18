@@ -1063,6 +1063,14 @@ algorithm
     // A multiple-string value.
     case (_, Flags.STRING_LIST_FLAG(), _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
 
+    // No value, and an enumeration that spells one of its values "true": the flag
+    // used to be a boolean one, so keep --flag meaning --flag=true.
+    case ("", Flags.ENUM_FLAG(validValues = enums), _)
+      algorithm
+        i := Util.assoc("true", enums);
+      then
+        Flags.ENUM_FLAG(i, enums);
+
     // An enumeration value.
     case (_, Flags.ENUM_FLAG(validValues = enums), _)
       algorithm
