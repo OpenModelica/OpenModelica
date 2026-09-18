@@ -117,6 +117,8 @@ import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
 import UnorderedMap;
+import UnorderedSet;
+import Util;
 import CheckModel = NFCheckModel;
 import EvalFunction = NFEvalFunction;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -587,6 +589,7 @@ algorithm
   () := match InstNode.getClass(node)
     case Class.NOT_INSTANTIATED()
       algorithm
+        markClassUsed(InstNode.definition(node));
         c := partialInstClass2(InstNode.definition(node), node);
         node := InstNode.updateClass(c, node);
         c := Class.initImports(c, node);
@@ -597,6 +600,89 @@ algorithm
     else ();
   end match;
 end partialInstClass;
+
+function startRecordingUsedClasses
+  "Makes the frontend record every class it instantiates and every component
+   it looks up from now on, see stopRecordingUsedClasses."
+algorithm
+  setGlobalRoot(Global.nfUsedClassesIndex,
+    SOME(UnorderedSet.new<String>(stringHashDjb2, stringEq)));
+end startRecordingUsedClasses;
+
+function stopRecordingUsedClasses
+  "Stops the recording started by startRecordingUsedClasses and returns the
+   keys (see usedElementKey) of the elements used in between."
+  output UnorderedSet<String> usedClasses;
+protected
+  Option<UnorderedSet<String>> used = getGlobalRoot(Global.nfUsedClassesIndex);
+algorithm
+  setGlobalRoot(Global.nfUsedClassesIndex, NONE());
+  usedClasses := match used
+    case SOME(usedClasses) then usedClasses;
+    else UnorderedSet.new<String>(stringHashDjb2, stringEq);
+  end match;
+end stopRecordingUsedClasses;
+
+function usedElementKey
+  "Identifies an element definition by its name and source position. Nodes are
+   copied when inherited, so the definition is what the copies share."
+  input SCode.Element definition;
+  output String key;
+protected
+  SourceInfo info = SCodeUtil.elementInfo(definition);
+algorithm
+  key := stringAppendList({SCodeUtil.elementName(definition), "@", info.fileName,
+    ":", intString(info.lineNumberStart), ":", intString(info.columnNumberStart),
+    "-", intString(info.lineNumberEnd), ":", intString(info.columnNumberEnd)});
+end usedElementKey;
+
+function markClassUsed
+  input SCode.Element definition;
+protected
+  Option<UnorderedSet<String>> used = getGlobalRoot(Global.nfUsedClassesIndex);
+algorithm
+  if isSome(used) then
+    UnorderedSet.add(usedElementKey(definition), Util.getOption(used));
+  end if;
+end markClassUsed;
+
+function expandReplacedClass
+  "Expands a class that is replaced by a redeclare if used elements are being
+   recorded, so that the classes it refers to are recorded too and a saved
+   total model contains what its replaceable declarations refer to."
+  input InstNode node;
+  input InstContext.Type context;
+protected
+  Option<UnorderedSet<String>> used = getGlobalRoot(Global.nfUsedClassesIndex);
+algorithm
+  if isSome(used) then
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      expand(node, context);
+    else
+    end try;
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+end expandReplacedClass;
+
+function markComponentUsed
+  "Records a component found by lookup, see startRecordingUsedClasses."
+  input InstNode node;
+protected
+  Option<UnorderedSet<String>> used = getGlobalRoot(Global.nfUsedClassesIndex);
+algorithm
+  if isSome(used) then
+    () := match node
+      case InstNode.COMPONENT_NODE(definition = SOME(_))
+        algorithm
+          UnorderedSet.add(usedElementKey(InstNode.definition(node)), Util.getOption(used));
+        then
+          ();
+
+      else ();
+    end match;
+  end if;
+end markComponentUsed;
 
 function partialInstClass2
   input SCode.Element definition;
@@ -1649,6 +1735,7 @@ algorithm
         for mod in mods loop
           try
             node := ClassTree.lookupElement(Modifier.name(mod), cls);
+            markComponentUsed(node);
             InstNode.componentApply(node, Component.mergeModifier, mod);
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
@@ -1710,6 +1797,7 @@ algorithm
             end if;
 
             if InstNode.isComponent(node) then
+              markComponentUsed(node);
               InstNode.componentApply(node, Component.mergeModifier, mod);
             else
               partialInstClass(node);
@@ -1848,6 +1936,7 @@ algorithm
   end if;
 
   partialInstClass(originalNode);
+  expandReplacedClass(originalNode, context);
   orig_cls := InstNode.getClass(originalNode);
   partialInstClass(redeclareNode);
   rdcl_cls := InstNode.getClass(redeclareNode);

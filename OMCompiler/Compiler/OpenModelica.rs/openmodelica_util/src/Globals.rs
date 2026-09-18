@@ -263,4 +263,10 @@ thread_local! {
     /// Source: `SimCodeFunctionUtil.extLibraryBuildAttempted`.
     pub static extLibraryBuildIndex: RefCell<metamodelica::List<ArcStr>> =
         RefCell::new(metamodelica::nil());
+
+    /// Index 40 — Classes the new frontend instantiated and components it
+    /// looked up while saveTotalModel records them, keyed by name and source
+    /// position; `None` otherwise. Source: `NFInst.startRecordingUsedClasses`.
+    pub static nfUsedClassesIndex: RefCell<Option<Arc<crate::UnorderedSet::UnorderedSet<ArcStr>>>> =
+        const { RefCell::new(None) };
 }

@@ -2614,6 +2614,13 @@ API function, which loads <code>className</code> and all the other needed
 classes into memory.</p>
 <p>This is useful to allow third parties to run a certain model (e.g. for
 debugging) without worrying about all the library dependencies.</p>
+<p>The classes it depends upon are found by instantiating <code>className</code>,
+and every class declared in it, with the new frontend. <code>className</code> is
+saved whole, so for a package all its classes are saved, while of the other classes
+only the ones used and of their packages only the constants used are saved. If
+<code>className</code> fails to instantiate, what was used up to the failure is
+saved, so the saved model fails the same way. The <code>className_total</code>
+model extending <code>className</code> is not added for packages and functions.</p>
 <p>Please note that the resulting file is not a valid Modelica .mo file according
 to the specification and cannot be loaded in OMEdit - it can only be
 loaded with loadFile() or passing the file to the compiler on the command line.</p>
@@ -2637,6 +2644,13 @@ API function, which loads <code>className</code> and all the other needed
 classes into memory.</p>
 <p>This is useful to allow third parties to run a certain model (e.g. for
 debugging) without worrying about all the library dependencies.</p>
+<p>The classes it depends upon are found by instantiating <code>className</code>,
+and every class declared in it, with the new frontend. <code>className</code> is
+saved whole, so for a package all its classes are saved, while of the other classes
+only the ones used and of their packages only the constants used are saved. If
+<code>className</code> fails to instantiate, what was used up to the failure is
+saved, so the saved model fails the same way. The <code>className_total</code>
+model extending <code>className</code> is not added for packages and functions.</p>
 <p>Please note that the resulting file is not a valid Modelica .mo file according
 to the specification and cannot be loaded in OMEdit - it can only be
 loaded with loadFile() or passing the file to the compiler on the command line.</p>
