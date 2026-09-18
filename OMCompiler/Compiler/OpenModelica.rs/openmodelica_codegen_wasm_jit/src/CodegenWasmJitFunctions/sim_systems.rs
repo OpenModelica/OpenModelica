@@ -350,8 +350,13 @@ fn emit_inverse_algorithm_residual(
 }
 
 /// Emit a `SES_FOR_RESIDUAL`: nested `for` loops (outermost first) storing
-/// `r[res_index + Σ(iter_k - start_k)] = exp` (C's `indexShift`). Each iterator
-/// registers as a wasm local so `compile_exp` resolves `x[$i]` and bare `$i`.
+/// `r[res_index + flatten(offsets)] = exp` (C's `indexShift`/`forIteratorBody`),
+/// where `flatten` is a mixed-radix (Horner) combination of each iterator's own
+/// offset and size -- first-listed iterator least significant -- not a plain sum,
+/// which is only bijective for a single iterator and otherwise collapses most
+/// (i1,i2,...) combinations onto the same `res[]` slot, leaving the rest of the
+/// residual vector uninitialized. Each iterator registers as a wasm local so
+/// `compile_exp` resolves `x[$i]` and bare `$i`.
 fn emit_for_residual(
     ctx: &mut FnCtx,
     iterators: &[BackendDAE::SimIterator],
@@ -361,13 +366,18 @@ fn emit_for_residual(
 ) -> Result<()> {
     use we::Instruction as I;
     let Some((sim_it, rest)) = iterators.split_first() else {
-        // addr = r + (res_index + Σ(it - start)) * 8
+        // addr = r + (res_index + flatten(outer)) * 8, outer[k] = (offset_k, size_k),
+        // flatten = off_0 + size_0*(off_1 + size_1*(... + size_{n-2}*off_{n-1}))
         ctx.emit(I::LocalGet(2)); // r
         ctx.emit(I::I32Const(res_index));
-        for &(it, start_l) in outer {
-            ctx.emit(I::LocalGet(it));
-            ctx.emit(I::LocalGet(start_l));
-            ctx.emit(I::I32Sub);
+        if let Some(&(last_off, _)) = outer.last() {
+            ctx.emit(I::LocalGet(last_off));
+            for &(off_l, size_l) in outer[..outer.len() - 1].iter().rev() {
+                ctx.emit(I::LocalGet(size_l));
+                ctx.emit(I::I32Mul);
+                ctx.emit(I::LocalGet(off_l));
+                ctx.emit(I::I32Add);
+            }
             ctx.emit(I::I32Add);
         }
         ctx.emit(I::I32Const(8));
@@ -378,7 +388,7 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = sim_it else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, size, .. } = sim_it else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -399,14 +409,28 @@ fn emit_for_residual(
     let pw = compile_exp(ctx, stop)?;
     coerce(ctx, pw, WTy::I32);
     ctx.emit(I::LocalSet(stop_l));
+    // this iterator's offset ((it-start)/step) and size, for the flatten above
+    let off_l = ctx.alloc_temp(WTy::I32);
+    let size_l = ctx.alloc_temp(WTy::I32);
+    {
+        let w = compile_exp(ctx, size)?;
+        coerce(ctx, w, WTy::I32);
+    }
+    ctx.emit(I::LocalSet(size_l));
     ctx.emit(I::Block(we::BlockType::Empty));
     ctx.emit(I::Loop(we::BlockType::Empty));
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(stop_l));
     ctx.emit(I::I32GtS);
     ctx.emit(I::BrIf(1));
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(start_l));
+    ctx.emit(I::I32Sub);
+    ctx.emit(I::LocalGet(step_l));
+    ctx.emit(I::I32DivS);
+    ctx.emit(I::LocalSet(off_l));
     let mut inner = outer.to_vec();
-    inner.push((it, start_l));
+    inner.push((off_l, size_l));
     emit_for_residual(ctx, rest, exp, res_index, &inner)?;
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(step_l));
