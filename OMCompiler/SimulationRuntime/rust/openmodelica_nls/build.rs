@@ -7,6 +7,11 @@
 
 fn main() {
     primme();
+    // `system-lapack` names `dgetrf_`/`dgetrs_`; an executable already links
+    // liblapack, but a plain `cargo test` of this crate does not.
+    if std::env::var_os("CARGO_FEATURE_SYSTEM_LAPACK").is_some() {
+        println!("cargo:rustc-link-lib=dylib=lapack");
+    }
     println!("cargo::rustc-check-cfg=cfg(sundials)");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_DIR");

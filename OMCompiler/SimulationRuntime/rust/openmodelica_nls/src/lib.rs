@@ -793,6 +793,39 @@ pub fn enorm(v: &[f64]) -> f64 {
     fmath::sqrt(s)
 }
 
+/// The dense LU behind the Newton step; see the `system-lapack` feature.
+#[cfg(feature = "system-lapack")]
+mod dense_lu {
+    unsafe extern "C" {
+        fn dgetrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
+                   info: *mut i32);
+        fn dgetrs_(trans: *const u8, n: *const i32, nrhs: *const i32, a: *const f64,
+                   lda: *const i32, ipiv: *const i32, b: *mut f64, ldb: *const i32,
+                   info: *mut i32, trans_len: usize);
+    }
+    pub fn getrf(n: usize, lu: &mut [f64], ipiv: &mut [i32]) -> i32 {
+        let (n, mut info) = (n as i32, 0);
+        unsafe { dgetrf_(&n, &n, lu.as_mut_ptr(), &n, ipiv.as_mut_ptr(), &mut info) };
+        info
+    }
+    pub fn getrs(n: usize, lu: &[f64], ipiv: &[i32], b: &mut [f64]) {
+        let (n, one, mut info) = (n as i32, 1, 0);
+        unsafe {
+            dgetrs_(b"N".as_ptr(), &n, &one, lu.as_ptr(), &n, ipiv.as_ptr(), b.as_mut_ptr(), &n,
+                    &mut info, 1)
+        };
+    }
+}
+#[cfg(not(feature = "system-lapack"))]
+mod dense_lu {
+    pub fn getrf(n: usize, lu: &mut [f64], ipiv: &mut [i32]) -> i32 {
+        openmodelica_lapack::dgetrf(n, n, lu, n, ipiv)
+    }
+    pub fn getrs(n: usize, lu: &[f64], ipiv: &[i32], b: &mut [f64]) {
+        openmodelica_lapack::dgetrs("N", n, 1, lu, n, ipiv, b, n);
+    }
+}
+
 /// Solve the dense `n`×`n` system `A x = b` in place (`A` column-major, `b ← x`).
 /// Returns `true` on success, `false` on a singular/failed factorization (in
 /// which case `b` is unchanged). Shared by [`newton_solve`] and `rt_linsolve`.
@@ -805,10 +838,10 @@ pub fn lu_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
 pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
     let mut lu = a[..n * n].to_vec();
     let mut ipiv = alloc::vec![0i32; n];
-    if openmodelica_lapack::dgetrf(n, n, &mut lu, n, &mut ipiv) != 0 {
+    if dense_lu::getrf(n, &mut lu, &mut ipiv) != 0 {
         return None;
     }
-    openmodelica_lapack::dgetrs("N", n, 1, &lu, n, &ipiv, b, n);
+    dense_lu::getrs(n, &lu, &ipiv, b);
     Some((0..n).map(|k| lu[k * n + k]).product())
 }
 
@@ -818,11 +851,11 @@ pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
 pub fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
     let mut lu = a[..n * n].to_vec();
     let mut ipiv = alloc::vec![0i32; n];
-    let info = openmodelica_lapack::dgetrf(n, n, &mut lu, n, &mut ipiv);
+    let info = dense_lu::getrf(n, &mut lu, &mut ipiv);
     if info != 0 {
         return Some((info.max(1) - 1) as usize);
     }
-    openmodelica_lapack::dgetrs("N", n, 1, &lu, n, &ipiv, b, n);
+    dense_lu::getrs(n, &lu, &ipiv, b);
     None
 }
 

@@ -50,6 +50,8 @@ fmi = ["dep:openmodelica_fmi3_wasm"]
 # by the linker afterwards.
 standalone = [
     "openmodelica_sim_meta/result-files",
+    # The executable links `-llapack`; an FMU links none and keeps the port.
+    "openmodelica_nls/system-lapack",
     "dep:openmodelica_mat_writer",
     "dep:openmodelica_plt_writer",
     "dep:openmodelica_mat_reader",
