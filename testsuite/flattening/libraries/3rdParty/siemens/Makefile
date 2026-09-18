@@ -5,13 +5,11 @@ translateFlueGasZones.mos \
 translateHeatExchanger.mos \
 translateJunctions.mos \
 translatePipes.mos \
-valve_test.mos \
 
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES= \
-paralleFlowEVA_test.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
@@ -20,7 +18,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-SiemensPowerOMCtest \
 SiemensPower \
 
 

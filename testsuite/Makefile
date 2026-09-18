@@ -1,11 +1,9 @@
 SLOWLOGS = \
 bootstrapping.log \
-msl31.log \
 msl40simulation.log \
+msl41simulation.log \
 msl32simulation.log \
 msl32simulation_cpp_mini.log \
-msl31simulation.log \
-msl31mediasimulation.log \
 siemens_nosim.log \
 siemens_simulation.log \
 SiemensPower.log \
@@ -94,8 +92,7 @@ simulationsolver_gbode.log \
 simulationBuiltin_delay.log \
 simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
-msl31mediasimulation.log \
-msl31simulation.log \
+msl41simulation.log \
 flatteningExercises.log \
 simulationExercises.log \
 simulation-start-value-selection.log \
@@ -560,6 +557,9 @@ biochem.log: omc-diff
 msl40simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl40 -f Makefile test > $@
 	@echo $@ done
+msl41simulation.log: omc-diff
+	$(MAKE) -C simulation/libraries/msl41 -f Makefile test > $@
+	@echo $@ done
 msl32simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl32 -f Makefile test > $@
 	@echo $@ done
@@ -568,12 +568,6 @@ msl32simulation_cpp.log: omc-diff
 	@echo $@ done
 msl32simulation_cpp_mini.log: omc-diff
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile test > $@
-	@echo $@ done
-msl31simulation.log: omc-diff
-	$(MAKE) -C simulation/libraries/msl31 -f Makefile test > $@
-	@echo $@ done
-msl31mediasimulation.log: omc-diff
-	$(MAKE) -C simulation/libraries/msl31/media -f Makefile test > $@
 	@echo $@ done
 siemens_nosim.log: omc-diff
 	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile test > $@
@@ -744,8 +738,7 @@ failingtest: omc-diff
 	cd mosfiles; $(MAKE) -f Makefile failingtest; \
 	cd ../flattening/modelica/msl; $(MAKE) -f Makefile failingtest; \
 	cd ../../biochem; $(MAKE) -f Makefile failingtest; \
-	cd ../multibody; $(MAKE) -f Makefile failingtest; \
-	cd ../msl31; $(MAKE) -f Makefile failingtest;
+	cd ../multibody; $(MAKE) -f Makefile failingtest;
 	cd ../msl32; $(MAKE) -f Makefile failingtest;
 
 clean:
@@ -831,6 +824,7 @@ clean_g_2 :
 clean_g_3 :
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
 	$(MAKE) -C simulation/libraries/msl40 -f Makefile clean
+	$(MAKE) -C simulation/libraries/msl41 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
 	$(MAKE) -C openmodelica/linearization -f Makefile clean
 	$(MAKE) -C openmodelica/modelicaML -f Makefile clean
@@ -839,10 +833,6 @@ clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile clean
-	if [ -d "flattening/libraries/msl31/" ]; then \
-	  $(MAKE) -C flattening/libraries/msl31 -f Makefile clean \
-	  $(MAKE) -C flattening/libraries/msl31/multibody -f Makefile clean; \
-	fi
 	if [ -d "flattening/libraries/msl32/" ]; then \
 	  $(MAKE) -C flattening/libraries/msl32 -f Makefile clean; \
 	fi

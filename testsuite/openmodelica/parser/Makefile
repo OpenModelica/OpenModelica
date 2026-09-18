@@ -37,7 +37,6 @@ ParseError1.mo \
 ParseError2.mo \
 ParseError3.mo \
 ParseFullModelica.mos \
-ParseFullModelica3.1.mos \
 ParseFullModelica3.2.1.mos \
 ParseString.mos \
 PureImpure.mo \
