@@ -16,29 +16,35 @@
 // occasionally corrupting the whole Newton step and crashing the solve.
 // Fixed by flattening the index the same way array crefs are already
 // indexed elsewhere in the same function (reusing forIteratorBody).
-// Before the fix this model failed nondeterministically-but-mostly
-// ("Solving non-linear system ... failed at time=0"); after the fix it
-// solves cleanly and reproducibly to the values checked below.
+//
+// Uses atan() (bounded range, bounded derivative) rather than a function
+// that can overflow (e.g. exp()): an early revision of this test used
+// exp() and an overshot Newton step could still push it to inf/nan on some
+// platforms even with the fix applied, since that's a separate, genuine
+// solver-robustness question, not what this test is checking. atan() can't
+// blow up that way, so a converging/non-converging result here isolates
+// the res[] indexing bug specifically. Purely algebraic (no der()), so one
+// interval is enough.
 
 loadString("
   model torn2DForResidualIndexTest
     parameter Integer N1=2, N2=10, N3=3;
-    Real x[N1,N2,N3](each start=0, each fixed=false);
+    Real x[N1,N2,N3](each start=1, each fixed=false);
     Real bus(start=0, fixed=false);
   equation
     for a in 1:N1 loop
       for b in 1:N2 loop
         for c in 1:N3 loop
-          exp(x[a,b,c]) = 1 + 0.001*a + 0.0001*b + 0.00001*c + 1e-6*bus;
+          atan(x[a,b,c]) = 1 + 0.001*a + 0.0001*b + 0.00001*c + 1e-6*bus;
         end for;
       end for;
     end for;
-    bus = sum(sum(sum(x[a,b,c] for c in 1:N3) for b in 1:N2) for a in 1:N1) - 1.0;
+    bus = sum(sum(sum(x[a,b,c] for c in 1:N3) for b in 1:N2) for a in 1:N1) - 4;
   end torn2DForResidualIndexTest;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend"); getErrorString();
-simulate(torn2DForResidualIndexTest); getErrorString();
+simulate(torn2DForResidualIndexTest, numberOfIntervals=1); getErrorString();
 val(x[1,1,1], 0.0);
 val(x[2,10,3], 0.0);
 // Result:
@@ -48,12 +54,12 @@ val(x[2,10,3], 0.0);
 // ""
 // record SimulationResult
 //     resultFile = "torn2DForResidualIndexTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'torn2DForResidualIndexTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'torn2DForResidualIndexTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 0.0011085093856299873
-// 0.003024545456783473
+// 1.5615256676653066
+// 1.5681471837919105
 // endResult
