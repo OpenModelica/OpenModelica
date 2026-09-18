@@ -588,6 +588,7 @@ pub enum MetaKind {
 
 impl MetaKind {
     /// Project onto the `.mat` writer's kind.
+    #[cfg(feature = "mat-writer")]
     pub fn mat(&self) -> openmodelica_mat_writer::MatKind {
         use openmodelica_mat_writer::{MatKind, Neg as MatNeg};
         let neg = |n: &Neg| match n {
@@ -620,6 +621,7 @@ impl MetaKind {
     }
 
     /// Project onto the `.plt` writer's kind.
+    #[cfg(feature = "plt-writer")]
     pub fn plt(&self) -> openmodelica_plt_writer::PltKind {
         use openmodelica_plt_writer::{Neg as PltNeg, PltKind};
         let neg = |n: &Neg| match n {

@@ -94,7 +94,25 @@ const RENAME: &[(&str, &str)] = &[("ty", "type")];
 /// Mirrors of a plain C `struct` with no typedef, which C must name with the tag.
 const C_TAG: &[&str] = &["OpenModelicaGeneratedFunctionCallbacks"];
 
+/// The FMU flavour of this runtime: an archive a source-code FMU links, where the
+/// C half is the FMU's own minimal one. What it cannot rely on there is behind
+/// `cfg(omc_fmi_runtime)`.
+fn fmi_runtime_cfg() -> bool {
+    println!("cargo:rustc-check-cfg=cfg(omc_fmi_runtime)");
+    println!("cargo:rerun-if-env-changed=OMC_SIMRT_FMI");
+    let fmi = std::env::var("OMC_SIMRT_FMI").is_ok_and(|v| v != "0" && !v.is_empty());
+    if fmi {
+        println!("cargo:rustc-cfg=omc_fmi_runtime");
+    }
+    fmi
+}
+
+/// The attribute that takes a mirror item out of the FMU flavour. `build.rs` reads
+/// `abi.rs` as text, so it has to honour the same gate the compiler will.
+const FMI_GATE: &str = "#[cfg(not(omc_fmi_runtime))]";
+
 fn main() {
+    let fmi = fmi_runtime_cfg();
     println!("cargo:rerun-if-changed=src/shim.c");
     cc::Build::new().file("src/shim.c").warnings(true).compile("omc_rust_runtime_shim");
     export_shim_entry_points();
@@ -108,8 +126,16 @@ fn main() {
          fn checks() -> Vec<(String, u64)> {\n  let mut v: Vec<(String, u64)> = Vec::new();\n",
     );
     let mut lines = src.lines().peekable();
+    let mut gated = false;
     while let Some(line) = lines.next() {
+        if line.trim() == FMI_GATE {
+            gated = true;
+            continue;
+        }
         if line.trim() != "#[repr(C)]" {
+            if !line.trim().starts_with("#[") {
+                gated = false;
+            }
             continue;
         }
         // Skip the derives between the attribute and the item.
@@ -117,11 +143,12 @@ fn main() {
         while head.trim_start().starts_with("#[") {
             head = lines.next().unwrap_or("");
         }
+        let struct_gated = core::mem::take(&mut gated);
         let Some(name) = head.trim().strip_prefix("pub struct ").and_then(|s| s.split_whitespace().next())
         else {
             continue;
         };
-        if !head.trim_end().ends_with('{') || SKIP.contains(&name) {
+        if !head.trim_end().ends_with('{') || SKIP.contains(&name) || (fmi && struct_gated) {
             continue;
         }
         let c_name = if C_TAG.contains(&name) { format!("struct {name}") } else { name.to_string() };
@@ -131,6 +158,7 @@ fn main() {
         );
         // Fields end at the closing brace; `pub <name>:` at one indent level.
         let mut depth = 1usize;
+        let mut field_gated = false;
         for body in lines.by_ref() {
             depth += body.matches('{').count();
             depth -= body.matches('}').count();
@@ -138,7 +166,15 @@ fn main() {
                 break;
             }
             let t = body.trim();
+            if t == FMI_GATE {
+                field_gated = true;
+                continue;
+            }
             let Some(field) = t.strip_prefix("pub ").and_then(|s| s.split(':').next()) else { continue };
+            if fmi && core::mem::take(&mut field_gated) {
+                continue;
+            }
+            field_gated = false;
             if !field.chars().all(|c| c.is_alphanumeric() || c == '_') || field.is_empty() {
                 continue;
             }

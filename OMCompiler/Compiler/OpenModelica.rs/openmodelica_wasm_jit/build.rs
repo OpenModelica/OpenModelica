@@ -165,8 +165,8 @@ fn build_wasip1_fused_adapter(
         .expect("crate has a parent dir")
         .join("openmodelica_fmi3_wasm");
     let features = match sundials_dir {
-        Some(_) => "me,cs,capi,sundials,host_lin_solve",
-        None => "me,cs,capi,host_lin_solve",
+        Some(_) => "me,cs,capi,sundials,host_lin_solve,wasm",
+        None => "me,cs,capi,host_lin_solve,wasm",
     };
     // The adapter's sources as well as the runtime's, and how it is built: any of
     // them changing produces a different blob, and a stamp that misses one serves
@@ -712,12 +712,17 @@ fn wasm_opt(path: &Path) {
         .map(|s| s.success())
         .unwrap_or(false)
         && std::fs::metadata(&tmp).map(|m| m.len() > 0).unwrap_or(false);
-    if ok {
-        std::fs::rename(&tmp, path).ok();
-    } else {
+    if !ok {
         std::fs::remove_file(&tmp).ok();
-        println!("cargo:warning=wasm-opt failed on {}; using it unoptimized", path.display());
+        // Never silently: an unoptimized blob is several times the size, and the
+        // layout that comes with it is what a wasm FMU's allocator faults on.
+        panic!(
+            "wasm-opt failed on {}. Fix the binaryen invocation, or build with \
+             -DRUST_OMC_WASM_OPT=OFF to leave every blob unoptimized.",
+            path.display()
+        );
     }
+    std::fs::rename(&tmp, path).expect("replace the blob with the wasm-opt output");
 }
 
 /// Part of every stamp that covers a wasm-opt'd module: turning binaryen on or off
@@ -1282,7 +1287,8 @@ struct AdapterVariant {
     name: &'static str,
     /// Human label for diagnostics.
     label: &'static str,
-    /// `cargo build` feature args (empty = default features → Model Exchange).
+    /// `cargo build` feature args. `wasm` is in every one: these are the component
+    /// builds, and without it the crate is the bare FMI state machine a native FMU links.
     cargo_args: &'static [&'static str],
 }
 
@@ -1298,13 +1304,13 @@ const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant {
         name: "me",
         label: "ME",
-        cargo_args: &["--no-default-features", "--features", "me,sundials"],
+        cargo_args: &["--no-default-features", "--features", "me,sundials,wasm"],
     },
     // One me_cs adapter, with the solver bundle as imports `SOLVER_LIBRARIES` resolves.
     AdapterVariant {
         name: "mecs",
         label: "me_cs",
-        cargo_args: &["--no-default-features", "--features", "me,cs,sundials"],
+        cargo_args: &["--no-default-features", "--features", "me,cs,sundials,wasm"],
     },
     // The same me_cs adapter with an FMI 3.0 C API instead of the component's WIT
     // exports, for a host that links it as a dylink library: it is then a *fixed*
@@ -1313,7 +1319,7 @@ const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant {
         name: "mecs_capi",
         label: "me_cs (C API)",
-        cargo_args: &["--no-default-features", "--features", "me,cs,capi"],
+        cargo_args: &["--no-default-features", "--features", "me,cs,capi,wasm"],
     },
 ];
 
@@ -1343,7 +1349,7 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant, sund
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }
-    let hash = format!("{digest}-{}-{sundials}-{}", v.name, wasm_opt_key());
+    let hash = format!("{digest}-{}-{}-{sundials}-{}", v.name, v.cargo_args.join(","), wasm_opt_key());
     if dest.exists()
         && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
         && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
@@ -1397,9 +1403,17 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
         -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
         -Clink-arg=--allow-undefined -Ctarget-feature=+simd128";
     let mut cmd = Command::new(cargo);
+    // `rustc --crate-type cdylib`, not `build`: the crate also builds as an `rlib`
+    // for the native FMU, and `lto = true` does not apply to a build that produces
+    // both. Without it nothing is internalized, so a dylink module -- which exports
+    // every symbol that is not hidden -- keeps the std and faer machinery
+    // `panic = "immediate-abort"` exists to make unreachable. That is 82 KB of
+    // static data against 210 KB, and the larger one moves `__heap_base` into a
+    // layout the FMU's allocator faults on.
     cmd.current_dir(adapter_dir)
-        .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
+        .args(["rustc", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
         .args(v.cargo_args)
+        .args(["--crate-type", "cdylib"])
         .arg("--target-dir")
         .arg(&target_dir)
         .env("RUSTFLAGS", rustflags);

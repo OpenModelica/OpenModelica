@@ -1758,6 +1758,11 @@ package SimCodeUtil
     output Integer vr;
   end lookupVR;
 
+  function isFMUSimCode
+    input SimCode.SimCode simCode;
+    output Boolean isFMU;
+  end isFMUSimCode;
+
   function lookupVRForRealOutputDerivative
     input DAE.ComponentRef cr;
     input SimCode.SimCode simCode;

@@ -25,7 +25,10 @@ impl XmlVar {
     }
 }
 
-/// What the XML says, grouped the way `read_input_xml` consumes it.
+/// What the XML says, grouped the way `read_input_xml` consumes it. The default is
+/// what an FMU has instead: the generated `<Model>_read_input_fmu` fills
+/// `MODEL_DATA` directly.
+#[derive(Default)]
 pub struct InitXml {
     /// `classType` -> variables, each at its `classIndex`.
     pub groups: HashMap<String, Vec<Option<XmlVar>>>,
@@ -561,6 +564,7 @@ fn read_alias(out: *mut DATA_ALIAS, vars: &[Option<XmlVar>], count: usize, maps:
 /// verdicts `read_variables` left. An alias that matches keeps the variable it
 /// names; a parameter alias only where the format writes parameters cheaply
 /// (`mat`).
+#[cfg(feature = "standalone")]
 pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases_and_params: bool) {
     let pattern = format!("^({filter})$");
     if pattern == "^(.*)$" {

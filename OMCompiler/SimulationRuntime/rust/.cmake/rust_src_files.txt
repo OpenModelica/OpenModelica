@@ -123,6 +123,9 @@ openmodelica_simulation_runtime/src/abi.rs
 openmodelica_simulation_runtime/src/data.rs
 openmodelica_simulation_runtime/src/datarecon.rs
 openmodelica_simulation_runtime/src/engine.rs
+openmodelica_simulation_runtime/src/fmi.rs
+openmodelica_simulation_runtime/src/fmi_host.rs
+openmodelica_simulation_runtime/src/fmi_vrs.rs
 openmodelica_simulation_runtime/src/iif.rs
 openmodelica_simulation_runtime/src/info_json.rs
 openmodelica_simulation_runtime/src/lib.rs

@@ -16037,6 +16037,18 @@ algorithm
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
 end lookupVR;
 
+public function isFMUSimCode
+  "True when this SimCode was built for an FMU export, so `valueReferences` --
+   what lookupVR and the FMI alias tables index -- is filled."
+  input SimCode.SimCode simCode;
+  output Boolean isFMU;
+algorithm
+  isFMU := match simCode.valueReferences
+    case AvlTreeCRToInt.EMPTY() then false;
+    else true;
+  end match;
+end isFMUSimCode;
+
 public function lookupVRForRealOutputDerivative
   "function which maps output Real var ValueReference to an internal real variable ValueReference of
   pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives"

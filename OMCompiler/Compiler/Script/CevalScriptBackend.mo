@@ -5033,8 +5033,8 @@ algorithm
   System.reportProgressMessage("Packing FMU");
   Error.checkCancel();
 
-  // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
-  if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+  // check for '--fmiSources=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
+  if Flags.getConfigEnum(Flags.FMI_SOURCES) == Flags.FMI_SOURCES_NONE or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
     if not System.removeDirectory(fmutmp + "/sources/") then
       Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
     end if;

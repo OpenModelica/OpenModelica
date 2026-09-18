@@ -25,8 +25,6 @@ pub type modelica_string = *mut c_void;
 /// Also `mmc_sint_t`.
 pub type _index_t = modelica_integer;
 
-/// `util/rtclock.h`: `union { struct timespec; unsigned long long; }` on unix,
-/// `LARGE_INTEGER`/`uint64_t` elsewhere -- 16 bytes either way on the unix build.
 /// `gc/omc_gc.h`'s `errorStage`: `threadData->currentErrorStage`.
 pub const ERROR_SIMULATION: i32 = 1;
 pub const ERROR_INTEGRATOR: i32 = 2;
@@ -35,12 +33,22 @@ pub const ERROR_EVENTSEARCH: i32 = 4;
 pub const ERROR_EVENTHANDLING: i32 = 5;
 pub const ERROR_OPTIMIZE: i32 = 6;
 
+/// `util/rtclock.h`, and the one layout the two runtimes' headers disagree about:
+/// an FMU defines `OMC_MINIMAL_RUNTIME`, where the clock is a `typedef int`
+/// against a 16-byte union otherwise. It is the last field of
+/// `NONLINEAR_SYSTEM_DATA`, so the wrong one gives the right offsets and the wrong
+/// stride -- `nonlinearSystemData[1]` then reads `sparsePattern` out of
+/// `eqn_simcode_indices`.
+#[cfg(not(omc_fmi_runtime))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct rtclock_t {
     pub a: u64,
     pub b: u64,
 }
+
+#[cfg(omc_fmi_runtime)]
+pub type rtclock_t = c_int;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -799,6 +807,8 @@ pub struct SIMULATION_DATA {
     pub inlineVars: *mut modelica_real,
 }
 
+/// Not present under `OMC_MINIMAL_RUNTIME`.
+#[cfg(not(omc_fmi_runtime))]
 #[repr(C)]
 pub struct real_time_sync_t {
     pub enabled: c_int,
@@ -815,7 +825,10 @@ pub struct DATA {
     pub modelData: *mut MODEL_DATA,
     pub simulationInfo: *mut SIMULATION_INFO,
     pub callback: *mut OpenModelicaGeneratedFunctionCallbacks,
+    // `OMC_MINIMAL_RUNTIME` ends the struct here.
+    #[cfg(not(omc_fmi_runtime))]
     pub embeddedServerState: *mut c_void,
+    #[cfg(not(omc_fmi_runtime))]
     pub real_time_sync: real_time_sync_t,
 }
 
@@ -968,6 +981,14 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub initialPartialFMIDERINIT: initialAnalyticalJacobian_func_ptr,
     pub functionJacFMIDERINIT_column: jacobianColumn_func_ptr,
     pub INDEX_JAC_FMIDERINIT: c_int,
+
+    /// Per base type, the alias table an FMI value reference resolves through:
+    /// entry `vr - (nVariables + nParameters)` is the value reference this alias
+    /// stands for, or `-(vr + 1)` when it stands for its negation.
+    pub fmiRealAliasIndexes: *const c_int,
+    pub fmiIntegerAliasIndexes: *const c_int,
+    pub fmiBooleanAliasIndexes: *const c_int,
+    pub fmiStringAliasIndexes: *const c_int,
 }
 
 /// The solver defaults `initializeDataStruc` installs (util/simulation_options.h,

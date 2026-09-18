@@ -1107,6 +1107,8 @@ algorithm
       list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
+      list<String> simrt_c_sources;
+      Boolean rustRuntime;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
@@ -1219,24 +1221,45 @@ algorithm
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
 
+        // --simCodeTarget=C+Rust: libSimulationRuntimeRust replaces everything
+        // libSimulationRuntimeC provided, the solvers included, so the FMU only
+        // compiles the libOpenModelicaRuntimeC half from C. The headers are the
+        // same either way -- the generated code and the FMI interface include
+        // them whichever runtime is behind them.
+        rustRuntime := Config.simCodeRustRuntime();
+        simrt_c_sources := if rustRuntime then RuntimeSources.simrt_c_runtime_sources else RuntimeSources.simrt_c_sources;
+        // Only worth carrying if the sources survive into the archive; this build
+        // links the installed archive either way.
+        if rustRuntime and Flags.getConfigEnum(Flags.FMI_SOURCES) <> Flags.FMI_SOURCES_NONE
+           and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX then
+          copyFmuRustSources(fmutmp);
+        end if;
+
         // The simrt c headers are in the include/omc/c directory.
         copyFiles(RuntimeSources.simrt_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
-        copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
         /*
         * fix issue https://github.com/OpenModelica/OpenModelica/issues/13719
         * copy the fmu runtime external solver sources to support source code cross compilation
         */
-        // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
-        copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        dgesv_sources := RuntimeSources.dgesv_sources;
+        if rustRuntime then
+          // dgesv and CMinpack are the Rust runtime's own openmodelica_lapack and
+          // minpack crates there.
+          dgesv_sources := {};
+          cminpack_sources := {};
+        else
+          // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
+          copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          dgesv_sources := RuntimeSources.dgesv_sources;
 
-        // Add CMinpack sources to FMU
-        copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        cminpack_sources := RuntimeSources.cminpack_sources;
+          // Add CMinpack sources to FMU
+          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          cminpack_sources := RuntimeSources.cminpack_sources;
+        end if;
 
         // Check if the sundials files are needed.
         // The in-FMU CVODE integrator (s:cvode) is a Co-Simulation feature: cvode_solver_fmi_step()
@@ -1264,13 +1287,13 @@ algorithm
         end if;
 
 
-        simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 then RuntimeSources.simrt_linear_solver_sources else {};
+        simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 and not rustRuntime then RuntimeSources.simrt_linear_solver_sources else {};
         copyFiles(simrt_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        simrt_non_linear_solver_sources := if varInfo.numNonLinearSystems > 0 then RuntimeSources.simrt_non_linear_solver_sources else {};
+        simrt_non_linear_solver_sources := if varInfo.numNonLinearSystems > 0 and not rustRuntime then RuntimeSources.simrt_non_linear_solver_sources else {};
         copyFiles(simrt_non_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        simrt_mixed_solver_sources := if varInfo.numMixedSystems > 0 then RuntimeSources.simrt_mixed_solver_sources else {};
+        simrt_mixed_solver_sources := if varInfo.numMixedSystems > 0 and not rustRuntime then RuntimeSources.simrt_mixed_solver_sources else {};
         copyFiles(simrt_mixed_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
         // This fmu export files of OMC are located in a very unexpected place. Right now they are in SimulationRuntime/fmi/export/openmodelica
@@ -1325,14 +1348,14 @@ algorithm
 
         // I need to see some tests failing or something not working to make sense of what to add here
         shared_source_files := List.flatten({fmi_export_files,
-                                             RuntimeSources.simrt_c_sources,
+                                             simrt_c_sources,
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
                                             });
 
-        // check for fmiSource=false or --fmiFilter=blackBox
-        if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+        // check for fmiSources=false or --fmiFilter=blackBox
+        if Flags.getConfigEnum(Flags.FMI_SOURCES) == Flags.FMI_SOURCES_NONE or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
           model_desc_src_files := List.flatten({List.sort(model_gen_files, Util.strcmpNoCaseBool),      //  order matters
@@ -1426,6 +1449,14 @@ algorithm
         end if;
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
+        // --simCodeTarget=C+Rust: name the installed archive, which is what this
+        // installation builds the FMU against. Rebuilding the FMU elsewhere finds
+        // no such file and falls back to the crates under sources/rust.
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@OMC_RUST_SIMULATION_RUNTIME@", if rustRuntime then "ON" else "OFF");
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUST_SIM_RUNTIME_LIBRARY@",
+          if rustRuntime
+          then "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/libSimulationRuntimeRust.a\""
+          else "\"\"");
         (needModelicaExternalC, cmakeCode) := SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@COMPILE_MODELICA_EXTERNAL_C@", needModelicaExternalC);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", cmakeCode);
@@ -2593,6 +2624,104 @@ algorithm
     Error.assertion(System.copyFile(source + "/" + f, f2), "Failed to copy file " + f + " from " + source + " to " + destination, sourceInfo());
   end for;
 end copyFiles;
+
+protected function copyFmuRustSources
+  "The Rust half of a `--simCodeTarget=C+Rust` source FMU: the crates
+   libSimulationRuntimeRust is built from, so the FMU rebuilds where OpenModelica
+   is not installed.
+
+   `--fmiSources=full` additionally vendors the crates.io dependencies beside them,
+   which makes the rebuild work without network access. The vendored tree is ~90 MB
+   and the same for every FMU, so it is built once into the user's cache and copied
+   from there. It is deliberately not part of the OpenModelica installation."
+  input String fmutmp;
+protected
+  String rust_sources_dir, dest, manifest, vendor, cache, lock;
+algorithm
+  rust_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_rust_sources_dir;
+  if not System.directoryExists(rust_sources_dir) then
+    Error.addCompilerWarning("--fmiSources asked for the sources of a --simCodeTarget=C+Rust FMU, but "
+      + rust_sources_dir + " does not exist: this OpenModelica was built without the Rust simulation "
+      + "runtime. The FMU carries its C sources only and cannot be rebuilt as C+Rust.");
+    return;
+  end if;
+  dest := fmutmp + "/sources/rust";
+  Error.assertion(Util.createDirectoryTree(dest), "Failed to create directory " + dest, sourceInfo());
+  if 0 <> System.systemCall("cp -rf \"" + rust_sources_dir + "/.\" \"" + dest + "/\"") then
+    Error.addInternalError("Failed to copy the Rust runtime sources into " + dest, sourceInfo());
+    return;
+  end if;
+
+  manifest := dest + "/" + RuntimeSources.fmu_rust_manifest;
+  writeFmuRustWorkspace(manifest);
+
+  if Flags.getConfigEnum(Flags.FMI_SOURCES) <> Flags.FMI_SOURCES_FULL then
+    return;
+  end if;
+
+  lock := System.dirname(manifest) + "/Cargo.lock";
+  // Keyed by the lock file: a different dependency set is a different vendor tree.
+  cache := Settings.getHomeDir(runningTestsuite=Testsuite.isRunning()) + "/.openmodelica/fmu-rust-vendor/"
+           + intString(stringHashDjb2(if System.regularFileExists(lock) then System.readFile(lock) else ""));
+  if not System.directoryExists(cache) then
+    Error.assertion(Util.createDirectoryTree(cache), "Failed to create directory " + cache, sourceInfo());
+    if 0 <> System.systemCall("cargo vendor --versioned-dirs --manifest-path \"" + manifest + "\" \"" + cache + "\"",
+                              outFile=fmutmp + "/resources/cargo-vendor.log") then
+      System.removeDirectory(cache);
+      Error.addCompilerError("--fmiSources=full needs `cargo vendor` to collect the Rust dependencies, and it failed. "
+        + "See " + fmutmp + "/resources/cargo-vendor.log. Use --fmiSources=slim for an FMU whose rebuild fetches them instead.");
+      return;
+    end if;
+  end if;
+
+  vendor := dest + "/vendor";
+  if 0 <> System.systemCall("cp -rf \"" + cache + "\" \"" + vendor + "\"") then
+    Error.addInternalError("Failed to copy the vendored Rust dependencies into " + vendor, sourceInfo());
+    return;
+  end if;
+  // Cargo finds this by walking up from its working directory, which the FMU's
+  // CMakeLists sets to `sources/rust`; the path in it is relative to that same
+  // directory, so the FMU stays movable.
+  Error.assertion(Util.createDirectoryTree(dest + "/.cargo"), "Failed to create directory " + dest + "/.cargo", sourceInfo());
+  System.writeFile(dest + "/.cargo/config.toml",
+    "[source.crates-io]\nreplace-with = \"vendored-sources\"\n\n[source.vendored-sources]\ndirectory = \"vendor\"\n");
+end copyFmuRustSources;
+
+protected function writeFmuRustWorkspace
+  "The FMU's own cargo workspace root, in place of the one the checkout uses.
+
+   That one reaches the result-file library and the browser module too, and those
+   pull in crates an FMU has no use for and does not carry -- `cargo vendor` stops
+   at the first one it cannot find. This root names `openmodelica_simulation_runtime`
+   and nothing else, and excludes every crate beside it so cargo does not claim
+   them as members of it."
+  input String manifest;
+protected
+  String dir, excludes;
+  list<String> subdirs;
+algorithm
+  dir := System.dirname(manifest);
+  subdirs := List.sort(list(d for d guard System.regularFileExists(dir + "/" + d + "/Cargo.toml")
+                            in System.subDirectories(dir)), Util.strcmpBool);
+  excludes := stringDelimitList(list("  \"" + d + "\"," for d in subdirs), "\n");
+  System.writeFile(manifest,
+    "# Generated by OpenModelica: the workspace a source-code FMU builds its Rust\n"
+    + "# simulation runtime from.\n"
+    + "[package]\n"
+    + "name = \"openmodelica_fmu_runtime\"\n"
+    + "version = \"0.1.0\"\n"
+    + "edition = \"2024\"\n"
+    + "\n"
+    + "[dependencies]\n"
+    + "# default-features = false drops `standalone`, which an FMU has no use for:\n"
+    + "# the executable entry points, the result file, --variableFilter and -iif.\n"
+    + "openmodelica_simulation_runtime = { path = \"openmodelica_simulation_runtime\", default-features = false, features = [\"fmu-lapack\", \"fmi\"] }\n"
+    + "\n"
+    + "# Reached as plain path dependencies; a member would have to belong to this\n"
+    + "# workspace, and each of them names another root.\n"
+    + "[workspace]\n"
+    + "exclude = [\n" + excludes + "\n]\n");
+end writeFmuRustWorkspace;
 
 protected function objectFilesOf
   "The object files a list of runtime sources compiles to, for the makefile of a

@@ -23,13 +23,13 @@ use alloc::vec::Vec;
 // through; either resolves to the same code.
 use crate::exports::fmi::fmi3::co_simulation::GuestCoSimulationInstance;
 use crate::exports::fmi::fmi3::model_exchange::GuestModelExchangeInstance;
-use crate::{Instance, Status};
+use crate::{Instance, Status, WasmInstance};
 
 // ── The instance ────────────────────────────────────────────────────────────
 
-static mut INSTANCE: Option<Instance> = None;
+static mut INSTANCE: Option<WasmInstance> = None;
 
-fn instance() -> Option<&'static Instance> {
+fn instance() -> Option<&'static WasmInstance> {
     unsafe { (*core::ptr::addr_of!(INSTANCE)).as_ref() }
 }
 
@@ -47,7 +47,7 @@ fn status(s: Status) -> i32 {
 }
 
 /// The status of a call on an instance that was never created.
-fn with<R>(f: impl FnOnce(&Instance) -> R, absent: R) -> R {
+fn with<R>(f: impl FnOnce(&WasmInstance) -> R, absent: R) -> R {
     match instance() {
         Some(i) => f(i),
         None => absent,

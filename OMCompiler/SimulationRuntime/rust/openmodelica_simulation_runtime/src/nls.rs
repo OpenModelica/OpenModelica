@@ -13,7 +13,7 @@ use core::ffi::{c_int, c_void};
 
 use openmodelica_nls as nls;
 use openmodelica_sim_meta::driver;
-use openmodelica_solvers::{omclog, simflags, solverflags};
+use openmodelica_solvers::{omclog, solverflags};
 
 use crate::abi::*;
 use crate::systems::eval_jacobian;
@@ -779,15 +779,19 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
         let td = THREAD_DATA.load(core::sync::atomic::Ordering::Relaxed) as *mut threadData_t;
         crate::throw(td, "a model error was raised where nothing could absorb it")
     });
-    // Both names are the path the flag gave; only the wasm host needs a second one.
-    nls::host::set_initial_guess_request(|eq_index| {
-        simflags::with_flags(|f| match &f.save_initial_guess {
-            Some((path, idx)) if *idx == eq_index as i32 => Some((path.clone(), path.clone())),
-            _ => None,
-        })
-        .filter(|_| !GUESS_DONE.swap(true, core::sync::atomic::Ordering::Relaxed))
-    });
-    nls::host::set_initial_guess_writer(write_state);
+    // `-saveInitialGuess_system` writes a `.mat`, which only a standalone run has.
+    #[cfg(feature = "standalone")]
+    {
+        // Both names are the path the flag gave; only the wasm host needs a second one.
+        nls::host::set_initial_guess_request(|eq_index| {
+            openmodelica_solvers::simflags::with_flags(|f| match &f.save_initial_guess {
+                Some((path, idx)) if *idx == eq_index as i32 => Some((path.clone(), path.clone())),
+                _ => None,
+            })
+            .filter(|_| !GUESS_DONE.swap(true, core::sync::atomic::Ordering::Relaxed))
+        });
+        nls::host::set_initial_guess_writer(write_state);
+    }
 }
 
 /// One-shot, as C's `B_save_initial_guess_system` is: it throws once written.
@@ -834,6 +838,7 @@ impl driver::SimEngine for ReadOnly {
 
 /// C's `mat4_init4` + `mat4_writeParameterData4` + `mat4_emit4`, where the solver
 /// stands.
+#[cfg(feature = "standalone")]
 fn write_state(path: &str) -> Result<(), String> {
     let meta = STATE_META.load(core::sync::atomic::Ordering::Relaxed)
         as *const openmodelica_sim_meta::SimMeta;

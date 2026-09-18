@@ -46,8 +46,10 @@ fn status(s: WitStatus) -> Status {
 }
 
 /// A component call that traps, or a status the master cannot continue from.
+/// `{e:#}` so the trap code (`wasm trap: ...`) comes with the backtrace wasmtime
+/// puts in front of it.
 fn trap(call: &'static str, e: impl std::fmt::Display) -> Error {
-    Error::Load(format!("{call}: {e}"))
+    Error::Load(format!("{call}: {e:#}"))
 }
 
 fn check(call: &'static str, s: WitStatus) -> Result<()> {

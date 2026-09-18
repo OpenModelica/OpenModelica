@@ -2,6 +2,7 @@
 // suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf simpleLoop* model_res.mat build_simpleLoop.log
+// cflags: --fmiSources=true
 //
 // Create a ME FMU, unzip and compile it again.
 // Simulate the resulting FMU with OMSimulator to make sure it still works.
