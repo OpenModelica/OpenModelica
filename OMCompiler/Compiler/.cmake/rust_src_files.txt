@@ -340,6 +340,7 @@ openmodelica_fmi_web/src/lib.rs
 openmodelica_gendoc/Cargo.toml
 openmodelica_gendoc/src/assets/gendoc.js
 openmodelica_gendoc/src/doc.rs
+openmodelica_gendoc/src/heap.rs
 openmodelica_gendoc/src/html.rs
 openmodelica_gendoc/src/icons.rs
 openmodelica_gendoc/src/index.rs

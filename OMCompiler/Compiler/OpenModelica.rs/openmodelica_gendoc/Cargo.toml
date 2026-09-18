@@ -23,6 +23,9 @@ openmodelica_frontend_types.workspace = true
 # nothing, and the feature drags in libcurl with its TLS/LDAP/SSH/krb5 tail.
 openmodelica_loader = { path = "../openmodelica_loader", default-features = false }
 openmodelica_util.workspace = true
+# GCExt::gcollect: what instantiation builds is cyclic, so releasing a scope
+# means running the cycle collector, not just dropping the last reference.
+openmodelica_util_datatypes_basic.workspace = true
 # The model instance the icons are rendered from, and the renderer itself.
 # No `ffi`: rendering an icon evaluates no `external "C"` function.
 openmodelica_nf_api = { path = "../openmodelica_nf_api", default-features = false }
@@ -36,8 +39,12 @@ rayon.workspace = true
 # samples in malloc and free, and glibc's arenas do not divide well between a
 # dozen threads instantiating at once. Optional so a build that cannot have it,
 # or wants to measure without it, can turn it off.
-tikv-jemallocator = { version = "0.7", optional = true }
+# `stats`: without it jemalloc is configured --disable-stats and the
+# `stats.*` mallctls do not exist, which is what the memory budget reads.
+tikv-jemallocator = { version = "0.7", features = ["stats"], optional = true }
+# mallctl, for those statistics and for handing dirty pages back.
+tikv-jemalloc-sys = { version = "0.7", optional = true }
 
 [features]
 default = ["jemalloc"]
-jemalloc = ["dep:tikv-jemallocator"]
+jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-sys"]

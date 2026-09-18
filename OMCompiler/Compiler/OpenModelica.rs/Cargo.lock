@@ -7669,7 +7669,9 @@ dependencies = [
  "openmodelica_omgraphics",
  "openmodelica_revision",
  "openmodelica_util",
+ "openmodelica_util_datatypes_basic",
  "rayon",
+ "tikv-jemalloc-sys",
  "tikv-jemallocator",
 ]
 

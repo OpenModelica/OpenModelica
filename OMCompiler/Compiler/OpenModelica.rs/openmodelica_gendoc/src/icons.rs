@@ -106,6 +106,19 @@ pub fn digest(content: &str) -> u128 {
     (half(1) << 64) | half(2)
 }
 
+/// One library's SCode. `translateAbsyn2SCode` maps over the top-level classes
+/// with nothing carried between them, so this runs on whichever thread parsed
+/// the library and its Absyn is freed as soon as this returns.
+pub fn translate(name: &str, program: &Absyn::Program) -> SCodeProgram {
+    match openmodelica_nf_api::NFInstanceAPI::programSCode(program.clone()) {
+        Ok(scode) => scode,
+        Err(_) => {
+            eprintln!("omgendoc: {name}: could not be translated");
+            metamodelica::nil()
+        }
+    }
+}
+
 /// The top scope a library's classes are instantiated in. Held for the whole
 /// library and dropped with it.
 pub struct Scope {
@@ -116,9 +129,16 @@ pub type SCodeProgram =
     metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>;
 
 impl Scope {
-    /// The SCode every scope is built from, translated once.
-    pub fn universe(program: &Absyn::Program) -> Option<SCodeProgram> {
-        openmodelica_nf_api::NFInstanceAPI::universeSCode(program.clone()).ok()
+    /// The builtin classes and every library's SCode as one program, which is
+    /// what a top scope is built over.
+    pub fn universe(parts: &[SCodeProgram]) -> Option<SCodeProgram> {
+        let builtin = openmodelica_nf_api::NFInstanceAPI::builtinSCode().ok()?;
+        Some(
+            std::iter::once(&builtin)
+                .chain(parts)
+                .flat_map(|part| part.iter().cloned())
+                .collect(),
+        )
     }
 
     /// A fresh scope over that SCode. One per library: what a scope expands is
