@@ -52,12 +52,9 @@ usage: omgendoc [options] LIBRARY...
       --no-icons         skip icon rendering (HTML only, much faster)
       --no-diagrams      render icons but not diagrams
       --chunk N          most classes per instantiation scope (default 1000)
-      --max-memory GB    how much live memory to work within (default 24). A
-                         thread past it drops its instantiation scope and takes
-                         a fresh one. Not a hard ceiling: address space is not
-                         bounded, since jemalloc retains freed extents to reuse
-                         and no cgroup is charged for them. What bounds the
-                         process is the cgroup, which counts resident pages
+      --max-memory GB    live memory to work within (default 24): a thread
+                         past it drops its instantiation scope and takes a
+                         fresh one. Not a ceiling; the cgroup is that
       --stats            report memory in use after each library
   -h, --help             this message
 ";
@@ -170,14 +167,12 @@ fn modelica_path(options: &Options) -> String {
 }
 
 /// Every library the documented ones name in `uses`, transitively, as SCode.
-///
 /// The top scope needs them: an icon is mostly inherited, and the base class
 /// usually lives in another library — without MSL present, anything that
 /// `extends Modelica.Icons.Package` renders nothing.
 ///
 /// A wave at a time, because a library's own `uses` is not known until it is
-/// parsed. Nothing within a wave depends on anything else in it, so a wave
-/// loads and translates in parallel the way the documented libraries do.
+/// parsed; nothing within a wave depends on anything else in it.
 fn dependencies(documented: &[ClassDoc], path: &str, stats: bool) -> Vec<icons::SCodeProgram> {
     fn enqueue(
         uses: &[(String, String)],
@@ -207,9 +202,6 @@ fn dependencies(documented: &[ClassDoc], path: &str, stats: bool) -> Vec<icons::
             .map(|(name, version)| {
                 let version = (!version.is_empty()).then_some(version.as_str());
                 let program = load_library(name, version, path).ok()?;
-                // Taken before the program goes: this returns the SCode, and
-                // the Absyn is dropped here rather than being held until the
-                // whole universe has been translated.
                 let uses = program.classes.iter().flat_map(doc::uses_of).collect();
                 Some((name.clone(), uses, icons::translate(name, &program)))
             })
@@ -227,11 +219,9 @@ fn dependencies(documented: &[ClassDoc], path: &str, stats: bool) -> Vec<icons::
     parts
 }
 
-/// What one thread is allowed to be holding mid-class. The budget is only
-/// consulted between classes, and instantiating a single class in a deeply
-/// inherited library allocates gigabytes before it returns -- an AixLib class
-/// was seen asking for 256 MB in one block -- so the budget has to sit this
-/// much below `--max-memory` per thread for the total to stay near it.
+/// Headroom for what one thread can be holding mid-class: the budget is only
+/// consulted between classes, and instantiating one class in a deeply
+/// inherited library allocates gigabytes before it returns.
 const PER_JOB_MEMORY: u64 = 2_000_000_000;
 
 /// How many threads render at once: `--jobs`, or the machine's physical cores.
@@ -339,16 +329,17 @@ fn render_graphics(
             Ok(pool) => pool.install(render),
             Err(_) => render(),
         };
-        // Dropping the scope is not enough: `nfTopScope` and the caches beside
-        // it are thread-local global roots, and they hold what this library
-        // expanded until the *next* instantiation on that thread replaces
-        // them. Clear them on every thread, then hand the pages back, or the
-        // run carries a library it has finished with into the next one.
+        // `nfTopScope` and the caches beside it are thread-local global roots
+        // holding what this library expanded until the *next* instantiation on
+        // that thread replaces them, so dropping the scope is not enough.
+        let clear = |_: rayon::BroadcastContext<'_>| {
+            openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache()
+        };
         match &pool {
             Ok(pool) => {
-                pool.broadcast(|_| release_scope());
+                pool.broadcast(clear);
             }
-            Err(_) => release_scope(),
+            Err(_) => openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache(),
         }
         heap::release();
         let mut graphics = 0;
@@ -381,10 +372,8 @@ fn render_graphics(
 /// The library is cut into chunks and the chunks go out to the pool; each
 /// thread builds its own top scope over the shared SCode, renders its chunk and
 /// drops the scope, which is what releases the instantiation. Live memory is
-/// therefore `--jobs` scopes of `--chunk` classes, all from this one library.
-/// The cost per class varies enormously -- a few milliseconds in OpenIPSL
-/// against a second in IDEAS -- so the chunk is a plain count and `ulimit` is
-/// what stops a class that will not be bounded at all.
+/// therefore `--jobs` scopes of at most `--chunk` classes, all from this one
+/// library.
 fn render_library(
     options: &Options,
     classes: &[ClassDoc],
@@ -396,19 +385,15 @@ fn render_library(
     marker: &Path,
 ) -> Vec<(usize, (Option<u128>, Option<u128>), icons::Resolved)> {
     let jobs = graphics_jobs(options);
-    // Sized against the process ceiling rather than fixed: what a class costs
-    // to instantiate varies by two orders of magnitude between libraries -- a
+    // Sized against `--max-memory` rather than fixed: what a class costs to
+    // instantiate varies by two orders of magnitude between libraries -- a
     // fraction of a megabyte in OpenIPSL, a couple of hundred in AixLib -- so
-    // no one count of classes per scope suits both. The figure is shared by
-    // every thread, so they all give way at once.
-    //
-    // The headroom left below the ceiling is per job, not a fraction: when the
-    // budget is crossed every thread is part way into a class of its own, and
-    // what one of those costs is what has to be left free.
-    let ceiling = options.max_memory * 1_000_000_000;
-    let budget = ceiling
+    // no one count of classes per scope suits both. The figure is process
+    // wide, so every thread gives way at once.
+    let allowed = options.max_memory * 1_000_000_000;
+    let budget = allowed
         .saturating_sub(jobs as u64 * PER_JOB_MEMORY)
-        .max(ceiling / 2);
+        .max(allowed / 2);
     // The chunk is a ceiling on a scope, not the unit of work: at the default
     // of 1000 a library of 1898 classes would make two tasks and keep two
     // threads busy. Cut it so there are several pieces per thread, which also
@@ -438,14 +423,9 @@ fn render_library(
                     let class = &classes[index];
                     let name = class.qualified_name();
                     next += 1;
-                    // A short class definition that adds no graphics of its
-                    // own has its base class' unchanged, and the frontend is
-                    // not asked anything about it at all. Not even a lookup:
-                    // reaching `HeaterCooler_u.Medium` means expanding the
-                    // model that encloses it, which expands the medium --
-                    // gigabytes, in one call that cannot be interrupted.
-                    // `link_names` resolves the base by name and
-                    // `inherit_graphics` copies its digests over.
+                    // Not even a lookup: reaching `HeaterCooler_u.Medium`
+                    // means expanding the model enclosing it, which expands
+                    // the medium. `link_names` resolves the base by name.
                     if class
                         .derived
                         .as_ref()
@@ -514,13 +494,9 @@ fn render_library(
                             done.push((index, (None, None), names));
                         }
                     }
-                    // After every class: a single AixLib class can cost a
-                    // couple of hundred megabytes, so a scope checked every
-                    // tenth runs gigabytes past the budget before anything
-                    // looks at it. `heap::over` is cheap until this thread has
-                    // allocated enough for the answer to have changed. It can
-                    // only be asked between classes: one class instantiating
-                    // is a single call that allocates whatever it needs.
+                    // After every class, not every tenth: one AixLib class
+                    // can cost a couple of hundred megabytes, and between
+                    // classes is the only place the budget can be consulted.
                     if heap::over(budget) {
                         break;
                     }
@@ -532,17 +508,7 @@ fn render_library(
                     // that own what the scope expanded, without which the next
                     // one starts where this ended.
                     *held = None;
-                    // What instantiation builds is cyclic -- an InstNode's
-                    // class holds components that point back at it, through
-                    // mutable cells -- so refcounting frees none of it and
-                    // dropping the scope on its own reclaims nothing. The
-                    // cycle collector is thread-local, which is what this is.
-                    release_scope();
-                    // Purge before the next measurement: `stats.mapped` counts
-                    // dirty pages the scope has given back but jemalloc has
-                    // not, so without this every later check still sees the
-                    // spent budget and each chunk drops its scope once.
-                    heap::release();
+                    openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
                 }
             }
             done
@@ -554,9 +520,8 @@ fn render_library(
         })
 }
 
-/// A short class definition's graphics are its base class', which is why it
-/// was not instantiated. Follow the chain of aliases to the first class that
-/// has any and take those.
+/// Take the graphics of the first class along the chain of aliases that has
+/// any, the alias itself never having been instantiated.
 fn inherit_graphics(classes: &[ClassDoc], digests: &mut [(Option<u128>, Option<u128>)]) {
     for index in 0..classes.len() {
         if !classes[index]
@@ -566,8 +531,7 @@ fn inherit_graphics(classes: &[ClassDoc], digests: &mut [(Option<u128>, Option<u
         {
             continue;
         }
-        // Bounded rather than a visited set: a cycle of aliases is malformed
-        // input, and a real chain is a link or two long.
+        // Bounded rather than a visited set: a real chain is a link or two.
         let mut at = index;
         for _ in 0..16 {
             let Some(base) = classes[at].derived.as_ref().and_then(|d| d.base_class) else {
@@ -583,13 +547,6 @@ fn inherit_graphics(classes: &[ClassDoc], digests: &mut [(Option<u128>, Option<u
             }
         }
     }
-}
-
-/// Drop this thread's share of the last instantiation: the global roots that
-/// own it, then the cycles between the nodes, which refcounting cannot free.
-fn release_scope() {
-    openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
-    openmodelica_util_datatypes_basic::GCExt::gcollect();
 }
 
 /// A class is skipped if it is named, or if a named package encloses it.
@@ -631,9 +588,7 @@ fn load_library(
     )
 }
 
-/// What the process holds, after handing back what can be handed back. Active
-/// is the figure the budget works to; mapped and retained are address space
-/// the allocator keeps to reuse, which no cgroup is charged for.
+/// What the process holds, after handing back what can be handed back.
 fn report(label: &str) {
     heap::release();
     let (allocated, active, mapped, retained) = heap::stats();
@@ -677,10 +632,9 @@ fn link_names(classes: &mut [ClassDoc], resolved: Vec<icons::Resolved>) {
         if let Some(derived) = class.derived.as_mut() {
             derived.base_class = find(&bases, &derived.base).or_else(|| {
                 // An alias was not instantiated, so the frontend resolved
-                // nothing for it: look the base up by name instead, outwards
-                // through the enclosing scopes as Modelica does. Imports and
-                // inherited scopes are not followed -- it decides a link and a
-                // reused icon, not a semantic question.
+                // nothing for it: look the base up outwards through the
+                // enclosing scopes. Imports and inherited scopes are not
+                // followed -- this decides a link, not a semantic question.
                 let scope = &class.path[..class.path.len() - 1];
                 (0..=scope.len()).rev().find_map(|depth| {
                     let mut candidate = scope[..depth].join(".");
@@ -733,8 +687,8 @@ fn run() -> Result<(), String> {
         .then(|| icons::Icons::new(&options.output_dir, &options.icons_dir))
         .transpose()
         .map_err(|e| e.to_string())?;
-    // Each library's SCode, in the order the classes were spliced: the
-    // documented ones first, then what they depend on.
+    // In the order the classes are spliced: documented libraries first, then
+    // what they depend on.
     let mut parts: Vec<icons::SCodeProgram> = Vec::new();
     // Libraries are independent, so parse them at the same time. ClassLoader
     // already parses the files *within* one in parallel; this fills the cores
@@ -759,11 +713,6 @@ fn run() -> Result<(), String> {
             // eleven waited.
             .map(|(name, version)| {
                 load_library(name, version.as_deref(), &path).map(|program| {
-                    // Translated here rather than once over the whole corpus
-                    // at the end: each library is still translated exactly
-                    // once, which is what keeps MSL from being translated per
-                    // library, but the work divides between the cores and a
-                    // library's Absyn goes as soon as its SCode exists.
                     let docs = doc::collect(&program);
                     (docs, icons::translate(name, &program))
                 })
@@ -822,7 +771,6 @@ fn run() -> Result<(), String> {
         ));
     }
 
-    // One program over which every rendering thread builds its top scope.
     let joining = std::time::Instant::now();
     let scode = icons::Scope::universe(&parts);
     drop(parts);

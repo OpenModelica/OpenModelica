@@ -385,11 +385,9 @@ algorithm
 end builtinSCode;
 
 public function programSCode
-  "One program's SCode. translateAbsyn2SCode maps over the top-level classes
-   with nothing carried between them, so a caller holding many libraries
-   translates each on the thread that parsed it and concatenates the results;
-   each library is still translated once, which is what keeps a shared
-   dependency like MSL from being translated per library."
+  "One program's SCode. translateAbsyn2SCode carries nothing between top-level
+   classes, so a caller holding many libraries may translate each separately
+   and concatenate the results."
   input Absyn.Program absynProgram;
   output SCode.Program program;
 algorithm

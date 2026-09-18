@@ -35,9 +35,8 @@ pub struct Derived {
     pub base_class: Option<usize>,
     pub dims: String,
     pub modifiers: Vec<Modifier>,
-    /// An `Icon` or `Diagram` annotation on the short class definition itself.
-    /// Without one its graphics are the base class' unchanged, and it does not
-    /// have to be instantiated to find that out.
+    /// Without an `Icon` or `Diagram` of its own, the graphics are the base
+    /// class' unchanged and the class need not be instantiated.
     pub own_graphics: bool,
 }
 

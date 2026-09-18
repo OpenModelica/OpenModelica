@@ -9,3 +9,6 @@ const-str.workspace=true
 loop_unwrap.workspace=true
 arcstr.workspace=true
 match_deref.workspace=true
+
+[features]
+cycle-collect = []
