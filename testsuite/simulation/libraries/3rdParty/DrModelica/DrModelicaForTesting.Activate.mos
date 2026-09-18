@@ -7,7 +7,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 loadFile("DrModelicaForTesting.mo"); getErrorString();
 
 simulate(DrModelicaForTesting.Activate, numberOfIntervals=200, stopTime=1.0); getErrorString();

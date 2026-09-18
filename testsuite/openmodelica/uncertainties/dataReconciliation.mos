@@ -5,7 +5,7 @@
 // A set of simple examples to test the uncertainties algorithm.
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 
 loadFile("dataReconciliation.mo");
 getErrorString();

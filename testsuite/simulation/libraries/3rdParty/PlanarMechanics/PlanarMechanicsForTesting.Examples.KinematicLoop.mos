@@ -7,7 +7,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 
 setMatchingAlgorithm("PFPlus");
