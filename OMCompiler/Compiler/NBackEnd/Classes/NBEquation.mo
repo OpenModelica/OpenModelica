@@ -2335,6 +2335,24 @@ public
       exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());
     end getResidualExp;
 
+    function tryGetResidualExp
+      "like getResidualExp, but returns NONE() instead of failing (and without an
+      error message) if no residual expression could be constructed, e.g. a
+      RECORD_EQUATION whose type has no '+'/'-'/'0' operators (a plain Medium
+      ThermodynamicState, for example)."
+      input Pointer<Equation> eqn_ptr;
+      output Option<Expression> residual;
+    algorithm
+      residual := matchcontinue eqn_ptr
+        local
+          Expression exp;
+        case _ algorithm
+          exp := getResidualExp(Pointer.access(eqn_ptr), throwOnFail = false);
+        then SOME(exp);
+        else NONE();
+      end matchcontinue;
+    end tryGetResidualExp;
+
     function getType
       input Equation eq;
       input Boolean skipIterator = false;

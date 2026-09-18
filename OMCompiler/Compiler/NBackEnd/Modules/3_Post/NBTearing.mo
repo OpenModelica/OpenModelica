@@ -352,19 +352,29 @@ public
     input UnorderedMap<Path, Function> funcMap;
     output Boolean linear = true;
   protected
-    Expression residual = Equation.getResidualExp(Pointer.access(eqn_ptr));
+    Option<Expression> residual_opt = Equation.tryGetResidualExp(eqn_ptr);
+    Expression residual;
     Differentiate.DifferentiationArguments diffArgs;
     Expression derivative;
   algorithm
-    for cref in crefs loop
-      diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
-      (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-      for other in crefs loop
-        if Expression.containsCref(derivative, other) then
-          linear := false;
-        end if;
+    if isSome(residual_opt) then
+      SOME(residual) := residual_opt;
+      for cref in crefs loop
+        diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
+        (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+        for other in crefs loop
+          if Expression.containsCref(derivative, other) then
+            linear := false;
+          end if;
+        end for;
       end for;
-    end for;
+    else
+      // no residual could be constructed at all (e.g. a record type such as a
+      // Medium's ThermodynamicState with no '+'/'-'/'0' operators, see
+      // Equation.getResidualExp) -- can't check, so assume the conservative
+      // (nonlinear) default instead of crashing the whole compilation.
+      linear := false;
+    end if;
   end isLinearSlice;
 
   function getModule

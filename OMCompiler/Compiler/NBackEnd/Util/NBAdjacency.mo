@@ -1489,7 +1489,8 @@ public
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
-          Boolean eqnIsDiscrete, eqnIsIf;
+          Boolean eqnIsDiscrete, eqnIsIf, eqnHasNoResidual;
+          Option<Expression> residual_opt;
 
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
@@ -1499,8 +1500,17 @@ public
             // crashing, now that NBTearing.mo's initialize can pass them in here.
             eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or Equation.isAlgorithm(eqn_ptr);
             eqnIsIf := Equation.isIfEquation(eqn_ptr);
+            eqnHasNoResidual := false;
             if not (eqnIsDiscrete or eqnIsIf) then
-              residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
+              // e.g. a RECORD_EQUATION whose type has no '+'/'-'/'0' operators (a plain
+              // Medium ThermodynamicState, for example) can't have a residual built at
+              // all -- fall back to IMPLICIT below instead of crashing.
+              residual_opt := Equation.tryGetResidualExp(eqn_ptr);
+              if isSome(residual_opt) then
+                SOME(residual) := residual_opt;
+              else
+                eqnHasNoResidual := true;
+              end if;
             end if;
             for var in UnorderedSet.toArray(full.occurrences[eqn_idx]) loop
               // only do something if var is to be refined
@@ -1514,7 +1524,7 @@ public
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
                     sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
-                  elseif eqnIsIf then
+                  elseif eqnIsIf or eqnHasNoResidual then
                     // TODO more thorough analysis
                     sol := Solvability.IMPLICIT();
                   else
