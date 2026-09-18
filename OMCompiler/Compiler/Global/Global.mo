@@ -105,6 +105,14 @@ constant Integer nfTopScope = 38;
 // owns the variables until they reach `VariablePointers`.
 constant Integer nbCreatedVars = 39;
 
+// The icon annotation JSON of each class a diagram has drawn a component of,
+// for the documentation generator. A diagram dumps the icon of every one of its
+// components, and a library draws the same few dozen types across thousands of
+// diagrams; the dump depends only on the class, since the component's own
+// modifications are not applied to it. Dropped with the top scope by
+// NFInstanceAPI.clearTopScopeCache.
+constant Integer nfDiagramIconCache = 40;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -147,6 +155,7 @@ algorithm
   setGlobalRoot(adjacencyIfCondCache, NONE());
   setGlobalRoot(nfTopScope, {});
   setGlobalRoot(nbCreatedVars, {});
+  setGlobalRoot(nfDiagramIconCache, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

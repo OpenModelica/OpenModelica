@@ -1532,15 +1532,37 @@ function(omc_rust_setup_codegen)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   endif()
-  install(FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo
-          DESTINATION lib/omc COMPONENT omc)
+  # The library-documentation generator. Frontend-only, so it does not link the
+  # cdylib and only DEPENDS on the transpile.
+  #
+  # MAKEFLAGS is cleared because tikv-jemalloc-sys prepends its own flags to it
+  # before running autotools make, which leaves make's dash-less leading option
+  # word where the nested make reads it as a goal.
+  add_custom_target(rust_omgendoc ALL
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    COMMAND ${CMAKE_COMMAND} -E env --unset=MAKEFLAGS
+            ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica_gendoc
+    DEPENDS rust_codegen
+    COMMENT "Rust: building omgendoc (${RUST_OMC_PROFILE})"
+    VERBATIM)
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+
+  set(_omc_builtin_mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo)
+  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omc)
+
+  # omgendoc deduces OPENMODELICAHOME from its own path, so its component
+  # carries the builtins too and needs no omc built beside it.
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omgendoc)
+  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omgendoc)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/ COMPONENT omc)
   endif() # NOT OM_OMC_WASM

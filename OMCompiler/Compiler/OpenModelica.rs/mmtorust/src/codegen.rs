@@ -2064,8 +2064,17 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
 /// of a C dependency wasm cannot link. (`FFI` uses the system libffi on Windows —
 /// built from the GNU-syntax `win64.S` with clang-cl — so it keeps the native
 /// module there.)
-fn stub_active_cfg(_name: &str) -> &'static str {
-    "target_arch = \"wasm32\""
+///
+/// Two of them are also optional on native, so a tool that needs neither
+/// downloads nor compile-time `external "C"` evaluation — `omgendoc` — links
+/// neither libcurl (and its TLS/LDAP/SSH tail) nor libffi. The stub reports the
+/// path unavailable, which is what those callers already handle.
+fn stub_active_cfg(name: &str) -> &'static str {
+    match name {
+        "Curl" => "any(target_arch = \"wasm32\", not(feature = \"curl\"))",
+        "FFI" => "any(target_arch = \"wasm32\", not(feature = \"ffi\"))",
+        _ => "target_arch = \"wasm32\"",
+    }
 }
 
 /// Emit a top-level `pub mod NAME;`, cfg-gating the native-only modules listed
@@ -12682,13 +12691,15 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // VarTransform.VariableReplacements value; VarTransform/Inline live in
         // the frontend base crate, so the thread_local is declared there.
         "inlineHashTable" => Some("openmodelica_frontend_base"),
-        // openmodelica_backend_main — the NF instantiation/node/lookup caches
+        // openmodelica_backend_main — the NF instantiation and lookup caches
         // store `NFInstNode.InstNode` (openmodelica_nf_frontend) and are only
         // accessed by Script/NFApi.mo. Declared in backend_main's Globals so the
         // old frontend need not depend on the new-frontend crate.
-        "instNFInstCacheIndex"
-        | "instNFNodeCacheIndex"
-        | "instNFLookupCacheIndex" => Some("openmodelica_backend_main"),
+        "instNFInstCacheIndex" | "instNFLookupCacheIndex" => Some("openmodelica_backend_main"),
+        // openmodelica_nf_api — the NF top-scope cache and the per-scope cache
+        // of diagram component icons, both written and read by
+        // NFFrontEnd/NFInstanceAPI.mo alone.
+        "instNFNodeCacheIndex" | "nfDiagramIconCache" => Some("openmodelica_nf_api"),
         // openmodelica_nf_frontend — the NF top scope root holds an
         // NFInstNode.InstNode and is written by NFInst.makeTopNode, both in
         // that crate.

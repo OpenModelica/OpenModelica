@@ -7107,7 +7107,9 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_inst",
  "openmodelica_frontend_types",
+ "openmodelica_loader",
  "openmodelica_nbackend",
+ "openmodelica_nf_api",
  "openmodelica_nf_frontend",
  "openmodelica_omgraphics",
  "openmodelica_program_util",
@@ -7582,6 +7584,7 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_inst",
  "openmodelica_frontend_types",
+ "openmodelica_loader",
  "openmodelica_script_util",
  "openmodelica_tpl",
  "openmodelica_util",
@@ -7651,6 +7654,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_gendoc"
+version = "0.1.0"
+dependencies = [
+ "arcstr",
+ "metamodelica",
+ "openmodelica_ast",
+ "openmodelica_error",
+ "openmodelica_frontend_dump",
+ "openmodelica_frontend_types",
+ "openmodelica_loader",
+ "openmodelica_nf_api",
+ "openmodelica_nf_frontend",
+ "openmodelica_omgraphics",
+ "openmodelica_revision",
+ "openmodelica_util",
+ "rayon",
+ "tikv-jemallocator",
+]
+
+[[package]]
 name = "openmodelica_hdf5_result"
 version = "0.1.0"
 dependencies = [
@@ -7662,6 +7685,24 @@ name = "openmodelica_lapack"
 version = "0.1.0"
 dependencies = [
  "faer",
+]
+
+[[package]]
+name = "openmodelica_loader"
+version = "0.1.0"
+dependencies = [
+ "arcstr",
+ "const-str 1.1.0",
+ "loop_unwrap",
+ "match_deref",
+ "metamodelica",
+ "openmodelica_ast",
+ "openmodelica_ast_collections",
+ "openmodelica_error",
+ "openmodelica_frontend_dump",
+ "openmodelica_script_util",
+ "openmodelica_util",
+ "openmodelica_util_datatypes_basic",
 ]
 
 [[package]]
@@ -7702,6 +7743,27 @@ dependencies = [
  "openmodelica_program_util",
  "openmodelica_simcode_types",
  "openmodelica_simcode_util",
+ "openmodelica_util",
+ "openmodelica_util_datatypes_basic",
+]
+
+[[package]]
+name = "openmodelica_nf_api"
+version = "0.1.0"
+dependencies = [
+ "arcstr",
+ "const-str 1.1.0",
+ "loop_unwrap",
+ "match_deref",
+ "metamodelica",
+ "openmodelica_ast",
+ "openmodelica_ast_collections",
+ "openmodelica_error",
+ "openmodelica_frontend",
+ "openmodelica_frontend_dump",
+ "openmodelica_frontend_types",
+ "openmodelica_loader",
+ "openmodelica_nf_frontend",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
 ]

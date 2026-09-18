@@ -53,14 +53,6 @@ thread_local! {
         (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, ArcStr, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
     )>> = RefCell::new(metamodelica::nil());
 
-    // Index 11 — instNFNodeCacheIndex
-    //
-    // NF node cache (program → SCode elements, InstNode).
-    pub static instNFNodeCacheIndex: RefCell<metamodelica::List<(
-        openmodelica_ast::Absyn::Program,
-        (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
-    )>> = RefCell::new(metamodelica::nil());
-
     // Index 12 — instNFLookupCacheIndex
     //
     // NF lookup cache. Same type as instNFInstCacheIndex (index 10).
