@@ -1574,12 +1574,16 @@ protected
   protected
     list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
     UnorderedMap<ComponentRef, Boolean> map;
+    UnorderedMap<ComponentRef, Integer> sizes;
+    ComponentRef stripped;
   algorithm
     if List.compareLength(filtered_exps, vars) == 0 then
-      map := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+      map   := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+      sizes := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
       for var in vars loop
         UnorderedMap.add(BVariable.getVarName(var), false, map);
+        UnorderedMap.add(BVariable.getVarName(var), BVariable.size(var), sizes);
       end for;
       // set the map entry for all variables that occur to true
       for exp in filtered_exps loop
@@ -1587,6 +1591,17 @@ protected
           case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
             UnorderedMap.add(exp.cref, true, map);
           then ();
+
+          // a subscripted element that covers the whole variable, e.g. x[1] for Real[1] x
+          case Expression.CREF() algorithm
+            stripped := ComponentRef.stripSubscriptsAll(exp.cref);
+            if UnorderedMap.contains(stripped, map) and UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp)) then
+              UnorderedMap.add(stripped, true, map);
+            else
+              return;
+            end if;
+          then ();
+
           else algorithm return; then ();
         end match;
       end for;
