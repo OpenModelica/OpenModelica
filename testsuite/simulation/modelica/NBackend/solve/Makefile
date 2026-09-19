@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 solveCallExp.mos \
+scalarFromSingleElementArray.mos \
 solveCallTan.mos \
 solveForLoop.mos \
 solveMultaryBinary.mos \
