@@ -72,13 +72,6 @@ if not installPackage(Complex, "4.1.0+maint.om", exactMatch=true) then
 else
   print("Installed: Complex 4.1.0+maint.om\n");
 end if;
-if not installPackage(Modelica, "3.1.0+maint.om", exactMatch=true) then
-  print("Modelica 3.1.0+maint.om failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: Modelica 3.1.0+maint.om\n");
-end if;
 if not installPackage(Modelica, "3.2.1+maint.om", exactMatch=true) then
   print("Modelica 3.2.1+maint.om failed.\n");
   print(getErrorString());
@@ -134,13 +127,6 @@ if not installPackage(ModelicaReference, "4.1.0+maint.om", exactMatch=true) then
   exit(1);
 else
   print("Installed: ModelicaReference 4.1.0+maint.om\n");
-end if;
-if not installPackage(ModelicaServices, "1.0.0", exactMatch=true) then
-  print("ModelicaServices 1.0.0 failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: ModelicaServices 1.0.0\n");
 end if;
 if not installPackage(ModelicaServices, "3.2.1+maint.om", exactMatch=true) then
   print("ModelicaServices 3.2.1+maint.om failed.\n");
@@ -247,13 +233,6 @@ if not installPackage(SiemensPower, "2.2.0", exactMatch=true) then
 else
   print("Installed: SiemensPower 2.2.0\n");
 end if;
-if not installPackage(SiemensPower, "OMCtest", exactMatch=true) then
-  print("SiemensPower OMCtest failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: SiemensPower OMCtest\n");
-end if;
 if not installPackage(ThermoPower, "3.1.0-master", exactMatch=true) then
   print("ThermoPower 3.1.0-master failed.\n");
   print(getErrorString());
@@ -275,4 +254,4 @@ if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
 else
   print("Installed: WasteWater 2.1.0\n");
 end if;
-system("touch .openmodelica/20260917174058.stamp")
+system("touch .openmodelica/20260917192201.stamp")
