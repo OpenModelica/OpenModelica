@@ -193,7 +193,11 @@ public
           idx     = index,
           strict  = singleImplicit(comp.var, comp.eqn),
           casual  = NONE(),
-          linear  = false,
+          // a multi-dimensional var (e.g. matrix-coupled array equation like A*x=b with
+          // A a parameter matrix) can be genuinely linear even though it isn't solvable
+          // one scalar element at a time -- check like SLICED_COMPONENT does instead of
+          // always assuming nonlinear.
+          linear  = isLinearSlice(comp.eqn, ComponentRef.scalarize(BVariable.getVarName(comp.var), false), funcMap),
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT,
@@ -221,7 +225,7 @@ public
           idx     = index,
           strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),
           casual  = NONE(),
-          linear  = false,
+          linear  = isLinearSlice(Slice.getT(comp.eqn), ComponentRef.scalarize(comp.var_cref, false), funcMap),
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT,
