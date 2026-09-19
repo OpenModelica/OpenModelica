@@ -105,6 +105,7 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
+import NFApi;
 import PackageManagement;
 import Parser;
 import Print;
@@ -853,12 +854,14 @@ algorithm
     case ("clear",{})
       algorithm
         SymbolTable.reset();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
     case ("clearProgram",{})
       algorithm
         SymbolTable.clearProgram();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
