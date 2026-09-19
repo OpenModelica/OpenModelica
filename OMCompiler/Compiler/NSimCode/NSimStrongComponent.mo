@@ -897,7 +897,8 @@ public
           Integer i;
           list<Subscript> subs;
 
-        case (BEquation.SCALAR_EQUATION(), {}) algorithm
+        // a scalar equation has size 1, so a slice {1} is the same as no slice
+        case (BEquation.SCALAR_EQUATION(), _) algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + 1;
