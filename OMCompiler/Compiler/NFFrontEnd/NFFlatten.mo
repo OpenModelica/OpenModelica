@@ -1237,7 +1237,8 @@ algorithm
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   dims := List.lastN(dims, listLength(subs));
-  binding_ty := Type.liftArrayLeftList(binding_ty, dims);
+  // the expression is already split, e.g. CAST(Real, {..}[$x1]), so its own type is the element type
+  binding_ty := Type.liftArrayLeftList(Expression.typeOf(exp), dims);
 
   if not listEmpty(dims) then
     if Expression.isLiteral(exp) or not Expression.contains(exp, Expression.isIterator) then
