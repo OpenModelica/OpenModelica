@@ -538,8 +538,12 @@ public
 
       case Equation.IF_EQUATION() algorithm
         (if_body, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(list(Slice.getT(v) for v in var_slices)), funcMap, kind, implicit_index, slicing_map, iter, varData, eqData);
-        eqn.body := if_body;
-      then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), status);
+        // keep the original equation if a branch is implicit, it is used as the residual
+        if status == Status.EXPLICIT then
+          eqn.body := if_body;
+          eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+        end if;
+      then (eqn_slice, status);
 
       // ToDo: inverse algorithms
       case Equation.ALGORITHM()
@@ -737,6 +741,7 @@ public
     IfEquationBody else_if;
     list<StrongComponent> comps, solved_comps;
     list<Pointer<Equation>> new_then_eqns = {};
+    Boolean explicit = true;
   algorithm
     // causalize this branch equations for the unknowns
     (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns), kind, iter = iter);
@@ -744,9 +749,20 @@ public
     for comp in comps loop
       (solved_comps, implicit_index) := solveStrongComponent(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       for solved_comp in solved_comps loop
-        new_then_eqns := StrongComponent.toSolvedEquation(solved_comp) :: new_then_eqns;
+        if StrongComponent.getSolveStatus(solved_comp) == Status.EXPLICIT then
+          new_then_eqns := StrongComponent.toSolvedEquation(solved_comp) :: new_then_eqns;
+        else
+          explicit := false;
+        end if;
       end for;
     end for;
+
+    // a branch that can only be solved implicitly makes the whole if equation implicit
+    if not explicit then
+      status := Status.IMPLICIT;
+      return;
+    end if;
+
     body.then_eqns := listReverse(new_then_eqns);
     // if there is an else branch -> go deeper
     if isSome(body.else_if) then
