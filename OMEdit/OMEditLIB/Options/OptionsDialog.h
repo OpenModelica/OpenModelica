@@ -1259,6 +1259,8 @@ private:
   QPushButton *mpSignOutButton;
   Label *mpStatusLabel;
   QGroupBox *mpRegistrationGroupBox;
+  //! The registration fields, hidden until the group box is ticked.
+  QWidget *mpRegistrationWidget;
   QLineEdit *mpGoogleClientIdTextBox;
   QLineEdit *mpGoogleClientSecretTextBox;
   QCheckBox *mpGoogleFullDriveScopeCheckBox;

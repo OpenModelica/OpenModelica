@@ -12,6 +12,23 @@ synced state, so a file that changed on both sides is reported rather than
 guessed at, and a missing file is only ever treated as deleted when the working
 copy is otherwise intact.
 
+## What each service can see
+
+|              | A folder OMEdit created | A folder you uploaded yourself |
+|--------------|-------------------------|--------------------------------|
+| OneDrive     | yes                     | yes, including what the desktop client syncs in |
+| Google Drive | yes                     | **no**                         |
+
+**To use a library that is already in your Google Drive**, download it as a
+`.zip`, open it in OMEdit, and use *File > Save to Cloud Storage*. From then on
+the folder is one OMEdit created, and it synchronises normally.
+
+The reason, for whoever registers the applications: Drive is used with the
+`drive.file` scope, which grants access only to what the application created.
+The alternative is the `drive` scope, which is *restricted* - app verification
+plus a paid security assessment every twelve months. The file picker is not a
+third option; it was measured, and a picked folder does not carry its contents.
+
 ## Using it
 
 - **File > Open Model/Library from Cloud Storage** picks a folder (or a file in
@@ -63,9 +80,9 @@ every visitor - and what protects the application is the registered redirect URI
 and origin.
 
 The scope is `drive.file`, which is non-sensitive: no app verification and no
-annual security assessment. OMEdit sees only the folder it creates
-(`OpenModelica`) and what it puts there. While the application is in *Testing*
-mode, add yourself under *Audience > Test users* or sign-in is refused.
+annual security assessment. What that costs the user is described under *What
+each service can see* above. While the application is in *Testing* mode, add
+yourself under *Audience > Test users* or sign-in is refused.
 
 ### OneDrive
 

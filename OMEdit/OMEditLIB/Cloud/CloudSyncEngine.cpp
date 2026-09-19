@@ -84,6 +84,14 @@ bool isHiddenPath(const QString &relativePath)
   return false;
 }
 
+CloudError errorAt(const CloudError &error, const QString &relativePath)
+{
+  if (error.code == CloudError::Cancelled || relativePath.isEmpty()) {
+    return error;
+  }
+  return CloudError(error.code, QStringLiteral("%1: %2").arg(relativePath, error.message), error.httpStatus);
+}
+
 QString conflictCopyName(const QString &relativePath)
 {
   const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd-hhmmss"));
@@ -457,7 +465,7 @@ void CloudSyncEngine::runNext()
       mpCurrentReply = pReply;
       connect(pReply, &CloudReply::finished, this, [this, pReply, action]() {
         if (pReply->error().isError()) {
-          finish(pReply->error());
+          finish(errorAt(pReply->error(), action.relativePath));
           return;
         }
         const QString path = absolutePath(action.relativePath);
@@ -485,7 +493,7 @@ void CloudSyncEngine::runNext()
       mpCurrentReply = pReply;
       connect(pReply, &CloudReply::finished, this, [this, pReply, action]() {
         if (pReply->error().isError()) {
-          finish(pReply->error());
+          finish(errorAt(pReply->error(), action.relativePath));
           return;
         }
         recordFromItem(action.relativePath, pReply->item(), QByteArray());
@@ -511,7 +519,7 @@ void CloudSyncEngine::runNext()
       mpCurrentReply = pReply;
       connect(pReply, &CloudReply::finished, this, [this, pReply, action, contents]() {
         if (pReply->error().isError()) {
-          finish(pReply->error());
+          finish(errorAt(pReply->error(), action.relativePath));
           return;
         }
         recordFromItem(action.relativePath, pReply->item(), hashOf(contents));
@@ -535,7 +543,7 @@ void CloudSyncEngine::runNext()
       mpCurrentReply = pReply;
       connect(pReply, &CloudReply::finished, this, [this, pReply, action]() {
         if (pReply->error().isError()) {
-          finish(pReply->error());
+          finish(errorAt(pReply->error(), action.relativePath));
           return;
         }
         // Only now, with the removal confirmed, does the entry go.

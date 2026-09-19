@@ -99,8 +99,8 @@ struct ProviderEndpoints
 const ProviderEndpoints kGoogle = {
   "https://accounts.google.com/o/oauth2/v2/auth",
   "https://oauth2.googleapis.com/token",
-  // drive.file keeps this a non-sensitive scope: no Google app verification, and
-  // the application only ever sees what it created or the user handed it.
+  // drive.file keeps this a non-sensitive scope: no Google app verification. The
+  // cost is that Drive shows only what OMEdit created; see CLOUD-STORAGE.md.
   "https://www.googleapis.com/auth/drive.file",
   // access_type=offline is what makes Google return a refresh token at all, and
   // it only returns one on a consent screen the user actually saw.
@@ -200,6 +200,11 @@ CloudClientRegistration CloudConfig::registration(CloudProviderKind kind) const
     registration.fullDriveScope = pSettings->value(settingsKey(kind, QStringLiteral("fullDriveScope"))).toBool();
   }
   return registration;
+}
+
+bool CloudConfig::hasUserRegistration(CloudProviderKind kind) const
+{
+  return !Utilities::getApplicationSettings()->value(settingsKey(kind, QStringLiteral("clientId"))).toString().isEmpty();
 }
 
 void CloudConfig::setRegistration(CloudProviderKind kind, const CloudClientRegistration &registration)

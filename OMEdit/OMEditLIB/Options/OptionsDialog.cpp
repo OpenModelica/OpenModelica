@@ -7568,6 +7568,16 @@ CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
   mpStatusLabel->setElideMode(Qt::ElideMiddle);
   mpStatusLabel->setWordWrap(true);
 
+  Label *pGoogleNoteLabel =
+      new Label(tr("<b>Google Drive</b> shows only folders OMEdit created itself, inside an OpenModelica folder in "
+                   "your Drive. To use a library that is already in your Drive, download it as a .zip, open it in "
+                   "OMEdit, and save it to a cloud folder from there."));
+  pGoogleNoteLabel->setWordWrap(true);
+  Label *pOneDriveNoteLabel =
+      new Label(tr("<b>OneDrive</b> can open any folder, including one you uploaded or that the OneDrive desktop "
+                   "client synchronised."));
+  pOneDriveNoteLabel->setWordWrap(true);
+
   QGridLayout *pAccountsLayout = new QGridLayout;
   pAccountsLayout->addWidget(mpAccountsListWidget, 0, 0, 4, 1);
   pAccountsLayout->addWidget(mpAddGoogleDriveButton, 0, 1);
@@ -7575,10 +7585,19 @@ CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
   pAccountsLayout->addWidget(mpSignOutButton, 2, 1);
   pAccountsLayout->setRowStretch(3, 1);
   pAccountsLayout->addWidget(mpStatusLabel, 4, 0, 1, 2);
+  pAccountsLayout->addWidget(pGoogleNoteLabel, 5, 0, 1, 2);
+  pAccountsLayout->addWidget(pOneDriveNoteLabel, 6, 0, 1, 2);
   mpAccountsGroupBox->setLayout(pAccountsLayout);
 
   // client registrations
-  mpRegistrationGroupBox = new QGroupBox(tr("OAuth Applications"));
+  // Qt only disables a checkable group box's children, so the fields live in a
+  // widget that is hidden outright.
+  mpRegistrationGroupBox = new QGroupBox(tr("Advanced: OAuth Applications"));
+  mpRegistrationGroupBox->setCheckable(true);
+  mpRegistrationGroupBox->setChecked(false);
+  mpRegistrationWidget = new QWidget;
+  mpRegistrationWidget->setVisible(false);
+  connect(mpRegistrationGroupBox, &QGroupBox::toggled, mpRegistrationWidget, &QWidget::setVisible);
   Label *pRegistrationNoteLabel =
       new Label(tr("Normally supplied by the deployment in cloud_config.json. Fill these in to use your own "
                    "registered applications instead."));
@@ -7608,7 +7627,12 @@ CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
   pRegistrationLayout->addWidget(mpGoogleFullDriveScopeCheckBox, 3, 0, 1, 2);
   pRegistrationLayout->addWidget(new Label(tr("OneDrive client ID:")), 4, 0);
   pRegistrationLayout->addWidget(mpOneDriveClientIdTextBox, 4, 1);
-  mpRegistrationGroupBox->setLayout(pRegistrationLayout);
+  pRegistrationLayout->setContentsMargins(0, 0, 0, 0);
+  mpRegistrationWidget->setLayout(pRegistrationLayout);
+
+  QVBoxLayout *pRegistrationOuterLayout = new QVBoxLayout;
+  pRegistrationOuterLayout->addWidget(mpRegistrationWidget);
+  mpRegistrationGroupBox->setLayout(pRegistrationOuterLayout);
 
   // mounted folders
   mpMountsGroupBox = new QGroupBox(tr("Mounted Folders"));
@@ -7718,6 +7742,10 @@ void CloudStoragePage::readRegistrations()
   mpGoogleClientSecretTextBox->setText(google.clientSecret);
   mpGoogleFullDriveScopeCheckBox->setChecked(google.fullDriveScope);
   mpOneDriveClientIdTextBox->setText(CloudConfig::instance()->registration(CloudProviderKind::OneDrive).clientId);
+  // Open only for someone with their own applications: the fields otherwise show
+  // the deployment's values.
+  mpRegistrationGroupBox->setChecked(CloudConfig::instance()->hasUserRegistration(CloudProviderKind::GoogleDrive)
+                                     || CloudConfig::instance()->hasUserRegistration(CloudProviderKind::OneDrive));
 }
 
 void CloudStoragePage::saveRegistrations()
