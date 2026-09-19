@@ -9,34 +9,63 @@ pub struct Resource {
     pub target: String,
 }
 
+/// `(version tag, name)`. A `modelica://` URI names a class in every copy of
+/// its library; the one a document means is its own, falling back to the
+/// untagged copy for a library documented only once.
+type Key = (String, String);
+
 #[derive(Default)]
 pub struct Resolver {
-    /// Qualified class name -> the directory its source file lives in. Doubles
-    /// as the set of classes that have a generated page.
-    class_dir: HashMap<String, PathBuf>,
-    /// Top-level class name -> the library root directory.
-    library_root: HashMap<String, PathBuf>,
+    /// (version tag, qualified class name) -> the directory its source file
+    /// lives in. Doubles as the set of classes that have a generated page.
+    class_dir: HashMap<Key, PathBuf>,
+    /// (version tag, top-level class name) -> the library root directory.
+    library_root: HashMap<Key, PathBuf>,
 }
 
 impl Resolver {
-    pub fn add_class(&mut self, qualified_name: &str, source_file: &str) {
+    pub fn add_class(&mut self, tag: &str, qualified_name: &str, source_file: &str) {
         let dir = Path::new(source_file).parent().unwrap_or(Path::new(""));
         self.class_dir
-            .insert(qualified_name.to_string(), dir.to_path_buf());
+            .insert((tag.to_string(), qualified_name.to_string()), dir.to_path_buf());
         if !qualified_name.contains('.') {
             self.library_root
-                .insert(qualified_name.to_string(), dir.to_path_buf());
+                .insert((tag.to_string(), qualified_name.to_string()), dir.to_path_buf());
         }
     }
 
-    pub fn rewrite(&self, html: &str, resources: &mut Vec<Resource>) -> String {
-        self.rewrite_from("", html, resources)
+    fn lookup<'a>(
+        table: &'a HashMap<Key, PathBuf>,
+        tag: &str,
+        name: &str,
+    ) -> Option<&'a PathBuf> {
+        table
+            .get(&(tag.to_string(), name.to_string()))
+            .or_else(|| table.get(&(String::new(), name.to_string())))
     }
 
-    /// As `rewrite`, for a document that is not at the output root: `prefix`
-    /// joins the resolved relative URL to it. An icon lives in `Icons/`, so the
-    /// bitmap it names resolves to `../resources/…`.
-    pub fn rewrite_from(&self, prefix: &str, html: &str, resources: &mut Vec<Resource>) -> String {
+    /// The page a class name leads to from a document tagged `tag`.
+    fn page_of(&self, tag: &str, name: &str) -> Option<String> {
+        let own = !tag.is_empty() && self.class_dir.contains_key(&(tag.to_string(), name.to_string()));
+        let tagged = match (own, name.split_once('.')) {
+            (false, _) => name.to_string(),
+            (true, Some((library, rest))) => format!("{library}@{tag}.{rest}"),
+            (true, None) => format!("{name}@{tag}"),
+        };
+        Self::lookup(&self.class_dir, tag, name)
+            .map(|_| format!("{}.html", uri_encode(&file_stem(&tagged))))
+    }
+
+    /// Every `modelica://` URI in `html`, resolved from the `tag` copy of the
+    /// library. `prefix` joins the resolved relative URL to it, for a document
+    /// that is not at the output root.
+    pub fn rewrite_in(
+        &self,
+        tag: &str,
+        prefix: &str,
+        html: &str,
+        resources: &mut Vec<Resource>,
+    ) -> String {
         let mut out = String::with_capacity(html.len());
         let mut rest = html;
         while let Some(start) = find_scheme(rest) {
@@ -47,7 +76,7 @@ impl Resolver {
             let end = tail
                 .find(|c: char| c.is_whitespace() || matches!(c, '"' | '\'' | '>' | '&' | '\\'))
                 .unwrap_or(tail.len());
-            let url = self.resolve(&tail[..end], resources);
+            let url = self.resolve(tag, &tail[..end], resources);
             if !url.starts_with(SCHEME) {
                 out.push_str(prefix);
             }
@@ -61,17 +90,14 @@ impl Resolver {
     /// A URI that names neither a class we generated a page for nor a file that
     /// exists is left as it was: the documentation is discussing the scheme,
     /// not linking with it.
-    fn resolve(&self, uri: &str, resources: &mut Vec<Resource>) -> String {
+    fn resolve(&self, tag: &str, uri: &str, resources: &mut Vec<Resource>) -> String {
         let (target, anchor) = match uri.split_once('#') {
             Some((u, a)) => (u, Some(a)),
             None => (uri, None),
         };
         let resolved = match target.split_once('/') {
-            Some((class, file)) => self.resolve_file(class, file, resources),
-            None => self
-                .class_dir
-                .contains_key(target)
-                .then(|| format!("{}.html", uri_encode(&file_stem(target)))),
+            Some((class, file)) => self.resolve_file(tag, class, file, resources),
+            None => self.page_of(tag, target),
         };
         match (resolved, anchor) {
             (Some(page), Some(anchor)) => format!("{page}#{anchor}"),
@@ -81,13 +107,15 @@ impl Resolver {
     }
 
     /// The file a `modelica://Lib.Sub/Resources/x.png` URI names.
-    fn source_file(&self, class: &str, file: &str) -> Option<PathBuf> {
+    fn source_file(&self, tag: &str, class: &str, file: &str) -> Option<PathBuf> {
         let file = percent_decode(file);
-        let mut dir = self.class_dir.get(class);
+        let mut dir = Self::lookup(&self.class_dir, tag, class);
         if dir.is_none() {
             // The class may be declared inside a package.mo, in which case the
             // enclosing package's directory is the one the URI resolves against.
-            dir = class.rsplit_once('.').and_then(|(p, _)| self.class_dir.get(p));
+            dir = class
+                .rsplit_once('.')
+                .and_then(|(p, _)| Self::lookup(&self.class_dir, tag, p));
         }
         let source = dir?.join(&file);
         source.is_file().then_some(source)
@@ -96,13 +124,14 @@ impl Resolver {
     /// `modelica://Lib.Sub/Resources/x.png` -> `resources/Lib/Sub/Resources/x.png`.
     fn resolve_file(
         &self,
+        tag: &str,
         class: &str,
         file: &str,
         resources: &mut Vec<Resource>,
     ) -> Option<String> {
-        let source = self.source_file(class, file)?;
+        let source = self.source_file(tag, class, file)?;
         let library = class.split('.').next()?;
-        let root = self.library_root.get(library)?;
+        let root = Self::lookup(&self.library_root, tag, library)?;
         let relative = source.strip_prefix(root).ok()?;
         let target = format!(
             "resources/{library}/{}",
@@ -134,7 +163,7 @@ impl Resolver {
             let uri = &tail[..end];
             match uri
                 .split_once('/')
-                .and_then(|(class, file)| self.source_file(class, file))
+                .and_then(|(class, file)| self.source_file("", class, file))
                 .and_then(|path| std::fs::read(&path).ok().map(|bytes| (path, bytes)))
             {
                 Some((path, bytes)) => {
@@ -243,6 +272,20 @@ pub fn aliases() -> &'static HashMap<String, String> {
 }
 
 static ALIASES: OnceLock<HashMap<String, String>> = OnceLock::new();
+
+/// Percent-encoding for a query value: `+` in a version is a space otherwise.
+pub fn query_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for byte in s.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                out.push(byte as char)
+            }
+            _ => out.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    out
+}
 
 pub fn uri_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());

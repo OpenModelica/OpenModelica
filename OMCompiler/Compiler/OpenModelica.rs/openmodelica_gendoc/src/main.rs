@@ -36,6 +36,18 @@ usage: omgendoc [options] LIBRARY...
       --modelica-path P  library search path (default: $OPENMODELICALIBRARY)
       --package-index F  index.json naming each library's source repository
                          (default: index.json in the first search path entry)
+      --playground URL   the simulator a runnable class opens in, with
+                         {version} standing for the playground build (default:
+                         playground/{version}/simulator/index.html, which is
+                         same-origin and so cross-origin isolated with the
+                         documentation). --no-playground leaves it out
+      --playground-versions V,V
+                         the builds the page offers, first one selected
+                         (default: latest,demo)
+      --testing-conf F   OpenModelicaLibraryTesting's configs/conf.json, which
+                         says which libraries are tested against their
+                         development version. The index links a report for
+                         each of those; without it no report is linked
   -j, --jobs N           libraries rendered at once, and page-rendering
                          threads (default: the machine's physical cores)
       --skip CLASS       render no graphics for this class or anything under
@@ -64,6 +76,9 @@ struct Options {
     icons_dir: String,
     modelica_path: Option<String>,
     package_index: Option<PathBuf>,
+    testing_conf: Option<PathBuf>,
+    playground: Option<String>,
+    playground_versions: Vec<String>,
     libraries: Vec<(String, Option<String>)>,
     jobs: Option<usize>,
     icons: bool,
@@ -81,6 +96,9 @@ fn parse_args() -> Result<Options, String> {
         icons_dir: String::from("Icons"),
         modelica_path: None,
         package_index: None,
+        testing_conf: None,
+        playground: Some(String::from("playground/{version}/simulator/index.html")),
+        playground_versions: vec![String::from("latest"), String::from("demo")],
         libraries: Vec::new(),
         jobs: None,
         icons: true,
@@ -116,6 +134,17 @@ fn parse_args() -> Result<Options, String> {
             "--stats" => options.stats = true,
             "--modelica-path" => options.modelica_path = Some(value()?),
             "--package-index" => options.package_index = Some(PathBuf::from(value()?)),
+            "--testing-conf" => options.testing_conf = Some(PathBuf::from(value()?)),
+            "--playground" => options.playground = Some(value()?),
+            "--playground-versions" => {
+                options.playground_versions = value()?
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|version| !version.is_empty())
+                    .map(String::from)
+                    .collect()
+            }
+            "--no-playground" => options.playground = None,
             "-j" | "--jobs" => {
                 options.jobs = Some(value()?.parse().map_err(|_| "-j needs a number")?)
             }
@@ -264,13 +293,13 @@ fn render_graphics(
     options: &Options,
     classes: &[ClassDoc],
     libraries: &[usize],
-    scode: Option<&icons::SCodeProgram>,
+    universes: &HashMap<ArcStr, icons::SCodeProgram>,
     resolver: &links::Resolver,
     store: Option<&mut icons::Icons>,
     resolved: &mut [icons::Resolved],
 ) -> Vec<(Option<u128>, Option<u128>)> {
     let mut digests = vec![(None, None); classes.len()];
-    let (Some(store), Some(scode)) = (store, scode) else {
+    let Some(store) = store else {
         return digests;
     };
     let markers = options.output_dir.join("index/graphics");
@@ -291,7 +320,11 @@ fn render_graphics(
         .build();
 
     for (done, &root) in libraries.iter().enumerate() {
-        let name = classes[root].name();
+        let name = classes[root].index_name();
+        let name = name.as_str();
+        let Some(scode) = universes.get(&classes[root].tag) else {
+            continue;
+        };
         // Filtered here rather than inside the loop, so a skipped class costs
         // nothing at all: a library that is skipped whole then has no members,
         // and no thread builds a top scope over the universe only to discard
@@ -524,6 +557,32 @@ fn render_library(
         })
 }
 
+/// An `experiment` annotation on a base class marks its descendants too: a
+/// library declares it once, on the partial example.
+fn inherit_experiment(classes: &mut [ClassDoc]) {
+    for index in 0..classes.len() {
+        if classes[index].experiment {
+            continue;
+        }
+        let mut at = index;
+        // Bounded rather than a visited set: a real chain is a link or two.
+        'chain: for _ in 0..16 {
+            for extends in &classes[at].extends {
+                let Some(base) = extends.base.filter(|&b| b != index) else {
+                    continue;
+                };
+                if classes[base].experiment {
+                    classes[index].experiment = true;
+                    break 'chain;
+                }
+                at = base;
+                continue 'chain;
+            }
+            break;
+        }
+    }
+}
+
 /// Take the graphics of the first class along the chain of aliases that has
 /// any, the alias itself never having been instantiated.
 fn inherit_graphics(classes: &[ClassDoc], digests: &mut [(Option<u128>, Option<u128>)]) {
@@ -563,6 +622,44 @@ fn skipped(name: &str, skip: &[String]) -> bool {
     })
 }
 
+/// The other documented versions of this class' library, and the page the
+/// class has in each -- the library's own page where the class is absent.
+fn version_links(
+    classes: &[ClassDoc],
+    class: usize,
+    copies: &HashMap<&str, Vec<usize>>,
+    pages: &HashMap<String, usize>,
+) -> Vec<html::VersionLink> {
+    let doc = &classes[class];
+    let library = doc.path[0].as_str();
+    let Some(roots) = copies.get(library) else {
+        return Vec::new();
+    };
+    roots
+        .iter()
+        .map(|&root| {
+            let tag = &classes[root].tag;
+            let mut name = match tag.is_empty() {
+                true => library.to_string(),
+                false => format!("{library}@{tag}"),
+            };
+            for segment in &doc.path[1..] {
+                name.push('.');
+                name.push_str(segment);
+            }
+            let target = pages.get(&name).copied().unwrap_or(root);
+            html::VersionLink {
+                label: classes[root]
+                    .installed_version()
+                    .unwrap_or(classes[root].version.as_str())
+                    .to_string(),
+                href: html::page_link(&classes[target]),
+                current: *tag == doc.tag,
+            }
+        })
+        .collect()
+}
+
 fn package_index(options: &Options, modelica_path: &str) -> PathBuf {
     if let Some(path) = &options.package_index {
         return path.clone();
@@ -571,11 +668,39 @@ fn package_index(options: &Options, modelica_path: &str) -> PathBuf {
     Path::new(first).join("index.json")
 }
 
+fn is_builtin(name: &str) -> bool {
+    name == "OpenModelica"
+}
+
+/// `OpenModelica` is not on the load path: the compiler defines it in the
+/// builtin files it parses at startup. Keep that class and drop the rest of
+/// the initial environment, which is the predefined types.
+fn load_builtin(name: &str) -> Result<Absyn::Program, &'static str> {
+    let program =
+        openmodelica_nf_api::NFInstanceAPI::builtinAbsyn().map_err(|_| "no builtin classes")?;
+    let classes: metamodelica::List<metamodelica::Ref<Absyn::Class>> = program
+        .classes
+        .iter()
+        .filter(|class| class.name.as_str() == name)
+        .cloned()
+        .collect();
+    if classes.is_empty() {
+        return Err("not a builtin class");
+    }
+    Ok(Absyn::Program {
+        classes,
+        within_: program.within_.clone(),
+    })
+}
+
 fn load_library(
     name: &str,
     version: Option<&str>,
     path: &str,
 ) -> Result<Absyn::Program, &'static str> {
+    if is_builtin(name) {
+        return load_builtin(name);
+    }
     let priority: metamodelica::List<ArcStr> = match version {
         Some(v) => std::iter::once(ArcStr::from(v)).collect(),
         None => metamodelica::nil(),
@@ -614,12 +739,15 @@ fn report(label: &str) {
 /// the two orderings need not agree. A name outside the documented set -- a
 /// builtin, or a library that was not loaded -- stays unlinked.
 fn link_names(classes: &mut [ClassDoc], resolved: Vec<icons::Resolved>) {
-    let index: HashMap<String, usize> = classes
+    // Keyed by the version too: two copies of a library declare the same
+    // qualified names, and a class links within its own copy.
+    let index: HashMap<(ArcStr, String), usize> = classes
         .iter()
         .enumerate()
-        .map(|(i, c)| (c.qualified_name(), i))
+        .map(|(i, c)| ((c.tag.clone(), c.qualified_name()), i))
         .collect();
     for (class, names) in classes.iter_mut().zip(resolved) {
+        let tag = class.tag.clone();
         let bases: HashMap<&str, &str> = names
             .bases
             .iter()
@@ -630,8 +758,14 @@ fn link_names(classes: &mut [ClassDoc], resolved: Vec<icons::Resolved>) {
             .iter()
             .map(|(name, full)| (name.as_str(), full.as_str()))
             .collect();
+        let lookup = |name: &str| {
+            index
+                .get(&(tag.clone(), name.to_string()))
+                .or_else(|| index.get(&(ArcStr::new(), name.to_string())))
+                .copied()
+        };
         let find = |table: &HashMap<&str, &str>, key: &str| {
-            table.get(key).and_then(|full| index.get(*full)).copied()
+            table.get(key).and_then(|full| lookup(full))
         };
         if let Some(derived) = class.derived.as_mut() {
             derived.base_class = find(&bases, &derived.base).or_else(|| {
@@ -646,7 +780,7 @@ fn link_names(classes: &mut [ClassDoc], resolved: Vec<icons::Resolved>) {
                         candidate.push('.');
                     }
                     candidate.push_str(&derived.base);
-                    index.get(&candidate).copied()
+                    lookup(&candidate)
                 })
             });
         }
@@ -691,9 +825,9 @@ fn run() -> Result<(), String> {
         .then(|| icons::Icons::new(&options.output_dir, &options.icons_dir))
         .transpose()
         .map_err(|e| e.to_string())?;
-    // In the order the classes are spliced: documented libraries first, then
-    // what they depend on.
-    let mut parts: Vec<icons::SCodeProgram> = Vec::new();
+    // `(version tag, library, SCode)`: the tag decides which universe the
+    // library's graphics are drawn against.
+    let mut parts: Vec<(ArcStr, String, icons::SCodeProgram)> = Vec::new();
     // Libraries are independent, so parse them at the same time. ClassLoader
     // already parses the files *within* one in parallel; this fills the cores
     // between libraries and for the many libraries too small to fill them on
@@ -718,7 +852,13 @@ fn run() -> Result<(), String> {
             .map(|(name, version)| {
                 load_library(name, version.as_deref(), &path).map(|program| {
                     let docs = doc::collect(&program);
-                    (docs, icons::translate(name, &program))
+                    // Already in every universe; a second copy of a
+                    // top-level class leaves the top scope unbuildable.
+                    let scode = match is_builtin(name) {
+                        true => metamodelica::nil(),
+                        false => icons::translate(name, &program),
+                    };
+                    (docs, scode)
                 })
             })
             .collect::<Vec<_>>()
@@ -728,11 +868,37 @@ fn run() -> Result<(), String> {
         Err(_) => load_all(),
     };
 
-    for ((name, _), result) in options.libraries.iter().zip(loaded) {
+    // A library named twice is documented twice. The first copy keeps the
+    // plain page names; the rest are tagged `Modelica@master.Blocks.html`.
+    let mut already: std::collections::HashSet<(&str, String)> = std::collections::HashSet::new();
+    for ((name, version), result) in options.libraries.iter().zip(loaded) {
         match result {
             Ok((mut loaded, scode)) => {
                 let offset = classes.len();
+                let loaded_version = loaded
+                    .iter()
+                    .find(|c| c.path.len() == 1)
+                    .and_then(|c| c.installed_version())
+                    .unwrap_or_default()
+                    .to_string();
+                // `Foo/1.0.0` resolves to whatever installed version provides
+                // it, which may be the one already documented.
+                if !already.insert((name.as_str(), loaded_version.clone())) {
+                    eprintln!("omgendoc: {name}: {loaded_version} is already documented");
+                    continue;
+                }
+                let first = !already.iter().any(|(n, v)| *n == name && *v != loaded_version);
+                let tag = if first {
+                    ArcStr::new()
+                } else {
+                    ArcStr::from(match (loaded_version.as_str(), version) {
+                        ("", Some(v)) => v.clone(),
+                        ("", None) => classes.len().to_string(),
+                        (v, _) => v.to_string(),
+                    })
+                };
                 for class in &mut loaded {
+                    class.tag = tag.clone();
                     for child in &mut class.children {
                         *child += offset;
                     }
@@ -748,7 +914,7 @@ fn run() -> Result<(), String> {
                         .map(|(i, _)| i + offset),
                 );
                 classes.extend(loaded);
-                parts.push(scode);
+                parts.push((tag, name.clone(), scode));
             }
             Err(e) => eprintln!("omgendoc: {name}: {e}"),
         }
@@ -759,14 +925,14 @@ fn run() -> Result<(), String> {
     if options.stats {
         report("all libraries parsed and translated");
     }
-    links::resolve_aliases(classes.iter().map(|c| c.qualified_name()));
+    links::resolve_aliases(classes.iter().map(|c| c.index_name()));
 
     let started = std::time::Instant::now();
     let find_dependencies = || dependencies(&classes, &path, options.stats);
-    parts.extend(match &loading {
+    let dependency_parts: Vec<icons::SCodeProgram> = match &loading {
         Ok(pool) => pool.install(find_dependencies),
         Err(_) => find_dependencies(),
-    });
+    };
     drop(loading);
     if options.stats {
         report(&format!(
@@ -776,8 +942,39 @@ fn run() -> Result<(), String> {
     }
 
     let joining = std::time::Instant::now();
-    let scode = icons::Scope::universe(&parts);
+    // One universe per tag: two versions declare the same top-level name, so
+    // a class is instantiated against its own. A tagged library replaces its
+    // untagged namesake throughout -- the master set is drawn against master.
+    let tags: Vec<ArcStr> = {
+        let mut tags: Vec<ArcStr> = vec![ArcStr::new()];
+        for (tag, _, _) in &parts {
+            if !tag.is_empty() && !tags.contains(tag) {
+                tags.push(tag.clone());
+            }
+        }
+        tags
+    };
+    let universes: HashMap<ArcStr, icons::SCodeProgram> = tags
+        .iter()
+        .filter_map(|tag| {
+            let replaced: Vec<&str> = parts
+                .iter()
+                .filter(|(t, _, _)| t == tag)
+                .map(|(_, library, _)| library.as_str())
+                .collect();
+            let chosen: Vec<icons::SCodeProgram> = dependency_parts
+                .iter()
+                .cloned()
+                .chain(parts.iter().filter_map(|(t, library, scode)| {
+                    let keep = t == tag || (t.is_empty() && !replaced.contains(&library.as_str()));
+                    keep.then(|| scode.clone())
+                }))
+                .collect();
+            icons::Scope::universe(&chosen).map(|universe| (tag.clone(), universe))
+        })
+        .collect();
     drop(parts);
+    drop(dependency_parts);
     if options.stats {
         report(&format!(
             "universe joined in {:.1} s",
@@ -787,7 +984,7 @@ fn run() -> Result<(), String> {
 
     let mut resolver = links::Resolver::default();
     for class in &classes {
-        resolver.add_class(&class.qualified_name(), &class.source_file);
+        resolver.add_class(&class.tag, &class.qualified_name(), &class.source_file);
     }
     let mut resolved: Vec<icons::Resolved> =
         (0..classes.len()).map(|_| icons::Resolved::default()).collect();
@@ -795,17 +992,18 @@ fn run() -> Result<(), String> {
         &options,
         &classes,
         &libraries,
-        scode.as_ref(),
+        &universes,
         &resolver,
         store.as_mut(),
         &mut resolved,
     );
-    drop(scode);
+    drop(universes);
     if options.stats {
         report("graphics rendered");
     }
 
     link_names(&mut classes, resolved);
+    inherit_experiment(&mut classes);
     inherit_graphics(&classes, &mut icon_digests);
 
     let footer = footer();
@@ -821,6 +1019,20 @@ fn run() -> Result<(), String> {
         })
         .collect();
 
+    let mut copies: HashMap<&str, Vec<usize>> = HashMap::new();
+    for &root in &libraries {
+        copies.entry(classes[root].name()).or_default().push(root);
+    }
+    copies.retain(|_, roots| roots.len() > 1);
+    let pages_by_name: HashMap<String, usize> = match copies.is_empty() {
+        true => HashMap::new(),
+        false => classes.iter().enumerate().map(|(i, c)| (c.index_name(), i)).collect(),
+    };
+
+    let playground = html::Playground {
+        url: options.playground.clone().unwrap_or_default(),
+        versions: options.playground_versions.clone(),
+    };
     let pages: Vec<html::Page> = classes
         .par_iter()
         .enumerate()
@@ -837,6 +1049,8 @@ fn run() -> Result<(), String> {
                 &children,
                 &class_graphics[i],
                 &child_icons,
+                &version_links(&classes, i, &copies, &pages_by_name),
+                &playground,
                 &resolver,
                 &footer,
             )
@@ -857,30 +1071,29 @@ fn run() -> Result<(), String> {
         }
     });
 
-    let requested: HashMap<&str, &str> = options
-        .libraries
-        .iter()
-        .filter_map(|(n, v)| v.as_deref().map(|v| (n.as_str(), v)))
-        .collect();
     let sources = packages::Sources::read(&package_index(&options, &path));
+    let tested = match &options.testing_conf {
+        Some(file) => packages::Tested::read(file),
+        None => packages::Tested::default(),
+    };
     let entries: Vec<html::LibraryEntry<'_>> = libraries
         .iter()
         .map(|&i| {
             let name = classes[i].name();
-            let version = requested
-                .get(name)
-                .copied()
-                .unwrap_or(classes[i].version.as_str());
+            let version = classes[i].installed_version().unwrap_or(classes[i].version.as_str());
             html::LibraryEntry {
                 doc: &classes[i],
                 icon: class_graphics[i].icon.clone(),
+                version: version.to_string(),
                 source: sources.url(name, version),
+                support: sources.support(name, version).unwrap_or_default().to_string(),
+                tested: tested.url(name, version),
             }
         })
         .collect();
     std::fs::write(
         options.output_dir.join("index.html"),
-        html::render_index(&entries, &footer),
+        html::render_index(&entries, &playground, &footer),
     )
     .map_err(|e| e.to_string())?;
     std::fs::write(
@@ -953,10 +1166,10 @@ fn write_assets(
         .par_iter()
         .zip(&members)
         .for_each(|(&root, members)| {
-            let name = classes[root].name();
+            let name = classes[root].index_name();
             let mut quoted = String::new();
-            index::escape(name, &mut quoted);
-            let file = links::plain_stem(name);
+            index::escape(&name, &mut quoted);
+            let file = links::plain_stem(&name);
             let write = |dir: &Path, kind: &str, body: String| {
                 let path = dir.join(format!("{file}.js"));
                 let content = format!("omdoc.{kind}({quoted},{body});\n");

@@ -30,21 +30,21 @@
   .editor-label { display:flex; align-items:center; gap:10px; }
   .editor-label > span { flex:1 1 auto; }
   .ex-select { text-transform:none; letter-spacing:normal; width:auto; min-width:0; max-width:60%;
-    background:#1b1b1b; color:var(--fg); border:1px solid var(--border); border-radius:4px;
+    background:var(--field); color:var(--fg); border:1px solid var(--border); border-radius:4px;
     padding:3px 6px; font:inherit; font-size:12px; }
   textarea {
     flex:1 1 auto; resize:none; border:0; outline:none; min-height:120px;
-    background:#1b1b1b; color:var(--fg); padding:10px 12px;
+    background:var(--field); color:var(--fg); padding:10px 12px;
     font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2;
   }
   /* log-scale tolerance stepper */
   .stepper { display:flex; align-items:stretch; gap:0; }
   .stepper input { text-align:center; border-radius:0; border-left:0; border-right:0; }
-  .stepper button { background:#1b1b1b; border:1px solid var(--border); color:var(--fg);
+  .stepper button { background:var(--field); border:1px solid var(--border); color:var(--fg);
     padding:0 9px; font-size:13px; border-radius:4px; }
   .stepper button:first-child { border-radius:4px 0 0 4px; }
   .stepper button:last-child { border-radius:0 4px 4px 0; }
-  .stepper button:hover { background:#2d2d30; }
+  .stepper button:hover { background:var(--hover); }
 
   /* Settings dialog: label above control, two fields per row, so the solver names
      and the tolerance stepper each get half the dialog instead of competing for it.
@@ -105,6 +105,37 @@
     body.docs-hidden .doc-expand { display:flex; flex:1 1 auto; align-items:flex-start;
       justify-content:center; width:100%; padding:10px 0; }
   }
+
+  /* Embedded in a documentation page (`?embed=1`): the page around it already
+     shows the source and the documentation, so the editor and the
+     documentation column go and the parameters keep the left column. */
+  body.embed .editor-label, body.embed #src { display:none; }
+  body.embed .docs, body.embed #run { display:none !important; }
+  body.embed #icPanel { max-height:none; }
+  /* The plot wants the room; the parameters are a preview of the model's own. */
+  @media (min-width:821px) and (orientation:landscape) {
+    body.embed main, body.docs-hidden.embed main { grid-template-columns:minmax(200px,20%) 1fr; }
+  }
+  .open-tab { display:none; }
+  body.embed .open-tab { display:inline-flex; align-items:center; gap:5px; }
+  /* A qualified class name is long and the frame is narrow: give it the row
+     and let the status and the controls have the next one. */
+  body.embed header { flex-wrap:wrap; row-gap:6px; }
+  body.embed header .title {
+    flex:1 0 100%; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  /* A check is a handful of lines: no editor column, no plot area, and the
+     report reads from the top left rather than floating in the middle. */
+  /* A check has no results and nothing to set, so no controls at all -- and
+     with none, the name and the verdict share the one row. */
+  body.embed.check .left, body.embed.check #exportFmu, body.embed.check #settingsBtn,
+  body.embed.check .open-tab, body.embed.check .dl { display:none !important; }
+  body.embed.check header .title { flex:0 1 auto; }
+  body.embed.check main { grid-template-columns:1fr !important; }
+  body.embed.check .charts-empty {
+    margin:0; align-self:stretch; text-align:left; padding:12px 14px;
+    white-space:pre-wrap; color:var(--fg);
+  }
 </style>
 <script type="importmap">
 { "imports": { "three": "../anim/three.module.min.js" } }
@@ -119,6 +150,8 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
   <button id="exportFmu" class="ghost" disabled title="Export an FMI 3.0 wasm FMU of the active model">Export FMU</button>
+  <a id="openTab" class="ghost open-tab" target="_blank" rel="noreferrer"
+     title="Open the simulator on its own: the source, every parameter and every variable">Open<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>
   <button id="run" disabled>Run</button>
   <span class="dl" id="downloadWrap" hidden>
     <button id="downloadRes" class="ghost icon-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
@@ -362,6 +395,39 @@ function call(worker, cmd, args) {
 }
 // `?driver=host|inwasm` overrides the simulation driver, for A/B'ing the two.
 const DRIVER_MODE = { host: 0, inwasm: 1 }[new URLSearchParams(location.search).get('driver')] ?? null;
+
+// `?class=Lib.Sub.Model&package=Lib&version=1.2.3&action=simulate|check&embed=1`
+// — what the generated library documentation links to. The package is what
+// gets installed, the class is what runs, and `embed` drops the panels the
+// documentation page around the frame already carries.
+const PARAMS = new URLSearchParams(location.search);
+const REQUEST = (() => {
+  const name = PARAMS.get('class');
+  if (!name) return null;
+  return {
+    name,
+    package: PARAMS.get('package') || name.split('.')[0],
+    version: PARAMS.get('version') || '',
+    action: PARAMS.get('action') === 'check' ? 'check' : 'simulate',
+  };
+})();
+const EMBED = PARAMS.get('embed') === '1';
+
+// `?theme=light|dark`, and `om-theme` afterwards: the embedding page decides.
+function applyTheme(theme) {
+  if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+  else delete document.documentElement.dataset.theme;
+}
+applyTheme(PARAMS.get('theme'));
+// What the MSL worker installs: the requested library, or the MSL by default.
+let LIBRARY = REQUEST
+  ? { name: REQUEST.package, version: REQUEST.version }
+  : { name: 'Modelica', version: '' };
+// Evaluating the final and protected parameters leaves the panel the ones a
+// reader could actually set, which is all a frame has room for.
+const INIT_FLAGS = EMBED
+  ? ['--evaluateFinalParameters=true', '--evaluateProtectedParameters=true']
+  : [];
 
 // Per-worker cancel control block (SharedArrayBuffer, needs the page's COOP/COEP
 // headers): each worker gets its own so cancelling an export never disturbs another
@@ -755,7 +821,48 @@ function showBuilding() {
   if (animView) animView.hide();
 }
 
+const showingCheck = (yes) => document.body.classList.toggle('check', !!yes);
+
+// The class is not an example, so what a reader can ask of it is whether it
+// translates and is balanced.
+async function checkClass(name) {
+  beginOp('Checking the model failed');
+  showBuilding();
+  showEmpty('Checking ' + name + '…');
+  setStatus('Checking ' + name + '…', 'busy');
+  mslJobStarted = true;
+  let worker;
+  try { if (!mslDone) statusFocus = w2; worker = await mslReady; }
+  catch (e) { return fail('' + e); } finally { statusFocus = null; }
+  let r;
+  try { r = await call(worker, 'checkModel', { name }); } catch (e) { return fail('' + e); }
+  if (!r.ok) return fail(r.error);
+  // checkModel reports nothing when it fails; the errors say why.
+  const lines = (r.report || '').trim().split('\n');
+  const verdict = lines.shift() || '';
+  const detail = [lines.join('\n').trim(), (r.errors || '').trim()].filter(Boolean).join('\n\n');
+  showEmpty(detail || verdict || 'checkModel said nothing.', !verdict);
+  // Embedded, the header already names the class and the frame has no row to
+  // spare for a verdict that only repeats it.
+  setStatus(verdict ? (EMBED ? '' : verdict) : 'Check of ' + name + ' failed.', verdict ? '' : 'err');
+}
+
+const askedExample = (name, action) => action === 'check'
+  ? { id: '__asked', label: name, check: name }
+  : { id: '__asked', label: name, library: name };
+
+// Say which class the page is showing, wherever its name appears.
+function nameAsked(name) {
+  document.title = 'OpenModelica — ' + name;
+  const title = document.querySelector('header .title');
+  if (title) title.textContent = name;
+  const option = [...exSel.options].find((o) => o.value === '__asked');
+  if (option) { option.textContent = name; exSel.value = '__asked'; }
+}
+
 async function selectExample(ex) {
+  showingCheck(ex.check);
+  if (ex.check) return checkClass(ex.check);
   beginOp('Loading the example failed');
   currentExample = ex;
   // An example may ask for DAE mode (config.json). Switching examples sets the box
@@ -809,7 +916,16 @@ async function loadConfig() {
   EXAMPLES = Array.isArray(cfg.examples) && cfg.examples.length ? cfg.examples : FALLBACK_CONFIG.examples;
   exSel.replaceChildren();
   for (const ex of EXAMPLES) { const o = document.createElement('option'); o.value = ex.id; o.textContent = ex.label; exSel.appendChild(o); }
-  currentExample = EXAMPLES.find((e) => e.id === cfg.defaultExample) || EXAMPLES[0];
+  if (REQUEST) {
+    // The asked-for class leads; the shipped examples stay reachable.
+    EXAMPLES = [askedExample(REQUEST.name, REQUEST.action), ...EXAMPLES];
+    const o = document.createElement('option');
+    o.value = '__asked'; o.textContent = REQUEST.name;
+    exSel.prepend(o);
+    nameAsked(REQUEST.name);
+  }
+  currentExample = (REQUEST && EXAMPLES[0])
+    || EXAMPLES.find((e) => e.id === cfg.defaultExample) || EXAMPLES[0];
   exSel.value = currentExample.id;
   // Pre-fill the editor with an inline default's source so it shows while the
   // compiler boots; library examples fill in after copyClass.
@@ -983,7 +1099,7 @@ function renderCharts() {
   charts.clear();
   buildColMap();
   const haveFigs = !!(modelFigures && modelFigures.length);
-  toggleBtn.style.display = haveFigs ? '' : 'none';
+  toggleBtn.style.display = haveFigs && !EMBED ? '' : 'none';
   const useFigs = haveFigs && viewMode !== 'all';
   toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
   if (useFigs) renderFigures(); else renderAllVariables();
@@ -1205,8 +1321,46 @@ autoDocs();
 
 exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id === exSel.value); if (ex) selectExample(ex); });
 
+// The documentation page keeps one frame and retargets it as the reader moves
+// between classes, so a second class costs no compiler boot. Another library
+// than the one installed does need the reload.
+window.addEventListener('message', (event) => {
+  const m = event.data;
+  if (m && m.type === 'om-theme') return applyTheme(m.theme);
+  if (!m || m.type !== 'om-load' || !m.class) return;
+  const pkg = m.package || m.class.split('.')[0];
+  if (pkg !== LIBRARY.name || (m.version || '') !== LIBRARY.version) {
+    const url = new URL(location.href);
+    url.search = new URLSearchParams({
+      class: m.class, package: pkg, version: m.version || '',
+      action: m.action === 'check' ? 'check' : 'simulate', embed: EMBED ? '1' : '0',
+      theme: document.documentElement.dataset.theme || '',
+    }).toString();
+    location.replace(url);
+    return;
+  }
+  const asked = askedExample(m.class, m.action);
+  EXAMPLES[0] = asked;
+  nameAsked(m.class);
+  if (EMBED) {
+    const full = new URL(location.href);
+    full.searchParams.delete('embed');
+    full.searchParams.set('class', m.class);
+    full.searchParams.set('action', m.action === 'check' ? 'check' : 'simulate');
+    el('openTab').href = full.toString();
+  }
+  selectExample(asked);
+});
+
 (async () => {
   try {
+    if (EMBED) {
+    document.body.classList.add('embed');
+    // The same page without `embed`: what a frame has no room for.
+    const full = new URL(location.href);
+    full.searchParams.delete('embed');
+    el('openTab').href = full.toString();
+  }
     await loadConfig();                             // examples + title, before the first run
 
     if (DRIVER_MODE !== null) log('sim driver forced to', DRIVER_MODE ? 'in-wasm' : 'host', '(?driver=)');
@@ -1218,13 +1372,13 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
     // loaded, if the user hasn't already asked for an MSL model, warm it with a
     // throwaway simulate so its first real run isn't cold (see mslJobStarted).
     mslReady = (async () => {
-      await call(w2, 'init'); await call(w2, 'installMSL'); mslDone = true; promote();
+      await call(w2, 'init', { flags: INIT_FLAGS }); await call(w2, 'installLibrary', LIBRARY); mslDone = true; promote();
       if (!mslJobStarted) call(w2, 'warmup').catch((e) => log('warmup failed', e));
       return w2;
     })();
     mslReady.catch((e) => log('MSL worker failed to initialise', e));
 
-    const v = await call(w1, 'init');
+    const v = await call(w1, 'init', { flags: INIT_FLAGS });
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     fillSolverMenus(v.solverOptions);
     fillCsSolvers(v.fmuCsSolvers);

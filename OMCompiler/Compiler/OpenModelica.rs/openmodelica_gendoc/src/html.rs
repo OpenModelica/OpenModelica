@@ -1,7 +1,9 @@
 //! Page rendering.
 
+use std::collections::{BTreeMap, HashMap};
+
 use crate::doc::{ClassDoc, Kind, Member};
-use crate::links::{Resolver, Resource, file_stem, uri_encode};
+use crate::links::{Resolver, Resource, file_stem, query_encode, uri_encode};
 
 pub struct Page {
     pub file: String,
@@ -58,6 +60,18 @@ fn description_html(s: &str) -> String {
     format!("{}{}", escape(&s[..at]), strip_html_tags(&s[at + 6..]))
 }
 
+/// The markup inside a documentation string, without the optional `<html>`
+/// wrapper: an `__OpenModelica_infoHeader` is markup whether or not it is
+/// wrapped, so `documentation_html`'s `<pre>` fallback does not apply.
+fn html_fragment(s: &str) -> &str {
+    let s = s.trim();
+    if s.to_ascii_lowercase().starts_with("<html>") {
+        strip_html_tags(&s[6..])
+    } else {
+        s
+    }
+}
+
 /// Drops a trailing `</html>`, which may or may not be there.
 fn strip_html_tags(s: &str) -> &str {
     let s = s.trim();
@@ -67,35 +81,142 @@ fn strip_html_tags(s: &str) -> &str {
     }
 }
 
-fn page_link(qualified_name: &str) -> String {
-    format!("{}.html", uri_encode(&file_stem(qualified_name)))
+pub struct Playground {
+    /// `{version}` stands for the build, so one address covers them all.
+    pub url: String,
+    /// First is the one a page starts on.
+    pub versions: Vec<String>,
 }
 
-fn breadcrumb(doc: &ClassDoc) -> String {
+impl Playground {
+    fn at(&self, version: &str) -> String {
+        self.url.replace("{version}", version)
+    }
+}
+
+/// Run it if it is an example, check that it translates otherwise.
+fn run_card(classes: &[ClassDoc], class: usize, playground: &Playground) -> String {
+    let doc = &classes[class];
+    if playground.url.is_empty()
+        || playground.versions.is_empty()
+        || doc.partial
+        || !matches!(doc.restriction.as_str(), "model" | "block")
+    {
+        return String::new();
+    }
+    let mut root = class;
+    while let Some(parent) = classes[root].parent {
+        root = parent;
+    }
+    let library = classes[root].name();
+    let version = classes[root]
+        .installed_version()
+        .unwrap_or(classes[root].version.as_str());
+    let name = doc.qualified_name();
+    let (action, label) = match doc.experiment {
+        true => ("simulate", "Simulate in your browser"),
+        false => ("check", "Check in your browser"),
+    };
+    let query = format!(
+        "class={}&package={}&version={}&action={action}&embed=1",
+        query_encode(&name),
+        query_encode(library),
+        query_encode(version)
+    );
+    // An <a> rather than a button: without scripting it still reaches the
+    // simulator, and the script turns a plain click into a frame on the page.
+    format!(
+        "<section class=\"om-run\" data-playground=\"{}\" data-query=\"{query}\" \
+         data-versions=\"{}\" title=\"{}\">\
+         <a class=\"om-run-start\" href=\"{}?{query}\">\u{25B6} {label}</a>\
+         </section>",
+        escape(&playground.url),
+        escape(&playground.versions.join(",")),
+        escape(&format!("{library} {version}").trim_end()),
+        escape(&playground.at(&playground.versions[0])),
+        query = escape(&query)
+    )
+}
+
+/// A documented version of this page's library, and where the class lands
+/// in it.
+pub struct VersionLink {
+    pub label: String,
+    pub href: String,
+    pub current: bool,
+}
+
+pub fn page_link(doc: &ClassDoc) -> String {
+    format!("{}.html", uri_encode(&file_stem(&doc.index_name())))
+}
+
+fn version_picker(versions: &[VersionLink]) -> String {
+    if versions.len() < 2 {
+        return String::new();
+    }
+    let mut out = String::from(
+        "<select class=\"om-versions\" id=\"om-version\" aria-label=\"Version\">",
+    );
+    for version in versions {
+        out.push_str(&format!(
+            "<option value=\"{}\"{}>{}</option>",
+            escape(&version.href),
+            if version.current { " selected" } else { "" },
+            escape(&version.label)
+        ));
+    }
+    out.push_str("</select>");
+    out
+}
+
+fn breadcrumb(classes: &[ClassDoc], class: usize, versions: &[VersionLink]) -> String {
+    let doc = &classes[class];
+    let mut ancestors: Vec<usize> = Vec::new();
+    let mut at = doc.parent;
+    while let Some(i) = at {
+        ancestors.push(i);
+        at = classes[i].parent;
+    }
+    ancestors.reverse();
     let mut out = String::from("<nav class=\"om-crumbs\"><a href=\"index.html\">Libraries</a>");
-    let mut prefix = String::new();
-    for (i, segment) in doc.path.iter().enumerate() {
-        if i > 0 {
-            prefix.push('.');
+    let picker = version_picker(versions);
+    for (depth, &i) in ancestors.iter().enumerate() {
+        out.push_str(&format!(
+            "<span class=\"om-sep\">.</span><a href=\"{}\">{}</a>",
+            page_link(&classes[i]),
+            escape(classes[i].name())
+        ));
+        if depth == 0 {
+            out.push_str(&picker);
         }
-        prefix.push_str(segment);
-        if i + 1 == doc.path.len() {
-            out.push_str(&format!(
-                "<span class=\"om-sep\">.</span><span class=\"om-current\">{}</span>",
-                escape(segment)
-            ));
-        } else {
-            out.push_str(&format!(
-                "<span class=\"om-sep\">.</span><a href=\"{}\">{}</a>",
-                page_link(&prefix),
-                escape(segment)
-            ));
-        }
+    }
+    out.push_str(&format!(
+        "<span class=\"om-sep\">.</span><span class=\"om-current\">{}</span>",
+        escape(doc.name())
+    ));
+    if ancestors.is_empty() {
+        out.push_str(&picker);
     }
     out.push_str("</nav>");
     out
 }
 
+
+/// `__OpenModelica_infoHeader` belongs in `<head>`, and is inherited from the
+/// enclosing packages outwards, as OMEdit's documentation view does it.
+fn info_header(classes: &[ClassDoc], class: usize) -> String {
+    let mut chain = Vec::new();
+    let mut at = Some(class);
+    while let Some(i) = at {
+        let fragment = html_fragment(&classes[i].info_header);
+        if !fragment.is_empty() {
+            chain.push(fragment);
+        }
+        at = classes[i].parent;
+    }
+    chain.reverse();
+    chain.join("\n")
+}
 
 pub fn render_class(
     classes: &[ClassDoc],
@@ -103,15 +224,22 @@ pub fn render_class(
     children: &[&ClassDoc],
     graphics: &Graphics,
     child_icons: &[Option<String>],
+    versions: &[VersionLink],
+    playground: &Playground,
     resolver: &Resolver,
     footer: &str,
 ) -> Page {
     let doc = &classes[class];
     let mut resources = Vec::new();
     let name = doc.qualified_name();
+    let index_name = doc.index_name();
+    let rewrite = |html: &str, resources: &mut Vec<Resource>| {
+        resolver.rewrite_in(&doc.tag, "", html, resources)
+    };
+    let library = index_name[..index_name.find('.').unwrap_or(index_name.len())].to_string();
     let mut body = String::with_capacity(4096);
 
-    body.push_str(&header(&breadcrumb(doc)));
+    body.push_str(&header(&breadcrumb(classes, class, versions), playground));
 
     let icon = match &graphics.icon {
         Some(url) => format!(
@@ -128,7 +256,7 @@ pub fn render_class(
     if !doc.comment.is_empty() {
         body.push_str(&format!(
             "<div class=\"om-summary\">{}</div>\n",
-            resolver.rewrite(&description_html(&doc.comment), &mut resources)
+            rewrite(&description_html(&doc.comment), &mut resources)
         ));
     }
     if !doc.version.is_empty() {
@@ -138,24 +266,38 @@ pub fn render_class(
         ));
     }
 
-    if let Some(diagram) = &graphics.diagram {
-        body.push_str(&format!(
-            "<div class=\"om-graphics\"><img class=\"om-diagram\" src=\"{}\" \
-             alt=\"Diagram of {}\" loading=\"lazy\"></div>\n",
-            uri_encode(diagram),
-            escape(doc.name())
-        ));
+    if doc.parent.is_none() {
+        body.push_str(&uses_line(classes, class));
     }
 
+    let diagram = match &graphics.diagram {
+        // The <img> is what a reader without scripting gets, and what the
+        // offline copy shows: `gendoc.js` fetches the same file and swaps in
+        // the live markup, which file:// forbids.
+        Some(url) => format!(
+            "<div class=\"om-graphics\" data-diagram=\"{url}\"><img class=\"om-diagram\" \
+             src=\"{url}\" alt=\"Diagram of {}\" loading=\"lazy\">\
+             <a class=\"om-diagram-open\" href=\"{url}\" target=\"_blank\" rel=\"noreferrer\" \
+             title=\"Open the diagram on its own (right-click to save it)\">\
+             <svg viewBox=\"0 0 24 24\" role=\"img\" fill=\"none\" stroke=\"currentColor\" \
+             stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\
+             <title>Open the diagram</title><path d=\"M14 4h6v6\"/><path d=\"M20 4l-8 8\"/>\
+             <path d=\"M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5\"/></svg></a></div>",
+            escape(doc.name()),
+            url = uri_encode(url)
+        ),
+        None => String::new(),
+    };
+    let run = run_card(classes, class, playground);
+    if !diagram.is_empty() || !run.is_empty() {
+        body.push_str(&format!("<div class=\"om-figure\">{diagram}{run}</div>\n"));
+    }
     body.push_str(&extends_line(classes, doc));
     body.push_str(&derived_line(classes, doc));
 
-    if !doc.info_header.is_empty() {
-        body.push_str(&resolver.rewrite(&documentation_html(&doc.info_header), &mut resources));
-    }
     if !doc.info.is_empty() {
         body.push_str("<section id=\"info\"><h2>Information</h2>\n");
-        body.push_str(&resolver.rewrite(&documentation_html(&doc.info), &mut resources));
+        body.push_str(&rewrite(&documentation_html(&doc.info), &mut resources));
         body.push_str("</section>\n");
     }
 
@@ -184,7 +326,7 @@ pub fn render_class(
             body.push_str(&format!(
                 "<tr><td class=\"om-name\">{}<a href=\"{}\">{}</a>{}</td><td>{}</td></tr>\n",
                 icon_tag,
-                page_link(&child.qualified_name()),
+                page_link(child),
                 escape(child.name()),
                 badge,
                 description_html(&child.comment)
@@ -195,7 +337,7 @@ pub fn render_class(
 
     if !doc.revisions.is_empty() {
         body.push_str("<section id=\"revisions\"><h2>Revisions</h2>\n");
-        body.push_str(&resolver.rewrite(&documentation_html(&doc.revisions), &mut resources));
+        body.push_str(&rewrite(&documentation_html(&doc.revisions), &mut resources));
         body.push_str("</section>\n");
     }
 
@@ -203,10 +345,68 @@ pub fn render_class(
     body.push_str(footer);
 
     Page {
-        file: format!("{}.html", file_stem(&name)),
-        html: document(&name, doc.path[0].as_str(), &name, &body),
+        file: format!("{}.html", file_stem(&index_name)),
+        html: document(
+            &name,
+            &library,
+            &index_name,
+            &rewrite(&info_header(classes, class), &mut resources),
+            &body,
+        ),
         resources,
     }
+}
+
+/// What `uses` declares, plus any other library the classes' base classes or
+/// component types resolve into. Only a declared dependency has a version.
+fn uses_line(classes: &[ClassDoc], class: usize) -> String {
+    let library = classes[class].name();
+    let tag = &classes[class].tag;
+    let mut needed: BTreeMap<&str, &str> = classes[class]
+        .uses
+        .iter()
+        .map(|(name, version)| (name.as_str(), version.as_str()))
+        .collect();
+    let own = |c: &&ClassDoc| c.path[0] == library && c.tag == *tag;
+    for c in classes.iter().filter(own) {
+        let targets = c
+            .extends
+            .iter()
+            .filter_map(|e| e.base)
+            .chain(c.components.iter().filter_map(|c| c.type_class))
+            .chain(c.derived.iter().filter_map(|d| d.base_class));
+        for target in targets {
+            let other = classes[target].path[0].as_str();
+            if other != library {
+                needed.entry(other).or_default();
+            }
+        }
+    }
+    if needed.is_empty() {
+        return String::new();
+    }
+    // Its own version of a dependency where there is one.
+    let mut page: HashMap<&str, usize> = HashMap::new();
+    for (i, c) in classes.iter().enumerate().filter(|(_, c)| c.path.len() == 1) {
+        if c.tag == *tag || !page.contains_key(c.name()) {
+            page.insert(c.name(), i);
+        }
+    }
+    let parts: Vec<String> = needed
+        .iter()
+        .map(|(name, version)| {
+            let text = match page.get(name) {
+                Some(&i) => format!("<a href=\"{}\">{}</a>", page_link(&classes[i]), escape(name)),
+                None => escape(name),
+            };
+            if version.is_empty() {
+                text
+            } else {
+                format!("{text} {}", escape(version))
+            }
+        })
+        .collect();
+    format!("<p class=\"om-uses\">Uses {}.</p>\n", parts.join(", "))
 }
 
 fn extends_line(classes: &[ClassDoc], doc: &ClassDoc) -> String {
@@ -216,7 +416,7 @@ fn extends_line(classes: &[ClassDoc], doc: &ClassDoc) -> String {
         let link = match extends.base {
             Some(base) => format!(
                 "<a href=\"{}\">{text}</a>",
-                page_link(&classes[base].qualified_name())
+                page_link(&classes[base])
             ),
             None => text,
         };
@@ -248,7 +448,7 @@ fn derived_line(classes: &[ClassDoc], doc: &ClassDoc) -> String {
     let base = match derived.base_class {
         Some(target) => format!(
             "<a href=\"{}\">{text}</a>",
-            page_link(&classes[target].qualified_name())
+            page_link(&classes[target])
         ),
         None => text,
     };
@@ -407,22 +607,24 @@ fn member_table(
         let type_cell = match component.type_class {
             Some(target) => format!(
                 "<a href=\"{}\">{type_text}</a>",
-                page_link(&classes[target].qualified_name())
+                page_link(&classes[target])
             ),
             None => type_text,
         };
         let from = match member.inherited_from {
             Some(base) => format!(
                 " <a class=\"om-from\" href=\"{}\" title=\"Inherited from {}\">(from {})</a>",
-                page_link(&classes[base].qualified_name()),
+                page_link(&classes[base]),
                 escape(&classes[base].qualified_name()),
                 escape(classes[base].name())
             ),
             None => String::new(),
         };
         out.push_str(&format!(
-            "<tr><td class=\"om-type\">{type_cell}{}</td><td class=\"om-name\">{}{from}</td>\
+            "<tr id=\"c-{}\"><td class=\"om-type\">{type_cell}{}</td>\
+             <td class=\"om-name\">{}{from}</td>\
              <td class=\"om-default\">{}</td><td>{}</td></tr>\n",
+            escape(&component.name),
             escape(&component.dims),
             escape(&component.name),
             escape(&component.default),
@@ -436,13 +638,93 @@ fn member_table(
 pub struct LibraryEntry<'a> {
     pub doc: &'a ClassDoc,
     pub icon: Option<String>,
+    /// The version it was loaded from, as the package index names it.
+    pub version: String,
     pub source: Option<String>,
+    /// The package index' support level, or empty when it records none.
+    pub support: String,
+    /// The OpenModelicaLibraryTesting report for this version.
+    pub tested: Option<String>,
 }
 
-pub fn render_index(libraries: &[LibraryEntry<'_>], footer: &str) -> String {
+/// The package index' support levels, best first, with the label to show.
+const SUPPORT_LEVELS: [(&str, &str); 5] = [
+    ("fullSupport", "Full"),
+    ("support", "Supported"),
+    ("experimental", "Experimental"),
+    ("obsolete", "Obsolete"),
+    ("noSupport", "Unsupported"),
+];
+
+fn support_label(level: &str) -> &str {
+    SUPPORT_LEVELS
+        .iter()
+        .find(|(key, _)| *key == level)
+        .map_or("", |(_, label)| *label)
+}
+
+/// A light rather than a word: the description wants the width.
+fn support_light(level: &str) -> String {
+    let label = support_label(level);
+    if label.is_empty() {
+        return String::new();
+    }
+    format!(
+        "<span class=\"om-light\" data-support=\"{}\" role=\"img\" \
+         aria-label=\"{label}\" title=\"{label}\"></span>",
+        escape(level)
+    )
+}
+
+/// `4.1.0+maint.om` is mostly build metadata; the hover has the whole of it.
+fn short_version(version: &str) -> String {
+    match version.split_once('+') {
+        Some((release, _)) => format!(
+            "<abbr title=\"{}\">{}+</abbr>",
+            escape(version),
+            escape(release)
+        ),
+        None => escape(version),
+    }
+}
+
+const REPORT_MARK: &str = "<svg class=\"om-mark\" viewBox=\"0 0 16 16\" role=\"img\" \
+    fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\">\
+    <title>Test report</title><path d=\"M2 14h12\"/><path d=\"M4.5 14V9\"/>\
+    <path d=\"M8 14V4\"/><path d=\"M11.5 14V7\"/></svg>";
+
+/// One chip per level, plus `All`. `gendoc.js` hides the rows that do not
+/// match the chosen `data-support`.
+fn support_filter(libraries: &[LibraryEntry<'_>]) -> String {
+    let present: Vec<&(&str, &str)> = SUPPORT_LEVELS
+        .iter()
+        .filter(|(key, _)| libraries.iter().any(|l| l.support == *key))
+        .collect();
+    if present.len() < 2 {
+        return String::new();
+    }
+    let mut out = String::from(
+        "<div class=\"om-filter\" id=\"om-filter\" role=\"group\" aria-label=\"Filter by support level\">\
+         <button type=\"button\" class=\"om-chip om-chip-on\" data-support=\"\">All</button>",
+    );
+    for (key, label) in present {
+        out.push_str(&format!(
+            "<button type=\"button\" class=\"om-chip\" data-support=\"{key}\">{label}</button>"
+        ));
+    }
+    out.push_str("</div>\n");
+    out
+}
+
+pub fn render_index(
+    libraries: &[LibraryEntry<'_>],
+    playground: &Playground,
+    footer: &str,
+) -> String {
     let mut body = String::with_capacity(8192);
     body.push_str(&header(
         "<nav class=\"om-crumbs\"><span class=\"om-current\">Libraries</span></nav>",
+        playground,
     ));
     body.push_str("<h1>Modelica Library Documentation</h1>\n");
     body.push_str(
@@ -452,10 +734,16 @@ pub fn render_index(libraries: &[LibraryEntry<'_>], footer: &str) -> String {
          library's own project and compiler problems to \
          <a href=\"https://github.com/OpenModelica/OpenModelica/issues\">OpenModelica</a>.</p>\n",
     );
+    body.push_str(&support_filter(libraries));
+    let tested_column = libraries.iter().any(|l| l.tested.is_some());
     body.push_str(
-        "<table class=\"om-contents\"><thead><tr><th>Library</th><th>Description</th>\
-         <th>Version</th><th>Source</th></tr></thead><tbody>\n",
+        "<table class=\"om-contents om-libraries\"><thead><tr><th>Library</th>\
+         <th>Description</th><th>Version</th><th class=\"om-wide\">Support</th>",
     );
+    if tested_column {
+        body.push_str("<th class=\"om-wide\">Tested</th>");
+    }
+    body.push_str("<th>Source</th></tr></thead><tbody>\n");
     for entry in libraries {
         let icon_tag = match &entry.icon {
             Some(path) => format!(
@@ -472,19 +760,32 @@ pub fn render_index(libraries: &[LibraryEntry<'_>], footer: &str) -> String {
             ),
             None => String::new(),
         };
+        let tested = match (tested_column, &entry.tested) {
+            (false, _) => String::new(),
+            (true, Some(url)) => format!(
+                "<td class=\"om-wide om-source\"><a href=\"{}\" rel=\"noreferrer\" \
+                 title=\"OpenModelicaLibraryTesting report\">{REPORT_MARK}</a></td>",
+                escape(url)
+            ),
+            (true, None) => String::from("<td class=\"om-wide\"></td>"),
+        };
         body.push_str(&format!(
-            "<tr><td class=\"om-name\">{}<a href=\"{}\">{}</a></td><td>{}</td><td>{}</td>\
+            "<tr data-support=\"{}\"><td class=\"om-name\">{}<a href=\"{}\">{}</a></td>\
+             <td>{}</td><td class=\"om-libversion\">{}</td>\
+             <td class=\"om-wide om-light-cell\">{}</td>{tested}\
              <td class=\"om-source\">{source}</td></tr>\n",
+            escape(&entry.support),
             icon_tag,
-            page_link(&entry.doc.qualified_name()),
+            page_link(entry.doc),
             escape(entry.doc.name()),
             description_html(&entry.doc.comment),
-            escape(&entry.doc.version)
+            short_version(&entry.version),
+            support_light(&entry.support)
         ));
     }
     body.push_str("</tbody></table>\n</main>\n");
     body.push_str(footer);
-    document("Modelica Library Documentation", "", "", &body)
+    document("Modelica Library Documentation", "", "", "", &body)
 }
 
 fn source_host(url: &str) -> &str {
@@ -522,15 +823,35 @@ fn source_mark(host: &str) -> String {
     )
 }
 
-fn header(crumbs: &str) -> String {
+/// Which build a runnable class opens in, chosen once for the whole visit.
+fn build_picker(playground: &Playground) -> String {
+    if playground.url.is_empty() || playground.versions.len() < 2 {
+        return String::new();
+    }
+    let mut out = String::from(
+        "<label class=\"om-build\">OMC<select id=\"om-build\" \
+         title=\"Which build of the compiler a class runs in\">",
+    );
+    for version in &playground.versions {
+        out.push_str(&format!(
+            "<option value=\"{0}\">{0}</option>",
+            escape(version)
+        ));
+    }
+    out.push_str("</select></label>");
+    out
+}
+
+fn header(crumbs: &str, playground: &Playground) -> String {
     format!(
         "<header class=\"om-header\">\
          <button type=\"button\" id=\"om-sidebar-toggle\" class=\"om-iconbutton\" \
          aria-label=\"Show the library browser\" title=\"Library browser\">\u{2630}</button>\
-         {crumbs}\
+         {crumbs}{}\
          <button type=\"button\" id=\"om-theme\" class=\"om-iconbutton\" \
          aria-label=\"Theme\">\u{263C}</button>\
-         </header>\n<main id=\"om-main\">\n"
+         </header>\n<main id=\"om-main\">\n",
+        build_picker(playground)
     )
 }
 
@@ -549,9 +870,10 @@ const SIDEBAR: &str = "<aside class=\"om-sidebar\" id=\"om-sidebar\">\
     spellcheck=\"false\" placeholder=\"Search classes and text\" \
     aria-label=\"Search classes and documentation text\" disabled>\
     <nav class=\"om-nav\" id=\"om-nav\"><p class=\"om-loading\">loading\u{2026}</p></nav>\
-    </aside>";
+    </aside>\
+    <div class=\"om-backdrop\" id=\"om-backdrop\"></div>";
 
-fn document(title: &str, library: &str, class: &str, body: &str) -> String {
+fn document(title: &str, library: &str, class: &str, head: &str, body: &str) -> String {
     format!(
         "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n\
          <meta charset=\"utf-8\">\n\
@@ -559,12 +881,18 @@ fn document(title: &str, library: &str, class: &str, body: &str) -> String {
          <title>{title}</title>\n\
          <link rel=\"stylesheet\" href=\"style.css\">\n\
          {THEME_BOOTSTRAP}\n\
+         {head}\
          </head>\n<body data-library=\"{library}\" data-class=\"{class}\">\n\
          <div class=\"om-shell\">{SIDEBAR}<div class=\"om-content\">\n\
          {body}</div></div>\n\
          <script src=\"index/aliases.js\" defer></script>\n\
          <script src=\"assets/gendoc.js\" defer></script>\n\
          </body>\n</html>\n",
+        head = if head.is_empty() {
+            String::new()
+        } else {
+            format!("{head}\n")
+        },
         title = escape(title),
         library = escape(library),
         class = escape(class)

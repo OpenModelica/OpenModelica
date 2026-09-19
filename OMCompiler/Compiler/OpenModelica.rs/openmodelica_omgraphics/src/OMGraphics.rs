@@ -1575,6 +1575,10 @@ pub fn diagram_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -
         let sx = (placement.x2 - placement.x1) / (ex2 - ex1);
         let sy = (placement.y2 - placement.y1) / (ey2 - ey1);
         svg.push_str("    <g");
+        svg.push_str(&format!(
+            " data-component=\"{}\"",
+            escape_xml(&component.get("name").as_str())
+        ));
         if placement.rotation != 0.0 {
             svg.push_str(&format!(
                 " transform=\"rotate({} {} {})\"",

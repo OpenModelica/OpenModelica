@@ -65,7 +65,15 @@ pub fn tree(classes: &[ClassDoc], members: &[usize], icons: &[Option<String>]) -
 
     let mut out = String::with_capacity(members.len() * 64);
     out.push_str("{\"n\":");
-    string_array(members.iter().map(|&c| classes[c].name()), &mut out);
+    // The root carries its tag, so the script rebuilds a second copy's page
+    // names as `Modelica@master.Blocks`.
+    string_array(
+        members.iter().map(|&c| match classes[c].path.len() {
+            1 => classes[c].index_name(),
+            _ => classes[c].name().to_string(),
+        }),
+        &mut out,
+    );
     out.push_str(",\"p\":[");
     for (i, parent) in parents.iter().enumerate() {
         if i > 0 {
@@ -224,11 +232,16 @@ pub fn libraries(
             out.push(',');
         }
         out.push_str("{\"n\":");
-        escape(classes[root].name(), &mut out);
+        escape(&classes[root].index_name(), &mut out);
         out.push_str(",\"d\":");
         escape(&crate::doc::description_text(&classes[root].comment), &mut out);
         out.push_str(",\"v\":");
-        escape(&classes[root].version, &mut out);
+        escape(
+            classes[root]
+                .installed_version()
+                .unwrap_or(classes[root].version.as_str()),
+            &mut out,
+        );
         out.push_str(",\"c\":");
         out.push_str(&count.to_string());
         out.push_str(",\"ic\":");

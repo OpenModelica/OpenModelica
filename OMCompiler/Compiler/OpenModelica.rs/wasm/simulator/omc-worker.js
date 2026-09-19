@@ -328,6 +328,7 @@ self.onmessage = async (ev) => {
         // so this API call is how the option gets set (models may still opt in via
         // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
         omc_eval('setCommandLineOptions("-d=visxml")');
+        for (const flag of a.flags || []) omc_eval(`setCommandLineOptions("${esc(flag)}")`);
         reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options(),
                 fmuCsSolvers: omc_fmu_cs_solvers(), fmuPlatforms: fmuAot ? omc_fmu_platforms() : [] });
         break;
@@ -342,11 +343,23 @@ self.onmessage = async (ev) => {
         reply({ ok: true });
         break;
       }
-      case 'installMSL': {
-        await evalWithDownloads('installPackage(Modelica)', status);
-        status('Loading Modelica library…');
-        await evalWithDownloads('loadModel(Modelica)', status);   // into the symbol table (list/simulate by name)
+      case 'installLibrary': {
+        // A version pins both calls: installPackage puts that release in the
+        // VFS, loadModel makes it resolvable by name, and without the priority
+        // it would take whichever release is already there.
+        const name = a.name || 'Modelica';
+        const exact = a.version ? `, "${esc(a.version)}", exactMatch=true` : '';
+        const priority = a.version ? `, {"${esc(a.version)}"}` : '';
+        await evalWithDownloads(`installPackage(${name}${exact})`, status);
+        status('Loading ' + name + '…');
+        await evalWithDownloads(`loadModel(${name}${priority})`, status);
         reply({ ok: true, message: omc_eval('getErrorString()').trim() });
+        break;
+      }
+      case 'checkModel': {
+        const report = unquote(await evalWithDownloads(`checkModel(${a.name})`, status));
+        const errors = unquote(omc_eval('getErrorString()'));
+        reply({ ok: true, report, errors });
         break;
       }
       case 'loadSource': {

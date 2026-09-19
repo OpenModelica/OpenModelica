@@ -81,6 +81,7 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     // instance, then drops the top scope.
     "BackendInterface.initializeWithoutBackend",
     "NFInstanceAPI.mkTop",
+    "NFInstanceAPI.builtinAbsyn",
     "NFInstanceAPI.builtinSCode",
     "NFInstanceAPI.programSCode",
     "NFInstanceAPI.topFromSCode",
