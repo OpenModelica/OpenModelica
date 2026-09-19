@@ -106,9 +106,7 @@ pub fn digest(content: &str) -> u128 {
     (half(1) << 64) | half(2)
 }
 
-/// One library's SCode. `translateAbsyn2SCode` maps over the top-level classes
-/// with nothing carried between them, so this runs on whichever thread parsed
-/// the library and its Absyn is freed as soon as this returns.
+/// One library's SCode, translated on whichever thread parsed it.
 pub fn translate(name: &str, program: &Absyn::Program) -> SCodeProgram {
     match openmodelica_nf_api::NFInstanceAPI::programSCode(program.clone()) {
         Ok(scode) => scode,
@@ -129,8 +127,7 @@ pub type SCodeProgram =
     metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>;
 
 impl Scope {
-    /// The builtin classes and every library's SCode as one program, which is
-    /// what a top scope is built over.
+    /// The builtin classes and every library's SCode as one program.
     pub fn universe(parts: &[SCodeProgram]) -> Option<SCodeProgram> {
         let builtin = openmodelica_nf_api::NFInstanceAPI::builtinSCode().ok()?;
         Some(

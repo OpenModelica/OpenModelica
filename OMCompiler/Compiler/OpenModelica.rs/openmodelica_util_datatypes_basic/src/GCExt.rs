@@ -39,13 +39,10 @@ pub fn expandHeap(sz: metamodelica::Real) -> bool {
 
 pub fn free<T>(data: T) {}
 
-// MetaModelica `GCExt.gcollect` maps to one run of the cycle collector: the
-// refcounted heap frees acyclic garbage eagerly on its own, so an explicit
-// collection only needs to reclaim cycles closed through mutable cells.
-
 /// `OPENMODELICA_GC_CYCLE_LOG=1`: report which types were actually on a
 /// reclaimed cycle. A static analysis cannot answer this — it sees a cycle
 /// wherever two types refer to each other, even when the values form a tree.
+#[cfg(feature = "cycle-collect")]
 fn collect_reporting() {
     if std::env::var_os("OPENMODELICA_GC_CYCLE_LOG").is_none() {
         metamodelica::gc::collect();
@@ -95,13 +92,18 @@ fn report_cell_sample() {
     }
 }
 
+/// The refcounted heap frees as ownership ends, so a collection only reclaims
+/// cycles closed through mutable cells, and costs a shadow graph the size of
+/// the live heap to look for them.
 pub fn gcollect() {
-    // The shadow graph costs O(live heap) on top of it, and
-    // `Interactive.evaluate2` calls this from its out-of-memory recovery.
-    if metamodelica::heap_limit::recovering() {
-        return;
+    #[cfg(feature = "cycle-collect")]
+    {
+        // `Interactive.evaluate2` calls this from its out-of-memory recovery.
+        if metamodelica::heap_limit::recovering() {
+            return;
+        }
+        collect_reporting();
     }
-    collect_reporting();
     report_cell_stats();
     report_cell_sample();
 }
