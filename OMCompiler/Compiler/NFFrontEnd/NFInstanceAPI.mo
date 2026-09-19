@@ -540,13 +540,14 @@ end resolveOne;
 
 public function clearTopScopeCache
   "Drop everything the last instantiation owns, so a batch caller can release a
-   library when it is done with it. NF nodes refer upwards weakly, so
-   `nfTopScope` is the only owner of the instantiated classes; makeTopNode
-   resets it, but not until the next instantiation."
+   library when it is done with it. NF nodes refer upwards weakly: what owns
+   them is `nfTopScope` and MutableWeak's set of identity cells, and makeTopNode
+   replaces those only at the next instantiation."
 algorithm
   setGlobalRoot(Global.instNFNodeCacheIndex, {});
   setGlobalRoot(Global.nfTopScope, {});
   setGlobalRoot(Global.nfDiagramIconCache, NONE());
+  MutableWeak.clearRoots();
 end clearTopScopeCache;
 
 public function iconJSONFromTop

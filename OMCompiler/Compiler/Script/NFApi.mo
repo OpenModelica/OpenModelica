@@ -448,6 +448,16 @@ algorithm
   end if;
 end mkFullyQual;
 
+public function clearCache
+  "Release every tree the instance API is holding. A session that has dropped
+   its program otherwise keeps its last models instantiated until something
+   instantiates again."
+algorithm
+  setGlobalRoot(Global.instNFInstCacheIndex, {});
+  setGlobalRoot(Global.instNFLookupCacheIndex, {});
+  NFInstanceAPI.clearTopScopeCache();
+end clearCache;
+
 protected
 function frontEndFront
   input Absyn.Program absynProgram;

@@ -71,9 +71,9 @@ impl Default for Roots {
     }
 }
 
-/// `OPENMODELICA_ROOT_STATS=1` reports what a set is holding when it is
-/// replaced: how much of it the owning structure is the last reference to, and
-/// how much of that something still names weakly.
+/// `OPENMODELICA_ROOT_STATS=1` reports what a set is holding when it goes: how
+/// much of it the owning structure is the last reference to, and how much of
+/// that something still names weakly.
 fn report(roots: &Roots, what: &str) {
     if std::env::var_os("OPENMODELICA_ROOT_STATS").is_some() {
         let (total, sole, sole_weak, shared) = roots.stats();
@@ -84,7 +84,8 @@ fn report(roots: &Roots, what: &str) {
     }
 }
 
-/// A fresh set, and the one [`root`] adds to from here on.
+/// A fresh set, and the one [`root`] adds to from here on. Held here too, so
+/// the owner dropping it is not enough to free the cells.
 pub fn newRoots() -> Roots {
     let roots = Roots::new();
     CURRENT.with(|c| {
@@ -97,6 +98,24 @@ pub fn newRoots() -> Roots {
 /// Add to `roots` again, for re-entering a structure built by an earlier run.
 pub fn useRoots(roots: Roots) {
     CURRENT.with(|c| *c.borrow_mut() = roots);
+}
+
+/// Empty the current set.
+///
+/// Emptied, not dropped: the tree holds the set back through
+/// `TOP_SCOPE.roots`, and the top node lives in one of these cells, so the two
+/// keep each other alive and letting go of this handle frees nothing.
+///
+/// That the set outlives the tree is deliberate -- a `ComponentRef` walks up
+/// into nodes after the scope that built them is gone -- so only a caller that
+/// knows it is done with a library may call this.
+pub fn clearRoots() {
+    CURRENT.with(|c| {
+        let roots = c.borrow().clone();
+        report(&roots, "cleared");
+        roots.0.lock().unwrap().clear();
+        *c.borrow_mut() = Roots::new();
+    });
 }
 
 /// Add a cell to the current set. A no-op in the bootstrapped compiler, where

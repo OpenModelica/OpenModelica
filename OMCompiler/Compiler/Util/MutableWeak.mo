@@ -148,5 +148,13 @@ algorithm
   annotation(__OpenModelica_EarlyInline = true);
 end root;
 
+function clearRoots
+  "Empties the current set. Its cells die with it, and a reference into them
+   outlives the tree by design, so only a caller that knows it is done with
+   them may do this. Inlined to nothing in the C compiler."
+algorithm
+  annotation(__OpenModelica_EarlyInline = true);
+end clearRoots;
+
 annotation(__OpenModelica_Interface="util_datatypes_basic");
 end MutableWeak;

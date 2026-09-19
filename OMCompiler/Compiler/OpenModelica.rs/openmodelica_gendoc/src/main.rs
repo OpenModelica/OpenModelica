@@ -412,6 +412,10 @@ fn render_library(
             let mut next = 0;
             while next < chunk.len() {
                 if held.is_none() {
+                    // A scope rayon discarded with its init state took no
+                    // `clearTopScopeCache` with it, and the cells of a scope
+                    // outlive the tree until something empties the set.
+                    openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
                     *held = icons::Scope::build(scode);
                 }
                 let Some(scope) = held.as_ref() else {
