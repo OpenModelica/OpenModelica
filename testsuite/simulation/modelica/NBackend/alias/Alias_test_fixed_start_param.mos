@@ -1,0 +1,36 @@
+// name: Alias_test_fixed_start_param
+// keywords: NewBackend, Alias
+// status: correct
+// function: Fixed start values that are syntactically different but not provably conflicting (literal vs. parameter binding) must only warn, not abort.
+
+loadString("
+  model FixedStartParam
+    parameter Real p = 2;
+    Real a(start = 2, fixed = true);
+    Real b(start = p, fixed = true);
+  equation
+    a = b;
+    der(a) = -a;
+  end FixedStartParam;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(FixedStartParam, stopTime = 1); getErrorString();
+val(a, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FixedStartParam_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FixedStartParam', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBAlias.setStartFixed: Multiple variables are fixed with start values that could not be proven equal; picking one arbitrarily. Use -d=dumprepl for more information.
+// "
+// 2.0
+// endResult
