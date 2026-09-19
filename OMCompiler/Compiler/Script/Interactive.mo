@@ -2148,53 +2148,15 @@ algorithm
 end restComponentReplacementRules;
 
 protected function getComponentsWithType
-"author: x02lucpo
- extracts all the components that have the type"
+  "extracts all the components that have the type"
   input InteractiveTypes.Components inComponents;
   input Absyn.Path inPath;
   output InteractiveTypes.Components outComponents;
+protected
+  list<InteractiveTypes.Component> comps;
 algorithm
-  outComponents:=
-  matchcontinue (inComponents,inPath)
-    local
-      InteractiveTypes.Components comps,res,comps_1,comps_2;
-      InteractiveTypes.Component comp;
-      Absyn.Path comp_path,path;
-    case (comps,_) /* rule  Absyn.path_string(path) => comp_path & print \"extracting comps for: \" & print comp_path & print \"\\n\" & int_eq(1,2) => true --------------------------- get_components_with_type(comps,path) => comps */
-      algorithm
-        true := emptyComponents(comps);
-      then
-        InteractiveTypes.COMPONENTS({},0);
-    case (comps,path)
-      algorithm
-        comp as InteractiveTypes.COMPONENTITEM(_,comp_path,_) := firstComponent(comps);
-        true := AbsynUtil.pathEqual(comp_path, path);
-        res := restComponents(comps);
-        comps_1 := getComponentsWithType(res, path);
-        comps_2 := addComponentToComponents(comp, comps_1);
-      then
-        comps_2;
-    case (comps,path)
-      algorithm
-        comp as InteractiveTypes.EXTENDSITEM(_,comp_path) := firstComponent(comps);
-        true := AbsynUtil.pathEqual(comp_path, path);
-        res := restComponents(comps);
-        comps_1 := getComponentsWithType(res, path);
-        comps_2 := addComponentToComponents(comp, comps_1);
-      then
-        comps_2;
-    case (comps,path)
-      algorithm
-        res := restComponents(comps);
-        comps_1 := getComponentsWithType(res, path);
-      then
-        comps_1;
-    else
-      algorithm
-        print("-get_components_with_type failed\n");
-      then
-        InteractiveTypes.COMPONENTS({},0);
-  end matchcontinue;
+  comps := list(comp for comp guard AbsynUtil.pathEqual(inPath, componentTypePath(comp)) in inComponents.componentLst);
+  outComponents := InteractiveTypes.COMPONENTS(comps, listLength(comps));
 end getComponentsWithType;
 
 protected function extractAllComponents
@@ -2629,6 +2591,16 @@ algorithm
         InteractiveTypes.COMPONENTS((comp :: comps),len_1);
   end match;
 end addComponentToComponents;
+
+function componentTypePath
+  input InteractiveTypes.Component comp;
+  output Absyn.Path path;
+algorithm
+  path := match comp
+    case InteractiveTypes.COMPONENTITEM() then comp.the2;
+    case InteractiveTypes.EXTENDSITEM() then comp.the2;
+  end match;
+end componentTypePath;
 
 protected function isParameterElement
 " Returns true if Element is a component of
