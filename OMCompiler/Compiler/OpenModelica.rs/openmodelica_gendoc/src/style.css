@@ -133,6 +133,7 @@ a:hover { text-decoration: underline; }
 
 #om-sidebar-toggle { display: none; }
 #om-theme { margin-left: auto; }
+.om-build ~ #om-theme { margin-left: 0.2rem; }
 
 .om-crumbs {
   flex: 1 1 auto;
@@ -195,6 +196,18 @@ main {
 .om-twisty:disabled { cursor: default; opacity: 0; }
 
 .om-tree-version { flex: none; font-size: 0.7rem; color: var(--fg-soft); }
+
+select.om-tree-version {
+  max-width: 7rem;
+  padding: 0 0.15rem;
+  font: inherit;
+  font-size: 0.7rem;
+  color: var(--fg-soft);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
 
 .om-loading { color: var(--fg-soft); font-size: 0.8rem; padding: 0.3rem 0.4rem; margin: 0; }
 
@@ -275,6 +288,7 @@ h3 { font-size: 1.05rem; margin: 1.6rem 0 0.4rem; }
 
 .om-summary { font-size: 1.05rem; color: var(--fg-soft); margin: 0 0 0.6rem; }
 .om-version { font-size: 0.85rem; color: var(--fg-soft); margin: 0; }
+.om-uses { font-size: 0.85rem; color: var(--fg-soft); margin: 0.15rem 0 0; }
 
 /* The icon belongs beside the name, the way a class is shown everywhere else. */
 .om-title {
@@ -294,7 +308,35 @@ h3 { font-size: 1.05rem; margin: 1.6rem 0 0.4rem; }
   margin-top: 0.5rem;
 }
 
-.om-graphics { margin: 1.5rem 0; }
+.om-figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+/* Shrink-wrapped, so the button below sits on the drawing's own corner. */
+.om-graphics { position: relative; flex: 0 1 auto; min-width: 0; margin: 0; }
+
+/* Inlining the drawing for its links costs the right-click an <img> offers;
+   this is how it is opened or saved instead. */
+.om-diagram-open {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  display: flex;
+  padding: 0.25rem;
+  color: var(--fg-soft);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  opacity: 0.55;
+}
+
+.om-diagram-open svg { width: 0.9rem; height: 0.9rem; }
+.om-diagram-open:hover { opacity: 1; }
+.om-graphics:hover .om-diagram-open { opacity: 1; }
 
 .om-diagram {
   display: block;
@@ -449,6 +491,147 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
 
 /* ── narrow ───────────────────────────────────────────────────────────────── */
 
+.om-versions {
+  margin-left: 0.3rem;
+  padding: 0 0.2rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--fg-soft);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* ── playground ──────────────────────────────────────────────────────────── */
+
+.om-run { flex: 0 0 auto; align-self: flex-end; }
+
+/* Parked on a page with nothing to run: the frame is kept alive off screen,
+   and the row it sat in goes with it. */
+.om-run-idle { display: none; }
+.om-figure:has(> .om-run-idle:only-child) { display: none; }
+
+.om-run-start {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--bg);
+  background: var(--link);
+  border: 1px solid var(--link);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.om-run-start:hover { text-decoration: none; filter: brightness(1.1); }
+
+.om-build {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--fg-soft);
+}
+
+.om-build select {
+  padding: 0.1rem 0.2rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--fg-soft);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Open: the frame takes the row. Parked, it is only hidden -- taking it out
+   of the page would reload the compiler in it. */
+.om-run-open {
+  flex: 1 1 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.om-run-open .om-run-start,
+.om-run-open .om-run-pick { display: none; }
+
+.om-sim {
+  display: block;
+  width: 100%;
+  height: min(82vh, 900px);
+  min-height: 30rem;
+  border: 0;
+}
+
+.om-run:not(.om-run-open) .om-sim { display: none; }
+
+/* A checkModel report is a few lines, not a plot: it fits beside the diagram
+   rather than claiming the row a simulation needs, and squares off with it
+   rather than standing a little taller or shorter. */
+.om-run-check .om-sim { height: 14rem; min-height: 0; }
+.om-run-open.om-run-check { flex: 1 1 18rem; }
+
+.om-figure:has(.om-graphics) .om-run-open.om-run-check { align-self: stretch; }
+.om-figure:has(.om-graphics) .om-run-check .om-sim { height: 100%; }
+
+.om-comp { cursor: pointer; }
+.om-comp:hover { opacity: 0.7; }
+
+.om-members tr:target { background: var(--hover); }
+.om-members tr:target td:first-child { box-shadow: inset 3px 0 0 var(--link); }
+
+/* ── library index ───────────────────────────────────────────────────────── */
+
+.om-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.8rem;
+}
+
+.om-chip {
+  padding: 0.25rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--fg-soft);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.om-chip:hover { background: var(--hover); }
+
+.om-chip-on {
+  color: var(--bg);
+  background: var(--link);
+  border-color: var(--link);
+}
+
+.om-libraries tr[hidden] { display: none; }
+.om-libraries .om-libversion { white-space: nowrap; }
+.om-libraries .om-light-cell { text-align: center; }
+
+.om-light {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--border);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.18);
+}
+
+.om-light[data-support="fullSupport"] { background: #2e9f4f; }
+.om-light[data-support="support"] { background: #8bc24a; }
+.om-light[data-support="experimental"] { background: #e8a33d; }
+.om-light[data-support="obsolete"] { background: #9aa0aa; }
+.om-light[data-support="noSupport"] { background: #d1495b; }
+
+.om-backdrop { display: none; }
+
 @media (max-width: 64rem) {
   .om-sidebar {
     position: fixed;
@@ -461,6 +644,23 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
   }
   .om-sidebar-open .om-sidebar { transform: none; }
   #om-sidebar-toggle { display: block; }
+
+  /* The open sidebar covers the toggle, so tapping it again cannot close it. */
+  .om-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    background: rgb(0 0 0 / 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease-out;
+  }
+  .om-sidebar-open .om-backdrop { opacity: 1; pointer-events: auto; }
+}
+
+@media (max-width: 48rem) {
+  .om-libraries .om-wide { display: none; }
 }
 
 @media (max-width: 30rem) {

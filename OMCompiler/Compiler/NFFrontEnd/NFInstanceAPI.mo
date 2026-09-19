@@ -384,6 +384,14 @@ algorithm
   (_, program) := FBuiltin.getInitialFunctions();
 end builtinSCode;
 
+public function builtinAbsyn
+  "The builtin classes as they were parsed, for a caller documenting the
+   OpenModelica package the compiler defines rather than instantiating it."
+  output Absyn.Program program;
+algorithm
+  (program, _) := FBuiltin.getInitialFunctions();
+end builtinAbsyn;
+
 public function programSCode
   "One program's SCode. translateAbsyn2SCode carries nothing between top-level
    classes, so a caller holding many libraries may translate each separately

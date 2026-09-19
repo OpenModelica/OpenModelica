@@ -71,6 +71,9 @@ pub enum Import {
 /// One documented class. `children` indexes back into the arena holding it.
 pub struct ClassDoc {
     pub path: Vec<ArcStr>,
+    /// Which copy of the library this class belongs to; empty for the one
+    /// that keeps the plain page names.
+    pub tag: ArcStr,
     pub restriction: String,
     /// The description string as written. Usually plain text, but the
     /// specification makes one starting with `<html>` an HTML fragment, so
@@ -83,6 +86,9 @@ pub struct ClassDoc {
     pub version: String,
     pub source_file: String,
     pub protected: bool,
+    pub partial: bool,
+    /// An `experiment` annotation of its own or from a base class.
+    pub experiment: bool,
     pub parent: Option<usize>,
     pub children: Vec<usize>,
     pub components: Vec<Component>,
@@ -99,6 +105,32 @@ pub struct ClassDoc {
 impl ClassDoc {
     pub fn qualified_name(&self) -> String {
         self.path.join(".")
+    }
+
+    /// The version the library was loaded from, read off its directory name
+    /// (`<Library> <version>`). Not the `version` annotation: the index knows
+    /// this one as `4.1.0+maint.om` where the annotation says `4.1.0`.
+    pub fn installed_version(&self) -> Option<&str> {
+        std::path::Path::new(&self.source_file)
+            .parent()?
+            .file_name()?
+            .to_str()?
+            .strip_prefix(self.name())?
+            .strip_prefix(' ')
+    }
+
+    /// The name this class is filed under: qualified, with the library
+    /// segment tagged. `@` cannot occur in an identifier, so nothing collides.
+    pub fn index_name(&self) -> String {
+        if self.tag.is_empty() {
+            return self.qualified_name();
+        }
+        let mut out = format!("{}@{}", self.path[0], self.tag);
+        for segment in &self.path[1..] {
+            out.push('.');
+            out.push_str(segment);
+        }
+        out
     }
 
     pub fn name(&self) -> &str {
@@ -129,6 +161,7 @@ fn collect_class(
     let index = arena.len();
     arena.push(ClassDoc {
         path: path.clone(),
+        tag: ArcStr::new(),
         restriction: Dump::unparseRestrictionStr(class.restriction.clone())
             .map(|s| s.to_string())
             .unwrap_or_default(),
@@ -142,6 +175,8 @@ fn collect_class(
         version: string_annotation(class, "version"),
         source_file: class.info.fileName.to_string(),
         protected,
+        partial: class.partialPrefix,
+        experiment: has_annotation(class, "experiment"),
         parent,
         children: Vec::new(),
         components: Vec::new(),
