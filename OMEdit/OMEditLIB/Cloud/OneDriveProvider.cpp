@@ -210,50 +210,93 @@ CloudReply *OneDriveProvider::metadata(const QString &itemId)
 }
 
 /*!
- * \brief Fetch a file's bytes, in two steps and deliberately: /content redirects
- * to a pre-authenticated URL that refuses a request also carrying an
- * Authorization header, which is what following the redirect would send.
+ * \brief Fetch a file's bytes, without an Authorization header on the last hop:
+ * the storage endpoint rejects a request that carries one. The pre-authenticated
+ * URL is an instance annotation, absent from a $select-filtered read on some
+ * drives, and /content redirects to the same place where it is missing.
  */
 CloudReply *OneDriveProvider::download(const QString &fileId)
 {
   CloudReply *pReply = CloudReply::pending(this);
-  QUrl url = itemUrl(fileId);
-  QUrlQuery query;
-  query.addQueryItem(QStringLiteral("$select"), QStringLiteral("id,@microsoft.graph.downloadUrl"));
-  url.setQuery(query);
-  CloudReply *pLookup = send(QNetworkRequest(url), "GET", QByteArray(),
+  CloudReply *pLookup = send(QNetworkRequest(itemUrl(fileId)), "GET", QByteArray(),
                              [](CloudReply *pInner, const QByteArray &payload) {
-    pInner->setData(QJsonDocument::fromJson(payload)
-                        .object()
-                        .value(QStringLiteral("@microsoft.graph.downloadUrl"))
-                        .toString()
-                        .toUtf8());
+    const QJsonObject object = QJsonDocument::fromJson(payload).object();
+    pInner->setItem(itemFromJson(object));
+    pInner->setData(object.value(QStringLiteral("@microsoft.graph.downloadUrl")).toString().toUtf8());
   });
-  connect(pLookup, &CloudReply::finished, pReply, [this, pReply, pLookup]() {
+  connect(pLookup, &CloudReply::finished, pReply, [this, pReply, pLookup, fileId]() {
     if (pLookup->error().isError()) {
       pReply->finish(pLookup->error());
       return;
     }
-    const QUrl downloadUrl(QString::fromUtf8(pLookup->data()));
-    if (!downloadUrl.isValid() || downloadUrl.isEmpty()) {
-      pReply->finish(CloudError(CloudError::Protocol, tr("OneDrive returned no download URL.")));
+    if (pLookup->item().isFolder) {
+      pReply->finish(CloudError(CloudError::Protocol, tr("%1 is a folder, not a file.").arg(pLookup->item().name)));
       return;
     }
-    QNetworkReply *pGet = mpNetworkAccessManager->get(QNetworkRequest(downloadUrl));
-    pReply->trackNetworkReply(pGet);
-    connect(pGet, &QNetworkReply::finished, pReply, [this, pReply, pGet]() {
-      pGet->deleteLater();
-      const int status = pGet->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-      const QByteArray payload = pGet->readAll();
-      if (status < 200 || status >= 300) {
-        pReply->finish(classifyError(status, payload, pGet->errorString()));
-        return;
-      }
-      pReply->setData(payload);
-      pReply->finish(CloudError());
-    });
+    const QUrl downloadUrl(QString::fromUtf8(pLookup->data()));
+    if (pLookup->data().isEmpty() || !downloadUrl.isValid()) {
+      cloudLog(QStringLiteral("no downloadUrl for %1; falling back to /content").arg(fileId));
+      downloadContent(pReply, fileId);
+      return;
+    }
+    fetchUnauthenticated(pReply, downloadUrl, fileId);
   });
   return pReply;
+}
+
+void OneDriveProvider::fetchUnauthenticated(CloudReply *pReply, const QUrl &url, const QString &fileId,
+                                            bool mayFallBack)
+{
+  QNetworkReply *pGet = mpNetworkAccessManager->get(QNetworkRequest(url));
+  pReply->trackNetworkReply(pGet);
+  connect(pGet, &QNetworkReply::finished, pReply, [this, pReply, pGet, fileId, mayFallBack]() {
+    pGet->deleteLater();
+    const int status = pGet->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const QByteArray payload = pGet->readAll();
+    if (status >= 200 && status < 300) {
+      pReply->setData(payload);
+      pReply->finish(CloudError());
+      return;
+    }
+    if (pGet->error() == QNetworkReply::OperationCanceledError) {
+      pReply->finish(CloudError(CloudError::Cancelled, tr("Cancelled.")));
+      return;
+    }
+    // No status at all is how a browser reports a response it may not read, the
+    // storage host having served it without CORS headers.
+    if (status == 0 && mayFallBack) {
+      cloudLog(QStringLiteral("pre-authenticated download of %1 failed (%2); falling back to /content")
+                   .arg(fileId, pGet->errorString()));
+      downloadContent(pReply, fileId);
+      return;
+    }
+    pReply->finish(classifyError(status, payload, pGet->errorString()));
+  });
+}
+
+void OneDriveProvider::downloadContent(CloudReply *pReply, const QString &fileId)
+{
+  QNetworkRequest request(itemUrl(fileId, QStringLiteral("/content")));
+#if !defined(__EMSCRIPTEN__)
+  // Qt replays the Authorization header onto the redirect; fetch drops it itself,
+  // and cannot be stopped at one anyway.
+  request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
+#endif
+  CloudReply *pContent = send(request, "GET", QByteArray(), [](CloudReply *pInner, const QByteArray &payload) {
+    pInner->setData(payload);
+  });
+  connect(pContent, &CloudReply::finished, pReply, [this, pReply, pContent, fileId]() {
+    if (pContent->error().isError()) {
+      pReply->finish(pContent->error());
+      return;
+    }
+    if (!pContent->redirectUrl().isEmpty()) {
+      fetchUnauthenticated(pReply, pContent->redirectUrl(), fileId, false);
+      return;
+    }
+    pReply->setData(pContent->data());
+    pReply->finish(CloudError());
+  });
 }
 
 CloudReply *OneDriveProvider::createFolder(const QString &parentId, const QString &name)

@@ -76,6 +76,8 @@ public:
   void ensureLoaded(QNetworkAccessManager *pNetworkAccessManager);
 
   CloudClientRegistration registration(CloudProviderKind kind) const;
+  //! True when the user supplied their own client, rather than the deployment's.
+  bool hasUserRegistration(CloudProviderKind kind) const;
   void setRegistration(CloudProviderKind kind, const CloudClientRegistration &registration);
 
   //! Endpoints, scopes and the registration, ready for OAuth2Client.

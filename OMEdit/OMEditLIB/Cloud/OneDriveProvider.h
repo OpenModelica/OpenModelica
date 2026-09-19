@@ -69,6 +69,8 @@ private:
   void listPage(CloudReply *pReply, const QUrl &url, const QList<RemoteItem> &sofar);
   void deltaPage(CloudReply *pReply, const QUrl &url, const QList<RemoteItem> &sofar, const QStringList &removed,
                  bool tokenOnly);
+  void fetchUnauthenticated(CloudReply *pReply, const QUrl &url, const QString &fileId, bool mayFallBack = true);
+  void downloadContent(CloudReply *pReply, const QString &fileId);
   void uploadSmall(CloudReply *pReply, const QUrl &url, const QByteArray &contents, const QString &expectedRevision);
   void uploadLarge(CloudReply *pReply, const QUrl &sessionUrl, const QByteArray &contents);
 

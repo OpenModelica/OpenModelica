@@ -85,6 +85,13 @@ QString sanitiseFolderName(const QString &name)
 
 } // namespace
 
+//! The id is a directory rather than a suffix on the name, so that a package.mo
+//! at the mount root still sits in a directory named after its class.
+QString CloudMountManager::workingCopyPath(const QString &mountId, const QString &remoteName)
+{
+  return QStringLiteral("%1/%2/%3").arg(workingCopyRoot(), mountId, sanitiseFolderName(remoteName));
+}
+
 QString CloudMount::manifestPath() const
 {
   return CloudMountManager::manifestRoot() + QStringLiteral("/manifest-") + mountId + QStringLiteral(".json");
@@ -126,6 +133,7 @@ void CloudMountManager::load()
     return;
   }
   const QJsonArray stored = QJsonDocument::fromJson(file.readAll()).array();
+  bool migrated = false;
   for (const QJsonValue &value : stored) {
     const QJsonObject object = value.toObject();
     CloudMount mount;
@@ -135,9 +143,25 @@ void CloudMountManager::load()
     mount.remoteName = object.value(QStringLiteral("remoteName")).toString();
     mount.localRoot = object.value(QStringLiteral("localRoot")).toString();
     mount.autoPush = object.value(QStringLiteral("autoPush")).toBool(true);
-    if (mount.isValid()) {
-      mMounts << mount;
+    if (!mount.isValid()) {
+      continue;
     }
+    // Re-derived, so a mount stored under the old layout heals itself. Never
+    // deleted on the way: an edit that was never pushed only exists there.
+    const QString expected = workingCopyPath(mount.mountId, mount.remoteName);
+    if (mount.localRoot != expected) {
+      QDir().mkpath(QFileInfo(expected).absolutePath());
+      const bool moved = QDir().rename(mount.localRoot, expected);
+      cloudLog(QStringLiteral("mount %1: working copy is now %2 (%3)")
+                   .arg(mount.remoteName, expected,
+                        moved ? QStringLiteral("moved") : QStringLiteral("will be fetched again")));
+      mount.localRoot = expected;
+      migrated = true;
+    }
+    mMounts << mount;
+  }
+  if (migrated) {
+    save();
   }
 }
 
@@ -209,8 +233,7 @@ CloudMount CloudMountManager::addMount(const QString &accountKey, const QString 
   mount.accountKey = accountKey;
   mount.remoteRootId = remoteRootId;
   mount.remoteName = remoteName;
-  // The mount id keeps two folders of the same name apart.
-  mount.localRoot = QStringLiteral("%1/%2-%3").arg(workingCopyRoot(), sanitiseFolderName(remoteName), mountId);
+  mount.localRoot = workingCopyPath(mountId, remoteName);
   mMounts << mount;
   save();
   return mount;
@@ -224,8 +247,9 @@ void CloudMountManager::removeMount(const QString &mountId)
       continue;
     }
     const CloudMount mount = mMounts.takeAt(i);
-    // The working copy, its cache and the manifest go; nothing is touched remotely.
-    QDir(mount.localRoot).removeRecursively();
+    // The working copy, its cache and the manifest go; nothing is touched
+    // remotely. The id directory holds only this mount, so it goes too.
+    QDir(QFileInfo(mount.localRoot).absolutePath()).removeRecursively();
     QFile::remove(mount.manifestPath());
     CloudCache::forget(mount);
     save();
