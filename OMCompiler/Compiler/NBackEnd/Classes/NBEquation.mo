@@ -2324,7 +2324,7 @@ public
 
         // returns innermost residual!
         // Ambiguous for entwined for loops!
-        case FOR_EQUATION(body = {_}) then getResidualExp(listHead(eqn.body));
+        case FOR_EQUATION(body = {_}) then getResidualExp(listHead(eqn.body), throwOnFail);
 
         else algorithm
           if throwOnFail then
