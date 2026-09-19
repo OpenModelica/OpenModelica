@@ -1111,6 +1111,18 @@ algorithm
   end match;
 end evalBinarySub;
 
+function expandLiteralRange
+  "A range operand can still be unevaluated here, e.g. 1 + (1:2) from an iterator
+   substituted into a subscript. Turn a literal range into an array."
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.RANGE() guard Expression.isLiteral(exp)
+      then Expression.mapSplitExpressions(exp, evalRangeExp);
+    else exp;
+  end match;
+end expandLiteralRange;
+
 function evalMultaryAddSub
   input list<Expression> arguments;
   input list<Expression> inv_arguments;
@@ -1120,12 +1132,12 @@ function evalMultaryAddSub
 algorithm
   // add up all arguments
   for arg in arguments loop
-    exp := evalBinaryAdd(exp, arg);
+    exp := evalBinaryAdd(exp, expandLiteralRange(arg));
   end for;
 
   // subtract all inverse arguments
   for arg in inv_arguments loop
-    exp := evalBinarySub(exp, arg);
+    exp := evalBinarySub(exp, expandLiteralRange(arg));
   end for;
 
   // return a boolean that is set to true if its the neutral element
@@ -1252,12 +1264,12 @@ function evalMultaryMulDiv
 algorithm
   // multiply all arguments
   for arg in arguments loop
-    exp := evalBinaryMul(exp, arg);
+    exp := evalBinaryMul(exp, expandLiteralRange(arg));
   end for;
 
   // divide all inverse arguments
   for arg in inv_arguments loop
-    exp := evalBinaryDiv(exp, arg, noTarget);
+    exp := evalBinaryDiv(exp, expandLiteralRange(arg), noTarget);
   end for;
 
   // return a boolean that is set to true if its the neutral element
