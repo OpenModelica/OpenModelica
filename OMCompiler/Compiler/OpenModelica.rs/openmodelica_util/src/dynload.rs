@@ -51,9 +51,11 @@ pub(crate) mod dl {
 
     // dlopen flags mirror `SystemImpl__loadLibrary` in the C runtime.
     #[cfg(target_os = "linux")]
-    const LOCAL: c_int = libc::RTLD_LOCAL | libc::RTLD_DEEPBIND;
+    const DEEP: c_int = libc::RTLD_DEEPBIND;
     #[cfg(not(target_os = "linux"))]
-    const LOCAL: c_int = libc::RTLD_LOCAL;
+    const DEEP: c_int = 0;
+
+    const LOCAL: c_int = libc::RTLD_LOCAL | DEEP;
 
     const FLAGS: c_int = LOCAL | libc::RTLD_NOW;
 
@@ -123,7 +125,9 @@ pub(crate) mod dl {
     fn open_global_mode(name: &str, binding: c_int) -> std::result::Result<usize, String> {
         let c = CString::new(name).map_err(|_| "NUL byte in path".to_owned())?;
         unsafe { libc::dlerror() };
-        let h = unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | binding) };
+        // DEEPBIND too, or omc's own symbols interpose the library's
+        // (libcom_err's `error_message` over ModelicaSDF's buffer of that name).
+        let h = unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | DEEP | binding) };
         if h.is_null() { Err(last_error()) } else { Ok(h as usize) }
     }
 
