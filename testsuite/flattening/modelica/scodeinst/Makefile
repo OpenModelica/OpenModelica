@@ -928,6 +928,7 @@ MultiInheritanceRedeclare2.mo \
 NoEvent1.mo \
 NoEvent2.mo \
 NonConnectorFlow1.mo \
+NonLiteralRange1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NonFixedConstant1.mo \

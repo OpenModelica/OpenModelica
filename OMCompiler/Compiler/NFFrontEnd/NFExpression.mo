@@ -6119,8 +6119,9 @@ public
 
       case RANGE()
         algorithm
-          exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), Absyn.dummyInfo);
+          exp.ty := TypeCheck.keepRangeSize(
+            TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
+              typeOf(exp.start), Absyn.dummyInfo), exp.ty);
         then
           ();
 
