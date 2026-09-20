@@ -896,6 +896,7 @@ public
           Block tmp;
           Integer i;
           list<Subscript> subs;
+          Equation body_eqn;
 
         // a scalar equation has size 1, so a slice {1} is the same as no slice
         case (BEquation.SCALAR_EQUATION(), _) algorithm
@@ -939,6 +940,12 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
+
+        // the generic residual writes one value per index, an array valued body would overflow the residual array
+        case (BEquation.FOR_EQUATION(body = {body_eqn}), _) guard(Equation.size(Pointer.create(body_eqn)) > 1) algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " does not support a part of a for equation with an array valued body:\n"
+            + Slice.toString(slice, function Equation.pointerToString(str = ""))});
+        then fail();
 
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
