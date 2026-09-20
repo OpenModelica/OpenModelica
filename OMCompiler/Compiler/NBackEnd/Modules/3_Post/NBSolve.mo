@@ -54,6 +54,7 @@ public
   import NFFunction.Function;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
+  import ExpandExp = NFExpandExp;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -667,6 +668,28 @@ public
     end match;
   end solveEquation;
 
+  function singleElement
+    "expands an array expression of size one and returns its only scalar element"
+    input Expression exp;
+    output Option<Expression> element = NONE();
+  protected
+    Expression expanded;
+    Boolean success;
+  algorithm
+    if not Type.isArray(Expression.typeOf(exp)) then
+      element := SOME(exp);
+      return;
+    end if;
+
+    (expanded, success) := ExpandExp.expand(exp, true);
+    if success then
+      element := match expanded
+        case Expression.ARRAY() guard(arrayLength(expanded.elements) == 1) then singleElement(expanded.elements[1]);
+        else NONE();
+      end match;
+    end if;
+  end singleElement;
+
   function solveBody
     input output Equation eqn;
     input ComponentRef cref;
@@ -686,6 +709,17 @@ public
       fixed_cref := getVarSlice(fixed_cref, SOME(cref), eqn);
     else
       fixed_cref := cref;
+      // a scalar solved from a single element array equation, e.g. mXi = m * Xi for Real[1] mXi, Xi:
+      // use the scalar equation, otherwise the solution is array valued
+      eqn := match eqn
+        local
+          Option<Expression> lhs, rhs;
+        case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ty) and Type.sizeOf(eqn.ty) == 1) algorithm
+          lhs := singleElement(eqn.lhs);
+          rhs := singleElement(eqn.rhs);
+        then if isSome(lhs) and isSome(rhs) then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Util.getOption(lhs), Util.getOption(rhs), eqn.source, eqn.attr) else eqn;
+        else eqn;
+      end match;
     end if;
 
     if Flags.isSet(Flags.DUMP_SOLVE) then
