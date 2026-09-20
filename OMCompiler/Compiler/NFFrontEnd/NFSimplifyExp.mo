@@ -163,8 +163,9 @@ algorithm
     exp := range;
   else
     if not Type.isResizable(ty) then
-      ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), Absyn.dummyInfo);
+      ty := TypeCheck.keepRangeSize(
+        TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+          Type.arrayElementType(ty), Absyn.dummyInfo), ty);
     else
       ty := ty2;
     end if;

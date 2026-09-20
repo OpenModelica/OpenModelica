@@ -2198,6 +2198,11 @@ algorithm
 
   // If the element types are compatible, check the dimensions too.
   (compatibleType, matchKind) := matchArrayDims(dims1, dims2, compatibleType, matchKind, options);
+
+  if isCompatibleMatch(matchKind) then
+    exp1 := setRangeSize(exp1, compatibleType);
+    exp2 := setRangeSize(exp2, compatibleType);
+  end if;
 end matchArrayExpressions;
 
 function matchArrayTypes
@@ -2220,7 +2225,42 @@ algorithm
 
   // If the element types are compatible, check the dimensions too.
   (compatibleType, matchKind) := matchArrayDims(dims1, dims2, compatibleType, matchKind, options);
+
+  if isCompatibleMatch(matchKind) then
+    expression := setRangeSize(expression, compatibleType);
+  end if;
 end matchArrayTypes;
+
+function keepRangeSize
+  "Recomputing a range's type from its bounds cannot find a size that
+   setRangeSize gave it, so keep the old one rather than fall back to the
+   symbolic size."
+  input output Type ty;
+  input Type oldTy;
+algorithm
+  if Type.isArray(oldTy) and Type.hasKnownSize(oldTy) and not Type.hasKnownSize(ty) then
+    ty := Type.setArrayElementType(oldTy, Type.arrayElementType(ty));
+  end if;
+end keepRangeSize;
+
+function setRangeSize
+  "A range whose bounds are not literals, like x:dx:x+4*dx, is sized by an
+   expression that cannot be evaluated. Giving it the size it was matched
+   against lets it be expanded when the equation is scalarized."
+  input output Expression exp;
+  input Type ty;
+algorithm
+  exp := match exp
+    case Expression.RANGE()
+      guard Type.hasKnownSize(ty) and not Type.hasKnownSize(exp.ty)
+      algorithm
+        exp.ty := Type.setArrayElementType(ty, Type.arrayElementType(exp.ty));
+      then
+        exp;
+
+    else exp;
+  end match;
+end setRangeSize;
 
 function matchArrayDims
   input list<Dimension> dims1;
