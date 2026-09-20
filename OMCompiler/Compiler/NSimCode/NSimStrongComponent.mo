@@ -479,6 +479,24 @@ public
       blcks := List.flatten(tmp_lst);
     end createInitialBlocks;
 
+    function createParameterBlocks
+      "creates the blocks of the explicitly solved primary parameter bindings, in evaluation order"
+      input list<StrongComponent> comps;
+      output list<Block> blcks = {};
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input UnorderedMap<ComponentRef, Block> equation_map;
+    protected
+      Block tmp;
+      Integer index;
+    algorithm
+      for comp in comps loop
+        (tmp, simCodeIndices, index) := fromStrongComponent(comp, simCodeIndices, NBPartition.Kind.INI, simcode_map, equation_map);
+        blcks := tmp :: blcks;
+      end for;
+      blcks := listReverse(blcks);
+    end createParameterBlocks;
+
     function createDAEModeBlocks
       input list<Partition.Partition> partitions;
       output list<list<Block>> blcks = {};

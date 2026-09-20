@@ -363,8 +363,6 @@ public
             nominal := {};
             min := {};
             max := {};
-            // all non constant parameter equations will be added to the initial system.
-            // There is no actual need for parameter equations block
             param := {};
             algorithms := {};
 
@@ -465,6 +463,9 @@ public
             // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
 
             // generate the generic loop calls and replace literal expressions
+            // the bindings of the primary parameters are solved before the initialization, they get the last indices
+            (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
+
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             literals            := UnorderedMap.keyList(literals_map);
