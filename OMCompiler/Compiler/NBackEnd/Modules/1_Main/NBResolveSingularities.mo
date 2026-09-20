@@ -388,7 +388,8 @@ public
     list<Slice<VariablePointer>> unmatched_vars;
     list<Slice<EquationPointer>> unmatched_eqns;
     list<Pointer<Variable>> start_vars, failed_vars = {};
-    list<Pointer<Equation>> sliced_eqns, start_eqns;
+    list<Pointer<Equation>> sliced_eqns, start_eqns, kept_eqns;
+    list<Integer> remaining;
     Pointer<Variable> var_ptr;
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
     Pointer<list<Pointer<Equation>>> ptr_start_eqns = Pointer.create({});
@@ -413,14 +414,28 @@ public
         Error.addMessage(Error.COMPILER_WARNING, {getInstanceName()
           + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
           + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = ""))});
-        // update this for potential arrays!
         // copy old map to update adjacency matrix correctly
         eo          := UnorderedMap.copy(equations.map);
         // get all unmatched equations and remove them from the system and overall equations
         sliced_eqns := list(Slice.getT(eqn) for eqn in unmatched_eqns);
         equations   := EquationPointers.removeList(sliced_eqns, equations);
+        // only some indices of a for equation can be redundant, keep the other ones
+        kept_eqns := {};
+        for eqn_slice in unmatched_eqns loop
+          if not listEmpty(eqn_slice.indices) and Equation.isForEquation(Slice.getT(eqn_slice)) then
+            remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
+            (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+            kept_eqns := listAppend(sliced_eqns, kept_eqns);
+          end if;
+        end for;
         // also update adjacency matrices
-        (adj, full) := Adjacency.Matrix.compress(adj, full, equations, variables, eo);
+        if listEmpty(kept_eqns) then
+          (adj, full) := Adjacency.Matrix.compress(adj, full, equations, variables, eo);
+        else
+          equations := EquationPointers.addList(kept_eqns, equations);
+          full := Adjacency.Matrix.createFull(variables, equations, kind);
+          adj  := Adjacency.Matrix.fullToFinal(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+        end if;
       end if;
 
       // --------------------------------------------------------
