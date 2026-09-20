@@ -120,6 +120,7 @@ public
     Option<list<Partition>> init_0        "Partitions for initialization with lambda = 0 (homotopy)";
     // add init_1 for lambda = 1? (test for efficency)
     Option<list<Partition>> dae           "Partitions for dae mode";
+    list<StrongComponent> parameters      "explicitly solved bindings of the primary parameters in evaluation order, computed before the initialization";
 
     VarData varData                       "Variable data";
     EqData eqData                         "Equation data";
@@ -269,7 +270,7 @@ public
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
   function main
