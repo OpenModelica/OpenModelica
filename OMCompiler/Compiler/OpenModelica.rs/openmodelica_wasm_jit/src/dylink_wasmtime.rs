@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use wasmtime::{Caller, Extern, Func, FuncType, Global, GlobalType, Memory, Mutability, Ref, Table, Val, ValType};
 
-use crate::dylink::{self, Dylink, SIDE_STACK_SIZE};
+use crate::dylink::{self, abi_of, c_record_layout, is_direct_call, record_leaf, Abi, Dylink, SIDE_STACK_SIZE};
 use crate::host::HostState;
 use crate::model::SimModel;
 
@@ -817,7 +817,15 @@ pub fn load_ext_libraries(
     // Binding an `external "C"` here makes the call wasm->wasm; the dlopen
     // fallback costs a host trampoline and libffi marshalling per call.
     if model.ext_builtin {
-        libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+        // Only the ones this model's `ext` imports reach, and what they need —
+        // the family is one library per MSL library. Nothing is fetched here, so
+        // the optional ones come too.
+        let carried = dylink::libraries_for(model.ext_imports.iter().map(|s| s.name.as_str()));
+        for file in carried {
+            if let Some(bytes) = crate::ext_library(file) {
+                libs.push(Library::builtin(file, bytes));
+            }
+        }
         // The dummy `usertab` ModelicaExternalC imports; last, so a `usertab` from
         // the model's own libraries wins.
         if !crate::USERTAB_DYLINK().is_empty() {
@@ -1051,19 +1059,6 @@ pub fn zero_results(
     }
     Ok(())
 }
-
-/// Whether the import is already exactly the C function, so the engine can call it
-/// wasm→wasm. `Ptr` qualifies: with shared memory it is a real address.
-fn is_direct_call(sig: &crate::sig::ExtCallSig) -> bool {
-    use crate::sig::SigTy;
-    fn scalar(t: &SigTy) -> bool {
-        matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Ptr)
-    }
-    sig.lang == crate::sig::ExtLang::C
-        && sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
-        && sig.ret.as_ref().is_none_or(scalar)
-}
-
 /// Bind `ext.<name>` to a library export. An array argument is passed as the
 /// address of the model's own elements — no copy either way; only a String
 /// (length-prefixed, not NUL-terminated) and an `_Out_` cell need scratch.
@@ -1412,52 +1407,6 @@ fn ext_result(
 
 
 // ─────────────────── records across the C boundary ───────────────────
-
-/// The C struct the callee declares, in the side module's wasm32 ABI.
-fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> crate::sig::CRecordLayout {
-    crate::sig::c_record_layout(fields, 4)
-}
-
-/// How the wasm C ABI passes a value.
-enum Abi {
-    /// No members: no argument, no result.
-    Dropped,
-    /// A struct with exactly one member passes and returns as that member,
-    /// recursively: clang lowers `struct One { double x; } f(double)` to
-    /// `(f64) -> f64`.
-    Scalar(crate::sig::SigTy),
-    /// By pointer; a return value gets a prepended `sret` pointer.
-    Indirect,
-}
-
-fn abi_of(t: &crate::sig::SigTy) -> Abi {
-    use crate::sig::SigTy;
-    match t {
-        SigTy::Record { fields, .. } => match fields.len() {
-            0 => Abi::Dropped,
-            1 => abi_of(&fields[0].1),
-            _ => Abi::Indirect,
-        },
-        other => Abi::Scalar(other.clone()),
-    }
-}
-
-/// The member a single-member struct collapses to, as `(offset from the record
-/// object's base, type)`. Descends nested single-member records.
-fn record_leaf(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> (u32, crate::sig::SigTy) {
-    use crate::sig::SigTy;
-    let layout = crate::sig::record_layout(fields);
-    let off = layout.data_off + layout.field_off.first().copied().unwrap_or(0);
-    match fields.first().map(|(_, t)| t) {
-        Some(SigTy::Record { fields: inner, .. }) if inner.len() == 1 => {
-            // The member is itself a record *object*, so its own base is stored here.
-            let (inner_off, ty) = record_leaf(inner);
-            (off + inner_off, ty)
-        }
-        Some(t) => (off, t.clone()),
-        None => (off, SigTy::Int),
-    }
-}
 
 /// Rebuild a single-member record from the scalar the ABI returned in place of it.
 fn record_from_scalar(

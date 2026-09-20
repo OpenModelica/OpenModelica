@@ -1,20 +1,11 @@
-//! wasm stub for [`crate::FFI`]. The native module evaluates `external "C"`
-//! functions at compile time by dlopen'ing the shared library and calling
-//! through libffi; wasm has neither dlopen nor libffi, and evaluates functions
-//! through the in-process wasm JIT instead. Only the `ArgSpec` enum (pure data,
-//! shared by NFEvalFunction's argument mapping) and a `callFunction` that
-//! reports the path unavailable are provided.
+//! The `external "C"` evaluation used where the native path (dlopen + libffi) is
+//! not available: the wasm32 build of omc, and a native build without the `ffi`
+//! feature. On wasm the library is a wasm shared library called through
+//! [`marshal`]; elsewhere `callFunction` reports the path unavailable.
 
-use std::sync::Arc;
+#![allow(non_snake_case, non_camel_case_types)]
 
-use metamodelica::Result;
-
-use crate::NFExpression as Expression;
-use crate::NFType as Type;
-
-/// Argument passing mode for an external-function parameter. Mirrors the native
-/// `FFI::ArgSpec`; kept on wasm because NFEvalFunction's argument mapping builds
-/// `Array<ArgSpec>` regardless of whether the call can be performed.
+/// Mirrors the native `FFI::ArgSpec`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(i32)]
 pub enum ArgSpec {
@@ -31,11 +22,22 @@ impl Ord for ArgSpec {
 impl Default for ArgSpec {
     fn default() -> Self { Self::INPUT }
 }
+
+#[cfg(target_arch = "wasm32")]
+#[path = "FFI_wasm_marshal.rs"]
+mod marshal;
+#[cfg(target_arch = "wasm32")]
+pub use marshal::callFunction;
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn callFunction(
     _fnHandle: i32,
-    _args: metamodelica::Array<metamodelica::Ref<Expression::NFExpression>>,
+    _args: metamodelica::Array<metamodelica::Ref<crate::NFExpression::NFExpression>>,
     _specs: metamodelica::Array<ArgSpec>,
-    _returnType: metamodelica::Ref<Type::NFType>,
-) -> Result<(metamodelica::Ref<Expression::NFExpression>, metamodelica::List<metamodelica::Ref<Expression::NFExpression>>)> {
-    return Err("FFI.callFunction: external \"C\" evaluation (dlopen+libffi) is unavailable on this target")
+    _returnType: metamodelica::Ref<crate::NFType::NFType>,
+) -> metamodelica::Result<(
+    metamodelica::Ref<crate::NFExpression::NFExpression>,
+    metamodelica::List<metamodelica::Ref<crate::NFExpression::NFExpression>>,
+)> {
+    Err("FFI.callFunction: external \"C\" evaluation (dlopen+libffi) is unavailable on this target")
 }

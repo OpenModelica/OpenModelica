@@ -8,6 +8,12 @@ use wasm_encoder as we;
 /// (module `model`), and imports `rt.memory` + `rt.rt_alloc` like a real model,
 /// so the merge must resolve both directions of the contract.
 fn build_stub_model() -> Vec<u8> {
+    build_stub_model_calling(None)
+}
+
+/// The same, with one `external "C"` import: `ext.<name>` taking `n` pointers and
+/// returning nothing.
+fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     use we::Instruction as I;
     let mut m = we::Module::new();
 
@@ -23,6 +29,9 @@ fn build_stub_model() -> Vec<u8> {
     // 4: (i32,i32)->()  (functionUpdateSynchronous / functionEquationsSynchronous)
     types.ty().function([we::ValType::I32, we::ValType::I32], []);
     types.ty().function([], []); // 5: ()->()      (om_throw_model_error)
+    if let Some((_, params)) = ext {
+        types.ty().function(vec![we::ValType::I32; params], []); // 6: the external
+    }
     m.section(&types);
 
     let mut imports = we::ImportSection::new();
@@ -32,8 +41,12 @@ fn build_stub_model() -> Vec<u8> {
         we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
     );
     imports.import("rt", "rt_alloc", we::EntityType::Function(0));
+    if let Some((name, _)) = ext {
+        imports.import("ext", name, we::EntityType::Function(6));
+    }
     m.section(&imports);
-    // Imported func index: rt_alloc = 0.
+    // Imported func indices: rt_alloc = 0, then the external.
+    let base = 1 + u32::from(ext.is_some());
 
     // The standalone runtime imports every driver entry point from `model`; the
     // emitter always exports them, so the stub must too or the merge leaves
@@ -68,12 +81,11 @@ fn build_stub_model() -> Vec<u8> {
     }
     m.section(&funcs);
 
-    // Defined-func indices start at 1 (rt_alloc is import 0).
     let mut exports = we::ExportSection::new();
     for (i, name) in one_arg.iter().enumerate() {
-        exports.export(name, we::ExportKind::Func, 1 + i as u32);
+        exports.export(name, we::ExportKind::Func, base + i as u32);
     }
-    let meta_ptr_idx = 1 + one_arg.len() as u32;
+    let meta_ptr_idx = base + one_arg.len() as u32;
     exports.export("om_meta_ptr", we::ExportKind::Func, meta_ptr_idx);
     exports.export("om_meta_len", we::ExportKind::Func, meta_ptr_idx + 1);
     exports.export("simulate", we::ExportKind::Func, meta_ptr_idx + 2);
@@ -161,6 +173,36 @@ fn fmu_component_links_without_a_host() {
         assert!(
             link_fmu_component(&build_stub_model(), adapter, solvers, &[], None).is_ok(),
             "{label} does not link into a component: {}",
+            openmodelica_util::Error::printMessagesStr(false)
+        );
+    }
+}
+
+/// A model with `external "C"` is given the libraries omc carries: each under the
+/// file name its dependents' `dylink.0` NEEDED entries use, and `usertab`'s own
+/// `ModelicaError` even when nothing the model calls asks for it.
+#[test]
+fn fmu_component_links_the_carried_libraries() {
+    let adapter = FMI3_ME_ADAPTER();
+    if adapter.is_empty()
+        || LIBC_PIC().is_empty()
+        || USERTAB_DYLINK().is_empty()
+        || openmodelica_wasm_jit::ext_library("ModelicaExternalC.wasm").is_none()
+    {
+        return; // omc built without the wasm32 toolchain
+    }
+    // The stubs, where the adapter imports the solvers at all.
+    let solvers: Option<&[&str]> = sundials_available().then_some(&[]);
+    for (sym, params) in [
+        // Pulls the whole table chain: ModelicaIO, ModelicaMatIO, zlib, hdf5.
+        ("ModelicaStandardTables_CombiTable1D_close", 1),
+        // Pulls LAPACK, which needs nothing — only `usertab` still wants a library.
+        ("dgesv_", 8),
+    ] {
+        let model = build_stub_model_calling(Some((sym, params)));
+        assert!(
+            link_fmu_component(&model, adapter, solvers, &[], None).is_ok(),
+            "a model calling {sym} does not link into a component: {}",
             openmodelica_util::Error::printMessagesStr(false)
         );
     }

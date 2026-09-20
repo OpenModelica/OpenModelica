@@ -190,3 +190,110 @@ mod tests {
         assert_eq!(align_up(17, 16), 32);
     }
 }
+
+// ── the wasm C ABI a library's prototype speaks ─────────────────────────────
+//
+// Both hosts marshal by these rules, and an FMU export lays records out the same.
+
+/// The C struct a callee declares, in the wasm32 ABI (4-byte pointers).
+pub fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> crate::sig::CRecordLayout {
+    crate::sig::c_record_layout(fields, 4)
+}
+
+/// How the wasm C ABI passes a value.
+pub enum Abi {
+    /// No members: no argument, no result.
+    Dropped,
+    /// A struct with exactly one member passes and returns as that member,
+    /// recursively: clang lowers `struct One { double x; } f(double)` to
+    /// `(f64) -> f64`.
+    Scalar(crate::sig::SigTy),
+    /// By pointer; a return value gets a prepended `sret` pointer.
+    Indirect,
+}
+
+pub fn abi_of(t: &crate::sig::SigTy) -> Abi {
+    use crate::sig::SigTy;
+    match t {
+        SigTy::Record { fields, .. } => match fields.len() {
+            0 => Abi::Dropped,
+            1 => abi_of(&fields[0].1),
+            _ => Abi::Indirect,
+        },
+        other => Abi::Scalar(other.clone()),
+    }
+}
+
+/// The member a single-member struct collapses to, as `(offset from the record
+/// object's base, type)`. Descends nested single-member records.
+pub fn record_leaf(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> (u32, crate::sig::SigTy) {
+    use crate::sig::SigTy;
+    let layout = crate::sig::record_layout(fields);
+    let off = layout.data_off + layout.field_off.first().copied().unwrap_or(0);
+    match fields.first().map(|(_, t)| t) {
+        Some(SigTy::Record { fields: inner, .. }) if inner.len() == 1 => {
+            // The member is itself a record *object*, so its own base is stored here.
+            let (inner_off, ty) = record_leaf(inner);
+            (off + inner_off, ty)
+        }
+        Some(t) => (off, t.clone()),
+        None => (off, SigTy::Int),
+    }
+}
+
+/// Whether the import can bind straight to the library's export: every argument
+/// and the result already have the representation C expects, so nothing has to be
+/// converted. `Ptr` qualifies — an external object is an opaque handle only the
+/// library dereferences.
+pub fn is_direct_call(sig: &crate::sig::ExtCallSig) -> bool {
+    use crate::sig::SigTy;
+    fn scalar(t: &SigTy) -> bool {
+        matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Ptr)
+    }
+    sig.lang == crate::sig::ExtLang::C
+        && sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
+        && sig.ret.as_ref().is_none_or(scalar)
+}
+
+// ── choosing the libraries a model needs ────────────────────────────────────
+
+/// The libraries omc carries that a model reaching `symbols` has to be given,
+/// **dependencies first** — the order the native loader places `libc.so` in.
+/// Placed the other way, an import can only get a host trampoline, which is slow
+/// and, on wasmer's js backend, wrong: it passes an `i64` through a JS number, so
+/// HDF5's `hid_t` arguments fail to convert.
+///
+/// The index (`wasm-blobs/index.json`) names only the entry points a model can
+/// declare; the rest follows from `dylink.0` NEEDED. A model that scans a string
+/// is given ModelicaExternalC alone; one that reads a table is given zlib → HDF5
+/// → ModelicaMatIO → ModelicaIO → ModelicaStandardTables.
+pub fn libraries_for(symbols: impl IntoIterator<Item = impl AsRef<str>>) -> Vec<&'static str> {
+    let mut wanted: Vec<&'static str> = Vec::new();
+    for sym in symbols {
+        let Some(file) = crate::ondemand_library_for(sym.as_ref()) else { continue };
+        push_with_needed(file, &mut wanted);
+    }
+    wanted
+}
+
+/// Everything `file` needs, then `file`.
+fn push_with_needed(file: &'static str, out: &mut Vec<&'static str>) {
+    if out.contains(&file) {
+        return;
+    }
+    // Before the recursion, so a cycle cannot spin.
+    out.push(file);
+    let at = out.len() - 1;
+    let Some(bytes) = crate::ext_library(file) else { return };
+    let Some(dl) = parse(bytes) else { return };
+    for dep in dl.needed {
+        // The name a dependency was linked under is the file it ships as; only a
+        // library omc carries can be resolved here, and `libc.so` is always given.
+        let Some((known, _)) = crate::EXT_FAMILY.iter().find(|(f, _)| *f == dep) else { continue };
+        push_with_needed(known, out);
+    }
+    // Everything the recursion added belongs in front of this one.
+    let me = out.remove(at);
+    out.push(me);
+}
+

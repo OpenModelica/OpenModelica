@@ -171,6 +171,11 @@ pub fn omc_init() -> bool {
     // wasm has no `Instant`; give the sim driver a wall-clock for the chunk budget.
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_clock(wall_ms);
 
+    // `System.loadLibrary` has no dlopen to call here; route it to the wasm
+    // side-module loader, so `external "C"` functions can still be evaluated at
+    // compile time (NFEvalFunction).
+    openmodelica_wasm_jit::ext_eval::install();
+
     // `-d=-buildExternalLibs`: never try to *build* an external "C" library's
     // Resources/BuildProjects (autotools) — impossible in-browser, and it would
     // abort simcode elaboration of table functions. External functions are

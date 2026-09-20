@@ -69,6 +69,15 @@ pub mod sim_runtime;
 #[cfg(feature = "jit")]
 #[path = "wasi_shim.rs"]
 pub mod wasi_shim;
+
+// Loading shared libraries under wasmer, and the compile-time `external "C"`
+// evaluation that is the one host with no simulation behind it. Only a wasm omc
+// needs them: a native one has dlopen and libffi.
+#[cfg(all(feature = "jit", target_arch = "wasm32"))]
+#[path = "dylink_wasmer.rs"]
+pub mod dylink_wasmer;
+#[cfg(all(feature = "jit", target_arch = "wasm32"))]
+pub mod ext_eval;
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 #[path = "dylink_wasmtime.rs"]
 pub mod dylink_engine;

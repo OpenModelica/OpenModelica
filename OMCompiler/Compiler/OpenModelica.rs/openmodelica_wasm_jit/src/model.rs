@@ -181,7 +181,7 @@ impl ExtArchives {
     pub fn link(&self) -> std::result::Result<String, String> {
         Err("the implementation comes from a static library, which has to be linked — the browser \
              omc has no linker. Provide it as a `Library` built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`"
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string())
     }
 }
@@ -338,7 +338,7 @@ impl ExtIncludes {
     pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`"
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string())
     }
 }

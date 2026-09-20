@@ -63,6 +63,12 @@ pub const os: &str = if cfg!(windows) {
 
 pub const is64Bit: bool = cfg!(target_pointer_width = "64");
 
+/// Whether omc itself was built as a wasm module (the browser build). It has no
+/// dlopen and no native toolchain: a shared library is a wasm side module, and
+/// the only simulation target is `wasm-jit`. Mirrored in `Autoconf.mo.in` as
+/// `dllExt == ".wasm"`, which no configure run produces.
+pub const isWasm: bool = cfg!(target_arch = "wasm32");
+
 pub const isWindows: bool = cfg!(windows);
 
 pub const platform: &str = if isWindows && is64Bit {
@@ -82,7 +88,9 @@ pub const cmake: &str = "cmake";
 pub const exeExt: &str = if isWindows { ".exe" } else { "" };
 
 /// `@SHREXT@`.
-pub const dllExt: &str = if isWindows {
+pub const dllExt: &str = if isWasm {
+    ".wasm"
+} else if isWindows {
     ".dll"
 } else if cfg!(target_os = "macos") {
     ".dylib"
@@ -264,7 +272,9 @@ pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> =
 /// `$host_cpu` for the compilation target. Extend the chain when porting to
 /// a new architecture — an explicit "unknown" keeps path construction
 /// greppable rather than silently wrong.
-pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
+pub(crate) const target_arch_str: &str = if cfg!(target_arch = "wasm32") {
+    "wasm32"
+} else if cfg!(target_arch = "x86_64") {
     "x86_64"
 } else if cfg!(target_arch = "aarch64") {
     "aarch64"
@@ -279,7 +289,9 @@ pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
 };
 
 /// `-$host_os` for the compilation target.
-const os_triple_suffix: &str = if cfg!(all(windows, target_env = "gnu")) {
+const os_triple_suffix: &str = if isWasm {
+    "-wasip1"
+} else if cfg!(all(windows, target_env = "gnu")) {
     "-windows-gnu"
 } else if cfg!(windows) {
     "-windows-msvc"

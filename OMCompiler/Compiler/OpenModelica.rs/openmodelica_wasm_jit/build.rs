@@ -121,7 +121,6 @@ fn main() {
         s.spawn(|| {
             build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir)
         });
-        s.spawn(|| build_external_c_wasm(&crate_dir, &out_dir));
         s.spawn(|| {
             let adapters = build_fmi3_me_adapter(&crate_dir, &out_dir, sundials_dir.is_some());
             build_solver_dylinks(&out_dir, sundials_dir, &adapters);
@@ -129,7 +128,6 @@ fn main() {
         s.spawn(|| build_wasip1_fused_adapter(&crate_dir, &out_dir, &hash, sundials_dir));
         s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
         s.spawn(|| build_lapack_dylink(&crate_dir, &out_dir));
-        s.spawn(|| build_lapack_wasi(&crate_dir, &out_dir));
     });
 
     write_ondemand_index(&out_dir);
@@ -673,91 +671,52 @@ fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, Strin
     Ok(produced)
 }
 
-/// `openmodelica_lapack` again, with its own memory (the shape `modelicaexternalc.wasm`
-/// has). wasmer, which the browser runs the simulation on, has no dynamic linker and so
-/// cannot load the PIC [`build_lapack_dylink`] module. Shipped as a bundle file.
-fn build_lapack_wasi(crate_dir: &Path, out_dir: &Path) {
-    let dest = out_dir.join("lapack_wasi.wasm");
-    let stamp = out_dir.join("lapack_wasi.wasm.hash");
-    let lapack_dir = crate_dir.parent().expect("crate has a parent dir").join("openmodelica_lapack");
-
-    println!("cargo:rerun-if-env-changed=OMC_LAPACK_WASI");
-    if let Ok(path) = std::env::var("OMC_LAPACK_WASI") {
-        copy(Path::new(&path), &dest);
-        std::fs::write(&stamp, format!("override:{path}")).ok();
-        return;
-    }
-    if prebuilt_in(&dest, &stamp) {
-        return;
-    }
-
-    let (hash, _files) = hash_inputs(&lapack_dir, &[]);
-    let hash = format!("{hash}-wasi-{}", wasm_opt_key());
-    // The sources are already tracked by build_lapack_dylink's rerun-if-changed.
-    if dest.exists()
-        && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
-        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
-    {
-        return;
-    }
-
-    match build_lapack_wasi_wasm(&lapack_dir, out_dir) {
-        Ok(produced) => {
-            copy(&produced, &dest);
-            wasm_opt(&dest);
-            std::fs::write(&stamp, &hash).ok();
-        }
-        Err(e) => panic!(
-            "failed to build the LAPACK WASI side module: {e}\n\
-             The web target needs it for a model calling Modelica.Math.Matrices. Needs \
-             `rustup target add wasm32-wasip1`; set OMC_LAPACK_WASI to a prebuilt .wasm \
-             to skip the build."
-        ),
-    }
-}
-
-/// Nothing here references wasi-libc's `malloc`, which the host marshals through.
-fn build_lapack_wasi_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, String> {
-    let target = "wasm32-wasip1";
-    let target_dir = out_dir.join("lapack-wasi-target");
-    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    let rustflags = "-Ctarget-feature=+simd128 \
-        -Clink-arg=--export=malloc -Clink-arg=--export=free";
-    let mut cmd = Command::new(cargo);
-    cmd.current_dir(lapack_dir)
-        .args(["build", "--release", "--target", target])
-        .args(["--features", "fortran-abi"])
-        .arg("--target-dir")
-        .arg(&target_dir)
-        .env("RUSTFLAGS", rustflags);
-    detach_cargo_env(&mut cmd);
-    run(&mut cmd, "cargo build (LAPACK WASI side module)")?;
-    let produced = target_dir.join(target).join("release").join("openmodelica_lapack.wasm");
-    if !produced.exists() {
-        return Err(format!("expected wasm not found at {}", produced.display()));
-    }
-    Ok(produced)
-}
-
-/// What `blobs_ondemand!` in src/blobs.rs declares.
-const ONDEMAND_BLOBS: &[&str] = &["lapack_wasi.wasm"];
+/// What `blobs_ondemand!` in src/blobs.rs declares, and whether the file comes
+/// from `openmodelica_wasi_libc`'s OUT_DIR rather than this crate's. Only what a
+/// model's `external` declaration can name is indexed; the rest of the family is
+/// reached through `dylink.0` NEEDED.
+const ONDEMAND_BLOBS: &[(&str, bool)] = &[
+    ("liblapack.wasm", false),
+    ("ModelicaExternalC.wasm", true),
+    ("ModelicaStandardTables.wasm", true),
+    ("ModelicaIO.wasm", true),
+    // Not ModelicaMatIO, zlib or libc: nothing a model declares names a symbol of
+    // theirs — they are reached as what ModelicaIO needs — and MatIO carries the
+    // 3000 `H5*` of the HDF5 that gives it MAT v7.3.
+];
 
 /// Read off the modules, so the index cannot drift from what they export.
+/// Whether an export is a name a model's `external` declaration could name. A PIC
+/// library is linked `--export-all`, which also exposes every mangled internal,
+/// the loader's own `__wasm_*`/`__dso_handle` and the allocator — none callable
+/// from Modelica, and 100 KB of index if left in.
+fn model_callable(name: &str) -> bool {
+    if matches!(name, "malloc" | "free" | "_initialize") || name.starts_with("__") {
+        return false;
+    }
+    // `_R` is Rust's v0 mangling, `_Z` C++'s (and Rust's legacy).
+    if name.starts_with("_R") || name.starts_with("_Z") {
+        return false;
+    }
+    let mut chars = name.chars();
+    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
 fn write_ondemand_index(out_dir: &Path) {
     let mut out = String::from("[");
     let mut written = 0;
-    for file in ONDEMAND_BLOBS {
-        let Ok(bytes) = std::fs::read(out_dir.join(file)) else { continue };
+    let wasi_dir = PathBuf::from(env("DEP_OMC_WASI_BLOBS_DIR"));
+    for (file, from_wasi_libc) in ONDEMAND_BLOBS {
+        let dir = if *from_wasi_libc { &wasi_dir } else { out_dir };
+        let Ok(bytes) = std::fs::read(dir.join(file)) else { continue };
         if written > 0 {
             out.push(',');
         }
         written += 1;
         out.push_str(&format!("\n  {{\"file\": {}, \"exports\": [", json_str(file)));
-        // The marshalling host's ABI with the module, never a name a model imports.
-        let names: Vec<String> = exported_functions(&bytes)
-            .into_iter()
-            .filter(|n| !matches!(n.as_str(), "malloc" | "free" | "_initialize"))
-            .collect();
+        let names: Vec<String> =
+            exported_functions(&bytes).into_iter().filter(|n| model_callable(n)).collect();
         for (k, n) in names.iter().enumerate() {
             out.push_str(if k == 0 { "\n    " } else { ",\n    " });
             out.push_str(&json_str(n));
@@ -1559,173 +1518,6 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
     }
     Ok(produced)
-}
-
-/// The `env` imports `sim_runtime_wasmer::define_external_imports` binds. Any other
-/// undefined symbol is a link error, see `build_external_c_wasm`.
-///
-/// The `Modelica*` entry points are not among them: the side module carries
-/// `external_c_callbacks.c`, the same one an FMU links, so a `%g` is interpolated
-/// by `vsnprintf` before the host ever sees the message. Only allocation stays
-/// host-side (`OM_EXT_HOST_ALLOC`) — the buffer lives in the side module's own
-/// memory and the trampoline frees it after copying it out.
-const HOST_PROVIDED: &[&str] = &[
-    "rt_ext_error",
-    "rt_ext_message",
-    "rt_ext_warning",
-    "ModelicaAllocateString",
-    "ModelicaAllocateStringWithErrorReturn",
-    "ModelicaInternal_getTime",
-    "ModelicaInternal_getpid",
-    "usertab",
-];
-
-/// `--export-all` keeps older MSL compatibility entry points present, but exports
-/// functions only — hence `__stack_pointer`, which the recovery path restores.
-const EXTRA_LINK_ARGS: &[&str] = &["-Wl,--export-all", "-Wl,--export=__stack_pointer"];
-
-/// Build + embed the ModelicaExternalC WASI side module (`modelicaexternalc.wasm`)
-/// for the web (wasmer) simulation host. Provides `ext.Modelica*_*` external functions
-/// (native uses libffi + `.so` instead). Compiled with `clang --target=wasm32-wasip1
-/// --sysroot=OMC_WASI_PIC_SYSROOT`. Uses the same PIC wasi-libc sysroot as the dylink
-/// module built by openmodelica_wasi_libc.
-///
-/// Mandatory: a failed build is a hard error (no placeholder).
-fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
-    let dest = out_dir.join("modelicaexternalc.wasm");
-    let stamp = out_dir.join("modelicaexternalc.wasm.hash");
-
-    // Check for prebuilt override (CI hand-off) before requiring OMC_EXTERNAL_C_SOURCES.
-    println!("cargo:rerun-if-env-changed=OMC_WASM_EXTERNAL_C");
-    if let Ok(path) = std::env::var("OMC_WASM_EXTERNAL_C") {
-        copy(Path::new(&path), &dest);
-        std::fs::write(&stamp, format!("override:{path}")).ok();
-        return;
-    }
-    if prebuilt_in(&dest, &stamp) {
-        return;
-    }
-
-    println!("cargo:rerun-if-env-changed=OMC_EXTERNAL_C_SOURCES");
-    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES")
-        .map(PathBuf::from)
-        .expect("OMC_EXTERNAL_C_SOURCES not set (CMake provides it)");
-
-    let stubs = crate_dir.join("external_c_stubs.c");
-    let callbacks = crate_dir.join("../openmodelica_wasi_libc/external_c_callbacks.c");
-    let sources = [
-        "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
-        "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
-        "ModelicaInternal.c", "ModelicaFFT.c",
-    ];
-    let src_paths: Vec<PathBuf> = sources.iter().map(|s| c_sources.join(s)).collect();
-
-    println!("cargo:rerun-if-changed={}", stubs.display());
-    println!("cargo:rerun-if-changed={}", callbacks.display());
-    for src in &src_paths {
-        println!("cargo:rerun-if-changed={}", src.display());
-    }
-
-    // Verify all sources exist.
-    for src in &src_paths {
-        if !src.exists() {
-            panic!("missing C source: {}", src.display());
-        }
-    }
-
-    let zlib_dir = c_sources.join("zlib");
-    let mut zlib_srcs = collect_c_files(&zlib_dir);
-    zlib_srcs.sort();
-    for z in &zlib_srcs {
-        println!("cargo:rerun-if-changed={}", z.display());
-    }
-
-    println!("cargo:rerun-if-env-changed=OMC_WASI_CLANG");
-    println!("cargo:rerun-if-env-changed=OMC_WASI_PIC_SYSROOT");
-    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
-    let sysroot = std::env::var("OMC_WASI_PIC_SYSROOT")
-        .expect("OMC_WASI_PIC_SYSROOT not set (CMake provides it)");
-    let hdf5 = wasm_hdf5();
-
-    let all_srcs: Vec<_> = src_paths.iter().chain(zlib_srcs.iter()).collect();
-    let hash = {
-        let mut h: u64 = 0xcbf29ce484222325;
-        let mut mix = |bytes: &[u8]| for &byte in bytes { h ^= byte as u64; h = h.wrapping_mul(0x100000001b3); };
-        for f in all_srcs.iter().copied().chain([&stubs, &callbacks]) {
-            if let Ok(b) = std::fs::read(f) { mix(&b); }
-        }
-        mix(clang.as_bytes());
-        mix(sysroot.as_bytes());
-        if let Some((_, archive)) = &hdf5 {
-            if let Ok(b) = std::fs::read(archive) { mix(&b); }
-        }
-        for s in HOST_PROVIDED { mix(s.as_bytes()); }
-        for s in EXTRA_LINK_ARGS { mix(s.as_bytes()); }
-        format!("{h:016x}")
-    };
-    if dest.exists() && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
-        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash) {
-        return;
-    }
-
-    // `-mexec-model=reactor`: exports `_initialize` (runs ctors), no `_start`.
-    // `-nodefaultlibs` means `-lc` has to be explicit.
-    //
-    // `--allow-undefined-file` rather than blanket `--allow-undefined`: a sysroot that
-    // fails to provide libc must be a link error, not a module whose `malloc`/`strlen`/
-    // `__wasi_init_tp` quietly turn into imports the host cannot satisfy.
-    let permit = out_dir.join("modelicaexternalc.imports");
-    std::fs::write(&permit, HOST_PROVIDED.join("\n")).expect("write import permit list");
-    let builtins = find_wasm_builtins().ok_or_else(|| {
-        "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
-    }).unwrap_or_else(|e| panic!("{e}"));
-    let mut cmd = Command::new(&clang);
-    // `-D_POSIX_VERSION` as for the dylink build; see `openmodelica_wasi_libc`.
-    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor", "-D_POSIX_VERSION=200809L",
-               "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB", "-DOM_EXT_HOST_ALLOC",
-               "-Wno-error=implicit-function-declaration"])
-        .arg(format!("--sysroot={sysroot}"))
-        .arg("-I").arg(&c_sources)
-        .arg("-I").arg(&zlib_dir)
-        .args(&all_srcs).arg(&stubs).arg(&callbacks)
-        .arg("-lc");
-    if let Some((include, archive)) = &hdf5 {
-        // HDF5's plugin loader's dlopen/dlsym are stubbed in
-        // external_c_callbacks.c, so they never reach HOST_PROVIDED.
-        cmd.arg("-DHAVE_HDF5=1").arg("-I").arg(include).arg(archive);
-    }
-    cmd.arg(&builtins)
-        .args(EXTRA_LINK_ARGS)
-        .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
-        .arg("-o").arg(&dest);
-    let what = format!("{clang} (modelicaexternalc.wasm, --target=wasm32-wasip1, sysroot {sysroot})");
-    run(&mut cmd, &what).unwrap_or_else(|e| panic!("{e}"));
-    if !std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false) {
-        panic!("modelicaexternalc.wasm is empty");
-    }
-    std::fs::write(&stamp, &hash).ok();
-}
-
-/// The `.c` files directly under `dir` (non-recursive), for the bundled zlib.
-fn collect_c_files(dir: &Path) -> Vec<PathBuf> {
-    let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
-    rd.flatten().map(|e| e.path())
-        .filter(|p| p.extension().map(|x| x == "c").unwrap_or(false))
-        .collect()
-}
-
-/// The HDF5 wasm install tree (`OMC_WASM_HDF5_DIR`, from CMake's
-/// rust_hdf5_wasm) that gives ModelicaMatIO its MAT v7.3 support. Absent, v7.3
-/// files are rejected at `Mat_Open`.
-fn wasm_hdf5() -> Option<(PathBuf, PathBuf)> {
-    println!("cargo:rerun-if-env-changed=OMC_WASM_HDF5_DIR");
-    let dir = PathBuf::from(std::env::var("OMC_WASM_HDF5_DIR").ok()?);
-    let archive = dir.join("lib/libhdf5.a");
-    println!("cargo:rerun-if-changed={}", archive.display());
-    if !archive.exists() {
-        panic!("OMC_WASM_HDF5_DIR={} has no lib/libhdf5.a", dir.display());
-    }
-    Some((dir.join("include"), archive))
 }
 
 /// Locate the clang wasm builtins archive (`libclang_rt.builtins-wasm32.a`).

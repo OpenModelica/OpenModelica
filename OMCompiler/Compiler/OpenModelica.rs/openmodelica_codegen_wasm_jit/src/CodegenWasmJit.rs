@@ -140,13 +140,12 @@ use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
 use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
 /// LAPACK for the `external "FORTRAN 77"` calls of `Modelica.Math.Matrices`, which
 /// a host-free FMU has no system library to resolve.
-use openmodelica_wasm_jit::LAPACK_DYLINK;
 /// The solvers the me_cs adapter's embedded driver calls, one side module each.
 use openmodelica_wasm_jit::{sundials_dylink_available as sundials_available, SOLVER_LIBRARIES};
 /// The external-"C" FMU artifacts, linked in only when the model uses `external
 /// "C"`. Any is empty when that omc was built without the toolchain.
 use openmodelica_wasm_jit::{
-    external_c_available, EXTERNAL_C_DYLINK, LIBC_PIC, USERTAB_DYLINK, WASI_P1_ADAPTER,
+    external_c_available, LIBC_PIC, USERTAB_DYLINK, WASI_P1_ADAPTER,
 };
 
 // Small shared helpers: list iteration, constant folding of literal

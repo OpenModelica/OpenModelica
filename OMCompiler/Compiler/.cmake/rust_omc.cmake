@@ -2333,7 +2333,14 @@ function(omc_rust_setup_wasm)
     # The side modules the wasm omc does not embed, with the index naming what each
     # exports; fetched from here on the first call that needs one (wasm-blobs.js).
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/wasm-blobs
-    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_WASM_BLOB_DIR}/lapack_wasi.wasm
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_WASM_BLOB_DIR}/liblapack.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/libc_pic.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaExternalC.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaStandardTables.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaIO.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaMatIO.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/zlib.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/hdf5.wasm
             ${RUST_OMC_WASM_BLOB_DIR}/index.json
             ${_web_dir}/wasm-blobs/
     ${_web_launcher_extra}

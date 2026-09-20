@@ -222,16 +222,14 @@ pub(super) fn link_fmu_component(
             l.library(lib.name, bytes, false).map_err(link_err)?;
         }
     }
-    if needs_lapack(model_wasm, ext_libs) {
-        l.library("lapack", LAPACK_DYLINK(), false).map_err(link_err)?;
-    }
+
     let real_solvers = solvers.is_some_and(|w| !w.is_empty());
     if has_ext || real_solvers {
         // modelicaexternalc before libc; the coexisting allocator (libc dlmalloc +
         // runtime rt_alloc over one shared heap) is intentional. A solver library
         // needs libc too, so it brings the same libraries along; the stubs do not.
         if has_ext {
-            // First, so a symbol they define wins over ModelicaExternalC's.
+            // First, so a symbol they define wins over the ones omc carries.
             let ext_bytes: Vec<Vec<u8>> =
                 ext_libs.iter().map(|lib| drop_redundant_initialize(&lib.bytes)).collect();
             for (lib, bytes) in ext_libs.iter().zip(&ext_bytes) {
@@ -240,7 +238,20 @@ pub(super) fn link_fmu_component(
             if let Some(stub) = native_stub {
                 l.library("native_stub", stub, false).map_err(link_err)?;
             }
-            l.library("modelicaexternalc", EXTERNAL_C_DYLINK(), false).map_err(link_err)?;
+            // Only the libraries this model reaches, and what they need: an FMU
+            // that scans a string does not carry the MAT reader (see
+            // `openmodelica_wasm_jit::dylink::libraries_for`). The libraries linked
+            // beside the model ask for their own: `usertab` calls `ModelicaError`,
+            // and a model's own library may call the MSL's.
+            let mut wanted: Vec<String> = external_imports(model_wasm);
+            for bytes in ext_bytes.iter().map(|b| &b[..]).chain([USERTAB_DYLINK()]) {
+                wanted.extend(dylink_needs(bytes));
+            }
+            // Under the file name, which is what another library's NEEDED says.
+            for file in openmodelica_wasm_jit::dylink::libraries_for(&wanted) {
+                let Some(bytes) = openmodelica_wasm_jit::ext_library(file) else { continue };
+                l.library(file, bytes, false).map_err(link_err)?;
+            }
         }
         l.library("libc", LIBC_PIC(), false).map_err(link_err)?;
         if has_ext {
