@@ -795,6 +795,9 @@ fn copy_kind(kind: u32, handle: u32) -> u32 {
     }
 }
 
+/// Largest array the 32-bit linear memory can hold, minus the object header.
+const MAX_ARRAY_BYTES: u64 = i32::MAX as u64 - 64;
+
 /// Round `n` up to the next multiple of 8 (element-area alignment).
 fn align8(n: u32) -> u32 {
     (n + 7) & !7
@@ -818,7 +821,15 @@ fn arr_data(obj: u32) -> u32 {
 pub extern "C" fn rt_array_new(elem_kind: u32, ndims: u32, total: u32) -> u32 {
     stat_inc(STAT_ARRAY_NEW);
     let data_off = arr_data_off(ndims);
-    let size = data_off + total * elem_stride(elem_kind);
+    let bytes = data_off as u64 + total as u64 * elem_stride(elem_kind) as u64;
+    if bytes > MAX_ARRAY_BYTES {
+        // Otherwise `size` wraps, or the allocator traps with no message.
+        note_runtime_error(&alloc::format!(
+            "wasm-jit: cannot allocate an array of {total} elements ({bytes} bytes); a dimension was computed from a value that is not a valid size."
+        ));
+        trap();
+    }
+    let size = bytes as u32;
     let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
