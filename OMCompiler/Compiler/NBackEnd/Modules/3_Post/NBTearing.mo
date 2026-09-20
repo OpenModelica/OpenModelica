@@ -315,8 +315,9 @@ public
     if listEmpty(indices) then
       indices := list(i for i in 0:(Equation.size(eqn_ptr) - 1));
     end if;
-    if List.hasOneElement(indices) then
-      // already scalar (or a genuinely single-row slice): no row-collapse risk.
+    if List.hasOneElement(indices) and Equation.size(eqn_ptr) == 1 then
+      // already scalar: no row-collapse risk. A single row of a bigger array
+      // equation still has the residual variable of the whole array.
       slices := {eqn};
     else
       base_cref := Equation.getEqnName(eqn_ptr);
@@ -529,6 +530,12 @@ protected
     end match;
   end initialize;
 
+  function isPartialArraySlice
+    input Slice<EquationPointer> eqn;
+    output Boolean b = not listEmpty(eqn.indices) and Equation.isArrayEquation(Slice.getT(eqn))
+                       and Equation.size(Slice.getT(eqn)) > listLength(eqn.indices);
+  end isPartialArraySlice;
+
   function finalize extends Module.tearingInterface;
   protected
     Tearing strict;
@@ -540,8 +547,9 @@ protected
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
-        // create residual equations
-        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false)) for eqn in List.flatten(acc));
+        // create residual equations, a part of an array equation needs residual variables for its rows only
+        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false))
+          for eqn in List.flatten(list(if isPartialArraySlice(eqn) then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
