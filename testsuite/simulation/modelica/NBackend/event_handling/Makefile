@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 compositeEvent.mos \
+spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
 algorithmWhen.mos\
