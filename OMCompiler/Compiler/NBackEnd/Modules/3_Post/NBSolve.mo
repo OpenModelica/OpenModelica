@@ -202,6 +202,7 @@ public
           UnorderedSet<ComponentRef> output_crefs, input_crefs, solved_inputs;
           list<tuple<ComponentRef, ComponentRef>> tmp_crefs;
           list<Pointer<Variable>> tmp_vars;
+          Boolean is_mixed;
           list<Pointer<Equation>> tmp_eqns;
           Pointer<Integer> idx;
           UnorderedMap<ComponentRef, ComponentRef> cref_repl;
@@ -287,8 +288,10 @@ public
                 Pointer.update(eqn_ptr, Equation.map(eqn, function Replacements.applySimpleExp(replacements = exp_repl)));
                 // create the algebraic loop, already torn
                 strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
-                // ToDo: set all the booleans correctly
-                solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status, true);
+                // a loop over discrete variables is mixed and must not get a Jacobian
+                is_mixed := List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isDiscontinuous(staticAsContinuous = Partition.kindIsInitial(kind)));
+                // ToDo: set the other booleans correctly
+                solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, is_mixed, false, solve_status, true);
 
                 // add new equations and new variables
                 EqData.addTypedList(eqData, tmp_eqns, NBEquation.EqData.EqType.CONTINUOUS);

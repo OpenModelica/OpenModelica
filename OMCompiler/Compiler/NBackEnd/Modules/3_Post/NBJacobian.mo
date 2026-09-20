@@ -601,6 +601,11 @@ protected
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
+        guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
+      then (comp, false);
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
