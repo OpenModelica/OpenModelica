@@ -167,6 +167,38 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   # As for DEB above: the metapackage is "openmodelica", not "openmodelica-meta".
   set(CPACK_RPM_META_PACKAGE_NAME "openmodelica")
 
+  # Every package's Requires, from the components' DEPENDS. CPackRPM has no counterpart to
+  # CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS and never reads them, so without this each package
+  # ships depending on nothing -- openmodelica-omc not even on openmodelica-simrt. A dependency
+  # is named by its own package, so the metapackage's rename is followed rather than assumed;
+  # %{version}-%{release} pins one build's packages to each other, as (= version) does for .deb.
+  foreach(_om_component IN LISTS CPACK_COMPONENTS_ALL)
+    string(TOUPPER "${_om_component}" _om_component_upper)
+    set(_om_component_requires "")
+    foreach(_om_dependency IN LISTS CPACK_COMPONENT_${_om_component_upper}_DEPENDS)
+      string(TOUPPER "${_om_dependency}" _om_dependency_upper)
+      if(CPACK_RPM_${_om_dependency_upper}_PACKAGE_NAME)
+        set(_om_dependency_package "${CPACK_RPM_${_om_dependency_upper}_PACKAGE_NAME}")
+      else()
+        set(_om_dependency_package "openmodelica-${_om_dependency}")
+      endif()
+      list(APPEND _om_component_requires "${_om_dependency_package} = %{version}-%{release}")
+    endforeach()
+    if(_om_component_requires)
+      list(JOIN _om_component_requires ", " CPACK_RPM_${_om_component_upper}_PACKAGE_REQUIRES)
+    endif()
+  endforeach()
+
+  # The tools omc runs rather than links, which rpmbuild's dependency generator cannot see:
+  # CPACK_DEBIAN_OMC_PACKAGE_DEPENDS under RPM names, where build-essential is gcc, gcc-c++ and
+  # make and the -dev packages are -devel. The Autoconf spec required these too, bar clang.
+  set(_om_omc_tools "clang, cmake, gcc, gcc-c++, make, gcc-gfortran, expat-devel, lapack-devel, zip, unzip")
+  if(CPACK_RPM_OMC_PACKAGE_REQUIRES)
+    set(CPACK_RPM_OMC_PACKAGE_REQUIRES "${CPACK_RPM_OMC_PACKAGE_REQUIRES}, ${_om_omc_tools}")
+  else()
+    set(CPACK_RPM_OMC_PACKAGE_REQUIRES "${_om_omc_tools}")
+  endif()
+
   # The same weak dependencies the DEB packages carry above. rpm has no package named
   # gnuplot-nox or xsltproc -- what each distribution calls them differs -- so those two are
   # asked for by the file they provide, which rpm resolves through its file index. Our own
