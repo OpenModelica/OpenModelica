@@ -66,7 +66,7 @@ function(omc_result_reader_library)
   add_custom_command(
     OUTPUT ${_lib}
     WORKING_DIRECTORY ${_workspace}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${_env} ${CARGO_EXECUTABLE} ${_cargo_cmd} --release --target-dir ${_target_dir} ${_target_flag} -p openmodelica_result_capi
     DEPENDS ${_rust_srcs}
     COMMENT "Rust: building libomc_result (result-file readers for OMEdit/OMPlot)"
