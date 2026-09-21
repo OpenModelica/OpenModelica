@@ -4067,7 +4067,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . &&  make " + getProcsStr(true) + " install && " +
+                  "cmake --build . --parallel " + getProcsStr() + " --target install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
