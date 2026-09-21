@@ -751,7 +751,7 @@ pipeline {
         // 'cmake-OMDev-gcc' stashed as 'omc-cmake-windows'. Its own stage, not
         // part of that build, so a test failure here reads as a testsuite
         // failure rather than a build failure.
-        stage('25 testsuite-windows') {
+        stage('20 testsuite-windows') {
           agent {
             node {
               label 'windows-no-release'
