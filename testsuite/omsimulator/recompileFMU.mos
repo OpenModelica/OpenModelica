@@ -30,7 +30,7 @@ buildModelFMU(simpleLoop, version="2.0", fmuType="me"); getErrorString();
 // Re-build FMU
 system("unzip -o -qq simpleLoop.fmu -d simpleLoop_FMU/");
 remove("simpleLoop.fmu");
-system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallationDirectoryPath() + "/include/omc/c/fmi -DFMI2_OVERRIDE_FUNCTION_PREFIX -DOMC_FMI_RUNTIME\" && make -s", "build_simpleLoop.log"); getErrorString();
+system("cmake -S simpleLoop_FMU/sources -B simpleLoop_FMU/sources/build_cmake && cmake --build simpleLoop_FMU/sources/build_cmake --target create_fmu", "build_simpleLoop.log"); getErrorString();
 
 system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --mode=me", "simpleLoop_me_systemCall.log");
 readFile("simpleLoop_me_systemCall.log");
