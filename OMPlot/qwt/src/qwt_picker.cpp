@@ -832,13 +832,13 @@ QRect QwtPicker::trackerRect( const QFont& font ) const
     return trackerRect( QSize( w, h ) );
 }
 
-/*! 
+/*!
    Calculate the geometry of the tracker that is needed to display
    information of a specific size at the tracker position
-    
-   \param size Size 
+
+   \param size Size
    \return Bounding rectangle of the tracker
-    
+
    \sa trackerPosition()
  */
 QRect QwtPicker::trackerRect( const QSize& size ) const

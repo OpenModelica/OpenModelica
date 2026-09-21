@@ -73,6 +73,24 @@
 
 class OMCProxy;
 
+#if defined(__EMSCRIPTEN__)
+// HTML splash overlay drawn straight into the DOM. Qt's QSplashScreen pumps the
+// Qt-for-WebAssembly event dispatcher during early startup, which traps, so on
+// wasm the splash and the startup passes are rendered outside Qt. See Utilities.cpp.
+namespace WasmSplash
+{
+  void show();
+  void setMessage(const QString &message);
+  void stepMessage(const QString &message);
+  void setProgress(int done, int total);
+  void finish();
+  bool isVisible();
+}
+#endif
+
+#if !defined(__EMSCRIPTEN__)
+// Omitted on wasm: showMessage()/repaint() pumps the Qt-for-WebAssembly event
+// dispatcher during early startup, which traps. Uses are guarded at the call sites.
 class SplashScreen : public QSplashScreen
 {
   Q_OBJECT
@@ -90,6 +108,7 @@ public slots:
     repaint();
   }
 };
+#endif
 
 class StatusBar : public QStatusBar
 {
@@ -100,6 +119,13 @@ public slots:
   void showMessage(const QString &message, int timeout = 0)
   {
     QStatusBar::showMessage(message, timeout);
+#if defined(__EMSCRIPTEN__)
+    // While the HTML splash is up (startup) the status bar is not yet on screen,
+    // so mirror its passes (loading libraries, …) onto the splash.
+    if (WasmSplash::isVisible()) {
+      WasmSplash::setMessage(message);
+    }
+#endif
     /* QStatusBar::showMessage calls update() which schedules a paint event for processing when Qt returns to the main event loop
      * so we call repaint() to get the immediate update. Calling repaint() is better than qApp->processEvents() which processes all pending events.
      */
@@ -121,10 +147,22 @@ protected:
 };
 
 class LineEdit;
+class QRegularExpression;
 class TreeSearchFilters : public QWidget
 {
   Q_OBJECT
 public:
+  /*!
+   * \brief The FilterSyntax enum
+   * The filter syntax used for the filter search. The values must stay in sync
+   * with the combo box item data (RegExp=0, Wildcard=1, FixedString=2).
+   */
+  enum FilterSyntax {
+    Regexp = 0,
+    Wildcard = 1,
+    FixedString = 2
+  };
+
   TreeSearchFilters(QWidget *pParent = 0);
   LineEdit* getFilterTextBox() {return mpFilterTextBox;}
   QTimer* getFilterTimer() {return mpFilterTimer;}
@@ -133,18 +171,20 @@ public:
   QToolButton* getCollapseAllButton() {return mpCollapseAllButton;}
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
+  FilterSyntax getFilterSyntax() const {return FilterSyntax(mpSyntaxComboBox->itemData(mpSyntaxComboBox->currentIndex()).toInt());}
+  static QRegularExpression getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, FilterSyntax syntax);
 private:
   LineEdit *mpFilterTextBox;
   QTimer *mpFilterTimer;
   QToolButton *mpScrollToActiveButton;
   QToolButton *mpExpandAllButton;
   QToolButton *mpCollapseAllButton;
-  QToolButton *mpShowHideButton;
   QWidget *mpFiltersWidget;
   QComboBox *mpSyntaxComboBox;
+  QToolButton *mpFiltersHelpButton;
   QCheckBox *mpCaseSensitiveCheckBox;
 private slots:
-  void showHideFilters(bool On);
+  void showFiltersHelp();
 signals:
   void clearFilter(const QString &);
 };
@@ -271,11 +311,14 @@ protected:
  * We must register this struct as a meta type since we need to use it as a QVariant.
  * This is used to store the recent files information in omedit.ini file.
  * The QDataStream also needed to be defined for this struct.
+ * It is also used to store the recent models information where fileName holds the Modelica class
+ * name and path holds the file that has to be loaded to make the class available before it can be shown.
  */
 struct RecentFile
 {
   QString fileName;
   QString encoding;
+  QString path;
   operator QVariant() const
   {
     return QVariant::fromValue(*this);
@@ -287,6 +330,7 @@ inline QDataStream& operator<<(QDataStream& out, const RecentFile& recentFile)
 {
   out << recentFile.fileName;
   out << recentFile.encoding;
+  out << recentFile.path;
   return out;
 }
 
@@ -294,6 +338,8 @@ inline QDataStream& operator>>(QDataStream& in, RecentFile& recentFile)
 {
   in >> recentFile.fileName;
   in >> recentFile.encoding;
+  // path was added later, older entries do not have it; reading past the end yields an empty string.
+  in >> recentFile.path;
   return in;
 }
 
@@ -430,6 +476,10 @@ public:
   }
 };
 
+// Qt for WebAssembly has no QProcess (QT_CONFIG(process) is off), so this
+// subprocess wrapper is unavailable on the web build. omc/compile/simulate run
+// in the omc Web Worker instead.
+#if QT_CONFIG(process)
 class QDetachableProcess : public QProcess
 {
   Q_OBJECT
@@ -437,10 +487,18 @@ public:
   QDetachableProcess(QObject *pParent = 0);
 
   void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
+  bool hasStartupError() const { return mStartupError; }
+  QString startupErrorString() const { return mStartupErrorString; }
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
   void start(const QString &command, OpenMode mode = ReadWrite);
 #endif
+
+private:
+  void finishStart();
+  bool mStartupError = false;
+  QString mStartupErrorString;
 };
+#endif
 
 class JsonDocument : public QObject
 {

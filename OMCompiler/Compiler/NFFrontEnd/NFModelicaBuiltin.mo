@@ -1300,10 +1300,57 @@ record CheckSettingsResult
   String MODELICAUSERCFLAGS, WORKING_DIRECTORY;
   Boolean CREATE_FILE_WORKS, REMOVE_FILE_WORKS;
   String OS, SYSTEM_INFO, SENDDATALIBS, C_COMPILER, C_COMPILER_VERSION;
-  Boolean C_COMPILER_RESPONDING, HAVE_CORBA;
+  Boolean C_COMPILER_RESPONDING;
   String CONFIGURE_CMDLINE;
 annotation(preferredView="text");
 end CheckSettingsResult;
+
+record AxisScale
+  "Scale of a figure axis, from the figures annotation."
+  String scaleType = "Linear" "\"Linear\" | \"Log\" | vendor markup";
+  Integer base = 10 "for Log; ignored otherwise";
+annotation(preferredView="text");
+end AxisScale;
+
+record Axis
+  "One axis of a figure plot, from the figures annotation."
+  Real[:] min = fill(0.0, 0) "empty = auto; length 1 = lower bound";
+  Real[:] max = fill(0.0, 0) "empty = auto; length 1 = upper bound";
+  String unit = "";
+  String label = "";
+  AxisScale scale = AxisScale();
+annotation(preferredView="text");
+end Axis;
+
+record Curve
+  "One curve of a figure plot, from the figures annotation."
+  String x = "time" "result reference";
+  String y "result reference";
+  String legend = "";
+  Integer zOrder = 0;
+annotation(preferredView="text");
+end Curve;
+
+record Plot
+  "One plot of a figure, from the figures annotation."
+  String title = "";
+  String identifier = "";
+  Curve[:] curves;
+  Axis x = Axis();
+  Axis y = Axis();
+annotation(preferredView="text");
+end Plot;
+
+record Figure
+  "One figure, from the figures sub-annotation of Documentation."
+  String title = "";
+  String identifier = "";
+  String group = "";
+  Boolean preferred = false;
+  Plot[:] plots;
+  String caption = "";
+annotation(preferredView="text");
+end Figure;
 
 package Internal
   "Internal definitions."
@@ -1324,6 +1371,11 @@ constant Integer RT_CLOCK_LINEARIZE = 16;
 constant Integer RT_CLOCK_TEMPLATES = 17;
 constant Integer RT_CLOCK_UNCERTAINTIES = 18;
 constant Integer RT_CLOCK_USER_RESERVED = 19;
+/* Accumulated over a whole translation, not a single tick/tock: the work only
+   an FMU export does, inside the phase clock of the same name. */
+constant Integer RT_CLOCK_FMU_BACKEND = 27;
+constant Integer RT_CLOCK_FMU_SIMCODE = 28;
+constant Integer RT_CLOCK_FMU_TEMPLATES = 31;
 
 function readableTime
   "Returns the time in seconds formatted as a string with four significant digits."
@@ -1359,6 +1411,16 @@ external "builtin";
 annotation(preferredView="text");
 end timerTock;
 
+function timerAccumulated
+  "Reads the total time accumulated on the internal timer with the given index,
+   or -1 if that timer never ran. Timers that measure a stretch of work that
+   recurs during one command accumulate instead of ticking once."
+  input Integer index;
+  output Real total;
+external "builtin";
+annotation(preferredView="text");
+end timerAccumulated;
+
 function timerClear
   "Clears the internal timer with the given index."
   input Integer index;
@@ -1388,7 +1450,7 @@ annotation(preferredView="text");
 end checkSettings;
 
 function loadFile
-  "Loads a Modelica file (*.mo)."
+  "Loads a Modelica file (``*.mo``)."
   input String fileName;
   input String encoding = "UTF-8";
   input Boolean uses = true;
@@ -1402,13 +1464,13 @@ annotation(Documentation(info="<html>
 <p>
   Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
-  The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
+  The main difference from loadModel is that loadFile appends this directory to OPENMODELICALIBRARY (MODELICAPATH in the language specification) (for this call only).
 </p>
 </html>"), preferredView="text");
 end loadFile;
 
 function loadFiles
-  "Loads Modelica files (*.mo)."
+  "Loads Modelica files (``*.mo``)."
   input String[:] fileNames;
   input String encoding = "UTF-8";
   input Integer numThreads = OpenModelica.Scripting.numProcessors();
@@ -1816,7 +1878,7 @@ function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
 <p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
 </html>"),
   preferredView="text");
@@ -1827,7 +1889,7 @@ function getModelicaPath
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The MODELICAPATH is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
+<p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
 <p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 <p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
 </html>"),
@@ -2134,6 +2196,7 @@ external "builtin" annotation(Library = {"omcruntime"});
 annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
+<p>The first signal asks the running command to stop, so that omc survives to report what it completed; a second one a tenth of the time later (at least 5 and at most 60 seconds) terminates omc if the command has no cancellation point to stop at. Re-arming or clearing the alarm withdraws the request.</p>
 </html>"));
 end alarm;
 
@@ -2330,7 +2393,7 @@ annotation(preferredView="text");
 end getDefaultOpenCLDevice;
 
 function setDefaultOpenCLDevice
-  "Sets the default OpenCL device to be used."
+  "Sets the default OpenCL device to be used. 0 selects one automatically."
   input Integer defdevid;
   output Boolean success;
 algorithm
@@ -2380,24 +2443,6 @@ function getLanguageStandard "Returns the current Modelica Language Standard in 
 external "builtin";
 annotation(preferredView="text");
 end getLanguageStandard;
-
-function getAstAsCorbaString
-  "Returns the AST in CORBA format."
-  input String fileName = "<interactive>";
-  output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
-external "builtin";
-annotation(Documentation(info="<html>
-<p>Prints the whole AST on the CORBA format for records, e.g.:
-<pre>
-  record Absyn.PROGRAM
-    classes = ...,
-    within_ = ...,
-  end Absyn.PROGRAM;
-</pre>
-</p>
-</html>"),
-  preferredView="text");
-end getAstAsCorbaString;
 
 function cd
   "Changes the working directory."
@@ -2966,7 +3011,8 @@ function translateModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
 external "builtin";
@@ -2989,8 +3035,10 @@ function buildModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
+  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3025,6 +3073,7 @@ function simulate
   input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
+  input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
   output SimulationResult simulationResults;
   record SimulationResult
     String resultFile;
@@ -3628,7 +3677,7 @@ function diffSimulationResults
   output String[:] failVars;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
@@ -3644,7 +3693,7 @@ function diffSimulationResultsHtml
   output String html;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResultsHtml;
@@ -5073,6 +5122,14 @@ external "builtin";
 annotation(preferredView="text");
 end getSimulationOptions;
 
+function getModelFigures
+  "Returns the figures defined in the class' figures sub-annotation of Documentation."
+  input TypeName name;
+  output Figure[:] figures;
+external "builtin";
+annotation(preferredView="text");
+end getModelFigures;
+
 function getAnnotationNamedModifiers
   "Returns the names of the modifiers in the given annotation."
   input TypeName className;
@@ -5810,7 +5867,10 @@ function getDefinitions
   output String result;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
-<p>Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
+<p>Used by org.openmodelica.corba.parser.DefinitionsCreator in the Java
+interface, which parses the string returned here. The corba in that package
+name is historical and does not imply a CORBA connection; OpenModelica no
+longer has a CORBA interface.</p>
 </html>"));
 end getDefinitions;
 
@@ -5828,7 +5888,7 @@ annotation(preferredView="text",Documentation(info="<html>
 end reverseLookup;
 
 // OMSimulator API calls
-type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";
+type oms_system = enumeration(oms_system_none, oms_system_wc, oms_system_sc, oms_system_sc3) "OMSimulator enumeration for system type.";
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined) "OMSimulator enumeration for casuality.";
 type oms_signal_type = enumeration (oms_signal_type_real,
   oms_signal_type_integer,

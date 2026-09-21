@@ -15,8 +15,7 @@
 
 #include <map>
 #include <Core/Utils/extension/impl/typeinfo.hpp>
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/remove_const.hpp>
+#include <type_traits>
 
 namespace boost {
 namespace extensions {
@@ -62,7 +61,7 @@ public:
     }
     template <class Type>
     operator Type&() {
-      typedef typename remove_const<Type>::type StoredType;
+      typedef typename std::remove_const<Type>::type StoredType;
       TypeInfo t =
         type_info_handler<TypeInfo, StoredType>
           ::get_class_type();

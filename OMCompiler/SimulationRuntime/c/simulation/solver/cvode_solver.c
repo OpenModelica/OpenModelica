@@ -75,8 +75,8 @@ const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
 };
 
 /* Internal function prototypes */
-int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData);
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI);
+int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, void *userData);
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleantype isFMI);
 
 /**
  * @brief Computes the ODE right-hand side for a given value of the independent variable t and state vector y
@@ -87,7 +87,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
  * @param userData    user data containing CVODE_SOLVER
  * @return int
  */
-int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData)
+int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, void *userData)
 {
   /* Variables */
   CVODE_SOLVER *cvodeData;
@@ -350,7 +350,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
  * @param cvodeData       CVODE solver data struckt
  * @param threadData      Thread data for error handling
  */
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI)
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleantype isFMI)
 {
   /* Variables */
   int i;
@@ -360,11 +360,11 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
   /* Set linear multistep method */
   if (omc_flag[FLAG_CVODE_LMM])
   {
-    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_ADAMS]))
+    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_ADAMS]) == 0)
     {
       config->lmm = CV_ADAMS;
     }
-    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_BDF]))
+    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_BDF]) == 0)
     {
       config->lmm = CV_BDF;
     }
@@ -390,11 +390,11 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
   /* Set nonlinear solver iteration type */
   if (omc_flag[FLAG_CVODE_ITER])
   {
-    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_FIXED_POINT]))
+    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_FIXED_POINT]) == 0)
     {
       config->iter = CV_ITER_FIXED_POINT;
     }
-    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_NEWTON]))
+    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_NEWTON]) == 0)
     {
       config->iter = CV_ITER_NEWTON;
     }
@@ -409,7 +409,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
         }
         messageClose(OMC_LOG_SOLVER);
       }
-      throwStreamPrint(threadData, "Unrecognized type of nonlinear solver iteration %s for CVODE.", (const char *)omc_flagValue[FLAG_CVODE_LMM]);
+      throwStreamPrint(threadData, "Unrecognized type of nonlinear solver iteration %s for CVODE.", (const char *)omc_flagValue[FLAG_CVODE_ITER]);
     }
   }
   else /* No user provided flag */
@@ -432,8 +432,8 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
     {
       warningStreamPrint(OMC_LOG_SOLVER, 1, "Combination of %s and %s not recommended.", CVODE_LMM_NAME[config->lmm], CVODE_ITER_NAME[config->iter]);
       warningStreamPrint(OMC_LOG_SOLVER, 0, "Use simflags %s and %s to set.", FLAG_NAME[FLAG_CVODE_LMM], FLAG_NAME[FLAG_CVODE_ITER]);
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_BDF, CV_NEWTON) for stiff problems (Default) or");
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_ADAMS, CV_FUNCTIONAL) for nonstiff problems.");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_BDF, CV_ITER_NEWTON) for stiff problems (Default) or");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_ADAMS, CV_ITER_FIXED_POINT) for nonstiff problems.");
       messageClose(OMC_LOG_SOLVER);
     }
   }
@@ -514,6 +514,34 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
 }
 
 /**
+ * @brief Read the states' nominal values into the absolute tolerances.
+ *
+ * Re-read by updateSolverNominals once initialization has computed the nominals
+ * that are parameter expressions.
+ *
+ * @param data              Runtime data struct
+ * @param threadData        Thread data for error handling
+ * @param cvodeData         CVODE solver data struct with absoluteTolerance allocated.
+ * @return int              Return 0 on success.
+ */
+int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER *cvodeData)
+{
+  int flag;
+  long int i;
+  double *abstol = N_VGetArrayPointer_Serial(cvodeData->absoluteTolerance);
+
+  for (i = 0; i < cvodeData->N; ++i)
+  {
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    abstol[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
+  }
+  flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
+
+  return 0;
+}
+
+/**
  * @brief Allocate memory, initialize and set configurations for CVODE solver
  *
  * @param data              Runtime data struct
@@ -543,13 +571,22 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Get CVODE settings from user flags */
   cvodeGetConfig(&(cvodeData->config), threadData, isFMI);
 
+  /* Create the SUNDIALS context every other SUNDIALS object is created with */
+  flag = SUNContext_Create(SUN_COMM_NULL, &cvodeData->sunctx);
+  assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_Create failed.");
+  sundialsSilenceLogger(cvodeData->sunctx);
+
+  /* Set error handler */
+  flag = SUNContext_PushErrHandler(cvodeData->sunctx, sundialsErrorHandlerFunction, cvodeData);
+  assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_PushErrHandler failed.");
+
   /* Initialize states */
   cvodeData->N = (long int)data->modelData->nStates;
-  cvodeData->y = N_VMake_Serial(cvodeData->N, (realtype *)data->localData[0]->realVars);
+  cvodeData->y = N_VMake_Serial(cvodeData->N, (sunrealtype *)data->localData[0]->realVars, cvodeData->sunctx);
   assertStreamPrint(threadData, NULL != cvodeData->y, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
 
   /* Allocate CVODE memory block */
-  cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm);
+  cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm, cvodeData->sunctx);
   assertStreamPrint(threadData, NULL != cvodeData->cvode_mem, "CVODE_ERROR: CVodeCreate failed - returned NULL pointer.");
 
   if (measure_time_flag)
@@ -567,33 +604,23 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Set CVODE relative and absolute error tolerances */
   abstol_tmp = (double *)calloc(cvodeData->N, sizeof(double)); /* Is freed with `free(NV_DATA_S(cvodeData->absoluteTolerance));` */
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
-  for (i = 0; i < cvodeData->N; ++i)
-  {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    abstol_tmp[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
-  }
-  cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);
+  cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp, cvodeData->sunctx);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
-  flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
+  cvode_solver_setNominals(data, threadData, cvodeData);
   infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
 
   /* Provide cvodeData as user data */
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetUserData");
 
-  /* Set error handler */
-  flag = CVodeSetErrHandlerFn(cvodeData->cvode_mem, cvodeErrorHandlerFunction, cvodeData);
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetErrHandlerFn");
-
   /* Set linear solver used by CVODE */
-  cvodeData->y_linSol = N_VNew_Serial(cvodeData->N);
+  cvodeData->y_linSol = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
   switch (cvodeData->config.jacobianMethod)
   {
   case INTERNALNUMJAC:
   case COLOREDNUMJAC:
-    cvodeData->J = SUNDenseMatrix(cvodeData->N, cvodeData->N);
-    cvodeData->linSol = SUNLinSol_Dense(cvodeData->y_linSol, cvodeData->J);
+    cvodeData->J = SUNDenseMatrix(cvodeData->N, cvodeData->N, cvodeData->sunctx);
+    cvodeData->linSol = SUNLinSol_Dense(cvodeData->y_linSol, cvodeData->J, cvodeData->sunctx);
     assertStreamPrint(threadData, NULL != cvodeData->linSol, "##CVODE## SUNLinSol_Dense failed.");
     break;
   default:
@@ -635,11 +662,12 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   switch (cvodeData->config.iter)
   {
     case CV_ITER_FIXED_POINT:
-      cvodeData->y_nonLinSol = N_VNew_Serial(cvodeData->N);
-      cvodeData->nonLinSol = SUNNonlinSol_FixedPoint(cvodeData->y_nonLinSol, cvodeData->N /* Num acceleration vectors for Anderson's method, m <= dimension*/);
+      cvodeData->y_nonLinSol = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
+      cvodeData->nonLinSol = SUNNonlinSol_FixedPoint(cvodeData->y_nonLinSol, cvodeData->N /* Num acceleration vectors for Anderson's method, m <= dimension*/, cvodeData->sunctx);
       assertStreamPrint(threadData, NULL != cvodeData->nonLinSol, "##CVODE## SUNNonlinSol_FixedPoint failed.");
       flag = CVodeSetNonlinearSolver(cvodeData->cvode_mem, cvodeData->nonLinSol);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetNonlinearSolver");
+      break;
     case CV_ITER_NEWTON:
       /* Default option, no allocation needed */
       cvodeData->y_nonLinSol = NULL;
@@ -772,9 +800,15 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
 
   /* Free CVODE internal data */
   CVodeFree(&cvodeData->cvode_mem);
+
+  SUNContext_Free(&cvodeData->sunctx);
   free(cvodeData->simData);
 
+#ifdef OMC_FMI_RUNTIME
+  cvodeData->freeSolverMemory(cvodeData);
+#else
   free(cvodeData);
+#endif
 
   /* Log cvode_solver_deinitial */
   infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### Finished deinitialization of CVODE solver successfully ###");

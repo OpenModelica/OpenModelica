@@ -5,6 +5,7 @@ find_package(LAPACK REQUIRED)
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
   "eval_dep.c"
+  "jacobian_colpack.cpp"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
@@ -14,6 +15,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "results/simulation_result_ia.cpp"
   "results/simulation_result_mat4.cpp"
   "results/simulation_result_plt.cpp"
+  "results/simulation_result_rust.cpp"
   "results/simulation_result.cpp"
   "simulation_info_json.c"
   "simulation_input_xml.c"
@@ -30,6 +32,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/discrete_changes.c"
   "solver/gbode_conf.c"
   "solver/gbode_ctrl.c"
+  "solver/gbode_err.c"
   "solver/gbode_events.c"
   "solver/gbode_main.c"
   "solver/gbode_nls.c"
@@ -41,7 +44,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/ida_solver.c"
   "solver/initialization/initialization.c"
   "solver/jacobian_analysis.c"
-  "solver/jacobianSymbolical.c"
   "solver/kinsol_b.c"
   "solver/kinsolSolver.c"
   "solver/linearSolverKlu.c"
@@ -79,6 +81,7 @@ set(OMC_SIMRT_SIMULATION_CINC
 set(OMC_SIMRT_SIMULATION_HEADERS
   "arrayIndex.h"
   "eval_dep.h"
+  "jacobian_colpack.h"
   "jacobian_util.h"
   "modelinfo.h"
   "omc_simulation_util.h"
@@ -88,6 +91,7 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "results/simulation_result_ia.h"
   "results/simulation_result_mat4.h"
   "results/simulation_result_plt.h"
+  "results/simulation_result_rust.h"
   "results/simulation_result.h"
   "simulation_info_json.h"
   "simulation_input_xml.h"
@@ -105,6 +109,7 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/discrete_changes.h"
   "solver/gbode_conf.h"
   "solver/gbode_ctrl.h"
+  "solver/gbode_err.h"
   "solver/gbode_events.h"
   "solver/gbode_main.h"
   "solver/gbode_nls.h"
@@ -115,7 +120,6 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/ida_solver.h"
   "solver/initialization/initialization.h"
   "solver/jacobian_analysis.h"
-  "solver/jacobianSymbolical.h"
   "solver/kinsol_b.h"
   "solver/kinsolSolver.h"
   "solver/linearSolverKlu.h"
@@ -147,6 +151,13 @@ set(OMC_SIMRT_SIMULATION_HEADERS
 
 add_library(OpenModelicaRuntimeCSimulation OBJECT ${OMC_SIMRT_SIMULATION_SOURCES})
 add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulation)
+
+# The result files (.mat/.arrow/.csv/.plt) written by the Rust writers in
+# libomc_result instead of the C ones (results/simulation_result_rust.cpp).
+if(OM_RUST_RESULT_WRITERS)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PUBLIC OM_RUST_RESULT_WRITERS)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::result)
+endif()
 
 target_include_directories(OpenModelicaRuntimeCSimulation
   PUBLIC
@@ -183,6 +194,16 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     omc::3rd::lis
     ${LAPACK_LIBRARIES}
 )
+
+if(OM_OMC_ENABLE_PRIMME)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_HAVE_PRIMME)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)
+endif()
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_HAVE_COLPACK)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::colpack)
+endif()
 
 if(OM_OMC_ENABLE_OPTIMIZATION)
   target_link_libraries(OpenModelicaRuntimeCSimulation

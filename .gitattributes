@@ -1,2 +1,5 @@
 *.mo linguist-language=Modelica
 *.tpl linguist-language=Susan
+# cmd.exe can fail to find a `call :label` in a batch file with LF endings.
+*.bat text eol=crlf
+*.cmd text eol=crlf

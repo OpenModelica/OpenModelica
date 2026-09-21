@@ -51,6 +51,7 @@
 
 #include <QMenu>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 const int fixedTabsCount = 4;
 
@@ -246,8 +247,19 @@ void MessageWidget::addGUIMessage(MessageItem messageItem)
   } else {
     message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
   }
+  // An omc message can be delivered as a queued call while MainWindow is still
+  // being constructed - loading libraries at startup does exactly that - and the
+  // Libraries Browser does not exist yet. Without this the lookups below run on an
+  // unset pointer, which faults somewhere inside the tree walk rather than cleanly.
+  const bool libraryReady = MainWindow::instance() && MainWindow::instance()->isLibraryWidgetReady();
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;
+  } else if (!libraryReady) {
+    // No tree to look the class up in yet; name the file and move on.
+    errorMessage = QString("[%1: %2]: %3")
+        .arg(messageItem.getFileName())
+        .arg(messageItem.getLocation())
+        .arg(message);
   } else if (MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())
@@ -596,6 +608,7 @@ void MessagesWidget::closeSimulationOutputWidgets(const QString &className)
  */
 bool MessagesWidget::closeTab(int index)
 {
+#if !defined(__EMSCRIPTEN__)
   // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pSimulationOutputWidget
@@ -622,6 +635,7 @@ bool MessagesWidget::closeTab(int index)
     emit messageTabClosed(index);
     return true;
   }
+#endif
   // Close CRMLTranslatorOutputWidget
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isTranslationProcessRunning()) {
@@ -641,9 +655,17 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // suppress the unnecessary qt warning messages
   foreach (QString suppressMessage, mSuppressMessagesList) {
-    QRegExp rx(suppressMessage);
-    rx.setPatternSyntax(QRegExp::Wildcard);
-    if (rx.exactMatch(messageItem.getMessage())) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QRegularExpression rx(QRegularExpression::fromWildcard(suppressMessage));
+#else
+    /* Qt 5 has no QRegularExpression::fromWildcard(). Use wildcardToRegularExpression()
+     * instead, which returns a fully anchored pattern
+     * by default — matching fromWildcard()'s default (anchored) behavior here, so no
+     * anchor-stripping is needed in this case.
+     */
+    QRegularExpression rx(QRegularExpression::wildcardToRegularExpression(suppressMessage));
+#endif
+    if (rx.match(messageItem.getMessage()).hasMatch()) {
       return;
     }
   }

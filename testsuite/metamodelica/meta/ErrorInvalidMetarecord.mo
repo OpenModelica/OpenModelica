@@ -1,6 +1,7 @@
 // name: ErrorInvalidMetarecord
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 
 model ErrorInvalidMetarecord
   uniontype Ut
@@ -12,7 +13,7 @@ end ErrorInvalidMetarecord;
 
 // Result:
 // Error processing file: ErrorInvalidMetarecord.mo
-// [metamodelica/meta/ErrorInvalidMetarecord.mo:10:3-10:30:writable] Error: The called uniontype record (ErrorInvalidMetarecord.Ut.DEF) contains a member (abc) that has a uniontype record as its type instead of a uniontype.
+// [metamodelica/meta/ErrorInvalidMetarecord.mo:11:3-11:30:writable] Error: The called uniontype record (ErrorInvalidMetarecord.Ut.DEF) contains a member (abc) that has a uniontype record as its type instead of a uniontype.
 // Error: Error occurred while flattening model ErrorInvalidMetarecord
 //
 // # Error encountered! Exiting...

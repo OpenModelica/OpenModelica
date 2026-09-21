@@ -77,6 +77,41 @@ constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
 constant Integer backendInterface = 31;
 constant Integer backendCevalInterface = 32;
+// The FMI index -> value reference map an FMI 3.0 <ModelStructure> is written
+// through (SimCodeUtil.cacheFMI3ValueReferences); live only while one is.
+constant Integer fmi3ValueReferenceCache = 33;
+// The value reference -> nested <Alias> members map an FMI 3.0 <ModelVariables>
+// is written through (SimCodeUtil.cacheFMI3VariableAliases); same lifetime.
+constant Integer fmi3VariableAliasCache = 34;
+// The FMU-grade translation translateModelFMU kept, which the buildModelFMU that
+// follows exports instead of translating the model again:
+// SOME((simCode, FMUVersion, FMUType)). Lives until the next translation.
+constant Integer fmuTranslation = 35;
+
+// Build projects already run this session; a failed build installs nothing.
+constant Integer extLibraryBuildIndex = 36;
+
+// Simplified if-conditions of the adjacency-row traversals, one translation:
+// SOME(HashTableExpToExp.HashTable). See BackendDAEUtil.simplifyIfCondCached.
+constant Integer adjacencyIfCondCache = 37;
+
+// The NF top scope of the current frontend run: list<NFInstNode.InstNode>,
+// empty or a single node. Every other NF node refers to its enclosing scope
+// weakly, so without this root the top scope has no owner at all.
+constant Integer nfTopScope = 38;
+
+// Every backend variable made by NBVariable.makeVarPtr. A variable and
+// its own cref refer to each other, so the cref's side is weak and the run
+// owns the variables until they reach `VariablePointers`.
+constant Integer nbCreatedVars = 39;
+
+// The icon annotation JSON of each class a diagram has drawn a component of,
+// for the documentation generator. A diagram dumps the icon of every one of its
+// components, and a library draws the same few dozen types across thousands of
+// diagrams; the dump depends only on the class, since the component's own
+// modifications are not applied to it. Dropped with the top scope by
+// NFInstanceAPI.clearTopScopeCache.
+constant Integer nfDiagramIconCache = 40;
 
 // indexes in System.tick
 // ----------------------
@@ -113,6 +148,14 @@ algorithm
   setGlobalRoot(instNFNodeCacheIndex, {});
   setGlobalRoot(instNFLookupCacheIndex, {});
   setGlobalRoot(sharedLibraryCacheIndex, {});
+  setGlobalRoot(fmi3ValueReferenceCache, NONE());
+  setGlobalRoot(fmi3VariableAliasCache, NONE());
+  setGlobalRoot(fmuTranslation, NONE());
+  setGlobalRoot(extLibraryBuildIndex, {});
+  setGlobalRoot(adjacencyIfCondCache, NONE());
+  setGlobalRoot(nfTopScope, {});
+  setGlobalRoot(nbCreatedVars, {});
+  setGlobalRoot(nfDiagramIconCache, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

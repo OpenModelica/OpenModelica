@@ -1,6 +1,7 @@
 // name:     RedeclareComponentInvalid1
 // keywords: redeclare component
 // status:   incorrect
+// suite: disabled
 //
 // Tests that a component redeclaration needs a corresponding inherited
 // component to redeclare.
@@ -13,7 +14,7 @@ end RedeclareComponentInvalid1;
 
 // Result:
 // Error processing file: RedeclareComponentInvalid1.mo
-// [RedeclareComponentInvalid1.mo:10:3-10:19:writable] Error: No inherited component named r found.
+// [RedeclareComponentInvalid1.mo:11:3-11:19:writable] Error: No inherited component named r found.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -185,20 +185,13 @@ namespace IAEX
     file.close();
 
     // go to correct parse function
-    try
+    switch( readmode_ )
     {
-      switch( readmode_ )
-      {
-      case READMODE_OLD:
-        return parseOld( domdoc );
-      case READMODE_NORMAL:
-      default:
-        return parseNormal( domdoc );
-      }
-    }
-    catch( std::exception &e )
-    {
-      throw e;
+    case READMODE_OLD:
+      return parseOld( domdoc );
+    case READMODE_NORMAL:
+    default:
+      return parseNormal( domdoc );
     }
   }
 
@@ -236,15 +229,8 @@ namespace IAEX
     // Create the grouppcell that will be the root parent.
     Cell *rootcell = factory_->createCell( "cellgroup", 0 );
 
-    try
-    {
-      if( !node.isNull() )
-        traverseCells( rootcell, node );
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    if( !node.isNull() )
+      traverseCells( rootcell, node );
 
     return rootcell;
   }
@@ -306,36 +292,29 @@ namespace IAEX
   */
   void XMLParser::traverseCells( Cell *parent, QDomNode &node )
   {
-    try
+    while( !node.isNull() )
     {
-      while( !node.isNull() )
+      QDomElement element = node.toElement();
+      if( !element.isNull() )
       {
-        QDomElement element = node.toElement();
-        if( !element.isNull() )
+        if( element.tagName() == XML_GROUPCELL )
+          traverseGroupCell( parent, element );
+        else if( element.tagName() == XML_TEXTCELL )
+          traverseTextCell( parent, element );
+        else if( element.tagName() == XML_INPUTCELL )
+          traverseInputCell( parent, element );
+        else if( element.tagName() == XML_GRAPHCELL )
+          traverseGraphCell( parent, element );
+        else if( element.tagName() == XML_LATEXCELL )
+          traverseLatexCell( parent, element );
+        else
         {
-          if( element.tagName() == XML_GROUPCELL )
-            traverseGroupCell( parent, element );
-          else if( element.tagName() == XML_TEXTCELL )
-            traverseTextCell( parent, element );
-          else if( element.tagName() == XML_INPUTCELL )
-            traverseInputCell( parent, element );
-          else if( element.tagName() == XML_GRAPHCELL )
-            traverseGraphCell( parent, element );
-          else if( element.tagName() == XML_LATEXCELL )
-            traverseLatexCell( parent, element );
-          else
-          {
-            std::string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
-            throw std::runtime_error( msg.c_str() );
-          }
+          std::string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
+          throw std::runtime_error( msg.c_str() );
         }
-
-        node = node.nextSibling();
       }
-    }
-    catch( std::exception &e )
-    {
-      throw e;
+
+      node = node.nextSibling();
     }
   }
 
@@ -425,7 +404,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           textcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_IMAGE )
         {
@@ -491,7 +470,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           inputcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_IMAGE )
         {
@@ -562,7 +541,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           graphcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_GRAPHCELL_DATA ) {}
         else if( e.tagName() == XML_GRAPHCELL_GRAPH ) {}
@@ -715,7 +694,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           latexcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else
         {
@@ -754,7 +733,7 @@ namespace IAEX
   void XMLParser::addImage( Cell *parent, QDomElement &element )
   {
     // Create a new image
-    QImage *image = new QImage();
+    QImage image;
 
     // Get saved image name
     QString imagename = element.attribute( XML_NAME, "" );
@@ -768,10 +747,10 @@ namespace IAEX
     QBuffer imagebuffer( &imagedata );
     imagebuffer.open( QBuffer::ReadOnly );
     QDataStream imagestream( &imagebuffer );
-    imagestream >> *image;
+    imagestream >> image;
     imagebuffer.close();
 
-    if( !image->isNull() )
+    if( !image.isNull() )
     {
       QString newname = doc_->addImage( image );
       // replace old imagename with the new name

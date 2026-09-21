@@ -1,0 +1,82 @@
+// name: jacobianCallArgContinuityDrop
+// keywords: NewBackend
+// status: correct
+//
+// Regression test for NBDifferentiate.mo's differentiateCall using
+// BackendUtil.isContinuous's ALL-fold ("are ALL crefs in this expression
+// continuous") instead of containsContinuousVar's OR-fold ("does this
+// expression contain AT LEAST ONE continuous variable") to decide whether
+// a user-defined function's call argument needs its own derivative
+// computed for the current (JACOBIAN-mode) differentiation.
+//
+// f_der/g_der are called directly (annotation(Inline=false) keeps them
+// from being algebraically inlined away before Jacobian codegen), each
+// with a "k*a1" argument that mixes a constant parameter (k) with the
+// torn algebraic loop's own seed variable (a1). Under the old ALL-fold,
+// "k*a1" was wrongly judged "not continuous" purely because k is a
+// parameter, so a1's contribution to d(f_der(...))/d(a1) was silently
+// dropped from BOTH residual equations -- leaving the whole first
+// (a1) Jacobian column structurally zero for this loop, corrupting the
+// analytic Jacobian used by the nonlinear solver.
+//
+// Symptom before the fix: solving the resulting 2x2 nonlinear system hit
+// repeated "Matrix (nearly) singular" / homotopy pivot warnings and took
+// ~2000 Jacobian evaluations to (mis-)converge to a wrong root
+// (a1 = -0.0281... instead of the true -1/18 = -0.0555...). After the
+// fix: 2 Newton iterations, no warnings, exact root.
+
+loadString("
+function f_der
+  input Real x;
+  input Real dx;
+  output Real dy;
+algorithm
+  dy := 2*x*dx;
+  annotation(Inline = false);
+end f_der;
+
+function g_der
+  input Real x;
+  input Real dx;
+  output Real dy;
+algorithm
+  dy := 2*x*dx;
+  annotation(Inline = false);
+end g_der;
+
+model jacobianCallArgContinuityDrop
+  parameter Real k = 3;
+  Real s(start=1, fixed=true);
+  Real w(start=1, fixed=true);
+  Real a1, a2;
+equation
+  der(s) = w;
+  der(w) = a1;
+  0 = f_der(k*s, k*a1) - 2*a2 - 1;
+  0 = g_der(k*s, k*a1) - 3*a2 - 2;
+end jacobianCallArgContinuityDrop;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(jacobianCallArgContinuityDrop, stopTime=0.02, numberOfIntervals=2); getErrorString();
+
+val(a1, 0.0);
+val(a2, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "jacobianCallArgContinuityDrop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.02, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianCallArgContinuityDrop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.05555555555555555
+// -1.0
+// endResult

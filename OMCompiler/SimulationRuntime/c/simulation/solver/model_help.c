@@ -52,10 +52,6 @@
 #include "../../meta/meta_modelica.h"
 #include "../eval_dep.h"
 
-#ifdef USE_PARJAC
-  #include <omp.h>
-#endif
-
 /* Private function prototypes */
 void* syncTimerListAlloc(const void* data);
 void syncTimerListFree(void* data);
@@ -109,6 +105,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   modelica_boolean discreteChanged = FALSE;
   modelica_boolean relationChanged = FALSE;
   data->simulationInfo->needToIterate = FALSE;
+  data->simulationInfo->discreteStateChanged = FALSE;
 
   data->simulationInfo->callStatistics.updateDiscreteSystem++;
 
@@ -137,6 +134,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   /* Update discrete system until nothing changes any more */
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
+    data->simulationInfo->discreteStateChanged = TRUE;
     storePreValues(data);
     updateRelationsPre(data);
 
@@ -407,20 +405,29 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
     return FALSE;
   }
 
-  /* check rows (or cols?) */
-  for(i=1; i < nlsSize; i++)
+  /* Use sizeCols (actual allocated columns) for leadindex bounds to avoid OOB when
+   * the Jacobian has fewer seed directions than NLS unknowns (nSeeds < nlsSize). */
   {
-    if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
-      warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
-      return FALSE;
+    unsigned int nCheckCols = sparsePattern->sizeCols < (unsigned int)nlsSize
+                              ? sparsePattern->sizeCols : (unsigned int)nlsSize;
+    for(i=1; i < (int)nCheckCols; i++)
+    {
+      if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
+        warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
+        return FALSE;
+      }
     }
   }
 
   /* check cols (or rows?) */
   colCheck = (char*) calloc(nlsSize, sizeof(char));
 
-  for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
+  for(i=0; i < (int)sparsePattern->leadindex[sparsePattern->sizeCols]; i++)
   {
+    /* Row index may exceed nlsSize when the Jacobian has auxiliary equations
+     * beyond the NLS residuals (sizeRows > nCols). Skip those rows to avoid
+     * out-of-bounds writes into colCheck[nlsSize]. */
+    if (sparsePattern->index[i] >= (unsigned int)nlsSize) continue;
     colCheck[sparsePattern->index[i]] = TRUE;
   }
 
@@ -511,6 +518,31 @@ void overwriteOldSimulationData(DATA *data)
     memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData->nVariablesBoolean);
     memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
   }
+}
+
+/*! \fn continueSimulationData
+ *
+ *  Makes the current slot of the ring buffer continue from the previous step.
+ *
+ *  `rotateRingBuffer` moves `localData[0]` onto the slot that held the values of
+ *  `SIZERINGBUFFER` steps ago, and the equations only overwrite what they compute,
+ *  so a variable read before the equation that computes it - a dynamic-tearing
+ *  constraint check, a nonlinear system's old value - would see that stale slot.
+ *
+ *  Call directly after `rotateRingBuffer` + `lookupRingBuffer`.
+ *
+ *  \param [ref] [data]
+ */
+void continueSimulationData(DATA *data)
+{
+  if(ringBufferLength(data->simulationData) < 2)
+    return;
+
+  data->localData[0]->timeValue = data->localData[1]->timeValue;
+  memcpy(data->localData[0]->realVars, data->localData[1]->realVars, sizeof(modelica_real)*data->modelData->nVariablesReal);
+  memcpy(data->localData[0]->integerVars, data->localData[1]->integerVars, sizeof(modelica_integer)*data->modelData->nVariablesInteger);
+  memcpy(data->localData[0]->booleanVars, data->localData[1]->booleanVars, sizeof(modelica_boolean)*data->modelData->nVariablesBoolean);
+  memcpy(data->localData[0]->stringVars, data->localData[1]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
 }
 
 /*! \fn copyRingBufferSimulationData
@@ -899,80 +931,104 @@ void freeModelDataVars(MODEL_DATA* modelData)
   for(i=0; i < modelData->nVariablesRealArray; i++) {
     freeVarInfo(&modelData->realVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realVarsData);
 
   for(i=0; i < modelData->nVariablesIntegerArray; i++) {
     freeVarInfo(&modelData->integerVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
 
   for(i=0; i < modelData->nVariablesBooleanArray; i++) {
     freeVarInfo(&modelData->booleanVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   for(i=0; i < modelData->nVariablesStringArray; i++) {
     freeVarInfo(&modelData->stringVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
 #endif
 
   // Parameters
   for(i=0; i < modelData->nParametersRealArray; i++) {
     freeVarInfo(&modelData->realParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realParameterData);
 
   for(i=0; i < modelData->nParametersIntegerArray; i++) {
     freeVarInfo(&modelData->integerParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
 
   for(i=0; i < modelData->nParametersBooleanArray; i++) {
     freeVarInfo(&modelData->booleanParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
 
   for(i=0; i < modelData->nParametersStringArray; i++) {
     freeVarInfo(&modelData->stringParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
 
   // Sensitivity
   for(i=0; i < modelData->nSensitivityVars; i++) {
     freeVarInfo(&modelData->realSensitivityData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
 
   // Alias Variables
   if (modelData->realAlias != NULL) {
     for(i=0; i < modelData->nAliasRealArray; i++) {
       freeVarInfo(&modelData->realAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->realAlias);
   }
 
   if (modelData->integerAlias != NULL) {
     for(i=0; i < modelData->nAliasIntegerArray; i++) {
       freeVarInfo(&modelData->integerAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->integerAlias);
   }
 
   if (modelData->booleanAlias != NULL) {
     for(i=0; i < modelData->nAliasBooleanArray; i++) {
       freeVarInfo(&modelData->booleanAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
   }
 
   if (modelData->stringAlias != NULL) {
     for(i=0; i < modelData->nAliasStringArray; i++) {
       freeVarInfo(&modelData->stringAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->stringAlias);
   }
+
+  freeModelDataVarArrays(modelData);
+}
+
+/**
+ * @brief Free the var data arrays allocated by `allocModelDataVars`.
+ *
+ * Leaves the VAR_INFO strings alone. Use this instead of `freeModelDataVars`
+ * when the strings were not allocated by `read_var_info`, e.g. for FMUs, where
+ * `read_input_fmu` points them at string literals in the generated code.
+ *
+ * @param modelData   Pointer to model data.
+ */
+void freeModelDataVarArrays(MODEL_DATA* modelData)
+{
+  // Variables
+  omc_alloc_interface.free_uncollectable(modelData->realVarsData);
+  omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
+  omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
+#endif
+
+  // Parameters
+  omc_alloc_interface.free_uncollectable(modelData->realParameterData);
+  omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
+  omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
+  omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
+
+  // Sensitivity
+  omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
+
+  // Alias Variables (not allocated for FMUs, see `allocModelDataVars`)
+  omc_alloc_interface.free_uncollectable(modelData->realAlias);
+  omc_alloc_interface.free_uncollectable(modelData->integerAlias);
+  omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
+  omc_alloc_interface.free_uncollectable(modelData->stringAlias);
 }
 
 /**
@@ -1216,6 +1272,9 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(JACOBIAN));
+  /* zero out, so that `availability == JACOBIAN_UNKNOWN` marks an uninitialized Jacobian */
+  memset(data->simulationInfo->analyticJacobians, 0, data->modelData->nJacobians*sizeof(JACOBIAN));
+  data->simulationInfo->odeJacobian = NULL;
 
   data->modelData->modelDataXml.functionNames = NULL;
   data->modelData->modelDataXml.equationInfo = NULL;
@@ -1256,6 +1315,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->noThrowDivZero = 0;
   data->simulationInfo->noThrowAsserts = 0;
   data->simulationInfo->needToReThrow = 0;
+  data->simulationInfo->discreteStateChanged = 0;
   data->simulationInfo->discreteCall = 0;
 
   /* initialize model error code */
@@ -1290,7 +1350,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 void deInitializeDataStruc(DATA *data)
 {
   size_t i = 0;
-  int needToFree = !data->callback->read_input_fmu;
 
   /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
@@ -1305,7 +1364,11 @@ void deInitializeDataStruc(DATA *data)
   omc_alloc_interface.free_uncollectable(data->localData);
   freeRingBuffer(data->simulationData);
 
-  if (needToFree) {
+  if (data->callback->read_input_fmu) {
+    /* FMU: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
+     * but the arrays were still allocated by `allocModelDataVars` in `fmi2Instantiate`. */
+    freeModelDataVarArrays(data->modelData);
+  } else {
     freeModelDataVars(data->modelData);
   }
 

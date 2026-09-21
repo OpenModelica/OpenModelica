@@ -31,6 +31,9 @@ extern "C" {
 #if defined(__MINGW32__) && ((GCC_VERSION > 40900) || defined(__clang__))
 #define PACKAGE OMEdit
 #endif
+// The symbolised backtrace is built on GNU bfd (binutils), available under MinGW
+// but not MSVC/clang-cl. The MSVC crash handler in main.cpp skips this path.
+#if defined(__MINGW32__)
 #include <bfd.h>
 #include <psapi.h>
 #include <stdlib.h>
@@ -70,6 +73,7 @@ void output_init(struct output_buffer *ob, char * buf, size_t sz);
 void output_print(struct output_buffer *ob, const char * format, ...);
 void _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT context);
 void release_set(struct bfd_set *set);
+#endif // defined(__MINGW32__)
 
 #ifdef __cplusplus
 } /* extern "C" */

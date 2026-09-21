@@ -30,10 +30,7 @@ val(x[3], 1.0);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'der_for_array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
-// 	Available keys: x, $DER.x
-// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
-// "
+// ""
 // 0.3678796919078512
 // 0.3678796919078512
 // endResult

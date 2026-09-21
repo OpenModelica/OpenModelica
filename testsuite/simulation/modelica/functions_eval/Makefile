@@ -1,10 +1,10 @@
 TEST = ../../../rtest -v
 
-FAILINGTESTFILES = \
-Inverter2.mos
+FAILINGTESTFILES =
 
 TESTFILES = \
 partialConstArray.mos \
+nestedRecordOutput.mos \
 functionArray.mos \
 functionEvaluation.mos \
 functionTest4.mos \
@@ -67,4 +67,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -1,0 +1,95 @@
+// name: fmi3_arrays_scalarized.mos
+// keywords: FMI 3.0 export array
+// status: correct
+// teardown_command: rm -rf fmi3_arrays_scalarized.fmu fmi3_arrays_scalarized.xml fmi3_arrays_scalarized_tmp.xml fmi3_arrays_scalarized.fmutmp/ fmi3_arrays_scalarized_res.mat fmi3_arrays_scalarized_fmpy.csv fmi3_arrays_scalarized_diff.*.csv fmi3_arrays_scalarized_info.json fmi3_arrays_scalarized.log fmi3_arrays_scalarized_FMU.libs fmi3_arrays_scalarized_FMU.makefile fmi3_arrays_scalarized_external_functions.json fmi3_arrays_scalarized_*.bin index.html resources
+//
+// The default backend scalarizes arrays, but the FMI 3.0 modelDescription.xml
+// lists an array whose elements are all exported, contiguous and alike as one
+// variable with <Dimension> children (SimCodeUtil.fmi3ArrayGroups): the state x
+// with its derivative, the outputs y, the parameter p bound to a function call
+// (kept as one variable by the frontend, #7512) and q. z's elements differ in
+// min and stay scalar; a is a scalar.
+
+loadString("
+package ArrPkg
+  function f
+    input Real[:] q;
+    output Real[size(q, 1)] y;
+  algorithm
+    y := 2*q;
+  end f;
+  model M
+    parameter Real q[3] = {1, 2, 3};
+    parameter Real p[3] = f(q);
+    parameter Real a = 0.5;
+    Real x[3](start = {1, 2, 3}, each fixed = true, each unit = \"m\");
+    output Real y[3] = f(x);
+    Real z[2](min = {-1, -2}) = {2*x[1], a*x[2]};
+  equation
+    der(x) = -p .* x;
+  end M;
+end ArrPkg;
+"); getErrorString();
+
+buildModelFMU(ArrPkg.M, fileNamePrefix="fmi3_arrays_scalarized", version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_arrays_scalarized.fmu modelDescription.xml > fmi3_arrays_scalarized_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_arrays_scalarized_tmp.xml > fmi3_arrays_scalarized.xml"); getErrorString();
+readFile("fmi3_arrays_scalarized.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi3_arrays_scalarized_tmp.xml > fmi3_arrays_scalarized.xml"); getErrorString();
+readFile("fmi3_arrays_scalarized.xml"); getErrorString();
+
+// The array variables are read and written through their one value reference.
+simulate(ArrPkg.M, stopTime=1.0, fileNamePrefix="fmi3_arrays_scalarized"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py fmi3_arrays_scalarized.fmu fmi3_arrays_scalarized_fmpy.csv 1.0 x[1] x[3] y[2] z[2]"); getErrorString();
+diffSimulationResults("fmi3_arrays_scalarized_fmpy.csv", "fmi3_arrays_scalarized_res.mat", "fmi3_arrays_scalarized_diff", vars={"x[1]","x[3]","y[2]","z[2]"}); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_arrays_scalarized.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//     <Float64 name=\"time\" valueReference=\"21\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 2.0 3.0\" unit=\"m\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\" unit=\"m.s-1\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"y\" valueReference=\"6\" causality=\"output\" ><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"z[1]\" valueReference=\"9\"  min=\"-1.0\"/>
+//     <Float64 name=\"z[2]\" valueReference=\"10\"  min=\"-2.0\"/>
+//     <Float64 name=\"a\" valueReference=\"11\" causality=\"parameter\" variability=\"fixed\"  start=\"0.5\"/>
+//     <Float64 name=\"p\" valueReference=\"12\" causality=\"calculatedParameter\" variability=\"fixed\" ><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"q\" valueReference=\"15\" causality=\"parameter\" variability=\"fixed\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Output valueReference=\"6\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"3\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"3\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"6\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"12\" dependencies=\"15\" dependenciesKind=\"dependent\"/>
+//   </ModelStructure>
+// "
+// ""
+// record SimulationResult
+//     resultFile = "fmi3_arrays_scalarized_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_arrays_scalarized', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// endResult

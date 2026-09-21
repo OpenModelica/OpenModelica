@@ -1,0 +1,225 @@
+// name: IntegralNewtonCotes
+// keywords: function pointer, array constructor, quadrature
+// status: correct
+// teardown_command: rm -rf IntegralNewtonCotes.MovingIntegralSinusoidal* output.log
+//
+// Newton-Cotes quadrature with a functional input argument, see #16543. The
+// variant that stores the function values in an array (quadratureNewtonCotes2)
+// used to generate a metatype_array for the array constructor of the boxed
+// calls, which doesn't compile.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+loadString("within ;
+package IntegralNewtonCotes
+
+  model MovingIntegralSinusoidal
+    extends Modelica.Icons.Example;
+    import Modelica.Units.SI;
+    import Modelica.Constants.pi;
+    import funB=Modelica.Math.sin \"Sinusoidal flux density distribution\";
+    import quadratureNewtonCotes=IntegralNewtonCotes.quadratureNewtonCotes2;
+    parameter SI.MagneticFluxDensity Bpeak=1 \"Amplitude\";
+    parameter SI.Angle beta(final min=0, final max=pi)=pi \"Coil width\";
+    parameter SI.Area wlD=100*0.05*0.05 \"Number of turns x length x diameter\";
+    parameter Integer N=180 \"Number of intervals\";
+    SI.Angle pos=2*pi*time/Tend \"Position\";
+    SI.MagneticFluxDensity B=Bpeak*funB(pos) \"Flux density\";
+    SI.MagneticFlux psi0=Bpeak*wlD*sin(beta/2)*2*cos(pos)
+      \"Flux linkage(analytically)\";
+    SI.MagneticFlux psi1=Bpeak*wlD*quadratureNewtonCotes(function funB(),
+      pos + pi/2 - beta/2, pos + pi/2  + beta/2, N=N, d=1)
+      \"Flux linkage using trapezoidal rule\";
+    SI.MagneticFlux psi2=Bpeak*wlD*quadratureNewtonCotes(function funB(),
+      pos + pi/2 - beta/2, pos + pi/2  + beta/2, N=N, d=2)
+      \"Flux linkage using Simpson's rule\";
+    SI.MagneticFlux psi3=Bpeak*wlD*quadratureNewtonCotes(function funB(),
+      pos + pi/2 - beta/2, pos + pi/2  + beta/2, N=N, d=3)
+      \"Flux linkage using 3/8-rule\";
+    SI.MagneticFlux psi4=Bpeak*wlD*quadratureNewtonCotes(function funB(),
+      pos + pi/2 - beta/2, pos + pi/2  + beta/2, N=N, d=4)
+      \"Flux linkage using Boole's rule\";
+    SI.MagneticFlux psi5=Bpeak*wlD*quadratureNewtonCotes(function funB(),
+      pos + pi/2 - beta/2, pos + pi/2  + beta/2, N=N, d=5)
+      \"Flux linkage using Newton-Cotes d=5\";
+    SI.MagneticFlux psi6=Bpeak*wlD*quadratureNewtonCotes(function funB(),
+      pos + pi/2 - beta/2, pos + pi/2  + beta/2, N=N, d=6)
+      \"Flux linkage using Newton-Cotes d=6\";
+  protected
+    constant SI.Time Tend=1 \"Stop time of simulation\";
+  initial equation
+    annotation (experiment(
+        StopTime=1,
+        Interval=0.001,
+        Tolerance=1e-06), Documentation(info=\"<html>
+<p>
+This example tests quadrature functions:
+</p>
+<p>
+The function <code>funB</code> defines the spatial distribution of the flux density with respect to the rotor surface.
+</p>
+<p>
+As the rotor position increases, the flux linkage of a coil of width <code>&beta;</code> is caculated 
+by integration over the interval <code>[pos + &pi;/2 - beta/2, pos + &pi;/2 + &beta;/2]</code>.
+</p>
+<p>
+The maximum of the flux linkage <code>psi0</code> is calculated analytically. 
+</p>
+<ul>
+<li><code>psi1</code> is the result of the moving integral using <strong>d=1 trapezoidal rule</strong></li>
+<li><code>psi2</code> is the result of the moving integral using <strong>d=2 Simpson's rule</strong></li>
+<li><code>psi3</code> is the result of the moving integral using <strong>d=3 3/8-rule</strong></li>
+<li><code>psi4</code> is the result of the moving integral using <strong>d=4 Boole's rule</strong></li>
+<li><code>psi5</code> is the result of the moving integral using <strong>d=5 Newton-Cotes</strong></li>
+<li><code>psi6</code> is the result of the moving integral using <strong>d=6 Newton-Cotes</strong></li>
+</ul>
+<p>
+At <code>time = 0</code>, the positive maximum of flux density distribution is at <code>pos = &pi;/2</code>, 
+the coil spans the angle <code>[&pi;/2; - &beta;/2, &pi;/2; + &beta;/2]</code>. Therefore the flux linkage has a maximum.
+</p>
+<p>
+Since flux linkage is not differentiable, a derivative with first-order lag is used to calculate induce voltage.
+</p>
+</html>\"),
+      Diagram(graphics={
+          Ellipse(extent={{-72,-18},{-68,-22}}, lineColor={28,108,200}),
+          Ellipse(extent={{-12,-18},{-8,-22}}, lineColor={28,108,200}),
+          Text(
+            extent={{-56,0},{-24,-10}},
+            textColor={28,108,200},
+            textString=\"beta\"),
+          Line(
+            points={{-70,-10},{-10,-10}},
+            color={28,108,200},
+            arrow={Arrow.Open,Arrow.Open}),
+          Line(points={{-80,0},{-68.7,34.2},{-61.5,53.1},{-55.1,66.4},{-49.4,74.6},
+                {-43.8,79.1},{-38.2,79.8},{-32.6,76.6},{-26.9,69.7},{-21.3,59.4},{
+                -14.9,44.1},{-6.83,21.2},{10.1,-30.8},{17.3,-50.2},{23.7,-64.2},{29.3,
+                -73.1},{35,-78.4},{40.6,-80},{46.2,-77.6},{51.9,-71.5},{57.5,-61.9},
+                {63.9,-47.2},{72,-24.8},{80,0}},              smooth = Smooth.Bezier,
+            pattern=LinePattern.Dash)}));
+  end MovingIntegralSinusoidal;
+
+  function quadratureNewtonCotes1
+    \"Quadrature using the Newton-Cotes formulas\"
+    extends Modelica.Icons.Function;
+    input Modelica.Math.Nonlinear.Interfaces.partialScalarFunction f \"Integrand function\";
+    input Real a \"Lower limit of integration interval\";
+    input Real b \"Upper limit of integration interval\";
+    input Integer N = 360 \"Number of intervals\";
+    input Integer d(final min=1, final max=6) = 1 \"Degree of interpolation polynominal\";
+    output Real integral \"Integral value\";
+  protected
+    constant Real c[6,7]={
+      { 1,  1,  0,  0,  0,  0, 0},
+      { 1,  4,  1,  0,  0,  0, 0},
+      { 1,  3,  3,  1,  0,  0, 0},
+      { 7, 32, 12, 32,  7,  0, 0},
+      {19, 75, 50, 50, 75, 19, 0},
+      {41,216, 27,272, 27,216,41}} \"Coefficients\";
+    Integer n=N + mod(N, d) \"Ensure number of intervals is a multiple of d\";
+    Real h=(b - a)/n \"Width of intervals\";
+  algorithm
+    integral:=sum({sum({c[d, k + 1]*f(a + h*(kp + k - d)) for k in 0:d})
+      for kp in d:d:n})*h*d/sum(c[d,:]);
+    annotation (Documentation(info=\"<html>
+<h4>Syntax</h4>
+<blockquote><pre>
+<strong>quadratureNewtonCotes</strong>(function f(), a, b);
+<strong>quadratureNewtonCotes</strong>(function f(), a, b, N=1440);
+<strong>quadratureNewtonCotes</strong>(function f(), a, b, N=1440, d=1);
+</pre></blockquote>
+
+<h4>Description</h4>
+<p>
+Compute definite integral over function f(u,...) from u=a up to u=b using the 
+<a href=\\\"https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas\\\">closed Newton-Cotes formulas</a>.
+</p>
+<p>
+<code>N</code> refers to the number of intervals to be used, including the intermediate points for <code>d &ge; 2</code>.<br>
+<code>1 &le; d &le; 4</code> refers to the degree of the used interpolation polynomial.
+</p>
+</html>\"));
+  end quadratureNewtonCotes1;
+
+  function quadratureNewtonCotes2 \"Quadrature using the Newton-Cotes formulas\"
+    extends Modelica.Icons.Function;
+    input Modelica.Math.Nonlinear.Interfaces.partialScalarFunction f \"Integrand function\";
+    input Real a \"Lower limit of integration interval\";
+    input Real b \"Upper limit of integration interval\";
+    input Integer N = 360 \"Number of intervals\";
+    input Integer d(final min=1, final max=6) = 1 \"Degree of interpolation polynominal\";
+    output Real integral \"Integral value\";
+  protected
+    constant Real c[6,7]={
+      { 1,  1,  0,  0,  0,  0, 0},
+      { 1,  4,  1,  0,  0,  0, 0},
+      { 1,  3,  3,  1,  0,  0, 0},
+      { 7, 32, 12, 32,  7,  0, 0},
+      {19, 75, 50, 50, 75, 19, 0},
+      {41,216, 27,272, 27,216,41}} \"Coefficients\";
+    Integer n=N + mod(N, d) \"Ensure number of intervals is a multiple of d\";
+    Real h=(b - a)/n \"Width of intervals\";
+    Real y[n + 1] \"Function evaluation at interval borders\";
+  algorithm
+    y:={f(a + h*k) for k in 0:n};
+    integral:=sum({sum({c[d, k + 1]*y[kp + k + 1 - d] for k in 0:d})
+      for kp in d:d:n})*h*d/sum(c[d,:]);
+    annotation (Documentation(info=\"<html>
+<h4>Syntax</h4>
+<blockquote><pre>
+<strong>quadratureNewtonCotes</strong>(function f(), a, b);
+<strong>quadratureNewtonCotes</strong>(function f(), a, b, N=1440);
+<strong>quadratureNewtonCotes</strong>(function f(), a, b, N=1440, d=1);
+</pre></blockquote>
+
+<h4>Description</h4>
+<p>
+Compute definite integral over function f(u,...) from u=a up to u=b using the 
+<a href=\\\"https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas\\\">closed Newton-Cotes formulas</a>.
+</p>
+<p>
+<code>N</code> refers to the number of intervals to be used, including the intermediate points for <code>d &ge; 2</code>.<br>
+<code>1 &le; d &le; 4</code> refers to the degree of the used interpolation polynomial.
+</p>
+</html>\"));
+  end quadratureNewtonCotes2;
+  annotation (uses(Modelica(version=\"4.1.0\")));
+end IntegralNewtonCotes;
+");
+getErrorString();
+
+simulate(IntegralNewtonCotes.MovingIntegralSinusoidal, stopTime = 1.0);
+getErrorString();
+
+// psi0 is the analytical result, psi1 to psi6 are the quadratures.
+val(psi0, 0.0);
+val(psi1, 0.0);
+val(psi2, 0.0);
+val(psi3, 0.0);
+val(psi4, 0.0);
+val(psi5, 0.0);
+val(psi6, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IntegralNewtonCotes.MovingIntegralSinusoidal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'IntegralNewtonCotes.MovingIntegralSinusoidal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// 0.49998730754306964
+// 0.5000000002577646
+// 0.5000000005799907
+// 0.4999999999999701
+// 0.49999999999993566
+// 0.5
+// endResult

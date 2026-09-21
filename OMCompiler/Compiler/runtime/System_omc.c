@@ -130,6 +130,9 @@ extern void System_realtimeTick(int ix)
 extern double System_realtimeTock(int ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  /* Never started, or cleared and not restarted: the tick is an earlier
+   * command's. -1 is the "did not run" answer the callers test for. */
+  if (rt_ncall(ix) == 0) return -1.0;
   return rt_tock(ix);
 }
 
@@ -310,6 +313,70 @@ extern int System_getUsesCardinality()
 extern void System_setUsesCardinality(int b)
 {
   usesCardinality = b;
+}
+
+/* Cooperative cancellation. System_isCancelled is polled by the compiler
+ * (Error.checkCancel); System_requestCancel/System_clearCancel are the host
+ * (OMEdit) side. Progress is one-way, compiler → host. */
+extern int System_isCancelled()
+{
+  if (pumpCallback) {
+    pumpCallback();
+  }
+  return cancelRequested;
+}
+
+extern int System_alarmExpired()
+{
+  return cancelledByAlarm;
+}
+
+extern void System_setPumpCallback(void (*cb)(void))
+{
+  pumpCallback = cb;
+}
+
+extern void System_requestCancel()
+{
+  cancelRequested = 1;
+}
+
+extern void System_clearCancel()
+{
+  cancelRequested = 0;
+  progressPermille = -1;
+  progressPhase = 0;
+  progressMessage = NULL;
+}
+
+/* Clears the message: it belongs to the step that reported it, and letting it
+ * outlive that step would mislabel whatever comes next. Report it again after
+ * this call to keep it. */
+extern void System_reportProgress(int permille, int phase)
+{
+  progressPermille = permille;
+  progressPhase = phase;
+  progressMessage = NULL;
+}
+
+extern void System_reportProgressMessage(const char *message)
+{
+  progressMessage = (message && *message) ? omc_alloc_interface.malloc_strdup(message) : NULL;
+}
+
+extern const char* System_progressMessage()
+{
+  return progressMessage ? progressMessage : "";
+}
+
+extern int System_progressPermille()
+{
+  return progressPermille;
+}
+
+extern int System_progressPhase()
+{
+  return progressPhase;
 }
 
 extern void* System_strtok(const char *str0, const char *delimit)
@@ -584,6 +651,19 @@ extern int System_loadLibrary(const char *name, int relativePath, int printDebug
   int res = SystemImpl__loadLibrary(name, relativePath, printDebug);
   if (res == -1) MMC_THROW();
   return res;
+}
+
+extern int System_loadLibraryLazy(const char *name, int relativePath, int printDebug)
+{
+  int res = SystemImpl__loadLibraryLazy(name, relativePath, printDebug);
+  if (res == -1) MMC_THROW();
+  return res;
+}
+
+extern const char* System_getLoadLibraryError(void)
+{
+  const char *res = SystemImpl__getLoadLibraryError();
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)

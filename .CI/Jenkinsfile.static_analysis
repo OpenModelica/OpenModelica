@@ -25,7 +25,11 @@ pipeline {
           additionalBuildArgs '--pull'
           dir '.CI/clang-tools'
           label 'linux'
+          customWorkspace 'ws/OpenModelica'
         }
+      }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
       }
       steps {
         script {
@@ -46,7 +50,7 @@ pipeline {
           cp -a .build.save build
           export OMC="`pwd`/.build.save/bin/omc"
           test -f "\$OMC"
-          scan-build ./configure --with-omniORB --disable-modelica3d CFLAGS='-O2 -march=native' --with-omc="\$OMC" "CXXFLAGS=-std=c++11" --without-omlibrary
+          scan-build ./configure --disable-modelica3d CFLAGS='-O2 -march=native' --with-omc="\$OMC" "CXXFLAGS=-std=c++11" --without-omlibrary
           mkdir -p html
           """
           sh "scan-build -o html make -j${numCPU}"

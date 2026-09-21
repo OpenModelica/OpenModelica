@@ -2463,18 +2463,9 @@ protected function dumpMatching1
   input Integer voffset;
   input Integer eoffset;
 algorithm
-   ():=
-  matchcontinue eoffset
-  case _
-    algorithm
-      false := intGt(arrayLength(v),0);
-    then();
-  case _
-    algorithm
-      true := intGt(arrayLength(v),0);
-      Array.fold(v,dumpMatching2,(1,voffset,eoffset));
-  then();
-    end matchcontinue;
+  if intGt(arrayLength(v),0) then
+    Array.fold(v,dumpMatching2,(1,voffset,eoffset));
+  end if;
 end dumpMatching1;
 
 

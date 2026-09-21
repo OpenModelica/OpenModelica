@@ -1,0 +1,9 @@
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica); getErrorString();
+loadFile("TestCombiTable1D.mo"); getErrorString();
+simulate(TestCombiTable1D, stopTime = 2.0, numberOfIntervals = 20); getErrorString();
+val(tab.u, 1.0);
+val(tab.y[1], 0.5);
+val(tab.y[1], 1.0);
+val(tab.y[1], 1.5);
+val(x, 2.0);

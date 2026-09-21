@@ -1,6 +1,7 @@
 // name: ErrorLocalElement3
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 
 class ErrorLocalElement3
   function fn
@@ -19,10 +20,10 @@ end ErrorLocalElement3;
 
 // Result:
 // Error processing file: ErrorLocalElement3.mo
-// [metamodelica/meta/ErrorLocalElement3.mo:12:9-12:20:writable] Error: Class int not found in scope ErrorLocalElement3.fn.$match scope$.list.
-// [metamodelica/meta/ErrorLocalElement3.mo:10:5-14:14:writable] Error: Internal error Patternm.addLocalDecls failed
-// [metamodelica/meta/ErrorLocalElement3.mo:12:9-12:20:writable] Error: Class int not found in scope ErrorLocalElement3.fn.$match scope$.list.
-// [metamodelica/meta/ErrorLocalElement3.mo:10:5-14:14:writable] Error: Internal error Patternm.addLocalDecls failed
+// [metamodelica/meta/ErrorLocalElement3.mo:13:9-13:20:writable] Error: Class int not found in scope ErrorLocalElement3.fn.$match scope$.list.
+// [metamodelica/meta/ErrorLocalElement3.mo:11:5-15:14:writable] Error: Internal error Patternm.addLocalDecls failed
+// [metamodelica/meta/ErrorLocalElement3.mo:13:9-13:20:writable] Error: Class int not found in scope ErrorLocalElement3.fn.$match scope$.list.
+// [metamodelica/meta/ErrorLocalElement3.mo:11:5-15:14:writable] Error: Internal error Patternm.addLocalDecls failed
 // Error: Error occurred while flattening model ErrorLocalElement3
 //
 // # Error encountered! Exiting...

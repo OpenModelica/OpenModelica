@@ -121,7 +121,9 @@ set(BasiLibName             ${LIBPREFIX}Base)
 # ── Boost ─────────────────────────────────────────────────────────────────────
 set(Boost_USE_MULTITHREADED ON)
 
-if(CMAKE_VERSION VERSION_LESS "3.30.0")
+if(OM_FETCH_BOOST)
+  # cmake/OMCBoost.cmake built it and set Boost_LIBRARIES to the targets.
+elseif(CMAKE_VERSION VERSION_LESS "3.30.0")
   FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
 else()
   FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options REQUIRED)
@@ -365,30 +367,17 @@ macro(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
 endmacro()
 
 set(HS
-  runtime/include/Core/Utils/extension/adaptable_factory.hpp
   runtime/include/Core/Utils/extension/common.hpp
   runtime/include/Core/Utils/extension/convenience.hpp
   runtime/include/Core/Utils/extension/extension.hpp
   runtime/include/Core/Utils/extension/factory.hpp
   runtime/include/Core/Utils/extension/factory_map.hpp
-  runtime/include/Core/Utils/extension/filesystem.hpp
-  runtime/include/Core/Utils/extension/parameter.hpp
-  runtime/include/Core/Utils/extension/parameter_map.hpp
-  runtime/include/Core/Utils/extension/registry.hpp
   runtime/include/Core/Utils/extension/shared_library.hpp
   runtime/include/Core/Utils/extension/type_map.hpp
   runtime/include/Core/Utils/extension/logger.hpp
-  runtime/include/Core/Utils/extension/impl/adaptable_factory.hpp
-  runtime/include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
-  runtime/include/Core/Utils/extension/impl/adaptable_factory_set.hpp
   runtime/include/Core/Utils/extension/impl/create.hpp
-  runtime/include/Core/Utils/extension/impl/create_func.hpp
   runtime/include/Core/Utils/extension/impl/decl.hpp
-  runtime/include/Core/Utils/extension/impl/factory.hpp
-  runtime/include/Core/Utils/extension/impl/factory_map.hpp
-  runtime/include/Core/Utils/extension/impl/function.hpp
   runtime/include/Core/Utils/extension/impl/library_impl.hpp
-  runtime/include/Core/Utils/extension/impl/shared_library.hpp
   runtime/include/Core/Utils/extension/impl/typeinfo.hpp
   runtime/include/FMU2/fmi2Functions.h
   runtime/include/FMU2/fmi2FunctionTypes.h
@@ -398,7 +387,3 @@ set(HS
   runtime/include/FMU2/FMU2Wrapper.cpp
   runtime/include/FMU2/FMU2Wrapper.h)
 INSTALL_HEADERS_WITH_DIRECTORY(HS)
-
-if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
-  install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/omsicpp/\")")
-endif()

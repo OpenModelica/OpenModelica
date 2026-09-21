@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot* _Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot* output.log
 // cflags: -d=-newInst
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library

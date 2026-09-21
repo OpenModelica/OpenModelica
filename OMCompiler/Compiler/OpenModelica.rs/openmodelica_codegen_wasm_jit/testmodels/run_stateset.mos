@@ -1,0 +1,11 @@
+// Dynamic state selection under wasm-jit: MultiBody FreeBody selects 3 of the 4
+// body quaternion components as states (a `$STATESET`). Without seeding the `A`
+// selection matrix before initialisation the selected-state equations are
+// singular (orientation stays at identity, DASSL fails IDID=-10). Values match
+// /usr/bin/omc (the C target) to solver tolerance.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody, stopTime = 1.0, numberOfIntervals = 20); getErrorString();
+val(body.r_0[1], 1.0); // expect ~0.19424
+val(body.r_0[2], 1.0); // expect ~-0.45115
+val(body.r_0[3], 1.0); // expect ~0.06642

@@ -32,6 +32,8 @@ AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC)
+# HDF5 for ModelicaMatIO's MAT v7.3 paths; only the CMake build looks for it.
+AC_SUBST(OMC_HDF5_LDFLAGS)
 # Libraries linked into generated simulation code when --parmodauto is enabled (ParModelica auto + oneTBB).
 PARMODELICAAUTO_LDFLAGS=" -lParModelicaAuto -ltbb "
 AC_SUBST(PARMODELICAAUTO_LDFLAGS)
@@ -39,6 +41,7 @@ AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(SUNDIALS_TARGET)
+AC_SUBST(SUNDIALS_RPATH_LDFLAGS)
 AC_SUBST(PRIMME_LDFLAGS)
 AC_SUBST(PRIMME_TARGET)
 AC_SUBST(COLPACK_LDFLAGS)
@@ -52,6 +55,7 @@ AC_SUBST(SOURCE_REVISION)
 AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
+AC_SUBST(OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE)
 AC_SUBST(OMC_LIBS)
 AC_SUBST(OMPCFLAGS)
 AC_SUBST(RUNTIMECC)
@@ -485,29 +489,6 @@ AC_MSG_RESULT([$RUNTIMECFLAGS])
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
-dnl Parallel Jacobian evaluation in C runtime
-dnl OpenMP needs to be available
-dnl If enabled, model needs to be compiled using -DUSE_PARJAC (add to RUNTIMECFLAGS)
-AC_ARG_ENABLE(
-  [parjac],
-  AS_HELP_STRING([--enable-parjac],
-                 [enable parallel symbolical Jacobian evaluation in C runtime]),
-  [want_parjac=$enableval],
-  [want_parjac=no]
-)
-USE_PARJAC="no"
-if test x$want_parjac = xyes; then
-  AC_MSG_CHECKING([for parallel Jacobian evaluation])
-  if test "$CONFIG_WITH_OPENMP=1"; then
-    USE_PARJAC="yes"
-    RUNTIMECFLAGS="$RUNTIMECFLAGS $OMPCFLAGS -DUSE_PARJAC"
-  else
-    AC_MSG_WARN([========= OpenMP is not available, will evaluate jacobians sequentially])
-  fi
-  AC_MSG_RESULT([$USE_PARJAC])
-fi
-AC_SUBST(USE_PARJAC)
-
 
 LIBS=""
 AC_SEARCH_LIBS(dlopen,dl)
@@ -556,7 +537,8 @@ SUNDIALS_SUNNONLINSOL_LDFLAGS="-lsundials_sunnonlinsolnewton"
 SUNDIALS_CVODE_LDFLAGS="-lsundials_cvode -lsundials_cvodes"
 SUNDIALS_IDA_LDFLAGS="-lsundials_idas"
 SUNDIALS_KINSOL_LDFLAGS="-lsundials_kinsol"
-SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIALS_SUNLINSOL_LDFLAGS $SUNDIALS_SUNNONLINSOL_LDFLAGS $SUNDIALS_CVODE_LDFLAGS $SUNDIALS_IDA_LDFLAGS $SUNDIALS_KINSOL_LDFLAGS $LD_LAPACK"
+SUNDIALS_CORE_LDFLAGS="-lsundials_core"
+SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIALS_SUNLINSOL_LDFLAGS $SUNDIALS_SUNNONLINSOL_LDFLAGS $SUNDIALS_CVODE_LDFLAGS $SUNDIALS_IDA_LDFLAGS $SUNDIALS_KINSOL_LDFLAGS $SUNDIALS_CORE_LDFLAGS $LD_LAPACK"
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 
@@ -710,7 +692,6 @@ AS_IF([test "x$with_colpack" = xyes],
   OMC_HAVE_COLPACK="/* #define OMC_HAVE_COLPACK */ /* Without ColPack*/"
 ])
 
-m4_include([common/m4/corba.m4])
 
 AC_MSG_CHECKING([for OpenCL])
 AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
@@ -741,13 +722,14 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lryu"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lryu -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
   RT_LDFLAGS_SHARED=
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
+  SUNDIALS_RPATH_LDFLAGS="-Wl,-rpath,@loader_path"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
@@ -774,12 +756,13 @@ elif echo "$host" | grep -iq "mingw"; then
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lryu -lm $LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lryu -lm $LD_NOUNDEFINED"
   LINK="cp -frl"
   # No RPATH in Windows :(
   RPATH=""
+  SUNDIALS_RPATH_LDFLAGS=""
   RPATH_QMAKE=""
   AR_SH="$AR -ru"
   LDFLAGS_SOCKET=" -lwsock32"
@@ -810,14 +793,15 @@ else
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lryu -lpthread -rdynamic" # Some of our tests refer to the testsuite itself
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lryu -lpthread -rdynamic$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -lryu -rdynamic $LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lryu -lm -lpthread -rdynamic $LD_NOUNDEFINED"
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID $COLPACK_LDFLAGS"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
+  SUNDIALS_RPATH_LDFLAGS="-Wl,-z,origin -Wl,-rpath,\$\$ORIGIN"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
@@ -908,11 +892,23 @@ OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-$host_os | sed "s/linux-gnu/linux/" |
 fi
 
 AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
+
+AC_MSG_CHECKING([for alternative OpenModelica platform name])
+case "$OPENMODELICA_SPEC_PLATFORM" in
+  aarch64-darwin) OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE=arm64-darwin ;;
+  *) OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE= ;;
+esac
+AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE])
+
 AC_MSG_CHECKING([for Modelica platform name])
 if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
   MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/x86_64-linux/linux64/" | sed "s/i.86-linux/linux32/"`
 elif echo "$OPENMODELICA_SPEC_PLATFORM" | grep -q darwin; then
-  MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/x86_64-darwin/darwin64/" | sed "s/i.86-darwin/darwin32/"`
+  # macOS libraries are universal binaries, so every 64-bit arch shares darwin64.
+  case "$OPENMODELICA_SPEC_PLATFORM" in
+    i@<:@3456@:>@86-darwin) MODELICA_SPEC_PLATFORM=darwin32 ;;
+    *) MODELICA_SPEC_PLATFORM=darwin64 ;;
+  esac
 else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
 fi

@@ -1,0 +1,52 @@
+// name: inlineScalarProductSlice
+// keywords: inline, scalar product, slice
+// status: correct
+//
+// A scalar product of two crefs sliced with a non-constant bound must not
+// become an element-wise array product.
+
+loadString("
+model inlineScalarProductSlice
+  function dot
+    input Integer n;
+    input Real a[n];
+    input Real b[n];
+    input Integer m;
+    output Real d;
+  algorithm
+    d := a[1:m]*b[1:m];
+    annotation(Inline=true);
+  end dot;
+  constant Integer n = 3;
+  Real a[n];
+  Real b[n];
+  Integer m;
+  Real d;
+equation
+  a = {1, 2, 3} * (1 + time);
+  b = {4, 5, 6} * (1 + time);
+  m = 1 + integer(2 * time);
+  d = dot(n, a, b, m);
+end inlineScalarProductSlice;
+"); getErrorString();
+
+simulate(inlineScalarProductSlice, stopTime = 1.0); getErrorString();
+
+// m = 1, 2, 3 -> d = (1 + time)^2 * {4, 14, 32}
+val(m, {0.25, 0.75, 1.0});
+val(d, {0.25, 0.75, 1.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "inlineScalarProductSlice_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'inlineScalarProductSlice', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,2.0,3.0}
+// {6.25,42.875,128.0}
+// endResult

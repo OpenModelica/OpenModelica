@@ -48,6 +48,7 @@ public import UnorderedMap;
 public import UnorderedSet;
 
 protected import Absyn;
+protected import AbsynUtil;
 protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import BackendEquation;
@@ -433,29 +434,22 @@ in singleRepl."
   input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   input HashSet.HashSet inSet "to avoid double work";
-  output VariableReplacements outRepl;
+  output VariableReplacements outRepl = repl;
+protected
+  HashSet.HashSet set = inSet;
+  DAE.Exp crDst;
 algorithm
-  outRepl := matchcontinue lst
-    local
-      DAE.Exp crDst;
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crs;
-      VariableReplacements repl1;
-      HashSet.HashSet set;
-    case {} then repl;
-    case cr::crs
-      algorithm
-        false := BaseHashSet.has(cr,inSet);
-        set := BaseHashSet.add(cr,inSet);
-        SOME(crDst) := UnorderedMap.getOrFail(cr,repl.hashTable);
+  for cr in lst loop
+    if not BaseHashSet.has(cr,set) then
+      try
+        set := BaseHashSet.add(cr,set);
+        SOME(crDst) := UnorderedMap.getOrFail(cr,outRepl.hashTable);
         (crDst,_) := replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
-        repl1 := addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
-      then
-        makeTransitive12(crs,repl1,singleRepl,inFuncTypeExpExpToBooleanOption,set);
-    case _::crs
-      then
-        makeTransitive12(crs,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet);
-  end matchcontinue;
+        outRepl := addReplacementNoTransitive(outRepl,cr,crDst) "add updated old rule";
+      else
+      end try;
+    end if;
+  end for;
 end makeTransitive12;
 
 protected function makeTransitive2 "
@@ -951,6 +945,12 @@ algorithm
         (e1_1,true) := replaceExp(e1, repl, cond);
       then
         (DAE.TSUB(e1_1,i,tp),true);
+    case ((DAE.RSUB(exp = e1,ix = i, fieldName = ident, ty = tp)),repl,cond)
+      algorithm
+        true := replaceExpCond(cond, e1);
+        (e1_1,true) := replaceExp(e1, repl, cond);
+      then
+        (DAE.RSUB(e1_1,i,ident,tp),true);
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
         guard replaceExpCond(cond, e)
       algorithm
@@ -1000,13 +1000,14 @@ algorithm
   repl := match ty
     local
       DAE.Exp bind;
+      Absyn.Path path;
 
-    case DAE.T_COMPLEX() algorithm
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path)) algorithm
       for var in ty.varLst loop
         // only do something if there is a binding
         if DAEUtil.isBound(var.binding) then
           SOME(bind) := DAEUtil.bindingExp(var.binding);
-          cref := getRecordElement(var.name, expl);
+          cref := getRecordElement(var.name, expl, path);
           // only replace if the expression is const and the name was found
           // if replacement already happened the name might not be found -> no error!
           if Expression.isConst(bind) and not ComponentReference.isWild(cref) then
@@ -1021,14 +1022,20 @@ end addConstantRecordReplacements;
 
 function getRecordElement
   "takes an attribute name and the list of full attribute names.
-  returns the cref of which the last ident matches the required name."
+  returns the cref of which the last ident matches the required name, and which
+  is an element of a record of the given type. A record expression may also be
+  built from the elements of a different record, and those are unrelated to this
+  record's bindings even when a name matches."
   input DAE.Ident name;
   input list<DAE.Exp> expl;
+  input Absyn.Path recordPath;
   output DAE.ComponentRef cref = DAE.WILD();
 algorithm
   for e in expl loop
     () := match e
-      case DAE.CREF() guard(ComponentReferenceBasics.crefLastIdent(e.componentRef) == name)
+      case DAE.CREF()
+        guard ComponentReferenceBasics.crefLastIdent(e.componentRef) == name and
+              isElementOfRecord(e.componentRef, recordPath)
         algorithm
           cref := e.componentRef;
           return;
@@ -1037,6 +1044,29 @@ algorithm
     end match;
   end for;
 end getRecordElement;
+
+function isElementOfRecord
+  "Whether the cref names an element of a record of the given type."
+  input DAE.ComponentRef cref;
+  input Absyn.Path recordPath;
+  output Boolean res;
+protected
+  Absyn.Path path;
+algorithm
+  res := match cref
+    case DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT())
+      algorithm
+        res := match Types.arrayElementType(cref.identType)
+          case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path))
+            then AbsynUtil.pathEqual(path, recordPath);
+          else false;
+        end match;
+      then res;
+
+    case DAE.CREF_QUAL() then isElementOfRecord(cref.componentRef, recordPath);
+    else false;
+  end match;
+end isElementOfRecord;
 
 public function replaceCref"replaces a cref.
 author: Waurich TUD 2014-06"
@@ -1765,6 +1795,7 @@ protected
   Boolean initialCall;
   Boolean b1,b2,b3;
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 algorithm
   for stmt in inStatementLst loop
     (outStatementLst, replacementPerformed) := matchcontinue stmt
@@ -1815,7 +1846,7 @@ algorithm
         then
           replaceSTMT_IF(e1_2,statementLst,else_,source,repl,inFuncTypeExpExpToBooleanOption,outStatementLst,replacementPerformed or b1);
 
-      case DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)
+      case DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source,sub_iters=sub_iters)
         algorithm
           repl := addIterationVar(repl,ident);
           (statementLst_1,b1) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1826,7 +1857,7 @@ algorithm
           source := ElementSource.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
           repl := removeIterationVar(repl,ident);
         then
-          (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source) :: outStatementLst, true);
+          (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source,sub_iters) :: outStatementLst, true);
 
       case DAE.STMT_PARFOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,loopPrlVars=loopPrlVars,source=source)
         algorithm
@@ -2229,7 +2260,7 @@ algorithm
     Option<DAE.Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
-    Option<DAE.Exp> startOrigin;
+    Option<DAE.StartOrigin> startOrigin;
   case DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin)
     algorithm
@@ -2242,7 +2273,6 @@ algorithm
     fixed := replaceOptionExp(fixed,repl);
     nominal := replaceOptionExp(nominal,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
@@ -2255,7 +2285,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
@@ -2265,7 +2294,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin)
@@ -2274,7 +2302,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin)
@@ -2285,7 +2312,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   else
@@ -2351,7 +2377,7 @@ protected
   Integer numberMathEvents;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingLst, sampleLst;
-  DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
+  BackendDAE.ZeroCrossingSet relationsLst;
   protected partial function Func
     input output BackendDAE.ZeroCrossing zc;
     input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
@@ -2363,7 +2389,7 @@ algorithm
   zc := function replaceZeroCrossing(inVariableReplacements=inVariableReplacements);
   DoubleEnded.mapNoCopy_1(zeroCrossingLst.zc, zc, inFuncTypeExpExpToBooleanOption);
   DoubleEnded.mapNoCopy_1(sampleLst.zc, zc, inFuncTypeExpExpToBooleanOption);
-  DoubleEnded.mapNoCopy_1(relationsLst, zc, inFuncTypeExpExpToBooleanOption);
+  DoubleEnded.mapNoCopy_1(relationsLst.zc, zc, inFuncTypeExpExpToBooleanOption);
   eInfoOut := BackendDAE.EVENT_INFO(timeEvents,zeroCrossingLst,relationsLst,sampleLst,numberMathEvents);
 end replaceEventInfo;
 
@@ -2430,17 +2456,20 @@ algorithm
 end dumpReplacements;
 
 public function dumpExtendReplacements
-"Prints the variable extendreplacements on form var1 -> var2"
+"Prints the variable extendreplacements on form var1 -> var2.
+ Sorted by name: the set is a hash set, so its traversal order depends on the
+ width of Integer and would differ between platforms and compiler builds."
   input VariableReplacements repl;
 protected
-  list<DAE.ComponentRef> crefs;
+  list<String> names;
 algorithm
-  crefs := UnorderedSet.toList(repl.extendhashTable);
+  names := list(ComponentReferenceBasics.printComponentRefStr(c) for c in UnorderedSet.toList(repl.extendhashTable));
+  names := List.sort(names, Util.strcmpBool);
   print("\nExtendReplacements: (");
-  print(String(listLength(crefs)));
+  print(String(listLength(names)));
   print(")\n");
   print("========================================\n");
-  print(stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(c) for c in crefs), "\n"));
+  print(stringDelimitList(names, "\n"));
   print("\n");
 end dumpExtendReplacements;
 

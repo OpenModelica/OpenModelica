@@ -57,7 +57,7 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
-  import NFBackendExtension.VariableKind;
+  import NFBackendExtension.{StateSelect, VariableKind};
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -211,10 +211,13 @@ protected
     // move stuff to their correct arrays
     (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
 
+    // promote StateSelect.prefer variables if their derivative already exists
+    (variables, unknowns, knowns, initials, states, derivatives, algebraics) := promotePreferStates(variables, unknowns, knowns, initials, states, derivatives, algebraics);
+
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(aux_eqns)) + ") Created auxiliary equations:"));
-      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n") + "\n");
+      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), List.Style.NEWLINE_TAB) + "\n\n");
     end if;
   end detectContinuousStatesDefault;
 
@@ -367,7 +370,7 @@ protected
       if listEmpty(acc_states) then
         print("\t<no states>\n\n");
       else
-        print(List.toString(acc_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
   end updateStatesAndDerivatives;
@@ -457,7 +460,7 @@ protected
       case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref, sourceInfo()), old_exp, true);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression " + context + "("
-          + List.toString(args, Expression.toString, "", "", ", ", "") + ")."});
+          + List.toString(args, Expression.toString, List.Style.FLAT) + ")."});
       then fail();
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
@@ -497,18 +500,18 @@ protected
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       if not listEmpty(acc_discrete_states) then
         print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
-        print(List.toString(acc_discrete_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_discrete_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
       if not listEmpty(acc_clocked_states) then
         print(StringUtil.headline_4("[stateselection] Natural clocked states from " + context + ":"));
-        print(List.toString(acc_clocked_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_clocked_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
 
     if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
       if not listEmpty(acc_previous) then
         print(StringUtil.headline_4("[discreteinfo] pre() and previous() variables from " + context + ":"));
-        print(List.toString(acc_previous, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_previous, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
 
@@ -657,21 +660,72 @@ protected
     end match;
   end stateOrder;
 
+  function promotePreferStates
+    "Promotes StateSelect.prefer variables to states if the model has ANY der() calls.
+    Only relevant for variables that have StateSelect.prefer but do NOT occur inside der()
+    calls — those that do occur are already promoted by natural state collection and removed
+    from algebraics before this function runs."
+    input output VariablePointers variables;
+    input output VariablePointers unknowns;
+    input output VariablePointers knowns;
+    input output VariablePointers initials;
+    input output VariablePointers states;
+    input output VariablePointers derivatives;
+    input output VariablePointers algebraics;
+  protected
+    list<Pointer<Variable>> acc_prefer_states = {};
+    list<Pointer<Variable>> acc_prefer_ders = {};
+    ComponentRef der_cref;
+    Pointer<Variable> der_var;
+  algorithm
+    // only promote if the model is dynamic (has at least one der() call)
+    if VariablePointers.size(states) > 0 then
+      for alg_ptr in VariablePointers.toList(algebraics) loop
+        if BVariable.isStateSelect(alg_ptr, StateSelect.PREFER) then
+          // this variable has StateSelect.prefer but is not inside any der() call;
+          // create its derivative and promote it to a state
+          (der_cref, der_var) := BVariable.makeDerVar(BVariable.getVarName(alg_ptr), variables.scalarized);
+          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(PointerWeak.downgrade(der_var)), false));
+          acc_prefer_states := alg_ptr :: acc_prefer_states;
+          acc_prefer_ders := der_var :: acc_prefer_ders;
+        end if;
+      end for;
+
+      if not listEmpty(acc_prefer_states) then
+        // update state variable arrays
+        states     := VariablePointers.addList(acc_prefer_states, states);
+        unknowns   := VariablePointers.removeList(acc_prefer_states, unknowns);
+        algebraics := VariablePointers.removeList(acc_prefer_states, algebraics);
+
+        // update derivative variable arrays (newly created — not yet in any array)
+        variables    := VariablePointers.addList(acc_prefer_ders, variables);
+        unknowns     := VariablePointers.addList(acc_prefer_ders, unknowns);
+        initials     := VariablePointers.addList(acc_prefer_ders, initials);
+        derivatives  := VariablePointers.addList(acc_prefer_ders, derivatives);
+
+        if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+          print(StringUtil.headline_4("[stateselection] (" + intString(listLength(acc_prefer_states)) + ") Forced states by StateSelect.PREFER:"));
+          print(List.toString(acc_prefer_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
+        end if;
+      end if;
+    end if;
+  end promotePreferStates;
+
   function updateStateOrder
     input ComponentRef lhs;
     input ComponentRef rhs;
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
   protected
-    Pointer<Variable> state;
+    PointerWeak<Variable> state;
   algorithm
     () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
       case (_, VariableKind.STATE_DER(state = state)) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(lhs), state_order);
+        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(lhs), state_order);
       then ();
       // der(b) = a
       case (VariableKind.STATE_DER(state = state), _) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(rhs), state_order);
+        UnorderedMap.add(BVariable.getVarName(PointerWeak.upgrade(state)), ComponentRef.stripSubscriptsAll(rhs), state_order);
       then ();
       else ();
     end match;

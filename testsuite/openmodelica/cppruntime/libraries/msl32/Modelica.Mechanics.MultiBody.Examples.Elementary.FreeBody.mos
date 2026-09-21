@@ -3,6 +3,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library

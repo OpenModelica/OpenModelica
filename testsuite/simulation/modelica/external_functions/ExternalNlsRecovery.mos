@@ -1,0 +1,37 @@
+// name:     ExternalNlsRecovery
+// keywords: external, nonlinear
+// status:   correct
+// setup_command: $OMC_CC $OMC_CFLAGS -I"$OPENMODELICAHOME/include/omc/c" $OMC_EXTLIB_FLAGS -o ExternalNlsRecovery-f$OMC_EXTLIB_EXT ExternalNlsRecovery-f.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -rf ExternalNlsRecovery_* ExternalNlsRecovery ExternalNlsRecovery.exe ExternalNlsRecovery-f.c.o ExternalNlsRecovery-f.o ExternalNlsRecovery-f.wasm ExternalNlsRecovery.makefile ExternalNlsRecovery.libs ExternalNlsRecovery.log output.log
+// depends: ExternalNlsRecovery-f.c
+//
+// A ModelicaError inside a nonlinear-solver residual is a rejected trial, not the
+// end of the run: the Newton step from x=5 overshoots to x=-15, where the external
+// function refuses, and the solver backs off onto the root x = 1/(1+time).
+// -lv=-LOG_ASSERT drops the per-trial message, which the wasm-jit target (whose
+// recovery does not evaluate it) does not print.
+//
+
+loadFile("ExternalNlsRecovery.mo");
+getErrorString();
+
+simulate(ExternalNlsRecovery, stopTime=1.0, numberOfIntervals=2, simflags="-lv=-LOG_ASSERT");
+getErrorString();
+
+val(x, 0.0);
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalNlsRecovery_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalNlsRecovery', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_ASSERT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.5
+// endResult

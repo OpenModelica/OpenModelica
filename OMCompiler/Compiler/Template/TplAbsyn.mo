@@ -1159,6 +1159,10 @@ algorithm
         //  = adaptTextToString(argval, stmts, locals, tplPackage);
         (_,exptype,_) := argval;
         exptype := deAliasedType(exptype, astDefs);
+        if isTextType(exptype) then
+          (stmts, locals, argval) := textConditionToIsEmpty(argval, stmts, locals);
+          exp := emptyExpression;
+        end if;
         mcases
           := elabCasesFromCondition(exptype, isnot, rhsval, tbranch, ebranch, tplPackage);
         ( argvals, fname, iargs, oargs, scEnv, accMMDecls)
@@ -4148,6 +4152,35 @@ algorithm
   end matchcontinue;
 end isAlwaysMatchedBool;
 
+protected function isTextType
+  input TypeSignature ts;
+  output Boolean b;
+algorithm
+  b := match ts
+    case TEXT_TYPE() then true;
+    else false;
+  end match;
+end isTextType;
+
+protected function textConditionToIsEmpty
+  "A Text condition tests emptiness through Tpl.isEmpty, so the generated
+   code does not depend on the representation of Text."
+  input tuple<MMExp, TypeSignature, SourceInfo> inArgValue;
+  input output list<MMExp> stmts;
+  input output TypedIdents locals;
+  output tuple<MMExp, TypeSignature, SourceInfo> outArgValue;
+protected
+  MMExp mmexp;
+  SourceInfo sinfo;
+  Ident retid;
+algorithm
+  (mmexp, _, sinfo) := inArgValue;
+  retid := returnTempVarNamePrefix + intString(listLength(locals));
+  locals := addLocalValue(retid, BOOLEAN_TYPE(), locals);
+  stmts := MM_ASSIGN({retid}, MM_FN_CALL(PATH_IDENT("Tpl", IDENT("isEmpty")), {mmexp})) :: stmts;
+  outArgValue := (MM_IDENT(IDENT(retid)), BOOLEAN_TYPE(), sinfo);
+end textConditionToIsEmpty;
+
 public function adaptTextToString
   input tuple<MMExp, TypeSignature, SourceInfo> inArgValue;
   input Expression inArgExp;
@@ -4258,13 +4291,10 @@ algorithm
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("false", BOOLEAN_TYPE()), tbranch, ebranchOpt);
 
+    // the condition value is Tpl.isEmpty(text), see textConditionToIsEmpty
     case (TEXT_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
-       casesForTrueFalseCondition(isnot,
-          //MEM_TEXT( tokens = {} )
-          RECORD_MATCH( PATH_IDENT("Tpl", IDENT("MEM_TEXT")),
-                        {("tokens",LIST_MATCH({}))} ),
-          tbranch, ebranchOpt);
+       casesForTrueFalseCondition(isnot, LITERAL_MATCH("true", BOOLEAN_TYPE()), tbranch, ebranchOpt);
 
     else
       algorithm
@@ -4880,15 +4910,12 @@ public function usedInImmediateLetScope
   output Boolean outIsUsed;
 algorithm
   outIsUsed
-  := matchcontinue inScopeEnv
+  := match inScopeEnv
     local
       Ident letIdent, freshIdent;
       ScopeEnv restEnv;
 
-    case LET_SCOPE(ident = letIdent, freshIdent = freshIdent) :: _
-      algorithm
-        true := stringEq(inIdent, letIdent);
-        true := stringEq(inFreshIdent, freshIdent);
+    case LET_SCOPE(ident = letIdent, freshIdent = freshIdent) :: _ guard stringEq(inIdent, letIdent) and stringEq(inFreshIdent, freshIdent)
       then
         true;
 
@@ -4898,10 +4925,7 @@ algorithm
       then
         usedInImmediateLetScope(inIdent, inFreshIdent, restEnv);
 
-    case RECURSIVE_SCOPE(recIdent = letIdent, freshIdent = freshIdent) :: _
-      algorithm
-        true := stringEq(inIdent, letIdent);
-        true := stringEq(inFreshIdent, freshIdent);
+    case RECURSIVE_SCOPE(recIdent = letIdent, freshIdent = freshIdent) :: _ guard stringEq(inIdent, letIdent) and stringEq(inFreshIdent, freshIdent)
       then
         true;
 
@@ -4913,7 +4937,7 @@ algorithm
 
     else false;
 
-  end matchcontinue;
+  end match;
 end usedInImmediateLetScope;
 
 
@@ -5804,16 +5828,14 @@ It assumes the input types are deAliasedType-ed.
   input list<ASTDef> inASTDefs;
 
 algorithm
-  ():= matchcontinue(inTypeA, inTypeB, inASTDefs)
+  ():= match(inTypeA, inTypeB, inASTDefs)
     local
       TypeSignature tyA, tyB;
       PathIdent na, nb;
       list<ASTDef> astDefs;
 
     //named types
-    case ( NAMED_TYPE(name = na), NAMED_TYPE(name = nb), _ )
-      algorithm
-        true := valueEq(na, nb);
+    case ( NAMED_TYPE(name = na), NAMED_TYPE(name = nb), _ ) guard valueEq(na, nb)
       then
         ();
 
@@ -5825,7 +5847,7 @@ algorithm
       then
         ();
 
-  end matchcontinue;
+  end match;
 end typesEqualConcrete;
 
 
@@ -6003,7 +6025,7 @@ public function checkPackageOpt
   input PathIdent inPackage;
   input Option<PathIdent> inPackageOpt;
 algorithm
-  () := matchcontinue (inPackage, inPackageOpt)
+  () := match (inPackage, inPackageOpt)
     local
       PathIdent path, pckgpath;
 
@@ -6011,9 +6033,7 @@ algorithm
       then
         ();
 
-    case ( path, SOME(pckgpath) )
-      algorithm
-        true := valueEq(path, pckgpath);
+    case ( path, SOME(pckgpath) ) guard valueEq(path, pckgpath)
       then
         ();
 
@@ -6023,7 +6043,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end checkPackageOpt;
 
 
@@ -6416,19 +6436,17 @@ protected function lookupTupleList
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outItemB := matchcontinue(inList, inItemA)
+  outItemB := match(inList, inItemA)
     local
        Type_a a, itemA;
        Type_b itemB;
        list<tuple<Type_a,Type_b>> rest;
 
-    case ( (a, itemB) :: _, itemA )
-      algorithm
-        true := valueEq(a, itemA);
+    case ( (a, itemB) :: _, itemA ) guard valueEq(a, itemA)
       then itemB;
     case ( _ :: rest, itemA)
       then lookupTupleList(rest, itemA);
-  end matchcontinue;
+  end match;
 end lookupTupleList;
 
 protected function updateTupleList
@@ -6463,16 +6481,14 @@ protected function lookupDeleteTupleList
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  (outItemB, outList) := matchcontinue(inList, inItemA)
+  (outItemB, outList) := match(inList, inItemA)
     local
        Type_a a, itemA;
        Type_b itemB;
        list<tuple<Type_a,Type_b>> rest;
        tuple<Type_a,Type_b> h;
 
-    case ( (a, itemB) :: rest, itemA )
-      algorithm
-        true := valueEq(a, itemA);
+    case ( (a, itemB) :: rest, itemA ) guard valueEq(a, itemA)
       then
         (itemB, rest);
 
@@ -6481,7 +6497,7 @@ algorithm
         (itemB, rest) := lookupDeleteTupleList(rest, itemA);
       then
         (itemB, h :: rest);
-  end matchcontinue;
+  end match;
 end lookupDeleteTupleList;
 
 protected function alignTupleList "
@@ -6637,22 +6653,16 @@ public function canBeEscapedUnquoted
     output Boolean outCanBeUnquoted;
 algorithm
   outCanBeUnquoted :=
-  matchcontinue inStringList
+  match inStringList
     local
       String str;
       list<String> rest;
 
-    case { str }
-      algorithm
-        true := stringLength(str) > 0;
-        true := canBeEscapedUnquotedChars(stringListStringChar(str));
+    case { str } guard (stringLength(str) > 0) and canBeEscapedUnquotedChars(stringListStringChar(str))
       then
         true;
 
-    case str :: (rest as (_::_))
-      algorithm
-        true := stringLength(str) > 0;
-        true := canBeEscapedUnquotedChars(stringListStringChar(str));
+    case str :: (rest as (_::_)) guard (stringLength(str) > 0) and canBeEscapedUnquotedChars(stringListStringChar(str))
       then
         canBeEscapedUnquoted(rest);
 
@@ -6660,7 +6670,7 @@ algorithm
     else
         false;
 
-  end matchcontinue;
+  end match;
 end canBeEscapedUnquoted;
 
 
@@ -6707,7 +6717,7 @@ public function pathIdentString
   input PathIdent inPathIndent;
   output String outPathIdentString;
 algorithm
-  outPathIdentString := matchcontinue inPathIndent
+  outPathIdentString := match inPathIndent
     local
       Ident ident;
       PathIdent path;
@@ -6729,12 +6739,12 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end pathIdentString;
 
 
 protected
-constant Tpl.Text eTxt = Tpl.MEM_TEXT({}, {});
+constant Tpl.Text eTxt = Tpl.emptyTxt;
 
 public function typeSignatureString
   input TypeSignature inTS;

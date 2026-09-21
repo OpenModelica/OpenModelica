@@ -2,6 +2,7 @@
 // keywords: Shadowing
 // status:   incorrect
 // cflags:   +g=MetaModelica -d=-newInst
+// suite: metamodelica
 //
 // Local Delcaration Shadowing
 //

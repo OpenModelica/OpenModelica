@@ -26,6 +26,9 @@
  */
 #ifndef MODEL_HELP_H
 #define MODEL_HELP_H
+#include "../../omc_dll.h"
+
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,39 +36,62 @@ extern "C" {
 
 #include "../../simulation_data.h"
 
-extern int maxEventIterations;
-extern double linearSparseSolverMaxDensity;
-extern int linearSparseSolverMinSize;
-extern double nonlinearSparseSolverMaxDensity;
-extern int nonlinearSparseSolverMinSize;
-extern double newtonXTol;
-extern double newtonFTol;
-extern int newtonMaxSteps;
-extern int maxJacUpdate[4];
-extern double maxStepFactor;
-extern double steadyStateTol;
-extern const size_t SIZERINGBUFFER;
-extern int compiledInDAEMode;
-extern int compiledWithSymSolver;
-extern double numericalDifferentiationDeltaXlinearize;
-extern double numericalDifferentiationDeltaXsolver;
-extern double homAdaptBend;
-extern double homHEps;
-extern int homMaxLambdaSteps;
-extern int homMaxNewtonSteps;
-extern int homMaxTries;
-extern double homTauDecreasingFactor;
-extern double homTauDecreasingFactorPredictor;
-extern double homTauIncreasingFactor;
-extern double homTauIncreasingThreshold;
-extern double homTauMax;
-extern double homTauMin;
-extern double homTauStart;
-extern int homBacktraceStrategy;
+DLLDataDirection extern int maxEventIterations;
+DLLDataDirection extern double linearSparseSolverMaxDensity;
+DLLDataDirection extern int linearSparseSolverMinSize;
+DLLDataDirection extern double nonlinearSparseSolverMaxDensity;
+DLLDataDirection extern int nonlinearSparseSolverMinSize;
+DLLDataDirection extern double newtonXTol;
+DLLDataDirection extern double newtonFTol;
+DLLDataDirection extern int newtonMaxSteps;
+DLLDataDirection extern int maxJacUpdate[4];
+DLLDataDirection extern double maxStepFactor;
+DLLDataDirection extern double steadyStateTol;
+DLLDataDirection extern const size_t SIZERINGBUFFER;
+DLLDataDirection extern int compiledInDAEMode;
+DLLDataDirection extern int compiledWithSymSolver;
+DLLDataDirection extern double numericalDifferentiationDeltaXlinearize;
+DLLDataDirection extern double numericalDifferentiationDeltaXsolver;
+DLLDataDirection extern double homAdaptBend;
+DLLDataDirection extern double homHEps;
+DLLDataDirection extern int homMaxLambdaSteps;
+DLLDataDirection extern int homMaxNewtonSteps;
+DLLDataDirection extern int homMaxTries;
+DLLDataDirection extern double homTauDecreasingFactor;
+DLLDataDirection extern double homTauDecreasingFactorPredictor;
+DLLDataDirection extern double homTauIncreasingFactor;
+DLLDataDirection extern double homTauIncreasingThreshold;
+DLLDataDirection extern double homTauMax;
+DLLDataDirection extern double homTauMin;
+DLLDataDirection extern double homTauStart;
+DLLDataDirection extern int homBacktraceStrategy;
+
+/**
+ * @brief Unsigned finite-difference step for one column of a numerical Jacobian.
+ *
+ * DASKR's DMATD and IDA's ida_ls difference over `delta_h*max(|y|,|h*y'|)`,
+ * floored at the unknown's error weight `1/wt = rtol*|y| + atol`. The floor is
+ * a tolerance, not a differencing step: an unknown below it is zero as far as
+ * the error control is concerned and its magnitude is no scale to difference
+ * over, but `1/wt` is `tolerance` times the nominal where the step wants
+ * `delta_h` times it. So take the nominal there instead.
+ *
+ * @param y         Value of the unknown.
+ * @param hyprime   Step size times its derivative.
+ * @param ewtInv    Its error weight inverted, `rtol*|y| + atol`.
+ * @param nominal   Its nominal value, scaled by -jacobianNominalFactor.
+ * @return double   The step, unsigned.
+ */
+static inline double numericalJacobianStep(double y, double hyprime, double ewtInv, double nominal)
+{
+  const double scale = fmax(fabs(y), fabs(hyprime));
+  return numericalDifferentiationDeltaXsolver * (scale > ewtInv ? scale : fmax(ewtInv, nominal));
+}
 
 void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
 
 void freeModelDataVars(MODEL_DATA* modelData);
+void freeModelDataVarArrays(MODEL_DATA* modelData);
 
 void scalarAllocArrayAttributes(MODEL_DATA* modelData);
 
@@ -89,6 +115,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
 modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream);
 
 void overwriteOldSimulationData(DATA *data);
+void continueSimulationData(DATA *data);
 void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing);
 void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 
@@ -204,7 +231,7 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
   }
 }
 
-extern int measure_time_flag;
+DLLDataDirection extern int measure_time_flag;
 
 #ifdef __cplusplus
 }

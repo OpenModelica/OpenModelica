@@ -945,6 +945,111 @@ extern struct record_description FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__
 #define FMI__EXPERIMENTANNOTATION_3dBOX3 3
 #define FMI__EXPERIMENTANNOTATION(fmiExperimentStartTime,fmiExperimentStopTime,fmiExperimentTolerance) (mmc_mk_box4(3,&FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc,fmiExperimentStartTime,fmiExperimentStopTime,fmiExperimentTolerance))
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc__fields[17] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","startValue","isFixed","valueReference","dimensions","declaredType","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3ENUMERATIONVARIABLE",
+  "FMI.ModelVariables.FMI3ENUMERATIONVARIABLE",
+  FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc;
+#endif
+#define FMI__FMI3ENUMERATIONVARIABLE_3dBOX17 14
+#define FMI__FMI3ENUMERATIONVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,declaredType,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(18, 14,&FMI_ModelVariables_FMI3ENUMERATIONVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,declaredType,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3CLOCKVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3CLOCKVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3CLOCKVARIABLE__desc__fields[18] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","isFixed","valueReference","dimensions","intervalVariability","intervalDecimal","hasIntervalDecimal","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3CLOCKVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3CLOCKVARIABLE",
+  "FMI.ModelVariables.FMI3CLOCKVARIABLE",
+  FMI_ModelVariables_FMI3CLOCKVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3CLOCKVARIABLE__desc;
+#endif
+#define FMI__FMI3CLOCKVARIABLE_3dBOX18 13
+#define FMI__FMI3CLOCKVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,isFixed,valueReference,dimensions,intervalVariability,intervalDecimal,hasIntervalDecimal,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(19, 13,&FMI_ModelVariables_FMI3CLOCKVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,isFixed,valueReference,dimensions,intervalVariability,intervalDecimal,hasIntervalDecimal,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3BINARYVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3BINARYVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3BINARYVARIABLE__desc__fields[18] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","startValue","isFixed","valueReference","dimensions","mimeType","maxSize","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3BINARYVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3BINARYVARIABLE",
+  "FMI.ModelVariables.FMI3BINARYVARIABLE",
+  FMI_ModelVariables_FMI3BINARYVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3BINARYVARIABLE__desc;
+#endif
+#define FMI__FMI3BINARYVARIABLE_3dBOX18 12
+#define FMI__FMI3BINARYVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,mimeType,maxSize,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(19, 12,&FMI_ModelVariables_FMI3BINARYVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,mimeType,maxSize,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3STRINGVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3STRINGVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3STRINGVARIABLE__desc__fields[16] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","startValue","isFixed","valueReference","dimensions","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3STRINGVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3STRINGVARIABLE",
+  "FMI.ModelVariables.FMI3STRINGVARIABLE",
+  FMI_ModelVariables_FMI3STRINGVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3STRINGVARIABLE__desc;
+#endif
+#define FMI__FMI3STRINGVARIABLE_3dBOX16 11
+#define FMI__FMI3STRINGVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(17, 11,&FMI_ModelVariables_FMI3STRINGVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc__fields[16] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","startValue","isFixed","valueReference","dimensions","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3BOOLEANVARIABLE",
+  "FMI.ModelVariables.FMI3BOOLEANVARIABLE",
+  FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc;
+#endif
+#define FMI__FMI3BOOLEANVARIABLE_3dBOX16 10
+#define FMI__FMI3BOOLEANVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(17, 10,&FMI_ModelVariables_FMI3BOOLEANVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3INTEGERVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3INTEGERVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3INTEGERVARIABLE__desc__fields[16] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","startValue","isFixed","valueReference","dimensions","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3INTEGERVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3INTEGERVARIABLE",
+  "FMI.ModelVariables.FMI3INTEGERVARIABLE",
+  FMI_ModelVariables_FMI3INTEGERVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3INTEGERVARIABLE__desc;
+#endif
+#define FMI__FMI3INTEGERVARIABLE_3dBOX16 9
+#define FMI__FMI3INTEGERVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(17, 9,&FMI_ModelVariables_FMI3INTEGERVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_ModelVariables_FMI3REALVARIABLE__desc_added
+#define FMI_ModelVariables_FMI3REALVARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_FMI3REALVARIABLE__desc__fields[16] = {"instance","name","description","baseType","fmiType","variability","causality","hasStartValue","startValue","isFixed","valueReference","dimensions","x1Placement","x2Placement","y1Placement","y2Placement"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_ModelVariables_FMI3REALVARIABLE__desc = {
+  "FMI_ModelVariables_FMI3REALVARIABLE",
+  "FMI.ModelVariables.FMI3REALVARIABLE",
+  FMI_ModelVariables_FMI3REALVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_FMI3REALVARIABLE__desc;
+#endif
+#define FMI__FMI3REALVARIABLE_3dBOX16 8
+#define FMI__FMI3REALVARIABLE(instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement) (mmc_mk_box(17, 8,&FMI_ModelVariables_FMI3REALVARIABLE__desc,instance,name,description,baseType,fmiType,variability,causality,hasStartValue,startValue,isFixed,valueReference,dimensions,x1Placement,x2Placement,y1Placement,y2Placement))
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef FMI_ModelVariables_ENUMERATIONVARIABLE__desc_added
 #define FMI_ModelVariables_ENUMERATIONVARIABLE__desc_added
 ADD_METARECORD_DEFINITIONS const char* FMI_ModelVariables_ENUMERATIONVARIABLE__desc__fields[14] = {"instance","name","description","baseType","variability","causality","hasStartValue","startValue","isFixed","valueReference","x1Placement","x2Placement","y1Placement","y2Placement"};

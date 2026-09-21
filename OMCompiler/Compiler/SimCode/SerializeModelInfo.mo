@@ -120,7 +120,12 @@ algorithm
         } loop
           (eqsName, eqsLst) := tpl;
           for eq in SimCodeUtil.sortEqSystems(eqsLst) loop
-            serializeEquation(file, eq, eqsName, withOperations);
+            try
+              serializeEquation(file, eq, eqsName, withOperations);
+            else
+              Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo.serializeWork failed for section=" + eqsName + " eqIndex=" + intString(SimCodeUtil.simEqSystemIndex(eq))});
+              fail();
+            end try;
           end for;
         end for;
 
@@ -827,8 +832,14 @@ algorithm
     // no dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = NONE()) algorithm
       eqs := SimCodeUtil.sortEqSystems(nlSystem.eqs);
-      serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
-      for e in listRest(eqs) loop serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL); end for;
+      for e in eqs loop
+        try
+          serializeEquation(file,e,section,withOperations,parent=nlSystem.index,first=(SimCodeUtil.simEqSystemIndex(e)==SimCodeUtil.simEqSystemIndex(listHead(eqs))),assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
+        else
+          Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo inner eq failed in NLS " + intString(nlSystem.index) + " for inner eqIndex=" + intString(SimCodeUtil.simEqSystemIndex(e))});
+          fail();
+        end try;
+      end for;
 
       jeqs := match nlSystem.jacobianMatrix
         case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));

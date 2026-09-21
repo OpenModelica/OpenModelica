@@ -37,7 +37,7 @@ if(OPENMODELICA_NEW_CMAKE_BUILD)
 include(cmake_3.14.cmake)
 else(OPENMODELICA_NEW_CMAKE_BUILD)
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 IF(UNIX)
   IF(APPLE)
@@ -152,7 +152,6 @@ SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
 SET(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 SET(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
-SET(USE_MICO OFF)
 SET(USE_KLU CACHE BOOL OFF)
 
 IF(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -186,32 +185,32 @@ INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 # Check C++11
 IF(NOT(USE_CPP_03))
   IF(MSVC)
-    IF(MSVC_VERSION GREATER 1700)
+    IF(MSVC_VERSION GREATER_EQUAL 1914)
       SET(COMPILER_SUPPORTS_CXX11 True)
-    ELSE(MSVC_VERSION GREATER 1700)
+    ELSE(MSVC_VERSION GREATER_EQUAL 1914)
       SET(COMPILER_SUPPORTS_CXX11 False)
-    ENDIF(MSVC_VERSION GREATER 1700)
+    ENDIF(MSVC_VERSION GREATER_EQUAL 1914)
   ELSE(MSVC)
     INCLUDE(CheckCXXCompilerFlag)
     IF(APPLE)
-      CHECK_CXX_COMPILER_FLAG("-std=c++11 -stdlib=libc++" COMPILER_SUPPORTS_CXX11)
+      CHECK_CXX_COMPILER_FLAG("-std=c++17 -stdlib=libc++" COMPILER_SUPPORTS_CXX11)
     ELSE(APPLE)
       IF(FMU_TARGET)
         SET(COMPILER_SUPPORTS_CXX11 True)
       ELSE(FMU_TARGET)
-        CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+        CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX11)
       ENDIF(FMU_TARGET)
     ENDIF(APPLE)
     IF(COMPILER_SUPPORTS_CXX11)
       IF(APPLE)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
-        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++11 -stdlib=libc++")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -stdlib=libc++")
+        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++17 -stdlib=libc++")
         SET(CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
-        SET(CXX11_FLAGS " -std=c++11 -stdlib=libc++") #used for precompiled header
+        SET(CXX11_FLAGS " -std=c++17 -stdlib=libc++") #used for precompiled header
       ELSE(APPLE)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++11")
-        SET(CXX11_FLAGS " -std=c++11") #used for precompiled header
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++17")
+        SET(CXX11_FLAGS " -std=c++17") #used for precompiled header
       ENDIF(APPLE)
     ELSE()
       SET(COMPILER_SUPPORTS_CXX11 False)
@@ -232,9 +231,9 @@ ELSE()
 ENDIF(NOT(USE_CPP_03))
 
 IF(COMPILER_SUPPORTS_CXX11)
-  MESSAGE(STATUS "C++11 support enabled")
+  MESSAGE(STATUS "C++17 support enabled")
 ELSE(COMPILER_SUPPORTS_CXX11)
-  MESSAGE(STATUS "C++11 support disabled")
+  MESSAGE(STATUS "C++17 support disabled")
   ADD_DEFINITIONS(-DUSE_CPP_03)
 ENDIF(COMPILER_SUPPORTS_CXX11)
 
@@ -340,11 +339,11 @@ IF(WIN32)
   ELSEIF(IS_MINGW32)
     MESSAGE(FATAL_ERROR "32-bit version not supported")
   ELSEIF(MSVC)
-    IF(MSVC_VERSION GREATER 1700)
+    IF(MSVC_VERSION GREATER_EQUAL 1914)
       SET(BOOST_ROOT ${OMDEV_ESCAPED}/lib/3rdParty/boost-1_59/)
-    ELSE(MSVC_VERSION GREATER 1700)
+    ELSE(MSVC_VERSION GREATER_EQUAL 1914)
       SET(BOOST_ROOT ${OMDEV_ESCAPED}/lib/3rdParty/boost-1_55/)
-    ENDIF(MSVC_VERSION GREATER 1700)
+    ENDIF(MSVC_VERSION GREATER_EQUAL 1914)
   ELSE()
     MESSAGE(FATAL_ERROR "CPPRuntime does not know how to handle boost in this configuration")
   ENDIF()
@@ -357,12 +356,6 @@ IF(WIN32)
     STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
     STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
   ENDIF(MSVC)
-
-  #set mico paths
-  IF(USE_MICO)
-    SET(MICO_LIB_HOME ${OMDEV_ESCAPED}/lib/mico-msys-mingw/)
-    SET(MICO_INCLUDE_HOME  ${OMDEV_ESCAPED}/include/mico-msys-mingw/)
-  endif()
 
   SET(INSTALL_OMDEV_LIBS OFF)
 ENDIF(WIN32)
@@ -554,8 +547,8 @@ ENDIF(REDUCE_DAE)
 IF(USE_SUNDIALS)
   #set sundials solvers include and library directories
   IF(MSVC)
-    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/sundials")
-    SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/lib/")
+    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/include/sundials")
+    SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/lib/")
   ELSE(MSVC)
     SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/sundials)
     SET(SUNDIALS_LIBRARY_RELEASE_HOME   ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/..)
@@ -572,6 +565,11 @@ IF(USE_SUNDIALS)
     MESSAGE(FATAL_ERROR "Could not find Sundials; compile omc first")
   ENDIF()
   INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+
+  FIND_LIBRARY(SUNDIALS_CORE_LIB "sundials_core" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+  IF(NOT SUNDIALS_CORE_LIB)
+    MESSAGE(FATAL_ERROR "Could not find libsundials_core!")
+  ENDIF()
 
   FIND_LIBRARY(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
   IF(NOT SUNDIALS_NVECSERIAL_LIB)
@@ -598,7 +596,7 @@ IF(USE_SUNDIALS)
   IF(NOT SUNDIALS_KINSOL_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_kinsol!")
   ENDIF()
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB} ${SUNDIALS_CORE_LIB})
 
   MESSAGE(STATUS "Sundials Libraries:")
   MESSAGE(STATUS "${SUNDIALS_LIBRARIES}")
@@ -685,17 +683,6 @@ ELSE(SUITESPARSE_UMFPACK_FOUND)
   SET(SUITESPARSE_INCLUDE ".")
   SET(UMFPACK_LIB "")
 ENDIF(SUITESPARSE_UMFPACK_FOUND)
-
-
-#Handle Mico corba
-IF(USE_MICO)
-  FIND_LIBRARY(MICO_LIBRARY  mico2313
-    PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-  FIND_PATH(MICO_INCLUDE_DIR CORBA.h
-     ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
-  MESSAGE(STATUS ${MICO_LIBRARY})
-  MESSAGE(STATUS ${MICO_INCLUDE_DIR})
-ENDIF(USE_MICO)
 
 
 #Write the defines into the ADDITIONAL_DEFINES variable
@@ -892,30 +879,17 @@ install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/cpp/lic
 #copy Utils/extension
 SET(HS Core/Object/IObject.h
         Core/Object/Object.h
-        Core/Utils/extension/adaptable_factory.hpp
         Core/Utils/extension/common.hpp
         Core/Utils/extension/convenience.hpp
         Core/Utils/extension/extension.hpp
         Core/Utils/extension/factory.hpp
         Core/Utils/extension/factory_map.hpp
-        Core/Utils/extension/filesystem.hpp
-        Core/Utils/extension/parameter.hpp
-        Core/Utils/extension/parameter_map.hpp
-        Core/Utils/extension/registry.hpp
         Core/Utils/extension/shared_library.hpp
         Core/Utils/extension/type_map.hpp
         Core/Utils/extension/logger.hpp
-        Core/Utils/extension/impl/adaptable_factory.hpp
-        Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
-        Core/Utils/extension/impl/adaptable_factory_set.hpp
         Core/Utils/extension/impl/create.hpp
-        Core/Utils/extension/impl/create_func.hpp
         Core/Utils/extension/impl/decl.hpp
-        Core/Utils/extension/impl/factory.hpp
-        Core/Utils/extension/impl/factory_map.hpp
-        Core/Utils/extension/impl/function.hpp
         Core/Utils/extension/impl/library_impl.hpp
-        Core/Utils/extension/impl/shared_library.hpp
         Core/Utils/extension/impl/typeinfo.hpp
         FMU2/fmi2Functions.h
         FMU2/fmi2FunctionTypes.h

@@ -103,7 +103,7 @@ SOURCE_DIRS=$(SOURCE_DIRS_UTF8) # testsuite/flattening/libraries/3rdParty/HumMod
 bom-error:
 	rm -f bom-error.log bom-error.sh
 	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
-	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
+	find $(SOURCE_DIRS) -type f -not -path '*/.git/*' \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
 	@if test -e bom-error.log; then cat bom-error.log; fi
 	@test ! -e bom-error.log
 	rm -f bom-error.log bom-error.sh
@@ -115,7 +115,7 @@ tab-error:
 	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | grep -v " 0\$$" | egrep -v '/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
 # Trims trailing whitespace and replaces tabs with spaces
 fix-whitespace:
-	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
+	find . -type f -not -path '*/.git/*' -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
 
 spellcheck:
 	bash cmake/spellcheck.sh . aspell
@@ -141,7 +141,7 @@ clean:
 	for d in @subdirs@ testsuite/difftool libraries; do $(MAKE) -C $$d clean; done
 
 gitclean:
-	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
+	git submodule foreach --recursive 'git clean -fdx -e /git'
 	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode
 
 prefix=@prefix@
@@ -196,7 +196,7 @@ install: install-dirs
 	# man pages
 	# cp -p "@OMBUILDDIR@"/share/man/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
-	cp -a "@OMBUILDDIR@"/share/omc/*.* "@OMBUILDDIR@"/share/omc/runtime ${INSTALL_SHAREDIR}/omc/
+	cp -a "@OMBUILDDIR@"/share/omc/runtime ${INSTALL_SHAREDIR}/omc/
 	test ! -d "@OMBUILDDIR@"/share/omnotebook/ || cp -rp "@OMBUILDDIR@"/share/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d "@OMBUILDDIR@"/share/omshell/ || cp -p "@OMBUILDDIR@"/share/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
 	test ! -d "@OMBUILDDIR@"/share/omshell/nls/ || cp -p "@OMBUILDDIR@"/share/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/

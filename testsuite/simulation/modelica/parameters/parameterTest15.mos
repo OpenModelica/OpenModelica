@@ -26,7 +26,7 @@ setCommandLineOptions("-d=evalParameterDump");
 
 simulate(parameterTest15, simflags="-output=p1,p2,p3"); getErrorString();
 
-system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErrorString();
+simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3", resimulateExecutable="parameterTest15"); getErrorString();
 
 
 // Result:
@@ -277,11 +277,15 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 // [<interactive>:11:3-11:39:writable] Warning: Parameter p7 has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// LOG_STDOUT        | warning | It is not possible to override the following quantity: p2
+// record SimulationResult
+//     resultFile = "parameterTest15_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override p1=2,p2=10,p3=10 -output=p1,p2,p3'",
+//     messages = "LOG_STDOUT        | warning | It is not possible to override the following quantity: p2
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=2,p2=2,p3=10
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
+// "
+// end SimulationResult;
 // ""
 // endResult

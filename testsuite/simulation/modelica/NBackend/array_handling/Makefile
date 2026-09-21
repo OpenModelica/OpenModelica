@@ -2,6 +2,8 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 array_start_vector.mos\
+integerComprehensionParameter.mos\
+arrayResultFile.mos\
 simple_for.mos\
 simple_nested_for.mos\
 irregular_for.mos\
@@ -88,4 +90,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

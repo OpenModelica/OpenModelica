@@ -34,8 +34,7 @@ buildModel(SlowFastDynamics);
 getErrorString();
 
 // Create reference results
-system(realpath(".") + "/SlowFastDynamics -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
-print(readFile("refSimulation.log"));
+simulate(SlowFastDynamics, simflags="-s=dassl -r SlowFastDynamics_ref.mat ", resimulateExecutable="SlowFastDynamics");
 
 // Test all RK methods
 for rkMethod in rkMethods loop
@@ -43,10 +42,8 @@ for rkMethod in rkMethods loop
     for errCtrl in errCtrls loop
       print("--------------------------------------------------------\n");
       print("Running RK " + rkMethod + " with NLS " + nlsMethod + " and errCtrl " + errCtrl + ":\n");
-      logFile := "SlowFastDynamics_" + rkMethod + "_" + nlsMethod + "_" + errCtrl + ".log";
       system("rm -f SlowFastDynamics_res.mat");
-      system(realpath(".") + "/SlowFastDynamics -s=gbode -gbm=" + rkMethod + " -gbnls=" + nlsMethod + " -gberr=" + errCtrl, logFile);
-      print(readFile(logFile) + "\n");
+      simulate(SlowFastDynamics, simflags="-s=gbode -gbm=" + rkMethod + " -gbnls=" + nlsMethod + " -gberr=" + errCtrl, resimulateExecutable="SlowFastDynamics");
 
       (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
                                                    expectedFile = "SlowFastDynamics_ref.mat",
@@ -76,159 +73,72 @@ end for;
 // ""
 // {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
-// 0
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "SlowFastDynamics_ref.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SlowFastDynamics', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -r SlowFastDynamics_ref.mat '",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-//
+// "
+// end SimulationResult;
 // --------------------------------------------------------
 // Running RK impl_euler with NLS newton and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK impl_euler with NLS newton and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK impl_euler with NLS newton and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK impl_euler with NLS kinsol and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK impl_euler with NLS kinsol and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK impl_euler with NLS kinsol and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk2 with NLS newton and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk2 with NLS newton and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk2 with NLS newton and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk2 with NLS kinsol and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk2 with NLS kinsol and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk2 with NLS kinsol and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS newton and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS newton and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS newton and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS kinsol and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS kinsol and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS kinsol and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS newton and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS newton and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS newton and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS kinsol and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS kinsol and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS kinsol and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS newton and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS newton and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS newton and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS kinsol and errCtrl default:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS kinsol and errCtrl richardson:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS kinsol and errCtrl embedded:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
 //
 // endResult

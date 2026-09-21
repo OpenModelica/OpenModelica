@@ -97,7 +97,7 @@ namespace IAEX
   {}
 
   // GROUPCELL
-  void UpdateLinkVisitor::visitCellGroupNodeBefore(CellGroup *node)
+  void UpdateLinkVisitor::visitCellGroupNodeBefore(CellGroup *)
   {}
 
   void UpdateLinkVisitor::visitCellGroupNodeAfter(CellGroup *)
@@ -150,7 +150,7 @@ namespace IAEX
   {}
 
   //INPUTCELL
-  void UpdateLinkVisitor::visitInputCellNodeBefore(InputCell *node)
+  void UpdateLinkVisitor::visitInputCellNodeBefore(InputCell *)
   {}
 
   void UpdateLinkVisitor::visitInputCellNodeAfter(InputCell *)
@@ -158,14 +158,14 @@ namespace IAEX
 
 
   //GRAPHCELL
-  void UpdateLinkVisitor::visitGraphCellNodeBefore(GraphCell *node)
+  void UpdateLinkVisitor::visitGraphCellNodeBefore(GraphCell *)
   {}
 
   void UpdateLinkVisitor::visitGraphCellNodeAfter(GraphCell *)
   {}
 
   //LatexCELL
-  void UpdateLinkVisitor::visitLatexCellNodeBefore(LatexCell *node)
+  void UpdateLinkVisitor::visitLatexCellNodeBefore(LatexCell *)
   {}
 
   void UpdateLinkVisitor::visitLatexCellNodeAfter(LatexCell *)

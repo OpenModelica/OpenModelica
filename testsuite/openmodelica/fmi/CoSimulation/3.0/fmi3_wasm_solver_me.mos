@@ -1,0 +1,39 @@
+// name: fmi3_wasm_solver_me.mos
+// keywords: FMI 3.0 export wasm Model Exchange kinsol solver
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf ME_kinsol.fmu ME_kinsol.fmu.log ME_kinsol_artifact ME_plain.fmu ME_plain.fmu.log ME_plain_artifact om-wasm-include-*
+//
+// Model Exchange integrates nothing, but its initialisation and residuals run the
+// same nonlinear and linear solvers, and an importer has no channel to pass
+// simulation flags -- so the export hard-codes the selection into the model
+// metadata and links exactly the libraries it reaches. `nls:kinsol` therefore costs
+// an ME FMU KINSOL and the shared base; default flags cost it neither.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("fmi3_wasm_solver_libraries.mo"); getErrorString();
+
+setCommandLineOptions("--fmiFlags=nls:kinsol"); getErrorString();
+buildModelFMU(MixedSystems, fileNamePrefix="ME_kinsol", fmuType="me", version="3.0", platforms={"wasm"}); getErrorString();
+
+setCommandLineOptions("--fmiFlags=default"); getErrorString();
+buildModelFMU(MixedSystems, fileNamePrefix="ME_plain", fmuType="me", version="3.0", platforms={"wasm"}); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "ME_kinsol.fmu"
+// "Warning: Adding unknown FMU simulation flag \"nls\" .
+// Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// true
+// ""
+// "ME_plain.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// endResult

@@ -46,7 +46,10 @@ typedef struct simulation_result {
   void (*free)(struct simulation_result*,DATA*,threadData_t *threadData);
 } simulation_result;
 
-extern simulation_result sim_result;
+DLLDataDirection extern simulation_result sim_result;
+
+/** Closes the writer of `sim_result` and resets it, undoing `initializeResultData`. */
+void deinitializeResultData(DATA *data, threadData_t *threadData);
 
 #ifdef __cplusplus
 }

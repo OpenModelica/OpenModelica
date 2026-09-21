@@ -47,10 +47,30 @@ wchar_t* longabspath(wchar_t* unicodePath);
  * @return wchar_t*  A wide character representation of the multibyte string. The caller is responsible for deallocating the memory.
  */
 wchar_t* omc_multibyte_to_wchar_str(const char* in_mb_str) {
-  int length = MultiByteToWideChar(CP_UTF8, 0, in_mb_str, -1, NULL, 0);
+  int length;
+  wchar_t* out_wc_str;
 
-  wchar_t* out_wc_str = (wchar_t*) malloc(length * sizeof(wchar_t));
-  MultiByteToWideChar(CP_UTF8, 0, in_mb_str, -1, out_wc_str, length);
+  /* MultiByteToWideChar returns 0 for a NULL or otherwise unconvertible input.
+     Returning malloc(0) here would hand the caller an unterminated, uninitialised
+     buffer that it then reads as a string. */
+  if (!in_mb_str) {
+    return NULL;
+  }
+
+  length = MultiByteToWideChar(CP_UTF8, 0, in_mb_str, -1, NULL, 0);
+  if (length <= 0) {
+    return NULL;
+  }
+
+  out_wc_str = (wchar_t*) malloc(length * sizeof(wchar_t));
+  if (!out_wc_str) {
+    return NULL;
+  }
+
+  if (MultiByteToWideChar(CP_UTF8, 0, in_mb_str, -1, out_wc_str, length) <= 0) {
+    free(out_wc_str);
+    return NULL;
+  }
 
   return out_wc_str;
 }
@@ -95,7 +115,19 @@ FILE* omc_fopen(const char *filename, const char *mode)
   wchar_t* unicodeMode = omc_multibyte_to_wchar_str(mode);
 
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
-  FILE *f = _wfopen(unicodeLongFileName, unicodeMode);
+  FILE *f;
+
+  /* The UCRT kills the process through the invalid parameter handler when one of
+     these is NULL, instead of returning an error, so do not let a path we failed
+     to resolve reach it. */
+  if (!unicodeLongFileName || !unicodeMode) {
+    free(unicodeLongFileName);
+    free(unicodeFilename);
+    free(unicodeMode);
+    return NULL;
+  }
+
+  f = _wfopen(unicodeLongFileName, unicodeMode);
 
   free(unicodeLongFileName);
   free(unicodeFilename);
@@ -188,10 +220,18 @@ int omc_stat(const char *filename, omc_stat_t* statbuf)
 {
   wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
+  int res;
+
+  /* See omc_fopen: _wstat(NULL, ...) terminates the process rather than failing. A
+     path that could not be resolved simply does not exist as far as callers care. */
+  if (!unicodeLongFileName) {
+    free(unicodeFilename);
+    return -1;
+  }
 
   // _wstat not working on MINGW64 with \\?\, because it links to the MSVCRT (Microsoft Visual C++ Runtime)
   // We need to use UCRT64, which links to UCRT (Universal C Runtime)
-  int res = _wstat(unicodeLongFileName, statbuf);
+  res = _wstat(unicodeLongFileName, statbuf);
 
   free(unicodeLongFileName);
   free(unicodeFilename);
@@ -259,6 +299,11 @@ int omc_unlink(const char *filename) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
+  /* See omc_fopen: _wunlink(NULL) terminates the process rather than failing. */
+  if (!unicodeFilename) {
+    free(unicodeLongFileName);
+    return -1;
+  }
   result = _wunlink(unicodeFilename);
   free(unicodeLongFileName);
   free(unicodeFilename);
@@ -305,6 +350,10 @@ wchar_t* longabspath(wchar_t* unicodePath) {
   wchar_t unicodeAbsPath[BUFSIZE];
   wchar_t unicodeLongAbsPath[BUFSIZE];
   wchar_t* path;
+
+  if (!unicodePath) {
+    return NULL;
+  }
 
   retval = GetFullPathNameW(unicodePath, BUFSIZE, unicodeAbsPath, NULL);
   if (retval == 0)

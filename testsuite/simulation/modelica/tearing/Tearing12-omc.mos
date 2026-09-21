@@ -24,7 +24,7 @@ simulate(Tearing12); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Tearing12_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Tearing12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -32,6 +32,7 @@ simulate(Tearing12); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 9901
 //  * Number of variables: 9901
+// Notification: Tearing is skipped for linear strong component 1: solving it torn to 125 iteration variables is estimated at 2762901 flops against 176144 for the untorn system of size 908.
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1968
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -46,13 +47,16 @@ simulate(Tearing12); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (not torn): 0
-//  * Torn equation systems: 1
+//  * Equation systems (not torn): 1
+//  * Torn equation systems: 0
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details for strict tearing set:
-//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(125,783,36.0%)}
-//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
+// Notification: Equation system details (not torn):
+//  * Constant Jacobian (size): 0 systems
+//  * Linear Jacobian (size,density): 1 system
+//    {(908,0.4%)}
+//  * Non-linear Jacobian (size): 0 systems
+//  * Without analytic Jacobian (size): 0 systems
+// Notification: Tearing is skipped for linear strong component 2: solving it torn to 77 iteration variables is estimated at 1297193 flops against 176037 for the untorn system of size 905.
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 4
 //  * Number of states: 62 ('-d=stateselection' for list of states)
@@ -67,12 +71,14 @@ simulate(Tearing12); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (not torn): 0
-//  * Torn equation systems: 1
+//  * Equation systems (not torn): 1
+//  * Torn equation systems: 0
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details for strict tearing set:
-//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(77,828,70.4%)}
-//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
+// Notification: Equation system details (not torn):
+//  * Constant Jacobian (size): 0 systems
+//  * Linear Jacobian (size,density): 1 system
+//    {(905,0.4%)}
+//  * Non-linear Jacobian (size): 0 systems
+//  * Without analytic Jacobian (size): 0 systems
 // "
 // endResult

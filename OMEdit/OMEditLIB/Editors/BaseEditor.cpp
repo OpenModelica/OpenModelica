@@ -43,12 +43,14 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Util/ResourceCache.h"
 
 #include <QMenu>
 #include <QCompleter>
 #include <QMessageBox>
+#include <QRegularExpression>
 #include <QTextDocumentFragment>
 #include <QDockWidget>
 
@@ -1119,6 +1121,22 @@ void PlainTextEdit::goToLineNumber(int lineNumber)
     QTextCursor cursor(block);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
     setTextCursor(cursor);
+    NavigationManager::instance()->recordNavigationPoint(this);
+    centerCursor();
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::moveToNavigationPoint
+ * Moves the text cursor to the given position.
+ * \param position - the position to move to.
+ */
+void PlainTextEdit::moveToNavigationPoint(int position)
+{
+  if (position >= 0 && position <= textCursor().document()->characterCount()) {
+    QTextCursor textCursor = this->textCursor();
+    textCursor.setPosition(position);
+    setTextCursor(textCursor);
     centerCursor();
   }
 }
@@ -1252,6 +1270,10 @@ void PlainTextEdit::ensureCursorVisible()
  */
 void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(fileName);
+  Q_UNUSED(lineNumber);
+#else
   BreakpointsTreeModel *pBreakpointsTreeModel = MainWindow::instance()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
   if (!pBreakpointMarker) {
@@ -1266,6 +1288,7 @@ void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
     mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
     pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
   }
+#endif
 }
 
 /*!
@@ -2082,6 +2105,9 @@ void PlainTextEdit::mousePressEvent(QMouseEvent *event)
     viewport()->unsetCursor();
   }
   QPlainTextEdit::mousePressEvent(event);
+  if (event->button() == Qt::LeftButton) {
+    NavigationManager::instance()->recordNavigationPoint(this);
+  }
 }
 
 /*!
@@ -2797,6 +2823,7 @@ void FindReplaceWidget::findText(bool forward)
     }
   }
   mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+  NavigationManager::instance()->recordNavigationPoint(mpBaseEditor->getPlainTextEdit());
 }
 
 /*!
@@ -2901,7 +2928,7 @@ void FindReplaceWidget::validateRegularExpression(const QString &text)
   if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0) {
     return; // nothing to validate
   }
-  QRegExp reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+  QRegularExpression reg(text, (mpCaseSensitiveCheckBox->isChecked() ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption));
   if (!reg.isValid()) {
     QMessageBox::critical( this, "Find", reg.errorString());
   }

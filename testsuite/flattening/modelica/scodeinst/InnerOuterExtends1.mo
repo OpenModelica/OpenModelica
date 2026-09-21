@@ -1,6 +1,7 @@
 // name: InnerOuterExtends1
 // keywords:
 // status: correct
+// suite: disabled
 //
 
 model A

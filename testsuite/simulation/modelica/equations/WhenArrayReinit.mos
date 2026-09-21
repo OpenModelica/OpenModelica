@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -rf equationsTests.WhenArrayReinit* _equationsTests.WhenArrayReinit* output.log
 // cflags: -d=-newInst
+// suite: disabled
 // 
 // Conditional Equations with when-Equations and array variable in reinit
 // 

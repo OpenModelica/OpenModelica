@@ -48,6 +48,7 @@ protected
 
 import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
+import AbsynUtil;
 import AvlTreePathFunction;
 import Call = NFCall;
 import ComponentReferenceBasics;
@@ -214,14 +215,94 @@ algorithm
   source := match cref
     case ComponentRef.CREF()
       algorithm
-        source := ElementSource.addElementSourceType(source,
-          InstNode.scopePath(InstNode.classScope(InstNode.getDerivedNode(InstNode.parent(cref.node)))));
+        source := addComponentLevelTypeToSource(InstNode.parent(ComponentRef.node(cref)), source);
       then
         addComponentTypeToSource(cref.restCref, source);
 
     else source;
   end match;
 end addComponentTypeToSource;
+
+function addComponentLevelTypeToSource
+  "Records the type(s) of the class that owns the component referenced at one
+   level of a cref into the element source. For a regular component this is a
+   single class (the class in which the component is declared). When a component
+   is inherited through one or more `extends` of a visualization type, e.g.
+
+     model MyShape
+       extends ModelicaServices.Animation.Shape;
+     end MyShape;
+
+   getDerivedNode collapses the whole extends chain down to the most derived
+   class (MyShape), so the visualization base class (Shape) would be lost and
+   the backend (VisualXML) could no longer recognize it. In that case we record
+   the full extends chain, with the visualization base class kept in the primary
+   slot of this level so that the identifier prefix computed from the type index
+   in VisualXML.isVisualizationVarFold still points at the right component.
+
+   This is only reached when the element source types are recorded at all, i.e.
+   under -d=visxml (animation) or infoXmlOperations; otherwise the original
+   single most derived class entry is kept."
+  input InstNode parentNode;
+  input output DAE.ElementSource source;
+protected
+  InstNode concrete, n;
+  Absyn.Path concretePath, p;
+  list<Absyn.Path> chain = {};
+  Option<Absyn.Path> visPath = NONE();
+algorithm
+  // the collapsed, most derived class (default behaviour)
+  concrete := InstNode.classScope(InstNode.getDerivedNode(parentNode));
+  concretePath := InstNode.scopePath(concrete);
+
+  // Skip the chain walk when the most derived class is itself a visualization
+  // type (direct ModelicaServices/MultiBody shapes already match as a single
+  // entry); only an inherited shape needs the base classes recorded.
+  if not isVisualizerLeafName(concretePath) then
+    // walk the extends chain from where the component is actually declared up
+    // to the most derived class, collecting the intermediate base classes
+    n := InstNode.classScope(parentNode);
+    while InstNode.isBaseClass(n) loop
+      p := InstNode.scopePath(n, ignoreBaseClass = true);
+      chain := p :: chain;
+      if isNone(visPath) and isVisualizerLeafName(p) then
+        visPath := SOME(p);
+      end if;
+      n := InstNode.classScope(InstNode.getDerivedNode(n, recursive = false));
+    end while;
+  end if;
+
+  if isSome(visPath) then
+    // a visualization type appears as a base class -> record the whole chain
+    // with the visualization base class in the primary slot of this level
+    SOME(p) := visPath;
+    chain := listAppend(list(c for c guard not AbsynUtil.pathEqual(c, p) in chain),
+                        {concretePath});
+    for c in listReverse(chain) loop
+      source := ElementSource.addElementSourceType(source, c);
+    end for;
+    source := ElementSource.addElementSourceType(source, p);
+  else
+    // default (unchanged): single most derived class entry
+    source := ElementSource.addElementSourceType(source, concretePath);
+  end if;
+end addComponentLevelTypeToSource;
+
+function isVisualizerLeafName
+  "Returns true if the last identifier of the path is one of the visualization
+   type names (Shape, Vector, Surface). This is only used to position the type
+   in the element source; VisualXML.hasVisPath remains the authority on whether
+   a fully qualified path is actually a visualization type."
+  input Absyn.Path path;
+  output Boolean isVisualizer;
+algorithm
+  isVisualizer := match AbsynUtil.pathLastIdent(path)
+    case "Shape" then true;
+    case "Vector" then true;
+    case "Surface" then true;
+    else false;
+  end match;
+end isVisualizerLeafName;
 
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
@@ -263,7 +344,7 @@ protected
   Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
   Option<DAE.StateSelect> state_select = NONE();
   Option<DAE.Uncertainty> uncertain = NONE();
-  Option<DAE.Exp> start_origin = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -306,7 +387,8 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
-  Option<DAE.Exp> start = NONE(), fixed = NONE(), start_origin = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -342,7 +424,7 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
-  Option<DAE.Exp> start_origin = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -375,7 +457,7 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
-  Option<DAE.Exp> start_origin = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -408,7 +490,8 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
-  Option<DAE.Exp> start = NONE(), fixed = NONE(), start_origin = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -497,7 +580,7 @@ protected
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+    case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
     else
       algorithm
         Error.terminate(getInstanceName() +
@@ -528,8 +611,13 @@ end lookupUncertaintyMember;
 
 function convertStartOrigin
   input Binding binding;
-  output Option<DAE.Exp> startOrigin =
-    SOME(DAE.Exp.SCONST(if Binding.source(binding) == NFBinding.Source.TYPE then "binding" else "type"));
+  output Option<DAE.StartOrigin> startOrigin;
+algorithm
+  startOrigin := SOME(
+    if Binding.isFromType(binding) then
+      DAE.StartOrigin.TYPE_CONFIDENCE(Binding.confidence(binding))
+    else
+      DAE.StartOrigin.CONFIDENCE(Binding.actualConfidence(binding), Binding.confidence(binding)));
 end convertStartOrigin;
 
 function convertEquations
@@ -920,15 +1008,21 @@ protected
   DAE.ElementSource source;
   Statement.ForType for_type;
   list<tuple<DAE.ComponentRef, SourceInfo>> loop_vars;
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters_dae;
+  list<tuple<ComponentRef, array<Expression>>> sub_iters;
 algorithm
-  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
+  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source, sub_iters = sub_iters) := forStmt;
   dbody := convertStatements(body);
   ty := InstNode.getType(iterator);
+  sub_iters_dae := list(
+    (ComponentRef.toDAE(Util.tuple21(si)),
+     listArray(list(Expression.toDAE(e) for e in arrayList(Util.tuple22(si)))))
+    for si in sub_iters);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()
       then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-        InstNode.name(iterator), Expression.toDAE(range), dbody, source);
+        InstNode.name(iterator), Expression.toDAE(range), dbody, source, sub_iters_dae);
 
     case Statement.ForType.PARALLEL()
       algorithm
@@ -1079,7 +1173,7 @@ algorithm
     case Class.INSTANCED_CLASS(sections = sections, restriction = Restriction.FUNCTION())
       algorithm
         elems := convertFunctionParams(func.inputs, {});
-        elems := convertFunctionParams(func.outputs, elems);
+        elems := convertFunctionParams(list(InstNode.fromHandle(o) for o in func.outputs), elems);
         elems := convertFunctionParams(func.locals, elems);
 
         def := match sections
@@ -1192,7 +1286,7 @@ algorithm
 
     case Expression.CREF(cref = cref as ComponentRef.CREF())
       algorithm
-        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(cref.node)));
+        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(ComponentRef.node(cref))));
       then
         DAE.ExtArg.EXTARG(ComponentRef.toDAE(cref), dir, Type.toDAE(exp.ty));
 
@@ -1214,7 +1308,7 @@ algorithm
 
     case ComponentRef.CREF()
       algorithm
-        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(cref.node)));
+        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(ComponentRef.node(cref))));
       then
         DAE.ExtArg.EXTARG(ComponentRef.toDAE(cref), dir, Type.toDAE(cref.ty));
 

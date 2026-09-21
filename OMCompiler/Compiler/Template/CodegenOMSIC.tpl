@@ -200,16 +200,18 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     KINSOL_LIBDIR=$(OMLIB)/omc
     KINSOL_LIB=sundials_kinsol
     SUNDIALS_NVECSERIAL=sundials_nvecserial
+    SUNDIALS_CORE=sundials_core
 
     OMSU_STATIC_LIB=-Wl,--whole-archive -lOMSISolver_static -lOMSIBase_static -lOMSIC_static -Wl,--no-whole-archive
     OMSU_STATIC_LIBDIR=-L$(OMLIB)/omc/omsi
-    LIBS = $(OMSU_STATIC_LIB) -Wl,-Bdynamic -l$(EXPAT_LIB) -l$(LAPACK_LIB) <%match makefileParams.platform case "win32" case "win64" then '' else '-l$(BLAS_LIB)'%> -l$(KINSOL_LIB) -l$(SUNDIALS_NVECSERIAL)
+    LIBS = $(OMSU_STATIC_LIB) -Wl,-Bdynamic -l$(EXPAT_LIB) -l$(LAPACK_LIB) <%match makefileParams.platform case "win32" case "win64" then '' else '-l$(BLAS_LIB)'%> -l$(KINSOL_LIB) -l$(SUNDIALS_NVECSERIAL) -l$(SUNDIALS_CORE)
     LIBSDIR= $(OMSU_STATIC_LIBDIR) -L$(EXPAT_LIBDIR) -L$(LAPACK_LIBDIR) -L$(KINSOL_LIBDIR)
 
     THIRD_PARTY_DYNAMIC_LIBS =<%match makefileParams.platform case "win32" case "win64" then
     '$(LAPACK_LIBDIR)/lib$(LAPACK_LIB).<%libEnding%>' else ''%>       \
      $(KINSOL_LIBDIR)/lib$(KINSOL_LIB).*                                \
      $(KINSOL_LIBDIR)/lib$(SUNDIALS_NVECSERIAL).*                       \
+     $(KINSOL_LIBDIR)/lib$(SUNDIALS_CORE).*                             \
 
     .PHONY: copyFiles makeStructure compile fmiImport OMSimulation clean
 
@@ -385,7 +387,7 @@ template createMakefileIn(SimCode simCode, String target, String FileNamePrefix,
         # /MD - link with MSVCRT.LIB
         # /link - [linker options and libraries]
         # /LIBPATH: - Directories where libs can be found
-        LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib  omcgc.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
+        LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib sundials_core.lib util.lib lapack_win32_MT.lib lis.lib  omcgc.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
 
         # /MDd link with MSVCRTD.LIB debug lib
         # lib names should not be appended with a d just switch to lib/omc/msvc/debug
@@ -411,6 +413,7 @@ template createMakefileIn(SimCode simCode, String target, String FileNamePrefix,
             copy modelDescription.xml <%fmudirname%>\modelDescription.xml
             copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_KINSOL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
             copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_NVECSERIAL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
+            copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_CORE.DLL <%fmudirname%>\binaries\$(PLATWIN32)
             copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\LAPACK_WIN32_MT.DLL <%fmudirname%>\binaries\$(PLATWIN32)
             copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\pthreadVC2.dll <%fmudirname%>\binaries\$(PLATWIN32)
             cd <%fmudirname%>

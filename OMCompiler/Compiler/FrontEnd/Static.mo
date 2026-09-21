@@ -2765,7 +2765,7 @@ algorithm
         Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
         pre_str := PrefixUtil.printPrefixStr(inPrefix);
         exp_str := ExpressionBasics.printExpStr(exp2);
-        expl_str := List.toString(inExpl, ExpressionBasics.printExpStr, "", "[", ",", "]", true);
+        expl_str := List.toStringCustom(inExpl, ExpressionBasics.printExpStr, "", "[", ",", "]", true);
         Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_ARRAY_EXP,
           {pre_str, exp_str, ty1_str, expl_str, ty2_str}, inInfo);
       end try;
@@ -3041,7 +3041,7 @@ algorithm
       dim1_str := ExpressionBasics.dimensionString(dim1);
       dim2_str := ExpressionBasics.dimensionString(dim2);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toStringCustom(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
         {pre_str, el_str, dim1_str, dim2_str}, inInfo);
     end if;
@@ -3054,7 +3054,7 @@ algorithm
       ty2_str := TypesDump.unparsePropTypeNoAttr(prop);
       Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toStringCustom(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_MATRIX_EXP,
         {pre_str, el_str, ty1_str, ty2_str}, inInfo);
     end try;
@@ -3633,7 +3633,14 @@ algorithm
            DAE.ICONST(info.columnNumberStart),
            DAE.ICONST(info.lineNumberEnd),
            DAE.ICONST(info.columnNumberEnd),
-           DAE.RCONST(info.lastModification)
+           // Deliberately not info.lastModification. This record is constant folded
+           // into the generated C, so the mtime of the source file would be baked in
+           // as a literal and the output would depend on when the file happened to be
+           // checked out. Nothing ever reads the field back off a sourceInfo() value
+           // (the mtime of a *class* is read from its Absyn.CLASS instead, see
+           // reloadClass and getTimeStamp in CevalScript), so pin it to 0.0.
+           // See OpenModelica#14399.
+           DAE.RCONST(0.0)
         };
         outExp := DAE.METARECORDCALL(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")),args,{"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastEditTime"},0,{});
       then (inCache,outExp,DAE.PROP(DAE.T_SOURCEINFO_DEFAULT,DAE.C_CONST()));

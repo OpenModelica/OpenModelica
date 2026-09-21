@@ -1,6 +1,7 @@
 // name:     Array6
 // keywords: array, modification
 // status:   correct
+// suite: disabled
 //
 // This demonstrates advanced use of modifiers in types.
 // Note that fill is generalized to take non-scalars in the flat model.

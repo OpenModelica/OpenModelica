@@ -72,12 +72,6 @@ val(z2,1.1); getErrorString();  // 10.0 or -2.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_DT_CONS       | info    | The following local constraint is violated:
 // |                 | |       | abs(y1) > 1e-12
-// LOG_DT_CONS       | info    | The following local constraint is violated:
-// |                 | |       | abs(y1) > 1e-12
-// LOG_DT_CONS       | info    | The following local constraint is violated:
-// |                 | |       | abs(y1) > 1e-12
-// LOG_DT_CONS       | info    | The following local constraint is violated:
-// |                 | |       | abs(y1) > 1e-12
 // LOG_DT_CONS       | info    | The following global constraint is violated:
 // |                 | |       | abs(-4.0 + a + (-b) - time) > 1e-12
 // LOG_DT_CONS       | info    | The following local constraint is violated:

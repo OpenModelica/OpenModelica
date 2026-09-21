@@ -49,10 +49,26 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "Plotting/VariablesWidget.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
+#include "Util/NetworkAccessManager.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "LSP/ModelicaLSPClient.h"
+#include "Cloud/CloudAccount.h"
+#include "Cloud/CloudConfig.h"
+#include "Cloud/CloudMount.h"
 #include <limits>
 
+#include <QDir>
+#include <QFileInfo>
+#include <QEventLoop>
+#include <QFile>
+#include <QNetworkReply>
+#include <QProgressDialog>
+#include <QSysInfo>
+#include <QCryptographicHash>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QStringBuilder>
 #include <QMessageBox>
 #include <QColorDialog>
@@ -132,6 +148,8 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
+  mpLanguageServerPage = new LanguageServerPage(this);
+  mpCloudStoragePage = new CloudStoragePage(this);
   // Get the settings.
   // Don't read the settings in case we are running the testsuite. We want default OMEdit.
   if (!MainWindow::instance()->isTestsuiteRunning()) {
@@ -183,6 +201,8 @@ void OptionsDialog::readSettings()
   readOMSimulatorSettings();
   readSensitivityOptimizationSettings();
   readTraceabilitySettings();
+  readLanguageServerSettings();
+  readCloudStorageSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -1727,6 +1747,7 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/recentFilesSize", recentFilesAndLatestNewsSize);
   }
   MainWindow::instance()->updateRecentFileActionsAndList();
+  MainWindow::instance()->updateRecentModelActionsAndList();
 }
 
 /*!
@@ -2446,6 +2467,14 @@ void OptionsDialog::saveGlobalSimulationSettings()
     mpSettings->setValue("simulation/targetLanguage", targetLanguage);
   }
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--simCodeTarget=%1").arg(targetLanguage));
+  // The wasm-jit target has no C toolchain, so never try to build/copy a missing
+  // external library from its Resources (autotools) during function elaboration
+  // (e.g. ModelicaStandardTables): that path shells out and aborts translation on
+  // the web. The externals are provided at run time by the wasm side module. This
+  // is re-applied here because translateModel() clears command line options first.
+  if (targetLanguage.compare("wasm-jit") == 0) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=-buildExternalLibs");
+  }
   // save target build
   QString target = mpSimulationPage->getTargetBuildComboBox()->itemData(mpSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
   if (target.compare(OptionsDefaults::Simulation::targetBuild) == 0) {
@@ -2916,7 +2945,9 @@ void OptionsDialog::saveDebuggerSettings()
   } else {
     mpSettings->setValue("displayUnknownFrames", displayUnknownFrames);
   }
+#if !defined(__EMSCRIPTEN__)
   MainWindow::instance()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+#endif
 
   bool clearOutputOnNewRun = mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked();
   if (clearOutputOnNewRun == OptionsDefaults::Debugger::clearOutputOnNewRun) {
@@ -3058,16 +3089,6 @@ void OptionsDialog::saveOMSimulatorSettings()
   } else {
     mpSettings->setValue("OMSimulator/commandLineOptions", commandLineOptions);
   }
-  // first clear all the command line options and then set the new
-  OMSProxy::instance()->setCommandLineOption("--clearAllOptions");
-  OMSProxy::instance()->setCommandLineOption(mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
-  // set working directory
-  const QString workingDirectory = mpGeneralSettingsPage->getWorkingDirectory();
-  if (workingDirectory.isEmpty()) {
-    OMSProxy::instance()->setWorkingDirectory(OptionsDefaults::GeneralSettings::workingDirectory);
-  } else {
-    OMSProxy::instance()->setWorkingDirectory(workingDirectory);
-  }
   // set logging level
   int loggingLevel = mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
   if (loggingLevel == OptionsDefaults::OMSimulator::loggingLevel) {
@@ -3075,7 +3096,8 @@ void OptionsDialog::saveOMSimulatorSettings()
   } else {
     mpSettings->setValue("OMSimulator/loggingLevel", loggingLevel);
   }
-  OMSProxy::instance()->setLoggingLevel(loggingLevel);
+  // commandLineOptions, loggingLevel, workingDirectory, logFile, tempDirectory are
+  // passed as CLI args to OMSimulatorSimulationServer.py at simulation launch — not sent to GuiServer.
 }
 
 /*!
@@ -3149,6 +3171,60 @@ void OptionsDialog::saveTraceabilitySettings()
     mpSettings->setValue("traceability/Port", port);
   }
 }
+
+/*!
+ * \brief OptionsDialog::readLanguageServerSettings
+ * Reads language server settings from omedit.ini.
+ */
+void OptionsDialog::readLanguageServerSettings()
+{
+  // On unless the user has turned it off: the server is installed with OMEdit,
+  // so the feature works without anything being set up. Absence of the key is
+  // a first run, not a decision to disable, so saveLanguageServerSettings()
+  // always writes it rather than removing it when off.
+  mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(mpSettings->value("languageServer/enabled", true).toBool());
+  mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
+  mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
+  // Restart applies to the saved configuration, so offer it only when the saved
+  // configuration has the server enabled.
+  mpLanguageServerPage->setServerRestartEnabled(mpSettings->value("languageServer/enabled", true).toBool());
+}
+
+/*!
+ * \brief OptionsDialog::saveLanguageServerSettings
+ * Saves language server settings to omedit.ini.
+ */
+void OptionsDialog::saveLanguageServerSettings()
+{
+  // Capture previous LSP-relevant settings to decide whether a running server must restart.
+  const bool wasEnabled = mpSettings->value("languageServer/enabled", true).toBool();
+  const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
+
+  bool enabled = mpLanguageServerPage->getLanguageServerGroupBox()->isChecked();
+  QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
+
+  // Written either way. Removing the key would read back as the default, which
+  // is on, so turning the feature off would not survive a restart.
+  mpSettings->setValue("languageServer/enabled", enabled);
+  if (executable.isEmpty()) {
+    mpSettings->remove("languageServer/executable");
+  } else {
+    mpSettings->setValue("languageServer/executable", executable);
+  }
+  mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
+  // Apply the change to the running session without requiring a restart.
+  if (enabled) {
+    const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable);
+    if (settingsChanged) {
+      // Restart so a new executable is picked up.
+      MainWindow::instance()->stopLanguageServer();
+    }
+    MainWindow::instance()->startLanguageServer();
+  } else {
+    MainWindow::instance()->stopLanguageServer();
+  }
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -3296,6 +3372,14 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
   pTraceabilityItem->setText(tr("Traceability"));
+  // Language Server Item
+  QListWidgetItem *pLanguageServerItem = new QListWidgetItem(mpOptionsList);
+  pLanguageServerItem->setIcon(QIcon(":/Resources/icons/language-server.svg"));
+  pLanguageServerItem->setText(tr("Language Server"));
+  // Cloud Storage Item
+  QListWidgetItem *pCloudStorageItem = new QListWidgetItem(mpOptionsList);
+  pCloudStorageItem->setIcon(QIcon(":/Resources/icons/libraries.svg"));
+  pCloudStorageItem->setText(tr("Cloud Storage"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -3326,6 +3410,8 @@ void OptionsDialog::createPages()
   addPage(mpOMSimulatorPage);
   addPage(mpSensitivityOptimizationPage);
   addPage(mpTraceabilityPage);
+  addPage(mpLanguageServerPage);
+  addPage(mpCloudStoragePage);
 }
 
 void OptionsDialog::addPage(QWidget* pPage)
@@ -3433,6 +3519,8 @@ void OptionsDialog::saveSettings()
   saveOMSimulatorSettings();
   saveSensitivityOptimizationSettings();
   saveTraceabilitySettings();
+  saveLanguageServerSettings();
+  saveCloudStorageSettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -3803,9 +3891,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  // MODELICAPATH
+  // OPENMODELICALIBRARY
   QGroupBox *pModelicaPathGroupBox = new QGroupBox(Helper::general);
-  mpModelicaPathLabel = new Label("MODELICAPATH");
+  mpModelicaPathLabel = new Label("OPENMODELICALIBRARY");
   mpModelicaPathTextBox = new QLineEdit;
   mpModelicaPathTextBox->setPlaceholderText(Helper::ModelicaPath);
   mpModelicaPathTextBox->setToolTip(Helper::modelicaPathTip);
@@ -3822,7 +3910,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   // system libraries groupbox
   mpSystemLibrariesGroupBox = new QGroupBox(tr("System libraries loaded automatically on startup *"));
   // system libraries note
-  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from the MODELICAPATH and are always read-only."));
+  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only."));
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // load latest Modeica checkbox
   mpLoadLatestModelicaCheckbox = new QCheckBox(tr("Load latest Modelica version on startup"));
@@ -5239,20 +5327,25 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new ComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
+#if defined(__EMSCRIPTEN__)
+  mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("wasm-jit"));
+#else
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
+#endif
   Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));
   mpTargetBuildComboBox = new ComboBox;
 #ifdef Q_OS_WIN
+  // Whichever toolchain this was built with: the simulation runtime it ships
+  // is that toolchain's ABI, so the other one could not link a model anyway.
+  // No versioned msvc10..msvc19 - Compile.bat builds with whichever Visual
+  // Studio vswhere reports.
+#ifdef __MINGW32__
   mpTargetBuildComboBox->addItem("MinGW", "gcc");
-  // We do not support any of the MSVC targets anymore
-  // mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
-  // mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
+#else
+  mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
+#endif
 #else
   mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif
@@ -6371,13 +6464,17 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
+  // Referenced by tag, omc resolves the digest and checks it against the one it trusts.
+  // See https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1153451071?tag=v1.27.0
+  const QString dockerImage = "ghcr.io/openmodelica/crossbuild:v1.27.0";
   QStringList dockerPlarforms;
-  dockerPlarforms << "x86_64-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "i686-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "x86_64-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "i686-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "arm-linux-gnueabihf docker run --pull=never multiarch/crossbuild"
-                  << "aarch64-linux-gnu docker run --pull=never multiarch/crossbuild";
+  dockerPlarforms << ("x86_64-linux-gnu docker run " + dockerImage)
+                  << ("i686-linux-gnu docker run " + dockerImage)
+                  << ("aarch64-linux-gnu docker run " + dockerImage)
+                  << ("arm-linux-gnueabi docker run " + dockerImage)
+                  << ("arm-linux-gnueabihf docker run " + dockerImage)
+                  << ("x86_64-w64-mingw32 docker run " + dockerImage)
+                  << ("i686-w64-mingw32 docker run " + dockerImage);
   foreach (QString dockerPlarform, dockerPlarforms) {
     QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);
@@ -6959,4 +7056,751 @@ void CRMLPage::browseCompilerProcessFile()
 void CRMLPage::resetCompilerProcessPath()
 {
   mpCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+}
+
+/*!
+ * \brief LanguageServerPage::LanguageServerPage
+ * \param pOptionsDialog
+ */
+LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpLanguageServerGroupBox = new QGroupBox(tr("Language Server Protocol (LSP)"));
+  mpLanguageServerGroupBox->setCheckable(true);
+  mpLanguageServerGroupBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information and go-to-definition."));
+  // Enable logging checkbox
+  mpEnableLoggingCheckBox = new QCheckBox(tr("Log language server messages to the Messages Browser"));
+  mpEnableLoggingCheckBox->setToolTip(tr("When enabled, messages from the language server are shown in the Messages Browser, prefixed with \"LSP\"."));
+  // Server executable
+  mpServerExecutableLabel = new Label(tr("Server Executable:"));
+  mpServerExecutableTextBox = new QLineEdit;
+  // Left empty, OMEdit runs the server installed with it. Name that server, so
+  // the empty box says what it is going to do rather than asking for a path.
+  const QString installed = ModelicaLSPClient::findBundledServer();
+  const QString placeholder = installed.isEmpty()
+      ? tr("No language server is installed with OMEdit - use Download... or set a path")
+      : tr("%1 (installed with OMEdit)").arg(installed);
+  mpServerExecutableTextBox->setPlaceholderText(placeholder);
+  // The placeholder is a full path and is elided in the box, so repeat it where
+  // it can be read in full.
+  mpServerExecutableTextBox->setToolTip(tr("Path to the language server to run. Leave empty to use the one "
+                                           "installed with OMEdit.\n\n%1").arg(placeholder));
+  mpBrowseServerExecutableButton = new QPushButton(Helper::browse);
+  mpBrowseServerExecutableButton->setAutoDefault(false);
+  connect(mpBrowseServerExecutableButton, SIGNAL(clicked()), SLOT(browseServerExecutable()));
+  mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
+  mpAutoDetectButton->setAutoDefault(false);
+  connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
+  // Restarting reloads the libraries from scratch. The library list is kept in
+  // step automatically, so this is for the cases that leaves out: a server that
+  // gave up after repeated crashes, or libraries changed on disk behind OMEdit.
+  mpRestartServerButton = new QPushButton(tr("Restart Server"));
+  mpRestartServerButton->setAutoDefault(false);
+  mpRestartServerButton->setToolTip(tr("Stops the language server and starts it again with the saved settings. "
+                                       "Takes effect immediately; settings edited above apply when you click OK."));
+  // Deliberately not tied to the group box's check state: that state is not
+  // saved until the dialog is accepted, and restarting from it would start a
+  // server the settings still say is disabled, which nothing would then stop.
+  mpRestartServerButton->setEnabled(false);
+  connect(mpRestartServerButton, SIGNAL(clicked()), SLOT(restartServer()));
+  // Offers the standalone server for platforms where OMEdit does not bundle one.
+  //
+  // The version is a choice rather than always the newest release: the language
+  // server is released independently of OMEdit, so "latest" can be a version this
+  // OMEdit has never been tried with. The list starts at the release installed
+  // with OMEdit; "Latest release" is there for users who want a fix or a feature
+  // that landed after it.
+  mpDownloadVersionComboBox = new QComboBox;
+  mpDownloadVersionComboBox->addItem(tr("%1 (recommended)").arg(installedServerVersion()), installedServerVersion());
+  mpDownloadVersionComboBox->addItem(tr("Latest release"), QString());
+  mpDownloadVersionComboBox->setToolTip(tr("Which modelica-language-server release to download. %1 is the version "
+                                           "installed with OMEdit.")
+                                        .arg(installedServerVersion()));
+  mpDownloadServerButton = new QPushButton(tr("Download..."));
+  mpDownloadServerButton->setAutoDefault(false);
+  mpDownloadServerButton->setToolTip(tr("Downloads the standalone Modelica language server for this platform "
+                                        "from the selected GitHub release."));
+  mpDownloadServerButton->setEnabled(!platformServerAsset().isEmpty());
+  mpDownloadVersionComboBox->setEnabled(!platformServerAsset().isEmpty());
+  connect(mpDownloadServerButton, SIGNAL(clicked()), SLOT(downloadServerExecutable()));
+  // The server is told about the libraries OMC has loaded; there is no separate
+  // list to maintain here.
+  // Layout inside group box
+  QGridLayout *pGroupBoxLayout = new QGridLayout;
+  pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGroupBoxLayout->addWidget(mpServerExecutableLabel, 0, 0);
+  pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 0, 1);
+  pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 0, 2);
+  QHBoxLayout *pDetectLayout = new QHBoxLayout;
+  pDetectLayout->setContentsMargins(0, 0, 0, 0);
+  pDetectLayout->addWidget(mpAutoDetectButton);
+  pDetectLayout->addWidget(mpRestartServerButton);
+  pDetectLayout->addStretch();
+  pDetectLayout->addWidget(mpDownloadVersionComboBox);
+  pGroupBoxLayout->addLayout(pDetectLayout, 1, 1);
+  pGroupBoxLayout->addWidget(mpDownloadServerButton, 1, 2);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 2, 0, 1, 3);
+  mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
+  // Main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpLanguageServerGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief LanguageServerPage::browseServerExecutable
+ * Opens a file browser to select the language server executable.
+ */
+void LanguageServerPage::browseServerExecutable()
+{
+  const QString selected = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile));
+  if (selected.isEmpty()) {
+    return;
+  }
+  mpServerExecutableTextBox->setText(selected);
+}
+
+/*!
+ * \brief LanguageServerPage::restartServer
+ * Stops the running language server and starts it again.
+ *
+ * Uses the saved settings rather than the fields above, which are applied when
+ * the dialog is accepted; restarting is a separate action from changing them.
+ */
+void LanguageServerPage::restartServer()
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  pMainWindow->stopLanguageServer();
+  pMainWindow->startLanguageServer();
+  if (!pMainWindow->getLSPClient()) {
+    QMessageBox::critical(this, Helper::applicationName,
+                          tr("The language server could not be started.\n\n"
+                             "Check the server executable above, and the Messages Browser for details."));
+  }
+}
+
+/*!
+ * \brief LanguageServerPage::installedServerVersion
+ * Tag of the modelica-language-server release installed with this OMEdit,
+ * kept in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt so the
+ * download offer and the installed server cannot drift apart.
+ */
+QString LanguageServerPage::installedServerVersion()
+{
+#ifdef MODELICA_LS_VERSION
+  return QStringLiteral("v") % QStringLiteral(MODELICA_LS_VERSION);
+#else
+  // The qmake build does not install a server and so does not define it. Keep it
+  // in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt.
+  return QStringLiteral("v0.3.3");
+#endif
+}
+
+/*!
+ * \brief LanguageServerPage::selectedReleaseTag
+ * Release tag chosen in the version combo box, or an empty string for the
+ * latest release.
+ */
+QString LanguageServerPage::selectedReleaseTag() const
+{
+  return mpDownloadVersionComboBox->currentData().toString();
+}
+
+/*!
+ * \brief LanguageServerPage::platformServerAsset
+ * Name of the standalone server asset published for this platform, or an empty
+ * string when the release does not build one for it.
+ */
+QString LanguageServerPage::platformServerAsset()
+{
+#if defined(Q_OS_WIN)
+  return QStringLiteral("modelica-language-server-windows-x64.exe");
+#elif defined(Q_OS_MACOS)
+  return QSysInfo::currentCpuArchitecture() == QStringLiteral("arm64")
+      ? QStringLiteral("modelica-language-server-macos-arm64")
+      : QStringLiteral("modelica-language-server-macos-x64");
+#elif defined(Q_OS_LINUX)
+  const QString architecture = QSysInfo::currentCpuArchitecture();
+  if (architecture == QStringLiteral("x86_64")) {
+    return QStringLiteral("modelica-language-server-linux-x64");
+  } else if (architecture == QStringLiteral("arm64")) {
+    return QStringLiteral("modelica-language-server-linux-arm64");
+  }
+  return QString();
+#else
+  return QString();
+#endif
+}
+
+/*!
+ * \brief LanguageServerPage::fetchAssetDigests
+ * Reads the SHA256 that the release publishes for each of its assets, so a
+ * downloaded file can be checked against it before OMEdit ever runs it.
+ *
+ * The digests are taken from the GitHub release API rather than pinned in
+ * OMEdit: a pin only covers the one release OMEdit ships, and the
+ * user may pick any published version here.
+ * \return false when the release could not be read at all. A release that
+ *     publishes no digest yields an empty entry, which the caller reports.
+ */
+bool LanguageServerPage::fetchAssetDigests(const QString &tag, QHash<QString, QString> *pDigests, QProgressDialog *pProgressDialog)
+{
+  const QString url = tag.isEmpty()
+      ? QStringLiteral("https://api.github.com/repos/OpenModelica/modelica-language-server/releases/latest")
+      : QStringLiteral("https://api.github.com/repos/OpenModelica/modelica-language-server/releases/tags/%1").arg(tag);
+  QNetworkRequest request((QUrl(url)));
+  request.setRawHeader("Accept", "application/vnd.github+json");
+  // The GitHub API answers 403 to a request without a User-Agent.
+  request.setHeader(QNetworkRequest::UserAgentHeader, Helper::applicationName);
+  request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+  NetworkAccessManager networkAccessManager;
+  // The answer decides what OMEdit accepts as its language server, so an
+  // unverified certificate must fail it rather than be ignored.
+  networkAccessManager.setIgnoreSslErrors(false);
+  QNetworkReply *pReply = networkAccessManager.get(request);
+
+  pProgressDialog->setLabelText(tr("Checking the release contents..."));
+  QEventLoop eventLoop;
+  connect(pReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+  connect(pProgressDialog, SIGNAL(canceled()), pReply, SLOT(abort()));
+  eventLoop.exec();
+
+  if (pReply->error() != QNetworkReply::NoError) {
+    const QString errorString = pReply->errorString();
+    pReply->deleteLater();
+    if (pProgressDialog->wasCanceled()) {
+      return false;
+    }
+    QMessageBox::critical(this, Helper::applicationName,
+                          tr("Failed to read release %1 of the Modelica language server:\n%2\n\n"
+                             "The checksums it publishes could not be fetched, so nothing was downloaded.")
+                          .arg(tag.isEmpty() ? tr("latest") : tag, errorString));
+    return false;
+  }
+  const QByteArray body = pReply->readAll();
+  pReply->deleteLater();
+
+  const QJsonArray assets = QJsonDocument::fromJson(body).object().value(QStringLiteral("assets")).toArray();
+  for (const QJsonValue &value : assets) {
+    const QJsonObject asset = value.toObject();
+    // "digest" is of the form "sha256:<hex>"; anything else is a hash OMEdit
+    // cannot check, and is left out so the caller treats it as unpublished.
+    const QString digest = asset.value(QStringLiteral("digest")).toString();
+    if (digest.startsWith(QStringLiteral("sha256:"), Qt::CaseInsensitive)) {
+      pDigests->insert(asset.value(QStringLiteral("name")).toString(), digest.mid(7).toLower());
+    }
+  }
+  return true;
+}
+
+/*!
+ * \brief LanguageServerPage::downloadReleaseAsset
+ * Downloads one asset of a modelica-language-server release. An empty \p tag
+ * means the latest release.
+ *
+ * \p expectedSha256 is the digest the release publishes for the asset; the
+ * download is written out only if it hashes to that. An empty value means the
+ * release publishes no digest and the user chose to continue without one.
+ * \return true on success; on failure nothing is written and the reason is
+ *     shown to the user.
+ */
+bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination,
+                                              const QString &expectedSha256, QProgressDialog *pProgressDialog)
+{
+  const QString url = tag.isEmpty()
+      ? QStringLiteral("https://github.com/OpenModelica/modelica-language-server/releases/latest/download/%1").arg(asset)
+      : QStringLiteral("https://github.com/OpenModelica/modelica-language-server/releases/download/%1/%2").arg(tag, asset);
+  QNetworkRequest request((QUrl(url)));
+  // Both the /releases/latest/ and the tagged URL redirect to the asset itself.
+  request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+  NetworkAccessManager networkAccessManager;
+  // This download ends up as an executable OMEdit runs, so a certificate error
+  // must fail it rather than be ignored the way ordinary page fetches do.
+  networkAccessManager.setIgnoreSslErrors(false);
+  QNetworkReply *pReply = networkAccessManager.get(request);
+
+  QEventLoop eventLoop;
+  connect(pReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+  connect(pProgressDialog, SIGNAL(canceled()), pReply, SLOT(abort()));
+  connect(pReply, &QNetworkReply::downloadProgress, pProgressDialog, [pProgressDialog, asset](qint64 received, qint64 total) {
+    pProgressDialog->setLabelText(tr("Downloading %1 (%2 MB)...").arg(asset).arg(received / 1024 / 1024));
+    if (total > 0) {
+      pProgressDialog->setMaximum(static_cast<int>(total / 1024));
+      pProgressDialog->setValue(static_cast<int>(received / 1024));
+    }
+  });
+  eventLoop.exec();
+
+  if (pReply->error() != QNetworkReply::NoError) {
+    const QNetworkReply::NetworkError error = pReply->error();
+    const QString errorString = pReply->errorString();
+    pReply->deleteLater();
+    if (pProgressDialog->wasCanceled()) {
+      return false;
+    }
+    if (error == QNetworkReply::ContentNotFoundError) {
+      // The release does not publish this asset. Standalone binaries are not
+      // built for every platform yet, so say so instead of reporting a bare 404.
+      QMessageBox::information(this, Helper::applicationName,
+                               tr("Release %1 does not provide %2.\n\n"
+                                  "A standalone server is not published for this platform in that release. "
+                                  "Try another version, or point Server Executable at a server you built yourself.")
+                               .arg(tag.isEmpty() ? tr("latest") : tag, asset));
+    } else if (error >= QNetworkReply::SslHandshakeFailedError && error <= QNetworkReply::UnknownNetworkError) {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Failed to download %1 securely:\n%2\n\n"
+                               "The connection to github.com could not be verified. The download was not used.")
+                            .arg(asset, errorString));
+    } else {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Failed to download %1:\n%2").arg(asset, errorString));
+    }
+    return false;
+  }
+
+  const QByteArray content = pReply->readAll();
+  pReply->deleteLater();
+
+  // Hash before writing: a file that fails the check is never put on disk, so
+  // there is nothing for a later run to pick up and execute.
+  if (!expectedSha256.isEmpty()) {
+    const QString actualSha256 = QString::fromLatin1(QCryptographicHash::hash(content, QCryptographicHash::Sha256).toHex());
+    if (actualSha256 != expectedSha256) {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Checksum mismatch for %1.\n\n"
+                               "Expected SHA256:\n%2\n\nGot:\n%3\n\n"
+                               "The download was discarded and nothing was installed.")
+                            .arg(asset, expectedSha256, actualSha256));
+      return false;
+    }
+  }
+
+  QFile file(destination);
+  if (!file.open(QIODevice::WriteOnly)) {
+    QMessageBox::critical(this, Helper::applicationName,
+                          tr("Failed to write %1:\n%2").arg(destination, file.errorString()));
+    return false;
+  }
+  file.write(content);
+  file.close();
+  return true;
+}
+
+/*!
+ * \brief LanguageServerPage::downloadServerExecutable
+ * Fetches the standalone server for this platform into the user's application
+ * data directory and points the executable setting at it.
+ *
+ * The tree-sitter WASM files are downloaded too: they are not embedded in the
+ * binary, which loads them from its own directory and aborts on startup without
+ * them.
+ *
+ * Every file is checked against the SHA256 its release publishes before being
+ * installed. Nothing is downloaded during the OMEdit build; getting a server is
+ * this, and only when the user asks for it.
+ */
+void LanguageServerPage::downloadServerExecutable()
+{
+  const QString asset = platformServerAsset();
+  if (asset.isEmpty()) {
+    QMessageBox::information(this, Helper::applicationName,
+                             tr("No standalone language server is published for this platform.\n\n"
+                                "Build a server yourself and point Server Executable at it."));
+    return;
+  }
+
+  // Alongside omedit.ini, so the server lands with the rest of OMEdit's user
+  // files (%APPDATA%/openmodelica on Windows) instead of a directory of its
+  // own. User-writable, so no administrator rights are needed.
+  const QString directory = QFileInfo(Utilities::getApplicationSettings()->fileName()).absolutePath()
+                            + QStringLiteral("/languageserver");
+  if (!QDir().mkpath(directory)) {
+    QMessageBox::critical(this, Helper::applicationName, tr("Failed to create directory %1.").arg(directory));
+    return;
+  }
+#if defined(Q_OS_WIN)
+  const QString serverPath = directory + QStringLiteral("/modelica-language-server.exe");
+#else
+  const QString serverPath = directory + QStringLiteral("/modelica-language-server");
+#endif
+
+  // Pinned to one release for the whole download: the WASM files must be the
+  // ones the binary was built with, so mixing releases would break it.
+  const QString tag = selectedReleaseTag();
+
+  // Download into a staging directory and only replace the installed server
+  // once every file has arrived. Writing in place would leave a user who
+  // already had a working server with nothing when a download fails, which is
+  // an ordinary outcome: a release need not publish an asset for every
+  // platform.
+  const QString stagingDirectory = directory + QStringLiteral("/.download");
+  QDir(stagingDirectory).removeRecursively();
+  if (!QDir().mkpath(stagingDirectory)) {
+    QMessageBox::critical(this, Helper::applicationName, tr("Failed to create directory %1.").arg(stagingDirectory));
+    return;
+  }
+
+  QProgressDialog progressDialog(tr("Downloading the Modelica language server..."), Helper::cancel, 0, 0, this);
+  progressDialog.setWindowTitle(Helper::applicationName);
+  progressDialog.setWindowModality(Qt::WindowModal);
+  progressDialog.show();
+
+  const QString stagedServerPath = stagingDirectory + QStringLiteral("/") + QFileInfo(serverPath).fileName();
+  const QStringList wasmFiles = {QStringLiteral("tree-sitter-modelica.wasm"), QStringLiteral("web-tree-sitter.wasm")};
+
+  // Fetch the checksums first: each file is checked against the digest its own
+  // release publishes before it is written, so a corrupted or substituted
+  // download never becomes the executable OMEdit starts.
+  QHash<QString, QString> digests;
+  if (!fetchAssetDigests(tag, &digests, &progressDialog)) {
+    QDir(stagingDirectory).removeRecursively();
+    return;
+  }
+  QStringList unverifiable;
+  for (const QString &name : QStringList({asset}) + wasmFiles) {
+    if (!digests.contains(name)) {
+      unverifiable << name;
+    }
+  }
+  if (!unverifiable.isEmpty()) {
+    // Older releases predate the digests, so this is a decision for the user
+    // rather than a hard failure — but it defaults to not downloading.
+    progressDialog.hide();
+    const QMessageBox::StandardButton answer =
+        QMessageBox::question(this, Helper::applicationName,
+                              tr("Release %1 publishes no checksum for:\n%2\n\n"
+                                 "What is downloaded cannot be verified. Download it anyway?")
+                              .arg(tag.isEmpty() ? tr("latest") : tag, unverifiable.join(QStringLiteral("\n"))),
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer != QMessageBox::Yes) {
+      QDir(stagingDirectory).removeRecursively();
+      return;
+    }
+    progressDialog.show();
+  }
+
+  if (!downloadReleaseAsset(tag, asset, stagedServerPath, digests.value(asset), &progressDialog)) {
+    QDir(stagingDirectory).removeRecursively();
+    return;
+  }
+  // The server aborts at startup unless both WASM files sit next to the binary.
+  for (const QString &wasm : wasmFiles) {
+    if (!downloadReleaseAsset(tag, wasm, stagingDirectory + QStringLiteral("/") + wasm, digests.value(wasm), &progressDialog)) {
+      QDir(stagingDirectory).removeRecursively();
+      return;
+    }
+  }
+
+  // Everything arrived; now replace the installed files.
+  QStringList installed;
+  installed << QFileInfo(serverPath).fileName() << wasmFiles;
+  for (const QString &name : installed) {
+    const QString target = directory + QStringLiteral("/") + name;
+    QFile::remove(target);
+    if (!QFile::rename(stagingDirectory + QStringLiteral("/") + name, target)) {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Failed to install %1 into %2.").arg(name, directory));
+      QDir(stagingDirectory).removeRecursively();
+      return;
+    }
+  }
+  QDir(stagingDirectory).removeRecursively();
+
+  QFile::setPermissions(serverPath, QFile::permissions(serverPath) | QFile::ExeOwner | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther);
+  progressDialog.close();
+  mpServerExecutableTextBox->setText(serverPath);
+  QMessageBox::information(this, Helper::applicationName,
+                           tr("The Modelica language server (%1) was downloaded to:\n%2\n\n"
+                              "Click OK to start using it.").arg(tag.isEmpty() ? tr("latest release") : tag, serverPath));
+}
+
+/*!
+ * \brief LanguageServerPage::autoDetectServerExecutable
+ * Fills Server Executable with the server OMEdit would run: the one installed
+ * with it, else one on PATH.
+ */
+void LanguageServerPage::autoDetectServerExecutable()
+{
+  // Resolves the server installed with OMEdit, or one on PATH.
+  const QString found = ModelicaLSPClient::resolveExecutable(QString());
+  if (!found.isEmpty()) {
+    mpServerExecutableTextBox->setText(found);
+    return;
+  }
+  // A build without network access installs no server, so the download is the
+  // way in.
+  QMessageBox::information(this, Helper::applicationName,
+                           tr("No language server found.\n\n"
+                              "Use Download... to fetch one, or point Server Executable at a "
+                              "server you already have."));
+}
+
+void OptionsDialog::readCloudStorageSettings()
+{
+  mpCloudStoragePage->readRegistrations();
+}
+
+void OptionsDialog::saveCloudStorageSettings()
+{
+  mpCloudStoragePage->saveRegistrations();
+}
+
+//! @class CloudStoragePage
+//! Cloud storage accounts and the OAuth applications this installation uses.
+
+CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // accounts
+  mpAccountsGroupBox = new QGroupBox(tr("Accounts"));
+  mpAccountsListWidget = new QListWidget;
+  mpAccountsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  mpAddGoogleDriveButton = new QPushButton(tr("Add Google Drive Account"));
+  connect(mpAddGoogleDriveButton, SIGNAL(clicked()), SLOT(addGoogleDriveAccount()));
+  mpAddOneDriveButton = new QPushButton(tr("Add OneDrive Account"));
+  connect(mpAddOneDriveButton, SIGNAL(clicked()), SLOT(addOneDriveAccount()));
+  mpSignOutButton = new QPushButton(tr("Sign Out"));
+  connect(mpSignOutButton, SIGNAL(clicked()), SLOT(signOutAccount()));
+  mpStatusLabel = new Label;
+  mpStatusLabel->setElideMode(Qt::ElideMiddle);
+  mpStatusLabel->setWordWrap(true);
+
+  Label *pGoogleNoteLabel =
+      new Label(tr("<b>Google Drive</b> shows only folders OMEdit created itself, inside an OpenModelica folder in "
+                   "your Drive. To use a library that is already in your Drive, download it as a .zip, open it in "
+                   "OMEdit, and save it to a cloud folder from there."));
+  pGoogleNoteLabel->setWordWrap(true);
+  Label *pOneDriveNoteLabel =
+      new Label(tr("<b>OneDrive</b> can open any folder, including one you uploaded or that the OneDrive desktop "
+                   "client synchronised."));
+  pOneDriveNoteLabel->setWordWrap(true);
+
+  QGridLayout *pAccountsLayout = new QGridLayout;
+  pAccountsLayout->addWidget(mpAccountsListWidget, 0, 0, 4, 1);
+  pAccountsLayout->addWidget(mpAddGoogleDriveButton, 0, 1);
+  pAccountsLayout->addWidget(mpAddOneDriveButton, 1, 1);
+  pAccountsLayout->addWidget(mpSignOutButton, 2, 1);
+  pAccountsLayout->setRowStretch(3, 1);
+  pAccountsLayout->addWidget(mpStatusLabel, 4, 0, 1, 2);
+  pAccountsLayout->addWidget(pGoogleNoteLabel, 5, 0, 1, 2);
+  pAccountsLayout->addWidget(pOneDriveNoteLabel, 6, 0, 1, 2);
+  mpAccountsGroupBox->setLayout(pAccountsLayout);
+
+  // client registrations
+  // Qt only disables a checkable group box's children, so the fields live in a
+  // widget that is hidden outright.
+  mpRegistrationGroupBox = new QGroupBox(tr("Advanced: OAuth Applications"));
+  mpRegistrationGroupBox->setCheckable(true);
+  mpRegistrationGroupBox->setChecked(false);
+  mpRegistrationWidget = new QWidget;
+  mpRegistrationWidget->setVisible(false);
+  connect(mpRegistrationGroupBox, &QGroupBox::toggled, mpRegistrationWidget, &QWidget::setVisible);
+  Label *pRegistrationNoteLabel =
+      new Label(tr("Normally supplied by the deployment in cloud_config.json. Fill these in to use your own "
+                   "registered applications instead."));
+  pRegistrationNoteLabel->setWordWrap(true);
+  mpGoogleClientIdTextBox = new QLineEdit;
+  mpGoogleClientSecretTextBox = new QLineEdit;
+  // Masked, so it stays out of screenshots and screen shares. It is not actually
+  // confidential - see the tooltip - but a field labelled "secret" showing its
+  // value in the clear reads as a bug.
+  mpGoogleClientSecretTextBox->setEchoMode(QLineEdit::Password);
+  mpGoogleClientSecretTextBox->setToolTip(tr("Required by Google even though this is a public client: its token "
+                                             "endpoint rejects a PKCE exchange without one. It is not confidential - "
+                                             "the web build serves it to every visitor. The registered redirect URI "
+                                             "and origin are what protect the application."));
+  mpGoogleFullDriveScopeCheckBox = new QCheckBox(tr("Request access to the whole Google Drive"));
+  mpGoogleFullDriveScopeCheckBox->setToolTip(tr("Off, OMEdit sees only what it created. On, it asks for the whole "
+                                                "Drive - a restricted scope, which requires your own client to pass "
+                                                "Google's app verification."));
+  mpOneDriveClientIdTextBox = new QLineEdit;
+
+  QGridLayout *pRegistrationLayout = new QGridLayout;
+  pRegistrationLayout->addWidget(pRegistrationNoteLabel, 0, 0, 1, 2);
+  pRegistrationLayout->addWidget(new Label(tr("Google Drive client ID:")), 1, 0);
+  pRegistrationLayout->addWidget(mpGoogleClientIdTextBox, 1, 1);
+  pRegistrationLayout->addWidget(new Label(tr("Google Drive client secret:")), 2, 0);
+  pRegistrationLayout->addWidget(mpGoogleClientSecretTextBox, 2, 1);
+  pRegistrationLayout->addWidget(mpGoogleFullDriveScopeCheckBox, 3, 0, 1, 2);
+  pRegistrationLayout->addWidget(new Label(tr("OneDrive client ID:")), 4, 0);
+  pRegistrationLayout->addWidget(mpOneDriveClientIdTextBox, 4, 1);
+  pRegistrationLayout->setContentsMargins(0, 0, 0, 0);
+  mpRegistrationWidget->setLayout(pRegistrationLayout);
+
+  QVBoxLayout *pRegistrationOuterLayout = new QVBoxLayout;
+  pRegistrationOuterLayout->addWidget(mpRegistrationWidget);
+  mpRegistrationGroupBox->setLayout(pRegistrationOuterLayout);
+
+  // mounted folders
+  mpMountsGroupBox = new QGroupBox(tr("Mounted Folders"));
+  Label *pMountsNoteLabel =
+      new Label(tr("A ticked folder is brought up to date after every save. Untick it to synchronise only when "
+                   "asked."));
+  pMountsNoteLabel->setWordWrap(true);
+  mpMountsListWidget = new QListWidget;
+  mpMountsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  connect(mpMountsListWidget, SIGNAL(itemChanged(QListWidgetItem*)), SLOT(mountAutoPushChanged(QListWidgetItem*)));
+  mpForgetMountButton = new QPushButton(tr("Forget Folder"));
+  connect(mpForgetMountButton, SIGNAL(clicked()), SLOT(forgetMount()));
+
+  QGridLayout *pMountsLayout = new QGridLayout;
+  pMountsLayout->addWidget(pMountsNoteLabel, 0, 0, 1, 2);
+  pMountsLayout->addWidget(mpMountsListWidget, 1, 0, 2, 1);
+  pMountsLayout->addWidget(mpForgetMountButton, 1, 1);
+  pMountsLayout->setRowStretch(2, 1);
+  mpMountsGroupBox->setLayout(pMountsLayout);
+
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpAccountsGroupBox);
+  pMainLayout->addWidget(mpMountsGroupBox);
+  pMainLayout->addWidget(mpRegistrationGroupBox);
+  pMainLayout->addStretch();
+  setLayout(pMainLayout);
+
+  connect(CloudAccountManager::instance(), SIGNAL(accountAdded(QString)), SLOT(onAccountAdded(QString)));
+  connect(CloudAccountManager::instance(), &CloudAccountManager::addAccountPhase, mpStatusLabel, &Label::setText);
+  connect(CloudAccountManager::instance(), SIGNAL(addAccountFailed(CloudError)), SLOT(onAddAccountFailed(CloudError)));
+}
+
+void CloudStoragePage::showEvent(QShowEvent *pEvent)
+{
+  QWidget::showEvent(pEvent);
+  readRegistrations();
+  refreshAccounts();
+  refreshMounts();
+}
+
+void CloudStoragePage::refreshMounts()
+{
+  mFillingMounts = true;
+  mpMountsListWidget->clear();
+  const QList<CloudMount> mounts = CloudMountManager::instance()->mounts();
+  for (const CloudMount &mount : mounts) {
+    QListWidgetItem *pItem = new QListWidgetItem(mpMountsListWidget);
+    pItem->setText(mount.remoteName);
+    pItem->setData(Qt::UserRole, mount.mountId);
+    pItem->setFlags(pItem->flags() | Qt::ItemIsUserCheckable);
+    pItem->setCheckState(mount.autoPush ? Qt::Checked : Qt::Unchecked);
+  }
+  mFillingMounts = false;
+}
+
+void CloudStoragePage::mountAutoPushChanged(QListWidgetItem *pItem)
+{
+  if (mFillingMounts || !pItem) {
+    return;
+  }
+  CloudMount mount = CloudMountManager::instance()->mount(pItem->data(Qt::UserRole).toString());
+  if (!mount.isValid()) {
+    return;
+  }
+  mount.autoPush = pItem->checkState() == Qt::Checked;
+  CloudMountManager::instance()->updateMount(mount);
+}
+
+void CloudStoragePage::forgetMount()
+{
+  QListWidgetItem *pItem = mpMountsListWidget->currentItem();
+  if (!pItem) {
+    return;
+  }
+  const int answer = QMessageBox::question(
+      this, QString("%1 - %2").arg(Helper::applicationName, tr("Forget Folder")),
+      tr("Forget %1?\n\nThe local copy and its synchronisation state are removed. Nothing in the cloud is "
+         "touched, and the folder can be opened again at any time.")
+          .arg(pItem->text()),
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  if (answer != QMessageBox::Yes) {
+    return;
+  }
+  CloudMountManager::instance()->removeMount(pItem->data(Qt::UserRole).toString());
+  refreshMounts();
+}
+
+void CloudStoragePage::refreshAccounts()
+{
+  mpAccountsListWidget->clear();
+  const QList<CloudAccount *> accounts = CloudAccountManager::instance()->accounts();
+  for (CloudAccount *pAccount : accounts) {
+    QListWidgetItem *pItem = new QListWidgetItem(mpAccountsListWidget);
+    pItem->setText(QString("%1 - %2").arg(cloudProviderDisplayName(pAccount->kind()), pAccount->displayName()));
+    pItem->setData(Qt::UserRole, pAccount->key());
+    if (!pAccount->isSignedIn()) {
+      pItem->setText(pItem->text() + tr(" (signed out)"));
+    }
+  }
+}
+
+void CloudStoragePage::readRegistrations()
+{
+  const CloudClientRegistration google = CloudConfig::instance()->registration(CloudProviderKind::GoogleDrive);
+  mpGoogleClientIdTextBox->setText(google.clientId);
+  mpGoogleClientSecretTextBox->setText(google.clientSecret);
+  mpGoogleFullDriveScopeCheckBox->setChecked(google.fullDriveScope);
+  mpOneDriveClientIdTextBox->setText(CloudConfig::instance()->registration(CloudProviderKind::OneDrive).clientId);
+  // Open only for someone with their own applications: the fields otherwise show
+  // the deployment's values.
+  mpRegistrationGroupBox->setChecked(CloudConfig::instance()->hasUserRegistration(CloudProviderKind::GoogleDrive)
+                                     || CloudConfig::instance()->hasUserRegistration(CloudProviderKind::OneDrive));
+}
+
+void CloudStoragePage::saveRegistrations()
+{
+  // Only write back what the user actually typed: storing the deployment's own
+  // values as user settings would pin them past a configuration update.
+  CloudClientRegistration google = CloudConfig::instance()->registration(CloudProviderKind::GoogleDrive);
+  if (mpGoogleClientIdTextBox->text() != google.clientId
+      || mpGoogleClientSecretTextBox->text() != google.clientSecret
+      || mpGoogleFullDriveScopeCheckBox->isChecked() != google.fullDriveScope) {
+    google.clientId = mpGoogleClientIdTextBox->text();
+    google.clientSecret = mpGoogleClientSecretTextBox->text();
+    google.fullDriveScope = mpGoogleFullDriveScopeCheckBox->isChecked();
+    CloudConfig::instance()->setRegistration(CloudProviderKind::GoogleDrive, google);
+  }
+  CloudClientRegistration oneDrive = CloudConfig::instance()->registration(CloudProviderKind::OneDrive);
+  if (mpOneDriveClientIdTextBox->text() != oneDrive.clientId) {
+    oneDrive.clientId = mpOneDriveClientIdTextBox->text();
+    CloudConfig::instance()->setRegistration(CloudProviderKind::OneDrive, oneDrive);
+  }
+}
+
+void CloudStoragePage::addGoogleDriveAccount()
+{
+  mpStatusLabel->setText(tr("Signing in to Google Drive..."));
+  saveRegistrations();
+  CloudAccountManager::instance()->addAccount(CloudProviderKind::GoogleDrive);
+}
+
+void CloudStoragePage::addOneDriveAccount()
+{
+  mpStatusLabel->setText(tr("Signing in to OneDrive..."));
+  saveRegistrations();
+  CloudAccountManager::instance()->addAccount(CloudProviderKind::OneDrive);
+}
+
+void CloudStoragePage::signOutAccount()
+{
+  QListWidgetItem *pItem = mpAccountsListWidget->currentItem();
+  if (!pItem) {
+    return;
+  }
+  CloudAccountManager::instance()->removeAccount(pItem->data(Qt::UserRole).toString());
+  refreshAccounts();
+  mpStatusLabel->setText(tr("Signed out."));
+}
+
+void CloudStoragePage::onAccountAdded(const QString &key)
+{
+  CloudAccount *pAccount = CloudAccountManager::instance()->account(key);
+  mpStatusLabel->setText(pAccount ? tr("Signed in as %1.").arg(pAccount->displayName()) : tr("Signed in."));
+  refreshAccounts();
+}
+
+void CloudStoragePage::onAddAccountFailed(const CloudError &error)
+{
+  mpStatusLabel->setText(tr("Sign-in failed: %1").arg(error.message));
 }

@@ -58,7 +58,7 @@ namespace IAEX
     ~ComboBoxSearch();
 
   protected:
-    void keyPressEvent( QKeyEvent* event );
+    void keyPressEvent( QKeyEvent* event ) override;
 
   signals:
     void returnPressed();

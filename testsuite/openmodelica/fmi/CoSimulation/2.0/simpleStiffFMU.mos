@@ -26,7 +26,7 @@ system("unzip -cqq stiffProblem.fmu resources/stiffProblem_flags.json > stiffPro
 readFile("stiffProblem_flags_dynamic.json"); getErrorString();
 
 // Simulate with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator stiffProblem.fmu --mode=cs --tolerance=1e-6 --stopTime=250.0 --stepSize=0.01 --resultFile=\"stiffProblem_Dynamic_res.mat\" --suppressPath=true --tempDir=\"stiffProblem-dynamic-tmp\"", "stiffProblem_cs_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator stiffProblem.fmu --mode=cs --tolerance=1e-6 --stopTime=250.0 --stepSize=0.01 --resultFile=\"stiffProblem_Dynamic_res.mat\" --stripRoot --suppressPath --tempDir=\"stiffProblem-dynamic-tmp\"", "stiffProblem_cs_systemCall.log"); getErrorString();
 readFile("stiffProblem_cs_systemCall.log"); getErrorString();
 
 // Check results
@@ -42,7 +42,9 @@ val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
 // true
 // ""
 // "stiffProblem.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "{
@@ -63,14 +65,21 @@ val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
-// info:    Result file: stiffProblem_Dynamic_res.mat (bufferSize=1)
+// info: *** FMU Simulation Info ***
+//      - model     : stiffProblem (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 250.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.01
+// info:    Result file: stiffProblem_Dynamic_res.mat (bufferSize=10)
 // "
 // ""
 // 1.0
 // ""
 // 1.0
 // ""
-// 2.0
+// 1.9999999999999973
 // ""
 // 2.0
 // ""

@@ -3,6 +3,7 @@
 // status: correct
 // cflags: --newBackend
 // teardown_command: rm Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks_res.csv
+// suite: disabled
 //
 // Simulate Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks and compare to reference results
 

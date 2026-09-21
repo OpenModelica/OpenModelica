@@ -1,7 +1,7 @@
 // name: ExternalLibraryFunction
 // status: correct
-// setup_command: gcc -o ./TestLibrary/Resources/Library/ext1.o -c ./TestLibrary/Resources/Library/ext1.c && ar -cr ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/Library/ext1.o && gcc -o ./TestLibrary/Resources/SpecialLib/ext2.o -c ./TestLibrary/Resources/SpecialLib/ext2.c && ar -cr ./TestLibrary/Resources/SpecialLib/libext2.a ./TestLibrary/Resources/SpecialLib/ext2.o
-// teardown_command: rm -f ./TestLibrary/Resources/Library/ext1.o ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/SpecialLib/ext2.o ./TestLibrary/Resources/SpecialLib/libext2.a Test_ext*
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ./TestLibrary/Resources/Library/libext1$OMC_EXTLIB_EXT ./TestLibrary/Resources/Library/ext1.c $OMC_EXTLIB_LIBS && $OMC_AR -cr ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/Library/libext1.o && $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ./TestLibrary/Resources/SpecialLib/libext2$OMC_EXTLIB_EXT ./TestLibrary/Resources/SpecialLib/ext2.c $OMC_EXTLIB_LIBS && $OMC_AR -cr ./TestLibrary/Resources/SpecialLib/libext2.a ./TestLibrary/Resources/SpecialLib/libext2.o
+// teardown_command: rm -f ./TestLibrary/Resources/Library/libext1$OMC_EXTLIB_EXT ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/SpecialLib/libext2$OMC_EXTLIB_EXT ./TestLibrary/Resources/SpecialLib/libext2.a Test_ext*
 // depends: TestLibrary
 // cflags: -d=-newInst
 

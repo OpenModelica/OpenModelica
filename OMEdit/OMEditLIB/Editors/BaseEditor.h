@@ -48,6 +48,7 @@
 #include <QCheckBox>
 #include <QToolButton>
 #include <QStandardItemModel>
+#include <QList>
 
 class ModelWidget;
 class InfoBar;
@@ -262,11 +263,13 @@ public:
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   void lineNumberAreaMouseEvent(QMouseEvent *event);
   void goToLineNumber(int lineNumber);
+  void moveToNavigationPoint(int position);
   QCompleter *completer();
   bool isUndoAvailable() {return mIsUndoAvailable;}
   bool isRedoAvailable() {return mIsRedoAvailable;}
   void setCompletionCharacters(QString chars) { mCompletionCharacters = chars; }
   void setReadOnlyStyleSheet();
+  BaseEditor *getBaseEditor() const {return mpBaseEditor;}
 private:
   BaseEditor *mpBaseEditor;
   LineNumberArea *mpLineNumberArea;

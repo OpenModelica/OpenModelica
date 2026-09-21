@@ -37,6 +37,19 @@
 #include "simulation/options.h"
 
 
+/* See the note in perform_simulation.c.inc: the Rust simulation runtime has its
+ * own loop, so this one is compiled away under `--simCodeTarget=C+Rust`.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performQSSSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
+
 /*! enum error_msg
  * \brief  Returnvalues of the functions in this file
  */
@@ -577,3 +590,5 @@ static uinteger minStep(const modelica_real* tqp, const uinteger size )
   }
   return ind;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

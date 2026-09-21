@@ -1,0 +1,11 @@
+// external "FORTRAN 77" (LAPACK) calls. Usage: omc run_extlapack.mos
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadFile("TestExtLapack.mo"); getErrorString();
+simulate(TestExtLapack, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(xs[1], 1.0);
+val(xs[2], 1.0);
+val(xs[3], 1.0);
+val(infos, 1.0);
+val(LU[2,2], 1.0);
+val(pivots[1], 1.0);

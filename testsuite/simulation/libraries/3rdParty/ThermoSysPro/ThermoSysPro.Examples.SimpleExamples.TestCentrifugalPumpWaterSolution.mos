@@ -49,7 +49,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}
 // endResult

@@ -14,6 +14,16 @@ endif()
 cmake_minimum_required(VERSION 3.14)
 project(OMModelicaExternalC)
 
+# For the Rust omc these shared libraries deliberately do not link the C runtime
+# (see ModelicaExternalC_shared below): omc resolves their ModelicaUtilities
+# symbols out of its own process at dlopen. ELF is happy to leave them
+# undefined; Mach-O has to be told to defer them.
+function(omc_defer_modelica_utilities tgt)
+  if(OM_OMC_ENABLE_RUST AND APPLE)
+    target_link_options(${tgt} PRIVATE -Wl,-undefined,dynamic_lookup)
+  endif()
+endfunction()
+
 ## ModelicaExternalC #########################################################################
 set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaInternal.c
@@ -44,7 +54,15 @@ if(UNIX)
   target_link_libraries(ModelicaExternalC_shared PUBLIC m)
 endif()
 
-target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
+# The Rust omc provides its own ModelicaUtilities (the wasm-jit/FFI simulation
+# environment, exported by libOpenModelicaCompiler) and never initialises the C
+# runtime's GC/threadData. So for the Rust target leave the ModelicaUtilities
+# symbols undefined in the ffi .so — resolved at dlopen against the omc process —
+# instead of dragging in libOpenModelicaRuntimeC via DT_NEEDED.
+if(NOT OM_OMC_ENABLE_RUST)
+  target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
+endif()
+omc_defer_modelica_utilities(ModelicaExternalC_shared)
 
 if(MINGW)
   target_link_options(ModelicaExternalC_shared PRIVATE -Wl,--export-all-symbols)
@@ -55,6 +73,8 @@ endif()
 
 
 ## ModelicaMatIO #########################################################################
+include(${CMAKE_CURRENT_SOURCE_DIR}/hdf5_native.cmake)
+
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 # Static version
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
@@ -63,6 +83,7 @@ add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO PUBLIC omc::simrt::runtime)
+omc_modelica_matio_hdf5(ModelicaMatIO PRIVATE)
 
 # Shared version
 add_library(ModelicaMatIO_shared SHARED ${libModelicaMatIO_SOURCES})
@@ -72,7 +93,13 @@ set_target_properties(ModelicaMatIO_shared
 
 target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
-target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
+omc_modelica_matio_hdf5(ModelicaMatIO_shared PUBLIC)
+# See ModelicaExternalC_shared above: decouple the ffi .so from the C runtime for
+# the Rust target so ModelicaUtilities resolves to our own implementation.
+if(NOT OM_OMC_ENABLE_RUST)
+  target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
+endif()
+omc_defer_modelica_utilities(ModelicaMatIO_shared)
 
 if(MINGW)
   target_link_options(ModelicaMatIO_shared PRIVATE -Wl,--export-all-symbols)
@@ -96,6 +123,8 @@ set_target_properties(ModelicaIO_shared
                       PROPERTIES OUTPUT_NAME ModelicaIO CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
+
+omc_defer_modelica_utilities(ModelicaIO_shared)
 
 if(MINGW)
   target_link_options(ModelicaIO_shared PRIVATE -Wl,--export-all-symbols)
@@ -134,6 +163,8 @@ target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
 if(UNIX)
   target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
 endif()
+
+omc_defer_modelica_utilities(ModelicaStandardTables_shared)
 
 if(MINGW)
   target_link_options(ModelicaStandardTables_shared PRIVATE -Wl,--export-all-symbols)

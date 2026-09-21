@@ -33,7 +33,7 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
-cmake_minimum_required(VERSION 3.5...4.3)
+cmake_minimum_required(VERSION 3.10...4.3)
 
 # OMSICPP_SOURCE_DIR is used by sub-CMakeLists.txt to reference paths relative
 # to the OMSICpp directory. In standalone mode it equals CMAKE_SOURCE_DIR; in
@@ -73,7 +73,6 @@ option(USE_CPP_03 "USE_CPP_03" OFF)
 option(USE_FMILIB "use fmi library" ON)
 option(REDUCE_DAE "Use reduce dae method" OFF)
 
-set(USE_MICO OFF)
 set(USE_KLU CACHE BOOL OFF)
 
 if(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -204,7 +203,6 @@ set(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
 set(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 set(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
-set(USE_MICO OFF)
 set(USE_KLU CACHE BOOL OFF)
 
 if(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -376,10 +374,6 @@ if(WIN32)
     string(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
   endif(MSVC)
 
-  #set mico paths
-  set(MICO_LIB_HOME ${OMDEV_ESCAPED}/lib/mico-msys-mingw/)
-  set(MICO_INCLUDE_HOME  ${OMDEV_ESCAPED}/include/mico-msys-mingw/)
-
   set(INSTALL_OMDEV_LIBS OFF)
 endif(WIN32)
 
@@ -549,10 +543,12 @@ endif()
 
 message(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
 
-
 if(REDUCE_DAE)
   add_definitions("-DUSE_REDUCE_DAE")
-  set(OMCCAPI_INLCUDE_HOME  omcWrapper/omcCAPI/include/)
+  # libOMCDLL / omcCAPI now lives in OMCompiler/Compiler/omcCAPI. This legacy
+  # standalone-build branch (REDUCE_DAE is OFF by default and forced OFF in the
+  # integrated build) still expects a preinstalled OMCDLL under Build_CAPI/.
+  set(OMCCAPI_INLCUDE_HOME  ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/omcCAPI/include/)
   set(OMCCAPI_LIBRARY_RELEASE_HOME   Build_CAPI/tmp/lib)
   find_library(OMCCAPI_LIB "OMCDLL" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMCCAPI_LIBRARY_RELEASE_HOME} )
   if(NOT OMCCAPI_LIB)
@@ -576,8 +572,8 @@ endif(REDUCE_DAE)
 if(USE_SUNDIALS)
   #set sundials solvers include and library directories
   if(MSVC)
-    set(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/sundials")
-    set(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/lib/")
+    set(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/include/sundials")
+    set(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/lib/")
   else(MSVC)
     set(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/sundials)
     set(SUNDIALS_LIBRARY_RELEASE_HOME ${CMAKE_INSTALL_PREFIX}/${LIB_OMC})
@@ -595,6 +591,12 @@ if(USE_SUNDIALS)
     message(FATAL_ERROR "Could not find Sundials; compile omc first")
   endif()
   include_directories(${SUNDIALS_INCLUDE_DIR})
+
+  find_library(SUNDIALS_CORE_LIB "sundials_core" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+
+  if(NOT SUNDIALS_CORE_LIB)
+    message(FATAL_ERROR "Could not find libsundials_core!")
+  endif()
 
   find_library(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
 
@@ -622,7 +624,7 @@ if(USE_SUNDIALS)
   if(NOT SUNDIALS_KINSOL_LIB)
     message(FATAL_ERROR "Could not find libsundials_kinsol!")
   endif()
-  set(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB})
+  set(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB} ${SUNDIALS_CORE_LIB})
 
   message(STATUS "Sundials Libraries for omsicpp:")
   message(STATUS "${SUNDIALS_LIBRARIES}")
@@ -790,15 +792,6 @@ else(SUITESPARSE_UMFPACK_FOUND)
 endif(SUITESPARSE_UMFPACK_FOUND)
 
 
-#Handle Mico corba
-if(USE_MICO)
-  find_library(MICO_LIBRARY  mico2313
-    PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-  find_path(MICO_INCLUDE_DIR CORBA.h
-     ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
-  message(STATUS ${MICO_LIBRARY})
-  message(STATUS ${MICO_INCLUDE_DIR})
-endif(USE_MICO)
 #Handle ZeroMQ
 
 
@@ -1012,10 +1005,6 @@ add_subdirectory(omsi)
 
 #install 3rdparty libraries
 if(INSTALL_OMDEV_LIBS)
-  if(USE_MICO)
-    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
-  endif()
-
   install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
   install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
 endif()
@@ -1040,30 +1029,17 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
 install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/omsicpp/licenses)
 
 #copy Utils/extension
-set(HS 	runtime/include/Core/Utils/extension/adaptable_factory.hpp
-        runtime/include/Core/Utils/extension/common.hpp
+set(HS 	runtime/include/Core/Utils/extension/common.hpp
         runtime/include/Core/Utils/extension/convenience.hpp
         runtime/include/Core/Utils/extension/extension.hpp
         runtime/include/Core/Utils/extension/factory.hpp
         runtime/include/Core/Utils/extension/factory_map.hpp
-        runtime/include/Core/Utils/extension/filesystem.hpp
-        runtime/include/Core/Utils/extension/parameter.hpp
-        runtime/include/Core/Utils/extension/parameter_map.hpp
-        runtime/include/Core/Utils/extension/registry.hpp
         runtime/include/Core/Utils/extension/shared_library.hpp
         runtime/include/Core/Utils/extension/type_map.hpp
         runtime/include/Core/Utils/extension/logger.hpp
-        runtime/include/Core/Utils/extension/impl/adaptable_factory.hpp
-        runtime/include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
-        runtime/include/Core/Utils/extension/impl/adaptable_factory_set.hpp
         runtime/include/Core/Utils/extension/impl/create.hpp
-        runtime/include/Core/Utils/extension/impl/create_func.hpp
         runtime/include/Core/Utils/extension/impl/decl.hpp
-        runtime/include/Core/Utils/extension/impl/factory.hpp
-        runtime/include/Core/Utils/extension/impl/factory_map.hpp
-        runtime/include/Core/Utils/extension/impl/function.hpp
         runtime/include/Core/Utils/extension/impl/library_impl.hpp
-        runtime/include/Core/Utils/extension/impl/shared_library.hpp
         runtime/include/Core/Utils/extension/impl/typeinfo.hpp
         runtime/include/FMU2/fmi2Functions.h
         runtime/include/FMU2/fmi2FunctionTypes.h
@@ -1073,7 +1049,3 @@ set(HS 	runtime/include/Core/Utils/extension/adaptable_factory.hpp
         runtime/include/FMU2/FMU2Wrapper.cpp
         runtime/include/FMU2/FMU2Wrapper.h)
 INSTALL_HEADERS_WITH_DIRECTORY(HS)
-if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
-  # symlink boost includes outside platform specific /usr/include
-  install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/omsicpp/\")")
-endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")

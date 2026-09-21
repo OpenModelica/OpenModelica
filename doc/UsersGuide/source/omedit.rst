@@ -978,13 +978,13 @@ windows by clicking on the New Plot Parametric toolbar button (|parametric-plot-
   :alt: OMEdit New Parametric Plot Window Icon
   :height: 14pt
 
-.. _array-plot :
-
 Select the x-axis variable while holding down the shift key, release the shift key and
 then select y-axis variables. One or many y-axis variables can be selected against one
 x-axis variable. To select a new x-axis variable press and hold the shift key again.
 
 Unchecking the x-axis variable will uncheck all y-axis variables linked to it.
+
+.. _array-plot:
 
 Array Plot
 ^^^^^^^^^^
@@ -1026,7 +1026,7 @@ Diagram Window
 Shows the active ModelWidget as a read only diagram. You can only have one
 Diagram Window. To show it click on Diagram Window toolbar button (|diagram-window|).
 
-.. |diagram-window| image:: ../../../OMEdit/OMEditLIB/Resources/icons/modeling.*
+.. |diagram-window| image:: media/omedit-icons/modeling.*
   :alt: OMEdit Diagram Window Icon
   :height: 14pt
 
@@ -1132,7 +1132,7 @@ which replaces third-party libraries (such as `Modelica3D
 Running a Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The 3d visualization is based on OpenSceneGraph. In order to run the
+The 3d visualization is based on Qt Quick 3D. In order to run the
 visualization simply right click the class in Libraries Browser an
 choose “\ **Simulate with Animation**\ ” as shown in :numref:`omedit-simulate-animation`.
 
@@ -1178,13 +1178,13 @@ The 3D camera view can be manipulated as follows:
 Move Closer/Further        none                           Wheel
 Move Closer/Further        Right Mouse Hold               Up/Down
 Move Up/Down/Left/Right    Middle Mouse Hold              Move Mouse
-Move Up/Down/Left/Right    Left and Right Mouse Hold      Move Mouse
+Move Up/Down/Left/Right    Ctrl + Left Mouse Hold         Move Mouse
 Rotate                     Left Mouse Hold                Move Mouse
 Shape context menu         Right Mouse + Shift
 ========================  ============================== ========================
 
-Predefined views (Isometric, Side, Front, Top) can be selected and the scene can be tilted
-by 90° either clock or anticlockwise with the rotation buttons.
+Predefined views (Isometric, Side, Front, Top) can be selected and the camera can be
+orbited left or right in steps with the rotation buttons.
 
 Additional Visualization Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1259,9 +1259,11 @@ in real-time (with a scaling factor just like simulation flag
 factor during the interactive simulation). In the synchronous mode, the
 speed of the simulation does not directly correspond to real-time.
 
-.. raw:: html
+.. only:: html and not epub
 
-   <video controls width="640" src="_static/interactive-simulation.mp4"></video>
+   .. raw:: html
+
+      <video controls width="640" src="_static/interactive-simulation.mp4"></video>
 
 How to Create User Defined Shapes - Icons
 -----------------------------------------
@@ -1471,7 +1473,9 @@ Libraries Options
 
 -  General
 
-  -  *MODELICAPATH* - Sets the MODELICAPATH. MODELICAPATH is used to load libraries.
+  -  *OPENMODELICALIBRARY* - The list of paths searched while loading a library, i.e. the
+     OPENMODELICALIBRARY environment variable (MODELICAPATH in the language specification).
+     Paths are separated by ``;`` on Windows and ``:`` on Linux and macOS.
 
 -  System libraries loaded automatically on startup - The list of system libraries that are loaded on startup.
 
@@ -1976,6 +1980,93 @@ Sensitivity Optimization Options
   -  *OMSens Backend Path* - sets the OMSens backend.
 
   -  *python* - sets the Python executable to run OMSens scripts.
+
+.. _omedit-options-language-server:
+
+Language Server Options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+OMEdit can connect to an external Modelica language server that speaks the
+`Language Server Protocol (LSP) <https://microsoft.github.io/language-server-protocol/>`_
+over stdin/stdout. When enabled, the language server provides:
+
+-  **Hover** - hover the mouse over a symbol in the text editor to see its
+   documentation in a tooltip.
+
+-  **Go to definition** - Ctrl+Click a symbol, or use *Go to Definition* from
+   the right-click menu, to navigate to where it is defined (including across
+   files).  When the language server cannot resolve the symbol, OMEdit falls
+   back to its built-in class navigation.
+
+The feature is on by default and can be turned off here.
+
+-  Language Server Protocol (LSP)
+
+  -  *Language Server Protocol (LSP)* - when this group is checked, OMEdit
+     starts the language server process and connects to it.
+
+  -  *Server Executable* - path to the language server executable.  Leave it
+     blank (recommended) to run the server installed with OpenModelica.  Use
+     *Download...* below to fetch a different release, *Browse* to select a
+     server you already have, or *Auto Detect* to search for one.
+
+  -  *Restart Server* - stops the language server and starts it again.  The
+     library list is kept in step with OMC automatically, so this is only
+     needed if the server stopped after repeated crashes, or if a library
+     changed on disk.  It acts immediately; changes to the fields above are
+     applied when you click *OK*.
+
+  -  *Download...* - fetches a standalone language server and points *Server
+     Executable* at it.  The drop-down next to the button chooses the release:
+     the version marked *(recommended)* is the one installed with OMEdit, and
+     *Latest release* takes the newest release published on GitHub.
+
+  The libraries the server searches are the ones loaded in OMEdit; there is no
+  separate list to maintain.  Loading a library makes it resolvable for *Go to
+  Definition* and hover, and unloading it removes it again.
+
+  -  *Log language server messages to the Messages Browser* - when checked,
+     messages from the language server are shown in the Messages Browser,
+     prefixed with ``LSP``.
+
+Hover information is shown as a tooltip.  Navigation works both with Ctrl+Click
+and from the editor right-click menu (*Go to Definition*, marked with the
+language server icon while the server is running).  Enabling or disabling the
+language server takes effect immediately; a restart is not required.
+
+**The language server installed with OpenModelica**
+
+OpenModelica installs a
+`Modelica language server <https://github.com/OpenModelica/modelica-language-server>`_
+alongside OMEdit, and it is what runs when *Server Executable* is left blank -
+which is the default, so there is nothing to set up.  It brings its own
+runtime, so nothing else has to be installed.
+
+It is installed in ``share/omedit/ls/modelica`` as three files: the server
+itself and the two ``.wasm`` files it parses Modelica with.  They belong
+together - a server without them starts, and then answers nothing.
+
+**Using a different server**
+
+*Download...* on the options page fetches another release of the same
+standalone server and points *Server Executable* at it.  It is installed under
+your user configuration directory, beside ``omedit.ini``, so no administrator
+rights are needed.
+
+You can also point *Server Executable* at a server you built yourself - which is
+how to try a change to the language server before it is released.  Keep
+``tree-sitter-modelica.wasm`` and ``web-tree-sitter.wasm`` in the same directory
+as the binary; without them the server starts but reports nothing, and OMEdit
+says so in the Messages Browser.
+
+**If the server stops**
+
+If the server process exits unexpectedly, OMEdit restarts it automatically
+after a short delay, up to 5 times within a 3 minute window.  Past that it
+stops retrying and reports the failure as an error message.  Every crash and
+restart attempt is appended to ``languageserver_crash.log`` in OMEdit's
+temporary directory (*Tools > Open Temporary Directory*), so the log can be
+attached to a bug report.
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------

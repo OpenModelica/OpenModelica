@@ -86,7 +86,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IPOPT_MAX_ITER */               "ipopt_max_iter",
   /* FLAG_IPOPT_WARM_START */             "ipopt_warm_start",
   /* FLAG_JACOBIAN */                     "jacobian",
-  /* FLAG_JACOBIAN_THREADS */             "jacobianThreads",
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "jacobianNominalFactor",
   /* FLAG_L */                            "l",
   /* FLAG_L_DATA_RECOVERY */              "l_datarec",
   /* FLAG_LOG_FORMAT */                   "logFormat",
@@ -172,6 +172,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_STOP_TIME */                    "stopTime",
   /* FLAG_SVD_SPARSE_COUNT */             "svdCount",
   /* FLAG_SVD_SPARSE_SIGMA */             "svdSigma",
+  /* FLAG_SVD_SPARSE_TOL */               "svdTol",
   /* FLAG_DATA_RECONCILE_Sx */            "sx",
   /* FLAG_TOLERANCE */                    "tolerance",
   /* FLAG_UP_HESSIAN */                   "keepHessian",
@@ -204,7 +205,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DELTA_X_SOLVER */               "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
   /* FLAG_EMBEDDED_SERVER */              "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMBEDDED_SERVER_PORT */         "[int (default 4841)] value specifies the port number used by the embedded server",
-  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header after emitting every N time-points (default disabled)",
+  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header (flushes a record batch of an arrow file) after emitting every N time-points (default disabled)",
   /* FLAG_EMIT_PROTECTED */               "emits protected variables to the result-file",
   /* FLAG_DATA_RECONCILE_Eps */           "value specifies the number of convergence iteration to be performed for DataReconciliation",
   /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",
@@ -247,7 +248,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_MAX_ITER */               "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
-  /* FLAG_JACOBIAN_THREADS */             "[int default: 1] value specifies the number of threads for jacobian evaluation in dassl or ida.",
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "[double (default 1.0)] scales the nominal value the numerical Jacobian differences over below a variable's absolute tolerance.",
   /* FLAG_L */                            "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */              "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
@@ -333,6 +334,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_STOP_TIME */                    "sets stopTime",
   /* FLAG_SVD_SPARSE_COUNT */             "[int (default 0)] Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
   /* FLAG_SVD_SPARSE_SIGMA */             "[double (default 1e-8, > 0)] Estimated smallest singular value for the preconditioner in SVD analysis.",
+  /* FLAG_SVD_SPARSE_TOL */               "[double (default 1e-8, > 0)] Convergence tolerance of the sparse SVD analysis, relative to the norm of the matrix.",
   /* FLAG_DATA_RECONCILE_Sx */            "value specifies a csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_TOLERANCE */                    "sets tolerance",
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
@@ -487,9 +489,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */
   "  Select the calculation method for Jacobian used by the integration method:\n",
-  /* FLAG_JACOBIAN_THREADS */
-  "  Value specifies the number of threads for jacobian evaluation in dassl or ida."
-  "  The value is an Integer with default value 1.",
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */
+  "  The numerical Jacobian differences column i over\n"
+  "\n"
+  "    ``delta_h * max(|x[i]|, |h*x'[i]|)``\n"
+  "\n"
+  "  and, where that is inside the variable's own absolute tolerance and so is\n"
+  "  no scale of its own, over delta_h*factor*nominal[i] instead.\n"
+  "  Lower the factor for a model that is non-smooth at that wider step;\n"
+  "  the value is a Double with default value 1.0.",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
   /* FLAG_L_DATA_RECOVERY */
@@ -650,13 +658,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_SR_CTRL_FILTER */
   "  Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.",
   /* FLAG_SR_CTRL_FHR */
-  "  Applies adaptive damping to the step size factor using Führer’s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.",
+  "  Applies adaptive damping to the step size factor using Führer’s approach, scaling it by ``h_fac *= (h_n / h_n1)^gamma`` to penalize repeated rejections or reward successful step acceptance.",
   /* FLAG_SR_ERR */
   "  Error estimation method for solver gbode (single-rate, slow states integrator)\n"
   "  Possible values:\n\n"
-  "    * default    - depending on the Runge-Kutta method\n"
+  "    * default - depending on the Runge-Kutta method\n"
   "    * richardson - Richardson extrapolation\n"
-  "    * embedded   - Embedded scheme\n",
+  "    * embedded   - Embedded scheme\n"
+  "    * two_step           - Two-step estimator, if available\n"
+  "    * contractive_defect - Contractive defect estimator, if available\n"
+  "    * contractive_filter - Contractive filter applied to the embedded estimator, if available\n",
   /* FLAG_SR_INT */
   "  Interpolation method of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_NLS */
@@ -675,9 +686,12 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_MR_ERR */
   "  Error estimation method for solver gbode (multi-rate, fast states integrator)\n"
   "  Possible values:\n\n"
-  "    * default    - depending on the Runge-Kutta method\n"
+  "    * default - depending on the Runge-Kutta method\n"
   "    * richardson - Richardson extrapolation\n"
-  "    * embedded   - Embedded scheme\n",
+  "    * embedded   - Embedded scheme\n"
+  "    * two_step           - Two-step estimator, if available\n"
+  "    * contractive_defect - Contractive defect estimator, if available\n"
+  "    * contractive_filter - Contractive filter applied to the embedded estimator, if available\n",
   /* FLAG_MR_INT */
   "  Interpolation method of solver gbode (multi-rate, fast states integrator).",
   /* FLAG_MR_NLS */
@@ -700,7 +714,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_STEADY_STATE */
   "  Aborts the simulation if steady state is reached.",
   /* FLAG_STEADY_STATE_TOL */
-  "  This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol",
+  "  This relative tolerance is used to detect steady state: ``max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol``",
   /* FLAG_STEP_SIZE */
   "  Sets stepSize for the simulation.",
   /* FLAG_STOP_AT_SYSTEM */
@@ -711,6 +725,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
   /* FLAG_SVD_SPARSE_SIGMA */
   "  Estimated smallest singular value for the preconditioner in SVD analysis.",
+  /* FLAG_SVD_SPARSE_TOL */
+  "  Convergence tolerance of the sparse SVD analysis: PRIMME stops at\n"
+  "  ||r|| <= svdTol*||A||. The normal equations it uses resolve no singular value\n"
+  "  below sqrt(DBL_EPSILON)*||A||, so tightening it past that buys nothing.",
   /* FLAG_DATA_RECONCILE_Sx */
   "  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_TOLERANCE */
@@ -799,7 +817,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_IPOPT_MAX_ITER */               FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_IPOPT_WARM_START */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_JACOBIAN */                     FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_JACOBIAN_THREADS */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_L */                            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_L_DATA_RECOVERY */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_LOG_FORMAT */                   FLAG_REPEAT_POLICY_FORBID,
@@ -885,6 +903,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_STOP_TIME */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_SVD_SPARSE_COUNT */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SVD_SPARSE_SIGMA */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SVD_SPARSE_TOL */               FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_TOLERANCE */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_UP_HESSIAN */                   FLAG_REPEAT_POLICY_FORBID,
@@ -894,7 +913,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_PARMOD_SCHEDULER */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_CLUSTERING */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_PARMOD_EXPORT_TASKGRAPH */        FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_EXPORT_TASKGRAPH */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_DUMP_STAGES */           FLAG_REPEAT_POLICY_FORBID,
 };
@@ -959,7 +978,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IPOPT_MAX_ITER */               FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_WARM_START */             FLAG_TYPE_OPTION,
   /* FLAG_JACOBIAN */                     FLAG_TYPE_OPTION,
-  /* FLAG_JACOBIAN_THREADS */             FLAG_TYPE_OPTION,
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      FLAG_TYPE_OPTION,
   /* FLAG_L */                            FLAG_TYPE_OPTION,
   /* FLAG_L_DATA_RECOVERY */              FLAG_TYPE_FLAG,
   /* FLAG_LOG_FORMAT */                   FLAG_TYPE_OPTION,
@@ -1045,6 +1064,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_STOP_TIME */                    FLAG_TYPE_OPTION,
   /* FLAG_SVD_SPARSE_COUNT */             FLAG_TYPE_OPTION,
   /* FLAG_SVD_SPARSE_SIGMA */             FLAG_TYPE_OPTION,
+  /* FLAG_SVD_SPARSE_TOL */               FLAG_TYPE_OPTION,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
   /* FLAG_TOLERANCE */                    FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
@@ -1054,115 +1074,141 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_PARMOD_SCHEDULER */             FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_CLUSTERING */            FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    FLAG_TYPE_OPTION,
-  /* FLAG_PARMOD_EXPORT_TASKGRAPH */        FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_EXPORT_TASKGRAPH */      FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_DUMP_STAGES */           FLAG_TYPE_OPTION,
 };
 
 const char *GB_METHOD_NAME[RK_MAX] = {
-  /* GB_UNKNOWN = 0 */   "unknown",
-  /* MS_ADAMS_MOULTON */ "adams",
-  /* RK_EXPL_EULER */    "expl_euler",
-  /* RK_IMPL_EULER */    "impl_euler",
-  /* RK_TRAPEZOID */     "trapezoid",
-  /* RK_SDIRK2 */        "sdirk2",
-  /* RK_SDIRK3 */        "sdirk3",
-  /* RK_SDIRK4 */        "sdirk4",
-  /* RK_ESDIRK2 */       "esdirk2",
-  /* RK_ESDIRK3 */       "esdirk3",
-  /* RK_ESDIRK4 */       "esdirk4",
-  /* RK_ESDIRK4_7L2SA */ "esdirk4s7",
-  /* RK_RADAU_IA_2 */    "radauIA2",
-  /* RK_RADAU_IA_3 */    "radauIA3",
-  /* RK_RADAU_IA_4 */    "radauIA4",
-  /* RK_RADAU_IIA_2 */   "radauIIA2",
-  /* RK_RADAU_IIA_3 */   "radauIIA3",
-  /* RK_RADAU_IIA_4 */   "radauIIA4",
-  /* RK_RADAU_IIA_5 */   "radauIIA5",
-  /* RK_RADAU_IIA_6 */   "radauIIA6",
-  /* RK_RADAU_IIA_7 */   "radauIIA7",
-  /* RK_LOBA_IIIA_3 */   "lobattoIIIA3",
-  /* RK_LOBA_IIIA_4 */   "lobattoIIIA4",
-  /* RK_LOBA_IIIB_3 */   "lobattoIIIB3",
-  /* RK_LOBA_IIIB_4 */   "lobattoIIIB4",
-  /* RK_LOBA_IIIC_3 */   "lobattoIIIC3",
-  /* RK_LOBA_IIIC_4 */   "lobattoIIIC4",
-  /* RK_GAUSS2 */        "gauss2",
-  /* RK_GAUSS3 */        "gauss3",
-  /* RK_GAUSS4 */        "gauss4",
-  /* RK_GAUSS5 */        "gauss5",
-  /* RK_GAUSS6 */        "gauss6",
-  /* RK_MERSON */        "merson",
-  /* RK_MERSONSSC1 */    "mersonSsc1",
-  /* RK_MERSONSSC2 */    "mersonSsc2",
-  /* RK_HEUN */          "heun",
-  /* RK_FEHLBERG12 */    "fehlberg12",
-  /* RK_FEHLBERG45 */    "fehlberg45",
-  /* RK_FEHLBERG78 */    "fehlberg78",
-  /* RK_FEHLBERGSSC1 */  "fehlbergSsc1",
-  /* RK_FEHLBERGSSC2 */  "fehlbergSsc2",
-  /* RK_RK810 */         "rk810",
-  /* RK_RK1012 */        "rk1012",
-  /* RK_RK1214 */        "rk1214",
-  /* RK_DOPRI45 */       "dopri45",
-  /* RK_DOPRISSC1 */     "dopriSsc1",
-  /* RK_DOPRISSC2 */     "dopriSsc2",
-  /* RK_TSIT5 */         "tsit5",
-  /* RK_RUNGEKUTTA */    "rungekutta",
-  /* RK_RKSSC */         "rungekuttaSsc"
+  /* GB_UNKNOWN = 0 */     "unknown",
+  /* MS_ADAMS_MOULTON */   "adams",
+  /* RK_EXPL_EULER */      "expl_euler",
+  /* RK_IMPL_EULER */      "impl_euler",
+  /* RK_TRAPEZOID */       "trapezoid",
+  /* RK_SDIRK2 */          "sdirk2",
+  /* RK_SDIRK3 */          "sdirk3",
+  /* RK_SDIRK4 */          "sdirk4",
+  /* RK_ESDIRK2 */         "esdirk2",
+  /* RK_ESDIRK3 */         "esdirk3",
+  /* RK_ESDIRK4 */         "esdirk4",
+  /* RK_ESDIRK4_7L2SA */   "esdirk4s7",
+  /* RK_SIRK3_2_3L2SA */   "sirk3l",
+  /* RK_SIRK3_2_4L3SA */   "sirk3",
+  /* RK_SIRK3_2_5L3SA */   "sirk3s5",
+  /* RK_SIRK4_3_LAGUERRE */"sirk4lag",
+  /* RK_SIRK4_3_5L3SA */   "sirk4",
+  /* RK_SIRK5_4_5L3SA */   "sirk5",
+  /* RK_SIRK4_3_6L4SA */   "sirk4s6",
+  /* RK_SIRK5_4_6L4SA */   "sirk5s6",
+  /* RK_SIRK5_4_7L4SA */   "sirk5s7",
+  /* RK_SIRK6_5_7L4SA */   "sirk6s7",
+  /* RK_SIRK6_5_8L4SA */   "sirk6s8",
+  /* RK_SIRK5_4_7L5SA */   "sirk5s7l5",
+  /* RK_FIRK7_6TS_5L4SA */ "firk7",
+  /* RK_RADAU_IA_2 */      "radauIA2",
+  /* RK_RADAU_IA_3 */      "radauIA3",
+  /* RK_RADAU_IA_4 */      "radauIA4",
+  /* RK_RADAU_IIA_2 */     "radauIIA2",
+  /* RK_RADAU_IIA_3 */     "radauIIA3",
+  /* RK_RADAU_IIA_4 */     "radauIIA4",
+  /* RK_RADAU_IIA_5 */     "radauIIA5",
+  /* RK_RADAU_IIA_6 */     "radauIIA6",
+  /* RK_RADAU_IIA_7 */     "radauIIA7",
+  /* RK_LOBA_IIIA_3 */     "lobattoIIIA3",
+  /* RK_LOBA_IIIA_4 */     "lobattoIIIA4",
+  /* RK_LOBA_IIIB_3 */     "lobattoIIIB3",
+  /* RK_LOBA_IIIB_4 */     "lobattoIIIB4",
+  /* RK_LOBA_IIIC_3 */     "lobattoIIIC3",
+  /* RK_LOBA_IIIC_4 */     "lobattoIIIC4",
+  /* RK_GAUSS2 */          "gauss2",
+  /* RK_GAUSS3 */          "gauss3",
+  /* RK_GAUSS4 */          "gauss4",
+  /* RK_GAUSS5 */          "gauss5",
+  /* RK_GAUSS6 */          "gauss6",
+  /* RK_MERSON */          "merson",
+  /* RK_MERSONSSC1 */      "mersonSsc1",
+  /* RK_MERSONSSC2 */      "mersonSsc2",
+  /* RK_HEUN */            "heun",
+  /* RK_FEHLBERG12 */      "fehlberg12",
+  /* RK_FEHLBERG45 */      "fehlberg45",
+  /* RK_FEHLBERG78 */      "fehlberg78",
+  /* RK_FEHLBERGSSC1 */    "fehlbergSsc1",
+  /* RK_FEHLBERGSSC2 */    "fehlbergSsc2",
+  /* RK_RK810 */           "rk810",
+  /* RK_RK1012 */          "rk1012",
+  /* RK_RK1214 */          "rk1214",
+  /* RK_DOPRI45 */         "dopri45",
+  /* RK_DOPRISSC1 */       "dopriSsc1",
+  /* RK_DOPRISSC2 */       "dopriSsc2",
+  /* RK_TSIT5 */           "tsit5",
+  /* RK_RUNGEKUTTA */      "rungekutta",
+  /* RK_RKSSC */           "rungekuttaSsc"
 };
 
 const char *GB_METHOD_DESC[RK_MAX] = {
-  /* GB_UNKNOWN = 0 */   "unknown",
-  /* MS_ADAMS_MOULTON */ "Implicit multistep method of type Adams-Moulton (order 2)",
-  /* RK_EXPL_EULER */    "Explizit Runge-Kutta Euler method (order 1)",
-  /* RK_IMPL_EULER */    "Implizit Runge-Kutta Euler method (order 1, L-stable)",
-  /* RK_TRAPEZOID */     "Implicit Runge-Kutta trapezoid method (order 2, A-stable)",
-  /* RK_SDIRK2 */        "Singly-diagonal implicit Runge-Kutta (order 2, L-stable)",
-  /* RK_SDIRK3 */        "Singly-diagonal implicit Runge-Kutta (order 3, L-stable)",
-  /* RK_SDIRK4 */        "Singly-diagonal implicit Runge-Kutta (order 4, L-stable)",
-  /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2, L-stable)",
-  /* RK_ESDIRK3 */       "Explicit singly-diagonal implicit Runge-Kutta (order 3, L-stable)",
-  /* RK_ESDIRK4 */       "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable, 6 stages)",
-  /* RK_ESDIRK4_7L2SA */ "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable, 7 stages)",
-  /* RK_RADAU_IA_2 */    "Implicit Runge-Kutta method of Radau family IA (order 3, L-stable)",
-  /* RK_RADAU_IA_3 */    "Implicit Runge-Kutta method of Radau family IA (order 5, L-stable)",
-  /* RK_RADAU_IA_4 */    "Implicit Runge-Kutta method of Radau family IA (order 7, L-stable)",
-  /* RK_RADAU_IIA_2 */   "Implicit Runge-Kutta method of Radau family IIA (order 3, L-stable)",
-  /* RK_RADAU_IIA_3 */   "Implicit Runge-Kutta method of Radau family IIA (order 5, L-stable)",
-  /* RK_RADAU_IIA_4 */   "Implicit Runge-Kutta method of Radau family IIA (order 7, L-stable)",
-  /* RK_RADAU_IIA_5 */   "Implicit Runge-Kutta method of Radau family IIA (order 9, L-stable)",
-  /* RK_RADAU_IIA_6 */   "Implicit Runge-Kutta method of Radau family IIA (order 11, L-stable)",
-  /* RK_RADAU_IIA_7 */   "Implicit Runge-Kutta method of Radau family IIA (order 13, L-stable)",
-  /* RK_LOBA_IIIA_3 */   "Implicit Runge-Kutta method of Lobatto family IIIA (order 4, A-stable)",
-  /* RK_LOBA_IIIA_4 */   "Implicit Runge-Kutta method of Lobatto family IIIA (order 6, A-stable)",
-  /* RK_LOBA_IIIB_3 */   "Implicit Runge-Kutta method of Lobatto family IIIB (order 4, A-stable)",
-  /* RK_LOBA_IIIB_4 */   "Implicit Runge-Kutta method of Lobatto family IIIB (order 6, A-stable)",
-  /* RK_LOBA_IIIC_3 */   "Implicit Runge-Kutta method of Lobatto family IIIC (order 4, L-stable)",
-  /* RK_LOBA_IIIC_4 */   "Implicit Runge-Kutta method of Lobatto family IIIC (order 6, L-stable)",
-  /* RK_GAUSS2 */        "Implicit Runge-Kutta method of Gauss (order 4, A-stable)",
-  /* RK_GAUSS3 */        "Implicit Runge-Kutta method of Gauss (order 6, A-stable)",
-  /* RK_GAUSS4 */        "Implicit Runge-Kutta method of Gauss (order 8, A-stable)",
-  /* RK_GAUSS5 */        "Implicit Runge-Kutta method of Gauss (order 10, A-stable)",
-  /* RK_GAUSS6 */        "Implicit Runge-Kutta method of Gauss (order 12, A-stable)",
-  /* RK_MERSON */        "Explicit Runge-Kutta Merson method (order 4)",
-  /* RK_MERSONSSC1 */    "Explicit Runge-Kutta Merson method with large stability region (order 1)",
-  /* RK_MERSONSSC2 */    "Explicit Runge-Kutta Merson method with large stability region (order 2)",
-  /* RK_HEUN */          "Explicit Runge-Kutta Heun method (order 2)",
-  /* RK_FEHLBERG12 */    "Explicit Runge-Kutta Fehlberg method (order 2)",
-  /* RK_FEHLBERG45 */    "Explicit Runge-Kutta Fehlberg method (order 5)",
-  /* RK_FEHLBERG78 */    "Explicit Runge-Kutta Fehlberg method (order 8)",
-  /* RK_FEHLBERGSSC1 */  "Explicit Runge-Kutta Fehlberg method with large stability region (order 1)",
-  /* RK_FEHLBERGSSC2 */  "Explicit Runge-Kutta Fehlberg method with large stability region (order 2)",
-  /* RK_RK810 */         "Explicit 8-10 Runge-Kutta method (order 10)",
-  /* RK_RK1012 */        "Explicit 10-12 Runge-Kutta method (order 12)",
-  /* RK_RK1214 */        "Explicit 12-14 Runge-Kutta method (order 14)",
-  /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)",
-  /* RK_DOPRISSC1 */     "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 1)",
-  /* RK_DOPRISSC2 */     "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 2)",
-  /* RK_TSIT5 */         "Explicit Runge-Kutta method from Tsitouras (order 5)",
-  /* RK_RUNGEKUTTA */    "Explicit classical Runge-Kutta method (order 4)",
-  /* RK_RKSSC */         "Explicit Runge-Kutta method with large stabiliy region (order 1)"
+  /* GB_UNKNOWN = 0 */     "unknown",
+  /* MS_ADAMS_MOULTON */   "Implicit multistep method of type Adams-Moulton (order 2)",
+  /* RK_EXPL_EULER */      "Explizit Runge-Kutta Euler method (order 1)",
+  /* RK_IMPL_EULER */      "Implizit Runge-Kutta Euler method (order 1, L-stable)",
+  /* RK_TRAPEZOID */       "Implicit Runge-Kutta trapezoid method (order 2, A-stable)",
+  /* RK_SDIRK2 */          "Singly-diagonal implicit Runge-Kutta (order 2, L-stable)",
+  /* RK_SDIRK3 */          "Singly-diagonal implicit Runge-Kutta (order 3, L-stable)",
+  /* RK_SDIRK4 */          "Singly-diagonal implicit Runge-Kutta (order 4, L-stable)",
+  /* RK_ESDIRK2 */         "Explicit singly-diagonal implicit Runge-Kutta (order 2, L-stable)",
+  /* RK_ESDIRK3 */         "Explicit singly-diagonal implicit Runge-Kutta (order 3, L-stable)",
+  /* RK_ESDIRK4 */         "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable, 6 stages)",
+  /* RK_ESDIRK4_7L2SA */   "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable, 7 stages)",
+  /* RK_SIRK3_2_3L2SA */   "Singly-implicit Runge-Kutta SIRK3(2)3L[2]SA (order 3, L-stable)",
+  /* RK_SIRK3_2_4L3SA */   "Singly-implicit Runge-Kutta SIRK3(2)4L[3]SA (order 3, L-stable)",
+  /* RK_SIRK3_2_5L3SA */   "Singly-implicit Runge-Kutta SIRK3(2)5L[3]SA (order 3, L-stable)",
+  /* RK_SIRK4_3_LAGUERRE */"Singly-implicit Runge-Kutta SIRK4(3) Laguerre (order 4, A(89.548*)-stable)",
+  /* RK_SIRK4_3_5L3SA */   "Singly-implicit Runge-Kutta SIRK4(3)5L[3]SA (order 4, L-stable)",
+  /* RK_SIRK5_4_5L3SA */   "Singly-implicit Runge-Kutta SIRK5(4)5L[3]SA (order 5, L-stable)",
+  /* RK_SIRK4_3_6L4SA */   "Singly-implicit Runge-Kutta SIRK4(3)6L[4]SA (order 4, L-stable)",
+  /* RK_SIRK5_4_6L4SA */   "Singly-implicit Runge-Kutta SIRK5(4)6L[4]SA (order 5, L-stable)",
+  /* RK_SIRK5_4_7L4SA */   "Singly-implicit Runge-Kutta SIRK5(4)7L[4]SA (order 5, L-stable)",
+  /* RK_SIRK6_5_7L4SA */   "Singly-implicit Runge-Kutta SIRK6(5)7L[4]SA (order 6, L-stable)",
+  /* RK_SIRK6_5_8L4SA */   "Singly-implicit Runge-Kutta SIRK6(5)8L[4]SA (order 6, L-stable)",
+  /* RK_SIRK5_4_7L5SA */   "Singly-implicit Runge-Kutta SIRK5(4)7L[5]SA (order 5, L-stable)",
+  /* RK_FIRK7_6TS_5L4SA */ "Fully-implicit Runge-Kutta FIRK7(6TS)5L[4]SA (order 7, L-stable)",
+  /* RK_RADAU_IA_2 */      "Implicit Runge-Kutta method of Radau family IA (order 3, L-stable)",
+  /* RK_RADAU_IA_3 */      "Implicit Runge-Kutta method of Radau family IA (order 5, L-stable)",
+  /* RK_RADAU_IA_4 */      "Implicit Runge-Kutta method of Radau family IA (order 7, L-stable)",
+  /* RK_RADAU_IIA_2 */     "Implicit Runge-Kutta method of Radau family IIA (order 3, L-stable)",
+  /* RK_RADAU_IIA_3 */     "Implicit Runge-Kutta method of Radau family IIA (order 5, L-stable)",
+  /* RK_RADAU_IIA_4 */     "Implicit Runge-Kutta method of Radau family IIA (order 7, L-stable)",
+  /* RK_RADAU_IIA_5 */     "Implicit Runge-Kutta method of Radau family IIA (order 9, L-stable)",
+  /* RK_RADAU_IIA_6 */     "Implicit Runge-Kutta method of Radau family IIA (order 11, L-stable)",
+  /* RK_RADAU_IIA_7 */     "Implicit Runge-Kutta method of Radau family IIA (order 13, L-stable)",
+  /* RK_LOBA_IIIA_3 */     "Implicit Runge-Kutta method of Lobatto family IIIA (order 4, A-stable)",
+  /* RK_LOBA_IIIA_4 */     "Implicit Runge-Kutta method of Lobatto family IIIA (order 6, A-stable)",
+  /* RK_LOBA_IIIB_3 */     "Implicit Runge-Kutta method of Lobatto family IIIB (order 4, A-stable)",
+  /* RK_LOBA_IIIB_4 */     "Implicit Runge-Kutta method of Lobatto family IIIB (order 6, A-stable)",
+  /* RK_LOBA_IIIC_3 */     "Implicit Runge-Kutta method of Lobatto family IIIC (order 4, L-stable)",
+  /* RK_LOBA_IIIC_4 */     "Implicit Runge-Kutta method of Lobatto family IIIC (order 6, L-stable)",
+  /* RK_GAUSS2 */          "Implicit Runge-Kutta method of Gauss (order 4, A-stable)",
+  /* RK_GAUSS3 */          "Implicit Runge-Kutta method of Gauss (order 6, A-stable)",
+  /* RK_GAUSS4 */          "Implicit Runge-Kutta method of Gauss (order 8, A-stable)",
+  /* RK_GAUSS5 */          "Implicit Runge-Kutta method of Gauss (order 10, A-stable)",
+  /* RK_GAUSS6 */          "Implicit Runge-Kutta method of Gauss (order 12, A-stable)",
+  /* RK_MERSON */          "Explicit Runge-Kutta Merson method (order 4)",
+  /* RK_MERSONSSC1 */      "Explicit Runge-Kutta Merson method with large stability region (order 1)",
+  /* RK_MERSONSSC2 */      "Explicit Runge-Kutta Merson method with large stability region (order 2)",
+  /* RK_HEUN */            "Explicit Runge-Kutta Heun method (order 2)",
+  /* RK_FEHLBERG12 */      "Explicit Runge-Kutta Fehlberg method (order 2)",
+  /* RK_FEHLBERG45 */      "Explicit Runge-Kutta Fehlberg method (order 5)",
+  /* RK_FEHLBERG78 */      "Explicit Runge-Kutta Fehlberg method (order 8)",
+  /* RK_FEHLBERGSSC1 */    "Explicit Runge-Kutta Fehlberg method with large stability region (order 1)",
+  /* RK_FEHLBERGSSC2 */    "Explicit Runge-Kutta Fehlberg method with large stability region (order 2)",
+  /* RK_RK810 */           "Explicit 8-10 Runge-Kutta method (order 10)",
+  /* RK_RK1012 */          "Explicit 10-12 Runge-Kutta method (order 12)",
+  /* RK_RK1214 */          "Explicit 12-14 Runge-Kutta method (order 14)",
+  /* RK_DOPRI45 */         "Explicit Runge-Kutta method Dormand-Prince (order 5)",
+  /* RK_DOPRISSC1 */       "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 1)",
+  /* RK_DOPRISSC2 */       "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 2)",
+  /* RK_TSIT5 */           "Explicit Runge-Kutta method from Tsitouras (order 5)",
+  /* RK_RUNGEKUTTA */      "Explicit classical Runge-Kutta method (order 4)",
+  /* RK_RKSSC */           "Explicit Runge-Kutta method with large stabiliy region (order 1)"
 };
 
 const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
@@ -1241,18 +1287,24 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
 };
 
-const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX] = {
-  /* GB_EXT_UNKNOWN */    "unknown",
-  /* GB_EXT_DEFAULT */    "default",
-  /* GB_EXT_RICHARDSON */ "richardson",
-  /* GB_EXT_EMBEDDED */   "embedded"
+const char *GB_ERROR_METHOD_NAME[GB_ERROR_MAX] = {
+  /* GB_ERROR_UNKNOWN */     "unknown",
+  /* GB_ERROR_DEFAULT */     "default",
+  /* GB_ERROR_RICHARDSON */  "richardson",
+  /* GB_ERROR_EMBEDDED */    "embedded",
+  /* GB_ERROR_TWO_STEP */    "two_step",
+  /* GB_ERROR_CONTRACTIVE */ "contractive_defect",
+  /* GB_ERROR_FILTER */      "contractive_filter"
 };
 
-const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX] = {
-  /* GB_EXT_UNKNOWN */    "unknown",
-  /* GB_EXT_DEFAULT */    "Default, depending on the Runge-Kutta method",
-  /* GB_EXT_RICHARDSON */ "Richardson extrapolation",
-  /* GB_EXT_EMBEDDED */   "Embedded scheme"
+const char *GB_ERROR_METHOD_DESC[GB_ERROR_MAX] = {
+  /* GB_ERROR_UNKNOWN */     "unknown",
+  /* GB_ERROR_DEFAULT */     "Default, depending on the Runge-Kutta method",
+  /* GB_ERROR_RICHARDSON */  "Richardson extrapolation",
+  /* GB_ERROR_EMBEDDED */    "Embedded scheme",
+  /* GB_ERROR_TWO_STEP */    "Two-step estimator",
+  /* GB_ERROR_CONTRACTIVE */ "Contractive defect estimator",
+  /* GB_ERROR_FILTER */      "Contractive filter applied to the embedded estimator"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
@@ -1416,7 +1468,8 @@ const char *JACOBIAN_METHOD_NAME[JAC_MAX] = {
   "coloredSymbolical",
   "coloredSymbolicalAdjoint",
   "numerical",
-  "symbolical"
+  "symbolical",
+  "bicoloredSymbolical"
 };
 
 const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
@@ -1427,7 +1480,8 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "Colored symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic. With option -idaLS=klu a sparse matrix is used.",
   "Colored symbolical adjoint Jacobian. Needs omc compiler flags --newBackend and --generateDynamicJacobian=symbolicadjoint.",
   "Dense numerical Jacobian.",
-  "Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic."
+  "Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic.",
+  "Bidirectional (star bicolored) symbolical Jacobian. Needs omc compiler flags --newBackend and --generateDynamicJacobian=bidirectional.",
  };
 
 const char *IDA_LS_METHOD_NAME[IDA_LS_MAX] = {

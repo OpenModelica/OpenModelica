@@ -35,6 +35,7 @@
 
 #ifndef OMC_GC_H_
 #define OMC_GC_H_
+#include "../omc_dll.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -47,8 +48,14 @@ extern "C" {
 #include <setjmp.h>
 
 #if defined(_MSC_VER)
+#include "omc_dll.h"
 #include "omc_inline.h"
 #include "util/omc_msvc.h"
+#elif !defined(DLLDataDirection)
+/* Only MSVC decorates shared data. Not omc_dll.h: reaching it needs c/ on the
+   include path, which only the _MSC_VER branch above has ever required, and
+   openmodelica.h includes this header from the middle of itself. */
+#define DLLDataDirection
 #endif
 
 typedef struct {
@@ -64,7 +71,7 @@ typedef struct {
   void (*free_string_persist)(void*);
 } omc_alloc_interface_t;
 
-extern omc_alloc_interface_t omc_alloc_interface;
+DLLDataDirection extern omc_alloc_interface_t omc_alloc_interface;
 extern omc_alloc_interface_t omc_alloc_interface_pooled;
 
 /*
@@ -207,7 +214,7 @@ struct mmc_GC_state_type /* the structure of GC state */
   modelica_metatype       global_roots[MMC_GC_GLOBAL_ROOTS_SIZE]; /* the global roots ! */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
-extern mmc_GC_state_type* mmc_GC_state;
+DLLDataDirection extern mmc_GC_state_type* mmc_GC_state;
 
 /* tag the free reqion as a free object with 250 ctor*/
 #define MMC_FREE_OBJECT_CTOR           200

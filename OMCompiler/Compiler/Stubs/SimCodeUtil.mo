@@ -67,6 +67,21 @@ algorithm
   assert(false, getInstanceName());
 end cref2simvar;
 
+function isContiguousArrayCref<A>
+  input A inCref;
+  output Boolean outContiguous;
+algorithm
+  assert(false, getInstanceName());
+end isContiguousArrayCref;
+
+function simVarExactFromHT<A,B>
+  input A inCref;
+  input B simCode;
+  output Option<SimCodeVar.SimVar> outSimVar;
+algorithm
+  assert(false, getInstanceName());
+end simVarExactFromHT;
+
 function simVarFromHT<A,B>
   input A inCref;
   input B simCode;

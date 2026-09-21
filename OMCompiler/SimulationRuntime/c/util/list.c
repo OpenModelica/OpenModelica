@@ -113,6 +113,21 @@ void freeNode(LIST *list, LIST_NODE *node)
 }
 
 /**
+ * @brief Checks if a list is empty
+ *
+ * @param list    Pointer to list
+ */
+int listEmptyTest(LIST *list)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  if(list->first){
+    return 0;
+  }else{
+    return 1;
+  }
+}
+
+/**
  * @brief Copies data into new tmpNode and pushes tmpNode to the front of list
  *
  * @param list    Pointer to list
@@ -232,7 +247,11 @@ void *listFirstData(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   assertStreamPrint(NULL, 0 != list->first, "empty list");
-  return list->first->data;
+  if(list->first){
+    return list->first->data;
+  }else{
+    return NULL;
+  }
 }
 
 /**
@@ -269,6 +288,25 @@ LIST_NODE *listPopFrontNode(LIST *list)
 }
 
 /**
+ * @brief Returns node and pops node from list
+ *
+ * @param list      Pointer to list
+ * @param prevNode  Node to remove after. prevNode won't be removed.
+ * @return node     Pointer to node (must be freed by caller)
+ */
+LIST_NODE *listPopNode(LIST *list, LIST_NODE *prevNode)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != list->first, "empty list");
+
+  LIST_NODE *node = prevNode->next;
+  LIST_NODE *afterNode = node->next;
+  prevNode->next = afterNode;
+  --(list->length);
+  return node;
+}
+
+/**
  * @brief Removes and frees first node from list
  *
  * @param list    Pointer to list
@@ -285,6 +323,41 @@ void listRemoveFront(LIST *list)
     --(list->length);
     if(!list->first)
       list->last = list->first;
+  }
+}
+
+/**
+ * @brief Removes and frees last node from list
+ *
+ * @param list    Pointer to list
+ */
+void listRemoveBack(LIST *list)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  if(list->last)
+  {
+    // case: one element
+    if (list->first == list->last)
+    {
+      listRemoveFront(list);
+    }
+    // general case: at least two elements -> find second last element
+    else
+    {
+      LIST_NODE *prev = list->first;
+      while (prev->next != list->last)
+      {
+        prev = prev->next;
+      }
+      LIST_NODE *delNode = list->last;
+
+      prev->next = NULL;
+      list->last = prev;
+      --(list->length);
+
+      freeNode(list, delNode);
+    }
+
   }
 }
 

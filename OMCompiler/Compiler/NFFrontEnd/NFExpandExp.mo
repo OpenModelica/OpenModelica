@@ -55,6 +55,8 @@ protected
   import Absyn;
   import EvalTarget = NFCeval.EvalTarget;
   import Array;
+  import Util;
+  import List;
 
 public
   function expand
@@ -293,9 +295,56 @@ public
     if expanded then
       outExp := Ceval.evalExp(exp);
     else
-      outExp := exp;
+      (outExp, expanded) := expandNonLiteralRange(exp, ty);
     end if;
   end expandRange;
+
+  function expandNonLiteralRange
+    "Expands a numeric range whose bounds are not literals but whose size is
+     known, since the i:th element is start + (i - 1) * step."
+    input Expression exp;
+    input Type ty;
+    output Expression outExp;
+    output Boolean expanded;
+  protected
+    Type ety;
+    Expression start_exp, step_exp, e;
+    Option<Expression> ostep_exp;
+    Integer sz;
+    list<Expression> expl = {};
+  algorithm
+    ety := Type.arrayElementType(ty);
+
+    if not (Type.hasKnownSize(ty) and (Type.isInteger(ety) or Type.isReal(ety))) then
+      outExp := exp;
+      expanded := false;
+      return;
+    end if;
+
+    Expression.RANGE(start = start_exp, step = ostep_exp) := exp;
+    step_exp := Util.getOptionOrDefault(ostep_exp, Expression.makeOne(ety));
+    sz := Dimension.size(Type.nthDimension(ty, 1));
+
+    for i in sz:-1:1 loop
+      if i == 1 then
+        e := start_exp;
+      else
+        e := Expression.BINARY(makeIndexOffset(i - 1, ety), Operator.makeMul(ety), step_exp);
+        e := SimplifyExp.simplify(Expression.BINARY(start_exp, Operator.makeAdd(ety), e));
+      end if;
+
+      expl := e :: expl;
+    end for;
+
+    outExp := Expression.makeArray(ty, listArray(expl));
+    expanded := true;
+  end expandNonLiteralRange;
+
+  function makeIndexOffset
+    input Integer offset;
+    input Type ty;
+    output Expression exp = if Type.isReal(ty) then Expression.REAL(intReal(offset)) else Expression.INTEGER(offset);
+  end makeIndexOffset;
 
   function expandCall
     input Call call;
@@ -462,6 +511,11 @@ public
     Mutable<Expression> iter;
     list<Mutable<Expression>> iters = {};
   algorithm
+    if Type.hasKnownSize(ty) and not List.any(iterators, function usesIterator(exp = exp)) then
+      result := fillArrayConstructor(expand(SimplifyExp.simplify(exp)), ty, listLength(iterators));
+      return;
+    end if;
+
     for i in iterators loop
       (node, range) := i;
       iter := Mutable.create(Expression.EMPTY(InstNode.getType(node)));
@@ -473,6 +527,24 @@ public
 
     result := expandArrayConstructor2(e, ty, ranges, iters);
   end expandArrayConstructor;
+
+  function usesIterator
+    input tuple<InstNode, Expression> iterator;
+    input Expression exp;
+    output Boolean used = Expression.containsIterator(exp, Util.tuple21(iterator));
+  end usesIterator;
+
+  function fillArrayConstructor
+    "The body does not depend on the iterators: every element is the same expression."
+    input Expression value;
+    input Type ty;
+    input Integer levels;
+    output Expression result;
+  algorithm
+    result := if levels == 0 then value else
+      Expression.makeArray(ty, arrayCreate(Dimension.size(Type.nthDimension(ty, 1)),
+        fillArrayConstructor(value, Type.unliftArray(ty), levels - 1)));
+  end fillArrayConstructor;
 
   function expandArrayConstructor2
     input Expression exp;

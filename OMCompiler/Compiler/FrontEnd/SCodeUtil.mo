@@ -960,7 +960,7 @@ protected function subModsEqual
   input list<SCode.SubMod>  inSubModLst2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(inSubModLst1,inSubModLst2)
+  equal := match(inSubModLst1,inSubModLst2)
     local
       SCode.Ident id1,id2;
       SCode.Mod mod1,mod2;
@@ -968,16 +968,12 @@ algorithm
 
     case ({},{}) then true;
 
-    case (SCode.NAMEMOD(id1,mod1)::subModLst1,SCode.NAMEMOD(id2,mod2)::subModLst2)
-        algorithm
-          true := stringEq(id1,id2);
-          true := modEqual(mod1,mod2);
-          true := subModsEqual(subModLst1,subModLst2);
+    case (SCode.NAMEMOD(id1,mod1)::subModLst1,SCode.NAMEMOD(id2,mod2)::subModLst2) guard stringEq(id1,id2) and modEqual(mod1,mod2) and subModsEqual(subModLst1,subModLst2)
         then
           true;
 
     else false;
-  end matchcontinue;
+  end match;
 end subModsEqual;
 
 protected function subscriptsEqual
@@ -2789,7 +2785,7 @@ public function replaceableEqual "Returns true if two replaceable attributes are
   input SCode.Replaceable r2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(r1,r2)
+  equal := match(r1,r2)
     local
       Absyn.Path p1, p2;
       SCode.Mod m1, m2;
@@ -2797,10 +2793,7 @@ algorithm
     case(SCode.NOT_REPLACEABLE(),SCode.NOT_REPLACEABLE()) then true;
 
     case(SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p1, modifier = m1))),
-         SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))
-      algorithm
-        true := AbsynUtil.pathEqual(p1, p2);
-        true := modEqual(m1, m2);
+         SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p2, modifier = m2)))) guard AbsynUtil.pathEqual(p1, p2) and modEqual(m1, m2)
       then
         true;
 
@@ -2808,7 +2801,7 @@ algorithm
 
     else false;
 
-  end matchcontinue;
+  end match;
 end replaceableEqual;
 
 public function prefixesEqual "Returns true if two prefixes are equal"
@@ -4207,7 +4200,7 @@ protected function removeSub
   input list<SCode.SubMod> inOld;
   output list<SCode.SubMod> outSubs;
 algorithm
-  outSubs := matchcontinue(inSub, inOld)
+  outSubs := match(inSub, inOld)
     local
       list<SCode.SubMod> rest;
       SCode.Ident id1, id2;
@@ -4215,9 +4208,7 @@ algorithm
 
     case (_, {}) then inOld;
 
-    case (SCode.NAMEMOD(ident = id1), SCode.NAMEMOD(ident = id2)::rest)
-      algorithm
-        true := stringEqual(id1, id2);
+    case (SCode.NAMEMOD(ident = id1), SCode.NAMEMOD(ident = id2)::rest) guard stringEqual(id1, id2)
       then
         rest;
 
@@ -4226,7 +4217,7 @@ algorithm
         rest := removeSub(inSub, rest);
       then
         s::rest;
-  end matchcontinue;
+  end match;
 end removeSub;
 
 public function mergeComponentModifiers

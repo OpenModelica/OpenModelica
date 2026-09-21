@@ -32,7 +32,7 @@ set(OMPLOTLIB_HEADERS OMPlot.h
                       LinearScaleEngine.h)
 
 add_library(OMPlotLib SHARED ${OMPLOTLIB_SOURCES} ${OMPLOTLIB_HEADERS})
-target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
+target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE OMPLOTLIB_LIBRARY)
 
 if(MSVC)
   set_target_properties(OMPlotLib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
@@ -50,6 +50,13 @@ endif ()
 
 target_link_libraries(OMPlotLib PUBLIC omqwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
+# Result files: the Rust omc_result library (also opens .arrow), or the C readers.
+# PUBLIC, so OMEdit (which links OMPlotLib) follows the same choice.
+if(OM_RUST_RESULT_READERS)
+  target_link_libraries(OMPlotLib PUBLIC omc::result)
+else()
+  target_compile_definitions(OMPlotLib PUBLIC OM_LEGACY_RESULT_READERS)
+endif()
 
 if(APPLE)
   set(MACOSX_BUNDLE_ICON_FILE omplot.ico)
@@ -69,6 +76,8 @@ install(TARGETS OMPlotLib)
 omc_install_gui_client(OMPlot)
 
 if(MINGW)
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
+
   # Find windeployqt6
   find_program(WINDEPLOYQT_EXECUTABLE
     NAMES windeployqt windeployqt6

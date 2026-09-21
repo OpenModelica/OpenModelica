@@ -69,7 +69,6 @@ import DAEDump;
 import DAEDumpTypes;
 import DAEUtil;
 import Debug;
-import DoubleEnded;
 import DumpHTML;
 import ElementSource;
 import Error;
@@ -268,7 +267,7 @@ algorithm
   dumpEquationArray(inShared.removedEqs, "Simple Shared Equations");
   dumpEquationArray(inShared.initialEqs, "Initial Equations");
   dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.zeroCrossings), "Zero Crossings");
-  dumpZeroCrossingList(DoubleEnded.toListNoCopyNoClear(inShared.eventInfo.relations), "Relations");
+  dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.relations), "Relations");
   if stringEqual(Config.simCodeTarget(), "Cpp") then
     dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.samples), "Samples");
   else
@@ -1802,7 +1801,7 @@ public function simIteratorString
 algorithm
   str := match iter
     case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReferenceBasics.printComponentRefStr(iter.name) + " in " + ExpressionBasics.printExpStr(iter.start) + ":" + ExpressionBasics.printExpStr(iter.step) + ":" + ExpressionBasics.printExpStr(iter.stop);
-    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReferenceBasics.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10);
+    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReferenceBasics.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, List.Style.FLAT_CURLY_SHORT);
   end match;
 end simIteratorString;
 
@@ -2279,7 +2278,7 @@ algorithm
     case {} then ();
     case elem::rest
       algorithm
-      sparsepatternStr := List.toString(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
+      sparsepatternStr := List.toStringCustom(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
       print(sparsepatternStr + "\n");
       dumpSparsePattern2(rest,inInteger+1);
     then ();

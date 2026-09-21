@@ -26,10 +26,10 @@ end RecordBinding10;
 
 // Result:
 // class RecordBinding10
-//   parameter Real a.x = b.data.x;
-//   parameter Real a.y[1] = b.data.y[1];
-//   parameter Real a.y[2] = b.data.y[2];
-//   parameter Real a.y[3] = b.data.y[3];
+//   parameter Real a.x = 3.0;
+//   parameter Real a.y[1] = 1.0;
+//   parameter Real a.y[2] = 2.0;
+//   parameter Real a.y[3] = 3.0;
 //   final parameter Real b.data.x = 3.0;
 //   final parameter Real b.data.y[1] = 1.0;
 //   final parameter Real b.data.y[2] = 2.0;

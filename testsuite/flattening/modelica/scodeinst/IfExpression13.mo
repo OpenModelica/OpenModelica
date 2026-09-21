@@ -1,6 +1,7 @@
 // name: IfExpression13
 // keywords:
 // status: correct
+// suite: disabled
 //
 
 record R

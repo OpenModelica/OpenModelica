@@ -45,6 +45,8 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 
+#include <QTimer>
+
 class CustomExpressionBox;
 class OutputPlainTextEdit;
 class ElementInfo;
@@ -106,6 +108,7 @@ public:
   bool isLoggingEnabled() {return mIsLoggingEnabled;}
   bool isLoadModelError() const {return mLoadModelError;}
   QString getErrorString(bool warningsAsErrors = false);
+  QString evaluateConstant(const QString &name);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
   void setCurrentError(int errorIndex);
@@ -175,7 +178,7 @@ public:
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool existClass(QString className);
-  bool renameClass(QString oldName, QString newName);
+  QList<QString> renameClass(QString oldName, QString newName);
   bool deleteClass(QString className);
   QString getSourceFile(QString className);
   bool setSourceFile(QString className, QString path);
@@ -217,7 +220,7 @@ public:
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-6);
-  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources);
+  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources, QString method = "<default>");
   bool translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources);
   QString translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors, QString modelName);
@@ -231,6 +234,7 @@ public:
   QList<QString> getCommandLineOptions();
   bool setCommandLineOptions(QString options);
   bool clearCommandLineOptions();
+  void setOMEditDebugFlag();
   bool enableNewInstantiation();
   bool disableNewInstantiation();
   QString makeDocumentationUriToFileName(QString documentation);
@@ -298,6 +302,27 @@ public slots:
   void openOMCLoggerWidget();
   void sendCustomExpression();
   void openOMCDiffWidget();
+};
+
+/*!
+ * \class OMCLongOperation
+ * \brief Scopes an omc call worth interrupting: a translation, an FMU export or
+ * an in-process (wasm-jit) simulation.
+ *
+ * omc only gets its event-pump callback while such a scope is alive; running the
+ * event loop at every cancel check is what keeps a long call interruptible, but
+ * for the short commands behind e.g. undo/redo it is pure flicker. Nested scopes
+ * are no-ops.
+ */
+class OMCLongOperation
+{
+public:
+  OMCLongOperation();
+  ~OMCLongOperation();
+  OMCLongOperation(const OMCLongOperation &) = delete;
+  OMCLongOperation& operator=(const OMCLongOperation &) = delete;
+private:
+  QTimer mShowCancelButtonTimer;
 };
 
 class CustomExpressionBox : public QLineEdit

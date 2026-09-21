@@ -1,6 +1,7 @@
 // name: InvalidComplexConnectorType4
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidComplexConnectorType4
@@ -17,7 +18,7 @@ end InvalidComplexConnectorType4;
 
 // Result:
 // Error processing file: InvalidComplexConnectorType4.mo
-// [flattening/modelica/scodeinst/InvalidComplexConnectorType4.mo:16:3-16:18:writable] Error: Connector element c1.x may not be both parameter and flow.
+// [flattening/modelica/scodeinst/InvalidComplexConnectorType4.mo:17:3-17:18:writable] Error: Connector element c1.x may not be both parameter and flow.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

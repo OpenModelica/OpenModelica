@@ -41,7 +41,6 @@ OMCompiler/omc_config.unix.h.in
 # [3rd-party]
 OMCompiler/tools/
 !OMCompiler/tools/debugging
-!OMCompiler/tools/xml
 
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc
@@ -234,9 +233,6 @@ OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/impl/
 OMCompiler/SimulationRuntime/OMSICpp/runtime/src/Solver/CppDASSL/ddaskr.cpp
 OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Solver/CppDASSL/dasslaux.h
 
-# [3rd-party] Pieter Hintjens / iMatix — ZeroMQ guide helper (zhelpers.hpp, MIT License)
-OMCompiler/SimulationRuntime/OMSICpp/omcWrapper/omcZeroMQ/include/zhelpers.hpp
-
 # =============================================================================
 # SimulationRuntime/ModelicaExternalC/
 # =============================================================================
@@ -272,6 +268,8 @@ testsuite/
 
 doc/
 OMCompiler/Examples/
+OMCompiler/Compiler/OpenModelica.rs/wasm/simulator/examples/
+OMCompiler/Compiler/OpenModelica.rs/openmodelica_codegen_wasm_jit/testmodels/
 !OMCompiler/Examples/GenerateDoc.mos
 
 # =============================================================================
@@ -331,6 +329,14 @@ OMOptim/OMOptim/GUI/Scene/diagramtextitem.h
 OMPlot/qwt/
 
 # =============================================================================
+# OMSimulator
+# =============================================================================
+
+OMSimulator/3rdParty/
+OMSimulator/doc/
+OMSimulator/testsuite/
+
+# =============================================================================
 # Submodules
 # TODO: Check which submodules need a check
 # =============================================================================
@@ -338,7 +344,6 @@ OMPlot/qwt/
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMSimulator/
 
 # =============================================================================
 # Build files

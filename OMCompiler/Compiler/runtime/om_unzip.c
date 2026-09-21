@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "../../3rdParty/FMIL/ThirdParty/Minizip/minizip/unzip.h"
+#include "../../3rdParty/FMIL/ThirdParty/Zlib/zlib-1.3.1/contrib/minizip/unzip.h"
 #include "util/modelica_string.h"
 #include "util/omc_file.h"
 #include "errorext.h"
@@ -45,6 +45,22 @@
 #define dir_delimter '/'
 #define MAX_FILENAME 2048
 #define READ_SIZE 8192
+
+/* Zip files need not contain entries for the directories, so create the ones
+ * leading up to path. The first skip characters are the destination given to
+ * om_unzip, which the caller has already created. */
+static void createParentDirectories(const char *path, size_t skip)
+{
+  const char *p;
+  for (p = strchr(path + skip, dir_delimter); p; p = strchr(p + 1, dir_delimter)) {
+    const char *dir = NULL;
+    GC_asprintf(&dir, "%.*s", (int) (p - path), path);
+    SystemImpl__createDirectory(dir);
+#if defined(_POSIX_C_SOURCE)
+    chmod(dir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH);
+#endif
+  }
+}
 
 int om_unzip(const char *zipFileName, const char *pathToExtract, const char *destPath)
 {
@@ -64,7 +80,7 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
   char read_buffer[READ_SIZE];
 
   uLong i, j;
-  size_t commonLength, pathToExtractLen = strlen(pathToExtract);
+  size_t commonLength, pathToExtractLen = strlen(pathToExtract), destPathLen = strlen(destPath);
   for (i = 0; i < global_info.number_entry; ++i ) {
     if (unzGetCurrentFileInfo(zipfile, &file_info, filename, MAX_FILENAME, NULL, 0, NULL, 0 ) != UNZ_OK) {
       c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "minizip failed to read file info: %s", &zipFileName, 1);
@@ -119,6 +135,7 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
     } else if (filenameStart[ filename_length-1 ] == dir_delimter) {
       /* Directory */
       GC_asprintf(&renamedPrefix, "%s%s%s", destPath, filenameStart[pathToExtractLen] == '/' || filenameStart[pathToExtractLen] == '\0' ? "" : "/", filenameStart+pathToExtractLen);
+      createParentDirectories(renamedPrefix, destPathLen);
       SystemImpl__createDirectory(renamedPrefix);
 #if defined(_POSIX_C_SOURCE)
       chmod(renamedPrefix, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH);
@@ -126,6 +143,7 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
     } else {
       /* File */
       GC_asprintf(&renamedPrefix, "%s%s%s", destPath, filenameStart[pathToExtractLen] == '/' || filenameStart[pathToExtractLen] == '\0' ? "" : "/", filenameStart+pathToExtractLen);
+      createParentDirectories(renamedPrefix, destPathLen);
       // Entry is a file, so extract it.
       if (unzOpenCurrentFile(zipfile) != UNZ_OK) {
         const char *msgs[2] = {zipFileName, filename};

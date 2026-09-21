@@ -33,5 +33,7 @@ buildModelFMU(test_fmu_me_1_0, version="1.0", fmuType="me"); getErrorString();
 // true
 // ""
 // "test_fmu_me_1_0.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // endResult

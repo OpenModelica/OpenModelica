@@ -39,6 +39,9 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#if defined(__EMSCRIPTEN__)
+#include "PersistentStorage.h"
+#endif
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
 #include "Editors/BaseEditor.h"
@@ -52,12 +55,14 @@
 #include <QPainter>
 #include <QColorDialog>
 #include <QDir>
-#include <QRegExp>
+#include <QRegularExpression>
+#include <QDesktopServices>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
 }
 
+#if !defined(__EMSCRIPTEN__)
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -67,6 +72,149 @@ SplashScreen *SplashScreen::instance()
   }
   return mpInstance;
 }
+#else
+#include <emscripten.h>
+#include <QElapsedTimer>
+
+// Return to the browser event loop for one frame so it composites the DOM
+// mutations made just before. A nested QEventLoop cannot do this during startup:
+// the splash runs before qApp->exec(), so there is no Qt loop to suspend and only
+// a raw Asyncify suspend actually yields to the browser (this is exactly how omc's
+// pre-exec worker wait paints its download bar). Safe only pre-exec, which the
+// splash always is (finish() runs before exec()).
+EM_ASYNC_JS(void, wasm_splash_yield, (), {
+  await new Promise(function(resolve) {
+    requestAnimationFrame(function() { setTimeout(resolve, 0); });
+  });
+});
+
+namespace WasmSplash
+{
+  static bool sVisible = false;
+
+  void show()
+  {
+    if (sVisible) {
+      return;
+    }
+    // Pure HTML/DOM, no Qt at all: Qt drawing/resource access before the event
+    // loop stalls the async library install on wasm. The image is referenced by
+    // URL (served beside the page) rather than read through a Qt resource.
+    sVisible = true;
+    EM_ASM({
+      if (document.getElementById('omedit-splash')) return;
+      var style = document.createElement('style');
+      style.id = 'omedit-splash-style';
+      style.textContent =
+        '#omedit-splash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;'
+        + 'align-items:center;justify-content:center;background:#ffffff;font-family:sans-serif;'
+        + 'transition:opacity .4s ease;}'
+        + '#omedit-splash img{max-width:80%;max-height:60%;box-shadow:0 6px 28px rgba(0,0,0,.25);}'
+        + '#omedit-splash .msg{margin-top:20px;font-size:15px;color:#333;min-height:20px;text-align:center;}'
+        + '#omedit-splash .bar{margin-top:16px;width:280px;height:6px;background:#e2e2e2;border-radius:3px;overflow:hidden;}'
+        + '#omedit-splash .bar > div{height:100%;width:40%;background:#e87424;border-radius:3px;'
+        + 'animation:omedit-splash-slide 1.2s ease-in-out infinite;}'
+        // transform (not margin-left) so the compositor animates it smoothly even
+        // while the main thread is blocked building the library tree.
+        + '@keyframes omedit-splash-slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}';
+      document.head.appendChild(style);
+      var o = document.createElement('div');
+      o.id = 'omedit-splash';
+      var img = document.createElement('img');
+      img.src = new URL('omedit_splashscreen.png', document.baseURI).href;
+      img.onerror = function() { img.style.display = 'none'; };
+      o.appendChild(img);
+      var msg = document.createElement('div');
+      msg.className = 'msg';
+      msg.id = 'omedit-splash-msg';
+      msg.textContent = 'Starting OMEdit…';
+      o.appendChild(msg);
+      var bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.appendChild(document.createElement('div'));
+      o.appendChild(bar);
+      document.body.appendChild(o);
+    });
+  }
+
+  void setMessage(const QString &message)
+  {
+    if (!sVisible) {
+      return;
+    }
+    EM_ASM({
+      var m = document.getElementById('omedit-splash-msg');
+      if (m) m.textContent = UTF8ToString($0);
+    }, message.toUtf8().constData());
+  }
+
+  void setProgress(int done, int total)
+  {
+    if (!sVisible || total <= 0) {
+      return;
+    }
+    // Callers drive this once per item; painting/yielding every time would dominate
+    // the actual work. Read a monotonic clock (no yield) and only touch the DOM
+    // ~every 300 ms. The first and last step always paint, so a determinate bar
+    // appears immediately (replacing the indeterminate slide) and lands on 100%.
+    int pct = done < 0 ? 0 : (done > total ? 100 : (100 * done) / total);
+    static QElapsedTimer sTimer;
+    static int sLastPct = -1;
+    const bool force = done <= 1 || done >= total;
+    if (!force) {
+      if (pct == sLastPct) {
+        return;
+      }
+      if (sTimer.isValid() && sTimer.elapsed() < 300) {
+        return;
+      }
+    }
+    sTimer.restart();
+    sLastPct = pct;
+    EM_ASM({
+      // Claim the bar: omc's __omcSetStatus fires on every worker reply and would
+      // otherwise keep restoring the indeterminate slide, fighting this update.
+      Module.__omeditSplashDeterminate = true;
+      var f = document.querySelector('#omedit-splash .bar > div');
+      if (f) { f.style.animation = 'none'; f.style.transform = 'none'; f.style.width = $0 + '%'; }
+    }, pct);
+    wasm_splash_yield();
+  }
+
+  void stepMessage(const QString &message)
+  {
+    if (!sVisible) {
+      return;
+    }
+    setMessage(message);
+    // The widget-creation steps are synchronous and never return to the event
+    // loop, so the message above would not paint until the whole phase ends.
+    wasm_splash_yield();
+  }
+
+  void finish()
+  {
+    if (!sVisible) {
+      return;
+    }
+    sVisible = false;
+    EM_ASM({
+      var o = document.getElementById('omedit-splash');
+      if (o) {
+        o.style.opacity = '0';
+        setTimeout(function() { if (o.parentNode) o.parentNode.removeChild(o); }, 450);
+      }
+      var s = document.getElementById('omedit-splash-style');
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    });
+  }
+
+  bool isVisible()
+  {
+    return sVisible;
+  }
+}
+#endif
 
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
@@ -96,15 +244,6 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpCollapseAllButton->setIcon(QIcon(":/Resources/icons/top.svg"));
   mpCollapseAllButton->setToolTip(Helper::collapseAll);
   mpCollapseAllButton->setAutoRaise(true);
-  // show hide button
-  mpShowHideButton = new QToolButton;
-  QString showHideButtonText = tr("Show/hide filters");
-  mpShowHideButton->setText(showHideButtonText);
-  mpShowHideButton->setIcon(QIcon(":/Resources/icons/down.svg"));
-  mpShowHideButton->setToolTip(showHideButtonText);
-  mpShowHideButton->setAutoRaise(true);
-  mpShowHideButton->setCheckable(true);
-  connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
   // filters widget
   mpFiltersWidget = new QWidget;
   // create the case sensitivity checkbox
@@ -115,18 +254,23 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   syntaxDescriptions << tr("A rich Perl-like pattern matching syntax.")
                       << tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\".")
                       << tr("Fixed string matching.");
-  mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
+  mpSyntaxComboBox->addItem(tr("Regular Expression"), TreeSearchFilters::Regexp);
+  mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
+  mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
+  // filter help button, opens the users guide link for
+  mpFiltersHelpButton = new QToolButton;
+  mpFiltersHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpFiltersHelpButton->setToolTip(tr("Filters help"));
+  connect(mpFiltersHelpButton, SIGNAL(clicked()), SLOT(showFiltersHelp()));
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pFiltersWidgetLayout->setAlignment(Qt::AlignTop);
   pFiltersWidgetLayout->addWidget(mpCaseSensitiveCheckBox, 0, 0);
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
+  pFiltersWidgetLayout->addWidget(mpFiltersHelpButton, 0, 2);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
-  mpFiltersWidget->hide();
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -136,18 +280,66 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
   pMainLayout->addWidget(mpExpandAllButton, 0, 2);
   pMainLayout->addWidget(mpCollapseAllButton, 0, 3);
-  pMainLayout->addWidget(mpShowHideButton, 0, 4);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 4);
   setLayout(pMainLayout);
 }
 
-void TreeSearchFilters::showHideFilters(bool On)
+/*!
+ * \brief TreeSearchFilters::showFiltersHelp
+ * Opens the OpenModelica Users Guide link for filters help.
+ */
+void TreeSearchFilters::showFiltersHelp()
 {
-  if (On) {
-    mpFiltersWidget->show();
-  } else {
-    mpFiltersWidget->hide();
+  QUrl filtersHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#variables-browser").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(filtersHelpPath);
+}
+
+/*!
+ * \brief TreeSearchFilters::getFilterRegularExpression
+ * Returns the QRegularExpression for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+  QRegularExpression regExp;
+  switch (syntax) {
+    case TreeSearchFilters::Wildcard: {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+#else
+      QString pattern = QRegularExpression::wildcardToRegularExpression(filterText);
+      /* Qt 5 has no UnanchoredWildcardConversion option, and wildcardToRegularExpression()
+       * always returns a fully anchored pattern wrapped as "\A(?:...)\z" (i.e. exact-match
+       * behavior). Strip the \A and \z anchors so the pattern can match anywhere in the
+       * string, matching the behavior of UnanchoredWildcardConversion on Qt 6.
+       */
+      if (pattern.startsWith("\\A")) {
+        pattern.remove(0, 2);
+      }
+      if (pattern.endsWith("\\z")) {
+        pattern.chop(2);
+      }
+      regExp = QRegularExpression(pattern, caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption);
+#endif
+      break;
+    }
+    case TreeSearchFilters::FixedString:
+      regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+      break;
+    default:
+      regExp = QRegularExpression(filterText, options);
+      break;
   }
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // QString::contains()/QSortFilterProxyModel do not warn about an invalid regex.
+  if (!regExp.isValid()) {
+    regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+  }
+  return regExp;
 }
 
 /*!
@@ -489,6 +681,7 @@ ListWidgetItem::ListWidgetItem(QString text, QColor color, QListWidget *pParentL
   setForeground(mColor);
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief QDetachableProcess::QDetachableProcess
  * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
@@ -515,8 +708,7 @@ QDetachableProcess::QDetachableProcess(QObject *pParent)
 void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
 {
   QProcess::start(program, arguments, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
@@ -529,11 +721,27 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
 void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
 {
   QProcess::start(command, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 #endif
 
+void QDetachableProcess::finishStart()
+{
+  mStartupError = false;
+  mStartupErrorString.clear();
+  if (!waitForStarted()) {
+    mStartupError = true;
+    mStartupErrorString = errorString();
+  } else if (waitForFinished(250) && (exitStatus() != QProcess::NormalExit || exitCode() != 0)) {
+    mStartupError = true;
+    mStartupErrorString = QString::fromLocal8Bit(readAllStandardError()).trimmed();
+    if (mStartupErrorString.isEmpty()) {
+      mStartupErrorString = tr("Process exited with code %1").arg(exitCode());
+    }
+  }
+  setProcessState(QProcess::NotRunning);
+}
+#endif // QT_CONFIG(process)
 
 JsonDocument::JsonDocument(QObject *pParent)
   : QObject(pParent)
@@ -636,13 +844,14 @@ QString& Utilities::tempDirectory()
     tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
 #endif
     tmpPath.remove("\"");
-    if (!QDir().exists(tmpPath)) {
-      if (!QDir().mkpath(tmpPath)) {
-        qDebug() << "Failed to create the tempDirectory" << tmpPath
-                 << "will use" << QDir::tempPath() << "instead.";
-        tmpPath = QDir::tempPath();
-        tmpPath.remove("\"");
-      }
+  }
+  // Recreate on every call if it has been removed (e.g. by tmpfiles cleanup on long-running sessions)
+  if (!QDir().exists(tmpPath)) {
+    if (!QDir().mkpath(tmpPath)) {
+      qDebug() << "Failed to create the tempDirectory" << tmpPath
+               << "will use" << QDir::tempPath() << "instead.";
+      tmpPath = QDir::tempPath();
+      tmpPath.remove("\"");
     }
   }
   return tmpPath;
@@ -683,7 +892,13 @@ QSettings* Utilities::getApplicationSettings()
   static QSettings *pSettings;
   if (!init) {
     init = 1;
+#if defined(__EMSCRIPTEN__)
+    // QSettings' own location is MEMFS, which the reload throws away. Put the ini
+    // in the tree PersistentStorage mirrors to IndexedDB instead.
+    pSettings = new QSettings(QString("%1/%2.ini").arg(PersistentStorage::root(), Helper::application), QSettings::IniFormat);
+#else
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+#endif
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
 #endif
@@ -757,8 +972,8 @@ bool Utilities::isValueLiteralConstant(QString value)
    * Issue #11840. Allow setting array of values.
    * The following regular expression allows decimal values and array of decimal values. The values can be negative.
    */
-  QRegExp rx("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?");
-  return rx.exactMatch(value);
+  QRegularExpression rx(QRegularExpression::anchoredPattern("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?"));
+  return rx.match(value).hasMatch();
 }
 
 /*!
@@ -771,8 +986,8 @@ bool Utilities::isValueScalarLiteralConstant(QString value)
   /* Issue #13636
    * Check if value is scalar and literal constant.
    */
-  QRegExp rx("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?");
-  return rx.exactMatch(value);
+  QRegularExpression rx(QRegularExpression::anchoredPattern("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?"));
+  return rx.match(value).hasMatch();
 }
 
 /*!
@@ -952,7 +1167,9 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
 qint64 Utilities::getProcessId(QProcess *pProcess)
 {
   qint64 processId = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+#if !QT_CONFIG(process)
+  Q_UNUSED(pProcess); /* no QProcess on wasm */
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
   processId = pProcess->processId();
 #else /* Qt4 */
 #if defined(_WIN32)
@@ -1150,10 +1367,10 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
     return false;
   }
   QString textToMatch = text.mid(index, keyword.length());
-  QRegExp keywordRegExp("\\b" + keyword + "\\b");
-  if (keywordRegExp.indexIn(textToMatch) != -1 && (index + keyword.length() == text.length() ||
-                                                   text[index + keyword.length()].isSpace() ||
-                                                   (checkParenthesis && text[index + keyword.length()] == '('))) {
+  QRegularExpression keywordRegExp("\\b" + keyword + "\\b");
+  if (keywordRegExp.match(textToMatch).hasMatch() && (index + keyword.length() == text.length() ||
+                                                      text[index + keyword.length()].isSpace() ||
+                                                      (checkParenthesis && text[index + keyword.length()] == '('))) {
     return true;
   }
   return false;

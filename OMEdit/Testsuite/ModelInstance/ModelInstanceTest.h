@@ -85,6 +85,18 @@ private slots:
    * legacy JSON-string + QJsonDocument::fromJson path.
    */
   void referencePathEquivalence();
+  /*!
+   * \brief modifiertoString
+   * Tests if the modifier is converted to string correctly.
+   */
+  void modifiertoString();
+  void modifiertoString_data();
+  /*!
+   * \brief subModifiertoString
+   * Tests if the sub-modifier is converted to string correctly.
+   */
+  void subModifiertoString();
+  void subModifiertoString_data();
   void cleanupTestCase();
 };
 

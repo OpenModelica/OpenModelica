@@ -1104,6 +1104,7 @@ algorithm
       list<DAE.Exp> eLst;
       Boolean bool;
       DAE.Else elseBranch;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
       case DAE.STMT_ASSIGN(t,e1,e,source)
         algorithm
           (outCache,e1) := prefixExpWork(outCache,env,inIH,e1,p);
@@ -1128,11 +1129,11 @@ algorithm
           outStmts := elem::outStmts;
         then ();
 
-      case DAE.STMT_FOR(t,bool,id,e,sList,source)
+      case DAE.STMT_FOR(t,bool,id,e,sList,source,sub_iters)
         algorithm
           (outCache,e) := prefixExpWork(outCache,env,inIH,e,p);
           (outCache,sList) := prefixStatements(outCache,env,inIH,sList,p);
-          elem := DAE.STMT_FOR(t,bool,id,e,sList,source);
+          elem := DAE.STMT_FOR(t,bool,id,e,sList,source,sub_iters);
           outStmts := elem::outStmts;
         then ();
 

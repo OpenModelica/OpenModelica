@@ -84,6 +84,11 @@ protected import System; // stringReal
 protected import Types;
 protected import Util;
 
+public constant Integer MAX_SUM_CHAIN = 32
+  "Longer sums are balanced. Shorter ones keep the chain, whose association
+   fixes the summation rounding and is read by the tearing and alias
+   heuristics. NFSimplifyExp.MAX_CHAIN_TERMS is the same limit for MULTARY.";
+
 /***************************************************/
 /* transform to other types */
 /***************************************************/
@@ -2416,34 +2421,6 @@ algorithm
   end if;
 end getAllCrefs2;
 
-public function getAllCrefsExpanded "author: ptaeuber
-  This function extracts all crefs from the input expression (except 'time') and expands arrays and records."
-  input DAE.Exp inExp;
-  output list<DAE.ComponentRef> outCrefs;
-algorithm
-  (_, outCrefs) := traverseExpBottomUp(inExp, getAllCrefsExpanded2, {});
-end getAllCrefsExpanded;
-
-protected function getAllCrefsExpanded2
-   input DAE.Exp inExp;
-   input list<DAE.ComponentRef> inCrefList;
-   output DAE.Exp outExp = inExp;
-   output list<DAE.ComponentRef> outCrefList = inCrefList;
-protected
-  DAE.ComponentRef cr;
-  list<DAE.ComponentRef> crlst;
-algorithm
-  if isCref(inExp) then
-    DAE.CREF(componentRef=cr) := inExp;
-    crlst := ComponentReference.expandCref(cr, true);
-    for c in crlst loop
-      if not ComponentReferenceBasics.crefEqual(c, DAE.crefTime) and not listMember(c, inCrefList) then
-        outCrefList := c::outCrefList;
-      end if;
-    end for;
-  end if;
-end getAllCrefsExpanded2;
-
 public function allTerms
 "similar to terms, but also performs expansion of
  multiplications to reveal more terms, like for instance:
@@ -3811,95 +3788,102 @@ algorithm
 end makeSum1;
 
 protected function makeSumWork
-"Takes a list of expressions an makes a sum
-  expression adding all elements in the list."
+"Takes a list of expressions an makes a sum expression adding all elements in
+  the list. Zero terms are dropped."
   input list<DAE.Exp> inExpLst;
   input Boolean simplify = false;
   output DAE.Exp outExp;
-
 protected
-  Type tp;
-  list<DAE.Exp> rest;
-  DAE.Exp eLst;
-  DAE.Operator op;
-
+  list<DAE.Exp> terms, rest;
 algorithm
-  eLst :: rest := inExpLst;
-  tp := typeof(eLst);
-  op := if DAEUtil.expTypeArray(tp) then DAE.ADD_ARR(tp) else DAE.ADD(tp);
+  terms := list(e for e guard(not isZero(e)) in inExpLst);
 
-  outExp := eLst;
-  for elem in rest loop
-    outExp := if isZero(elem) then outExp elseif isZero(outExp) then elem elseif simplify then ExpressionSimplify.simplify1(DAE.BINARY(outExp, op, elem)) else DAE.BINARY(outExp, op, elem);
-  end for;
+  if listEmpty(terms) then
+    outExp := listHead(inExpLst);
+  elseif listLength(terms) > MAX_SUM_CHAIN then
+    outExp := balancedSum(terms, simplify);
+  else
+    outExp :: rest := terms;
 
+    for e in rest loop
+      outExp := DAE.BINARY(outExp, addOperator(outExp, e), e);
+
+      if simplify then
+        outExp := ExpressionSimplify.simplify1(outExp);
+      end if;
+    end for;
+  end if;
 end makeSumWork;
 
 public function makeSum
-"Takes a list of expressions an makes a sum
-  expression adding all elements in the list."
+"Takes a list of expressions an makes a sum expression adding all elements in
+  the list. Zero terms are dropped."
   input list<DAE.Exp> inExpLst;
   output DAE.Exp outExp;
+protected
+  list<DAE.Exp> terms;
 algorithm
-  outExp:=
-  matchcontinue inExpLst
-    local
-      DAE.Exp e1,e2,res;
-      Boolean b1;
-      Type tp;
-      list<DAE.Exp> rest,lst;
-      list<String> explst;
-      String str;
-      Operator op;
-      Boolean b;
-    case {} then DAE.RCONST(0.0);
-    case {e1} then e1;
-    case {e1, e2}
-      algorithm
-        true := isZero(e1);
-      then e2;
-    case {e1, e2}
-      algorithm
-        true := isZero(e2);
-      then e1;
-    case {e1, e2}
-      algorithm
-        tp := typeof(e1) "Take type info from e1, ok since type checking already performed." ;
-        b := DAEUtil.expTypeArray(tp);
-        op := if b then DAE.ADD_ARR(tp) else DAE.ADD(tp);
-      then DAE.BINARY(e1, op, e2);
-        //res = DAE.BINARY(e1, DAE.ADD(tp), e2);
-      //then res;
-    /*case ({e1,e2})
-      algorithm
-        b1 = isZero(e1);
-        tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
-        res = DAE.BINARY(e1,DAE.ADD(tp),e2);
-        res = if_(b1,e2,res);
-      then
-        res;*/
-    case e1 :: rest
-      algorithm
-        b1 := isZero(e1);
-        e2 := makeSum(rest);
-        tp := typeof(e2);
-        b := DAEUtil.expTypeArray(tp);
-        op := if b then DAE.ADD_ARR(tp) else DAE.ADD(tp);
-        res := DAE.BINARY(e1,op,e2);
-        res := if b1 then e2 else res;
-      then
-        res;
-    case lst
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("-Expression.makeSum failed, DAE.Exp lst:");
-        explst := List.map(lst, ExpressionBasics.printExpStr);
-        str := stringDelimitList(explst, ", ");
-        Debug.traceln(str);
-      then
-        fail();
-  end matchcontinue;
+  terms := list(e for e guard(not isZero(e)) in inExpLst);
+
+  if listEmpty(terms) then
+    outExp := if listEmpty(inExpLst) then DAE.RCONST(0.0) else List.last(inExpLst);
+  elseif listLength(terms) > MAX_SUM_CHAIN then
+    outExp := balancedSum(terms);
+  else
+    terms := listReverse(terms);
+    outExp :: terms := terms;
+
+    for e in terms loop
+      outExp := DAE.BINARY(e, addOperator(e, outExp), outExp);
+    end for;
+  end if;
 end makeSum;
+
+protected function addOperator
+  "The addition operator for two summands, array-valued if either of them is."
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Operator op;
+protected
+  Type tp = typeof(e1);
+algorithm
+  if not DAEUtil.expTypeArray(tp) then
+    tp := typeof(e2);
+  end if;
+
+  op := if DAEUtil.expTypeArray(tp) then DAE.ADD_ARR(tp) else DAE.ADD(tp);
+end addOperator;
+
+protected function balancedSum
+  "Adds the expressions pairwise, level by level, keeping their order. Used for
+  sums too long to leave as a chain, see MAX_SUM_CHAIN."
+  input list<DAE.Exp> inExpLst;
+  input Boolean simplify = false;
+  output DAE.Exp outExp;
+protected
+  list<DAE.Exp> level = inExpLst, next;
+  DAE.Exp e1, e2;
+algorithm
+  while not listEmpty(listRest(level)) loop
+    next := {};
+
+    while not listEmpty(level) loop
+      e1 :: level := level;
+
+      if listEmpty(level) then
+        next := e1 :: next;
+      else
+        e2 :: level := level;
+        outExp := DAE.BINARY(e1, addOperator(e1, e2), e2);
+        next := (if simplify then ExpressionSimplify.simplify1(outExp) else outExp) :: next;
+      end if;
+    end while;
+
+    level := MetaModelica.Dangerous.listReverseInPlace(next);
+  end while;
+
+  outExp := listHead(level);
+end balancedSum;
 
 public function expMul
 "author: PA
@@ -4776,6 +4760,48 @@ algorithm
     else (inExp,true,inTpl);
   end match;
 end replaceExpWork;
+
+public function replaceExpNoEvent
+"Like replaceExp, but does not descend into noEvent() or smooth() calls.
+ Relations inside such operators are evaluated continuously (without state
+ events), so replacing them by an (event-based, discrete) variable would
+ change the model semantics. Replacing a whole noEvent()/smooth() expression
+ is still possible, since the equality check happens before the descent stop."
+  input DAE.Exp inExp;
+  input DAE.Exp inSourceExp;
+  input DAE.Exp inTargetExp;
+  output DAE.Exp exp;
+  output Integer i;
+algorithm
+  (exp,(_,_,i)) := traverseExpTopDown(inExp,replaceExpWorkNoEvent,(inSourceExp,inTargetExp,0));
+end replaceExpNoEvent;
+
+protected function replaceExpWorkNoEvent
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp,DAE.Exp,Integer> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.Exp,DAE.Exp,Integer> otpl;
+algorithm
+  (outExp,cont,otpl) := match (inExp, inTpl)
+    local
+      DAE.Exp source,target;
+      Integer c;
+    case (_, (source,target,c))
+      guard ExpressionBasics.expEqual(inExp, source)
+      then (target,false,(source,target,c+1));
+
+    // do not replace inside noEvent()/smooth(): expressions there are
+    // continuous, substituting them by an event-based variable is unsound
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
+      then (inExp,false,inTpl);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
+      then (inExp,false,inTpl);
+
+    else (inExp,true,inTpl);
+  end match;
+end replaceExpWorkNoEvent;
 
 public function expressionCollector
    input DAE.Exp exp;
@@ -7871,6 +7897,30 @@ algorithm
     else false;
   end match;
 end isAtomic;
+
+public function isDeeperThan
+  "Whether the expression tree is deeper than inDepth levels."
+  input DAE.Exp inExp;
+  input Integer inDepth;
+  output Boolean outDeeper;
+algorithm
+  outDeeper := match inExp
+    case _ guard inDepth <= 0 then true;
+    case DAE.BINARY() then if isDeeperThan(inExp.exp1, inDepth - 1) then true
+                           else isDeeperThan(inExp.exp2, inDepth - 1);
+    case DAE.LBINARY() then if isDeeperThan(inExp.exp1, inDepth - 1) then true
+                            else isDeeperThan(inExp.exp2, inDepth - 1);
+    case DAE.RELATION() then if isDeeperThan(inExp.exp1, inDepth - 1) then true
+                             else isDeeperThan(inExp.exp2, inDepth - 1);
+    case DAE.IFEXP() then if isDeeperThan(inExp.expCond, inDepth - 1) then true
+                          elseif isDeeperThan(inExp.expThen, inDepth - 1) then true
+                          else isDeeperThan(inExp.expElse, inDepth - 1);
+    case DAE.UNARY() then isDeeperThan(inExp.exp, inDepth - 1);
+    case DAE.LUNARY() then isDeeperThan(inExp.exp, inDepth - 1);
+    case DAE.CAST() then isDeeperThan(inExp.exp, inDepth - 1);
+    else false;
+  end match;
+end isDeeperThan;
 
 public function isImpure "author: lochel
   Returns true if an expression contains an impure function call."

@@ -2,6 +2,7 @@
 // keywords: Builtin
 // status:   correct
 // cflags:   -g=MetaModelica -d=gen -d=-newInst
+// suite: metamodelica
 //
 // Builtin function testing
 //
@@ -29,7 +30,7 @@ getErrorString();
 // Result:
 // true
 //
-// "[metamodelica/meta/BuiltinList.mos:10:1-10:30:writable] Error: Could not solve the polymorphism in the function call to .listAppend
+// "[metamodelica/meta/BuiltinList.mos:11:1-11:30:writable] Error: Could not solve the polymorphism in the function call to .listAppend
 //   Input bindings:
 //     $A:
 //       #Real

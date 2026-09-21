@@ -3,6 +3,7 @@
 // status:   correct
 // cflags: -g=MetaModelica -d=gen -d=-newInst
 // teardown_command: rm -f MatchIfEquation1_*
+// suite: metamodelica
 //
 // Match Testing
 //

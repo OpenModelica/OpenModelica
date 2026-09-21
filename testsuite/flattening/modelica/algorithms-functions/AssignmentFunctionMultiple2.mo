@@ -1,6 +1,7 @@
 // name: AssignmentFunctionMultiple2
 // keywords: assignment, function
 // status: correct
+// suite: disabled
 //
 // Tests assignment to a function call with multiple outputs, omitting one of the outputs
 //

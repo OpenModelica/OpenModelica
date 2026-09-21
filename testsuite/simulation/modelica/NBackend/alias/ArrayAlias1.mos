@@ -28,7 +28,7 @@ simulate(ArrayAlias1); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[ARRY] (2) a = b ($RES_SIM_2)
+// 	[ARRY] (2) a = b; ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************

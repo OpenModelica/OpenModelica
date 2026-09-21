@@ -71,10 +71,10 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES) \
+	@$(TEST) -disabled $(FAILINGTESTFILES) \
 
 manualtest :
 	@echo
 	@echo Running manual tests...
 	@echo
-	@$(TEST) $(MANUALTESTFILES) \
+	@$(TEST) -disabled $(MANUALTESTFILES) \

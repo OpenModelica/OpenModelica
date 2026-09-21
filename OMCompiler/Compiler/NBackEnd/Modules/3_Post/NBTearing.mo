@@ -45,7 +45,7 @@ public
   import Module = NBModule;
   import Slice = NBSlice;
   import NBVariable.{VarSlice, VariablePointer, VariablePointers, VarData};
-  import NBEquation.{Equation, EqnSlice, EquationPointer, EquationPointers, EqData};
+  import NBEquation.{Equation, EqnSlice, EquationPointer, EquationPointers, EqData, EquationAttributes};
   import StrongComponent = NBStrongComponent;
 
 protected
@@ -61,6 +61,9 @@ protected
   import NFFunction.Function;
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
+  import Subscript = NFSubscript;
+  import Type = NFType;
+  import NFBackendExtension.{BackendInfo, VariableKind};
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -122,9 +125,9 @@ public
     input output String str;
   algorithm
     str := StringUtil.headline_4(str);
-    str := str + "### Iteration Variables:\n" + Slice.lstToString(set.iteration_vars, BVariable.pointerToString);
-    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = ""));
-    str := str + "\n### Inner Equations:\n" + Array.toString(set.innerEquations, function StrongComponent.toString(index = -1), "", "\t", "\n\t", "");
+    str := str + "### Iteration Variables:\n" + Slice.lstToString(set.iteration_vars, BVariable.pointerToString, "    ");
+    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = "    "));
+    str := str + "\n### Inner Equations:\n" + Array.toString(set.innerEquations, function StrongComponent.toString(index = -1), "", "    ", "\n  ", "");
     if isSome(set.jac) then
       str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS");
     end if;
@@ -190,10 +193,16 @@ public
           idx     = index,
           strict  = singleImplicit(comp.var, comp.eqn),
           casual  = NONE(),
-          linear  = false,
+          // a multi-dimensional var (e.g. matrix-coupled array equation like A*x=b with
+          // A a parameter matrix) can be genuinely linear even though it isn't solvable
+          // one scalar element at a time -- check like SLICED_COMPONENT does instead of
+          // always assuming nonlinear.
+          linear  = isLinearSlice(comp.eqn, ComponentRef.scalarize(BVariable.getVarName(comp.var), false), funcMap),
           mixed   = false,
           homotopy = Pointer.access(homotopy),
-          status  = NBSolve.Status.IMPLICIT);
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
@@ -205,7 +214,9 @@ public
           linear  = false,
           mixed   = false,
           homotopy = Pointer.access(homotopy),
-          status  = NBSolve.Status.IMPLICIT);
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
@@ -214,10 +225,31 @@ public
           idx     = index,
           strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),
           casual  = NONE(),
-          linear  = false,
+          linear  = isLinearSlice(Slice.getT(comp.eqn), ComponentRef.scalarize(comp.var_cref, false), funcMap),
           mixed   = false,
           homotopy = Pointer.access(homotopy),
-          status  = NBSolve.Status.IMPLICIT);
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
+        index := index + 1;
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+
+      // a component matched to a genuine partial array slice (comp.var/comp.eqn already
+      // carry the correct .indices) that could not be solved explicitly, e.g. a torn
+      // matrix-shaped subsystem for i_s[{1, 2}]. Same treatment as
+      // SINGLE_COMPONENT/RESIZABLE_COMPONENT, keeping the slice instead of wrapping a
+      // whole variable/equation. Was previously missing, falling through to "do nothing".
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        new_comp := StrongComponent.ALGEBRAIC_LOOP(
+          idx     = index,
+          strict  = slicedImplicit(comp.var, comp.eqn),
+          casual  = NONE(),
+          linear  = isLinearSlice(Slice.getT(comp.eqn), ComponentRef.scalarize(comp.var_cref, false), funcMap),
+          mixed   = false,
+          homotopy = Pointer.access(homotopy),
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       // do nothing otherwise
@@ -234,6 +266,128 @@ public
       innerEquations  = listArray({}),
       jac             = NONE());
   end singleImplicit;
+
+  function slicedImplicit
+    "same as singleImplicit, but var already carries the correct .indices (see the
+    SLICED_COMPONENT case in implicit()) and must not be re-wrapped as a whole slice.
+    eqn is expanded to one residual_eqns entry per scalar row (see scalarSlices):
+    NBJacobian.compJacobian pulls one residual variable per residual_eqns entry
+    (Equation.getResidualVar), so a single entry covering all rows of a multi-row
+    array equation undercounts the residual side against a per-element iteration_vars
+    seed list, producing an empty/mismatched Jacobian sparsity pattern."
+    input Slice<VariablePointer> var;
+    input Slice<EquationPointer> eqn;
+    output NBTearing tearingSet = Tearing.TEARING_SET(
+      iteration_vars  = {var},
+      residual_eqns   = scalarSlices(eqn),
+      innerEquations  = listArray({}),
+      jac             = NONE());
+  end slicedImplicit;
+
+  function scalarSlices
+    "expands a (possibly whole, .indices={}) equation slice into one Slice entry per
+    scalar row, each wrapping its OWN, newly created scalar residual equation with a
+    distinct residual variable -- NOT just the same underlying equation pointer
+    re-sliced. Equations are keyed by their residual variable's name throughout this
+    codebase (Equation.getEqnName/getResidualVar), which is a whole-variable property
+    like everything else keyed that way here; multiple slices of one multi-row array
+    equation would all resolve back to the SAME residual variable and collapse to one
+    entry in any name-keyed collection built from them (e.g. EquationPointers.fromList
+    in NBJacobian.jacobianNumeric's adjacency-matrix build), silently undercounting
+    rows and producing an empty/wrong Jacobian sparsity pattern."
+    input Slice<EquationPointer> eqn;
+    output list<Slice<EquationPointer>> slices;
+  protected
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn);
+    Equation e = Pointer.access(eqn_ptr);
+    list<Integer> indices = eqn.indices;
+    ComponentRef base_cref;
+    Expression residual;
+    Type elem_ty;
+    EquationAttributes attr;
+    list<Subscript> subs;
+    ComponentRef row_cref;
+    Pointer<Variable> row_var;
+    Variable row_var_data;
+    Expression row_residual;
+    Equation row_eqn;
+    Boolean is_for;
+  algorithm
+    if listEmpty(indices) then
+      indices := list(i for i in 0:(Equation.size(eqn_ptr) - 1));
+    end if;
+    if List.hasOneElement(indices) and Equation.size(eqn_ptr) == 1 then
+      // already scalar: no row-collapse risk. A single row of a bigger array
+      // equation still has the residual variable of the whole array.
+      slices := {eqn};
+    else
+      base_cref := Equation.getEqnName(eqn_ptr);
+      is_for    := Equation.isArrayBodyFor(e);
+      residual  := if is_for then Expression.EMPTY(Type.UNKNOWN()) else Equation.getResidualExp(e);
+      elem_ty   := Type.arrayElementType(Expression.typeOf(residual));
+      attr      := Equation.getAttributes(e);
+      attr.residual := true;
+      slices := {};
+      for i in indices loop
+        if is_for then
+          row_residual := Equation.forArrayBodyRowResidual(e, i);
+          elem_ty      := Type.arrayElementType(Expression.typeOf(row_residual));
+        else
+          subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
+          row_residual := Expression.applySubscripts(subs, residual);
+        end if;
+        (row_var, row_cref) := BVariable.makeAuxVar(ComponentRef.toString(base_cref), i, elem_ty, false);
+        // makeAuxVar tags the new var with a plain VariableKind derived from its type;
+        // it must instead be marked RESIDUAL_VAR like any other residual variable, or
+        // downstream Jacobian construction (NBJacobian.getTmpFilterFunction's
+        // BVariable.isResidual check for LS/NLS/DAE) won't recognize it as a result row
+        // and the Jacobian's sparsity pattern will come out empty for this equation.
+        row_var_data := Pointer.access(row_var);
+        row_var_data.backendinfo := BackendInfo.setVarKind(row_var_data.backendinfo, VariableKind.RESIDUAL_VAR());
+        Pointer.update(row_var, row_var_data);
+        attr.residualVar := SOME(row_var);
+        row_eqn := Equation.SCALAR_EQUATION(elem_ty, Expression.fromCref(row_cref), row_residual, Equation.getSource(e), attr);
+        slices := Slice.SLICE(Pointer.create(row_eqn), {}) :: slices;
+      end for;
+      slices := listReverse(slices);
+    end if;
+  end scalarSlices;
+
+  function isLinearSlice
+    "local, differentiation-based linearity check for a single equation against a
+    list of crefs, for use where no adjacency-matrix solvability info is available
+    (see checkLinearity for the normal, matrix-based version). Linear iff no
+    partial derivative w.r.t. one of the crefs still contains any of them --
+    catches both self- (x^2) and cross- (x*y) nonlinearity."
+    input Pointer<Equation> eqn_ptr;
+    input list<ComponentRef> crefs;
+    input UnorderedMap<Path, Function> funcMap;
+    output Boolean linear = true;
+  protected
+    Option<Expression> residual_opt = Equation.tryGetResidualExp(eqn_ptr);
+    Expression residual;
+    Differentiate.DifferentiationArguments diffArgs;
+    Expression derivative;
+  algorithm
+    if isSome(residual_opt) then
+      SOME(residual) := residual_opt;
+      for cref in crefs loop
+        diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
+        (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+        for other in crefs loop
+          if Expression.containsCref(derivative, other) then
+            linear := false;
+          end if;
+        end for;
+      end for;
+    else
+      // no residual could be constructed at all (e.g. a record type such as a
+      // Medium's ThermodynamicState with no '+'/'-'/'0' operators, see
+      // Equation.getResidualExp) -- can't check, so assume the conservative
+      // (nonlinear) default instead of crashing the whole compilation.
+      linear := false;
+    end if;
+  end isLinearSlice;
 
   function getModule
     "Returns the module function that was chosen by the user."
@@ -334,43 +488,60 @@ protected
     b := true;
   end noFilterEqn;
 
+  function tolerantSubMap
+    "Like UnorderedMap.subMap, but silently skips keys that don't exist in
+     map instead of crashing (UnorderedMap.subMap uses getSafe)."
+    input UnorderedMap<ComponentRef, Integer> map;
+    input list<ComponentRef> lst;
+    output UnorderedMap<ComponentRef, Integer> sub_map =
+      UnorderedMap.subMap(map, list(k for k guard UnorderedMap.contains(k, map) in lst));
+  end tolerantSubMap;
+
   function initialize
     extends Module.tearingInterface;
     input checkVarInit varFunc = noFilterVar;
     input BEquation.checkEqn eqnFunc = noFilterEqn;
+    // varFunc/eqnFunc kept for API compatibility with getModule()'s partial applications,
+    // but no longer consulted below (see comment further down).
     partial function checkVarInit extends BVariable.checkVar;
       input Boolean init;
     end checkVarInit;
   protected
     Tearing strict;
-    list<ComponentRef> vars_lst, eqns_lst;
-    UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
-    UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
-    constant Boolean init = Partition.kindIsInitial(kind);
+    list<ComponentRef> all_vars_lst, all_eqns_lst;
+    UnorderedSet<ComponentRef> vars_set        "all loop vars, used by refine to detect self-referential (nonlinear) dependencies";
+    UnorderedMap<ComponentRef, Integer> v_all, e_all "unfiltered loop vars/equations map";
   algorithm
     (comp, full, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         index := index + 1;
         comp.idx := index;
 
-        // filter variables and equations appropriately
-        vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard varFunc(Slice.getT(var), init) in strict.iteration_vars);
-        eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard eqnFunc(Slice.getT(eqn)) in strict.residual_eqns);
-
-        // the set of all loop variables used to determine solvability
-        vars_set := UnorderedSet.fromList(vars_lst, ComponentRef.hash, ComponentRef.isEqual);
-
-        // the sets of variables and equations
-        v := UnorderedMap.subMap(variables.map, vars_lst);
-        e := UnorderedMap.subMap(equations.map, eqns_lst);
+        // refine and checkLinearity both need the loop's full, unfiltered var/eqn set --
+        // varFunc/eqnFunc's filtered one is often EMPTY for a purely continuous loop,
+        // which silently misclassified such loops as linear (see #16463). Tolerant
+        // lookup: not every name here is necessarily registered in variables.map/
+        // equations.map yet.
+        all_vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
+        all_eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        vars_set := UnorderedSet.fromList(all_vars_lst, ComponentRef.hash, ComponentRef.isEqual);
+        v_all := tolerantSubMap(variables.map, all_vars_lst);
+        e_all := tolerantSubMap(equations.map, all_eqns_lst);
 
         // refine the adjacency matrix by updating solvability information
-        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, Partition.kindIsInitial(kind));
-        comp.linear := checkLinearity(full, v, e);
+        full := Adjacency.Matrix.refine(full, funcMap, v_all, e_all, variables, equations, vars_set, Partition.kindIsInitial(kind));
+
+        comp.linear := checkLinearity(full, v_all, e_all);
       then (comp, full, index);
       else (comp, full, index);
     end match;
   end initialize;
+
+  function isPartialArraySlice
+    input Slice<EquationPointer> eqn;
+    output Boolean b = not listEmpty(eqn.indices) and (Equation.isArrayEquation(Slice.getT(eqn)) or Equation.isArrayBodyFor(Pointer.access(Slice.getT(eqn))))
+                       and Equation.size(Slice.getT(eqn)) > listLength(eqn.indices);
+  end isPartialArraySlice;
 
   function finalize extends Module.tearingInterface;
   protected
@@ -383,8 +554,9 @@ protected
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
-        // create residual equations
-        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false)) for eqn in List.flatten(acc));
+        // create residual equations, a part of an array equation needs residual variables for its rows only
+        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false))
+          for eqn in List.flatten(list(if isPartialArraySlice(eqn) then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -398,15 +570,16 @@ protected
   function minimal extends Module.tearingInterface;
     // only extracts discrete variables to be solved as inner equations
   protected
-    Tearing strict;
-    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars;
-    list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
+    Tearing strict, innerStrict;
+    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
+    list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
     Integer num_vars, num_eqns;
-    list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
-    Adjacency.Matrix adj;
+    list<Slice<VariablePointer>> iteration_vars = {};
+    Adjacency.Matrix adj, sub;
     Matching matching;
     list<StrongComponent> inner_comps;
-    UnorderedMap<ComponentRef, Integer> v, e;
+    VariablePointers disc_variables;
+    EquationPointers disc_equations;
     UnorderedSet<ComponentRef> matched_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     comp := match comp
@@ -416,47 +589,66 @@ protected
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
         (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, Partition.kindIsInitial(kind));
         (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
+        // extract continuous algorithm equations; they have implied inner variables and cannot be residuals
+        (alg_eqns, cont_eqns) := List.splitOnTrue(cont_eqns, Equation.isAlgorithm);
 
-        // get the implied vars by algorithms and tuples
-        implied_vars := List.flatten(list(getImpliedInnerVars(eqn) for eqn in disc_eqns));
+        // get the implied vars by algorithms and tuples (from both alg_eqns and disc_eqns)
+        implied_vars := List.flatten(list(getImpliedInnerVars(eqn) for eqn in listAppend(alg_eqns, disc_eqns)));
         disc_vars := UnorderedSet.unique_list(listAppend(disc_vars, implied_vars), BVariable.hash, BVariable.equalName);
         cont_vars := UnorderedSet.difference_list(cont_vars, implied_vars, BVariable.hash, BVariable.equalName);
 
         num_vars := sum(BVariable.size(var) for var in disc_vars);
-        num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
+        num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns) + sum(Equation.size(eqn) for eqn in alg_eqns);
 
-        // do nothing if there are no discrete equations
-        if not listEmpty(disc_eqns) then
+        // do nothing if there are no discrete or algorithm equations
+        if not (listEmpty(disc_eqns) and listEmpty(alg_eqns)) then
           comp.mixed := true;
+          inner_comps := {};
 
-          // the sets of discrete variables and discrete equations
-          v := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
-          e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
-
-          // match the discretes to create inner components
-          adj         := Adjacency.Matrix.fullToFinal(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
-          matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
-
-          // get matched vars and remove them from the iteration variable list
-          (matched_vars, _, _, _) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(adj), variables, equations);
-          // build the matched variables set
-          for var in matched_vars loop
-            UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
+          // algorithm equations: create MULTI_COMPONENTs directly with ALL outputs as inner variables
+          // (they cannot be residuals and have multiple outputs, so standard 1:1 matching is wrong)
+          for alg_eqn in alg_eqns loop
+            alg_implied := getImpliedInnerVars(alg_eqn);
+            for var in alg_implied loop
+              UnorderedSet.add(BVariable.getVarName(var), matched_set);
+            end for;
+            inner_comps := StrongComponent.MULTI_COMPONENT(
+              list(Slice.SLICE(var, {}) for var in alg_implied),
+              Slice.SLICE(alg_eqn, {}),
+              NBSolve.Status.UNPROCESSED
+            ) :: inner_comps;
           end for;
 
-          // only take variables that are not in the set
+          if not listEmpty(disc_eqns) then
+            // local system of the discrete variables and equations, in the order of the full system
+            disc_vars := sortByIndex(list(var for var guard(not UnorderedSet.contains(BVariable.getVarName(var), matched_set)) in disc_vars), BVariable.getVarName, variables.map);
+            disc_eqns := sortByIndex(disc_eqns, Equation.getEqnName, equations.map);
+            disc_variables := VariablePointers.fromList(disc_vars);
+            disc_equations := EquationPointers.fromList(disc_eqns);
+            sub := Adjacency.Matrix.subFull(full, list(UnorderedMap.getSafe(Equation.getEqnName(eqn), equations.map, sourceInfo()) for eqn in disc_eqns), disc_equations, disc_variables);
+
+            // match the discretes to create inner components
+            adj         := Adjacency.Matrix.fullToFinal(sub, disc_variables.map, disc_equations.map, disc_equations, NBAdjacency.MatrixStrictness.MATCHING);
+            matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
+
+            // build the matched variables set
+            for var in Matching.getMatchedVars(matching, Adjacency.Matrix.getMappingOpt(adj), disc_variables.map, disc_variables) loop
+              UnorderedSet.add(BVariable.getVarName(var), matched_set);
+            end for;
+
+            // upgrade adjacency matrix and sort the system creating inner equation components
+            adj         := Adjacency.Matrix.upgrade(adj, sub, disc_variables.map, disc_equations.map, disc_equations, NBAdjacency.MatrixStrictness.SORTING);
+            inner_comps := listAppend(Sorting.tarjan(adj, matching, disc_variables, disc_equations), inner_comps);
+          end if;
+
+          // only take variables that are not in the matched set
           for var in strict.iteration_vars loop
             if not UnorderedSet.contains(BVariable.getVarName(Slice.getT(var)), matched_set) then
               iteration_vars := var :: iteration_vars;
             end if;
           end for;
 
-          // upgrade adjacency matrix and sort the system creating inner equation components
-          adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
-          inner_comps := Sorting.tarjan(adj, matching, variables, equations); // probably need other variables and equations here?
           strict.innerEquations := listArray(inner_comps);
-
-          // create residuals equations and iteration variables
           strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
           strict.iteration_vars := listReverse(iteration_vars);
           comp.strict := strict;
@@ -465,6 +657,23 @@ protected
       else comp;
     end match;
   end minimal;
+
+  function sortByIndex<T>
+    "sorts the elements by their index in the map"
+    input list<T> lst;
+    input getName func;
+    input UnorderedMap<ComponentRef, Integer> map;
+    output list<T> sorted;
+    partial function getName
+      input T t;
+      output ComponentRef name;
+    end getName;
+  protected
+    list<tuple<Integer, T>> indexed = list((UnorderedMap.getSafe(func(t), map, sourceInfo()), t) for t in lst);
+  algorithm
+    indexed := List.sort(indexed, function Util.compareTupleIntGt());
+    sorted := list(Util.tuple22(tpl) for tpl in indexed);
+  end sortByIndex;
 
   function guru extends Module.tearingInterface;
   protected
@@ -499,7 +708,7 @@ protected
           failed_vars := list(var for var guard(Slice.check(var, function NBVariable.isDiscontinuous(staticAsContinuous = staticAsContinuous))) in guru_vars);
           if not listEmpty(failed_vars) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables cannot be chosen as iteration variables because they are discontinuous:\n"
-              + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
+              + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB)});
             fail();
           end if;
 
@@ -575,7 +784,7 @@ protected
             // if not variable could be assigned in a full circle of checking all equations the problem is impossible to solve
             if not var_assigned then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables could not be solved as inner variables:\n"
-                + List.toString(UnorderedMap.valueList(unsolved_inner_vars), function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
+                + List.toString(UnorderedMap.valueList(unsolved_inner_vars), function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB)});
               fail();
             end if;
           end while;
@@ -686,8 +895,9 @@ protected
         Algorithm alg;
         Expression tpl;
 
-      case Equation.ALGORITHM(alg = alg)
-      then list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);
+      case Equation.ALGORITHM(alg = alg) algorithm
+        vars := list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);
+      then vars;
 
       case Equation.RECORD_EQUATION(lhs = tpl as Expression.TUPLE()) algorithm
       then list(BVariable.getVarPointer(tpl_cr, sourceInfo()) for tpl_cr in UnorderedSet.toList(Expression.extractCrefs(tpl)));

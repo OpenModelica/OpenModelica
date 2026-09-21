@@ -1,6 +1,7 @@
 // name: DuplicateElements8
 // keywords:
 // status: correct
+// suite: disabled
 //
 //
 

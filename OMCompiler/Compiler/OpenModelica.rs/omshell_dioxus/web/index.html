@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>OMShell (dioxus)</title>
+  <style>
+    html, body, #main { height: 100%; margin: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <div id="main"></div>
+  <!--
+    cmake-driven launcher (no dx). Only this GUI's wasm (./OMShell-dioxus/) loads
+    here; the omc compiler module (./omc/) is instantiated off the UI thread by
+    omc_worker.js, which the GUI spawns as a Web Worker. So a running command
+    never blocks the page.
+  -->
+  <script type="module">
+    import guiInit from './OMShell-dioxus/OMShell-dioxus.js';
+
+    guiInit().catch((e) => {
+      document.body.innerHTML = '<pre style="color:#f48771">Startup error: ' + e + '</pre>';
+    });
+  </script>
+</body>
+</html>

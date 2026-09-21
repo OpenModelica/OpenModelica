@@ -4,7 +4,9 @@ TEST = ../rtest -v
 # Tests to run.
 TESTFILES = \
 
-# test that currently fail. Move up when fixed. 
+# test that currently fail. Move up when fixed.
+# Each of them also needs a '// suite: disabled' line in its header, or rtest
+# runs it as if it were part of the testsuite.
 FAILINGTESTFILES= \
 
 # Dependency files that are not .mo .mos or Makefile

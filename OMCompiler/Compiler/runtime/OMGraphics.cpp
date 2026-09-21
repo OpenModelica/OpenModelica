@@ -838,12 +838,24 @@ const Json *findIconObject(const Json &root)
 
 } // namespace
 
-Icon iconFromJson(const Json &root)
+/* A class's Icon layer is its base classes' unioned with its own, the base
+ * classes' drawn first (behind); most of MSL draws its icon that way. Bounded
+ * depth so a malformed instance cannot recurse forever. */
+static void collectIcon(const Json &root, Icon &icon, int depth)
 {
-  Icon icon;
-  const Json *iconObj = findIconObject(root);
-  if (!iconObj) return icon;
+  if (depth > 32) return;
+  const Json &els = root.get("elements");
+  if (els.isArray()) {
+    for (size_t i = 0; i < els.size(); ++i) {
+      const Json &e = els.at(i);
+      if (e.get("$kind").asString() == "extends") collectIcon(e.get("baseClass"), icon, depth + 1);
+    }
+  }
 
+  const Json *iconObj = findIconObject(root);
+  if (!iconObj) return;
+
+  /* The most derived declaration wins for the coordinate system. */
   const Json &cs = iconObj->get("coordinateSystem");
   if (cs.isObject()) {
     const Json &ext = cs.get("extent");
@@ -865,6 +877,12 @@ Icon iconFromJson(const Json &root)
       if (parseShape(name, elements, s)) icon.graphics.push_back(s);
     }
   }
+}
+
+Icon iconFromJson(const Json &root)
+{
+  Icon icon;
+  collectIcon(root, icon, 0);
   return icon;
 }
 

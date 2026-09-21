@@ -37,7 +37,7 @@ QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
 
 LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
   -L$$(OMBUILDDIR)/lib/omc -L$$(OMBUILDDIR)/../OMParser/install/lib -Wl,-Bstatic -lOMParser -lantlr4-runtime -Wl,-Bdynamic -lomantlr3 -lOMPlot -lomqwt -lomopcua -lzmq \
-  -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread -lshlwapi -lws2_32 -lgdi32 -lsimdjson \
+  -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread -lshlwapi -lws2_32 -lgdi32 -lcrypt32 -lsimdjson \
   -L$$(OMBUILDDIR)/bin -lOMSimulator
 
 # libbdf links differently on newer MSYS2, e.g. when using UCRT64
@@ -57,11 +57,11 @@ CONFIG(release, debug|release) { # release
   # -s will remove all symbol table and relocation information from the executable.
   QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
   QMAKE_LFLAGS_RELEASE =
-  OSG_LIBS = -limagehlp $$BFD_LIBS -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll -lOpengl32
+  GL_LIBS = -limagehlp $$BFD_LIBS -lOpengl32
 } else { # debug
   LIBS += -L$$(MSYSTEM_PREFIX)/bin
-  OSG_LIBS = -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll -lOpengl32
+  GL_LIBS = -lOpengl32
 }
 
 LIBS += -L$$BFD_PATH -L$$(MSYSTEM_PREFIX)/bin
-LIBS += $$OSG_LIBS
+LIBS += $$GL_LIBS

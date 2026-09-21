@@ -1,0 +1,62 @@
+// name: TestAlgorithmSection
+// keywords: inStream, algorithm section, stream connector
+// status: correct
+// teardown_command: rm -rf TestAlgSect* Top_* Top.c Top.o Top.exe Top.log Top Top.libs Top.makefile Top_records.c output.log
+//
+// NFFlatten.evaluateConnectionOperators used to skip algorithm sections, so an
+// inStream() written in one survived flattening and reached code generation. The
+// C target emitted a call to a function that does not exist ("call to undeclared
+// function 'inStream'"); wasm-jit reported it as an unsupported builtin.
+
+loadString("
+connector FP
+  Real p;
+  flow Real m_flow;
+  stream Real rho;
+end FP;
+
+model Sink
+  FP port;
+  Real v;
+algorithm
+  v := port.m_flow * inStream(port.rho);
+equation
+  port.p = 1e5;
+  port.rho = 1.2;
+end Sink;
+
+model Src
+  FP port;
+equation
+  port.rho = 1.0;
+  port.m_flow = -0.5;
+end Src;
+
+model Top
+  Sink s;
+  Src r;
+equation
+  connect(r.port, s.port);
+end Top;
+"); getErrorString();
+
+simulate(Top, stopTime=1.0, numberOfIntervals=2); getErrorString();
+
+// inStream() of the only other connector in the set is that connector's value:
+// flow enters s, so inStream(s.port.rho) is r.port.rho = 1.0, and the algorithm
+// computes s.port.m_flow * 1.0 = 0.5.
+val(s.v, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Top_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Top', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// endResult

@@ -174,7 +174,7 @@ namespace
         , m_pending( false )
         , m_value( 0 )
     {
-        QRectF r = rect; 
+        QRectF r = rect;
         if ( !m_vertical )
             r.setSize( QSizeF( r.height(), r.width() ) );
 

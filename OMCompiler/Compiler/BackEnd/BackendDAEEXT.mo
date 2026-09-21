@@ -217,6 +217,17 @@ public function setAdjacencyMatrix "author: Frenkel TUD 2012-04"
   external "C" BackendDAEEXT_setAdjacencyMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
 end setAdjacencyMatrix;
 
+public function setAdjacencyMatrixFlat "the adjacency matrix with each row stored as a slice of one flat buffer"
+  input Integer nv;
+  input Integer ne;
+  input Integer nz;
+  input array<Integer> start  "row -> 1-based index of its first entry in data";
+  input array<Integer> len    "row -> number of entries";
+  input array<Integer> data;
+
+  external "C" BackendDAEEXT_setAdjacencyMatrixFlat(nv,ne,nz,start,len,data) annotation(Library = "omcruntime");
+end setAdjacencyMatrixFlat;
+
 /* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function cheapmatching
 "author: Frenkel TUD 2012-04

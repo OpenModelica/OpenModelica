@@ -3,7 +3,7 @@
 // status:              correct
 // teardown_command:    rm -f TestSpatialDiscretization.Test2*
 //
-// Mmoble with spatialDistribution with changing velocity.
+// Model with spatialDistribution with changing velocity.
 
 loadModel(Modelica); getErrorString();
 loadFile("TestSpatialDiscretization.mo"); getErrorString();

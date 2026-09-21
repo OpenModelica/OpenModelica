@@ -216,6 +216,12 @@ package builtin
     output Real z;
   end realDiv;
 
+  function realSub
+    input Real x;
+    input Real y;
+    output Real z;
+  end realSub;
+
   function stringLength
     input String str;
     output Integer length;
@@ -440,6 +446,33 @@ package SimCode
   type SparsityPattern = list<tuple<Integer, list<Integer>>>;
   type NonlinearPattern = SparsityPattern;
 
+
+  uniontype Dependency
+    record DEPENDENCY
+      array<list<Integer>> skips;
+      list<Boolean> kinds "true = reduced, false = regular";
+    end DEPENDENCY;
+  end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name;
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+  uniontype Sparsity
+    record SPARSITY
+      list<SparsityRow> rows;
+    end SPARSITY;
+
+    record EMPTY
+    end EMPTY;
+  end Sparsity;
+
+
   uniontype JacobianColumn
     record JAC_COLUMN
       list<SimEqSystem> columnEqns;
@@ -454,6 +487,7 @@ package SimCode
       list<JacobianColumn> columns;
       list<SimCodeVar.SimVar> seedVars;
       String matrixName;
+      Sparsity sparsityMatrix;
       SparsityPattern sparsity;
       SparsityPattern sparsityT;
       NonlinearPattern nonlinear;
@@ -466,6 +500,9 @@ package SimCode
       list<SimGenericCall> generic_loop_calls;
       Option<HashTableCrefSimVar.HashTable> crefsHT;
       Boolean isAdjoint;
+      Boolean isBidirectional;
+      Integer adjointJacobianIndex;
+      String adjointMatrixName;
     end JAC_MATRIX;
   end JacobianMatrix;
 
@@ -573,6 +610,7 @@ package SimCode
       DAE.Exp initPnts      "initial grid points";
       DAE.Exp initVals      "initial grid values";
       Integer initSize      "number of initial points";
+      Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
     end SPATIAL_DISTRIBUTION;
   end SpatialDistribution;
 
@@ -629,7 +667,7 @@ package SimCode
     record SES_FOR_RESIDUAL
       Integer index;
       Integer res_index;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+      list<BackendDAE.SimIterator> iterators;
       DAE.Exp exp;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
@@ -639,7 +677,7 @@ package SimCode
       Integer index;
       Integer res_index;
       list<Integer> scal_indices;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+      list<BackendDAE.SimIterator> iterators;
       DAE.Exp exp;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
@@ -1026,6 +1064,14 @@ package SimCode
     end FMIINITIALUNKNOWNS;
   end FmiInitialUnknowns;
 
+  uniontype FmiArray
+    record FMIARRAY
+      DAE.ComponentRef first;
+      Integer fmiIndex;
+      Integer numElements;
+    end FMIARRAY;
+  end FmiArray;
+
   uniontype FmiModelStructure
     record FMIMODELSTRUCTURE
       FmiOutputs fmiOutputs;
@@ -1034,6 +1080,7 @@ package SimCode
       Option<JacobianMatrix> initialPartialDerivatives;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
+      list<FmiArray> fmiArrays;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1053,6 +1100,44 @@ package SimCode
       String variableKind;
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
+
+  uniontype FmiFigure
+    record FMI_FIGURE
+      String title;
+      String group;
+      Boolean preferred;
+      String caption;
+      list<FmiPlot> plots;
+    end FMI_FIGURE;
+  end FmiFigure;
+
+  uniontype FmiPlot
+    record FMI_PLOT
+      String title;
+      list<FmiCurve> curves;
+      FmiFigureAxis xAxis;
+      FmiFigureAxis yAxis;
+      Option<String> terminal;
+    end FMI_PLOT;
+  end FmiPlot;
+
+  uniontype FmiCurve
+    record FMI_CURVE
+      Option<DAE.ComponentRef> xVariable;
+      DAE.ComponentRef yVariable;
+      String legend;
+    end FMI_CURVE;
+  end FmiCurve;
+
+  uniontype FmiFigureAxis
+    record FMI_FIGURE_AXIS
+      String label;
+      String unit;
+      Option<Real> min;
+      Option<Real> max;
+      Boolean logScale;
+    end FMI_FIGURE_AXIS;
+  end FmiFigureAxis;
 
   uniontype FmiClock
     record FMI_CLOCK
@@ -1276,6 +1361,16 @@ end SimCodeFunction;
 
 package SimCodeUtil
 
+  function linearSystemMatrixFormat
+    input SimCode.LinearSystem ls;
+    output String format;
+  end linearSystemMatrixFormat;
+
+  function nonlinearSystemMatrixFormat
+    input SimCode.NonlinearSystem nls;
+    output String format;
+  end nonlinearSystemMatrixFormat;
+
   function absoluteClockIdxForBaseClock
     input Integer baseClockIdx;
     input list<SimCode.ClockedPartition> allBaseClockPartitions;
@@ -1379,11 +1474,55 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3ValueReference;
 
+  function fmi3UnknownDependencyAttributes
+    input SimCode.SimCode simCode;
+    input SimCode.FmiUnknown unknown;
+    output String attributes;
+  end fmi3UnknownDependencyAttributes;
+
   function getFMI3ValueReferenceFromFMIIndex
     input SimCode.SimCode inSimCode;
     input Integer inFMIIndex;
     output String outValueReference;
   end getFMI3ValueReferenceFromFMIIndex;
+
+  function fmiDependenciesString
+    input list<Integer> dependencies;
+    output String str;
+  end fmiDependenciesString;
+
+  function fmiDependenciesKindString
+    input list<String> kinds;
+    output String str;
+  end fmiDependenciesKindString;
+
+  function fmi3ArrayView
+    input SimCode.SimCode simCode;
+    output SimCode.SimCode view;
+  end fmi3ArrayView;
+
+  function fmi3ArrayDefines
+    input SimCode.SimCode simCode;
+    output String defines;
+  end fmi3ArrayDefines;
+
+  function cacheFMI3ValueReferences
+    input SimCode.SimCode simCode;
+    output String dummy;
+  end cacheFMI3ValueReferences;
+
+  function clearFMI3ValueReferences
+    output String dummy;
+  end clearFMI3ValueReferences;
+
+  function cacheFMI3VariableAliases
+    input SimCode.SimCode simCode;
+    output String dummy;
+  end cacheFMI3VariableAliases;
+
+  function clearFMI3VariableAliases
+    output String dummy;
+  end clearFMI3VariableAliases;
 
   function numScalarElems
     input list<SimCodeVar.SimVar> vars;
@@ -1406,6 +1545,16 @@ package SimCodeUtil
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
 
+  function getFMI3Figures
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiFigure> figures;
+  end getFMI3Figures;
+
+  function getFMI3VisualizationResource
+    input SimCode.SimCode simCode;
+    output String resource;
+  end getFMI3VisualizationResource;
+
   function isFMI3NestableAlias
     input SimCodeVar.SimVar simVar;
     output Boolean nestable;
@@ -1413,7 +1562,7 @@ package SimCodeUtil
 
   function getFMI3VariableAliases
     input SimCode.SimCode simCode;
-    input DAE.ComponentRef canonical;
+    input SimCodeVar.SimVar canonical;
     output list<SimCodeVar.SimVar> aliases;
   end getFMI3VariableAliases;
 
@@ -1426,6 +1575,20 @@ package SimCodeUtil
     input SimCode.SimCode inSimCode;
     output String outValueReference;
   end getFMI3TimeValueReference;
+
+  function getFMI3DaeModeValueReference
+    input SimCode.SimCode simCode;
+    output String vr;
+  end getFMI3DaeModeValueReference;
+
+  function fmi3DaeResiduals
+    input SimCode.SimCode simCode;
+    output list<tuple<String, String>> residuals;
+  end fmi3DaeResiduals;
+
+  function fmiLsDaeVersion
+    output String version;
+  end fmiLsDaeVersion;
 
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
@@ -1442,6 +1605,14 @@ package SimCodeUtil
     input String iIndexForUndefinedReferences;
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
+
+  function getVarIndexHeadByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input Boolean iColumnMajor;
+    input String iIndexForUndefinedReferences;
+    output String oVarIndex;
+  end getVarIndexHeadByMapping;
 
   function getVarIndexByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
@@ -1525,6 +1696,17 @@ package SimCodeUtil
     output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
 
+  function isContiguousArrayCref
+    input DAE.ComponentRef inCref;
+    output Boolean outContiguous;
+  end isContiguousArrayCref;
+
+  function simVarExactFromHT
+    input DAE.ComponentRef inCref;
+    input HashTableCrefSimVar.HashTable crefToSimVarHT;
+    output Option<SimCodeVar.SimVar> outSimVar;
+  end simVarExactFromHT;
+
   function simVarFromHT
     input DAE.ComponentRef inCref;
     input HashTableCrefSimVar.HashTable crefToSimVarHT;
@@ -1582,6 +1764,11 @@ package SimCodeUtil
     output Integer vr;
   end lookupVR;
 
+  function isFMUSimCode
+    input SimCode.SimCode simCode;
+    output Boolean isFMU;
+  end isFMUSimCode;
+
   function lookupVRForRealOutputDerivative
     input DAE.ComponentRef cr;
     input SimCode.SimCode simCode;
@@ -1604,6 +1791,12 @@ package SimCodeUtil
     input list<SimCode.JacobianColumn> columns;
     output Boolean b ;
   end jacobianColumnsAreEmpty;
+
+  function stripAsubIfNoIter
+    input DAE.Exp exp;
+    input Boolean hasIter;
+    output DAE.Exp outExp;
+  end stripAsubIfNoIter;
 
   function getFmiInitialAttributeStr
     input SimCodeVar.SimVar simVar;
@@ -2634,6 +2827,7 @@ package DAE
       Exp range;
       list<Statement> statementLst;
       ElementSource source;
+      list<tuple<ComponentRef, array<Exp>>> sub_iters;
     end STMT_FOR;
     record STMT_PARFOR
       Type type_;
@@ -3849,6 +4043,12 @@ package ComponentReference
     output DAE.ComponentRef outComponentRef;
   end crefStripSubs;
 
+  function crefRenameSeedRoot
+    input DAE.ComponentRef inComponentRef;
+    input String newJacName;
+    output DAE.ComponentRef outComponentRef;
+  end crefRenameSeedRoot;
+
   function crefTypeFull
     input DAE.ComponentRef inRef;
     output DAE.Type res;
@@ -3993,6 +4193,11 @@ package Expression
     output Boolean outIsCref;
   end isCref;
 
+  function containsAnyCall
+    input DAE.Exp inExp;
+    output Boolean outContainsCall;
+  end containsAnyCall;
+
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
     input list<DAE.Subscript> inSubs;
@@ -4008,6 +4213,12 @@ package Expression
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end isAtomic;
+
+  function isDeeperThan
+    input DAE.Exp inExp;
+    input Integer inDepth;
+    output Boolean outDeeper;
+  end isDeeperThan;
 
   function isHalf
     input DAE.Exp inExp;
@@ -4164,6 +4375,14 @@ package Config
   function simCodeTarget
     output String target;
   end simCodeTarget;
+
+  function targetTriple
+    output String triple;
+  end targetTriple;
+
+  function simCodeRustRuntime
+    output Boolean rust;
+  end simCodeRustRuntime;
 
   function simulationCodeTarget
   "@author: adrpo

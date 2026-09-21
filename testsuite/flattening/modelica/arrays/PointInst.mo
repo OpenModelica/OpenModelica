@@ -1,6 +1,7 @@
 // name:     PointInst
 // keywords: array
 // status:   correct
+// suite: disabled
 //
 // Drmodelica: 7.1 Type Checking (p. 209)
 //

@@ -1,6 +1,7 @@
 // name:     RedeclareClass3
 // keywords: redeclare class
 // status:   correct
+// suite: disabled
 //
 // Tests simple redeclaration of inherited classes.
 //

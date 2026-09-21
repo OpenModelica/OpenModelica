@@ -1,6 +1,7 @@
 // name: SimplifyTest
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("SimplifyTest.mo");getErrorString();

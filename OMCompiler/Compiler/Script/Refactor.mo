@@ -2046,18 +2046,11 @@ protected function setDefaultFillColor "
   output list<Absyn.ElementArg> oList;
   output list<Absyn.ElementArg> tList;
 algorithm
-  (oList,tList)  := matchcontinue (oldList,transformedList)
-    local
-      list<Absyn.ElementArg> oLst,tLst;
-
-    case(oLst,tLst)
-      algorithm
-        false := isFillColorInList(listAppend(oLst,tLst));
-        tLst := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("fillColor"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::tLst;
-      then (oLst,tLst);
-
-    else (oldList,transformedList);
-  end matchcontinue;
+  oList := oldList;
+  tList := transformedList;
+  if not isFillColorInList(listAppend(oldList,transformedList)) then
+    tList := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("fillColor"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::tList;
+  end if;
 end setDefaultFillColor;
 
 protected function isFillColorInList "

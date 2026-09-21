@@ -2,12 +2,13 @@
 // keywords: simulation TestMedia.TestModels.FlueGas.Test1
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.FlueGas.Test1.* TestMedia.TestModels.FlueGas.Test1_* TestMedia.TestModels.FlueGas.Test1 TestMedia.TestModels.FlueGas.Test1.exe TestMedia.TestModels.FlueGas.Test1.cpp TestMedia.TestModels.FlueGas.Test1.makefile TestMedia.TestModels.FlueGas.Test1.libs TestMedia.TestModels.FlueGas.Test1.log TestMedia.TestModels.FlueGas.Test1.c TestMedia.TestModels.FlueGas.Test1.o output.log
+// suite: disabled
 //
 // Simulation Results 
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica,{"3.2.1"}); getErrorString();
 loadFile("TestMedia.mo"); getErrorString();
 
 

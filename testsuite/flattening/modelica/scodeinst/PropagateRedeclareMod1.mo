@@ -1,6 +1,7 @@
 // name: PropagateRedeclareMod1
 // keywords:
 // status: correct
+// suite: disabled
 //
 
 model A

@@ -1,6 +1,8 @@
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/ParModelica/auto)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/c/ParModelica/explicit/openclrt)
 
-find_package(OpenCL REQUIRED)
+# Diagnostics from the OpenCL runtime
+omc_option(OM_OMC_PARMODELICA_OCL_VERBOSE
+           "Print verbose OpenCL diagnostics from the ParModelica explicit runtime." OFF)
 
 set(PARMODEXP_SOURCES omc_ocl_memory_ops.cpp
                     omc_ocl_interface.cpp
@@ -14,6 +16,9 @@ TARGET_SOURCES(ParModelicaExpl PRIVATE ${PARMODEXP_SOURCES})
 target_link_libraries(ParModelicaExpl PUBLIC omc::simrt::runtime)
 target_link_libraries(ParModelicaExpl PUBLIC OpenCL::OpenCL)
 
+if(OM_OMC_PARMODELICA_OCL_VERBOSE)
+  target_compile_definitions(ParModelicaExpl PRIVATE BE_OCL_VERBOSE)
+endif()
 
 install(TARGETS ParModelicaExpl)
 install(FILES ParModelicaBuiltin.mo

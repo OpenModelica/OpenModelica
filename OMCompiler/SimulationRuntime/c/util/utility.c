@@ -359,7 +359,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
         MMC_THROW();
       }
       /* Move the found ident last in the path */
-      strcpy(buf+MMC_STRLEN(dir)+1, buf);
+      memmove(buf+MMC_STRLEN(dir)+1, buf, strlen(buf)+1);
       /* Copy the old directory in there */
       strcpy(buf, MMC_STRINGDATA(dir));
       buf[MMC_STRLEN(dir)]='/';

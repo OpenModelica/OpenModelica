@@ -47,8 +47,15 @@
 #include "commandcompletion.h"
 #include "stylesheet.h"
 #include "inputcell.h"
+#include "textcell.h"
+#include "graphcell.h"
+#include "latexcell.h"
+#include "cellgroup.h"
+#include "cellcursor.h"
+#include "visitor.h"
 #include "notebookcommands.h"
 #include <QSplashScreen>
+#include <QTimer>
 
 #include <cstdlib>
 
@@ -63,6 +70,47 @@
 #include <QLocale>
 #include <QMainWindow>
 #include <QDir>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/em_js.h>
+
+// Fetch the bundled example notebooks (next to the page) and extract them into
+// MEMFS at "/" so DrModelica/DrControl/OMNotebookHelp.onb resolve like a normal
+// filesystem — the File menus, links and F1 then work unchanged. gzip is undone
+// by the browser's DecompressionStream; the tar is plain (all paths < 100 chars).
+EM_ASYNC_JS(int, omnotebook_stage_notebooks, (), {
+  try {
+    const resp = await fetch("notebooks.tar.gz");
+    if (!resp.ok) { console.error("notebooks.tar.gz: HTTP " + resp.status); return 0; }
+    const stream = resp.body.pipeThrough(new DecompressionStream("gzip"));
+    const buf = new Uint8Array(await new Response(stream).arrayBuffer());
+    const td = new TextDecoder();
+    const field = (o, n) => {
+      let end = o;
+      while (end < o + n && buf[end] !== 0) end++;
+      return td.decode(buf.subarray(o, end));
+    };
+    for (let off = 0; off + 512 <= buf.length; ) {
+      const name = field(off, 100);
+      if (name === "") break;                       // zero block ends the archive
+      const size = parseInt(field(off + 124, 12).trim(), 8) || 0;
+      const type = buf[off + 156];
+      off += 512;
+      const path = "/" + name;
+      if (type === 53) {                            // '5' directory
+        try { FS.mkdirTree(path); } catch (e) {}
+      } else if (type === 0 || type === 48) {       // '0'/NUL regular file
+        const slash = path.lastIndexOf("/");
+        if (slash > 0) { try { FS.mkdirTree(path.substring(0, slash)); } catch (e) {} }
+        FS.writeFile(path, buf.subarray(off, off + size));
+      }
+      off += Math.ceil(size / 512) * 512;
+    }
+    return 1;
+  } catch (e) { console.error("notebook staging failed: " + e); return 0; }
+});
+#endif
 
 namespace IAEX
 {
@@ -126,6 +174,7 @@ namespace IAEX
   {
       app_ = new MyApp(argc, argv, this);
 
+#ifndef __EMSCRIPTEN__
       const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
       if (!installationDirectoryPath) {
           QMessageBox::critical(nullptr, tr("Error"),
@@ -151,6 +200,7 @@ namespace IAEX
 
       if (translator.load("OMNotebook_" + locale, translationDirectory))
           app_->installTranslator(&translator);
+#endif
 
       //  Main window (purely a placeholder – real windows are opened later)
       mainWindow = new QMainWindow();
@@ -160,7 +210,7 @@ namespace IAEX
                        app_, &QApplication::quit);
 
       // Create a commandCenter
-      cmdCenter_ = new CellCommandCenter(this);
+      cmdCenter_ = std::make_unique<CellCommandCenter>(this);
 
       setlocale(LC_NUMERIC, "C");               // force C‑style doubles
 
@@ -169,8 +219,24 @@ namespace IAEX
        * Is important for threadData initialization
        */
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance(threadData);
+#ifdef __EMSCRIPTEN__
+      // The browser omc starts with no library; queue the MSL install (and the
+      // startup option) as fire-and-forget worker commands. They must not run a
+      // nested event loop here, before QApplication::exec(), as that crashes the
+      // not-yet-realized wasm screen. The window comes up while they run.
+      env->startBackgroundCommand("setCommandLineOptions(\"+d=shortOutput\")");
+      env->startBackgroundCommand("installPackage(Modelica)");
+      // Stage the example notebooks into MEMFS before the default file opens.
+      omnotebook_stage_notebooks();
+      // Loaded notebooks write their embedded images here (CellDocument::addImage);
+      // unlike the native build there is no other code creating it, so make sure
+      // it exists or every image write silently fails and renders blank.
+      QDir().mkpath(OmcInteractiveEnvironment::TmpPath());
+#else
       // Avoid cluttering the whole disk with omc temp-files
       env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
+#endif
+#ifndef __EMSCRIPTEN__
       QString tmpDir = OmcInteractiveEnvironment::TmpPath();
 
       if (!QDir().exists(tmpDir))
@@ -185,15 +251,12 @@ namespace IAEX
                                     .arg(tmpDir).arg(cdRes));
           std::exit(1);
       }
+#endif
 
-      //  Load stylesheet.xml
-      QString openmodelica = QString::fromLatin1(installationDirectoryPath);
+      //  Load stylesheet.xml and commands.xml from the bundled resources, so they
+      //  work regardless of the installation layout and on the web build.
       try {
-          QString stylesheetfile = openmodelica;
-          if (!stylesheetfile.endsWith('/') && !stylesheetfile.endsWith('\\'))
-              stylesheetfile += '/';
-          stylesheetfile += "share/omnotebook/stylesheet.xml";
-          Stylesheet::instance(stylesheetfile);
+          Stylesheet::instance(":/stylesheet.xml");
       } catch (std::exception &e) {
           QMessageBox::warning(nullptr, tr("Error"), e.what());
           std::exit(-1);
@@ -201,11 +264,7 @@ namespace IAEX
 
       //  Load commands.xml (command completion)
       try {
-          QString commandfile = openmodelica;
-          if (!commandfile.endsWith('/') && !commandfile.endsWith('\\'))
-              commandfile += '/';
-          commandfile += "share/omnotebook/commands.xml";
-          CommandCompletion::instance(commandfile);
+          CommandCompletion::instance(":/commands.xml");
       } catch (std::exception &e) {
           QString msg = e.what();
           msg += "\nCould not create command completion class, exiting OMNotebook";
@@ -288,16 +347,7 @@ namespace IAEX
       }
   }
 
-
-  //  Simple accessor / mutator helpers
-
-  CommandCenter *CellApplication::commandCenter()               { return cmdCenter_; }
-
-  void           CellApplication::setCommandCenter(CommandCenter *c)
-  {
-      cmdCenter_ = c;
-      cmdCenter_->setApplication(this);
-  }
+  CommandCenter& CellApplication::commandCenter() { return *cmdCenter_; }
 
   /*!
    * \author Anders Fernström and Ingemar Axelsson
@@ -327,8 +377,7 @@ namespace IAEX
    */
   std::vector<Cell*> CellApplication::pasteboard() { return pasteboard_; }
   int CellApplication::exec()                  { return app_->exec(); }
-  void CellApplication::add(Document *d)       { documents_.push_back(d); }
-  void CellApplication::add(DocumentView *d)   { views_.push_back(d); }
+  void CellApplication::add(DocumentView* d)   { views_.push_back(d); }
 
   /*!
    * \author Ingemar Axelsson and Anders Fernström
@@ -348,63 +397,100 @@ namespace IAEX
    * all operations are done on the window.
    * 2006-05-03 AF, during open, stop highlighter
    */
+#ifdef __EMSCRIPTEN__
+  // Recompute every cell's height. On Qt for WebAssembly a freshly loaded
+  // notebook lays out its cells before their final width and fonts are known, so
+  // they come up far too tall; re-running contentChanged() once geometry has
+  // settled fixes them — the same recomputation an edit triggers by hand.
+  class RecomputeHeightVisitor : public Visitor
+  {
+  public:
+    void visitCellNodeBefore(Cell *) override {}
+    void visitCellNodeAfter(Cell *) override {}
+    void visitCellGroupNodeBefore(CellGroup *) override {}
+    void visitCellGroupNodeAfter(CellGroup *) override {}
+    // contentChanged() is a slot on every cell type (protected on TextCell), so
+    // invoke it by name through the meta-object rather than calling directly.
+    void visitTextCellNodeBefore(TextCell *) override {}
+    void visitTextCellNodeAfter(TextCell *n) override { recompute(n); }
+    void visitInputCellNodeBefore(InputCell *) override {}
+    void visitInputCellNodeAfter(InputCell *n) override { recompute(n); }
+    void visitGraphCellNodeBefore(GraphCell *) override {}
+    void visitGraphCellNodeAfter(GraphCell *n) override { recompute(n); }
+    void visitLatexCellNodeBefore(LatexCell *) override {}
+    void visitLatexCellNodeAfter(LatexCell *n) override { recompute(n); }
+    void visitCellCursorNodeBefore(CellCursor *) override {}
+    void visitCellCursorNodeAfter(CellCursor *) override {}
+  private:
+    static void recompute(QObject *cell)
+    {
+      QMetaObject::invokeMethod(cell, "contentChanged", Qt::DirectConnection);
+    }
+  };
+#endif
+
   void CellApplication::open(const QString filename, int readmode, int isDrModelica)
   {
-      try {
-          // 1. Create the document
-          Document *d = new CellDocument(this, filename, readmode);
-          add(d);
+    // 1. Create the document
+    auto d = std::make_unique<CellDocument>(this, filename, readmode);
 
-          // 2. Create the view (NotebookWindow)
-          DocumentView *v = new NotebookWindow(d, filename, isDrModelica);
-          add(v);
+    // 2. Create the view (NotebookWindow)
+    NotebookWindow *v = new NotebookWindow(std::move(d), filename, isDrModelica);
+    add(v);
 
-      // 2006-01-31 AF, Open window minimized instead of normal
+    // 2006-01-31 AF, Open window minimized instead of normal
 
-      //v->showMinimized();
+    //v->showMinimized();
 
-      // 2005-10-11 AF, Porting, added resize so all cells get the
-      // correct size. Ugly way!
+    // 2005-10-11 AF, Porting, added resize so all cells get the
+    // correct size. Ugly way!
 
-      //v->resize( 810, 610 ); //not working with Qt 4.3
+    //v->resize( 810, 610 ); //not working with Qt 4.3
 
-      // 2006-01-17 AF, when the document have been opened, set the
-      // changed variable to false.
-          // 3. Initialise the view – size, position, etc.
-          v->document()->setChanged(false);
+    // 2006-01-17 AF, when the document have been opened, set the
+    // changed variable to false.
+    // 3. Initialise the view – size, position, etc.
+    v->document()->setChanged(false);
 
-      // 2006-01-31 AF, show window again
-          v->show();
-          v->raise();               // macOS
-          v->activateWindow();      // Windows
+    // 2006-01-31 AF, show window again
+    v->show();
+    v->raise();               // macOS
+    v->activateWindow();      // Windows
 
-          // Update the Window‑menu for all open notebooks
-          for (DocumentView *dv : documentViewList())
-              static_cast<NotebookWindow*>(dv)->updateWindowMenu();
+    // Update the Window‑menu for all open notebooks
+    for (auto &v: views_) {
+      v->updateWindowMenu();
+    }
 
-          //  Position the window at the top‑left corner and resize it to the
-          //  full screen size – using Qt‑6‑compatible API.
-          v->move(0, 0);
+    //  Position the window at the top‑left corner and resize it to the
+    //  full screen size – using Qt‑6‑compatible API.
+    v->move(0, 0);
 
-          // Qt 5 and Qt 6 both provide a QScreen via QGuiApplication.
-          // The code works for any Qt version ≥ 5.0 (QGuiApplication existed
-          // already) and therefore also for Qt 6.
-          QScreen *screen = QGuiApplication::primaryScreen();
-          if (screen) {
-              // Use *availableGeometry* so the window does not overlap the task‑bar / dock.
-              QRect geom = screen->availableGeometry();
-              v->resize(geom.width(), geom.height());
-          } else {
-              // Fallback – extremely unlikely, but keeps the old behaviour.
-              v->resize(800, 600);
-          }
+    // Qt 5 and Qt 6 both provide a QScreen via QGuiApplication.
+    // The code works for any Qt version ≥ 5.0 (QGuiApplication existed
+    // already) and therefore also for Qt 6.
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (screen) {
+      // Use *availableGeometry* so the window does not overlap the task‑bar / dock.
+      QRect geom = screen->availableGeometry();
+      v->resize(geom.width(), geom.height());
+    } else {
+      // Fallback – extremely unlikely, but keeps the old behaviour.
+      v->resize(800, 600);
+    }
 
-          // Apply the "show‑/hide‑closed‑groupcells" visitor.
-          UpdateGroupcellVisitor visitor;
-          v->document()->runVisitor(visitor);
-      } catch (std::exception &e) {
-          throw e;
-      }
+    // Apply the "show‑/hide‑closed‑groupcells" visitor.
+    UpdateGroupcellVisitor visitor;
+    v->document()->runVisitor(visitor);
+#ifdef __EMSCRIPTEN__
+    // Cells load too tall until their geometry/fonts settle; recompute
+    // heights once back in the event loop, as editing a cell would.
+    Document *doc = v->document();
+    QTimer::singleShot(0, doc, [doc]() {
+        RecomputeHeightVisitor rv;
+        doc->runVisitor(rv);
+    });
+#endif
   }
 
   /*!
@@ -425,7 +511,7 @@ namespace IAEX
   *
   * \brief returns list of all current document views
   */
-  std::vector<DocumentView *> CellApplication::documentViewList()
+  std::vector<DocumentView*> CellApplication::documentViewList()
   {
       return views_;
   }
@@ -439,18 +525,13 @@ namespace IAEX
   */
   void CellApplication::removeDocumentView(DocumentView *view)
   {
-      // erase from document list
-      auto dit = std::remove_if(documents_.begin(), documents_.end(),
-                                [&](Document *d){ return d == view->document(); });
-      documents_.erase(dit, documents_.end());
-
       // erase from view list
       auto vit = std::remove_if(views_.begin(), views_.end(),
-                                [&](DocumentView *v){ return v == view; });
+                                [&](auto &v){ return v == view; });
       views_.erase(vit, views_.end());
 
       // refresh all window menus
-      for (DocumentView *dv : documentViewList())
+      for (auto &dv: views_)
         dv->updateWindowMenu();
   }
 
@@ -496,7 +577,7 @@ namespace IAEX
                         << (fileDir.absolutePath() + "/" + fileList.at(j)).toStdString()
                         << std::endl;
 
-              Document *d = new CellDocument(this,
+              CellDocument d(this,
                          fileDir.absolutePath() + "/" + fileList.at(j),
                          READMODE_CONVERTING_ONB);
 
@@ -507,13 +588,11 @@ namespace IAEX
                         << (dir.absolutePath() + "/" + dirList.at(i) + "/" + filename).toStdString()
                         << std::endl;
 
-              SaveDocumentCommand command(d,
-                     dir.absolutePath() + "/" + dirList.at(i) + "/" + filename);
-              commandCenter()->executeCommand(&command);
+              commandCenter().executeCommand(
+                std::make_unique<SaveDocumentCommand>(&d, dir.absolutePath() + "/" + dirList.at(i) + "/" + filename));
 
               std::cout << "DONE!\n\n";
 
-              delete d;
               fileDir.remove(fileList.at(j));
           }
       }

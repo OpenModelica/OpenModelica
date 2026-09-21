@@ -1,13 +1,13 @@
 // name: Issue14456.mos
 // keywords: fmu export and run
 // status: correct
-// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log model_res.mat
+// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log roomM370_res.mat roomM370_info.json model_res.mat roomM370.log
 
 setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
 loadFile("roomM370.mo"); getErrorString();
 buildModelFMU(roomM370, version="2.0", fmuType="cs", platforms=["dynamic"]); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator roomM370.fmu --mode=cs --tolerance=1e-6 --suppressPath=true --tempDir=\"roomM370-tmp\"", "roomM370_cs_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator roomM370.fmu --mode=cs --tolerance=1e-6 --stripRoot --suppressPath --tempDir=\"roomM370-tmp\"", "roomM370_cs_systemCall.log"); getErrorString();
 readFile("roomM370_cs_systemCall.log"); getErrorString();
 
 
@@ -18,6 +18,8 @@ readFile("roomM370_cs_systemCall.log"); getErrorString();
 // ""
 // {"roomM370.fmu"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'dynamic' (1/1).
+// Notification: Finished FMU for platform 'dynamic' (1/1).
 // "
 // 0
 // ""
@@ -33,7 +35,14 @@ readFile("roomM370_cs_systemCall.log"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
-// info:    Result file: model_res.mat (bufferSize=10)
+// info: *** FMU Simulation Info ***
+//      - model     : roomM370 (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 8000.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 1
+// info:    Result file: roomM370_res.mat (bufferSize=10)
 // "
 // ""
 // endResult

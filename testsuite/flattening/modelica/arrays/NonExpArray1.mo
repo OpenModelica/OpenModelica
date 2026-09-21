@@ -1,6 +1,7 @@
 // name:     Non-expanded Array1
 // keywords: array
 // status:   correct
+// suite: disabled
 //
 // This is a simple test of non-expanded array handling.
 //

@@ -1,6 +1,7 @@
 // name: InvalidComplexConnectorType1
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidComplexConnectorType1
@@ -24,7 +25,7 @@ end InvalidComplexConnectorType1;
 
 // Result:
 // Error processing file: InvalidComplexConnectorType1.mo
-// [flattening/modelica/scodeinst/InvalidComplexConnectorType1.mo:23:3-23:18:writable] Error: Cannot connect parameter c2.y to non-constant/parameter c1.y.
+// [flattening/modelica/scodeinst/InvalidComplexConnectorType1.mo:24:3-24:18:writable] Error: Cannot connect parameter c2.y to non-constant/parameter c1.y.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

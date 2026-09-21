@@ -223,7 +223,10 @@ if (QWT_WITH_WIDGETS)
     qwt_wheel.cpp)
 endif ()
 
-add_library(omqwt SHARED ${QWT_HEADERS} ${QWT_SOURCES})
+if(NOT DEFINED OMQWT_LIBRARY_TYPE)
+  set(OMQWT_LIBRARY_TYPE SHARED)
+endif()
+add_library(omqwt ${OMQWT_LIBRARY_TYPE} ${QWT_HEADERS} ${QWT_SOURCES})
 
 if(WIN32)
   # define QWT_DLL so the headers add the dll export/import specifiers .

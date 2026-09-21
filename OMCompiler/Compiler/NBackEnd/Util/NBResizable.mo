@@ -105,13 +105,13 @@ public
           if UnorderedMap.isEmpty(c2pi) then
             print("  <No Constraints>\n\n");
           else
-            print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
+            print(List.toStringCustom(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
           end if;
           print(StringUtil.headline_2("[debug] Final Equality Constraints:"));
           if UnorderedMap.isEmpty(c2pe) then
             print("  <No Constraints>\n\n");
           else
-            print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
+            print(List.toStringCustom(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
           end if;
         end if;
 
@@ -692,7 +692,9 @@ protected
       end for;
       const := Expression.map(const, function Replacements.applySimpleExp(replacements = zero_replacements));
       const := SimplifyExp.simplify(const);
-      if not func(const) then fail(); end if;
+      // Only fail for literals: symbolic CREFs remaining after replacement are inner iterators
+      // (e.g. sum/product) whose bounds are guaranteed by their own range expression.
+      if not func(const) and Expression.isLiteral(const) then fail(); end if;
     end if;
 
     if debug then
@@ -771,12 +773,12 @@ protected
         case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes as VariableAttributes.VAR_ATTR_INT())) algorithm
           if UnorderedSet.contains(cref, min_parameters) then
             if isSome(attributes.min) then
-              SOME(value) := attributes.min;
+              value := Binding.getTypedExp(Util.getOption(attributes.min));
             else
               value := Expression.INTEGER(0);
             end if;
           elseif isSome(attributes.max) then
-            SOME(value) := attributes.max;
+            value := Binding.getTypedExp(Util.getOption(attributes.max));
           else
             value := Expression.INTEGER(0);
           end if;

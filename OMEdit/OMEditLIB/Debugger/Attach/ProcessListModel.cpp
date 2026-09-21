@@ -84,7 +84,7 @@ static QString imageName(DWORD processId)
   WCHAR buffer[MAX_PATH];
   DWORD bufSize = MAX_PATH;
   if (queryFullProcessImageName(handle, 0, buffer, &bufSize))
-    rc = QString::fromUtf16(reinterpret_cast<const ushort*>(buffer));
+    rc = QString::fromUtf16(reinterpret_cast<const char16_t*>(buffer));
   CloseHandle(handle);
   return rc;
 }

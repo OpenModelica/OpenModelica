@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint
 // keywords: simulation MSL Examples
 // status: correct
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library

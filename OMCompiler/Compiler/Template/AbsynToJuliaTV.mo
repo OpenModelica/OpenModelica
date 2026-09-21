@@ -1904,6 +1904,19 @@ package DAE
     end DISTRIBUTION;
   end Distribution;
 
+  uniontype StartOrigin "where the start attribute of a variable was set"
+    record UNDEFINED_ORIGIN end UNDEFINED_ORIGIN;
+    record TYPE_ORIGIN "start set by the type's default" end TYPE_ORIGIN;
+    record BINDING_ORIGIN "start set by a modifier" end BINDING_ORIGIN;
+    record CONFIDENCE
+      Integer actual "parameter-followed confidence per MLS 8.6.2, lower = stronger";
+      Integer raw "confidence of the start attribute itself, used as tie-break";
+    end CONFIDENCE;
+    record TYPE_CONFIDENCE
+      Integer level "start set by the type, at the level where the type was determined";
+    end TYPE_CONFIDENCE;
+  end StartOrigin;
+
   uniontype VariableAttributes
     record VAR_ATTR_REAL
       Option<Exp> quantity "quantity";
@@ -1920,7 +1933,7 @@ package DAE
       Option<Exp> equationBound;
       Option<Boolean> isProtected;
       Option<Boolean> finalPrefix;
-      Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<StartOrigin> startOrigin;
     end VAR_ATTR_REAL;
 
     record VAR_ATTR_INT
@@ -1934,7 +1947,7 @@ package DAE
       Option<Exp> equationBound;
       Option<Boolean> isProtected; // ,eb,ip
       Option<Boolean> finalPrefix;
-      Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<StartOrigin> startOrigin;
     end VAR_ATTR_INT;
 
     record VAR_ATTR_BOOL
@@ -1944,7 +1957,7 @@ package DAE
       Option<Exp> equationBound;
       Option<Boolean> isProtected;
       Option<Boolean> finalPrefix;
-      Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<StartOrigin> startOrigin;
     end VAR_ATTR_BOOL;
 
     record VAR_ATTR_STRING
@@ -1953,7 +1966,7 @@ package DAE
       Option<Exp> equationBound;
       Option<Boolean> isProtected;
       Option<Boolean> finalPrefix;
-      Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<StartOrigin> startOrigin;
     end VAR_ATTR_STRING;
 
     record VAR_ATTR_ENUMERATION
@@ -1965,7 +1978,7 @@ package DAE
       Option<Exp> equationBound;
       Option<Boolean> isProtected;
       Option<Boolean> finalPrefix;
-      Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<StartOrigin> startOrigin;
     end VAR_ATTR_ENUMERATION;
 
   end VariableAttributes;

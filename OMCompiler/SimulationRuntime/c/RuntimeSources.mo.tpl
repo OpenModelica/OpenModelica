@@ -1,7 +1,17 @@
 encapsulated package RuntimeSources
   constant String fmu_sources_dir = "/include/omc/c/";
 
+  // Where the Rust crates a --simCodeTarget=C+Rust source FMU carries would be.
+  // This build system does not build the Rust simulation runtime, so nothing
+  // installs them and --fmiSources reports that.
+  constant String fmu_rust_sources_dir = "/share/omc/sources/rust";
+  constant String fmu_rust_manifest = "SimulationRuntime/rust/Cargo.toml";
+
   constant list<String> simrt_c_sources={COMMON_FILES};
+
+  // The libOpenModelicaRuntimeC half of simrt_c_sources, which is all a
+  // --simCodeTarget=C+Rust FMU compiles from C.
+  constant list<String> simrt_c_runtime_sources={RUNTIME_C_FILES};
 
   constant list<String> simrt_c_headers={COMMON_HEADERS};
 
@@ -45,22 +55,38 @@ encapsulated package RuntimeSources
                                              "_init_fmu.c",
                                              "_FMU.c"};
 
-  constant list<String> sundials_headers={"sundials/cvode/cvode_ls.h",
+  constant list<String> sundials_headers={"sundials/cvode/cvode.h",
+                                         "sundials/cvode/cvode_ls.h",
                                          "sundials/cvode/cvode_proj.h",
-                                         "sundials/cvode/cvode.h",
+                                         "sundials/nvector/nvector_serial.h",
+                                         "sundials/sundials/priv/sundials_context_impl.h",
+                                         "sundials/sundials/priv/sundials_errors_impl.h",
+                                         "sundials/sundials/sundials_adaptcontroller.h",
+                                         "sundials/sundials/sundials_adjointcheckpointscheme.h",
+                                         "sundials/sundials/sundials_adjointstepper.h",
                                          "sundials/sundials/sundials_config.h",
+                                         "sundials/sundials/sundials_context.h",
+                                         "sundials/sundials/sundials_core.h",
                                          "sundials/sundials/sundials_dense.h",
                                          "sundials/sundials/sundials_direct.h",
+                                         "sundials/sundials/sundials_domeigestimator.h",
+                                         "sundials/sundials/sundials_errors.h",
+                                         "sundials/sundials/sundials_export.h",
                                          "sundials/sundials/sundials_iterative.h",
                                          "sundials/sundials/sundials_linearsolver.h",
+                                         "sundials/sundials/sundials_logger.h",
+                                         "sundials/sundials/sundials_math.h",
                                          "sundials/sundials/sundials_matrix.h",
+                                         "sundials/sundials/sundials_memory.h",
                                          "sundials/sundials/sundials_nonlinearsolver.h",
+                                         "sundials/sundials/sundials_nvector.h",
+                                         "sundials/sundials/sundials_profiler.h",
+                                         "sundials/sundials/sundials_stepper.h",
                                          "sundials/sundials/sundials_types.h",
+                                         "sundials/sundials/sundials_version.h",
                                          "sundials/sunlinsol/sunlinsol_dense.h",
                                          "sundials/sunmatrix/sunmatrix_dense.h",
-                                         "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h",
-                                         "sundials/nvector/nvector_serial.h",
-                                         "sundials/sundials/sundials_nvector.h"};
+                                         "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h"};
 
   constant list<String> simrt_c_sundials_sources={"simulation/solver/cvode_solver.c",
                                                   "simulation/solver/sundials_error.c"};

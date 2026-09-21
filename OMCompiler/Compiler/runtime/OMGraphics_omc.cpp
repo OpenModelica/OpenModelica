@@ -134,12 +134,13 @@ const Json &rootForHandle(int handle)
 
 /* A placed connector component of the model: its instance name, the icon file
  * base name derived from its type, the placement bounding box (icon coordinates)
- * and a pointer to its type's Icon annotation (into the cached tree). */
+ * and a pointer to its type (into the cached tree). The type, not the Icon it
+ * declares itself: a connector inherits its icon like any other class. */
 struct PlacedConnector {
   std::string name;
   std::string iconBaseName;
   double x1, y1, x2, y2;
-  const Json *icon; /* points into g_cachedRoot */
+  const Json *type; /* points into g_cachedRoot */
 };
 
 /* base name for a connector icon file: the type path with non-alphanumerics
@@ -189,8 +190,7 @@ std::vector<PlacedConnector> collectPlacedConnectors(const Json &root)
     c.name = e.get("name").asString();
     c.iconBaseName = iconBaseNameOf(t.get("name").asString());
     c.x1 = box[0]; c.y1 = box[1]; c.x2 = box[2]; c.y2 = box[3];
-    const Json &ic = t.get("annotation").get("Icon");
-    c.icon = ic.isObject() ? &ic : NULL;
+    c.type = &t;
     out.push_back(c);
   }
   return out;
@@ -276,8 +276,8 @@ const char* OMGraphics_placedConnectorInfo(int handle, int index)
 const char* OMGraphics_placedConnectorIconSVG(int handle, int index)
 {
   std::vector<PlacedConnector> cs = collectPlacedConnectors(rootForHandle(handle));
-  if (index < 0 || index >= (int) cs.size() || !cs[index].icon) return gcString("");
-  OMGraphics::Icon icon = OMGraphics::iconFromJson(*cs[index].icon);
+  if (index < 0 || index >= (int) cs.size() || !cs[index].type) return gcString("");
+  OMGraphics::Icon icon = OMGraphics::iconFromJson(*cs[index].type);
   if (icon.graphics.empty()) return gcString("");
   return gcString(OMGraphics::renderIconSVG(icon));
 }
@@ -299,8 +299,8 @@ int OMGraphics_writeIconPNGFromHandle(int handle, const char *modelName, const c
 int OMGraphics_writePlacedConnectorIconPNG(int handle, int index, const char *path)
 {
   std::vector<PlacedConnector> cs = collectPlacedConnectors(rootForHandle(handle));
-  if (index < 0 || index >= (int) cs.size() || !cs[index].icon) return 0;
-  OMGraphics::Icon icon = OMGraphics::iconFromJson(*cs[index].icon);
+  if (index < 0 || index >= (int) cs.size() || !cs[index].type) return 0;
+  OMGraphics::Icon icon = OMGraphics::iconFromJson(*cs[index].type);
   if (icon.graphics.empty()) return 0;
   return writeBinaryFile(path, OMGraphics::renderIconPNG(icon)) ? 1 : 0;
 }

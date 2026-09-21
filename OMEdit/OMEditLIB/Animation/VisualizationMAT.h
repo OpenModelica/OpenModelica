@@ -41,7 +41,11 @@
 #define VISUALIZATIONMAT_H
 
 #include "Visualization.h"
+#ifdef OM_LEGACY_RESULT_READERS
 #include "util/read_matlab4.h"
+#else
+#include "omc_result.h"
+#endif
 
 class VisualizationMAT : public VisualizationAbstract
 {
@@ -58,9 +62,15 @@ public:
   void updateScene(const double time) override;
   void updateVisualizerAttribute(VisualizerAttribute& attr, const double time) override;
   void updateVisualizerAttributeMAT(VisualizerAttribute& attr, const double time);
+#ifdef OM_LEGACY_RESULT_READERS
   double omcGetVarValue(ModelicaMatReader* reader, const char* varName, const double time);
 private:
   ModelicaMatReader _matReader;
+#else
+  double omcGetVarValue(omc::ResultFile* reader, const char* varName, const double time);
+private:
+  omc::ResultFile _matReader;
+#endif
 };
 
 #endif // VISUALIZATIONMAT_H

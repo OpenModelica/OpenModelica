@@ -52,6 +52,7 @@ protected
   //NF imports
   import Attributes = NFAttributes;
   import NFBinding.Binding;
+  import NFBinding.Source;
   import Call = NFCall;
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
@@ -68,7 +69,9 @@ protected
 
   // Util imports
   import Pointer;
+  import PointerWeak;
   import UnorderedMap;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   uniontype BackendInfo
@@ -76,12 +79,12 @@ public
       VariableKind varKind                   "Structural kind: state, algebraic...";
       VariableAttributes attributes          "values on built-in attributes";
       Annotations annotations                "values on annotations (vendor specific)";
-      Option<Pointer<Variable>> var_pre      "Pointer (var -> pre) or (pre -> var) if existent.";
-      Option<Pointer<Variable>> var_seed     "Pointer (var -> seed) or (seed -> var) if existent.";
-      Option<Pointer<Variable>> var_pder_res "Pointer (var -> pder, result var in Jacobian) or (pder -> var) if existent.";
-      Option<Pointer<Variable>> var_pder_tmp "Pointer (var -> pder, tmp var in Jacobian) or (pder -> var) if existent.";
-      Option<Pointer<Variable>> var_start    "Pointer (var -> start) or (start -> var) if existent.";
-      Option<Pointer<Variable>> parent       "record parent if it is part of a record.";
+      Option<PointerWeak<Variable>> var_pre      "Pointer (var -> pre) or (pre -> var) if existent.";
+      Option<PointerWeak<Variable>> var_seed     "Pointer (var -> seed) or (seed -> var) if existent.";
+      Option<PointerWeak<Variable>> var_pder_res "Pointer (var -> pder, result var in Jacobian) or (pder -> var) if existent.";
+      Option<PointerWeak<Variable>> var_pder_tmp "Pointer (var -> pder, tmp var in Jacobian) or (pder -> var) if existent.";
+      Option<PointerWeak<Variable>> var_start    "Pointer (var -> start) or (start -> var) if existent.";
+      Option<PointerWeak<Variable>> parent       "record parent if it is part of a record.";
     end BACKEND_INFO;
 
     function toString
@@ -126,8 +129,32 @@ public
       input output BackendInfo binfo;
       input Pointer<Variable> parent;
     algorithm
-      binfo.parent := SOME(parent);
+      binfo.parent := SOME(PointerWeak.downgrade(parent));
     end setParent;
+
+    function weaken
+      "A partner edge owns nothing: the variable is in `VariablePointers`."
+      input Option<Pointer<Variable>> strong;
+      output Option<PointerWeak<Variable>> weak;
+    algorithm
+      weak := match strong
+        local Pointer<Variable> p;
+        case SOME(p) then SOME(PointerWeak.downgrade(p));
+        else NONE();
+      end match;
+    end weaken;
+
+    function strengthen
+      "NONE() if the partner is gone, which the callers already handle."
+      input Option<PointerWeak<Variable>> weak;
+      output Option<Pointer<Variable>> strong;
+    algorithm
+      strong := matchcontinue weak
+        local PointerWeak<Variable> w;
+        case SOME(w) then SOME(PointerWeak.upgrade(w));
+        else NONE();
+      end matchcontinue;
+    end strengthen;
 
     partial function setPartner
       input output BackendInfo binfo;
@@ -136,27 +163,27 @@ public
 
     function setVarPre extends setPartner;
     algorithm
-      binfo.var_pre := var_ptr;
+      binfo.var_pre := weaken(var_ptr);
     end setVarPre;
 
     function setVarSeed extends setPartner;
     algorithm
-      binfo.var_seed := var_ptr;
+      binfo.var_seed := weaken(var_ptr);
     end setVarSeed;
 
     function setVarPDer extends setPartner;
       input Boolean isTmp;
     algorithm
       if isTmp then
-        binfo.var_pder_tmp := var_ptr;
+        binfo.var_pder_tmp := weaken(var_ptr);
       else
-        binfo.var_pder_res := var_ptr;
+        binfo.var_pder_res := weaken(var_ptr);
       end if;
     end setVarPDer;
 
     function setVarStart extends setPartner;
     algorithm
-      binfo.var_start := var_ptr;
+      binfo.var_start := weaken(var_ptr);
     end setVarStart;
 
     function setAttributes
@@ -191,10 +218,15 @@ public
       binfo_list := match binfo.varKind
         local
           list<VariableAttributes> scalar_attributes;
+          Boolean uniform;
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
-          scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder_res, binfo.var_pder_tmp, binfo.var_start, binfo.parent) for attr in scalar_attributes);
+          (scalar_attributes, uniform) := VariableAttributes.scalarize(binfo.attributes, length);
+          if uniform then
+            binfo.attributes := listHead(scalar_attributes);
+          end if;
+        then if uniform then List.fill(binfo, length) else
+          list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder_res, binfo.var_pder_tmp, binfo.var_start, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
@@ -206,18 +238,18 @@ public
     record ALGEBRAIC end ALGEBRAIC;
     record STATE
       Integer index                         "how often this states was differentiated";
-      Option<Pointer<Variable>> derivative  "pointer to the derivative";
+      Option<PointerWeak<Variable>> derivative  "pointer to the derivative";
       Boolean natural                       "false if it was forced by StateSelect.always or StateSelect.prefer or generated by index reduction";
     end STATE;
     record STATE_DER
-      Pointer<Variable> state               "Original state";
+      PointerWeak<Variable> state               "Original state";
       Option<Pointer<Expression>> alias     "Optional alias state expression. Result of differentiating the state if existant!";
     end STATE_DER;
     record DUMMY_DER
-      Pointer<Variable> dummy_state         "corresponding dummy state";
+      PointerWeak<Variable> dummy_state         "corresponding dummy state";
     end DUMMY_DER;
     record DUMMY_STATE
-      Pointer<Variable> dummy_der           "corresponding dummy derivative";
+      PointerWeak<Variable> dummy_der           "corresponding dummy derivative";
     end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state selection in index reduction
     record DISCRETE end DISCRETE;
     record DISCRETE_STATE end DISCRETE_STATE;
@@ -230,12 +262,12 @@ public
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
     record RECORD
-      list<Pointer<Variable>> children;
+      list<PointerWeak<Variable>> children;
       Variability min_var;
       Variability max_var;
     end RECORD;
     record START
-      Pointer<Variable> original            "Pointer to the corresponding original variable.";
+      PointerWeak<Variable> original            "Pointer to the corresponding original variable.";
     end START;
     record EXTOBJ
       Absyn.Path fullClassName;
@@ -338,46 +370,43 @@ public
 
   uniontype VariableAttributes
     record VAR_ATTR_REAL
-      Option<Expression> quantity             "quantity";
-      Option<Expression> unit                 "SI Unit for actual computation value";
-      Option<Expression> displayUnit          "SI Unit only for displaying";
-      Option<Expression> min                  "Lower boundry";
-      Option<Expression> max                  "Upper boundry";
-      Option<Expression> start                "start value";
-      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
-      Option<Expression> nominal              "nominal";
+      Option<Binding> quantity                "quantity";
+      Option<Binding> unit                    "SI Unit for actual computation value";
+      Option<Binding> displayUnit             "SI Unit only for displaying";
+      Option<Binding> min                     "Lower boundry";
+      Option<Binding> max                     "Upper boundry";
+      Option<Binding> start                   "start value";
+      Option<Binding> fixed                   "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Binding> nominal                 "nominal";
       Option<StateSelect> stateSelect         "Priority to be selected as a state during index reduction";
       Option<TearingSelect> tearingSelect     "Priority to be selected as an iteration variable during tearing";
       Option<Uncertainty> uncertainty         "Attributes from data reconcilliation";
       Option<Distribution> distribution       "ToDo: ???";
-      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Binding> binding                 "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_REAL;
 
     record VAR_ATTR_INT
-      Option<Expression> quantity             "quantity";
-      Option<Expression> min                  "Lower boundry";
-      Option<Expression> max                  "Upper boundry";
-      Option<Expression> start                "start value";
-      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Binding> quantity                "quantity";
+      Option<Binding> min                     "Lower boundry";
+      Option<Binding> max                     "Upper boundry";
+      Option<Binding> start                   "start value";
+      Option<Binding> fixed                   "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Uncertainty> uncertainty         "Attributes from data reconcilliation";
       Option<Distribution> distribution       "ToDo: ???";
-      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Binding> binding                 "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_INT;
 
     record VAR_ATTR_BOOL
-      Option<Expression> quantity             "quantity";
-      Option<Expression> start                "start value";
-      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
-      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Binding> quantity                "quantity";
+      Option<Binding> start                   "start value";
+      Option<Binding> fixed                   "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Binding> binding                 "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_BOOL;
 
     record VAR_ATTR_CLOCK
@@ -387,25 +416,23 @@ public
 
     record VAR_ATTR_STRING
       "kabdelhak: why does string have quantity/start/fixed?"
-      Option<Expression> quantity             "quantity";
-      Option<Expression> start                "start value";
-      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
-      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Binding> quantity                "quantity";
+      Option<Binding> start                   "start value";
+      Option<Binding> fixed                   "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Binding> binding                 "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_STRING;
 
     record VAR_ATTR_ENUMERATION
-      Option<Expression> quantity             "quantity";
-      Option<Expression> min                  "Lower boundry";
-      Option<Expression> max                  "Upper boundry";
-      Option<Expression> start                "start value";
-      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
-      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Binding> quantity                "quantity";
+      Option<Binding> min                     "Lower boundry";
+      Option<Binding> max                     "Upper boundry";
+      Option<Binding> start                   "start value";
+      Option<Binding> fixed                   "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Binding> binding                 "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_ENUMERATION;
 
     record VAR_ATTR_RECORD
@@ -421,25 +448,47 @@ public
     algorithm
       str := match attr
         case VAR_ATTR_REAL()
-        then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max), ("nominal", attr.nominal)}, attr.stateSelect, attr.tearingSelect);
+        then attributesToString({
+          ("fixed",   Util.applyOption(attr.fixed,   Binding.getTypedExp)),
+          ("start",   Util.applyOption(attr.start,   Binding.getTypedExp)),
+          ("min",     Util.applyOption(attr.min,     Binding.getTypedExp)),
+          ("max",     Util.applyOption(attr.max,     Binding.getTypedExp)),
+          ("nominal", Util.applyOption(attr.nominal, Binding.getTypedExp))
+        }, attr.stateSelect, attr.tearingSelect);
 
         case VAR_ATTR_INT()
-        then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
+        then attributesToString({
+          ("fixed", Util.applyOption(attr.fixed, Binding.getTypedExp)),
+          ("start", Util.applyOption(attr.start, Binding.getTypedExp)),
+          ("min",   Util.applyOption(attr.min,   Binding.getTypedExp)),
+          ("max",   Util.applyOption(attr.max,   Binding.getTypedExp))
+        }, NONE(), NONE());
 
         case VAR_ATTR_BOOL()
-        then attributesToString({("fixed", attr.fixed), ("start", attr.start)}, NONE(), NONE());
+        then attributesToString({
+          ("fixed", Util.applyOption(attr.fixed, Binding.getTypedExp)),
+          ("start", Util.applyOption(attr.start, Binding.getTypedExp))
+        }, NONE(), NONE());
 
         case VAR_ATTR_CLOCK()
         then "";
 
         case VAR_ATTR_STRING()
-        then attributesToString({("fixed", attr.fixed), ("start", attr.start)}, NONE(), NONE());
+        then attributesToString({
+          ("fixed", Util.applyOption(attr.fixed, Binding.getTypedExp)),
+          ("start", Util.applyOption(attr.start, Binding.getTypedExp))
+        }, NONE(), NONE());
 
         case VAR_ATTR_ENUMERATION()
-        then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
+        then attributesToString({
+          ("fixed", Util.applyOption(attr.fixed, Binding.getTypedExp)),
+          ("start", Util.applyOption(attr.start, Binding.getTypedExp)),
+          ("min",   Util.applyOption(attr.min,   Binding.getTypedExp)),
+          ("max",   Util.applyOption(attr.max,   Binding.getTypedExp))
+        }, NONE(), NONE());
 
         case VAR_ATTR_RECORD()
-        then List.toString(UnorderedMap.toList(attr.indexMap), function recordString(childrenAttr = attr.childrenAttr), "", "" ,", " , "");
+        then List.toString(UnorderedMap.toList(attr.indexMap), function recordString(childrenAttr = attr.childrenAttr), List.Style.FLAT);
 
         else getInstanceName() + " failed. Attribute string could not be created.";
       end match;
@@ -496,52 +545,47 @@ public
     algorithm
       attributes := match attributes
         case VAR_ATTR_REAL() algorithm
-          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
-          attributes.unit         := Util.applyOption(attributes.unit, function Expression.map(func = func));
-          attributes.displayUnit  := Util.applyOption(attributes.displayUnit, function Expression.map(func = func));
-          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
-          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
-          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
-          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
-          attributes.nominal      := Util.applyOption(attributes.nominal, function Expression.map(func = func));
-          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
-          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+          attributes.quantity     := Util.applyOption(attributes.quantity,    function Binding.mapExp(mapFn = func));
+          attributes.unit         := Util.applyOption(attributes.unit,        function Binding.mapExp(mapFn = func));
+          attributes.displayUnit  := Util.applyOption(attributes.displayUnit, function Binding.mapExp(mapFn = func));
+          attributes.min          := Util.applyOption(attributes.min,         function Binding.mapExp(mapFn = func));
+          attributes.max          := Util.applyOption(attributes.max,         function Binding.mapExp(mapFn = func));
+          attributes.start        := Util.applyOption(attributes.start,       function Binding.mapExp(mapFn = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed,       function Binding.mapExp(mapFn = func));
+          attributes.nominal      := Util.applyOption(attributes.nominal,     function Binding.mapExp(mapFn = func));
+          attributes.binding      := Util.applyOption(attributes.binding,     function Binding.mapExp(mapFn = func));
         then attributes;
 
         case VAR_ATTR_INT() algorithm
-          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
-          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
-          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
-          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
-          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
-          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
-          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+          attributes.quantity     := Util.applyOption(attributes.quantity,    function Binding.mapExp(mapFn = func));
+          attributes.min          := Util.applyOption(attributes.min,         function Binding.mapExp(mapFn = func));
+          attributes.max          := Util.applyOption(attributes.max,         function Binding.mapExp(mapFn = func));
+          attributes.start        := Util.applyOption(attributes.start,       function Binding.mapExp(mapFn = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed,       function Binding.mapExp(mapFn = func));
+          attributes.binding      := Util.applyOption(attributes.binding,     function Binding.mapExp(mapFn = func));
         then attributes;
 
         case VAR_ATTR_BOOL() algorithm
-          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
-          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
-          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
-          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
-          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+          attributes.quantity     := Util.applyOption(attributes.quantity,    function Binding.mapExp(mapFn = func));
+          attributes.start        := Util.applyOption(attributes.start,       function Binding.mapExp(mapFn = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed,       function Binding.mapExp(mapFn = func));
+          attributes.binding      := Util.applyOption(attributes.binding,     function Binding.mapExp(mapFn = func));
         then attributes;
 
         case VAR_ATTR_STRING() algorithm
-          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
-          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
-          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
-          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
-          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+          attributes.quantity     := Util.applyOption(attributes.quantity,    function Binding.mapExp(mapFn = func));
+          attributes.start        := Util.applyOption(attributes.start,       function Binding.mapExp(mapFn = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed,       function Binding.mapExp(mapFn = func));
+          attributes.binding      := Util.applyOption(attributes.binding,     function Binding.mapExp(mapFn = func));
         then attributes;
 
         case VAR_ATTR_ENUMERATION() algorithm
-          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
-          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
-          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
-          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
-          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
-          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
-          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+          attributes.quantity     := Util.applyOption(attributes.quantity,    function Binding.mapExp(mapFn = func));
+          attributes.min          := Util.applyOption(attributes.min,         function Binding.mapExp(mapFn = func));
+          attributes.max          := Util.applyOption(attributes.max,         function Binding.mapExp(mapFn = func));
+          attributes.start        := Util.applyOption(attributes.start,       function Binding.mapExp(mapFn = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed,       function Binding.mapExp(mapFn = func));
+          attributes.binding      := Util.applyOption(attributes.binding,     function Binding.mapExp(mapFn = func));
         then attributes;
 
         case VAR_ATTR_RECORD() algorithm
@@ -559,10 +603,11 @@ public
       input Boolean overwrite = false;
     protected
       list<Integer> sizes;
-      Expression start, iter_range, binding = Expression.BOOLEAN(b);
+      Expression start, iter_range, fixedExp = Expression.BOOLEAN(b);
       Option<Expression> step;
       InstNode iter_name;
       list<tuple<InstNode, Expression>> iterators = {};
+      Binding fixedBinding;
     algorithm
       // make array constructor if it is an array
       if Type.isArray(ty) then
@@ -574,28 +619,29 @@ public
           iter_range  := Expression.RANGE(Type.INTEGER(), start, step, Expression.INTEGER(stop));
           iterators   := (iter_name, iter_range) :: iterators;
         end for;
-        binding := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(binding), NFPrefixes.Purity.PURE, binding, listReverse(iterators)));
+        fixedExp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(fixedExp), NFPrefixes.Purity.PURE, fixedExp, listReverse(iterators)));
       end if;
+      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED);
 
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.fixed)) algorithm
-          attributes.fixed := SOME(binding);
+          attributes.fixed := SOME(fixedBinding);
         then attributes;
 
         case VAR_ATTR_INT() guard(overwrite or isNone(attributes.fixed)) algorithm
-          attributes.fixed := SOME(binding);
+          attributes.fixed := SOME(fixedBinding);
         then attributes;
 
         case VAR_ATTR_BOOL() guard(overwrite or isNone(attributes.fixed)) algorithm
-          attributes.fixed := SOME(binding);
+          attributes.fixed := SOME(fixedBinding);
         then attributes;
 
         case VAR_ATTR_STRING() guard(overwrite or isNone(attributes.fixed)) algorithm
-          attributes.fixed := SOME(binding);
+          attributes.fixed := SOME(fixedBinding);
         then attributes;
 
         case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.fixed)) algorithm
-          attributes.fixed := SOME(binding);
+          attributes.fixed := SOME(fixedBinding);
         then attributes;
 
         else attributes;
@@ -607,12 +653,14 @@ public
       output Boolean fixed;
     algorithm
       fixed := match attributes
-        case VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)))        then true;
-        case VAR_ATTR_INT(fixed = SOME(Expression.BOOLEAN(value = true)))         then true;
-        case VAR_ATTR_BOOL(fixed = SOME(Expression.BOOLEAN(value = true)))        then true;
-        case VAR_ATTR_STRING(fixed = SOME(Expression.BOOLEAN(value = true)))      then true;
-        case VAR_ATTR_ENUMERATION(fixed = SOME(Expression.BOOLEAN(value = true))) then true;
-                                                                                  else false;
+        local
+          Binding b;
+        case VAR_ATTR_REAL(fixed = SOME(b))        then Expression.isAllTrue(Binding.getTypedExp(b));
+        case VAR_ATTR_INT(fixed = SOME(b))         then Expression.isAllTrue(Binding.getTypedExp(b));
+        case VAR_ATTR_BOOL(fixed = SOME(b))        then Expression.isAllTrue(Binding.getTypedExp(b));
+        case VAR_ATTR_STRING(fixed = SOME(b))      then Expression.isAllTrue(Binding.getTypedExp(b));
+        case VAR_ATTR_ENUMERATION(fixed = SOME(b)) then Expression.isAllTrue(Binding.getTypedExp(b));
+                                                   else false;
       end match;
     end isFixed;
 
@@ -620,26 +668,29 @@ public
       input output VariableAttributes attributes;
       input Expression start;
       input Boolean overwrite = false;
+    protected
+      Binding startBinding;
     algorithm
+      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED);
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.start)) algorithm
-          attributes.start := SOME(start);
+          attributes.start := SOME(startBinding);
         then attributes;
 
         case VAR_ATTR_INT() guard(overwrite or isNone(attributes.start)) algorithm
-          attributes.start := SOME(start);
+          attributes.start := SOME(startBinding);
         then attributes;
 
         case VAR_ATTR_BOOL() guard(overwrite or isNone(attributes.start)) algorithm
-          attributes.start := SOME(start);
+          attributes.start := SOME(startBinding);
         then attributes;
 
         case VAR_ATTR_STRING() guard(overwrite or isNone(attributes.start)) algorithm
-          attributes.start := SOME(start);
+          attributes.start := SOME(startBinding);
         then attributes;
 
         case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.start)) algorithm
-          attributes.start := SOME(start);
+          attributes.start := SOME(startBinding);
         then attributes;
 
         else attributes;
@@ -651,11 +702,11 @@ public
       output Option<Expression> start;
     algorithm
       start := match attributes
-        case VAR_ATTR_REAL()          then attributes.start;
-        case VAR_ATTR_INT()           then attributes.start;
-        case VAR_ATTR_BOOL()          then attributes.start;
-        case VAR_ATTR_STRING()        then attributes.start;
-        case VAR_ATTR_ENUMERATION()   then attributes.start;
+        case VAR_ATTR_REAL()          then Util.applyOption(attributes.start, Binding.getTypedExp);
+        case VAR_ATTR_INT()           then Util.applyOption(attributes.start, Binding.getTypedExp);
+        case VAR_ATTR_BOOL()          then Util.applyOption(attributes.start, Binding.getTypedExp);
+        case VAR_ATTR_STRING()        then Util.applyOption(attributes.start, Binding.getTypedExp);
+        case VAR_ATTR_ENUMERATION()   then Util.applyOption(attributes.start, Binding.getTypedExp);
         else NONE();
       end match;
     end getStartAttribute;
@@ -664,19 +715,21 @@ public
       input output VariableAttributes attributes;
       input Option<Expression> min_val;
       input Boolean overwrite = false;
+    protected
+      Option<Binding> min_binding = Util.applyOption(min_val, expToGeneratedBinding);
     algorithm
       attributes := match attributes
 
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.min)) algorithm
-          attributes.min := min_val;
+          attributes.min := min_binding;
         then attributes;
 
         case VAR_ATTR_INT() guard(overwrite or isNone(attributes.min)) algorithm
-          attributes.min := min_val;
+          attributes.min := min_binding;
         then attributes;
 
         case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.min)) algorithm
-          attributes.min := min_val;
+          attributes.min := min_binding;
         then attributes;
 
         else attributes;
@@ -687,24 +740,126 @@ public
       input output VariableAttributes attributes;
       input Option<Expression> max_val;
       input Boolean overwrite = false;
+    protected
+      Option<Binding> max_binding = Util.applyOption(max_val, expToGeneratedBinding);
     algorithm
       attributes := match attributes
 
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.max)) algorithm
-          attributes.max := max_val;
+          attributes.max := max_binding;
         then attributes;
 
         case VAR_ATTR_INT() guard(overwrite or isNone(attributes.max)) algorithm
-          attributes.max := max_val;
+          attributes.max := max_binding;
         then attributes;
 
         case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.max)) algorithm
-          attributes.max := max_val;
+          attributes.max := max_binding;
         then attributes;
 
         else attributes;
       end match;
     end setMax;
+
+    function merge
+      "Merges the attributes from src into dst. Used by inlining to carry the
+       attributes declared on a function input/output (src) onto the model
+       variable (dst) that is bound to it, so they are not lost when the call is
+       replaced by the function body (see #15947). The model variable wins for
+       any scalar attribute that is already set; for min/max the tightest bound
+       wins."
+      input output VariableAttributes dst;
+      input VariableAttributes src;
+    algorithm
+      dst := match (dst, src)
+        case (VAR_ATTR_REAL(), VAR_ATTR_REAL()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.unit        := mergeOpt(dst.unit, src.unit);
+          dst.displayUnit := mergeOpt(dst.displayUnit, src.displayUnit);
+          dst.min         := tightestBound(dst.min, src.min, true);
+          dst.max         := tightestBound(dst.max, src.max, false);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+          dst.nominal     := mergeOpt(dst.nominal, src.nominal);
+        then dst;
+
+        case (VAR_ATTR_INT(), VAR_ATTR_INT()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.min         := tightestBound(dst.min, src.min, true);
+          dst.max         := tightestBound(dst.max, src.max, false);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        case (VAR_ATTR_BOOL(), VAR_ATTR_BOOL()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        case (VAR_ATTR_STRING(), VAR_ATTR_STRING()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        case (VAR_ATTR_ENUMERATION(), VAR_ATTR_ENUMERATION()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.min         := mergeOpt(dst.min, src.min);
+          dst.max         := mergeOpt(dst.max, src.max);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        else dst;
+      end match;
+    end merge;
+
+    function mergeOpt
+      "Keeps dst if it is already set, otherwise takes src."
+      input output Option<Binding> dst;
+      input Option<Binding> src;
+    algorithm
+      dst := if isSome(dst) then dst else src;
+    end mergeOpt;
+
+    function tightestBound
+      "Picks the tighter of two bounds when both are constant numbers, otherwise
+       keeps the already present (dst) bound. isMin = true for lower bounds
+       (the larger value is tighter), false for upper bounds (the smaller value
+       is tighter)."
+      input Option<Binding> dst;
+      input Option<Binding> src;
+      input Boolean isMin;
+      output Option<Binding> res;
+    protected
+      Binding db, sb;
+      Expression de, se;
+      Real dv, sv;
+    algorithm
+      if isNone(dst) then
+        res := src;
+      elseif isNone(src) then
+        res := dst;
+      else
+        SOME(db) := dst;
+        SOME(sb) := src;
+        de := Binding.getTypedExp(db);
+        se := Binding.getTypedExp(sb);
+        // both bounds must be constant numbers to be able to compare them
+        if Expression.isConstNumber(de) and Expression.isConstNumber(se) then
+          dv := Expression.realValue(de);
+          sv := Expression.realValue(se);
+          if isMin then
+            res := if sv > dv then src else dst;
+          else
+            res := if sv < dv then src else dst;
+          end if;
+        else
+          res := dst;
+        end if;
+      end if;
+    end tightestBound;
 
     function setStateSelect
       input output VariableAttributes attributes;
@@ -761,7 +916,7 @@ public
       output Option<Expression> nominal;
     algorithm
       nominal := match attr
-        case VAR_ATTR_REAL() then attr.nominal;
+        case VAR_ATTR_REAL() then Util.applyOption(attr.nominal, Binding.getTypedExp);
         else NONE();
       end match;
     end getNominal;
@@ -782,27 +937,38 @@ public
       input ExpressionIterator        binding_iter "A binding expression for certain types. E.G. parameters";
       input Option<Boolean>           isProtected "Defined in protected scope";
       input Option<Boolean>           finalPrefix "Defined as final";
-      input ExpressionIterator        startOrigin_iter "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
       input Integer                   length "length of result";
       output list<VariableAttributes> scalar_attributes = {};
+      output Boolean uniform;
     protected
-      Option<Expression> quantity, unit, displayUnit, min, max, start, fixed, nominal, binding, startOrigin;
-      ExpressionIterator quantity_loc = quantity_iter, unit_loc = unit_iter, displayUnit_loc = displayUnit_iter, min_loc = min_iter, max_loc = max_iter, start_loc = start_iter, fixed_loc = fixed_iter, nominal_loc = nominal_iter, binding_loc = binding_iter, startOrigin_loc = startOrigin_iter;
+      Option<Expression> quantity_e, unit_e, displayUnit_e, min_e, max_e, start_e, fixed_e, nominal_e, binding_e;
+      ExpressionIterator quantity_loc = quantity_iter, unit_loc = unit_iter, displayUnit_loc = displayUnit_iter, min_loc = min_iter, max_loc = max_iter, start_loc = start_iter, fixed_loc = fixed_iter, nominal_loc = nominal_iter, binding_loc = binding_iter;
     algorithm
-      for i in 1:length loop
-        (quantity_loc, quantity) := ExpressionIterator.nextOpt(quantity_loc);
-        (unit_loc, unit) := ExpressionIterator.nextOpt(unit_loc);
-        (displayUnit_loc, displayUnit) := ExpressionIterator.nextOpt(displayUnit_loc);
-        (min_loc, min) := ExpressionIterator.nextOpt(min_loc);
-        (max_loc, max) := ExpressionIterator.nextOpt(max_loc);
-        (start_loc, start) := ExpressionIterator.nextOpt(start_loc);
-        (fixed_loc, fixed) := ExpressionIterator.nextOpt(fixed_loc);
-        (nominal_loc, nominal) := ExpressionIterator.nextOpt(nominal_loc);
-        (binding_loc, binding) := ExpressionIterator.nextOpt(binding_loc);
-        (startOrigin_loc, startOrigin) := ExpressionIterator.nextOpt(startOrigin_loc);
-        scalar_attributes := VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelect,tearingSelect,uncertainty,distribution,binding,isProtected,finalPrefix,startOrigin) :: scalar_attributes;
+      uniform := length > 1 and List.all({quantity_iter, unit_iter, displayUnit_iter, min_iter, max_iter, start_iter, fixed_iter, nominal_iter, binding_iter}, ExpressionIterator.isUniform);
+      for i in 1:(if uniform then 1 else length) loop
+        (quantity_loc, quantity_e)     := ExpressionIterator.nextOpt(quantity_loc);
+        (unit_loc, unit_e)             := ExpressionIterator.nextOpt(unit_loc);
+        (displayUnit_loc, displayUnit_e) := ExpressionIterator.nextOpt(displayUnit_loc);
+        (min_loc, min_e)               := ExpressionIterator.nextOpt(min_loc);
+        (max_loc, max_e)               := ExpressionIterator.nextOpt(max_loc);
+        (start_loc, start_e)           := ExpressionIterator.nextOpt(start_loc);
+        (fixed_loc, fixed_e)           := ExpressionIterator.nextOpt(fixed_loc);
+        (nominal_loc, nominal_e)       := ExpressionIterator.nextOpt(nominal_loc);
+        (binding_loc, binding_e)       := ExpressionIterator.nextOpt(binding_loc);
+        scalar_attributes := VAR_ATTR_REAL(
+          Util.applyOption(quantity_e,     expToGeneratedBinding),
+          Util.applyOption(unit_e,         expToGeneratedBinding),
+          Util.applyOption(displayUnit_e,  expToGeneratedBinding),
+          Util.applyOption(min_e,          expToGeneratedBinding),
+          Util.applyOption(max_e,          expToGeneratedBinding),
+          Util.applyOption(start_e,        expToGeneratedBinding),
+          Util.applyOption(fixed_e,        expToGeneratedBinding),
+          Util.applyOption(nominal_e,      expToGeneratedBinding),
+          stateSelect, tearingSelect, uncertainty, distribution,
+          Util.applyOption(binding_e,      expToGeneratedBinding),
+          isProtected, finalPrefix) :: scalar_attributes;
       end for;
-      scalar_attributes := listReverse(scalar_attributes);
+      scalar_attributes := if uniform then List.fill(listHead(scalar_attributes), length) else listReverseInPlace(scalar_attributes);
     end scalarizeReal;
 
     function scalarizeInt
@@ -816,24 +982,32 @@ public
       input ExpressionIterator        binding_iter "A binding expression for certain types. E.G. parameters";
       input Option<Boolean>           isProtected "Defined in protected scope";
       input Option<Boolean>           finalPrefix "Defined as final";
-      input ExpressionIterator        startOrigin_iter "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
       input Integer                   length "length of result";
       output list<VariableAttributes> scalar_attributes = {};
+      output Boolean uniform;
     protected
-      Option<Expression> quantity, min, max, start, fixed, binding, startOrigin;
-      ExpressionIterator quantity_loc = quantity_iter, min_loc = min_iter, max_loc = max_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter, startOrigin_loc = startOrigin_iter;
+      Option<Expression> quantity_e, min_e, max_e, start_e, fixed_e, binding_e;
+      ExpressionIterator quantity_loc = quantity_iter, min_loc = min_iter, max_loc = max_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter;
     algorithm
-      for i in 1:length loop
-        (quantity_loc, quantity) := ExpressionIterator.nextOpt(quantity_loc);
-        (min_loc, min) := ExpressionIterator.nextOpt(min_loc);
-        (max_loc, max) := ExpressionIterator.nextOpt(max_loc);
-        (start_loc, start) := ExpressionIterator.nextOpt(start_loc);
-        (fixed_loc, fixed) := ExpressionIterator.nextOpt(fixed_loc);
-        (binding_loc, binding) := ExpressionIterator.nextOpt(binding_loc);
-        (startOrigin_loc, startOrigin) := ExpressionIterator.nextOpt(startOrigin_loc);
-        scalar_attributes := VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainty,distribution,binding,isProtected,finalPrefix,startOrigin) :: scalar_attributes;
+      uniform := length > 1 and List.all({quantity_iter, min_iter, max_iter, start_iter, fixed_iter, binding_iter}, ExpressionIterator.isUniform);
+      for i in 1:(if uniform then 1 else length) loop
+        (quantity_loc, quantity_e) := ExpressionIterator.nextOpt(quantity_loc);
+        (min_loc, min_e)           := ExpressionIterator.nextOpt(min_loc);
+        (max_loc, max_e)           := ExpressionIterator.nextOpt(max_loc);
+        (start_loc, start_e)       := ExpressionIterator.nextOpt(start_loc);
+        (fixed_loc, fixed_e)       := ExpressionIterator.nextOpt(fixed_loc);
+        (binding_loc, binding_e)   := ExpressionIterator.nextOpt(binding_loc);
+        scalar_attributes := VAR_ATTR_INT(
+          Util.applyOption(quantity_e, expToGeneratedBinding),
+          Util.applyOption(min_e,      expToGeneratedBinding),
+          Util.applyOption(max_e,      expToGeneratedBinding),
+          Util.applyOption(start_e,    expToGeneratedBinding),
+          Util.applyOption(fixed_e,    expToGeneratedBinding),
+          uncertainty, distribution,
+          Util.applyOption(binding_e,  expToGeneratedBinding),
+          isProtected, finalPrefix) :: scalar_attributes;
       end for;
-      scalar_attributes := listReverse(scalar_attributes);
+      scalar_attributes := if uniform then List.fill(listHead(scalar_attributes), length) else listReverseInPlace(scalar_attributes);
     end scalarizeInt;
 
     function scalarizeBool
@@ -843,22 +1017,27 @@ public
       input ExpressionIterator        binding_iter "A binding expression for certain types. E.G. parameters";
       input Option<Boolean>           isProtected "Defined in protected scope";
       input Option<Boolean>           finalPrefix "Defined as final";
-      input ExpressionIterator        startOrigin_iter "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
       input Integer                   length "length of result";
       output list<VariableAttributes> scalar_attributes = {};
+      output Boolean uniform;
     protected
-      Option<Expression> quantity, start, fixed, binding, startOrigin;
-      ExpressionIterator quantity_loc = quantity_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter, startOrigin_loc = startOrigin_iter;
+      Option<Expression> quantity_e, start_e, fixed_e, binding_e;
+      ExpressionIterator quantity_loc = quantity_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter;
     algorithm
-      for i in 1:length loop
-        (quantity_loc, quantity) := ExpressionIterator.nextOpt(quantity_loc);
-        (start_loc, start) := ExpressionIterator.nextOpt(start_loc);
-        (fixed_loc, fixed) := ExpressionIterator.nextOpt(fixed_loc);
-        (binding_loc, binding) := ExpressionIterator.nextOpt(binding_loc);
-        (startOrigin_loc, startOrigin) := ExpressionIterator.nextOpt(startOrigin_loc);
-        scalar_attributes := VAR_ATTR_BOOL(quantity,start,fixed,binding,isProtected,finalPrefix,startOrigin) :: scalar_attributes;
+      uniform := length > 1 and List.all({quantity_iter, start_iter, fixed_iter, binding_iter}, ExpressionIterator.isUniform);
+      for i in 1:(if uniform then 1 else length) loop
+        (quantity_loc, quantity_e) := ExpressionIterator.nextOpt(quantity_loc);
+        (start_loc, start_e)       := ExpressionIterator.nextOpt(start_loc);
+        (fixed_loc, fixed_e)       := ExpressionIterator.nextOpt(fixed_loc);
+        (binding_loc, binding_e)   := ExpressionIterator.nextOpt(binding_loc);
+        scalar_attributes := VAR_ATTR_BOOL(
+          Util.applyOption(quantity_e, expToGeneratedBinding),
+          Util.applyOption(start_e,    expToGeneratedBinding),
+          Util.applyOption(fixed_e,    expToGeneratedBinding),
+          Util.applyOption(binding_e,  expToGeneratedBinding),
+          isProtected, finalPrefix) :: scalar_attributes;
       end for;
-      scalar_attributes := listReverse(scalar_attributes);
+      scalar_attributes := if uniform then List.fill(listHead(scalar_attributes), length) else listReverseInPlace(scalar_attributes);
     end scalarizeBool;
 
     function scalarizeClock
@@ -866,6 +1045,7 @@ public
       input Option<Boolean>               finalPrefix "Defined as final";
       input Integer                       length "length of result";
       output list<VariableAttributes>     scalar_attributes = List.fill(VAR_ATTR_CLOCK(isProtected, finalPrefix), length);
+      output Boolean uniform = true;
     end scalarizeClock;
 
     function scalarizeString
@@ -875,22 +1055,27 @@ public
       input ExpressionIterator        binding_iter "A binding expression for certain types. E.G. parameters";
       input Option<Boolean>           isProtected "Defined in protected scope";
       input Option<Boolean>           finalPrefix "Defined as final";
-      input ExpressionIterator        startOrigin_iter "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
       input Integer                   length "length of result";
       output list<VariableAttributes> scalar_attributes = {};
+      output Boolean uniform;
     protected
-     Option<Expression> quantity, start, fixed, binding, startOrigin;
-      ExpressionIterator quantity_loc = quantity_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter, startOrigin_loc = startOrigin_iter;
+      Option<Expression> quantity_e, start_e, fixed_e, binding_e;
+      ExpressionIterator quantity_loc = quantity_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter;
     algorithm
-      for i in 1:length loop
-        (quantity_loc, quantity) := ExpressionIterator.nextOpt(quantity_loc);
-        (start_loc, start) := ExpressionIterator.nextOpt(start_loc);
-        (fixed_loc, fixed) := ExpressionIterator.nextOpt(fixed_loc);
-        (binding_loc, binding) := ExpressionIterator.nextOpt(binding_loc);
-        (startOrigin_loc, startOrigin) := ExpressionIterator.nextOpt(startOrigin_loc);
-        scalar_attributes := VAR_ATTR_STRING(quantity,start,fixed,binding,isProtected,finalPrefix,startOrigin) :: scalar_attributes;
+      uniform := length > 1 and List.all({quantity_iter, start_iter, fixed_iter, binding_iter}, ExpressionIterator.isUniform);
+      for i in 1:(if uniform then 1 else length) loop
+        (quantity_loc, quantity_e) := ExpressionIterator.nextOpt(quantity_loc);
+        (start_loc, start_e)       := ExpressionIterator.nextOpt(start_loc);
+        (fixed_loc, fixed_e)       := ExpressionIterator.nextOpt(fixed_loc);
+        (binding_loc, binding_e)   := ExpressionIterator.nextOpt(binding_loc);
+        scalar_attributes := VAR_ATTR_STRING(
+          Util.applyOption(quantity_e, expToGeneratedBinding),
+          Util.applyOption(start_e,    expToGeneratedBinding),
+          Util.applyOption(fixed_e,    expToGeneratedBinding),
+          Util.applyOption(binding_e,  expToGeneratedBinding),
+          isProtected, finalPrefix) :: scalar_attributes;
       end for;
-      scalar_attributes := listReverse(scalar_attributes);
+      scalar_attributes := if uniform then List.fill(listHead(scalar_attributes), length) else listReverseInPlace(scalar_attributes);
     end scalarizeString;
 
     function scalarizeEnumeration
@@ -902,75 +1087,80 @@ public
       input ExpressionIterator        binding_iter "A binding expression for certain types. E.G. parameters";
       input Option<Boolean>           isProtected "Defined in protected scope";
       input Option<Boolean>           finalPrefix "Defined as final";
-      input ExpressionIterator        startOrigin_iter "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
       input Integer                   length "length of result";
       output list<VariableAttributes> scalar_attributes = {};
+      output Boolean uniform;
     protected
-      Option<Expression> quantity, min, max, start, fixed, binding, startOrigin;
-      ExpressionIterator quantity_loc = quantity_iter, min_loc = min_iter, max_loc = max_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter, startOrigin_loc = startOrigin_iter;
+      Option<Expression> quantity_e, min_e, max_e, start_e, fixed_e, binding_e;
+      ExpressionIterator quantity_loc = quantity_iter, min_loc = min_iter, max_loc = max_iter, start_loc = start_iter, fixed_loc = fixed_iter, binding_loc = binding_iter;
     algorithm
-      for i in 1:length loop
-        (quantity_loc, quantity) := ExpressionIterator.nextOpt(quantity_loc);
-        (min_loc, min) := ExpressionIterator.nextOpt(min_loc);
-        (max_loc, max) := ExpressionIterator.nextOpt(max_loc);
-        (start_loc, start) := ExpressionIterator.nextOpt(start_loc);
-        (fixed_loc, fixed) := ExpressionIterator.nextOpt(fixed_loc);
-        (binding_loc, binding) := ExpressionIterator.nextOpt(binding_loc);
-        (startOrigin_loc, startOrigin) := ExpressionIterator.nextOpt(startOrigin_loc);
-        scalar_attributes :=  VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,binding,isProtected,finalPrefix,startOrigin) :: scalar_attributes;
+      uniform := length > 1 and List.all({quantity_iter, min_iter, max_iter, start_iter, fixed_iter, binding_iter}, ExpressionIterator.isUniform);
+      for i in 1:(if uniform then 1 else length) loop
+        (quantity_loc, quantity_e) := ExpressionIterator.nextOpt(quantity_loc);
+        (min_loc, min_e)           := ExpressionIterator.nextOpt(min_loc);
+        (max_loc, max_e)           := ExpressionIterator.nextOpt(max_loc);
+        (start_loc, start_e)       := ExpressionIterator.nextOpt(start_loc);
+        (fixed_loc, fixed_e)       := ExpressionIterator.nextOpt(fixed_loc);
+        (binding_loc, binding_e)   := ExpressionIterator.nextOpt(binding_loc);
+        scalar_attributes := VAR_ATTR_ENUMERATION(
+          Util.applyOption(quantity_e, expToGeneratedBinding),
+          Util.applyOption(min_e,      expToGeneratedBinding),
+          Util.applyOption(max_e,      expToGeneratedBinding),
+          Util.applyOption(start_e,    expToGeneratedBinding),
+          Util.applyOption(fixed_e,    expToGeneratedBinding),
+          Util.applyOption(binding_e,  expToGeneratedBinding),
+          isProtected, finalPrefix) :: scalar_attributes;
       end for;
-      scalar_attributes := listReverse(scalar_attributes);
+      scalar_attributes := if uniform then List.fill(listHead(scalar_attributes), length) else listReverseInPlace(scalar_attributes);
     end scalarizeEnumeration;
 
     function scalarize
       input VariableAttributes attributes;
       input Integer length;
       output list<VariableAttributes> scalar_attributes = {};
+      output Boolean uniform "every element got the same attribute record";
     algorithm
-      scalar_attributes := match attributes
+      (scalar_attributes, uniform) := match attributes
         case VAR_ATTR_REAL() then scalarizeReal(
-          quantity_iter       = ExpressionIterator.fromExpOpt(attributes.quantity),
-          unit_iter           = ExpressionIterator.fromExpOpt(attributes.unit),
-          displayUnit_iter    = ExpressionIterator.fromExpOpt(attributes.displayUnit),
-          min_iter            = ExpressionIterator.fromExpOpt(attributes.min),
-          max_iter            = ExpressionIterator.fromExpOpt(attributes.max),
-          start_iter          = ExpressionIterator.fromExpOpt(attributes.start),
-          fixed_iter          = ExpressionIterator.fromExpOpt(attributes.fixed),
-          nominal_iter        = ExpressionIterator.fromExpOpt(attributes.nominal),
+          quantity_iter       = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.quantity,    Binding.getTypedExp)),
+          unit_iter           = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.unit,        Binding.getTypedExp)),
+          displayUnit_iter    = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.displayUnit, Binding.getTypedExp)),
+          min_iter            = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.min,         Binding.getTypedExp)),
+          max_iter            = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.max,         Binding.getTypedExp)),
+          start_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.start,       Binding.getTypedExp)),
+          fixed_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.fixed,       Binding.getTypedExp)),
+          nominal_iter        = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.nominal,     Binding.getTypedExp)),
           stateSelect         = attributes.stateSelect,
           tearingSelect       = attributes.tearingSelect,
           uncertainty         = attributes.uncertainty,
           distribution        = attributes.distribution,
-          binding_iter        = ExpressionIterator.fromExpOpt(attributes.binding),
+          binding_iter        = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.binding,     Binding.getTypedExp)),
           isProtected         = attributes.isProtected,
           finalPrefix         = attributes.finalPrefix,
-          startOrigin_iter    = ExpressionIterator.fromExpOpt(attributes.startOrigin),
           length              = length
         );
 
         case VAR_ATTR_INT() then scalarizeInt(
-          quantity_iter       = ExpressionIterator.fromExpOpt(attributes.quantity),
-          min_iter            = ExpressionIterator.fromExpOpt(attributes.min),
-          max_iter            = ExpressionIterator.fromExpOpt(attributes.max),
-          start_iter          = ExpressionIterator.fromExpOpt(attributes.start),
-          fixed_iter          = ExpressionIterator.fromExpOpt(attributes.fixed),
+          quantity_iter       = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.quantity, Binding.getTypedExp)),
+          min_iter            = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.min,      Binding.getTypedExp)),
+          max_iter            = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.max,      Binding.getTypedExp)),
+          start_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.start,    Binding.getTypedExp)),
+          fixed_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.fixed,    Binding.getTypedExp)),
           uncertainty         = attributes.uncertainty,
           distribution        = attributes.distribution,
-          binding_iter        = ExpressionIterator.fromExpOpt(attributes.binding),
+          binding_iter        = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.binding,  Binding.getTypedExp)),
           isProtected         = attributes.isProtected,
           finalPrefix         = attributes.finalPrefix,
-          startOrigin_iter    = ExpressionIterator.fromExpOpt(attributes.startOrigin),
           length              = length
         );
 
         case VAR_ATTR_BOOL() then scalarizeBool(
-          quantity_iter       = ExpressionIterator.fromExpOpt(attributes.quantity),
-          start_iter          = ExpressionIterator.fromExpOpt(attributes.start),
-          fixed_iter          = ExpressionIterator.fromExpOpt(attributes.fixed),
-          binding_iter        = ExpressionIterator.fromExpOpt(attributes.binding),
+          quantity_iter       = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.quantity, Binding.getTypedExp)),
+          start_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.start,    Binding.getTypedExp)),
+          fixed_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.fixed,    Binding.getTypedExp)),
+          binding_iter        = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.binding,  Binding.getTypedExp)),
           isProtected         = attributes.isProtected,
           finalPrefix         = attributes.finalPrefix,
-          startOrigin_iter    = ExpressionIterator.fromExpOpt(attributes.startOrigin),
           length              = length
         );
 
@@ -981,31 +1171,29 @@ public
         );
 
         case VAR_ATTR_STRING() then scalarizeString(
-          quantity_iter       = ExpressionIterator.fromExpOpt(attributes.quantity),
-          start_iter          = ExpressionIterator.fromExpOpt(attributes.start),
-          fixed_iter          = ExpressionIterator.fromExpOpt(attributes.fixed),
-          binding_iter        = ExpressionIterator.fromExpOpt(attributes.binding),
+          quantity_iter       = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.quantity, Binding.getTypedExp)),
+          start_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.start,    Binding.getTypedExp)),
+          fixed_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.fixed,    Binding.getTypedExp)),
+          binding_iter        = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.binding,  Binding.getTypedExp)),
           isProtected         = attributes.isProtected,
           finalPrefix         = attributes.finalPrefix,
-          startOrigin_iter    = ExpressionIterator.fromExpOpt(attributes.startOrigin),
           length              = length
         );
 
         case VAR_ATTR_ENUMERATION() then scalarizeEnumeration(
-          quantity_iter       = ExpressionIterator.fromExpOpt(attributes.quantity),
-          min_iter            = ExpressionIterator.fromExpOpt(attributes.min),
-          max_iter            = ExpressionIterator.fromExpOpt(attributes.max),
-          start_iter          = ExpressionIterator.fromExpOpt(attributes.start),
-          fixed_iter          = ExpressionIterator.fromExpOpt(attributes.fixed),
-          binding_iter        = ExpressionIterator.fromExpOpt(attributes.binding),
+          quantity_iter       = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.quantity, Binding.getTypedExp)),
+          min_iter            = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.min,      Binding.getTypedExp)),
+          max_iter            = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.max,      Binding.getTypedExp)),
+          start_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.start,    Binding.getTypedExp)),
+          fixed_iter          = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.fixed,    Binding.getTypedExp)),
+          binding_iter        = ExpressionIterator.fromExpOpt(Util.applyOption(attributes.binding,  Binding.getTypedExp)),
           isProtected         = attributes.isProtected,
           finalPrefix         = attributes.finalPrefix,
-          startOrigin_iter    = ExpressionIterator.fromExpOpt(attributes.startOrigin),
           length              = length
         );
 
         // kabdelhak: ToDo: need to discuss this case
-        case VAR_ATTR_RECORD() then {attributes};
+        case VAR_ATTR_RECORD() then ({attributes}, false);
 
         else algorithm
           Error.terminate(getInstanceName() + "failed. Not yet handled: " + toString(attributes), sourceInfo());
@@ -1133,8 +1321,8 @@ public
     protected
       String name;
       Binding b;
-      Option<Expression> quantity = NONE(), unit = NONE(), displayUnit = NONE();
-      Option<Expression> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
+      Option<Binding> quantity = NONE(), unit = NONE(), displayUnit = NONE();
+      Option<Binding> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
       Option<StateSelect> state_select = NONE();
       Option<TearingSelect> tearing_select = NONE();
     algorithm
@@ -1166,7 +1354,7 @@ public
 
       attributes := VariableAttributes.VAR_ATTR_REAL(
         quantity, unit, displayUnit, min, max, start, fixed, nominal,
-        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal), NONE());
+        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal));
     end createReal;
 
     function createInt
@@ -1176,8 +1364,8 @@ public
     protected
       String name;
       Binding b;
-      Option<Expression> quantity = NONE(), min = NONE(), max = NONE();
-      Option<Expression> start = NONE(), fixed = NONE();
+      Option<Binding> quantity = NONE(), min = NONE(), max = NONE();
+      Option<Binding> start = NONE(), fixed = NONE();
     algorithm
       if listEmpty(attrs) and not isFinal then
         attributes := EMPTY_VAR_ATTR_INT;
@@ -1204,7 +1392,7 @@ public
 
         attributes := VariableAttributes.VAR_ATTR_INT(
           quantity, min, max, start, fixed,
-          NONE(), NONE(), NONE(), NONE(), SOME(isFinal), NONE());
+          NONE(), NONE(), NONE(), NONE(), SOME(isFinal));
       end if;
     end createInt;
 
@@ -1215,7 +1403,7 @@ public
     protected
       String name;
       Binding b;
-      Option<Expression> quantity = NONE(), start = NONE(), fixed = NONE();
+      Option<Binding> quantity = NONE(), start = NONE(), fixed = NONE();
     algorithm
       if listEmpty(attrs) and not isFinal then
         attributes := EMPTY_VAR_ATTR_BOOL;
@@ -1239,7 +1427,7 @@ public
         end for;
 
         attributes := VariableAttributes.VAR_ATTR_BOOL(
-          quantity, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
+          quantity, start, fixed, NONE(), NONE(), SOME(isFinal));
       end if;
     end createBool;
 
@@ -1250,7 +1438,7 @@ public
     protected
       String name;
       Binding b;
-      Option<Expression> quantity = NONE(), start = NONE(), fixed = NONE();
+      Option<Binding> quantity = NONE(), start = NONE(), fixed = NONE();
     algorithm
       if listEmpty(attrs) and not isFinal then
         attributes := EMPTY_VAR_ATTR_STRING;
@@ -1274,7 +1462,7 @@ public
         end for;
 
         attributes := VariableAttributes.VAR_ATTR_STRING(
-          quantity, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
+          quantity, start, fixed, NONE(), NONE(), SOME(isFinal));
       end if;
     end createString;
 
@@ -1285,8 +1473,8 @@ public
     protected
       String name;
       Binding b;
-      Option<Expression> quantity = NONE(), min = NONE(), max = NONE();
-      Option<Expression> start = NONE(), fixed = NONE();
+      Option<Binding> quantity = NONE(), min = NONE(), max = NONE();
+      Option<Binding> start = NONE(), fixed = NONE();
     algorithm
       if listEmpty(attrs) and not isFinal then
         attributes := EMPTY_VAR_ATTR_REAL;
@@ -1312,7 +1500,7 @@ public
         end for;
 
         attributes := VariableAttributes.VAR_ATTR_ENUMERATION(
-          quantity, min, max, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
+          quantity, min, max, start, fixed, NONE(), NONE(), SOME(isFinal));
       end if;
     end createEnum;
 
@@ -1344,7 +1532,7 @@ public
 
     function createAttribute
       input Binding binding;
-      output Option<Expression> attribute = SOME(Binding.getTypedExp(binding));
+      output Option<Binding> attribute = SOME(binding);
     end createAttribute;
 
     function createStateSelect
@@ -1369,7 +1557,7 @@ public
     algorithm
       name := match exp
         case Expression.ENUM_LITERAL() then exp.name;
-        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+        case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
         case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
           guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
@@ -1492,14 +1680,19 @@ public
         else NONE();
       end match;
     end lookupTearingSelectMember;
+
+    function expToGeneratedBinding
+      input Expression exp;
+      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED);
+    end expToGeneratedBinding;
   end VariableAttributes;
 
-  constant VariableAttributes EMPTY_VAR_ATTR_REAL         = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-  constant VariableAttributes EMPTY_VAR_ATTR_INT          = VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-  constant VariableAttributes EMPTY_VAR_ATTR_BOOL         = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_REAL         = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_INT          = VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_BOOL         = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
   constant VariableAttributes EMPTY_VAR_ATTR_CLOCK        = VAR_ATTR_CLOCK(NONE(),NONE());
-  constant VariableAttributes EMPTY_VAR_ATTR_STRING       = VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-  constant VariableAttributes EMPTY_VAR_ATTR_ENUMERATION  = VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_STRING       = VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_ENUMERATION  = VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
 
   type StateSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);
   type TearingSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);

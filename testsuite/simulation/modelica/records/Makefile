@@ -7,7 +7,9 @@ constVar2.mos \
 constVar4.mos \
 InOutRecord.mos \
 InputRecord.mos \
+RecordCoercion1.mos \
 RecordConstructor1.mos \
+RecordNested1.mos \
 TestComplexSum1.mos \
 TestComplexSum2.mos \
 Ticket5134.mos \
@@ -15,6 +17,7 @@ Ticket12135.mos \
 Ticket12135_inline.mos \
 Ticket13009.mos \
 Ticket14485.mos \
+Ticket16177.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
@@ -63,4 +66,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

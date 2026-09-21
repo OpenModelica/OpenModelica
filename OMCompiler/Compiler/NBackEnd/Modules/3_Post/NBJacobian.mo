@@ -50,24 +50,32 @@ public
 protected
   // OF imports
   import Absyn.Path;
+  import DAE;
 
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Algorithm = NFAlgorithm;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Statement = NFStatement;
+  import Subscript = NFSubscript;
+  import List;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import Variable = NFVariable;
+  import Scalarize = NFScalarize;
+  import NFInstNode.InstNode;
 
   // Backend imports
+  import NFBackendExtension.BackendInfo;
   import Adjacency = NBAdjacency;
   import NBAdjacency.Mapping;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
-  import NBEquation.{Equation, EquationPointers, EqData};
+  import NBEquation.{Equation, Iterator, EquationPointers, EqData};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
   import Partition = NBPartition;
@@ -84,6 +92,7 @@ protected
 
   // Util imports
   import StringUtil;
+  import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
   import Util;
@@ -140,7 +149,8 @@ public
             then fail();
           end match;
 
-          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
+          // DAE mode: SimCode reads only the DAE partition jacobian
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func, kind <> NBPartition.Kind.DAE);
           bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
           bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
           bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
@@ -163,8 +173,9 @@ public
     input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
+    input Boolean simJacobian = true "also create the partition jacobian";
   algorithm
-    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
+    partitions := list(partJacobian(part, funcMap, knowns, name, func, simJacobian) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
@@ -204,14 +215,8 @@ public
     list<Pointer<Variable>> variables = {}, unknowns = {}, auxiliaryVars = {}, aliasVars = {};
     list<Pointer<Variable>> diffVars = {}, dependencies = {}, resultVars = {}, tmpVars = {}, seedVars = {};
     list<StrongComponent> comps = {};
-    list<SparsityPatternCol> col_wise_pattern = {};
-    list<SparsityPatternRow> row_wise_pattern = {};
-    list<ComponentRef> seed_vars = {};
-    list<ComponentRef> partial_vars = {};
-    Integer nnz = 0;
+    list<Adjacency.Matrix> sparsity_patterns = {};
     VarData varData;
-    SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN);
   algorithm
     if List.hasOneElement(jacobians) then
       jacobian := listHead(jacobians);
@@ -227,9 +232,8 @@ public
         () := match jac
           local
             VarData tmpVarData;
-            SparsityPattern tmpPattern;
 
-          case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC(), sparsityPattern = tmpPattern) algorithm
+          case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC()) algorithm
             jacType       := jac.jacType;
             variables     := listAppend(VariablePointers.toList(tmpVarData.variables), variables);
             unknowns      := listAppend(VariablePointers.toList(tmpVarData.unknowns), unknowns);
@@ -240,15 +244,8 @@ public
             resultVars    := listAppend(VariablePointers.toList(tmpVarData.resultVars), resultVars);
             tmpVars       := listAppend(VariablePointers.toList(tmpVarData.tmpVars), tmpVars);
             seedVars      := listAppend(VariablePointers.toList(tmpVarData.seedVars), seedVars);
-
             comps         := listAppend(arrayList(jac.comps), comps);
-
-            col_wise_pattern  := listAppend(tmpPattern.col_wise_pattern, col_wise_pattern);
-            row_wise_pattern  := listAppend(tmpPattern.row_wise_pattern, row_wise_pattern);
-            seed_vars         := listAppend(tmpPattern.seed_vars, seed_vars);
-            partial_vars      := listAppend(tmpPattern.partial_vars, partial_vars);
-            nnz               := nnz + tmpPattern.nnz;
-            sparsityColoring  := SparsityColoring.combine(sparsityColoring, jac.sparsityColoring);
+            sparsity_patterns := jac.sparsity :: sparsity_patterns;
           then ();
 
           else algorithm
@@ -269,23 +266,13 @@ public
         seedVars      = VariablePointers.fromList(seedVars)
       );
 
-      sparsityPattern := SPARSITY_PATTERN(
-        col_wise_pattern  = col_wise_pattern,
-        row_wise_pattern  = row_wise_pattern,
-        seed_vars         = seed_vars,
-        partial_vars      = partial_vars,
-        nnz               = nnz
-      );
-
       jacobian := BackendDAE.JACOBIAN(
-        name              = name,
-        jacType           = jacType,
-        varData           = varData,
-        comps             = listArray(comps),
-        //sparsity          = Adjacency.Matrix.SPARSITY(arrayCreate()),
-        sparsityPattern   = sparsityPattern,
-        sparsityColoring  = sparsityColoring,
-        isAdjoint         = name == "ADJ" // this is maybe bad (e.g. when name changes)
+        name      = name,
+        jacType   = jacType,
+        varData   = varData,
+        comps     = listArray(comps),
+        sparsity  = Adjacency.Matrix.combine(sparsity_patterns),
+        isAdjoint = name == "ADJ" // this is maybe bad (e.g. when name changes)
       );
     end if;
   end combine;
@@ -297,8 +284,12 @@ public
     func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
       case "symbolic" then jacobianSymbolic;
       case "symbolicadjoint" then jacobianSymbolicAdjoint;
+      case "bidirectional" then jacobianSymbolic;
       case "numeric"  then jacobianNumeric;
       case "none"     then jacobianNone;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown jacobian type: " + Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)});
+      then fail();
     end match;
   end getModule;
 
@@ -325,558 +316,6 @@ public
     end match;
   end jacobianTypeString;
 
-  // necessary as wrapping value type for UnorderedMap
-  type CrefLst = list<ComponentRef>;
-
-  type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "seed_var, {partial_vars}";
-  type SparsityPatternRow = SparsityPatternCol                      "partial_var, {seed_vars}";
-
-  uniontype SparsityPattern
-    record SPARSITY_PATTERN
-      list<SparsityPatternCol> col_wise_pattern   "colum-wise sparsity pattern";
-      list<SparsityPatternRow> row_wise_pattern   "row-wise sparsity pattern";
-      list<ComponentRef> seed_vars                "independent variables solved here ($SEED)";
-      list<ComponentRef> partial_vars             "LHS variables of the jacobian ($pDER)";
-      Integer nnz                                 "number of nonzero elements";
-    end SPARSITY_PATTERN;
-
-    function toString
-      input SparsityPattern pattern;
-      output String str = StringUtil.headline_2("Sparsity Pattern (nnz: " + intString(pattern.nnz) + ")");
-    protected
-      ComponentRef cref;
-      list<ComponentRef> dependencies;
-      Boolean colEmpty = listEmpty(pattern.col_wise_pattern);
-      Boolean rowEmpty = listEmpty(pattern.row_wise_pattern);
-    algorithm
-      str := str + "\n" + StringUtil.headline_3("### Seeds (col vars) ###");
-      str := str + List.toString(pattern.seed_vars, ComponentRef.toString) + "\n";
-      str := str + "\n" + StringUtil.headline_3("### Partials (row vars) ###");
-      str := str + List.toString(pattern.partial_vars, ComponentRef.toString) + "\n";
-      if not colEmpty then
-        str := str + "\n" + StringUtil.headline_3("### Columns ###");
-        for col in pattern.col_wise_pattern loop
-          (cref, dependencies) := col;
-          str := str + "(" + ComponentRef.toString(cref) + ")\t affects:\t" + ComponentRef.listToString(dependencies) + "\n";
-        end for;
-      end if;
-      if not rowEmpty then
-        str := str + "\n" + StringUtil.headline_3("##### Rows #####");
-        for row in pattern.row_wise_pattern loop
-          (cref, dependencies) := row;
-          str := str + "(" + ComponentRef.toString(cref) + ")\t depends on:\t" + ComponentRef.listToString(dependencies) + "\n";
-        end for;
-      end if;
-    end toString;
-
-    function lazy
-      input VariablePointers seedCandidates;
-      input VariablePointers partialCandidates;
-      input Option<array<StrongComponent>> strongComponents "Strong Components";
-      input JacobianType jacType;
-      output SparsityPattern sparsityPattern;
-      output SparsityColoring sparsityColoring;
-    protected
-      list<ComponentRef> seed_vars, partial_vars;
-      list<SparsityPatternCol> cols = {};
-      list<SparsityPatternRow> rows = {};
-      Integer nnz;
-    algorithm
-      // get all relevant crefs
-      seed_vars     := VariablePointers.getScalarVarNames(seedCandidates, false);
-      partial_vars  := VariablePointers.getScalarVarNames(partialCandidates, false);
-
-      // assume full dependency
-      cols := list((s, partial_vars) for s in seed_vars);
-      rows := list((p, seed_vars) for p in partial_vars);
-      nnz := listLength(partial_vars) * listLength(seed_vars);
-
-      sparsityPattern := SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz);
-      sparsityColoring := SparsityColoring.lazy(sparsityPattern);
-    end lazy;
-
-    // Pretty-print the bipartite adjacency map used during sparsity detection:
-    // map[cref] -> list of neighbor crefs on the opposite side.
-    function adjacencyMapToString
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      output String s;
-    protected
-      list<ComponentRef> keys;
-      ComponentRef k;
-      list<ComponentRef> neighs;
-      list<String> lines = {};
-    algorithm
-      keys := UnorderedMap.keyList(map);
-      for k in keys loop
-        neighs := UnorderedMap.getOrFail(k, map);
-        lines := ("  " + ComponentRef.toString(k) + " -> " + ComponentRef.listToString(neighs)) :: lines;
-      end for;
-      lines := listReverse(lines);
-      s := "Adjacency map (" + intString(listLength(keys)) + " keys):\n" + stringDelimitList(lines, "\n");
-    end adjacencyMapToString;
-
-    function resolveDependency
-      input ComponentRef cref;
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      input UnorderedSet<ComponentRef> seed_set;
-      input UnorderedSet<ComponentRef> visited;
-      input UnorderedSet<ComponentRef> dep_set "collect seed dependencies here";
-    protected
-      list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
-    algorithm
-      if UnorderedSet.add(cref, visited) then
-        if UnorderedSet.contains(cref, seed_set) then
-          UnorderedSet.add(cref, dep_set);
-        else
-          for dep in UnorderedMap.getOrDefault(cref, map, tmp_lst) loop
-            resolveDependency(dep, map, seed_set, visited, dep_set);
-          end for;
-        end if;
-      end if;
-    end resolveDependency;
-
-    function resolveRowDependencies
-      input ComponentRef row;
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      input UnorderedSet<ComponentRef> seed_set;
-      output list<ComponentRef> dependencies;
-    protected
-      UnorderedSet<ComponentRef> dep_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-      list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
-    algorithm
-      for dep in UnorderedMap.getOrDefault(row, map, tmp_lst) loop
-        resolveDependency(dep, map, seed_set, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual), dep_set);
-      end for;
-      dependencies := List.sort(UnorderedSet.toList(dep_set), ComponentRef.isGreater);
-    end resolveRowDependencies;
-
-    function create
-      input VariablePointers seedCandidates;
-      input VariablePointers partialCandidates;
-      input Option<array<StrongComponent>> strongComponents "Strong Components";
-      input JacobianType jacType;
-      input Boolean staticAsContinuous;
-      output SparsityPattern sparsityPattern;
-      output SparsityColoring sparsityColoring;
-    protected
-      UnorderedMap<ComponentRef, list<ComponentRef>> map;
-    algorithm
-      (sparsityPattern, map) := match strongComponents
-        local
-          Mapping seed_mapping, partial_mapping;
-          array<StrongComponent> comps;
-          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, jac_row_vars, row_deps, tmp, row_vars = {}, col_vars = {};
-          UnorderedSet<ComponentRef> set, seed_set;
-          list<SparsityPatternCol> cols = {};
-          list<SparsityPatternRow> rows = {};
-          ComponentRef row_cref;
-          Integer nnz = 0;
-
-        case SOME(comps) guard(arrayEmpty(comps)) algorithm
-        then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
-
-        case SOME(comps) algorithm
-          // create index mapping only for variables
-          seed_mapping    := Mapping.create(EquationPointers.empty(), seedCandidates);
-          partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
-
-          // get all relevant crefs
-          partial_vars        := VariablePointers.getScalarVarNames(partialCandidates, false);
-          seed_vars           := VariablePointers.getScalarVarNames(seedCandidates, false);
-          jac_row_vars        := getSparsityRowCrefs(partialCandidates, jacType, staticAsContinuous);
-          // unscalarized seed vars are currently needed for sparsity pattern
-          seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
-          partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
-
-          // create a sufficient big unordered map
-          map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(partial_vars)));
-          set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars_array)));
-          seed_set := UnorderedSet.fromList(seed_vars, ComponentRef.hash, ComponentRef.isEqual);
-
-          // save all seed_vars and partial_vars to know later on if a cref should be added
-          for cref in seed_vars loop UnorderedMap.add(cref, {}, map); end for;
-          for cref in partial_vars loop UnorderedMap.add(cref, {}, map); end for;
-          for cref in seed_vars_array loop UnorderedSet.add(cref, set); end for;
-          for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
-
-          // traverse all components and save cref dependencies (only column-wise)
-          for i in 1:arrayLength(comps) loop
-            if not StrongComponent.isDiscrete(comps[i]) then
-              StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, jacType);
-            end if;
-          end for;
-
-          // create row-wise sparsity pattern
-          for cref in listReverse(jac_row_vars) loop
-            // only create rows for actual Jacobian result variables / rows
-            if UnorderedMap.contains(cref, map) then
-              rows := (cref, resolveRowDependencies(cref, map, seed_set)) :: rows;
-              row_vars := cref :: row_vars;
-            end if;
-          end for;
-
-          // create column-wise sparsity pattern
-          for cref in listReverse(seed_vars) loop
-            // transpose the resolved row dependencies
-            tmp := {};
-            for row in rows loop
-              (row_cref, row_deps) := row;
-              if List.contains(row_deps, cref, ComponentRef.isEqual) then
-                tmp := row_cref :: tmp;
-              end if;
-            end for;
-            tmp := List.sort(UnorderedSet.unique_list(tmp, ComponentRef.hash, ComponentRef.isEqual), ComponentRef.isGreater);
-            cols := (cref, tmp) :: cols;
-            col_vars := cref :: col_vars;
-          end for;
-
-          // find number of nonzero elements
-          for col in cols loop
-            (_, tmp) := col;
-            nnz := nnz + listLength(tmp);
-          end for;
-        then (SPARSITY_PATTERN(cols, rows, col_vars, row_vars, nnz), map);
-
-        case NONE() algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
-        then fail();
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-        then fail();
-      end match;
-
-      // create coloring
-      sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
-      // sparsityColoring := SparsityColoring.PartialD2ColoringAlgColumnAndRow(sparsityPattern, map);
-
-      if Flags.isSet(Flags.DUMP_SPARSE) then
-        print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
-      end if;
-    end create;
-
-    function createEmpty
-      output SparsityPattern sparsityPattern = EMPTY_SPARSITY_PATTERN;
-      output SparsityColoring sparsityColoring = EMPTY_SPARSITY_COLORING;
-    end createEmpty;
-  end SparsityPattern;
-
-  constant SparsityPattern EMPTY_SPARSITY_PATTERN = SPARSITY_PATTERN({}, {}, {}, {}, 0);
-  constant SparsityColoring EMPTY_SPARSITY_COLORING = SPARSITY_COLORING(listArray({}), listArray({}));
-
-  type SparsityColoringCol = list<ComponentRef>  "seed variable lists belonging to the same color";
-  type SparsityColoringRow = SparsityColoringCol "partial variable lists for each color (multiples allowed!)";
-
-  uniontype SparsityColoring
-    record SPARSITY_COLORING
-      "column wise coloring with extra row sparsity information"
-      array<SparsityColoringCol> cols;
-      array<SparsityColoringRow> rows;
-    end SPARSITY_COLORING;
-
-    function toString
-      input SparsityColoring sparsityColoring;
-      output String str = StringUtil.headline_2("Sparsity Coloring");
-    protected
-      Boolean empty = arrayLength(sparsityColoring.cols) == 0;
-    algorithm
-      if empty then
-        str := str + "\n<empty sparsity pattern>\n";
-      end if;
-      for i in 1:arrayLength(sparsityColoring.cols) loop
-        str := str + "Column Color (" + intString(i) + ")\n"
-          + "  - Column: " + ComponentRef.listToString(sparsityColoring.cols[i]) + "\n";
-      end for;
-      for i in 1:arrayLength(sparsityColoring.rows) loop
-        str := str + "Row Color (" + intString(i) + ")\n"
-          + "  - Row:    " + ComponentRef.listToString(sparsityColoring.rows[i]) + "\n";
-      end for;
-    end toString;
-
-    function lazy
-      "creates a lazy coloring that just groups each independent variable individually
-      and implies dependence for each row"
-      input SparsityPattern sparsityPattern;
-      output SparsityColoring sparsityColoring;
-    protected
-      array<SparsityColoringCol> cols;
-      array<SparsityColoringRow> rows;
-    algorithm
-      cols := listArray(list({cref} for cref in sparsityPattern.seed_vars));
-      rows := arrayCreate(arrayLength(cols), sparsityPattern.partial_vars);
-      sparsityColoring := SPARSITY_COLORING(cols, rows);
-    end lazy;
-
-    function PartialD2ColoringAlgC
-      "author: kabdelhak 2022-03
-      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
-      https://doi.org/10.1137/S0036144504444711
-      A greedy partial distance-2 coloring algorithm implemented in C."
-      input SparsityPattern sparsityPattern;
-      input JacobianType jacType;
-      output SparsityColoring sparsityColoring;
-    protected
-      array<ComponentRef> seeds, partials;
-      UnorderedMap<ComponentRef, Integer> seed_indices, partial_indices;
-      Integer sizeCols, sizeRows;
-      ComponentRef idx_cref;
-      list<ComponentRef> deps;
-      array<list<Integer>> cols, rows, colored_cols, colored_rows;
-      array<SparsityColoringCol> cref_colored_cols, cref_colored_rows;
-      function getIndices
-        input ComponentRef cref;
-        input UnorderedMap<ComponentRef, Integer> seed_indices;
-        input UnorderedMap<ComponentRef, Integer> partial_indices;
-        input array<list<Integer>> rows;
-        output list<Integer> indices;
-      algorithm
-        if UnorderedMap.contains(cref, seed_indices) then
-          indices := {UnorderedMap.getSafe(cref, seed_indices, sourceInfo())};
-        elseif UnorderedMap.contains(cref, partial_indices) then
-          indices := rows[UnorderedMap.getSafe(cref, partial_indices, sourceInfo())];
-        else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref " + ComponentRef.toString(cref)
-            + " is neither a seed nor a partial candidate!"});
-          fail();
-        end if;
-      end getIndices;
-    algorithm
-      // create index -> cref arrays
-      seeds := listArray(sparsityPattern.seed_vars);
-      partials := listArray(sparsityPattern.partial_vars);
-
-      // create cref -> index maps
-      sizeCols := arrayLength(seeds);
-      sizeRows := arrayLength(partials);
-      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeCols));
-      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeRows));
-      for i in 1:sizeCols loop
-        UnorderedMap.add(seeds[i], i, seed_indices);
-      end for;
-      for i in 1:sizeRows loop
-        UnorderedMap.add(partials[i], i, partial_indices);
-      end for;
-      cols := arrayCreate(sizeCols, {});
-      rows := arrayCreate(sizeRows, {});
-
-      // prepare index based sparsity pattern for C
-      for tpl in sparsityPattern.col_wise_pattern loop
-        (idx_cref, deps) := tpl;
-        cols[UnorderedMap.getSafe(idx_cref, seed_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, partial_indices, sourceInfo()) for dep in deps);
-      end for;
-      for tpl in sparsityPattern.row_wise_pattern loop
-        (idx_cref, deps) := tpl;
-        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := listAppend(getIndices(dep, seed_indices, partial_indices, rows) for dep in deps);
-      end for;
-
-      // call C function (old backend - ToDo: port to new backend!)
-      // colored_cols := Coloring.createColoring(cols, rows, sizeRows, sizeCols);
-      colored_cols := Coloring.createColoring(rows, cols, sizeCols, sizeRows);
-      // get cref based coloring
-      cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
-      for i in 1:arrayLength(colored_cols) loop
-        cref_colored_cols[i] := list(seeds[idx] for idx in colored_cols[i]);
-      end for;
-
-      // Row coloring (color partials)
-      colored_rows := Coloring.createColoring(cols, rows, sizeRows, sizeCols);
-      cref_colored_rows := arrayCreate(arrayLength(colored_rows), {});
-      for i in 1:arrayLength(colored_rows) loop
-        cref_colored_rows[i] := list(partials[idx] for idx in colored_rows[i]);
-      end for;
-
-      //sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(sizeRows, {}));
-      //sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(arrayLength(cref_colored_cols), {}));
-      sparsityColoring := SPARSITY_COLORING(cref_colored_cols, cref_colored_rows);
-    end PartialD2ColoringAlgC;
-
-    function PartialD2ColoringAlgColumnAndRow
-      "author: fbrandt 2025-10
-      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
-      https://doi.org/10.1137/S0036144504444711 (Algorithm 3.2)
-      A greedy partial distance-2 coloring algorithm done twice to compute both column and row coloring."
-      input SparsityPattern sparsityPattern;
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      output SparsityColoring sparsityColoring;
-    protected
-      array<ComponentRef> seed_nodes, partial_nodes;
-      list<SparsityColoringCol> col_groups = {};
-      list<SparsityColoringRow> row_groups = {};
-      array<SparsityColoringCol> cols_arr;
-      array<SparsityColoringRow> rows_arr;
-    algorithm
-      // Nodes to color: seeds (columns) and partials (rows)
-      seed_nodes := listArray(sparsityPattern.seed_vars);
-      partial_nodes  := listArray(sparsityPattern.partial_vars);
-
-      // Column coloring (seeds -> partials -> seeds)
-      col_groups := GreedyPartialD2Color(seed_nodes, map);
-      // Row coloring (partials -> seeds -> partials)
-      row_groups := GreedyPartialD2Color(partial_nodes, map);
-      // Build arrays for result
-      cols_arr := listArray(col_groups);
-      rows_arr := listArray(row_groups);
-
-      sparsityColoring := SPARSITY_COLORING(cols_arr, rows_arr);
-    end PartialD2ColoringAlgColumnAndRow;
-
-    // Distance-2 greedy coloring on a bipartite graph represented by 'map':
-    // Given a node set 'nodes' (either seeds or partials), assign colors so that
-    // no two nodes at distance 2 (node -> opposite side -> node) share a color.
-    // Returns the list of color groups in stable order.
-    function GreedyPartialD2Color
-      input array<ComponentRef> nodes;
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      output list<list<ComponentRef>> groups_lst;
-    protected
-      UnorderedMap<ComponentRef, Integer> index_lookup;
-      array<Integer> coloring, forbidden_colors;
-      array<Boolean> color_exists;
-      array<list<ComponentRef>> groups;
-      Integer i, color, n = arrayLength(nodes);
-      ComponentRef node, mid, neigh;
-    algorithm
-      // Build cref -> index lookup for the given nodes.
-      index_lookup := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(n));
-      for i in 1:n loop
-        UnorderedMap.add(nodes[i], i, index_lookup);
-      end for;
-
-      // Init data structures
-      coloring := arrayCreate(n, 0);
-      forbidden_colors := arrayCreate(n, 0);
-      color_exists := arrayCreate(n, false);
-      groups := arrayCreate(n, {});
-
-      // Greedy partial distance-2 coloring:
-      // For node i, forbid colors of any already-colored neighbor at distance 2.
-      for i in 1:n loop
-        node := nodes[i];
-
-        // Mark forbidden colors for neighbors at distance 2: node -> mid -> neigh
-        for mid in UnorderedMap.getSafe(node, map, sourceInfo()) loop
-          for neigh in UnorderedMap.getSafe(mid, map, sourceInfo()) loop
-            color := coloring[UnorderedMap.getSafe(neigh, index_lookup, sourceInfo())];
-            if color > 0 then
-              forbidden_colors[color] := i;
-            end if;
-          end for;
-        end for;
-
-        // Pick smallest available color
-        color := 1;
-        while forbidden_colors[color] == i loop
-          color := color + 1;
-        end while;
-
-        coloring[i] := color;
-        color_exists[color] := true;
-        groups[color] := node :: groups[color];
-      end for;
-
-      // Collect groups (reverse to keep stable order)
-      groups_lst := {};
-      for i in arrayLength(color_exists):-1:1 loop
-        if color_exists[i] then
-          groups_lst := groups[i] :: groups_lst;
-        end if;
-      end for;
-    end GreedyPartialD2Color;
-
-    function PartialD2ColoringAlg
-      "author: kabdelhak 2022-03
-      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
-      https://doi.org/10.1137/S0036144504444711
-      A greedy partial distance-2 coloring algorithm. Slightly adapted to also track row sparsity."
-      input SparsityPattern sparsityPattern;
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      output SparsityColoring sparsityColoring;
-    protected
-      array<ComponentRef> cref_lookup;
-      UnorderedMap<ComponentRef, Integer> index_lookup;
-      array<Boolean> color_exists;
-      array<Integer> coloring, forbidden_colors;
-      array<list<ComponentRef>> col_coloring, row_coloring;
-      Integer color;
-      list<SparsityColoringCol> cols_lst = {};
-      list<SparsityColoringRow> rows_lst = {};
-    algorithm
-      // integer to cref and reverse lookup arrays
-      cref_lookup := listArray(sparsityPattern.seed_vars); // x, y, z
-      index_lookup := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(sparsityPattern.seed_vars)));
-      for i in 1:arrayLength(cref_lookup) loop
-        UnorderedMap.add(cref_lookup[i], i, index_lookup); // x->1, y->2, z->3
-      end for;
-
-      // create empty colorings
-      coloring := arrayCreate(arrayLength(cref_lookup), 0);
-      forbidden_colors := arrayCreate(arrayLength(cref_lookup), 0);
-      color_exists := arrayCreate(arrayLength(cref_lookup), false);
-      col_coloring := arrayCreate(arrayLength(cref_lookup), {});
-      row_coloring := arrayCreate(arrayLength(cref_lookup), {});
-
-      for i in 1:arrayLength(cref_lookup) loop
-        // all neighbors w of v_i
-        for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()) loop
-          // all colored neighbors x of w
-          for col_var /* x */ in UnorderedMap.getSafe(row_var, map, sourceInfo()) loop
-            color := coloring[UnorderedMap.getSafe(col_var, index_lookup, sourceInfo())];
-            if color > 0 then
-              forbidden_colors[color] := i;
-            end if;
-          end for;
-        end for;
-        // assign the smallest available color to v_i
-        color := 1;
-        while forbidden_colors[color] == i loop
-          color := color + 1;
-        end while;
-        coloring[i] := color;
-        // also save all row dependencies of this color
-        row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()));
-        color_exists[color] := true;
-      end for;
-
-      for i in 1:arrayLength(coloring) loop
-        col_coloring[coloring[i]] := cref_lookup[i] :: col_coloring[coloring[i]];
-      end for;
-
-      // traverse in reverse to have correct ordering in the end)
-      for i in arrayLength(color_exists):-1:1 loop
-        if color_exists[i] then
-          cols_lst := col_coloring[i] :: cols_lst;
-          rows_lst := row_coloring[i] :: rows_lst;
-        end if;
-      end for;
-
-      sparsityColoring := SPARSITY_COLORING(listArray(cols_lst), listArray(rows_lst));
-    end PartialD2ColoringAlg;
-
-    function combine
-      "combines sparsity patterns by just appending them because they are supposed to
-      be entirely independent of each other."
-      input SparsityColoring coloring1;
-      input SparsityColoring coloring2;
-      output SparsityColoring coloring_out;
-    protected
-      array<SparsityColoringCol> cols_big, cols_small;
-      array<SparsityColoringRow> rows_big, rows_small;
-    algorithm
-      // append the smaller to the bigger
-      (cols_big, cols_small) := if arrayLength(coloring2.cols) > arrayLength(coloring1.cols) then (coloring2.cols, coloring1.cols) else (coloring1.cols, coloring2.cols);
-      (rows_big, rows_small) := if arrayLength(coloring2.rows) > arrayLength(coloring1.rows) then (coloring2.rows, coloring1.rows) else (coloring1.rows, coloring2.rows);
-      // initialize new coloring with the bigger ones
-      coloring_out := SPARSITY_COLORING(cols_big, rows_big);
-      // append the columns
-      for i in 1:arrayLength(cols_small) loop
-        coloring_out.cols[i] := listAppend(coloring_out.cols[i], cols_small[i]);
-      end for;
-      // append the rows
-      for i in 1:arrayLength(rows_small) loop
-        coloring_out.rows[i] := listAppend(coloring_out.rows[i], rows_small[i]);
-      end for;
-    end combine;
-  end SparsityColoring;
 
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!
@@ -968,7 +407,6 @@ protected
     output Option<Jacobian> MRF_jacobian;
     output Option<Jacobian> R0_jacobian;
   protected
-    Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean staticAsContinuous = true;
     VariablePointers seedCandidates, partialCandidates;
   algorithm
@@ -1003,12 +441,14 @@ protected
     input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
+    input Boolean simJacobian = true;
   protected
     JacobianType jacType;
     VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian, LFG_jacobian = NONE(), MRF_jacobian = NONE(), R0_jacobian = NONE()  "Resulting jacobians";
+    Option<Jacobian> adjointJac;
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
   algorithm
@@ -1027,7 +467,7 @@ protected
     end match;
 
     // create the simulation jacobian
-    if Partition.Partition.isODEorDAE(part) then
+    if simJacobian and Partition.Partition.isODEorDAE(part) then
       partialCandidates := part.unknowns;
       unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
       jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
@@ -1043,7 +483,11 @@ protected
         (LFG_jacobian, MRF_jacobian, R0_jacobian) := partJacobianDynamicOptimization(part, knowns, name, func, funcMap);
       end if;
 
-      if isSome(jacobian) then
+      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "bidirectional" and isSome(jacobian) and not BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
+        // Bidirectional: generate adjoint jacobian in addition to forward
+        adjointJac := jacobianSymbolicAdjoint(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
+        part.association := Partition.Association.CONTINUOUS(kind, jacobian, adjointJac, LFG_jacobian, MRF_jacobian, R0_jacobian);
+      elseif isSome(jacobian) then
         if BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
           part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian, LFG_jacobian, MRF_jacobian, R0_jacobian);
         else
@@ -1058,6 +502,92 @@ protected
     end if;
   end partJacobian;
 
+  function forEquationStart
+    "Returns the INTEGER start value of a FOR_EQUATION's single iterator range.
+     Returns 0 when the equation is not a FOR_EQUATION or start is not an integer."
+    input Equation eqn;
+    output Integer s = 0;
+  protected
+    Expression start_exp;
+  algorithm
+    () := match eqn
+      case Equation.FOR_EQUATION(iter = Iterator.SINGLE(range = Expression.RANGE(start = start_exp)))
+        algorithm s := Expression.integerValueOrDefault(start_exp, 0); then ();
+      else ();
+    end match;
+  end forEquationStart;
+
+  function partialSliceSeedCandidates
+    "Creates per-element seed candidates for partial iteration-var slices where
+     the for-loop starts at or above the slice's first element index.  This
+     avoids phantom seeds (e.g. $SEED.x[1] when x[2..N] is the NLS slice) that
+     would produce a zero sparsity column and cause sparsitySanityCheck to fail.
+     Falls back to whole-array seeds when the for-loop starts below the slice
+     (e.g. slice_for where i1 starts at 1 but x is sliced from x[2])."
+    input list<Slice<VariablePointer>> iteration_vars;
+    input list<Slice<BEquation.EquationPointer>> residual_eqns;
+    output list<VariablePointer> seed_candidates = {};
+  protected
+    Integer for_start = 0;  // 0 = no FOR_EQUATION found
+    Integer s;
+    Integer slice_first_1based;
+    list<Variable> elem_vars;
+    Variable var_elem;
+  algorithm
+    // Find minimum for-loop start across all FOR_EQUATION residuals.
+    for eqn_slice in residual_eqns loop
+      s := forEquationStart(Pointer.access(Slice.getT(eqn_slice)));
+      if s > 0 then
+        if for_start == 0 then
+          for_start := s;
+        else
+          for_start := intMin(for_start, s);
+        end if;
+      end if;
+    end for;
+    // Build seed candidates: per-element for safe partial slices, whole-array otherwise.
+    for var_slice in iteration_vars loop
+      if listEmpty(var_slice.indices) then
+        // Full slice: no phantom risk.
+        seed_candidates := Slice.getT(var_slice) :: seed_candidates;
+      else
+        // Partial slice: first 0-based index + 1 gives the 1-based start element.
+        var_elem := Pointer.access(Slice.getT(var_slice));
+        slice_first_1based := listHead(var_slice.indices) + 1;
+        if (for_start == 0 or for_start >= slice_first_1based) and
+           (Type.isReal(Type.arrayElementType(var_elem.ty)) or Type.isComplex(Type.arrayElementType(var_elem.ty))) then
+          // Safe to use per-element seeds: the loop never reaches below the slice start
+          // (for_start >= slice_first_1based, or no FOR_EQUATION residual at all).
+          // Record (Complex) element types are included here too: scalarizeBackendVariable
+          // only splits the ARRAY dimension (still record-typed per-element results), and
+          // the later general VariablePointers.scalarize pass (already used for every other
+          // Jacobian's seedVars, e.g. NSimJacobian.mo) recurses into scalarizeComplexVariable
+          // to flatten those into scalar leaf fields - the same path record-typed FULL-slice
+          // seed candidates already go through above. Restricting to Real here (as before)
+          // meant a record-element partial slice fell back to the WHOLE parent array/record
+          // as a single seed candidate, which the general scalarize pass then expands to far
+          // more scalar columns than this Jacobian's true torn-unknown count (sizeCols ended
+          // up way bigger than the NLS's own size), silently degrading every such Jacobian to
+          // a numeric one at runtime (see nonlinearSystem.c's sizeCols-vs-size safety check).
+          // NOTE: for_start was computed above but previously never consulted here (only
+          // "slice_first_1based > 1" was checked) -- a dead-code bug that silently defeated
+          // exactly the case this function's own docstring describes (slice_for.mos: the
+          // for-loop starts at 1 but x is sliced from x[2], so a symbolic body term like
+          // x[$i1] at $i1=1 needs a seed for x[1], which per-element scalarization of just
+          // x[2..4] can never provide).
+          elem_vars := Scalarize.scalarizeBackendVariable(var_elem, var_slice.indices);
+          for v in elem_vars loop
+            seed_candidates := Pointer.create(v) :: seed_candidates;
+          end for;
+        else
+          // Unsafe or no phantom risk avoidance possible: fall back to whole-array seed pointer.
+          seed_candidates := Slice.getT(var_slice) :: seed_candidates;
+        end if;
+      end if;
+    end for;
+    seed_candidates := listReverse(seed_candidates);
+  end partialSliceSeedCandidates;
+
   function compJacobian
     input output StrongComponent comp;
     input Option<Adjacency.Matrix> full;
@@ -1071,12 +601,17 @@ protected
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
+        guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
+      then (comp, false);
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // create seed and partial candidates
-        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
+        seed_candidates := partialSliceSeedCandidates(strict.iteration_vars, strict.residual_eqns);
         residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
         inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
 
@@ -1088,7 +623,22 @@ protected
           comps              = Array.appendList(strict.innerEquations, residual_comps),
           full               = full,
           funcMap            = funcMap,
-          name               = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          // comp.idx is assigned from two disjoint, independently-numbered sources:
+          // NBSolve.mo's Tearing.implicit() (single-equation loops promoted from an
+          // unsolvable explicit equation) and NBTearing.mo's initialize() (genuine
+          // multi-equation torn loops), each restarting its own count at 1 per
+          // partition kind. Two components from different sources can therefore
+          // share the same (kind, idx), which previously collided on the exact same
+          // generated Jacobian name (e.g. both "INI_NLS_JAC_1") -- note comp.status
+          // alone can't distinguish them, since NBSolve.mo's solveStrongComponent
+          // marks EVERY algebraic loop status=IMPLICIT, torn or not. Tag
+          // comp.implicitlyCreated components distinctly so the two numbering
+          // spaces can never collide, without changing either one's actual numbers
+          // (which existing reference test outputs depend on).
+          name               = Partition.Partition.kindToString(kind)
+                                + (if comp.implicitlyCreated then "_NLS_IMPL_"
+                                   else if comp.linear then "_LS_JAC_" else "_NLS_JAC_")
+                                + intString(comp.idx),
           staticAsContinuous = staticAsContinuous);
         comp.strict := strict;
 
@@ -1106,14 +656,19 @@ protected
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef,ComponentRef> seed_diff_map;
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
 
-    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
+    VariablePointers adjacencyVars;
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, res_vars_d, tmp_vars, tmp_vars_d, seed_vars, seed_vars_d;
     BVariable.VarData varDataJac;
-    SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring;
-
+    Adjacency.Matrix fullLocal, sparsity;
+    UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> adj_base_seen;
+    list<Pointer<Variable>> adj_seed_list;
+    ComponentRef adj_base_cref;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     if isSome(strongComponents) then
@@ -1128,6 +683,15 @@ protected
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
                                                                      makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    for v in VariablePointers.toList(seedCandidates) loop
+      if BVariable.isContinuous(v, staticAsContinuous) then
+        UnorderedSet.add(BVariable.getVarName(v), seed_set);
+        // Also add base cref so iterator-subscripted deps from for-loop equations
+        // (where subscript is an iterator variable, not a literal integer) can
+        // match via base fallback in filterSet.
+        UnorderedSet.add(ComponentRef.stripSubscriptsAll(BVariable.getVarName(v)), seed_set);
+      end if;
+    end for;
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
@@ -1137,13 +701,21 @@ protected
       makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
     end for;
 
-    res_vars := Pointer.access(pDer_vars_ptr);
+    for v in res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+    end for;
+    res_vars_d := listReverse(Pointer.access(pDer_vars_ptr));
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop
-      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
-    end for;
-    tmp_vars := Pointer.access(pDer_vars_ptr);
+    // Snapshot diff_map before adding inner LS tmp pder entries.
+    // When an outer iter var and an inner LS var share the same base ComponentRef
+    // (slices of the same array variable), the tmp pder pass below would overwrite
+    // the outer seed entry. fullToSparsity must see the pre-overwrite version so
+    // that outer iter var dependencies resolve to outer seed columns (0..N-1), not
+    // to inner LS tmp pder columns (N..N+M-1).
+    seed_diff_map := UnorderedMap.copy(diff_map);
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous); end for;
+    tmp_vars_d := Pointer.access(pDer_vars_ptr);
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -1162,11 +734,11 @@ protected
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
 
     // collect var data (most of this can be removed)
-    unknown_vars  := listAppend(res_vars, tmp_vars);
+    unknown_vars  := listAppend(res_vars_d, tmp_vars_d);
     all_vars      := unknown_vars;  // add other vars later on
 
-    seed_vars     := Pointer.access(seed_vars_ptr);
-    aux_vars      := seed_vars;     // add other auxiliaries later on
+    seed_vars_d   := listReverse(Pointer.access(seed_vars_ptr));
+    aux_vars      := seed_vars_d;     // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};
 
@@ -1177,29 +749,48 @@ protected
       aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = partialCandidates,
       dependencies  = VariablePointers.fromList(depend_vars),
-      resultVars    = VariablePointers.fromList(res_vars),
-      tmpVars       = VariablePointers.fromList(tmp_vars),
-      seedVars      = VariablePointers.fromList(seed_vars)
+      resultVars    = VariablePointers.fromList(res_vars_d),
+      tmpVars       = VariablePointers.fromList(tmp_vars_d),
+      seedVars      = VariablePointers.fromList(seed_vars_d)
     );
 
-    if isSome(full) then
-      //sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), comps);
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
-      fail();
+    // Always rebuild the full matrix from the actual comps equations.
+    // Using part.adjacencyMatrix (the `full` param) would fail because residual
+    // equations created by finalize() during tearing get new names and don't
+    // appear in the partition's pre-tearing adjacency matrix.
+    // Build adjacencyVars from unique base variable ptrs derived from seedCandidates.
+    // When seedCandidates contains scalar element ptrs for partial-slice NLS iter vars,
+    // all elements of the same array share the same base ptr. Using base ptrs here
+    // preserves pseudo=true subscript-stripped lookup in getDependentCref, which matches
+    // any element expression (e.g. module[i].T for iterator i) to the base column.
+    adj_base_seen := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    adj_seed_list := {};
+    for v in VariablePointers.toList(seedCandidates) loop
+      adj_base_cref := ComponentRef.stripSubscriptsAll(BVariable.getVarName(v));
+      if not UnorderedSet.contains(adj_base_cref, adj_base_seen) then
+        UnorderedSet.add(adj_base_cref, adj_base_seen);
+        adj_seed_list := BVariable.getVarPointer(BVariable.getVarName(v), sourceInfo()) :: adj_seed_list;
+      end if;
+    end for;
+    adjacencyVars := VariablePointers.fromList(listReverse(adj_seed_list));
+    adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+    // For ODE Jacobians, also include state derivatives as adjacency variables.
+    // Some equations use der(x_j) as an RHS input (e.g. der(x_i) = f(der(x_j), x_k)).
+    // Without this, the transitive seed dependency der(x_i) -> der(x_j) -> x_j is lost.
+    if jacType == JacobianType.ODE then
+      adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
     end if;
-
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
+    fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
+      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, seed_diff_map);
 
     jacobian := SOME(Jacobian.JACOBIAN(
-      name              = name,
-      jacType           = jacType,
-      varData           = varDataJac,
-      comps             = listArray(diffed_comps),
-      // sparsity
-      sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring,
-      isAdjoint         = false
+      name      = name,
+      jacType   = jacType,
+      varData   = varDataJac,
+      comps     = listArray(diffed_comps),
+      sparsity  = sparsity,
+      isAdjoint = false
     ));
   end jacobianSymbolic;
 
@@ -1256,7 +847,7 @@ protected
     input UnorderedMap<ComponentRef,ComponentRef> diff_map;
     input UnorderedMap<Path, Function> funcMapIn;
     input Boolean scalarized;
-    input UnorderedMap<ComponentRef, list<Expression>> adjoint_map_in;
+    input UnorderedMap<ComponentRef, AdjointTermList> adjoint_map_in;
     output Differentiate.DifferentiationArguments diffArguments;
   algorithm
     // Prepare args to collect adjoints into the incoming map
@@ -1277,23 +868,17 @@ protected
   end accumulateAdjointForResidual;
 
   // Reusable builder for a SINGLE_COMPONENT adjoint assignment (tmp or result var).
-  function makeAdjointComponent
+  function makeAdjointComponentFromRhs
     input ComponentRef lhsKey;
-    input UnorderedMap<ComponentRef, list<Expression>> adjoint_map;
+    input Expression rhsExpr;
     input String contextName;
     input Integer eqIndex;
     output NBStrongComponent diffed_comp;
   protected
-    list<Expression> terms;
-    Expression rhsExpr;
     Pointer<NBEquation.Equation> eqPtr;
     NBEquation.Equation eq;
     Pointer<Variable> lhsVarPtr;
   algorithm
-    terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
-
-    rhsExpr := buildAdjointRhs(lhsKey, terms);
-
     eqPtr := Equation.makeAssignment(
       Expression.fromCref(lhsKey),
       rhsExpr,
@@ -1311,9 +896,9 @@ protected
         if not listEmpty(ComponentRef.subscriptsAllFlat(lhsKey)) then
           // Represent as a sliced component of size 1
           diffed_comp := NBStrongComponent.SLICED_COMPONENT(
-            var_cref = lhsKey,                      // keep the subscripted cref for nice printing
-            var      = Slice.SLICE(lhsVarPtr, {}),  // scalar element; indices not needed here
-            eqn      = Slice.SLICE(eqPtr, {}),      // scalar equation
+            var_cref = lhsKey,
+            var      = Slice.SLICE(lhsVarPtr, {}),
+            eqn      = Slice.SLICE(eqPtr, {}),
             status   = NBSolve.Status.EXPLICIT
           );
         else
@@ -1340,12 +925,12 @@ protected
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " cannot create adjoint strong component for equation " + NBEquation.Equation.toString(eq)});
       then fail();
     end match;
-  end makeAdjointComponent;
+  end makeAdjointComponentFromRhs;
 
   function addEntryToLPAMap
     input Pointer<Variable> vptr;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
-    input UnorderedMap<ComponentRef, list<Expression>> loop_product_adjoint_map;
+    input UnorderedMap<ComponentRef, AdjointTermList> loop_product_adjoint_map;
   protected
     Option<ComponentRef> mappedSeed;
   algorithm
@@ -1354,6 +939,35 @@ protected
       UnorderedMap.tryAdd(Util.getOption(mappedSeed), {}, loop_product_adjoint_map);
     end if;
   end addEntryToLPAMap;
+
+  // Resolve base variables that were actually mapped to tmp pDER vars.
+  // This avoids relying on splitOnTrue output ordering semantics.
+  function getBaseTmpVarCandidates
+    input list<NBVariable.VariablePointer> partialVars;
+    input list<NBVariable.VariablePointer> tmpPDerVars;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output list<NBVariable.VariablePointer> baseTmpVars = {};
+  protected
+    UnorderedSet<ComponentRef> tmpPDerSet;
+    ComponentRef baseCref;
+    Option<ComponentRef> o_mapped;
+  algorithm
+    tmpPDerSet := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(tmpPDerVars)));
+
+    for v in tmpPDerVars loop
+      UnorderedSet.add(BVariable.getVarName(v), tmpPDerSet);
+    end for;
+
+    for v in partialVars loop
+      baseCref := BVariable.getVarName(v);
+      o_mapped := UnorderedMap.get(baseCref, diff_map);
+      if isSome(o_mapped) and UnorderedSet.contains(Util.getOption(o_mapped), tmpPDerSet) then
+        baseTmpVars := v :: baseTmpVars;
+      end if;
+    end for;
+
+    baseTmpVars := listReverse(baseTmpVars);
+  end getBaseTmpVarCandidates;
 
   // Build a filtered diff map for a given variable list.
   // For each variable pointer v in 'vars', if there exists a mapping
@@ -1380,59 +994,473 @@ protected
     end for;
   end populateDiffMap;
 
-  // Flattened across all components: preserve component order and in-component order
-  function getAllAlgVars
-    input list<StrongComponent> comps;
-    output list<NBVariable.VariablePointer> vars = {};
+  function isSupportedAdjointStrongComponent
+    input StrongComponent comp;
+    output Boolean ok;
   algorithm
-    for c in comps loop
-      for v in list(v for v guard BVariable.isAlgebraic(v) in StrongComponent.getVariables(c)) loop
-        vars := v :: vars;
-      end for;
+    ok := match comp
+      case StrongComponent.SINGLE_COMPONENT()    then true;
+      case StrongComponent.MULTI_COMPONENT()     then true;
+      case StrongComponent.SLICED_COMPONENT()    then true;
+      case StrongComponent.RESIZABLE_COMPONENT() then true;
+      case StrongComponent.ALGEBRAIC_LOOP()      then true;
+      case StrongComponent.ALIAS()               then isSupportedAdjointStrongComponent(comp.original);
+      else false;
+    end match;
+  end isSupportedAdjointStrongComponent;
+
+  type AdjointTermList = list<Expression>;
+  function generateAdjointComponent
+    "Generate adjoint strong component(s) for a single primal strong component.
+     Uses a fresh adjoint_map per component and returns the resulting adjoint
+     component(s) plus any new temporary variables."
+    input StrongComponent comp;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    input UnorderedMap<Path, Function> funcMap;
+    input Boolean scalarized;
+    input Boolean staticAsContinuous;
+    input Pointer<Integer> idx;
+    input String contextName;
+    input VariablePointers seedCandidates "for algebraic loop x-inputs";
+    input list<Pointer<Variable>> tmpVarCandidates "base tmp variables to also include in diff_map_x for algebraic loops";
+    output list<StrongComponent> adjointComps = {};
+    output list<Pointer<Variable>> newTmpVars = {};
+  protected
+    StrongComponent c_noalias;
+    UnorderedMap<ComponentRef, AdjointTermList> fresh_adjoint_map;
+    Differentiate.DifferentiationArguments diffArgs;
+    Equation eq;
+    list<Statement> adjStmts;
+    Pointer<Equation> eqPtr;
+    list<Slice<VariablePointer>> adjVarSlices;
+    // SSA helper: accumulator for pDer vars created for SSA temporaries
+    Pointer<list<Pointer<Variable>>> ssaPDerVarsPtr = Pointer.create({});
+  algorithm
+    c_noalias := StrongComponent.removeAlias(comp);
+
+    () := match c_noalias
+      local
+        // ALGEBRAIC_LOOP locals
+        Tearing tearing;
+        list<VariablePointer> itVarPtrs;
+        list<Expression> residuals;
+        list<Pointer<Variable>> lambdaPtrs;
+        list<ComponentRef> lambdaCrefs;
+        Integer iRes;
+        Pointer<Variable> lhsVarPtr;
+        ComponentRef newC;
+        UnorderedMap<ComponentRef, ComponentRef> diff_map_y, diff_map_x, diff_map_union;
+        UnorderedMap<ComponentRef, AdjointTermList> loop_product_adjoint_map;
+        list<Pointer<Variable>> seedPtrListX;
+        list<Pointer<Equation>> linResEqnPtrs;
+        AdjointTermList terms_j, terms_x;
+        Expression lhs_j, rhs_j, rhs_x;
+        Pointer<Equation> resid_j;
+        Option<ComponentRef> o_ySeedCref, o_pDerX;
+        ComponentRef ySeedCref, baseX, pDerX;
+        StrongComponent loopComp;
+
+        StrongComponent ssaAlg;
+        list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements = {};
+        list<Pointer<Variable>> newVars = {};
+        // SSA seed-init locals (used in MULTI_COMPONENT adjoint)
+        UnorderedSet<ComponentRef> seenCrefs;
+        ComponentRef origCref, finalSsaCref, pDerOrigCref, pDerSsaCref;
+        Type vty;
+        // x_bar algorithm locals (used in ALGEBRAIC_LOOP adjoint)
+        list<Statement> xbarStmts;
+        SizeClassification sc_x;
+        Operator addOp_x;
+        Expression accRhs;
+        // this true when its an initial problem? but we are only in the dynamic case
+        Boolean init = false;
+
+      // ===================== ALGEBRAIC_LOOP =====================
+      case StrongComponent.ALGEBRAIC_LOOP(strict = tearing) algorithm
+        // Collect iteration vars and residual equations and turn into residual expressions
+        itVarPtrs := Tearing.getIterationVars(tearing);
+        residuals := list(Equation.getResidualExp(Pointer.access(e)) for e in Tearing.getResidualEqns(tearing));
+
+        // Create scalar lambda_i temporaries
+        // Is it possible to create it as a vector?
+        lambdaPtrs := {};
+        lambdaCrefs := {};
+        for iIdx in 1:listLength(residuals) loop
+          (lhsVarPtr, newC) := BVariable.makeAuxVar(NBVariable.TEMPORARY_STR, Pointer.access(idx) + 1, Type.REAL(), false);
+          Pointer.update(idx, Pointer.access(idx) + 1);
+          (newC, lhsVarPtr) := BVariable.makePDerVar(newC, contextName, isTmp = true);
+          lambdaPtrs := lhsVarPtr :: lambdaPtrs;
+          lambdaCrefs := newC :: lambdaCrefs;
+        end for;
+        lambdaPtrs := listReverse(lambdaPtrs);
+        lambdaCrefs := listReverse(lambdaCrefs);
+        newTmpVars := lambdaPtrs;
+
+        // Build filtered diff maps
+        diff_map_y := populateDiffMap(itVarPtrs, diff_map);
+        seedPtrListX := listAppend(BVariable.VariablePointers.toList(seedCandidates), tmpVarCandidates);
+        seedPtrListX := list(vp for vp guard(not UnorderedMap.contains(BVariable.getVarName(vp), diff_map_y)) in seedPtrListX);
+        diff_map_x := populateDiffMap(seedPtrListX, diff_map);
+        diff_map_union := UnorderedMap.merge(diff_map_y, diff_map_x, sourceInfo());
+
+        // Pre-populate loop_product_adjoint_map
+        loop_product_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, listLength(itVarPtrs) + listLength(seedPtrListX));
+        for vp in itVarPtrs loop addEntryToLPAMap(vp, diff_map_y, loop_product_adjoint_map); end for;
+        for vp in seedPtrListX loop addEntryToLPAMap(vp, diff_map_x, loop_product_adjoint_map); end for;
+
+        // Accumulate reverse-mode adjoints per residual with seed = lambda_i
+        iRes := 1;
+        for residual_i in residuals loop
+          if iRes > listLength(lambdaCrefs) then break; end if;
+          diffArgs := accumulateAdjointForResidual(
+            residual_i,
+            Expression.fromCref(listGet(lambdaCrefs, iRes)),
+            diff_map_union,
+            funcMap,
+            scalarized,
+            loop_product_adjoint_map
+          );
+          // Update loop_product_adjoint_map with new adjoint terms collected from this residual
+          loop_product_adjoint_map := Util.getOption(diffArgs.adjoint_map);
+          iRes := iRes + 1;
+        end for;
+
+        // Build linear algebraic loop: sum_i(dr_i/dy_j * lambda_i) = y_bar_j
+        linResEqnPtrs := {};
+        for vp in itVarPtrs loop
+          o_ySeedCref := UnorderedMap.get(BVariable.getVarName(vp), diff_map_y);
+          if isSome(o_ySeedCref) then
+            ySeedCref := Util.getOption(o_ySeedCref);
+            terms_j := UnorderedMap.getOrDefault(ySeedCref, loop_product_adjoint_map, {});
+            lhs_j := buildAdjointRhs(ySeedCref, terms_j);
+            rhs_j := Expression.fromCref(ySeedCref);
+            resid_j := Equation.makeAssignment(lhs_j, rhs_j, idx, contextName,
+              NBEquation.Iterator.EMPTY(), NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
+            linResEqnPtrs := Equation.createResidual(resid_j) :: linResEqnPtrs;
+          end if;
+        end for;
+        linResEqnPtrs := listReverse(linResEqnPtrs);
+
+        if not listEmpty(linResEqnPtrs) then
+          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, NONE(), mixed = false, homotopy = false);
+          adjointComps := loopComp :: adjointComps;
+        end if;
+
+        // Build x_bar = -lambda^T * (dr/dx) as a single algorithm component
+        xbarStmts := {};
+        for seedVarPtrX in seedPtrListX loop
+          baseX := BVariable.getVarName(seedVarPtrX);
+          o_pDerX := UnorderedMap.get(baseX, diff_map_x);
+          if isSome(o_pDerX) then
+            pDerX := Util.getOption(o_pDerX);
+            terms_x := UnorderedMap.getOrDefault(pDerX, loop_product_adjoint_map, {});
+            if not listEmpty(terms_x) then
+              rhs_x := Expression.negate(buildAdjointRhs(pDerX, terms_x));
+              vty := ComponentRef.getComponentType(pDerX);
+              if Expression.containsCref(rhs_x, pDerX) then
+                accRhs := rhs_x;
+              else
+                sc_x := sizeClassificationFromType(vty);
+                addOp_x := Operator.fromClassification((MathClassification.ADDITION, sc_x), vty);
+                accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(pDerX), rhs_x}, {}, addOp_x));
+              end if;
+              accRhs := Expression.map(accRhs, Expression.repairOperator);
+              xbarStmts := Statement.ASSIGNMENT(
+                Expression.fromCref(pDerX), accRhs, vty, DAE.emptyElementSource
+              ) :: xbarStmts;
+            end if;
+          end if;
+        end for;
+        xbarStmts := listReverse(xbarStmts);
+        if not listEmpty(xbarStmts) then
+          eqPtr := Equation.makeAlgorithm(xbarStmts, init);
+          Equation.createName(eqPtr, idx, contextName);
+          adjVarSlices := listReverse(collectAdjointVarSlices(xbarStmts, {}));
+          adjointComps := StrongComponent.MULTI_COMPONENT(
+            vars   = adjVarSlices,
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          ) :: adjointComps;
+        end if;
+      then ();
+
+      // ===================== SINGLE_COMPONENT (scalar/array/record equation) =====================
+      case StrongComponent.SINGLE_COMPONENT() algorithm
+        eq := Pointer.access(c_noalias.eqn);
+
+        // Build fresh adjoint_map
+        fresh_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, 16);
+        diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
+          diffCref        = ComponentRef.EMPTY(),
+          new_vars        = {},
+          diff_map        = SOME(diff_map),
+          diffType        = DifferentiationType.JACOBIAN,
+          funcMap         = funcMap,
+          scalarized      = scalarized,
+          adjoint_map     = SOME(fresh_adjoint_map),
+          current_grad    = Expression.EMPTY(Type.REAL()),
+          collectAdjoints = true
+        );
+
+        (diffArgs, adjStmts) := Differentiate.differentiateEquationAdjoint(eq, diffArgs);
+
+        if not listEmpty(adjStmts) then
+          eqPtr := Equation.makeAlgorithm(adjStmts, init);
+          Equation.createName(eqPtr, idx, contextName);
+
+          // Collect output variables from adjoint statements (handles FOR and IF nesting)
+          adjVarSlices := listReverse(collectAdjointVarSlices(adjStmts, {}));
+
+          adjointComps := {StrongComponent.MULTI_COMPONENT(
+            vars   = adjVarSlices,
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          )};
+        end if;
+      then ();
+
+      // ===================== MULTI_COMPONENT (algorithm or if-equation) =====================
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        eq := match Pointer.access(Slice.getT(c_noalias.eqn))
+          case Equation.ALGORITHM() algorithm
+            (ssaAlg, replacements, newVars) := algorithmToSSA(c_noalias);
+            if Flags.isSet(Flags.DEBUG_ADJOINT) then
+              print("SSA algorithm for adjoint of component " + StrongComponent.toString(c_noalias) + ":\n" + StrongComponent.toString(ssaAlg) + "\n");
+            end if;
+
+            // ── Register SSA variables in diff_map ──
+            // For each new SSA variable, create a pDer companion and add the mapping
+            // ssaCref -> pDerCref to diff_map so the adjoint differentiation can propagate
+            // gradients through the SSA rename chain (e.g. x_1 -> pDer.x_1).
+            for ssaVarPtr in newVars loop
+              makeVarTraverse(ssaVarPtr, contextName, ssaPDerVarsPtr, diff_map,
+                function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
+            end for;
+            // Collect the newly created pDer vars as temporaries
+            for pDerVarPtr in Pointer.access(ssaPDerVarsPtr) loop
+              newTmpVars := pDerVarPtr :: newTmpVars;
+            end for;
+
+          then match ssaAlg
+            case StrongComponent.MULTI_COMPONENT() then Pointer.access(Slice.getT(ssaAlg.eqn));
+            else Pointer.access(Slice.getT(c_noalias.eqn));
+          end match;
+          else algorithm
+            then Pointer.access(Slice.getT(c_noalias.eqn));
+          end match;
+
+        // Build fresh adjoint_map
+        fresh_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, 16);
+        diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
+          diffCref        = ComponentRef.EMPTY(),
+          new_vars        = {},
+          diff_map        = SOME(diff_map),
+          diffType        = DifferentiationType.JACOBIAN,
+          funcMap         = funcMap,
+          scalarized      = scalarized,
+          adjoint_map     = SOME(fresh_adjoint_map),
+          current_grad    = Expression.EMPTY(Type.REAL()),
+          collectAdjoints = true
+        );
+
+        (diffArgs, adjStmts) := Differentiate.differentiateEquationAdjoint(eq, diffArgs);
+
+        // TODO: Check if it works as intended and make a test case
+        // ── Prepend seed-initialization statements for the final SSA variable of each
+        //    multi-assigned original variable ──
+        // The last SSA rename (x_N) represents the final value of x after the algorithm.
+        // Before the adjoint reverse sweep we must:
+        //   1. seed  pDer.x_N := pDer.x   (transfer the incoming gradient for x)
+        // We iterate replacements in REVERSE line order so the FIRST entry we see for
+        // each base variable IS its final SSA rename.  A local seen-set avoids re-seeding
+        // non-final renames.
+        if not listEmpty(newVars) then
+          seenCrefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, 4);
+          for replacement in listReverse(replacements) loop
+            (origCref, (finalSsaCref, _)) := replacement;
+            if not UnorderedSet.contains(origCref, seenCrefs) then
+              UnorderedSet.add(origCref, seenCrefs);
+              if UnorderedMap.contains(origCref, diff_map) and
+                 UnorderedMap.contains(finalSsaCref, diff_map) then
+                pDerOrigCref := UnorderedMap.getOrFail(origCref, diff_map);
+                pDerSsaCref  := UnorderedMap.getOrFail(finalSsaCref, diff_map);
+                vty := ComponentRef.getSubscriptedType(pDerSsaCref, true);
+                adjStmts := Statement.ASSIGNMENT(
+                  Expression.fromCref(pDerSsaCref),
+                  Expression.fromCref(pDerOrigCref),
+                  vty, DAE.emptyElementSource) :: adjStmts;
+              end if;
+            end if;
+          end for;
+        end if;
+
+        if not listEmpty(adjStmts) then
+          eqPtr := Equation.makeAlgorithm(adjStmts, init);
+          Equation.createName(eqPtr, idx, contextName);
+
+          // Collect output variables from adjoint statements (handles FOR and IF nesting)
+          adjVarSlices := listReverse(collectAdjointVarSlices(adjStmts, {}));
+
+          adjointComps := {StrongComponent.MULTI_COMPONENT(
+            vars   = adjVarSlices,
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          )};
+        end if;
+      then ();
+
+      // ===================== ForComponent: SLICED / RESIZABLE / GENERIC =====================
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        eq := Pointer.access(Slice.getT(c_noalias.eqn));
+        adjointComps := generateAdjointForComponent(eq, c_noalias, diff_map, funcMap, scalarized, init, idx, contextName);
+      then ();
+
+      case StrongComponent.RESIZABLE_COMPONENT() algorithm
+        eq := Pointer.access(Slice.getT(c_noalias.eqn));
+        adjointComps := generateAdjointForComponent(eq, c_noalias, diff_map, funcMap, scalarized, init, idx, contextName);
+      then ();
+
+      case StrongComponent.GENERIC_COMPONENT() algorithm
+        eq := Pointer.access(Slice.getT(c_noalias.eqn));
+        adjointComps := generateAdjointForComponent(eq, c_noalias, diff_map, funcMap, scalarized, init, idx, contextName);
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " unsupported component type: " + StrongComponent.toString(c_noalias)});
+      then ();
+    end match;
+  end generateAdjointComponent;
+
+  function generateAdjointForComponent
+    "Handle SLICED/RESIZABLE/GENERIC components that wrap for-equations.
+     Extracts the body equations, differentiates them, wraps in a for-algorithm."
+    input Equation eq;
+    input StrongComponent originalComp;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    input UnorderedMap<Path, Function> funcMap;
+    input Boolean scalarized;
+    input Boolean init;
+    input Pointer<Integer> idx;
+    input String contextName;
+    output list<StrongComponent> adjointComps = {};
+  protected
+    UnorderedMap<ComponentRef, AdjointTermList> fresh_adjoint_map;
+    Differentiate.DifferentiationArguments diffArgs;
+    list<Statement> adjStmts;
+    Pointer<Equation> eqPtr;
+    list<Slice<VariablePointer>> adjVarSlices;
+    ComponentRef adjVarCref;
+  algorithm
+    // Build fresh adjoint_map and diff arguments
+    fresh_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, 16);
+    diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
+      diffCref        = ComponentRef.EMPTY(),
+      new_vars        = {},
+      diff_map        = SOME(diff_map),
+      diffType        = DifferentiationType.JACOBIAN,
+      funcMap         = funcMap,
+      scalarized      = scalarized,
+      adjoint_map     = SOME(fresh_adjoint_map),
+      current_grad    = Expression.EMPTY(Type.REAL()),
+      collectAdjoints = true
+    );
+
+    // differentiateEquationAdjoint handles FOR_EQUATION (wraps with reversed iterators)
+    (diffArgs, adjStmts) := Differentiate.differentiateEquationAdjoint(eq, diffArgs);
+
+    if not listEmpty(adjStmts) then
+      eqPtr := Equation.makeAlgorithm(adjStmts, init);
+      Equation.createName(eqPtr, idx, contextName);
+
+      // Collect variable slices from statements (handles ASSIGNMENT, FOR, and IF nesting)
+      adjVarSlices := listReverse(collectAdjointVarSlices(adjStmts, {}));
+
+      // Determine the adjoint var cref for the component wrapper
+      adjVarCref := match originalComp
+        case StrongComponent.SLICED_COMPONENT() then originalComp.var_cref;
+        case StrongComponent.RESIZABLE_COMPONENT() then originalComp.var_cref;
+        case StrongComponent.GENERIC_COMPONENT() then originalComp.var_cref;
+        else ComponentRef.EMPTY();
+      end match;
+
+      adjointComps := {StrongComponent.MULTI_COMPONENT(
+        vars   = adjVarSlices,
+        eqn    = Slice.SLICE(eqPtr, {}),
+        status = NBSolve.Status.EXPLICIT
+      )};
+    end if;
+  end generateAdjointForComponent;
+
+  function collectAdjointVarSlices
+    "Recursively collect variable pointer slices from adjoint statements.
+     Handles ASSIGNMENT at any nesting depth inside FOR and IF bodies."
+    input list<Statement> stmts;
+    input output list<Slice<VariablePointer>> varSlices;
+  protected
+    Pointer<Variable> vPtr;
+    ComponentRef baseCref;
+  algorithm
+    for s in stmts loop
+      () := match s
+        case Statement.ASSIGNMENT(lhs = Expression.CREF()) algorithm
+          baseCref := ComponentRef.stripSubscriptsAll(Expression.toCref(s.lhs));
+          try
+            vPtr := BVariable.getVarPointer(baseCref, sourceInfo());
+            varSlices := Slice.SLICE(vPtr, {}) :: varSlices;
+          else
+          end try;
+        then ();
+        case Statement.FOR() algorithm
+          varSlices := collectAdjointVarSlices(s.body, varSlices);
+        then ();
+        case Statement.IF() algorithm
+          for branch in s.branches loop
+            varSlices := collectAdjointVarSlices(Util.tuple22(branch), varSlices);
+          end for;
+        then ();
+        else ();
+      end match;
     end for;
-  end getAllAlgVars;
+  end collectAdjointVarSlices;
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
-    list<StrongComponent> comps, diffed_comps, comps_non_alg;
-    StrongComponent c_noalias;
+    list<StrongComponent> comps, primalComps, diffed_comps = {};
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
 
-    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars;
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars, baseTmpVarCandidates;
     BVariable.VarData varDataJac;
-    SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring;
 
-    Integer i;
+    VariablePointers adjacencyVars;
+    Adjacency.Matrix fullLocal, sparsity;
+    UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
     String newName;
-    ComponentRef newC, c;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
-    type ExpressionList = list<Expression>; // for saving terms for the same lhs in a map
-    UnorderedMap<ComponentRef, list<Expression>> adjoint_map;
-    Pointer<Variable> lhsVarPtr;
 
-    list<StrongComponent> algebraicLoopComps = {};
-
-    // added locals for causalization of tmp equations
-    list<StrongComponent> tmpComps = {}, resComps = {};
-
-    list<ComponentRef> orderedTmpCrefs = {};
-    ComponentRef baseCref, pDerCref;
-    Option<ComponentRef> o_pDerCref;
+    // Per-component adjoint generation
+    list<StrongComponent> compAdjComps;
+    list<Pointer<Variable>> compNewVars;
   algorithm
     newName := name + "_ADJ";
     if isSome(strongComponents) then
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
-      // only allow single components and algebraic loops
+      primalComps := comps;
+      // only allow currently implemented adjoint-capable components
       for c in comps loop
-        if not StrongComponent.isSingleComponent(c) and not StrongComponent.isAlgebraicLoop(c) then
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " only supports SINGLE_COMPONENT and ALGEBRAIC_LOOP!"});
+        if not isSupportedAdjointStrongComponent(c) then
+          Error.addMessage(Error.INTERNAL_ERROR, {
+            getInstanceName() + " only supports SINGLE_COMPONENT, MULTI_COMPONENT, SLICED_COMPONENT, RESIZABLE_COMPONENT and ALGEBRAIC_LOOP in symbolic adjoint jacobian generation!"
+          });
           fail();
+        end if;
+        if Flags.isSet(Flags.DEBUG_ADJOINT) then
+          print("Primal component: " + StrongComponent.toString(c) + "\n");
         end if;
       end for;
     else
@@ -1448,15 +1476,23 @@ protected
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop
       makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+
+      if BVariable.isContinuous(v, staticAsContinuous) then
+        UnorderedSet.add(BVariable.getVarName(v), seed_set);
+      end if;
     end for;
-    res_vars := Pointer.access(pDer_vars_ptr);
+    res_vars := listReverse(Pointer.access(pDer_vars_ptr));
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
+    for v in old_res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+    end for;
+
     for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous); end for;
-    seed_vars := Pointer.access(seed_vars_ptr);
+    seed_vars := listReverse(Pointer.access(seed_vars_ptr));
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("seed vars after seed creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(seed_vars), "Seed Vars") + "\n");
@@ -1467,305 +1503,51 @@ protected
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
-
-    // create adjoint map with seed vars and tmp vars as keys mapping to empty lists
-    adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual, listLength(res_vars) + listLength(tmp_vars));
-    for v in res_vars loop
-      UnorderedMap.tryAdd(BVariable.getVarName(v), {}, adjoint_map);
-    end for;
-    for v in tmp_vars loop
-      UnorderedMap.tryAdd(BVariable.getVarName(v), {}, adjoint_map);
-    end for;
+    baseTmpVarCandidates := getBaseTmpVarCandidates(VariablePointers.toList(partialCandidates), tmp_vars, diff_map);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
-      print("Diff map before:\n" + diffMapToString(diff_map) + "\n");
+      print("Diff map before component generation:\n" + diffMapToString(diff_map) + "\n");
     end if;
 
-    comps_non_alg := {};
-    for c in comps loop
-      c_noalias := StrongComponent.removeAlias(c);
-      () := match c_noalias
-        local
-          // tearing data
-          list<VariablePointer> itVarPtrs = {};
-          list<Expression> residuals;
+    // ===================== Sequential adjoint component generation =====================
+    // Process each primal component in reverse order (LIFO), generate adjoint component(s),
+    // and prepend to the unified list.
+    for comp in primalComps loop
+      (compAdjComps, compNewVars) := generateAdjointComponent(
+        comp, diff_map, funcMap, seedCandidates.scalarized, staticAsContinuous, idx, newName, seedCandidates, baseTmpVarCandidates);
 
-          // reverse-mode lambda temporaries
-          list<Pointer<Variable>> lambdaPtrs = {};
-          list<ComponentRef>      lambdaCrefs = {};
+      // Prepend adjoint components (already in correct order from generateAdjointComponent)
+      // only more than one if the original component was an algebraic loop
+      for ac in compAdjComps loop
+        diffed_comps := ac :: diffed_comps;
+      end for;
 
-          // misc
-          Tearing tearing;
-          Integer iRes;
-          list<Expression> terms_x;
-          Expression rhs_x;
+      // Collect any new temporary variables (e.g. lambda vars from algebraic loops)
+      for v in compNewVars loop
+        tmp_vars := v :: tmp_vars;
+      end for;
 
-          UnorderedMap<ComponentRef, ComponentRef> diff_map_y =
-            UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-          // Map for inputs x only: base x -> $pDER_...(x)
-          UnorderedMap<ComponentRef, ComponentRef> diff_map_x =
-            UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-          UnorderedMap<ComponentRef, ComponentRef> diff_map_union =
-            UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-          UnorderedMap<ComponentRef, list<Expression>> loop_product_adjoint_map =
-            UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-          ComponentRef baseX, pDerX;
-          Option<ComponentRef> o_pDerX;
-          list<Pointer<Variable>> seedPtrListX;
-
-          list<Pointer<NBEquation.Equation>> linResEqnPtrs = {};
-          list<Expression> terms_j;
-          Expression lhs_j, rhs_j;
-          Pointer<NBEquation.Equation> resid_j;
-          Option<ComponentRef> o_ySeedCref;
-          ComponentRef ySeedCref;
-        case NBStrongComponent.ALGEBRAIC_LOOP(strict = tearing)
-          algorithm
-            // Collect iteration vars
-            itVarPtrs := Tearing.getIterationVars(tearing);
-
-            // Extract residual expressions
-            residuals := list(Equation.getResidualExp(Pointer.access(e)) for e in Tearing.getResidualEqns(tearing));
-
-            // Create scalar lambda_i temporaries (Real), referenced as seeds for reverse mode
-            for iIdx in 1:listLength(residuals) loop
-              // make an auxiliary scalar Real variable which will hold lambda_i
-              (lhsVarPtr, newC) := BVariable.makeAuxVar(NBVariable.TEMPORARY_STR, Pointer.access(idx) + 1, Type.REAL(), false);
-              Pointer.update(idx, Pointer.access(idx) + 1);
-              (newC, lhsVarPtr) := BVariable.makePDerVar(newC, newName, isTmp = true);
-
-              lambdaPtrs := lhsVarPtr :: lambdaPtrs;
-              lambdaCrefs := newC :: lambdaCrefs;
-
-              if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-                print("[adjoint] created lambda_" + intString(iIdx) + " = " + ComponentRef.toString(newC) + "\n");
-              end if;
-            end for;
-            // keep 1..m order
-            tmp_vars := List.append_reverse(lambdaPtrs, tmp_vars);
-            lambdaPtrs := listReverse(lambdaPtrs);
-            lambdaCrefs := listReverse(lambdaCrefs);
-
-            // ===================== Unified accumulation =====================
-              // Build filtered diff maps:
-              //  - diff_map_y: base iteration var y -> $SEED(y)
-              //  - diff_map_x: base input x       -> $pDER(x)
-              // Combine both into diff_map_union and collect adjoints into loop_product_adjoint_map
-            // diff_map_y: keep only iteration vars that have a $SEED mapping in the global diff_map
-            diff_map_y := populateDiffMap(itVarPtrs, diff_map);
-
-            // diff_map_x: keep only inputs x (seedCandidates) that have a $pDER mapping in the global diff_map
-            seedPtrListX := BVariable.VariablePointers.toList(seedCandidates);
-            diff_map_x := populateDiffMap(seedPtrListX, diff_map);
-
-            // union/merge diff maps into diff_map_union
-            diff_map_union := UnorderedMap.merge(diff_map_y, diff_map_x, sourceInfo());
-
-            // Pre-populate loop_product_adjoint_map with all $SEED(y) keys
-            for itVarPtr in itVarPtrs loop
-              addEntryToLPAMap(itVarPtr, diff_map_y, loop_product_adjoint_map);
-            end for;
-            // ...and all $pDER(x) keys
-            for seedVarPtr in seedPtrListX loop
-              addEntryToLPAMap(seedVarPtr, diff_map_x, loop_product_adjoint_map);
-            end for;
-
-            // Accumulate reverse-mode adjoints per residual with seed = lambda_i into the unified map
-            // we only need to process residuals 1..m with their corresponding lambda_i because everything is linear
-            iRes := 1;
-            for residual_i in residuals loop
-              if iRes > listLength(lambdaCrefs) then
-                break;
-              end if;
-
-              diffArguments := accumulateAdjointForResidual(
-                residual_i,
-                Expression.fromCref(listGet(lambdaCrefs, iRes)),  // current_grad = lambda_i
-                diff_map_union,                                    // union: { y-> $SEED(y), x-> $pDER(x) }
-                funcMap,
-                seedCandidates.scalarized,
-                loop_product_adjoint_map
-              );
-
-              // Thread state
-              loop_product_adjoint_map := Util.getOption(diffArguments.adjoint_map);
-
-              iRes := iRes + 1;
-            end for;
-            if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-              print("[adjoint] loop_product_adjoint_map after: \n" + adjointMapToString(SOME(loop_product_adjoint_map)) + "\n");
-            end if;
-
-            // Build a linear algebraic loop for lambda: sum_i (d r_i / d y_j) * lambda_i = y_bar_j
-            // For each iteration var y_j (in itVarPtrs order), create residual:
-            //   LHS_j = sum(loop_product_adjoint_map[$SEED(y_j)]) ; residual_j = LHS_j - $SEED(y_j) = 0
-            for vptr in itVarPtrs loop
-              // Map base y to its seed cref (y_bar variable)
-              o_ySeedCref := UnorderedMap.get(BVariable.getVarName(vptr), diff_map_y);
-              if isSome(o_ySeedCref) then
-                ySeedCref := Util.getOption(o_ySeedCref);
-
-                // Get accumulated terms for this seed (may be empty)
-                terms_j := UnorderedMap.getOrDefault(ySeedCref, loop_product_adjoint_map, {});
-
-                // Build LHS as sum of terms (or 0 if empty)
-                lhs_j := buildAdjointRhs(ySeedCref, terms_j);
-
-                // RHS is the y_bar variable itself
-                rhs_j := Expression.fromCref(ySeedCref);
-
-                // Create assignment equation: lambda = lambda_vec
-                resid_j := NBEquation.Equation.makeAssignment(
-                  lhs_j,
-                  rhs_j,
-                  idx,
-                  newName,
-                  NBEquation.Iterator.EMPTY(),
-                  NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
-                );
-
-                // Create scalar residual equation pointer for r_j = 0
-                linResEqnPtrs := NBEquation.Equation.createResidual(resid_j) :: linResEqnPtrs;
-              else
-                // No mapping -> skip (nothing to solve for this y)
-                continue;
-              end if;
-            end for;
-            linResEqnPtrs := listReverse(linResEqnPtrs);
-
-            // Wrap into a linear algebraic loop with lambda as iteration vars
-            if not listEmpty(linResEqnPtrs) then
-              algebraicLoopComps := makeLinearAlgebraicLoop(
-                lambdaPtrs,                  // iteration vars: lambda_1..m
-                linResEqnPtrs,               // residuals: sum(...) - y_bar = 0
-                NONE(),
-                mixed = false,
-                homotopy = false
-              ) :: algebraicLoopComps;
-            end if;
-
-            // -------------------------------------------------------------
-            // Build x_bar = - lambda^T * (d r / d x)
-            // Use the unified loop_product_adjoint_map:
-            //   for each $pDER(x_k): terms_x = [dr1/dx_k*lambda_1, dr2/dx_k*lambda_2, ...]
-            //   x_bar[k] = - sum(terms_x)
-            // Append into global adjoint_map under the $pDER(x_k) keys.
-            // -------------------------------------------------------------
-            for seedVarPtrX in seedPtrListX loop
-              baseX := BVariable.getVarName(seedVarPtrX);
-
-              // If this base x has a $pDER mapping and collected terms, emit its equation
-              o_pDerX := UnorderedMap.get(baseX, diff_map_x);
-              if isSome(o_pDerX) then
-                pDerX := Util.getOption(o_pDerX);
-
-                terms_x := UnorderedMap.getOrDefault(pDerX, loop_product_adjoint_map, {});
-                if listEmpty(terms_x) then
-                  // no contributions -> skip
-                  continue;
-                end if;
-
-                // Sum terms using correct type/operator for the LHS variable
-                // and apply required minus sign
-                rhs_x := Expression.negate(buildAdjointRhs(pDerX, terms_x));
-
-                // Append to global adjoint_map so standard emission produces:
-                //   $pDER_...x = - (sum_i lambda_i * d r_i / d x)
-                UnorderedMap.add(
-                  pDerX,
-                  rhs_x :: UnorderedMap.getOrDefault(pDerX, adjoint_map, {}),
-                  adjoint_map
-                );
-              end if;
-            end for;
-          then ();
-        else algorithm
-          // non-algebraic loop handled later
-          comps_non_alg := c_noalias :: comps_non_alg;
-        then ();
-      end match;
+      if Flags.isSet(Flags.DEBUG_ADJOINT) then
+        for ac in compAdjComps loop
+          print("[adjoint] generated component: " + StrongComponent.toString(ac) + "\n");
+        end for;
+      end if;
     end for;
-    // keep original order
-    comps := listReverse(comps_non_alg);
+    // diffed_comps is now in LIFO order (correct for adjoint execution)
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      print("Adjoint map after loop adding:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
+      print("Final list of differentiated components:\n");
+      for comp in diffed_comps loop
+        print(StrongComponent.toString(comp) + "\n");
+      end for;
     end if;
-
-    // Build differentiation argument structure
-    diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
-      new_vars        = {},
-      diff_map        = SOME(diff_map),         // seed and temporary cref map
-      diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-      funcMap         = funcMap,
-      scalarized      = seedCandidates.scalarized,
-      adjoint_map     = SOME(adjoint_map),
-      current_grad    = Expression.EMPTY(Type.REAL()),
-      collectAdjoints = true
-    );
-
-    // differentiate all strong components
-    (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, newName, getInstanceName());
-
-    if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      print("Adjoint map after differentiation:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
-    end if;
-
-    adjoint_map := Util.getOption(diffArguments.adjoint_map);
-    // New list of strong components replacing original diffed_comps
-    diffed_comps := {};
-    i := 1;
-
-    // they are already in reverse order
-    for v in getAllAlgVars(comps) loop
-      baseCref := BVariable.getVarName(v);
-      o_pDerCref := UnorderedMap.get(baseCref, diff_map);
-      if isSome(o_pDerCref) then
-        pDerCref := Util.getOption(o_pDerCref);
-        // only emit if we actually collected adjoint terms (key exists in map)
-        if UnorderedMap.contains(pDerCref, adjoint_map) then
-          orderedTmpCrefs := pDerCref :: orderedTmpCrefs;
-        end if;
-      end if;
-    end for;
-    // Emit tmp components in determined order
-    for lhsKey in orderedTmpCrefs loop
-      tmpComps := makeAdjointComponent(lhsKey, adjoint_map, newName, i) :: tmpComps;
-      i := i + 1;
-    end for;
-
-    // Emit any remaining tmp vars (e.g. lambda temporaries) not in orderedTmpCrefs.
-    for v in tmp_vars loop
-      baseCref := BVariable.getVarName(v); // for tmp_vars (already pDer/lambda names)
-      if (not List.contains(orderedTmpCrefs, baseCref, ComponentRef.isEqual))
-         and UnorderedMap.contains(baseCref, adjoint_map) then
-        tmpComps := makeAdjointComponent(baseCref, adjoint_map, newName, i) :: tmpComps;
-        i := i + 1;
-      end if;
-    end for;
-
-    // emit result variable components in any order
-    resComps := {};
-    for v in res_vars loop
-      c := BVariable.getVarName(v);
-      if UnorderedMap.contains(c, adjoint_map) then
-        resComps := makeAdjointComponent(c, adjoint_map, newName, i) :: resComps;
-        i := i + 1;
-      end if;
-    end for;
-    // no reversal needed as order does not matter?
-
-    // here are also the loop components from above which might be empty though if there are none
-    diffed_comps := listAppend(tmpComps, listAppend(algebraicLoopComps, resComps));
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
     all_vars      := unknown_vars;  // add other vars later on
 
     seed_vars     := Pointer.access(seed_vars_ptr);
-    aux_vars      := seed_vars;     // add other auxiliaries later on
+    aux_vars      := seed_vars;     // add other auxiliaries later on. TODO: Need to add the SSA vars and the lambda vars from algebraic loops as auxiliaries?
     alias_vars    := {};
     depend_vars   := {};
 
@@ -1781,58 +1563,94 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
-
-    if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      print("Adjoint sparsity pattern and coloring:\n");
-      print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
+    adjacencyVars := VariablePointers.clone(seedCandidates);
+    // tmp_vars are diffed so use the undiffed ones for adjacency (but does this adjacency approach even work because the adjoint adds tmp vars to the system which are not part of the original system?)
+    adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
+    if jacType == JacobianType.ODE then
+      adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
     end if;
+    fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
+      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true);
 
     jacobian := SOME(Jacobian.JACOBIAN(
-      name              = newName,
-      jacType           = jacType,
-      varData           = varDataJac,
-      comps             = listArray(diffed_comps),
-      sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring,
-      isAdjoint         = true
+      name      = newName,
+      jacType   = jacType,
+      varData   = varDataJac,
+      comps     = listArray(diffed_comps),
+      sparsity  = sparsity,
+      isAdjoint = true
     ));
   end jacobianSymbolicAdjoint;
 
-  function jacobianNumeric "still creates sparsity pattern"
+  function jacobianNumeric
     extends Module.jacobianInterface;
   protected
     VarData varDataJac;
-    SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring;
-    list<Pointer<Variable>> res_vars, tmp_vars;
+    VariablePointers adjacencyVars;
+    Adjacency.Matrix sparsity, fullLocal;
+    list<Pointer<Variable>> res_vars, tmp_vars, seed_vars_d, pDer_vars_d;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
+    Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
+    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+
+    UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    seed_vars_d := Pointer.access(seed_vars_ptr);
+    for v in VariablePointers.toList(seedCandidates) loop
+      if BVariable.isContinuous(v, staticAsContinuous) then
+        UnorderedSet.add(BVariable.getVarName(v), seed_set);
+        // Also add base cref so iterator-subscripted deps from for-loop equations
+        // can match via base fallback in filterSet.
+        UnorderedSet.add(ComponentRef.stripSubscriptsAll(BVariable.getVarName(v)), seed_set);
+      end if;
+    end for;
+
+    for v in res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+    end for;
+    pDer_vars_d := Pointer.access(pDer_vars_ptr);
+
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
       unknowns      = partialCandidates,
-      auxiliaries   = VariablePointers.fromList({}),
+      auxiliaries   = VariablePointers.fromList(seed_vars_d),
       aliasVars     = VariablePointers.fromList({}),
-      diffVars      = VariablePointers.fromList({}),
+      diffVars      = partialCandidates,
       dependencies  = VariablePointers.fromList({}),
-      resultVars    = VariablePointers.fromList(res_vars),
+      resultVars    = VariablePointers.fromList(pDer_vars_d),
       tmpVars       = VariablePointers.fromList(tmp_vars),
-      seedVars      = seedCandidates
+      seedVars      = VariablePointers.fromList(seed_vars_d)
     );
 
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
+    if isSome(strongComponents) then
+      adjacencyVars := VariablePointers.clone(seedCandidates);
+      adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+      if jacType == JacobianType.ODE then
+        adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
+      end if;
+      fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
+        List.flatten(list(StrongComponent.getEquations(comp) for comp in arrayList(Util.getOption(strongComponents))))));
+      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set, diff_map);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
+      fail();
+    end if;
 
     jacobian := SOME(Jacobian.JACOBIAN(
-      name              = name,
-      jacType           = jacType,
-      varData           = varDataJac,
-      comps             = listArray({}),
-      sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring,
-      isAdjoint         = false
+      name      = name,
+      jacType   = jacType,
+      varData   = varDataJac,
+      comps     = listArray({}),
+      sparsity  = sparsity,
+      isAdjoint = false
     ));
   end jacobianNumeric;
 
@@ -1862,21 +1680,6 @@ protected
     end match;
   end getTmpFilterFunction;
 
-  function getSparsityRowCrefs
-    "Returns the actual jacobian row crefs from the partial candidates"
-    input VariablePointers partialCandidates;
-    input JacobianType jacType;
-    input Boolean staticAsContinuous;
-    output list<ComponentRef> row_crefs;
-  protected
-    list<Pointer<Variable>> row_vars;
-    BVariable.checkVar func = getTmpFilterFunction(jacType);
-  algorithm
-    (row_vars, _) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    row_vars := list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in row_vars);
-    row_crefs := VariablePointers.getScalarVarNames(VariablePointers.fromList(row_vars, partialCandidates.scalarized), false);
-  end getSparsityRowCrefs;
-
   function makeVarTraverse
     input Pointer<Variable> var_ptr;
     input String name;
@@ -1903,6 +1706,16 @@ protected
       Pointer.update(vars_ptr, diff_ptr :: Pointer.access(vars_ptr));
       // add x -> $<new>.x to the map for later lookup
       UnorderedMap.add(var.name, diff, map);
+      // Base-cref fallback for iterator-subscripted deps (x[$i1]) to find their seed in Part D.
+      // Literal subscripts (x[1] vs x[2]) are independent unknowns: registering a base-cref
+      // fallback for them would let an UNRELATED literal element (never itself an unknown of
+      // this Jacobian, e.g. x[1] when only x[2] is) wrongly resolve via NBDifferentiate's
+      // exact-match-first lookup falling through to this template. Exclude those; literal
+      // elements that *are* genuine unknowns already get resolved by the exact-match check.
+      if ComponentRef.hasSubscripts(var.name) and not List.all(ComponentRef.subscriptsAllFlat(var.name), Subscript.isLiteral)
+          and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(var.name), map) then
+        UnorderedMap.add(ComponentRef.stripSubscriptsAll(var.name), diff, map);
+      end if;
 
       // differentiate parent and add to map
       () := match BVariable.getParent(var_ptr)
@@ -1926,34 +1739,6 @@ protected
       end match;
     end if;
   end makeVarTraverse;
-
-  function adjointMapToString
-    "Pretty print the optional adjoint_map:
-       { cref1 -> [e1, e2, ...]; cref2 -> [ ... ]; }
-     If NONE() => {}"
-    input Option<UnorderedMap<ComponentRef, list<Expression>>> adjoint_map;
-    output String str;
-  protected
-    UnorderedMap<ComponentRef, list<Expression>> map;
-
-    function valueToString
-      input list<Expression> elst;
-      output String vstr;
-    algorithm
-      vstr := "[" + stringDelimitList(list(Expression.toString(e) for e in elst), ", ") + "]";
-    end valueToString;
-  algorithm
-    if isNone(adjoint_map) then
-      str := "{}";
-      return;
-    end if;
-
-    SOME(map) := adjoint_map;
-
-    // TODO Collect and sort keys (for deterministic output).
-    str := UnorderedMap.toString(map, ComponentRef.toString, valueToString, "\n  ", " -> ");
-    str := "{\n  " + str + "\n}";
-  end adjointMapToString;
 
   function diffMapToString
     input UnorderedMap<ComponentRef, ComponentRef> map;
@@ -2003,9 +1788,193 @@ protected
       linear   = true,
       mixed    = mixed,
       homotopy = homotopy,
-      status   = NBSolve.Status.IMPLICIT
+      status   = NBSolve.Status.IMPLICIT,
+      implicitlyCreated = false
     );
   end makeLinearAlgebraicLoop;
+
+
+  function makeSSAVar
+    "Creates a fresh SSA variable named 'baseName_idx' that copies all
+     attributes from the variable referenced by baseCref.
+     The new variable and its component reference are linked cyclically
+     via the InstNode VAR_NODE pointer (same pattern as BVariable.makeAuxVar)."
+    input  ComponentRef baseCref "original base cref (no subscripts)";
+    input  Integer idx           "SSA subscript index (1 for x_1, 2 for x_2, ...)";
+    output Pointer<Variable> ssaVarPtr;
+    output ComponentRef ssaCref;
+  protected
+    Pointer<Variable> origVarPtr;
+    Variable origVar;
+    InstNode newNode;
+    Type ty;
+  algorithm
+    origVarPtr := BVariable.getVarPointer(baseCref, sourceInfo());
+    origVar    := Pointer.access(origVarPtr);
+    ty         := ComponentRef.getSubscriptedType(baseCref, false);
+
+    // Build a fresh VAR_NODE with the SSA name; the variable pointer is
+    // initially a dummy and is linked to the real variable by makeVarPtr below.
+    newNode := InstNode.VAR_NODE(
+      ComponentRef.firstName(baseCref) + "_" + intString(idx),
+      PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
+    ssaCref := ComponentRef.fromNode(newNode, ty);
+
+    // Clear any inherited partner pointers (pDer, seed) so that a fresh pDer
+    // variable is created for this SSA temporary rather than reusing the
+    // original variable's existing partner.
+    origVar.backendinfo := BackendInfo.BACKEND_INFO(
+      origVar.backendinfo.varKind,
+      origVar.backendinfo.attributes,
+      origVar.backendinfo.annotations,
+      origVar.backendinfo.var_pre,
+      NONE() /* var_seed */,
+      NONE() /* var_pder_res */,
+      NONE() /* var_pder_tmp */,
+      origVar.backendinfo.var_start,
+      origVar.backendinfo.parent
+    );
+
+    // Establish the cyclic Variable <-> InstNode pointer link
+    (ssaVarPtr, ssaCref) := BVariable.makeVarPtr(origVar, ssaCref);
+  end makeSSAVar;
+
+  function algorithmToSSA
+    "Transforms a MULTI_COMPONENT algorithm strong component into SSA
+     (Static Single Assignment) form.
+
+     Variables assigned more than once receive fresh indexed names,
+     e.g. x -> x_1, x_2, ...  RHS reads are updated to use the latest
+     SSA name of each written variable.
+     Only ASSIGNMENT statements are expected in the algorithm body.
+
+     Each entry (orig_cref, (ssa_cref, line_index)) in `replacements`
+     records that orig_cref was renamed to ssa_cref at the statement
+     with 1-based index line_index within the original algorithm."
+    input  StrongComponent comp;
+    output StrongComponent ssaComp;
+    output list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements
+      "original_var -> (ssa_var, line_of_replacement)";
+    output list<Pointer<Variable>> newVars
+      "newly created SSA variable pointers; caller must register them in the variable system";
+  protected
+    Equation eqn;
+    Algorithm alg;
+    Statement stmt;
+    ComponentRef lhsCref, baseCref, ssaCref;
+    Integer cnt, idx, lineIdx;
+    Pointer<Variable> ssaVarPtr;
+    Expression lhsExp, rhsExp;
+    // Phase 1: how many times is each base cref assigned?
+    UnorderedMap<ComponentRef, Integer> assignCount =
+      UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    // Phase 2: current per-variable SSA counter
+    UnorderedMap<ComponentRef, Integer> ssaIdx =
+      UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    // Phase 2: current active SSA expression for each multi-assigned cref
+    UnorderedMap<ComponentRef, Expression> activeRepl =
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    list<Statement> ssaStmts = {};
+    list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replAcc = {};
+    list<Pointer<Variable>> newVarsAcc = {};
+    Pointer<Equation> ssaEqnPtr;
+  algorithm
+    (ssaComp, replacements, newVars) := match comp
+
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        eqn := Pointer.access(Slice.getT(comp.eqn));
+        Equation.ALGORITHM(alg = alg) := eqn;
+
+        // ── Phase 1: count how many times each base cref appears on the LHS ──
+        for origStmt in alg.statements loop
+          () := match origStmt
+            case Statement.ASSIGNMENT() algorithm
+              lhsCref := match origStmt.lhs
+                case Expression.CREF(cref = lhsCref) then lhsCref;
+                else ComponentRef.EMPTY();
+              end match;
+              if not ComponentRef.isEmpty(lhsCref) then
+                baseCref := ComponentRef.stripSubscriptsAll(lhsCref);
+                cnt := UnorderedMap.getOrDefault(baseCref, assignCount, 0);
+                UnorderedMap.add(baseCref, cnt + 1, assignCount);
+              end if;
+            then ();
+            else ();
+          end match;
+        end for;
+
+        // ── Phase 2: rename multi-assigned variables; substitute RHS reads ──
+        lineIdx := 1;
+        for origStmt in alg.statements loop
+          stmt := match origStmt
+            case Statement.ASSIGNMENT() algorithm
+              // Substitute every RHS read with its current SSA name
+              rhsExp := Expression.map(origStmt.rhs,
+                function Replacements.applySimpleExp(replacements = activeRepl));
+
+              // Check whether the LHS variable needs SSA renaming
+              lhsExp  := origStmt.lhs;
+              lhsCref := match origStmt.lhs
+                case Expression.CREF(cref = lhsCref) then lhsCref;
+                else ComponentRef.EMPTY();
+              end match;
+
+              if not ComponentRef.isEmpty(lhsCref) then
+                baseCref := ComponentRef.stripSubscriptsAll(lhsCref);
+                if UnorderedMap.getOrDefault(baseCref, assignCount, 1) > 1 then
+                  // Increment the SSA index and create a fresh variable
+                  idx := UnorderedMap.getOrDefault(baseCref, ssaIdx, 0) + 1;
+                  UnorderedMap.add(baseCref, idx, ssaIdx);
+                  (ssaVarPtr, ssaCref) := makeSSAVar(baseCref, idx);
+                  newVarsAcc := ssaVarPtr :: newVarsAcc;
+
+                  // Re-attach original subscripts to the new SSA cref
+                  ssaCref := ComponentRef.copySubscripts(lhsCref, ssaCref);
+
+                  // Update active replacement map (keyed by unsubscripted base cref)
+                  UnorderedMap.add(baseCref,
+                    Expression.fromCref(ComponentRef.stripSubscriptsAll(ssaCref)),
+                    activeRepl);
+
+                  // Record: original base cref -> (ssa base cref, 1-based line index)
+                  replAcc := (baseCref,
+                    (ComponentRef.stripSubscriptsAll(ssaCref), lineIdx)) :: replAcc;
+
+                  // Replace the LHS with the SSA cref expression
+                  lhsExp := Expression.fromCref(ssaCref);
+                end if;
+              end if;
+            then Statement.ASSIGNMENT(lhsExp, rhsExp, origStmt.ty, origStmt.source);
+
+            else origStmt;
+          end match;
+
+          ssaStmts := stmt :: ssaStmts;
+          lineIdx   := lineIdx + 1;
+        end for;
+
+        // Build a fresh equation pointer with the SSA statement list so the
+        // original primal equation is left untouched. Is that intended? SSA variables are appended to the component's var list so
+        // that code generation can declare them as local temporaries.
+        alg.statements := listReverse(ssaStmts);
+        eqn := match eqn
+          case Equation.ALGORITHM() algorithm eqn.alg := alg; then eqn;
+          else eqn;
+        end match;
+        ssaEqnPtr := Pointer.create(eqn);
+      then (StrongComponent.MULTI_COMPONENT(
+              vars   = listAppend(comp.vars, list(Slice.SLICE(v, {}) for v in listReverse(newVarsAcc))),
+              eqn    = Slice.SLICE(ssaEqnPtr, {}),
+              status = comp.status
+            ), listReverse(replAcc), listReverse(newVarsAcc));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {getInstanceName() + " expects a MULTI_COMPONENT with an ALGORITHM equation."});
+      then fail();
+
+    end match;
+  end algorithmToSSA;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBJacobian;

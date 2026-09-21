@@ -280,9 +280,10 @@ void CrashReportDialog::sendReport()
     OMEditCommunicationLogFileHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMEditCommunicationLogFileHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"omeditcommunication.log\"; filename=\"omeditcommunication.log\""));
     QFile *pOMEditCommunicationLogFileFile = new QFile(mpOMEditCommunicationLogFileCheckBox->text());
-    pOMEditCommunicationLogFileFile->open(QIODevice::ReadOnly);
-    OMEditCommunicationLogFileHttpPart.setBodyDevice(pOMEditCommunicationLogFileFile);
-    pOMEditCommunicationLogFileFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    if (pOMEditCommunicationLogFileFile->open(QIODevice::ReadOnly)) {
+      OMEditCommunicationLogFileHttpPart.setBodyDevice(pOMEditCommunicationLogFileFile);
+      pOMEditCommunicationLogFileFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    }
     pHttpMultiPart->append(OMEditCommunicationLogFileHttpPart);
   }
   // OMEditCommandsMosFile
@@ -291,9 +292,10 @@ void CrashReportDialog::sendReport()
     OMEditCommandsMosFileHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMEditCommandsMosFileHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"omeditcommands.mos\"; filename=\"omeditcommands.mos\""));
     QFile *pOMEditCommandsMosFile = new QFile(mpOMEditCommandsMosFileCheckBox->text());
-    pOMEditCommandsMosFile->open(QIODevice::ReadOnly);
-    OMEditCommandsMosFileHttpPart.setBodyDevice(pOMEditCommandsMosFile);
-    pOMEditCommandsMosFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    if (pOMEditCommandsMosFile->open(QIODevice::ReadOnly)) {
+      OMEditCommandsMosFileHttpPart.setBodyDevice(pOMEditCommandsMosFile);
+      pOMEditCommandsMosFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    }
     pHttpMultiPart->append(OMEditCommandsMosFileHttpPart);
   }
   // OMStackTraceFile
@@ -302,9 +304,10 @@ void CrashReportDialog::sendReport()
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"openmodelica.stacktrace.OMEdit\"; filename=\"openmodelica.stacktrace.OMEdit\""));
     QFile *pOMStackTraceFile = new QFile(mpOMStackTraceFileCheckBox->text());
-    pOMStackTraceFile->open(QIODevice::ReadOnly);
-    OMStackTraceFileCheckBoxHttpPart.setBodyDevice(pOMStackTraceFile);
-    pOMStackTraceFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    if (pOMStackTraceFile->open(QIODevice::ReadOnly)) {
+      OMStackTraceFileCheckBoxHttpPart.setBodyDevice(pOMStackTraceFile);
+      pOMStackTraceFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    }
     pHttpMultiPart->append(OMStackTraceFileCheckBoxHttpPart);
   }
   // create the request

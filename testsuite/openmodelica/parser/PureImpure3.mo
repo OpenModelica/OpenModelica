@@ -2,6 +2,7 @@
 // keywords:
 // status: incorrect
 // cflags: -d=newInst --std=3.2 --strict
+// suite: antlr
 //
 // Checks that pure/impure are not allowed in Modelica 3.2 when using --strict.
 //
@@ -19,7 +20,7 @@ end PureImpure3;
 // Error processing file: PureImpure3.mo
 // Failed to parse file: PureImpure3.mo!
 //
-// [openmodelica/parser/PureImpure3.mo:9:1-9:5:writable] Error: Parser error: Unexpected token near: pure (IDENT)
+// [openmodelica/parser/PureImpure3.mo:10:1-10:5:writable] Error: Parser error: Unexpected token near: pure (IDENT)
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

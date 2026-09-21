@@ -49,7 +49,7 @@ getErrorString();
 // ========================================
 // 1/1 (1): P01 = 3.93397   [binding |0|0|0|0|]
 // 2/2 (1): P02 = 5.73935   [binding |0|0|0|0|]
-// 3/3 (1): P03 = 0.9378339999999999   [binding |0|0|0|0|]
+// 3/3 (1): P03 = 0.937834   [binding |0|0|0|0|]
 // 4/4 (1): P1 = P01   [dynamic |0|0|0|0|]
 // 5/5 (1): P2 = P02   [dynamic |0|0|0|0|]
 // 6/6 (1): P3 = P03   [dynamic |0|0|0|0|]
@@ -79,7 +79,7 @@ getErrorString();
 // Standard BLT of the original model:(12)
 // ============================================================
 //
-// 12: P03: (3/3): (1): P03 = 0.9378339999999999
+// 12: P03: (3/3): (1): P03 = 0.937834
 // 11: P02: (2/2): (1): P02 = 5.73935
 // 10: P01: (1/1): (1): P01 = 3.93397
 // 9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
@@ -120,7 +120,7 @@ getErrorString();
 // Binding equations:(3)
 // ============================================================
 //
-// 12: P03: (3/3): (1): P03 = 0.9378339999999999
+// 12: P03: (3/3): (1): P03 = 0.937834
 // 11: P02: (2/2): (1): P02 = 5.73935
 // 10: P01: (1/1): (1): P01 = 3.93397
 //
@@ -188,7 +188,7 @@ getErrorString();
 // 2/2 (1): Q2 = 0.0   [binding |0|0|0|0|]
 // 3/3 (1): P01 = 3.93397   [binding |0|0|0|0|]
 // 4/4 (1): P02 = 5.73935   [binding |0|0|0|0|]
-// 5/5 (1): P03 = 0.9378339999999999   [binding |0|0|0|0|]
+// 5/5 (1): P03 = 0.937834   [binding |0|0|0|0|]
 // 6/6 (1): P1 = P01   [dynamic |0|0|0|0|]
 // 7/7 (1): BQ = Q1 + Q2 - Q3   [dynamic |0|0|0|0|]
 // 8/8 (1): rho * der_V = BQ   [dynamic |0|0|0|0|]
@@ -216,7 +216,7 @@ getErrorString();
 // Standard BLT of the original model:(12)
 // ============================================================
 //
-// 12: P03: (5/5): (1): P03 = 0.9378339999999999
+// 12: P03: (5/5): (1): P03 = 0.937834
 // 11: P02: (4/4): (1): P02 = 5.73935
 // 10: P01: (3/3): (1): P01 = 3.93397
 // 9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
@@ -257,7 +257,7 @@ getErrorString();
 // Binding equations:(5)
 // ============================================================
 //
-// 12: P03: (5/5): (1): P03 = 0.9378339999999999
+// 12: P03: (5/5): (1): P03 = 0.937834
 // 11: P02: (4/4): (1): P02 = 5.73935
 // 10: P01: (3/3): (1): P01 = 3.93397
 // 8: Q2: (2/2): (1): Q2 = 0.0
@@ -321,11 +321,12 @@ getErrorString();
 // 2: BQ type: Real
 //
 //
-// Parameters in SET_S (3)
+// Parameters in SET_S (4)
 // ========================================
-// 1: k1:PARAM()  = 1.0  type: Real
-// 2: der_V:PARAM()  = -0.000907595  type: Real
-// 3: rho:PARAM()  = 1.0  type: Real
+// 1: k3:PARAM()  = 1.0  type: Real
+// 2: k1:PARAM()  = 1.0  type: Real
+// 3: der_V:PARAM()  = -9.07595e-4  type: Real
+// 4: rho:PARAM()  = 1.0  type: Real
 //
 //
 //
@@ -471,14 +472,14 @@ getErrorString();
 // parameters in final DAE updated (5)
 // ========================================
 // 1: rho:PARAM()  = 1.0  type: Real
-// 2: der_V:PARAM()  = -0.000907595  type: Real
+// 2: der_V:PARAM()  = -9.07595e-4  type: Real
 // 3: k1:PARAM()  = 1.0  type: Real
 // 4: k2:PARAM()  = 1.0  type: Real
 // 5: k3:PARAM()  = 1.0  type: Real
 //
 // record SimulationResult
 //     resultFile = "econcileState",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.MergerDynInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.MergerDynInit_Inputs.csv -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.MergerDynInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.MergerDynInit_Inputs.csv -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | Reconcile State Estimation Starting!

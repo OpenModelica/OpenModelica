@@ -36,7 +36,7 @@ omc_check_function_exists_and_define(ctime_r)
 
 # Libraries
 ##################################################################################################
-set(OMC_RUNTIIME_SOURCES
+set(OMC_RUNTIME_SOURCES
     Error_omc.cpp
     Dynload_omc.cpp
     Print_omc.c
@@ -44,6 +44,7 @@ set(OMC_RUNTIIME_SOURCES
     ErrorMessage.cpp
     System_omc.c
     Lapack_omc.cpp
+    omc_lapack.c
     Settings_omc.cpp
     UnitParserExt_omc.cpp
     unitparser.cpp
@@ -62,26 +63,64 @@ set(OMC_RUNTIIME_SOURCES
     OMGraphics.cpp
     OMGraphics_omc.cpp)
 
+if(OM_OMC_ENABLE_COLPACK)
+  list(APPEND OMC_RUNTIME_SOURCES ColPackBicoloring_omc.cpp)
+endif()
+
 
 # ######################################################################################################################
 # Library: omcruntime
 add_library(omcruntime STATIC)
 add_library(omc::compiler::runtime ALIAS omcruntime)
 
-target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
+target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
+# The scripting API reads and converts .arrow result files through libomc_result.
+if(TARGET omc::result)
+  target_link_libraries(omcruntime PUBLIC omc::result)
+  target_compile_definitions(omcruntime PUBLIC OMC_HAVE_OMC_RESULT)
+endif()
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
 
+if(OM_OMC_ENABLE_COLPACK)
+  target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)
+endif()
+
 if(OM_OMC_USE_LAPACK)
-  target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  if(WIN32)
+    # Do not import LAPACK into the compiler on Windows. OpenBLAS allocates its
+    # per-thread buffers in DllMain, which Windows charges as committed memory
+    # (~128 MB per hardware thread) on every omc process even though the
+    # compiler never writes to them. lapackimpl.c loads the library on demand
+    # instead, with the thread count pinned to one across the load. See #16638.
+    #
+    # Hand it the library the build resolved so it does not have to guess: an
+    # import library such as libopenblas.dll.a names the DLL beside it. Only the
+    # first entry is needed, it is the one carrying the LAPACK routines, and the
+    # loader in lapackimpl.c falls back to the usual names if it does not open.
+    list(GET LAPACK_LIBRARIES 0 OMC_LAPACK_DLL)
+    if(OMC_LAPACK_DLL MATCHES "^-l(.+)$")
+      # A bare linker flag rather than a path, e.g. -lopenblas.
+      set(OMC_LAPACK_DLL "lib${CMAKE_MATCH_1}")
+    endif()
+    get_filename_component(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}" NAME)
+    string(REGEX REPLACE "\\.(a|lib)$" "" OMC_LAPACK_DLL "${OMC_LAPACK_DLL}")
+    if(NOT OMC_LAPACK_DLL MATCHES "\\.dll$")
+      set(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}.dll")
+    endif()
+    message(STATUS "omc will load LAPACK on demand from ${OMC_LAPACK_DLL}")
+    target_compile_definitions(omcruntime PRIVATE OMC_LAPACK_DLL_NAMES="${OMC_LAPACK_DLL}")
+  else()
+    target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  endif()
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
@@ -92,42 +131,6 @@ target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 if(UNIX AND NOT APPLE)
   target_link_libraries(omcruntime PUBLIC ${UUID_LIB})
 endif()
-
-# Corba support
-if(OM_OMC_USE_CORBA)
-  if(MINGW)
-    if(DEFINED ENV{MSYSTEM_PREFIX})
-      string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
-      if(IS_UCRT64)
-        message(FATAL_ERROR "No corba support on UCRT64")
-      endif()
-    endif()
-    # setup omniORB for MinGW OMDev
-    include(.cmake/omdev_omniorb_setup.cmake)
-    # Include the macro for compiling corba targets.
-    include(.cmake/omc_omniorb_corba_target.cmake)
-
-    # Make a directory specifically for generated files
-    set(GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${GENERATED_DIRECTORY})
-
-    # add a corba target for omc_communication.idl. The outputs will be put in the generated files directory.
-    omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
-                                 ${GENERATED_DIRECTORY})
-    # Add the generated files to the sources of the library
-    target_sources(omcruntime PRIVATE ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp
-                                      Corba_omc.cpp)
-
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omnithread40_rt)
-    target_compile_definitions(omcruntime PRIVATE USE_CORBA)
-    target_include_directories(omcruntime PRIVATE ${GENERATED_DIRECTORY})
-  else() # Not MinGW
-    message(FATAL "Corba support for non-MinGW omc builds is not yet implemented.")
-  endif()
-else() # No corba support requested. Use the stub file.
-  target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-endif(OM_OMC_USE_CORBA)
 
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)
@@ -159,10 +162,8 @@ target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::FMIL::expat)
-
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
 
 ################################################################################
 # This is a lazy approach to generating OMCompiler/omc_config.unix.h and Compiler/Util/Autoconf.mo
@@ -173,58 +174,13 @@ target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # the generated output files. For now just mimic the old compilation.
 
 
-set(SHREXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
-string(TOLOWER ${CMAKE_SYSTEM_NAME} OMC_TARGET_SYSTEM_NAME)
-omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
-set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
-
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-  set(OMC_TARGET_ARCH_IS_64 "true")
-  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
-else()
-  set(OMC_TARGET_ARCH_IS_64 "false")
-  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
-endif()
-
-set(host_short ${CMAKE_LIBRARY_ARCHITECTURE})
-
-get_filename_component(RUNTIMECC ${CMAKE_C_COMPILER} NAME)
-get_filename_component(CC ${CMAKE_C_COMPILER} NAME)
-get_filename_component(CXX ${CMAKE_CXX_COMPILER} NAME)
-
-find_package(OpenMP)
-if(OpenMP_FOUND)
-  set(OMPCFLAGS "-fopenmp")
-endif()
-
-if(LAPACK_FOUND)
-  set(HAVE_LAPACK "#define HAVE_LAPACK")
-  if(OMC_HAVE_LAPACK_DEPRECATED)
-    set(HAVE_LAPACK_DEPRECATED "#define HAVE_LAPACK_DEPRECATED")
-  endif()
-endif()
-
-
-if(OpenMP_FOUND)
-  set(CONFIG_WITH_OPENMP 1)
-else()
-  set(CONFIG_WITH_OPENMP 0)
-endif()
-
-set(OMC_HAVE_IPOPT "/* OMC_HAVE_IPOPT Not needed for CMake build. Availability and use of ipopt is handled by the CMakefiles.*/")
-
-set(WITH_SUITESPARSE "#define WITH_SUITESPARSE")
-set(WITH_HWLOC 0)
-set(WITH_UUID "#define WITH_LIBUUID 1")
-
-
-set(USE_GRAPH 0)
-
-set(RUNTIMECFLAGS "-fPIC -DOM_HAVE_PTHREADS")
-
-configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
-configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE_DIR}/omc_config.unix.h)
-
+# omc_config.unix.h generation lives in a standalone module so the Rust build
+# can run it too (Compiler/CMakeLists.txt includes it before its early return;
+# the simulation runtime needs the header but the Rust path skips this file).
+# Sets the platform/compiler vars and writes omc_config.unix.h into the build
+# tree; the feature vars set elsewhere in this file (above) are still in scope
+# for the configure_file inside it.
+include(${CMAKE_CURRENT_SOURCE_DIR}/omc_config_unix.cmake)
 
 # Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
 
@@ -259,39 +215,18 @@ string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
 
 if(MINGW)
   set(CONFIG_OS "Windows_NT")
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-
 elseif(MSVC)
   set(CONFIG_OS "Windows_NT")
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-
 elseif(APPLE)
   set(CONFIG_OS "OSX")
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-lSimulationRuntimeFMI -llapack -lblas -lm")
-
 elseif(UNIX AND NOT APPLE)
   set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic ")
-
 else()
    message(FATAL_ERROR "Unknow system for OpenModelica simulation code generation and compilation. OpenModelica does not know how to compile and simulate simulation code on this configuration.")
 endif()
+
+# RT_LDFLAGS_GENERATED_CODE* (the link flags for generated simulation/FMU code).
+include(${CMAKE_CURRENT_SOURCE_DIR}/rt_ldflags_generated_code.cmake)
 
 # Libraries linked into generated simulation code when --parmodauto is enabled (ParModelica auto + oneTBB).
 # OMC_PARMODELICA_TBB_LINK_NAME is resolved to oneTBB's default library name in OMCompiler/3rdParty/CMakeLists.txt.

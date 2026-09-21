@@ -57,15 +57,15 @@ getClassComment(M); getErrorString();
 getComponentComment(M, r); getErrorString();
 getClassInformation(state1); getErrorString();
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 getAnnotationCount(Modelica.Electrical.Analog.Basic.Resistor); getErrorString();
 getNthAnnotationString(Modelica.Electrical.Analog.Basic.Resistor, 1); getErrorString();
-getImportCount(Modelica.Mechanics.Rotational); getErrorString();
-getNthImport(Modelica.Mechanics.Rotational, 1); getErrorString();
+getImportCount(Modelica.Blocks); getErrorString();
+getNthImport(Modelica.Blocks, 1); getErrorString();
 getInitialAlgorithmCount(Modelica.Blocks.Sources.BooleanTable); getErrorString();
 getNthInitialAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1); getErrorString();
-getAlgorithmCount(Modelica.Blocks.Sources.BooleanTable); getErrorString();
-getNthAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1); getErrorString();
+getAlgorithmCount(Modelica.Blocks.Sources.RadioButtonSource); getErrorString();
+getNthAlgorithm(Modelica.Blocks.Sources.RadioButtonSource, 1); getErrorString();
 getInitialEquationCount(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString();
 getNthInitialEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1); getErrorString();
 getEquationCount(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString();
@@ -314,7 +314,7 @@ getMessagesStringInternal(unique = false); // not unique
 // ("model", "", false, false, false, "openmodelica/interactive-API/interactive_api_calls.mo", false, 44, 1, 46, 11, {}, false, false, "", "", true, "", "", "", "", "")
 // Evaluating: getErrorString()
 // ""
-// Evaluating: loadModel(Modelica, {"3.1"})
+// Evaluating: loadModel(Modelica)
 // true
 // Evaluating: getErrorString()
 // ""
@@ -324,36 +324,30 @@ getMessagesStringInternal(unique = false); // not unique
 // ""
 // Evaluating: getNthAnnotationString(Modelica.Electrical.Analog.Basic.Resistor, 1)
 // "annotation(
-//   Documentation(info = \"<HTML>
-// <P>
-// The linear resistor connects the branch voltage <i>v</i> with the
-// branch current <i>i</i> by <i>i*R = v</i>.
-// The Resistance <i>R</i> is allowed to be positive, zero, or negative.
-// </P>
-// </HTML>
-//   \", revisions = \"<html>
+//   Documentation(info = \"<html>
+// <p>The linear resistor connects the branch voltage <em>v</em> with the branch current <em>i</em> by <em>i*R = v</em>. The Resistance <em>R</em> is allowed to be positive, zero, or negative.</p>
+// </html>\", revisions = \"<html>
 // <ul>
-// <li><i> August 07, 2009   </i>
+// <li><em> August 07, 2009   </em>
 //        by Anton Haumer<br> temperature dependency of resistance added<br>
 //        </li>
-// <li><i> March 11, 2009   </i>
+// <li><em> March 11, 2009   </em>
 //        by Christoph Clauss<br> conditional heat port added<br>
 //        </li>
-// <li><i> 1998   </i>
+// <li><em> 1998   </em>
 //        by Christoph Clauss<br> initially implemented<br>
 //        </li>
 // </ul>
 // </html>\"),
-//   Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {90, 0}}, color = {0, 0, 255}), Text(extent = {{-144, -40}, {142, -72}}, lineColor = {0, 0, 0}, textString = \"R=%R\"), Line(visible = useHeatPort, points = {{0, -100}, {0, -30}}, color = {127, 0, 0}, smooth = Smooth.None, pattern = LinePattern.Dot), Text(extent = {{-152, 87}, {148, 47}}, textString = \"%name\", lineColor = {0, 0, 255})}),
-//   Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}), Line(points = {{-96, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {96, 0}}, color = {0, 0, 255})}));"
+//   Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {90, 0}}, color = {0, 0, 255}), Text(extent = {{-150, -40}, {150, -80}}, textString = \"R=%R\"), Line(visible = useHeatPort, points = {{0, -100}, {0, -30}}, color = {127, 0, 0}, pattern = LinePattern.Dot), Text(extent = {{-150, 90}, {150, 50}}, textString = \"%name\", textColor = {0, 0, 255})}));"
 // Evaluating: getErrorString()
 // ""
-// Evaluating: getImportCount(Modelica.Mechanics.Rotational)
+// Evaluating: getImportCount(Modelica.Blocks)
 // 1
 // Evaluating: getErrorString()
 // ""
-// Evaluating: getNthImport(Modelica.Mechanics.Rotational, 1)
-// {"Modelica.SIunits", "SI", "named"}
+// Evaluating: getNthImport(Modelica.Blocks, 1)
+// {"Modelica.Units.SI", "", "qualified"}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getInitialAlgorithmCount(Modelica.Blocks.Sources.BooleanTable)
@@ -361,23 +355,20 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthInitialAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1)
-// "(index, nextTime, y) := getFirstIndex(table, time, startValue);"
+// "isValidTable(table);"
 // Evaluating: getErrorString()
 // ""
-// Evaluating: getAlgorithmCount(Modelica.Blocks.Sources.BooleanTable)
+// Evaluating: getAlgorithmCount(Modelica.Blocks.Sources.RadioButtonSource)
 // 1
 // Evaluating: getErrorString()
 // ""
-// Evaluating: getNthAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1)
-// "when time >= pre(nextTime) and n > 0 then
-//   if index < n then
-//     index := index + 1;
-//     nextTime := table[index];
-//     y := not y;
-//   elseif index == n then
-//     index := index + 1;
-//     y := not y;
-//   end if;
+// Evaluating: getNthAlgorithm(Modelica.Blocks.Sources.RadioButtonSource, 1)
+// "pre_reset := pre(reset);
+// when pre_reset then
+//   on := false;
+// end when;
+// when change(table.y) then
+//   on := true;
 // end when;"
 // Evaluating: getErrorString()
 // ""
@@ -612,7 +603,8 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: loadModel(Modelica, {"3.2.1"})
 // true
 // Evaluating: getErrorString()
-// ""
+// "Notification: Modelica requested package Complex of version 3.2.1. Complex 4.1.0 is used instead which states that it is fully compatible without conversion script needed.
+// "
 // Evaluating: getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
 // "class"
 // Evaluating: getErrorString()
@@ -722,19 +714,6 @@ getMessagesStringInternal(unique = false); // not unique
 // true
 // Evaluating: getMessagesStringInternal()
 // {record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "",
-//     readonly = false,
-//     lineStart = 0,
-//     columnStart = 0,
-//     lineEnd = 0,
-//     columnEnd = 0
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.",
-//     kind = .OpenModelica.Scripting.ErrorKind.symbolic,
-//     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 7017
-// end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
 //     filename = "ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,
@@ -947,19 +926,6 @@ getMessagesStringInternal(unique = false); // not unique
 // true
 // Evaluating: getMessagesStringInternal(unique = false)
 // {record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "",
-//     readonly = false,
-//     lineStart = 0,
-//     columnStart = 0,
-//     lineEnd = 0,
-//     columnEnd = 0
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.",
-//     kind = .OpenModelica.Scripting.ErrorKind.symbolic,
-//     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 7017
-// end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
 //     filename = "ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,

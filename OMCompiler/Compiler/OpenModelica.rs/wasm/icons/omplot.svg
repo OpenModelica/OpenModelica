@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- axes -->
+  <path d="M9 6 V39 H42" stroke="#8a8a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- reference trajectory with its tolerance tube -->
+  <path d="M9 30 C15 12, 23 12, 29 24 C33 32, 37 32, 41 20" stroke="#3987e5" stroke-width="7" stroke-opacity=".28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9 30 C15 12, 23 12, 29 24 C33 32, 37 32, 41 20" stroke="#3987e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- actual trajectory, leaving the tube at the end -->
+  <path d="M9 30 C15 13, 23 13, 29 25 C33 33, 37 36, 41 30" stroke="#e66767" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3"/>
+</svg>

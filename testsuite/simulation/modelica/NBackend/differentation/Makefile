@@ -4,6 +4,9 @@ TESTFILES = \
 adjoint_jacobian1.mos \
 adjoint_jacobian2.mos \
 adjoint_jacobian3.mos \
+adjoint_jacobian4.mos \
+adjoint_jacobian5.mos \
+symbolicJacobianEvaluation.mos \
 allTheBuildins.mos \
 diff_subs.mos \
 arrayDiff.mos \
@@ -56,4 +59,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

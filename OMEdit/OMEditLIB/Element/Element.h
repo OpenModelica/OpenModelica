@@ -194,9 +194,6 @@ public:
   QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
   void updateElementTransformations(const Transformation &oldTransformation, const bool positionChanged);
   void handleOMSElementDoubleClick();
-  bool isInBus() {return mpBusComponent != 0;}
-  void setBusComponent(Element *pBusComponent);
-  Element* getBusComponent() {return mpBusComponent;}
   void reDrawConnector(QPainter *painter);
 
   Transformation mTransformation;
@@ -241,7 +238,6 @@ private:
   bool mHasTransition = false;
   bool mIsInitialState = false;
   bool mActiveState = false;
-  Element *mpBusComponent = nullptr;
   bool mIgnoreSelection = false;
   void createNonExistingElement();
   void deleteNonExistingElement();

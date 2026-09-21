@@ -38,6 +38,7 @@ extern "C" {
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock2.h>
+#include <wchar.h> /* _wunlink */
 #else
 #include <unistd.h>
 #endif

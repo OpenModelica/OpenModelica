@@ -1,0 +1,55 @@
+// name: fmi3_graphics_inherited.mos
+// keywords: FMI 3.0 export graphics icon annotations inheritance extends
+// status: correct
+// teardown_command: rm -rf Inherited.fmu Inherited.fmutmp/ Inherited.log Inherited_info.json Inherited_FMU.libs Inherited_FMU.makefile Inherited_external_functions.json resources index.html
+//
+// A model's Icon layer is the union of its base classes' and its own, with the
+// base classes' graphics painted first. Most of the Modelica Standard Library
+// gets its icon that way (extends Modelica.Icons.Example and friends): the class
+// carries no Icon annotation of its own, so reading only its own annotation
+// renders nothing and the FMU ends up with no terminalsAndIcons/icon.png at all.
+
+loadString("
+partial model IconBase
+  annotation(Icon(coordinateSystem(extent = {{-100,-100},{100,100}}), graphics = {
+    Ellipse(extent = {{-100,-100},{100,100}}, lineColor = {75,138,73}, fillColor = {255,255,255}, fillPattern = FillPattern.Solid),
+    Polygon(points = {{-36,60},{64,0},{-36,-60}}, lineColor = {0,0,255}, fillColor = {75,138,73}, fillPattern = FillPattern.Solid)}));
+end IconBase;
+
+model Inherited \"an icon inherited from a base class\"
+  extends IconBase;
+  Real x(start = 1);
+equation
+  der(x) = -x;
+  annotation(Icon(graphics = {Text(extent = {{-90,-30},{90,30}}, textString = \"%name\")}));
+end Inherited;
+"); getErrorString();
+
+buildModelFMU(Inherited, version="3.0", fmuType="me"); getErrorString();
+
+// The icon exists at all, which it did not when only the class's own annotation
+// was read.
+system("unzip -l Inherited.fmu | grep -oE \"terminalsAndIcons/icon[.](png|svg)\" | sort"); getErrorString();
+
+// Both layers are in it, the base class's first (painted behind) and the model's
+// own %name text last.
+system("unzip -cqq Inherited.fmu terminalsAndIcons/icon.svg | grep -oE \"<ellipse|<polygon|>Inherited<\""); getErrorString();
+
+// Result:
+// true
+// ""
+// "Inherited.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// terminalsAndIcons/icon.png
+// terminalsAndIcons/icon.svg
+// 0
+// ""
+// <ellipse
+// <polygon
+// >Inherited<
+// 0
+// ""
+// endResult

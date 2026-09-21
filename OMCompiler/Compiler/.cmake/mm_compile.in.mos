@@ -2,8 +2,8 @@ echo(false);
 mm_output_dir := "@MM_OUTPUT_DIR@";
 mm_src_file := "@MM_INPUT_SOURCE_DIR@/@MM_PACKAGE_NAME@.mo";
 
-out_c_src_dir := "@MM_OUTPUT_DIR@/c_files/";
-out_log_file := "@MM_OUTPUT_DIR@/c_files/@MM_PACKAGE_NAME@.log";
+out_c_src_dir := "@MM_C_OUTPUT_DIR@/";
+out_log_file := "@MM_C_OUTPUT_DIR@/@MM_PACKAGE_NAME@.log";
 
 class_strname := "@MM_PACKAGE_NAME@";
 class_typename := $TypeName(@MM_PACKAGE_NAME@);

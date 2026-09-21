@@ -133,7 +133,6 @@ public:
     TaskSystemT ALG_system;
     std::unique_ptr<TaskGraphScheduler> ALG_scheduler;
 
-    void load_from_xml(TaskSystemT&, const std::string&, FunctionType*);
     void load_from_json(TaskSystemT&, const std::string&, FunctionType*);
 };
 

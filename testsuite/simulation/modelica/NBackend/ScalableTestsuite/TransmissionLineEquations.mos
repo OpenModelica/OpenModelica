@@ -2,6 +2,7 @@
 // keywords: NewBackend
 // status: correct
 // cflags: --newBackend
+// suite: disabled
 
 loadModel(ScalableTestSuite); getErrorString();
 

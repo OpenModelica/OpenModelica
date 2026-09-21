@@ -1,6 +1,7 @@
 // name: conngraph2.mo
 // keywords:
 // status: correct
+// suite: disabled
 //
 // FAILREASON: Overconstrained types not yet recognized as such.
 //
@@ -19,7 +20,7 @@ end M;
 
 // Result:
 // Error processing file: conngraph2.mo
-// [conngraph2.mo:17:3-17:26:writable] Error: The argument of Connections.root must be an overdetermined type or record.
+// [conngraph2.mo:18:3-18:26:writable] Error: The argument of Connections.root must be an overdetermined type or record.
 // Error: Error occurred while flattening model M
 //
 // # Error encountered! Exiting...

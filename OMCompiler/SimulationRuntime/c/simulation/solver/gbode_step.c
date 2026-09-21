@@ -31,25 +31,18 @@
 #include "gbode_main.h"
 #include "gbode_nls.h"
 #include "gbode_internal_nls.h"
+#include "gbode_err.h"
 #include "gbode_util.h"
 
 #include "kinsolSolver.h"
 
-/* some constants for less verbose BLAS calls */
-static const double DBL_ONE = 1.0;
-static const int INT_ONE = 1;
-
-/* y := a * x + y */
-extern void daxpy_(const int *n,
-                   const double *alpha,
-                   const double *x, const int *incX,
-                   double *y, const int *incY);
+#include <math.h>
 
 /**
  * @brief Generic multi-step function.
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
- * Results will be saved in y and embedded results saved in yt.
+ * Results will be saved in y and the signed error estimate in yt.
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -123,6 +116,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     }
     gbData->y[i] += gbData->kv[stage * nStates + i] * gbData->tableau->b[stage] * gbData->stepSize;
     gbData->y[i] /= gbData->tableau->c[stage];
+    gbData->yt[i] = gbData->y[i] - gbData->yt[i];
   }
 
   return 0;
@@ -132,7 +126,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
  * @brief Generic multi-step function.
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
- * Results will be saved in y and embedded results saved in yt.
+ * Results will be saved in y and the signed error estimate in yt.
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -221,6 +215,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     }
     gbfData->y[i] += gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] * gbfData->stepSize;
     gbfData->y[i] /= gbfData->tableau->c[stage];
+    gbfData->yt[i] = gbfData->y[i] - gbfData->yt[i];
   }
 
   return 0;
@@ -230,7 +225,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
  * @brief Generic diagonal implicit Runge-Kutta step function.
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
- * Results will be saved in y and embedded results saved in yt.
+ * Results are saved in y. The selected error estimator writes |error| to errest.
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -248,6 +243,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
+  GB_ERROR_CONTEXT error_context = {data, threadData, gbData, NULL, FALSE};
 
   if (!gbData->isExplicit  && OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS_V)) {
     // NLS - used values for extrapolation
@@ -386,32 +382,21 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
   infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: all stages done.");
 
-  // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
-  // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
-  // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+  // Apply RK-scheme for determining the approximation at (gbData->time + gbData->stepSize)
+  // y = yold + h * sum(b[stage_] * k[stage_], stage_=1..nStages);
 
   for (i=0; i<nStates; i++)
   {
-    gbData->y[i]  = gbData->yOld[i];
-    if (!gbData->tableau->richardson) {
-      gbData->yt[i] = gbData->yOld[i];
-    }
+    gbData->y[i] = gbData->yOld[i];
     for (stage_=0; stage_<nStages; stage_++)
     {
-      gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
-      if (!gbData->tableau->richardson) {
-        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
-      }
+      gbData->y[i] += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
     }
   }
 
-  modelica_boolean use_contractive_error = (gbData->tableau->contraction != NULL
-                                         && gbData->tableau->contraction->apply_filter_only
-                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
-
-  if (use_contractive_error)
+  if (gbEstimateError(&error_context, &gbData->tableau->error.active) < 0)
   {
-    gbInternalContractiveFilter(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+    return -1;
   }
 
   return 0;
@@ -423,7 +408,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  * Only for the fast states (inner integration).
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
- * Results will be saved in y and embedded results saved in yt.
+ * Results are saved in y. The selected error estimator writes |error| to errest.
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -595,29 +580,22 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     memcpy(gbfData->k + stage * nStates, fODE, nStates*sizeof(double));
   }
 
-  // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
-  // y       = yold+h*sum(b[stage]  * k[stage], stage=1..nStages);
-  // yt      = yold+h*sum(bt[stage] * k[stage], stage=1..nStages);
+  // Apply RK-scheme for determining the approximation at (gbData->time + gbData->stepSize)
+  // y = yold + h * sum(b[stage] * k[stage], stage=1..nStages);
   // for the fast states only!
   for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++) {
     int full_idx = gbData->fastStatesIdx[fast_idx];
     // y   is the new approximation
-    // yt  is the approximation of the embedded method for error estimation
-    gbfData->y[full_idx]  = gbfData->yOld[full_idx];
-    gbfData->yt[full_idx] = gbfData->yOld[full_idx];
+    gbfData->y[full_idx] = gbfData->yOld[full_idx];
     for (int stage = 0; stage < nStages; stage++) {
-      gbfData->y[full_idx]  += gbfData->stepSize * gbfData->tableau->b[stage]  * (gbfData->k + stage * nStates)[full_idx];
-      gbfData->yt[full_idx] += gbfData->stepSize * gbfData->tableau->bt[stage] * (gbfData->k + stage * nStates)[full_idx];
+      gbfData->y[full_idx] += gbfData->stepSize * gbfData->tableau->b[stage]  * (gbfData->k + stage * nStates)[full_idx];
     }
   }
 
-  modelica_boolean use_contractive_error = (gbfData->tableau->contraction != NULL
-                                         && gbfData->tableau->contraction->apply_filter_only
-                                         && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
-
-  if (use_contractive_error)
+  GB_ERROR_CONTEXT error_context = {data, threadData, gbData, gbfData, TRUE};
+  if (gbEstimateError(&error_context, &gbfData->tableau->error.active) < 0)
   {
-    gbInternalContractiveFilter(data, threadData, gbData->gbfData->nlsData, gbData, gbfData->y, gbfData->yt);
+    return -1;
   }
 
   return 0;
@@ -705,9 +683,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
 
-  // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
-  // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
-  // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+  // Apply RK-scheme for determining the approximation at (gbData->time + gbData->stepSize)
+  // y = yold + h * sum(b[stage_] * k[stage_], stage_=1..nStages);
 
   // calculate y(t_n+1)
   for (i = 0; i < nStates; i++) {
@@ -717,27 +694,10 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     }
   }
 
-  modelica_boolean use_contractive_error = (gbData->tableau->t_transform != NULL
-                                         && gbData->tableau->contraction != NULL
-                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
-
-  // calculate yt(t_n+1) by contractive or standard embedded error estimate
-  if (use_contractive_error)
+  GB_ERROR_CONTEXT error_context = {data, threadData, gbData, NULL, FALSE};
+  if (gbEstimateError(&error_context, &gbData->tableau->error.active) < 0)
   {
-    // compute contractive error into gbData->yt = err = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k)
-    gbInternalContractiveDefect(data, threadData, gbData->nlsData, gbData, gbData->yt);
-
-    // compute "embedded" method as yt := y + err
-    daxpy_(&nStates, &DBL_ONE, gbData->y, &INT_ONE, gbData->yt, &INT_ONE);
-  }
-  else
-  {
-    for (i = 0; i < nStates; i++) {
-      gbData->yt[i] = gbData->yOld[i];
-      for (int stage = 0; stage < nStages; stage++) {
-        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage] * (gbData->k + stage * nStates)[i];
-      }
-    }
+    return -1;
   }
 
   // copy the whole solution vector to the inner buffer (for latter extrapolation and dense output)
@@ -825,40 +785,10 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     }
   }
 
-  modelica_boolean use_contractive_error = (gbfData->tableau->t_transform != NULL
-                                         && gbfData->tableau->contraction != NULL
-                                         && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
-
-  // calculate yt(t_n+1) by contractive or standard embedded error estimate
-  if (use_contractive_error)
+  GB_ERROR_CONTEXT error_context = {data, threadData, gbData, gbfData, TRUE};
+  if (gbEstimateError(&error_context, &gbfData->tableau->error.active) < 0)
   {
-    // get work pointer from internal NLS
-    double *work = gbInternalGetWorkPointer(((struct dataSolver *)nlsData->solverData)->ordinaryData);
-
-    // compute contractive error into gbData->yt = err = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k)
-    gbInternalContractiveDefect(data, threadData, gbfData->nlsData, gbData, work);
-
-    // compute "embedded" method as yt := y + err
-    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
-    {
-      int full_idx = fastStatesIdx[fast_idx];
-      gbfData->yt[full_idx] = gbfData->y[full_idx] + work[fast_idx];
-    }
-  }
-  else
-  {
-    // calculate yt with standard embedded method
-    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
-    {
-      int full_idx = fastStatesIdx[fast_idx];
-      gbfData->yt[full_idx] = gbfData->yOld[full_idx];
-      for (int stage = 0; stage < nStages; stage++)
-      {
-        int offset_fast = stage * nFastStates;
-        int offset_full = stage * nStates;
-        gbfData->yt[full_idx] += gbfData->stepSize * gbfData->tableau->bt[stage]  * gbfData->kCurrPacked[offset_fast + fast_idx];
-      }
-    }
+    return -1;
   }
 
   return 0;
@@ -992,8 +922,10 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
   if (!step_info) {
     // Extrapolate values based on order of the scheme
+    double richardsonFactor = pow(2., p);
     for (i = 0; i < nStates; i++) {
-      gbfData->yt[i] = (pow(2.,p) * gbfData->y1[i] - gbfData->y[i]) / (pow(2.,p) - 1);
+      double y_extrapolated = (richardsonFactor * gbfData->y1[i] - gbfData->y[i]) / (richardsonFactor - 1);
+      gbfData->yt[i] = gbfData->y[i] - y_extrapolated;
     }
   }
 
@@ -1128,8 +1060,10 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!step_info) {
     // Extrapolate values based on order of the scheme
+    double richardsonFactor = pow(2., p);
     for (i = 0; i < nStates; i++) {
-      gbData->yt[i] = (pow(2.,p) * gbData->y1[i] - gbData->y[i]) / (pow(2.,p) - 1);
+      double y_extrapolated = (richardsonFactor * gbData->y1[i] - gbData->y[i]) / (richardsonFactor - 1);
+      gbData->yt[i] = gbData->y[i] - y_extrapolated;
     }
   }
 

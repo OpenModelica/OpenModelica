@@ -12,6 +12,9 @@ bug4419.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
+cseOutsideNoEvent.mos \
+DelayZeroCrossing.mos \
+derInWhenCondition.mos \
 discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \
@@ -23,6 +26,7 @@ IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
 noEventEmit.mos \
+noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
 sample2.mos \
@@ -85,4 +89,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

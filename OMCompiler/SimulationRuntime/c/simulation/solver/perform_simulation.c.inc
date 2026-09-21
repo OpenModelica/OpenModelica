@@ -55,6 +55,26 @@
 #include "real_time_sync.h"
 #endif
 
+/* The Rust simulation runtime (`--simCodeTarget=C+Rust`) drives the model from
+ * its own loop, so nothing below is ever entered -- and every runtime function
+ * it names would otherwise have to exist twice. Compile it away instead; the
+ * two callbacks stay valid function pointers that report if anything calls them.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "updateContinuousSystem: the Rust simulation runtime drives the model itself");
+}
+
+int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
+
 /*! \fn updateContinuousSystem
  *
  *  Function to update the whole system with EventIteration.
@@ -289,7 +309,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   if (terminate) {
-    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+    omc_terminate(omc_dummyFileInfo, "The embedded server received command to terminate.");
   }
 
   if (data->real_time_sync.enabled) {
@@ -370,6 +390,9 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
   if (!(omc_flag[FLAG_NO_RESTART] && (solverInfo->solverMethod==S_DASSL || solverInfo->solverMethod==S_GBODE)) && solverInfo->didEventStep)
   {
     addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
+    /* euler, rungekutta and the sym solvers accumulate into solverStatsTmp
+     * instead of overwriting it, so keeping it would count it twice. */
+    resetSolverStats(&(solverInfo->solverStatsTmp));
   }
 }
 
@@ -396,9 +419,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   if (!compiledInDAEMode)
   {
-    printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
-        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
-        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
+    JACOBIAN* odeJacobian = getSymbolicOdeJacobian(data);
+    printSparseStructure(getJacobianCscPattern(odeJacobian),
+        odeJacobian->sizeRows,
+        odeJacobian->sizeCols,
         OMC_LOG_SOLVER, "ODE sparse pattern");
   }
   else
@@ -475,6 +499,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         if (!compiledInDAEMode || data->modelData->nStates == 0) { /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
+          continueSimulationData(data);
         }
 
         modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep == TIMER_FIRED || syncStep == TIMER_FIRED_EVENT;
@@ -531,6 +556,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
+          continueSimulationData(data);
           continue;
         }
 
@@ -605,3 +631,5 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   return retValue;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

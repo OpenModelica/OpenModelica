@@ -75,7 +75,7 @@ namespace IAEX
       backgroundColor_ = col;
    }
 
-   void TreeView::setSelected(const bool sel)
+   void TreeView::setSelected(bool sel)
    {
       selected_ = sel;
       repaint();
@@ -84,18 +84,18 @@ namespace IAEX
    /*!
     * \deprecated
     */
-   const bool TreeView::selected() const
+   bool TreeView::selected() const
    {
       return selected_;
    }
 
-   void TreeView::setClosed(const bool closed)
+   void TreeView::setClosed(bool closed)
    {
       closed_ = closed;
       repaint();
    }
 
-   const bool TreeView::isClosed() const
+   bool TreeView::isClosed() const
    {
       return closed_;
    }

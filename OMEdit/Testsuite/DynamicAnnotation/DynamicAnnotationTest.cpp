@@ -67,6 +67,20 @@ void DynamicAnnotationTest::initTestCase()
   if (!MainWindow::instance()->getOMCProxy()->existClass("EnableInReplaceable1")) {
     QFAIL(QString("Failed to load file %1").arg(enableInReplaceable1FileName).toStdString().c_str());
   }
+
+  // load EnableNonLiteral.mo (regression model for #15965)
+  const QString enableNonLiteralFileName = QFINDTESTDATA("EnableNonLiteral.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(enableNonLiteralFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("EnableNonLiteral")) {
+    QFAIL(QString("Failed to load file %1").arg(enableNonLiteralFileName).toStdString().c_str());
+  }
+
+  // load EnableExternalConstant.mo (regression model for #16270)
+  const QString enableExternalConstantFileName = QFINDTESTDATA("EnableExternalConstant.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(enableExternalConstantFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("EnableExternalConstant")) {
+    QFAIL(QString("Failed to load file %1").arg(enableExternalConstantFileName).toStdString().c_str());
+  }
 }
 
 void DynamicAnnotationTest::evaluate()
@@ -124,6 +138,46 @@ void DynamicAnnotationTest::evaluate_data()
       << "mainRecord"
       << "realParam"
       << true;
+
+  // Regression test for #15965: enable is a call to a user function that the
+  // FlatModelica evaluator cannot reduce, so it evaluates to the non-literal
+  // fixed point userPredicate(true). This used to make evaluate_helper recurse
+  // until the stack overflowed. It must now terminate; the non-literal result
+  // leaves the enable at its default (true).
+  QTest::newRow("Evaluate Dialog(enable = userPredicate(booleanParam)) does not recurse")
+      << "EnableNonLiteral.ClassWithInstances"
+      << "mainClass"
+      << "realParam"
+      << true;
+
+  /* Regression test for #16270: the expression uses a constant that is declared outside
+   * the model, which is neither an element of the model nor a variable in the result file.
+   * The evaluator used to give up on the whole expression and leave the enable at its
+   * default true, it now asks OMC for the value of the name.
+   */
+  QTest::newRow("Evaluate Dialog(enable = constant of another package)")
+      << "EnableExternalConstant.ClassWithInstances"
+      << "mainClass"
+      << "constantParam"
+      << false;
+
+  QTest::newRow("Evaluate Dialog(enable = constant of another package > 1)")
+      << "EnableExternalConstant.ClassWithInstances"
+      << "mainClass"
+      << "comparedParam"
+      << false;
+
+  QTest::newRow("Evaluate Dialog(enable = constant of another package < 1)")
+      << "EnableExternalConstant.ClassWithInstances"
+      << "mainClass"
+      << "enabledParam"
+      << true;
+
+  QTest::newRow("Evaluate Dialog(enable = Modelica.Constants.eps > 1)")
+      << "EnableExternalConstant.ClassWithInstances"
+      << "mainClass"
+      << "mslParam"
+      << false;
 }
 
 void DynamicAnnotationTest::evaluate_nested()

@@ -97,6 +97,7 @@ Kinsol::Kinsol(INonLinSolverSettings* settings, shared_ptr<INonLinearAlgLoop> al
   , _Kin_linSol           (NULL)
   , _Kin_J                (NULL)
   , _kinMem               (NULL)
+  , _sunctx               (NULL)
   , _fValid               (false)
   , _y_old                (NULL)
   , _y_new                (NULL)
@@ -140,6 +141,7 @@ Kinsol::~Kinsol() {
   SUNMatDestroy(_Kin_J);
   SUNLinSolFree(_Kin_linSol);
   KINFree(&_kinMem);
+  SUNContext_Free(&_sunctx);
 }
 
 /**
@@ -182,6 +184,7 @@ void Kinsol::initialize() {
   SUNMatDestroy(_Kin_J);
   SUNLinSolFree(_Kin_linSol);
   KINFree(&_kinMem);
+  SUNContext_Free(&_sunctx);
 
   // Initialize vectors
   _y                = new double[_dimSys];
@@ -220,12 +223,27 @@ void Kinsol::initialize() {
 
 
   // Create Kinsol memory
-  _Kin_y = N_VMake_Serial(_dimSys, _y);
-  _Kin_y0 = N_VMake_Serial(_dimSys, _y0);
-  _Kin_yScale = N_VMake_Serial(_dimSys, _yScale);
-  _Kin_fScale = N_VMake_Serial(_dimSys, _fScale);
-  _Kin_ySolver = N_VNew_Serial(_dimSys);
-  _kinMem = KINCreate();
+  /* Create the SUNDIALS context first - every other SUNDIALS object below is
+     created with it. */
+  if (SUNContext_Create(SUN_COMM_NULL, &_sunctx) != SUN_SUCCESS)
+    throw ModelicaSimulationError(ALGLOOP_SOLVER,"SUNDIALS_ERROR: SUNContext_Create failed");
+  /* Mute SUNDIALS' own logger: package level messages go to stderr/stdout by default, and we report solver failures ourselves. */
+  {
+    SUNLogger _sunlogger = NULL;
+    if (SUNContext_GetLogger(_sunctx, &_sunlogger) == SUN_SUCCESS && _sunlogger != NULL) {
+      SUNLogger_SetErrorFilename(_sunlogger, "");
+      SUNLogger_SetWarningFilename(_sunlogger, "");
+      SUNLogger_SetInfoFilename(_sunlogger, "");
+      SUNLogger_SetDebugFilename(_sunlogger, "");
+    }
+  }
+
+  _Kin_y = N_VMake_Serial(_dimSys, _y, _sunctx);
+  _Kin_y0 = N_VMake_Serial(_dimSys, _y0, _sunctx);
+  _Kin_yScale = N_VMake_Serial(_dimSys, _yScale, _sunctx);
+  _Kin_fScale = N_VMake_Serial(_dimSys, _fScale, _sunctx);
+  _Kin_ySolver = N_VNew_Serial(_dimSys, _sunctx);
+  _kinMem = KINCreate(_sunctx);
 
   // Set internal memory
   idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
@@ -234,8 +252,8 @@ void Kinsol::initialize() {
   }
 
   // Initialize dense linear solver
-  _Kin_J = SUNDenseMatrix(_dimSys, _dimSys);
-  _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J);
+  _Kin_J = SUNDenseMatrix(_dimSys, _dimSys, _sunctx);
+  _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J, _sunctx);
   if (_Kin_linSol == NULL) {
     fprintf(stderr,"\nSUNDIALS_ERROR: SUNLinSol_Dense() failed - returned NULL pointer\n\n");
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
@@ -251,7 +269,6 @@ void Kinsol::initialize() {
     throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
   }
 
-  idid = KINSetErrFile(_kinMem, NULL);
   idid = KINSetNumMaxIters(_kinMem, 50);
 
   _fnormtol  = 1.e-13;     /* function tolerance */
@@ -319,7 +336,7 @@ void Kinsol::solve() {
     if (check_flag(&idid, (char *)"SUNLinSolFree", 1)) {
       throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinol::solve()");
     }
-    _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J);
+    _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J, _sunctx);
     if (_Kin_linSol == NULL) {
       fprintf(stderr,"\nSUNDIALS_ERROR: SUNLinSol_Dense() failed - returned NULL pointer\n\n");
       throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
@@ -384,7 +401,7 @@ void Kinsol::solve() {
   if (check_flag(&idid, (char *)"SUNLinSolFree", 1)) {
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
   }
-  _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, PREC_NONE, _dimSys /* Krylov subspaces */);
+  _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, SUN_PREC_NONE, _dimSys /* Krylov subspaces */, _sunctx);
   if (_Kin_linSol == NULL) {
     fprintf(stderr,"\nSUNDIALS_ERROR: SUNLinSol_SPGMR() failed - returned NULL pointer\n\n");
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
@@ -437,7 +454,7 @@ void Kinsol::solve() {
   if (check_flag(&idid, (char *)"SUNLinSolFree", 1)) {
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
   }
-  _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, PREC_NONE, _dimSys /* Krylov subspaces */);
+  _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, SUN_PREC_NONE, _dimSys /* Krylov subspaces */, _sunctx);
   if (_Kin_linSol == NULL) {
     fprintf(stderr,"\nSUNDIALS_ERROR: SUNLinSol_SPGMR() failed - returned NULL pointer\n\n");
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");

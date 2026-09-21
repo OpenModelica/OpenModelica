@@ -1,6 +1,7 @@
 // name: MatchCaseGuard
 // cflags: -g=MetaModelica -d=tail,gen -d=-newInst
 // status: correct
+// suite: metamodelica
 
 loadString("function fac
   input Integer i;

@@ -70,6 +70,7 @@ import BackendDAEEXT;
 import BackendInline;
 import BackendVarTransform;
 import BackendVariable;
+import BaseHashTable;
 import BinaryTree;
 import Causalize;
 import CheckModel;
@@ -83,7 +84,6 @@ import DAEMode;
 import DAEUtil;
 import DataReconciliation;
 import Debug;
-import DoubleEnded;
 import Differentiate;
 import DumpGraphML;
 import DynamicOptimization;
@@ -106,6 +106,7 @@ import FlagsUtil;
 import Global;
 import HpcOmEqSystems;
 import HashSet;
+import HashTableExpToExp;
 import IndexReduction;
 import Initialization;
 import Inline;
@@ -611,7 +612,7 @@ protected
 algorithm
   outNumZeroCrossings := ZeroCrossings.length(eventInfo.zeroCrossings);
   outNumTimeEvents := listLength(eventInfo.timeEvents);
-  outNumRelations := DoubleEnded.length(eventInfo.relations);
+  outNumRelations := ZeroCrossings.count(eventInfo.relations);
   outNumMathEventFunctions := eventInfo.numberMathEvents;
 end numberOfZeroCrossings;
 
@@ -1301,61 +1302,69 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
 
-public function markZeroCrossingEquations "function: markStateEquations
-  This function goes through all equations and marks the ones that
-  calculates a state, or is needed in order to calculate a state,
-  with a non-zero value in the array passed as argument.
-  This is done by traversing the directed graph of nodes where
-  a node is an equation/solved variable and following the edges in the
-  backward direction.
-  inputs: (daeLow: BackendDAE,
-             marks: int array,
-    adjacencyMatrix: AdjacencyMatrix,
-    adjacencyMatrixT: AdjacencyMatrixT,
-    assignments1: int vector,
-    assignments2: int vector)
-  outputs: marks: int array"
+public function zeroCrossingVarIndices
+  "For every equation system, the indices of its variables that occur in a zero
+   crossing relation. All systems are resolved against one combined variable set
+   in a single pass; looking each zero crossing up in every system is quadratic."
+  input BackendDAE.EqSystems systs;
+  input list<BackendDAE.ZeroCrossing> zeroCross;
+  output array<AvlSetInt.Tree> trees;
+protected
+  Integer nsys = listLength(systs), total = 0, gidx = 0, s = 0, n;
+  BackendDAE.Variables allVars;
+  array<Integer> sysOf, locOf "combined index -> system / index within that system";
+  AvlSetInt.Tree tree;
+algorithm
+  trees := arrayCreate(intMax(nsys, 1), AvlSetInt.new());
+  for syst in systs loop
+    total := total + BackendVariable.varsSize(syst.orderedVars);
+  end for;
+  if total == 0 then
+    return;
+  end if;
+
+  allVars := BackendVariable.emptyVarsSized(total);
+  sysOf := arrayCreate(total, 0);
+  locOf := arrayCreate(total, 0);
+  for syst in systs loop
+    s := s + 1;
+    n := BackendVariable.varsSize(syst.orderedVars);
+    for i in 1:n loop
+      allVars := BackendVariable.addNewVar(BackendVariable.getVarAt(syst.orderedVars, i), allVars);
+      gidx := gidx + 1;
+      arrayUpdate(sysOf, gidx, s);
+      arrayUpdate(locOf, gidx, i);
+    end for;
+  end for;
+
+  tree := AvlSetInt.new();
+  for zc in zeroCross loop
+    tree := BackendEquation.expressionVarsIndexes(zc.relation_, tree,
+              function BackendEquation.checkEquationsVarsExpTopDown(vars=allVars));
+  end for;
+
+  for gi in AvlSetInt.listKeys(tree) loop
+    s := arrayGet(sysOf, gi);
+    arrayUpdate(trees, s, AvlSetInt.add(arrayGet(trees, s), arrayGet(locOf, gi)));
+  end for;
+end zeroCrossingVarIndices;
+
+public function markZeroCrossingEquations
+  "Marks the equations needed to evaluate this system's zero crossings by
+  following the adjacency graph backwards from the variables they use."
   input BackendDAE.EqSystem syst;
-  input list<BackendDAE.ZeroCrossing> inZeroCross;
+  input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing, see zeroCrossingVarIndices";
   input array<Integer> arr;
   input array<Integer> ass1;
   output array<Integer> outIntegerArray;
 protected
-  list<Integer> varindx_lst,eqns;
+  list<Integer> eqns;
   BackendDAE.AdjacencyMatrix m;
-  BackendDAE.Variables v;
-  AvlSetInt.Tree tree;
-  CheckEquationsVarsExpTopDownFunc func;
-  partial function CheckEquationsVarsExpTopDownFunc
-    input output DAE.Exp exp;
-    output Boolean cont;
-    input output AvlSetInt.Tree tree;
-  end CheckEquationsVarsExpTopDownFunc;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  tree := AvlSetInt.new();
-  func := function BackendEquation.checkEquationsVarsExpTopDown(vars=v);
-  for zc in inZeroCross loop
-    tree := varsCollector(zc.relation_, tree, func);
-  end for;
-  varindx_lst := AvlSetInt.listKeys(tree);
-  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in varindx_lst);
+  BackendDAE.EQSYSTEM(m=SOME(m)) := syst;
+  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in AvlSetInt.listKeys(zcVars));
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
-
-protected function varsCollector
-  input DAE.Exp exp;
-  input output AvlSetInt.Tree tree;
-  input CheckEquationsVarsExpTopDownFunc func;
-
-  partial function CheckEquationsVarsExpTopDownFunc
-    input output DAE.Exp exp;
-    output Boolean cont;
-    input output AvlSetInt.Tree tree;
-  end CheckEquationsVarsExpTopDownFunc;
-algorithm
-  tree := BackendEquation.expressionVarsIndexes(exp, tree, func);
-end varsCollector;
 
 protected function markStateEquationsWork
   "Helper function to mark_state_equation
@@ -1485,15 +1494,19 @@ protected
   BackendDAE.AdjacencyMatrix adjMatrix, adjMatrixT;
 
   list<BackendDAE.ZeroCrossing> zeroCrossings;
+  array<AvlSetInt.Tree> zcVars;
+  Integer sysIdx = 0;
 
   constant Boolean debug = false;
 algorithm
 
   // get zeroCrossings
   zeroCrossings := ZeroCrossings.toList(inBackendDAE.shared.eventInfo.zeroCrossings);
+  zcVars := zeroCrossingVarIndices(inBackendDAE.eqs, zeroCrossings);
 
   // walk once through all comps and get of dependends of dynamic, algebraic, zeroCrossings,
   for eqSystem in inBackendDAE.eqs loop
+    sysIdx := sysIdx + 1;
     if debug then
       BackendDump.printEqSystem(eqSystem);
     end if;
@@ -1521,7 +1534,7 @@ algorithm
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageDynamic);
 
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
-      markedEqns := markZeroCrossingEquations(eqSystem, zeroCrossings, markedEqns, assigndVar);
+      markedEqns := markZeroCrossingEquations(eqSystem, arrayGet(zcVars, sysIdx), markedEqns, assigndVar);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageZeroCross);
 
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
@@ -1908,7 +1921,13 @@ algorithm
         newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cref);
         newVar := BackendVariable.copyVarNewName(newCref, v);
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
-        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        /* A discrete output's alias stays discrete; as a continuous variable it
+         * also gets "$PRE.alias = alias", which over-specifies the initial system.
+         */
+        newVar := match v.varKind
+          case BackendDAE.DISCRETE() then newVar;
+          else BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        end match;
         /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15311
          * force StateSelect.never on the alias variable so that state selection never picks the alias
          * instead of original state variable, which would cause wrong code generation and simulation results.
@@ -2014,6 +2033,7 @@ algorithm
 
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case ({},_) then ({});
 
@@ -2049,11 +2069,11 @@ algorithm
         xs := removeDiscreteAssignments(rest,vars);
       then DAE.STMT_IF(e,stmts,algElse,source)::xs;
 
-    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source))::rest),vars)
+    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source, sub_iters=sub_iters))::rest),vars)
       algorithm
         stmts := removeDiscreteAssignments(stmts,vars);
         xs := removeDiscreteAssignments(rest,vars);
-      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source)::xs;
+      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source,sub_iters)::xs;
 
     case (((DAE.STMT_WHILE(exp=e,statementLst=stmts, source = source))::rest),vars)
       algorithm
@@ -2373,28 +2393,14 @@ algorithm
   end try;
 end adjacencyMatrixScalar;
 
-protected function applyIndexType
-"@author: adrpo
-  Applies absolute value to all entries in the given list."
-  input AvlSetInt.Tree inLst;
-  input BackendDAE.IndexType inIndexType;
-  output AvlSetInt.Tree outLst;
+public function uniqueRow
+  "The row's variable indices without duplicates, in the descending order
+   AvlSetInt.listKeys listed them in when the row was a set."
+  input list<Integer> row;
+  output list<Integer> outRow;
 algorithm
-  outLst := match inIndexType
-    // transform to absolute indexes
-    case BackendDAE.ABSOLUTE()
-      guard not AvlSetInt.isEmpty(inLst) and AvlSetInt.smallestKey(inLst) < 0
-      algorithm
-        outLst := AvlSetInt.EMPTY();
-        for key in AvlSetInt.listKeys(inLst) loop
-          outLst := AvlSetInt.add(outLst, intAbs(key));
-        end for;
-    then outLst;
-
-    // leave as it is
-    else inLst;
-  end match;
-end applyIndexType;
+  outRow := List.sortedUnique(List.sort(row, intLt), intEq);
+end uniqueRow;
 
 public function getIndexType
 "author kabdelhak FHB 10-2019
@@ -2468,7 +2474,7 @@ protected
   Integer num_eqs, num_vars;
   BackendDAE.Equation eq;
   list<Integer> row;
-  AvlSetInt.Tree rowTree;
+  list<Integer> rowLst;
 algorithm
   num_eqs := BackendEquation.getNumberOfEquations(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
@@ -2479,8 +2485,8 @@ algorithm
     // Get the equation.
     eq := BackendEquation.get(inEqns, idx);
     // Compute the row.
-    rowTree := adjacencyRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY(), isInitial);
-    row := AvlSetInt.listKeys(rowTree);
+    rowLst := adjacencyRow(eq, inVars, inIndexType, functionTree, {}, isInitial);
+    row := uniqueRow(rowLst);
     // Put it in the arrays.
     arrayUpdate(outAdjacencyArray, idx, row);
     outAdjacencyArrayT := filladjacencyMatrixT(row, {idx}, outAdjacencyArrayT);
@@ -2500,7 +2506,7 @@ protected
   Integer num_eqs, num_vars;
   BackendDAE.Equation eq;
   list<Integer> row;
-  AvlSetInt.Tree rowTree;
+  list<Integer> rowLst;
 algorithm
   num_eqs := BackendEquation.getNumberOfEquations(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
@@ -2512,8 +2518,8 @@ algorithm
       // Get the equation.
       eq := BackendEquation.get(inEqns, idx);
       // Compute the row.
-      rowTree := adjacencyRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY(), isInitial);
-      row := AvlSetInt.listKeys(rowTree);
+      rowLst := adjacencyRow(eq, inVars, inIndexType, functionTree, {}, isInitial);
+      row := uniqueRow(rowLst);
       // Put it in the arrays.
       arrayUpdate(outAdjacencyArray, idx, row);
       outAdjacencyArrayT := filladjacencyMatrixT(row, {idx}, outAdjacencyArrayT);
@@ -2536,7 +2542,7 @@ protected function adjacencyMatrixDispatchScalar
 protected
   Integer num_eqs, num_vars, size, num_rows = 0;
   BackendDAE.Equation eq;
-  AvlSetInt.Tree rowTree;
+  list<Integer> rowLst;
   list<Integer> row, row_indices, imap = {};
   list<BackendDAE.AdjacencyMatrixElement> iarr = {};
 algorithm
@@ -2550,8 +2556,8 @@ algorithm
     eq := BackendEquation.get(inEqns, idx);
 
     // Compute the row.
-    (rowTree, size) := adjacencyRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY(), isInitial);
-    row := AvlSetInt.listKeys(rowTree);
+    (rowLst, size) := adjacencyRow(eq, inVars, inIndexType, functionTree, {}, isInitial);
+    row := uniqueRow(rowLst);
     row_indices := List.intRange2(num_rows + 1, num_rows + size);
     num_rows := num_rows + size;
     arrayUpdate(omapEqnIncRow, idx, row_indices);
@@ -2600,9 +2606,9 @@ public function adjacencyRow
   input BackendDAE.Variables vars;
   input BackendDAE.IndexType inIndexType;
   input Option<AvlTreePathFunction.Tree> functionTree;
-  input AvlSetInt.Tree iRow;
+  input list<Integer> iRow;
   input Boolean isInitial;
-  output AvlSetInt.Tree outIntegerLst;
+  output list<Integer> outIntegerLst;
   output Integer rowSize;
 protected
   list<Integer> whenIntegerLst;
@@ -2641,7 +2647,7 @@ algorithm
 
   (outIntegerLst,rowSize) := matchcontinue inlinedEquation
     local
-      AvlSetInt.Tree lst1,res;
+      list<Integer> lst1,res;
       list<Integer> dimsize;
       DAE.Exp e1,e2,e,expCref;
       list<DAE.Exp> expl;
@@ -2792,7 +2798,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-  outIntegerLst := AvlSetInt.addList(outIntegerLst, whenIntegerLst);
+  outIntegerLst := listAppend(whenIntegerLst, outIntegerLst);
 end adjacencyRow;
 
 protected
@@ -2824,9 +2830,9 @@ protected function adjacencyRowLst
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<AvlTreePathFunction.Tree> functionTree;
-  input AvlSetInt.Tree inIntegerLst;
+  input list<Integer> inIntegerLst;
   input Boolean isInitial;
-  output AvlSetInt.Tree outIntegerLst = inIntegerLst;
+  output list<Integer> outIntegerLst = inIntegerLst;
   output Integer rowSize = 0;
 protected
   Integer size;
@@ -2846,9 +2852,9 @@ protected function adjacencyRowLstLst
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<AvlTreePathFunction.Tree> functionTree;
-  input AvlSetInt.Tree inIntegerLst;
+  input list<Integer> inIntegerLst;
   input Boolean isInitial;
-  output AvlSetInt.Tree outIntegerLst = inIntegerLst;
+  output list<Integer> outIntegerLst = inIntegerLst;
   output Integer rowSize = 0;
 protected
   Integer size;
@@ -2867,9 +2873,9 @@ protected function adjacencyRowWhen
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<AvlTreePathFunction.Tree> functionTree;
-  input AvlSetInt.Tree inRow;
+  input list<Integer> inRow;
   input Boolean isInitial;
-  output AvlSetInt.Tree outRow;
+  output list<Integer> outRow;
 algorithm
   outRow := match inEquation
     local
@@ -2898,9 +2904,9 @@ protected function adjacencyRowWhenOps
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<AvlTreePathFunction.Tree> functionTree;
-  input AvlSetInt.Tree inRow;
+  input list<Integer> inRow;
   input Boolean isInitial;
-  output AvlSetInt.Tree outRow;
+  output list<Integer> outRow;
 algorithm
   outRow := match inWhenOps
     local
@@ -2951,7 +2957,7 @@ end adjacencyRowWhenOps;
 
 protected function adjacencyRowAlgorithm
   input DAE.Exp exp;
-  input output AvlSetInt.Tree row;
+  input output list<Integer> row;
   input BackendDAE.Variables inVariables;
   input Option<AvlTreePathFunction.Tree> functionTree;
   input BackendDAE.IndexType inIndexType;
@@ -3008,15 +3014,16 @@ public function adjacencyRowExp "author: PA
   returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  input AvlSetInt.Tree inIntegerLst;
+  input list<Integer> inIntegerLst;
   input Option<AvlTreePathFunction.Tree> functionTree;
   input BackendDAE.IndexType inIndexType;
   input Boolean isInitial;
-  output AvlSetInt.Tree outIntegerLst;
+  output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst := match inIndexType
     local
-      AvlSetInt.Tree vallst;
+      list<Integer> vallst, outLst;
+      Integer key;
 
     case BackendDAE.SPARSE() algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinderwithInput, (inVariables, inIntegerLst, isInitial));
@@ -3034,25 +3041,32 @@ algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingAdjacencyRowExpFinderSubClock, (inVariables, inIntegerLst, isInitial));
     then vallst;
 
+    // The row is absolute already; only what this expression adds needs intAbs.
+    case BackendDAE.ABSOLUTE() algorithm
+      (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinder, (inVariables, {}, isInitial));
+      outLst := inIntegerLst;
+      for key in listReverse(vallst) loop
+        outLst := intAbs(key) :: outLst;
+      end for;
+    then outLst;
+
     else algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinder, (inVariables, inIntegerLst, isInitial));
-      // only absolute indices?
-      vallst := applyIndexType(vallst, inIndexType);
     then vallst;
   end match;
 end adjacencyRowExp;
 
 public function traversingadjacencyRowExpSolvableFinder "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> inTpl;
+  input tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> outTpl;
+  output tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> outTpl;
 algorithm
   (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
       list<Integer> p, p2;
-      AvlSetInt.Tree pa;
+      list<Integer> pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e1, e2;
@@ -3063,7 +3077,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       Option<AvlTreePathFunction.Tree> ofunctionTree;
       AvlTreePathFunction.Tree functionTree;
-      tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
+      tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
       Integer diffindx;
       list<DAE.Subscript> subs;
       AvlSetPath.Tree visitedPaths;
@@ -3178,7 +3192,7 @@ protected function traversingadjacencyRowIfExpSolvableFinder
       ToDo: inside more complex expression? IF_EQUATION?"
   input output DAE.Exp e;
   output Boolean cont = false; // always false, just for convenience
-  input output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
+  input output tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
 algorithm
   tpl := matchcontinue e
     local
@@ -3201,7 +3215,7 @@ algorithm
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
         /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
-        expCond := ExpressionSimplify.simplify(expCond);
+        expCond := simplifyIfCondCached(expCond);
         tpl := match expCond
           case DAE.BCONST(true) algorithm
             (_,tpl) := Expression.traverseExpTopDown(expThen, traversingadjacencyRowExpSolvableFinder, tpl);
@@ -3233,12 +3247,12 @@ protected function traversingadjacencyRowIfExp
       ToDo: inside more complex expression? IF_EQUATION?"
   input output DAE.Exp e;
   output Boolean cont = false; // always false, just for convenience
-  input output tuple<BackendDAE.Variables, AvlSetInt.Tree, Boolean> tpl;
+  input output tuple<BackendDAE.Variables, list<Integer>, Boolean> tpl;
   input traverserFunction traFunc;
   partial function traverserFunction
     input output DAE.Exp exp;
     output Boolean cont;
-    input output tuple<BackendDAE.Variables, AvlSetInt.Tree, Boolean> tpl;
+    input output tuple<BackendDAE.Variables, list<Integer>, Boolean> tpl;
   end traverserFunction;
 algorithm
   tpl := matchcontinue e
@@ -3262,7 +3276,7 @@ algorithm
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
         /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
-        expCond := ExpressionSimplify.simplify(expCond);
+        expCond := simplifyIfCondCached(expCond);
         tpl := match expCond
           case DAE.BCONST(true) algorithm
             (_,tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
@@ -3285,6 +3299,29 @@ algorithm
       then fail();
   end matchcontinue;
 end traversingadjacencyRowIfExp;
+
+protected function simplifyIfCondCached
+  "The same if-conditions are simplified in every adjacency row of every
+   matrix build (thousands per translation); cleared in getSolvedSystem."
+  input DAE.Exp cond;
+  output DAE.Exp simplified;
+protected
+  Option<HashTableExpToExp.HashTable> opt;
+  HashTableExpToExp.HashTable ht;
+algorithm
+  opt := getGlobalRoot(Global.adjacencyIfCondCache);
+  ht := match opt
+    case SOME(ht) then ht;
+    else HashTableExpToExp.emptyHashTableSized(1013);
+  end match;
+  try
+    simplified := BaseHashTable.get(cond, ht);
+  else
+    simplified := ExpressionSimplify.simplify(cond);
+    ht := BaseHashTable.add((cond, simplified), ht);
+    setGlobalRoot(Global.adjacencyIfCondCache, SOME(ht));
+  end try;
+end simplifyIfCondCached;
 
 protected function traversingAdjacencyRowIfExpEnhanced
   "author: kabdelhak FHB 2020-01
@@ -3328,7 +3365,7 @@ algorithm
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
         /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
-        expCond := ExpressionSimplify.simplify(expCond);
+        expCond := simplifyIfCondCached(expCond);
         tpl := match expCond
           case DAE.BCONST(true) algorithm
             (_, tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
@@ -3362,33 +3399,33 @@ end traversingAdjacencyRowIfExpEnhanced;
 public function traversingAdjacencyRowExpFinderBaseClock "author: lochel
   This is used for base-clock partitioning."
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, AvlSetInt.Tree, Boolean> inTpl;
+  input tuple<BackendDAE.Variables, list<Integer>, Boolean> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, AvlSetInt.Tree, Boolean> outTpl;
+  output tuple<BackendDAE.Variables, list<Integer>, Boolean> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       list<Integer> p, p2;
-      AvlSetInt.Tree pa;
+      list<Integer> pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
       Boolean isInitial;
-      tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
+      tuple<BackendDAE.Variables,list<Integer>, Boolean> tpl;
 
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
         (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-        pa := AvlSetInt.addList(pa, p);
-        pa := AvlSetInt.addList(pa, p2);
+        pa := listAppend(p, pa);
+        pa := listAppend(p2, pa);
       then (inExp, true, (vars, pa, isInitial));
 
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
-      then (inExp, true, (vars, AvlSetInt.addList(pa, p), isInitial));
+      then (inExp, true, (vars, listAppend(p, pa), isInitial));
 
     case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, e}), _)
       algorithm
@@ -3417,32 +3454,32 @@ public function traversingAdjacencyRowExpFinderSubClock "author: lochel
   This is used for sub-clock partitioning.
   TODO: avoid code duplicates, cf. function traversingAdjacencyRowExpFinderBaseClock"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, AvlSetInt.Tree, Boolean> inTpl;
+  input tuple<BackendDAE.Variables, list<Integer>, Boolean> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, AvlSetInt.Tree, Boolean> outTpl;
+  output tuple<BackendDAE.Variables, list<Integer>, Boolean> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       list<Integer> p, p2;
-      AvlSetInt.Tree pa, res;
+      list<Integer> pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       Boolean isInitial;
-      tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
+      tuple<BackendDAE.Variables,list<Integer>, Boolean> tpl;
 
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
         (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-        res := AvlSetInt.addList(pa, p);
-        res := AvlSetInt.addList(res, p2);
+        res := listAppend(p, pa);
+        res := listAppend(p2, res);
       then (inExp, true, (vars, res, isInitial));
 
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
-        res := AvlSetInt.addList(pa, p);
+        res := listAppend(p, pa);
       then (inExp, true, (vars, res, isInitial));
 
     case (DAE.CALL(path=Absyn.IDENT(name="subSample")), _)
@@ -3471,22 +3508,22 @@ public function traversingadjacencyRowExpFinder "
   author: Frenkel TUD 2010-11
   Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> inTpl;
+  input tuple<BackendDAE.Variables,list<Integer>, Boolean> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> outTpl;
+  output tuple<BackendDAE.Variables,list<Integer>, Boolean> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       list<Integer> p, p2;
-      AvlSetInt.Tree pa,res;
+      list<Integer> pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2;
       list<BackendDAE.Var> varslst;
       Boolean b, b1, b2, isInitial;
       Integer i;
-      tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
+      tuple<BackendDAE.Variables,list<Integer>, Boolean> tpl;
 
     // cref and $START.cref
     case (e as DAE.CREF(componentRef=cr), (vars, pa, isInitial))
@@ -3579,15 +3616,15 @@ protected function adjacencyRowExp1
   "Adds an adjacency matrix entry for all variables in the inVarLst."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
-  input AvlSetInt.Tree inVarIndxLst;
+  input list<Integer> inVarIndxLst;
   input Integer diffindex;
-  output AvlSetInt.Tree outVarIndxLst;
+  output list<Integer> outVarIndxLst;
 algorithm
   outVarIndxLst := match (inVarLst,inIntegerLst)
     local
        list<BackendDAE.Var> rest;
        list<Integer> irest;
-       AvlSetInt.Tree vars;
+       list<Integer> vars;
        Integer i,i1,diffidx;
     case ({},{}) then inVarIndxLst;
     /*If variable x is a state, der(x) is a variable in adjacency matrix,
@@ -3596,16 +3633,16 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))::rest,i::irest)
       algorithm
         i1 := if intGe(diffindex,1) then i else -i;
-        vars := AvlSetInt.add(inVarIndxLst, i1);
+        vars := i1 :: inVarIndxLst;
       then adjacencyRowExp1(rest,irest,vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))::rest,i::irest)
       algorithm
         i1 := if intGe(diffindex,diffidx) then i else -i;
-        vars := AvlSetInt.add(inVarIndxLst, i1);
+        vars := i1 :: inVarIndxLst;
       then adjacencyRowExp1(rest,irest,vars,diffindex);
     case (_::rest,i::irest)
       algorithm
-        vars := AvlSetInt.add(inVarIndxLst, i);
+        vars := i :: inVarIndxLst;
       then adjacencyRowExp1(rest,irest,vars,diffindex);
   end match;
 end adjacencyRowExp1;
@@ -3614,19 +3651,19 @@ protected function adjacencyRowExp1DiscreteOrArray
   "Adds an adjacency matrix entry for all variables in the inVarLst, if they are discrete."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
-  input AvlSetInt.Tree inVarIndxLst;
-  output AvlSetInt.Tree outVarIndxLst;
+  input list<Integer> inVarIndxLst;
+  output list<Integer> outVarIndxLst;
 algorithm
   outVarIndxLst := match (inVarLst,inIntegerLst)
     local
        list<BackendDAE.Var> rest;
        list<Integer> irest;
-       AvlSetInt.Tree vars;
+       list<Integer> vars;
        Integer i;
     case ({}, {}) then inVarIndxLst;
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
       algorithm
-        vars := AvlSetInt.add(inVarIndxLst, i);
+        vars := i :: inVarIndxLst;
       then adjacencyRowExp1DiscreteOrArray(rest,irest,vars);
     case (_::rest, _::irest)
       then adjacencyRowExp1DiscreteOrArray(rest,irest,inVarIndxLst);
@@ -3635,20 +3672,20 @@ end adjacencyRowExp1DiscreteOrArray;
 
 public function traversingadjacencyRowExpFinderwithInput "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> inTpl;
+  input tuple<BackendDAE.Variables,list<Integer>, Boolean> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> outTpl;
+  output tuple<BackendDAE.Variables,list<Integer>, Boolean> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
   local
       list<Integer> p;
-      AvlSetInt.Tree pa, res;
+      list<Integer> pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e1, e2;
       list<BackendDAE.Var> varslst;
-      tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
+      tuple<BackendDAE.Variables,list<Integer>, Boolean> tpl;
       Boolean b1, b2, isInitial;
 
     // inner variable
@@ -3730,9 +3767,9 @@ end traversingadjacencyRowExpFinderwithInput;
 protected function adjacencyRowExp1withInput
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
-  input AvlSetInt.Tree vars;
+  input list<Integer> vars;
   input Integer diffindex;
-  output AvlSetInt.Tree outIntegerLst;
+  output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst := match (inVarLst, inIntegerLst)
     local
@@ -3741,44 +3778,32 @@ algorithm
        Integer i;
     case ({}, {}) then vars;
     case (BackendDAE.VAR(varKind = BackendDAE.DAE_AUX_VAR())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DAE_RESIDUAL_VAR())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.JAC_TMP_VAR())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE())::rest, i::irest)
-      guard not (diffindex==0 or AvlSetInt.hasKey(vars, i))
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      guard diffindex <> 0
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())::rest, i::irest)
-      guard not AvlSetInt.hasKey(vars, i)
-      then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+      then adjacencyRowExp1(rest,irest,i::vars,diffindex);
     case (_ :: _, _::_)
       then vars;
   end match;
@@ -3847,8 +3872,8 @@ algorithm
       BackendDAE.AdjacencyMatrixT mt_1,mt_2,mt_3;
       Integer e,abse;
       BackendDAE.Equation eqn;
-      AvlSetInt.Tree row,invars,outvars;
-      list<Integer> eqns,oldvars;
+      AvlSetInt.Tree invars,outvars;
+      list<Integer> row,eqns,oldvars;
 
     case {} then (m,mt);
 
@@ -3856,10 +3881,11 @@ algorithm
       algorithm
         abse := intAbs(e);
         eqn := BackendEquation.get(daeeqns, abse);
-        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,AvlSetInt.EMPTY(),isInitial);
+        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,{},isInitial);
+        row := uniqueRow(row);
         oldvars := getOldVars(m,abse);
-        m_1 := Array.replaceAtWithFill(abse,AvlSetInt.listKeys(row),{},m);
-        (_,outvars,invars) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars),row);
+        m_1 := Array.replaceAtWithFill(abse,row,{},m);
+        (_,outvars,invars) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars), AvlSetInt.addList(AvlSetInt.EMPTY(), row));
         mt_1 := removeValuefromMatrix(abse,AvlSetInt.listKeys(outvars),mt);
         mt_2 := addValuetoMatrix(abse,AvlSetInt.listKeys(invars),mt_1);
         (m_2,mt_3) := updateAdjacencyMatrix1(vars,daeeqns,inIndxType,functionTree,m_1,mt_2,eqns,isInitial);
@@ -3964,8 +3990,8 @@ algorithm
       BackendDAE.AdjacencyMatrixT mt_1,mt_2,mt_3;
       Integer e,abse;
       BackendDAE.Equation eqn;
-      AvlSetInt.Tree row,invarsTree,outvarsTree;
-      list<Integer> invars,outvars,eqns,oldvars,scalarindxs;
+      AvlSetInt.Tree invarsTree,outvarsTree;
+      list<Integer> row,invars,outvars,eqns,oldvars,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
 
@@ -3975,14 +4001,15 @@ algorithm
       algorithm
         abse := intAbs(e);
         eqn := BackendEquation.get(daeeqns, abse);
-        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,AvlSetInt.Tree.EMPTY(),isInitial);
+        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,{},isInitial);
+        row := uniqueRow(row);
         scalarindxs := iMapEqnIncRow[abse];
         oldvars := getOldVars(m,listHead(scalarindxs));
-        (_,outvarsTree,invarsTree) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
+        (_,outvarsTree,invarsTree) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars), AvlSetInt.addList(AvlSetInt.EMPTY(), row));
         outvars := AvlSetInt.listKeys(outvarsTree);
         invars := AvlSetInt.listKeys(invarsTree);
         // do the same for each scalar indxs
-        m_1 := List.fold1r(scalarindxs,arrayUpdate,AvlSetInt.listKeys(row),m);
+        m_1 := List.fold1r(scalarindxs,arrayUpdate,row,m);
         mt_1 := List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
         mt_2 := List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
         (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) := updateAdjacencyMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree,isInitial);
@@ -3991,14 +4018,14 @@ algorithm
     case e::eqns // Backup for non existent equations
       algorithm
         abse := intAbs(e);
-        row := AvlSetInt.Tree.EMPTY();
+        row := {};
         scalarindxs := iMapEqnIncRow[abse];
         oldvars := getOldVars(m,listHead(scalarindxs));
-        (_,outvarsTree,invarsTree) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
+        (_,outvarsTree,invarsTree) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars), AvlSetInt.EMPTY());
         outvars := AvlSetInt.listKeys(outvarsTree);
         invars := AvlSetInt.listKeys(invarsTree);
         // do the same for each scalar indxs
-        m_1 := List.fold1r(scalarindxs,arrayUpdate,AvlSetInt.listKeys(row),m);
+        m_1 := List.fold1r(scalarindxs,arrayUpdate,row,m);
         mt_1 := List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
         mt_2 := List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
         (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) := updateAdjacencyMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree,isInitial);
@@ -4033,7 +4060,7 @@ algorithm
       BackendDAE.AdjacencyMatrixT mt1;
       Integer abse,rowsize,new_size;
       BackendDAE.Equation eqn;
-      AvlSetInt.Tree row;
+      list<Integer> row;
       list<Integer> scalarindxs, row_lst;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
@@ -4044,12 +4071,12 @@ algorithm
         abse := intAbs(index);
         eqn := BackendEquation.get(daeeqns, abse);
         rowsize := BackendEquation.equationSize(eqn);
-        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,AvlSetInt.EMPTY(),isInitial);
+        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,{},isInitial);
         new_size := size+rowsize;
         scalarindxs := List.intRange2(size+1,new_size);
         mapEqnIncRow := arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
         mapIncRowEqn := List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
-        row_lst := AvlSetInt.listKeys(row);
+        row_lst := uniqueRow(row);
         m1:= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
         mt1 := filladjacencyMatrixT(row_lst,scalarindxs,mt);
         (m1,mt1,mapEqnIncRow,mapIncRowEqn) := updateAdjacencyMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree,isInitial);
@@ -4063,12 +4090,12 @@ algorithm
       algorithm
         abse := intAbs(index);
         rowsize := 1;
-        row := AvlSetInt.EMPTY();
+        row := {};
         new_size := size+rowsize;
         scalarindxs := List.intRange2(size+1,new_size);
         mapEqnIncRow := arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
         mapIncRowEqn := List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
-        row_lst := AvlSetInt.listKeys(row);
+        row_lst := uniqueRow(row);
         m1:= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
         mt1 := filladjacencyMatrixT(row_lst,scalarindxs,mt);
         (m1,mt1,mapEqnIncRow,mapIncRowEqn) := updateAdjacencyMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree,isInitial);
@@ -4767,7 +4794,7 @@ algorithm
   end matchcontinue;
 end fillincAdjacencyMatrixTEnhanced;
 
-protected function adjacencyRowEnhanced
+public function adjacencyRowEnhanced
 "author: Frenkel TUD 2012-05
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
   in the matrix for one equation."
@@ -7294,7 +7321,8 @@ author: Peter Aronsson (paronsson@wolfram.com)
 algorithm
  (outAttr,outExtraArg) := match attr
    local
-     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound,startOrigin;
+     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
+     Option<DAE.StartOrigin> startOrigin;
      Option<DAE.Exp> q_,u_,du_,min_,max_,i_,f_,n_,eqbound_;
      Option<DAE.StateSelect> ss;
      Option<DAE.Uncertainty> unc;
@@ -7625,6 +7653,7 @@ algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
   StackOverflow.clearStacktraceMessages();
+  setGlobalRoot(Global.adjacencyIfCondCache, NONE());
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
@@ -7642,6 +7671,7 @@ algorithm
 
   execStat("pre-optimization done (n="+String(daeSize(dae))+")");
   // transformation phase (matching and sorting using index reduction method)
+  Error.checkCancel();
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
   execStat("matching and sorting (n="+String(daeSize(dae))+")");
 
@@ -7662,9 +7692,11 @@ algorithm
   end if;
 
   //generate Jacobian for StateSets for initial state selection
+  Error.checkCancel();
   dae := SymbolicJacobian.calculateStateSetsJacobians(dae);
 
   // generate system for initialization
+  Error.checkCancel();
   (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(outInitDAE);
@@ -7734,6 +7766,9 @@ algorithm
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
   ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+  // A user cancel unwinds through this checkpoint like a failure; report it as
+  // such (after the rollback, so the message survives) rather than as overflow.
+  Error.checkCancel();
   Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
@@ -7766,6 +7801,7 @@ protected
 algorithm
   execStat("prepare preOptimizeDAE");
   for preOptModule in inPreOptModules loop
+    Error.checkCancel();
     (optModule, moduleStr) := preOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
@@ -7866,6 +7902,7 @@ algorithm
     then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
 
     case syst::systs algorithm
+      Error.checkCancel();
       (syst,shared,arg,causalized) := causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
       (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
     then (systs,shared,args,causalized);
@@ -7922,6 +7959,8 @@ algorithm
     then (syst, shared,SOME(arg), true);
 
     case (_, (_,mAmethodstr), (_,str1,_,_)) algorithm
+      // A cancel unwinds through here; do not blame the module for it.
+      Error.checkCancel();
       str := "Transformation Module " + mAmethodstr + " index Reduction Method " + str1 + " failed!";
       if not isInitializationDAE(ishared) then
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -7952,7 +7991,9 @@ protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
 algorithm
   outSystem := list(match syst
     case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)) then syst;
-    else sortEqnsDAEWork(syst, inShared);
+    else algorithm
+      Error.checkCancel();
+    then sortEqnsDAEWork(syst, inShared);
   end match for syst in inSystem);
 end mapSortEqnsDAE;
 
@@ -8017,6 +8058,7 @@ protected
 algorithm
   execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
+    Error.checkCancel();
     (optModule, moduleStr) := postOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
@@ -9631,7 +9673,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
+  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), ZeroCrossings.new(), ZeroCrossings.new(), 0);
 end emptyEventInfo;
 
 public function getSubClock
@@ -10224,6 +10266,22 @@ algorithm
     end for;
   end for;
 end warnAboutIterationVariablesWithNoNominal;
+
+public function useSparseSolver
+"Whether a system of this size and sparsity is factorized sparse or dense. The
+ runtime used to decide this itself, which left the backend guessing."
+  input Integer size;
+  input Integer nnz;
+  input Boolean isLinear;
+  output Boolean sparse;
+protected
+  constant Real maxDensityLinear = 0.2, maxDensityNonlinear = 0.1;
+  constant Integer minSize = 1000;
+algorithm
+  sparse := if size <= 0 then false
+            else intReal(nnz) / intReal(size * size) < (if isLinear then maxDensityLinear else maxDensityNonlinear)
+                 or size > minSize;
+end useSparseSolver;
 
 public function getLinearfromJacType "  author: Frenkel TUD 2012-09"
   input BackendDAE.JacobianType jacType;

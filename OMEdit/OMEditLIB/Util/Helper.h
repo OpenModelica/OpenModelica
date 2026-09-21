@@ -152,6 +152,7 @@ public:
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString loadCompiledModel;
   static QString newCRMLModel;
   static QString newCRMLModelTip;
   static QString newMOSScript;
@@ -159,6 +160,7 @@ public:
   static QString libraries;
   static QString elements;
   static QString clearRecentFiles;
+  static QString clearRecentModels;
   static QString encoding;
   static QString fileLabel;
   static QString file;
@@ -195,6 +197,7 @@ public:
   static QString general;
   static QString output;
   static QString parameters;
+  static QString parametersTip;
   static QString inputs;
   static QString name;
   static QString startScript;
@@ -421,18 +424,8 @@ public:
   static QString addSubModel;
   static QString addExternalTLMModel;
   static QString addSubModelTip;
-  static QString addBus;
-  static QString addBusTip;
-  static QString editBus;
-  static QString addTLMBus;
-  static QString addTLMBusTip;
-  static QString editTLMBus;
   static QString addConnector;
   static QString addConnectorTip;
-  static QString addBusConnection;
-  static QString editBusConnection;
-  static QString addTLMConnection;
-  static QString editTLMConnection;
   static QString running;
   static QString finished;
   static QString newVariable;

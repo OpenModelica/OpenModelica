@@ -58,11 +58,12 @@ public import TplAbsyn;
 public import TplCodegen;
 
 protected
-constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
+constant Tpl.Text emptyTxt = Tpl.emptyTxt;
 constant SourceInfo dsi = TplAbsyn.dummySourceInfo;
 
 public function main
   input String inFile;
+  input String inOutputDir = "";
 
 algorithm
   () := match inFile
@@ -77,7 +78,7 @@ algorithm
     case file
       algorithm
         Print.clearBuf();
-        translateFile(file);
+        translateFile(file, inOutputDir);
         strErrBuf := Print.getErrorString();
         strErrBuf := if strErrBuf == "" then "" else ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n");
         print(strErrBuf);
@@ -89,6 +90,7 @@ end main;
 
 public function translateFile
   input String inFile;
+  input String inOutputDir = "";
 
 algorithm
   () := matchcontinue inFile
@@ -107,6 +109,9 @@ algorithm
 
         destFile := System.stringReplace(file + "*", ".tpl*", ".mo");
         false := stringEq(file, destFile);
+        if inOutputDir <> "" then
+          destFile := inOutputDir + "/" + System.basename(destFile);
+        end if;
 
         //print(destFile);
         tplPackage := TplParser.templPackageFromFile(file);
@@ -256,7 +261,7 @@ public function tplMainTest
   input String inFile;
 algorithm
 
-  () := matchcontinue inFile
+  () := match inFile
     local
       //Tpl.Tokens toks, txttoks;
       String  str, strOut, ident, cval;
@@ -1422,7 +1427,7 @@ is\\n verbatim!
       then
         ();
 
-  end matchcontinue;
+  end match;
 end tplMainTest;
 
 

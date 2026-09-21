@@ -192,7 +192,6 @@ void LinearSolver::initialize()
 
         _Ap = new int[(_dimSys + 1)];
         _Ai = new int[_nonzeros];
-        _Ax = new double[_nonzeros];
 
         int const* Ti= boost::numeric::bindings::begin_compressed_index_major (A);
         int const* Tj= boost::numeric::bindings::begin_index_minor (A);

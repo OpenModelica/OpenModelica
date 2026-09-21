@@ -154,7 +154,19 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
   dim->nsi = -1; /* Initialize the data just in case */
-  data->callback->getTimeGrid(data, &dim->nsi, &time->tt); /* TODO: dim->nsi is long*, expected is int* */
+  {
+    /* The model names its time grid by parameter index; the values are read here. */
+    modelica_integer *tgrid = NULL;
+    modelica_integer i;
+    data->callback->getTimeGrid(data, &dim->nsi, &tgrid); /* TODO: dim->nsi is long*, expected is int* */
+    if (dim->nsi > 0) {
+      time->tt = (modelica_real*) malloc((dim->nsi+1)*sizeof(modelica_real));
+      for (i = 0; i < dim->nsi+1; ++i) {
+        time->tt[i] = data->simulationInfo->realParameter[tgrid[i]];
+      }
+    }
+    free(tgrid);
+  }
   time->model_grid = (modelica_boolean)(dim->nsi > 0);
 
   if (!time->model_grid) {
@@ -251,7 +263,6 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
   pFile = omc_fopen(filename,"r");
   if(pFile == NULL){
     warningStreamPrint(OMC_LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
-    fclose(pFile);
     return nsi;
   }
    while(1){
@@ -960,7 +971,7 @@ static inline void pickUpStates(OptData* optData){
         char buffer[200];
         rewind(pFile);
         for(i =0; i< n; ++i){
-          fscanf(pFile, "%s", buffer);
+          fscanf(pFile, "%199s", buffer);
           if (fscanf(pFile, "%lf", &start_value) <= 0) continue;
 
           for(j = 0, b = 0; j < optData->dim.nReal; ++j){

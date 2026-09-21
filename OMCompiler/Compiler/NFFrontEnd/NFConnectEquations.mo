@@ -62,6 +62,7 @@ import Type = NFType;
 import Call = NFCall;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
+import NFInstNode;
 import Class = NFClass;
 import Binding = NFBinding;
 import NFFunction.Function;
@@ -128,7 +129,7 @@ algorithm
     else
       Error.addInternalError(getInstanceName() + " got connection set with invalid type '" +
         ConnectorType.toDebugString(cty) + "': " +
-        List.toString(set, Connector.toString, "", "{", ", ", "}", true), sourceInfo());
+        List.toString(set, Connector.toString, List.Style.FLAT_CURLY), sourceInfo());
       fail();
     end if;
 
@@ -372,11 +373,11 @@ algorithm
     exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp, -1);
   end if;
 
-  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
+  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, NFInstNode.NO_SCOPE, source);
 
   // wrap the equation in for loop if necessary
   while not listEmpty(iterators) loop
-    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, InstNode.EMPTY_NODE(), source);
+    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, NFInstNode.NO_SCOPE, source);
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;
@@ -411,6 +412,7 @@ protected
   list<Connector> c_rest;
   DAE.ElementSource src;
   Expression sum;
+  list<Expression> terms;
   list<InstNode> iterators = {};
   list<Expression> ranges = {};
   list<Subscript> subs = {};
@@ -427,18 +429,20 @@ algorithm
   if listEmpty(c_rest) then
     sum := Expression.fromCref(c.name);
   else
-    sum := makeFlowExp(c);
+    terms := {makeFlowExp(c)};
 
     for e in c_rest loop
-      sum := Expression.BINARY(sum, Operator.makeAdd(Type.REAL()), makeFlowExp(e));
+      terms := makeFlowExp(e)::terms;
       src := ElementSource.mergeSources(src, e.source);
     end for;
+
+    sum := Expression.MULTARY(listReverseInPlace(terms), {}, Operator.makeAdd(Type.REAL()));
   end if;
 
   equations := {Equation.makeEquality(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), src)};
 
   while not listEmpty(iterators) loop
-    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), src)};
+    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, NFInstNode.NO_SCOPE, src)};
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;
@@ -1281,7 +1285,8 @@ function makeSmoothCall
   output Expression callExp;
 algorithm
   callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SMOOTH,
-    {Expression.INTEGER(order), arg}, Expression.variability(arg), Purity.PURE));
+    {Expression.INTEGER(order), arg}, Expression.variability(arg), Purity.PURE,
+    Expression.typeOf(arg)));
 end makeSmoothCall;
 
 protected function removeStreamSetElement
@@ -1310,14 +1315,15 @@ function associatedFlowCref
 protected
   Type ty;
   ComponentRef rest_cr;
-  InstNode flow_node;
+  NFInstNode.ScopeRef flow_node;
 algorithm
   ComponentRef.CREF(ty = ty, restCref = rest_cr) := streamCref;
 
   flowCref := match Type.arrayElementType(ty)
     // A connector with a single flow, append the flow node to the cref and return it.
     case Type.COMPLEX(complexTy = ComplexType.CONNECTOR(flows = {flow_node}))
-      then ComponentRef.prefixCref(flow_node, InstNode.getType(flow_node), {}, streamCref);
+      then ComponentRef.prefixCref(InstNode.borrow(flow_node),
+        InstNode.getType(InstNode.borrow(flow_node)), {}, streamCref);
 
     // Otherwise, remove the first part of the cref and try again.
     else associatedFlowCref(rest_cr);

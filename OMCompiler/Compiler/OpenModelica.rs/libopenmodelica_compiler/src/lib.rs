@@ -1,0 +1,435 @@
+//! `libOpenModelicaCompiler.so` — the C ABI OMEdit links against to drive the
+//! Rust omc in-process.
+//!
+//! This exposes the same interactive command/response protocol used over
+//! ZeroMQ, but through direct function calls: initialise the runtime once with
+//! [`omc_compiler_init`], then evaluate command strings with
+//! [`omc_compiler_eval`]. The implementation is a thin C wrapper over the safe
+//! [`openmodelica_backend_main::capi`] embedding API.
+//!
+//! ## Contract
+//! * Call [`omc_compiler_init`] exactly once, before any [`omc_compiler_eval`].
+//! * All calls must come from the **same thread** (the compiler keeps
+//!   per-thread state), and that thread should have a large stack (several MiB)
+//!   — see the note in [`openmodelica_backend_main::capi`].
+//! * Strings returned by [`omc_compiler_eval`] are owned by the caller and must
+//!   be released with [`omc_compiler_free_string`].
+//! * No Rust panic is allowed to cross the FFI boundary; every entry point
+//!   traps unwinding and reports failure instead.
+//!
+//! The typed `OMCInterface` (generated `OpenModelicaScriptingAPIQt.cpp`) that
+//! OMEdit also uses is a future layer built on top of this string interface;
+//! see the design notes accompanying this crate.
+
+use arcstr::ArcStr;
+use openmodelica_backend_main::capi;
+use std::ffi::{CStr, CString, c_char, c_int};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+// Not the `mimalloc` crate's GlobalAlloc: that one calls `mi_malloc_aligned` for
+// every allocation, whose slow over-allocating path is taken whenever a size
+// class's page is full. `mi_malloc` already guarantees 16-byte alignment.
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+mod mi {
+    use libmimalloc_sys as mi;
+    use std::alloc::{GlobalAlloc, Layout};
+    use std::ffi::c_void;
+
+    const MI_MAX_ALIGN_SIZE: usize = 16;
+
+    pub struct MiMalloc;
+
+    unsafe impl GlobalAlloc for MiMalloc {
+        #[inline]
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_malloc(layout.size()) as *mut u8
+            } else {
+                mi::mi_malloc_aligned(layout.size(), layout.align()) as *mut u8
+            }
+        }
+
+        #[inline]
+        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_zalloc(layout.size()) as *mut u8
+            } else {
+                mi::mi_zalloc_aligned(layout.size(), layout.align()) as *mut u8
+            }
+        }
+
+        #[inline]
+        unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+            mi::mi_free(ptr as *mut c_void);
+        }
+
+        #[inline]
+        unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_realloc(ptr as *mut c_void, new_size) as *mut u8
+            } else {
+                mi::mi_realloc_aligned(ptr as *mut c_void, new_size, layout.align()) as *mut u8
+            }
+        }
+    }
+}
+
+// The wasm build keeps the plain allocator: its address space is the ceiling.
+#[cfg(not(target_arch = "wasm32"))]
+use metamodelica::heap_limit::Limited;
+
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+#[global_allocator]
+static GLOBAL: Limited<mi::MiMalloc> = Limited(mi::MiMalloc);
+
+#[cfg(all(feature = "jemalloc", not(target_arch = "wasm32")))]
+#[global_allocator]
+static GLOBAL: Limited<tikv_jemallocator::Jemalloc> = Limited(tikv_jemallocator::Jemalloc);
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "mimalloc"), not(feature = "jemalloc")))]
+#[global_allocator]
+static GLOBAL: Limited<std::alloc::System> = Limited(std::alloc::System);
+
+// MetaModelica-ABI compatibility shims (`omc_Main_init` / `omc_Main_handleCommand`
+// / GC + Windows no-ops) OMEdit links against. Implemented over the embedding ABI
+// below; the `#[no_mangle]` entry points are exported from this cdylib directly.
+// OMEdit is a native C++ host (malloc/free/strdup/FILE), so these shims and the
+// SimulationRuntime C ABI below are native-only; a wasm build of this cdylib
+// targets a JS host and exposes the init/eval entry points instead.
+#[cfg(not(target_arch = "wasm32"))]
+mod mmc_compat;
+
+// JavaScript (wasm-bindgen) bindings: the string-to-string command interface a
+// browser/Node host calls instead of the native C ABI above.
+#[cfg(target_arch = "wasm32")]
+mod wasm_api;
+
+// Renders `plot(...)` output as an SVG chart (charton) into the page; registered
+// with the System plot-callback registry at init.
+#[cfg(target_arch = "wasm32")]
+mod wasm_plot;
+
+// SimulationRuntime metadata tables OMEdit reads (FLAG_*, *_METHOD_*,
+// OMC_LOG_STREAM_*); generated from the C runtime by gen/gen-sim-tables.sh so
+// OMEdit needs no OpenModelica C runtime library for them.
+mod sim_metadata;
+
+// The rest of the SimulationRuntime C ABI OMEdit uses (result-file readers, the
+// realtime clock, ryu number formatting), backed by the Rust port so OMEdit
+// needs no OpenModelica C runtime library. The `#[no_mangle]` symbols are
+// exported from this cdylib directly.
+#[cfg(not(target_arch = "wasm32"))]
+mod omedit_runtime;
+
+// malloc + copy rather than `libc::strdup`, for the reason `omc_strdup` exists.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) unsafe fn malloc_dup(s: *const std::ffi::c_char) -> *mut std::ffi::c_char {
+    let n = unsafe { libc::strlen(s) } + 1;
+    let p = unsafe { libc::malloc(n) } as *mut std::ffi::c_char;
+    if !p.is_null() {
+        unsafe { std::ptr::copy_nonoverlapping(s, p, n) };
+    }
+    p
+}
+
+// Re-export the generated typed OMEdit interface ABI (the `extern "C"` wrappers
+// behind OpenModelicaScriptingAPIQt, in the `openmodelica_scripting_qt` crate).
+// The `pub use` makes the `#[no_mangle]` symbols reachable from this cdylib's
+// crate root so the linker keeps them in `libOpenModelicaCompiler.so` (an rlib's
+// `#[no_mangle]` items are otherwise liable to be dropped if nothing references
+// them). OMEdit-specific, so native-only and behind the `scripting_api` feature
+// (the generated OMEdit ABI crate is dropped from builds that don't ship it).
+#[cfg(all(not(target_arch = "wasm32"), feature = "scripting_api"))]
+pub use openmodelica_scripting_qt::scripting_api_qt::*;
+
+// Re-export the plot/loadModel callback registration entry points (implemented
+// in `openmodelica_util::System`) for the same reason — OMEdit registers its
+// callbacks through these so omc can drive plot windows / model loading.
+pub use openmodelica_util::System::{omc_set_loadmodel_callback, omc_set_plot_callback};
+
+// Re-export the in-memory model-instance reference C ABI (issue #15219):
+// `ModelInstanceReference_get`/`_release` plus the `omc_json_*` walker that
+// OMEdit uses to read a model instance's boxed JSON value directly in-process,
+// avoiding JSON string (de)serialisation. Same `pub use` rationale as above —
+// keep the `#[no_mangle]` symbols in `libOpenModelicaCompiler.so`.
+pub use openmodelica_util::ModelInstanceReference::*;
+
+// Ipopt/MUMPS's LAPACK entry points (same `pub use` rationale as above).
+#[cfg(not(target_arch = "wasm32"))]
+pub use openmodelica_sim_meta::lapack_dyn::*;
+
+/// Report this build's revision as the compiler version (`getVersion()`,
+/// `omc --version`); called by every entry point that starts a session.
+// `libmimalloc-sys` binds only the allocation entry points; `mi_collect` is part
+// of the same mimalloc C API it links.
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+unsafe extern "C" {
+    fn mi_collect(force: bool);
+}
+
+/// Hand the pages a caught unwind freed back to the OS. Under jemalloc nothing
+/// is released and recovery leans on the ceiling rising instead.
+#[cfg(not(target_arch = "wasm32"))]
+fn release_memory() {
+    #[cfg(all(feature = "mimalloc", not(feature = "jemalloc")))]
+    unsafe {
+        mi_collect(true)
+    };
+    // glibc only; elsewhere the allocator decides for itself when to unmap.
+    #[cfg(all(
+        not(all(feature = "mimalloc", not(feature = "jemalloc"))),
+        target_os = "linux",
+        target_env = "gnu"
+    ))]
+    unsafe {
+        libc::malloc_trim(0)
+    };
+}
+
+fn set_revision() {
+    metamodelica::heap_limit::init();
+    #[cfg(not(target_arch = "wasm32"))]
+    metamodelica::heap_limit::set_release_fn(release_memory);
+    capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
+}
+
+/// Run the standalone `omc` command-line interface and return its process exit
+/// code (`0` on success, `1` on a failed MetaModelica execution or a panic).
+///
+/// This is the entry point the thin `openmodelica` launcher binary calls: the
+/// launcher dynamically links `libOpenModelicaCompiler.so` and forwards its
+/// argv here instead of statically linking the whole compiler, so the compiler
+/// code lives in exactly one place — this shared library — shared by both the
+/// CLI and OMEdit (which previously meant two ~400 MB copies of identical code).
+///
+/// `argv`/`argc` are the raw process arguments *including* `argv[0]`; the
+/// program name is skipped here, matching `std::env::args().skip(1)` in a normal
+/// `main`. The caller must run this on a thread with a large stack (several MiB)
+/// — the launcher does, see the threading note in [`mod@capi`]. Null entries are
+/// skipped; a null `argv` (with `argc > 0`) is treated as no arguments.
+#[cfg(not(target_arch = "wasm32"))]
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int {
+    use std::io::Write;
+    set_revision();
+    // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
+    // and stop; empty means the per-user cache, which an installer or a test run
+    // warms. For the build and for CI; not a user-facing flag.
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Some(dir) = std::env::var_os("OMC_WASM_PRECOMPILE_CACHE") {
+        // Bulk allocation with no translation to abandon: a genuine exhaustion
+        // should come back as wasmtime's error, not an unwind from a destructor.
+        metamodelica::heap_limit::set_max_heap_size(0);
+        let dir = std::path::PathBuf::from(&dir);
+        let dir = if dir.as_os_str().is_empty() {
+            openmodelica_wasm_jit::sim_runtime::aot_cache_dir()
+        } else {
+            dir
+        };
+        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir) {
+            Ok(names) => {
+                println!("precompiled {} wasm artifacts into {}", names.len(), dir.display());
+                0
+            }
+            Err(e) => {
+                eprintln!("omc: precompiling the wasm cache failed: {e}");
+                1
+            }
+        };
+    }
+    let args: Vec<ArcStr> = if argv.is_null() || argc <= 0 {
+        Vec::new()
+    } else {
+        // Skip argv[0] (the program name), mirroring `args().skip(1)`.
+        (1..argc as isize)
+            .filter_map(|i| {
+                // SAFETY: caller guarantees `argv` holds `argc` valid (or null)
+                // NUL-terminated C strings.
+                let p = unsafe { *argv.offset(i) };
+                if p.is_null() {
+                    None
+                } else {
+                    let bytes = unsafe { CStr::from_ptr(p) }.to_bytes();
+                    Some(ArcStr::from(String::from_utf8_lossy(bytes)))
+                }
+            })
+            .collect()
+    };
+    let arglist: metamodelica::List<_> = args.into_iter().collect();
+    let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
+    // `process::exit` drops no thread-local, so flush the buffered writers here.
+    openmodelica_util::File::flush_all_registered();
+    match status {
+        Ok(Ok(())) => 0,
+        // Mirror the launcher's old inline `run()`: flush stdout, report on
+        // stderr and exit 1. The MetaModelica exception carries no payload worth
+        // printing — diagnostics were already emitted via the Error buffer.
+        Ok(Err(_)) => {
+            let _ = std::io::stdout().flush();
+            eprintln!("Execution failed!");
+            1
+        }
+        Err(p) => {
+            let _ = std::io::stdout().flush();
+            match metamodelica::heap_limit::oom_from_panic(&*p) {
+                Some(oom) => eprintln!("{oom}"),
+                None => eprintln!("Execution failed!"),
+            }
+            1
+        }
+    }
+}
+
+/// Initialise the compiler runtime on the calling thread.
+///
+/// Returns `0` on success and `-1` on failure (initialisation error or a
+/// panic). The installation directory is taken from the `OPENMODELICAHOME`
+/// environment variable, as in a normal omc startup. No command-line flags are
+/// passed; use [`omc_compiler_init_args`] to forward flags (e.g. `+locale=…`).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_init() -> c_int {
+    set_revision();
+    match catch_unwind(|| capi::init(&[])) {
+        Ok(Ok(())) => 0,
+        Ok(Err(_)) | Err(_) => -1,
+    }
+}
+
+/// Like [`omc_compiler_init`] but forwarding the command-line arguments the
+/// embedder wants applied (`argv[0..argc]`, without the executable name), the
+/// same list `omc_Main_init` receives in a normal startup — e.g. `+locale=sv_SE`.
+/// Returns `0` on success, `-1` on failure or panic. Null/`argc <= 0` behaves
+/// like [`omc_compiler_init`].
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_init_args(argv: *const *const c_char, argc: c_int) -> c_int {
+    set_revision();
+    let args: Vec<ArcStr> = if argv.is_null() || argc <= 0 {
+        Vec::new()
+    } else {
+        (0..argc as isize)
+            .filter_map(|i| {
+                // SAFETY: caller guarantees `argv` holds `argc` valid (or null)
+                // NUL-terminated C strings.
+                let p = unsafe { *argv.offset(i) };
+                if p.is_null() {
+                    None
+                } else {
+                    let bytes = unsafe { CStr::from_ptr(p) }.to_bytes();
+                    Some(ArcStr::from(String::from_utf8_lossy(bytes)))
+                }
+            })
+            .collect()
+    };
+    match catch_unwind(AssertUnwindSafe(|| capi::init(&args))) {
+        Ok(Ok(())) => 0,
+        Ok(Err(_)) | Err(_) => -1,
+    }
+}
+
+/// Evaluate one interactive command string and return its reply.
+///
+/// `command` must be a non-null, NUL-terminated UTF-8 string. The returned
+/// pointer is a newly-allocated NUL-terminated C string owned by the caller
+/// (free it with [`omc_compiler_free_string`]). Returns null only if `command`
+/// is null or evaluation traps; a normal evaluation error is reported through
+/// the reply string itself (the same way the interactive server does).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_eval(command: *const c_char) -> *mut c_char {
+    omc_compiler_eval_keep(command, std::ptr::null_mut())
+}
+
+/// Like [`omc_compiler_eval`] but also reports whether the session should keep
+/// running: `*keep_running` is set to 0 after `quit()` and 1 otherwise (mirroring
+/// `omc_Main_handleCommand`'s boolean result). `keep_running` may be null.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_eval_keep(
+    command: *const c_char,
+    keep_running: *mut c_int,
+) -> *mut c_char {
+    if !keep_running.is_null() {
+        unsafe { *keep_running = 1 };
+    }
+    if command.is_null() {
+        return std::ptr::null_mut();
+    }
+    // SAFETY: the contract requires a valid NUL-terminated string.
+    let cmd_bytes = unsafe { CStr::from_ptr(command) }.to_bytes();
+    let cmd = ArcStr::from(String::from_utf8_lossy(cmd_bytes));
+
+    let (keep, reply) = match catch_unwind(AssertUnwindSafe(|| capi::eval(cmd))) {
+        Ok(Ok((keep, reply))) => (keep, reply),
+        // Evaluation failure: surface the error text rather than a bare null so
+        // the embedder gets a diagnostic, matching omc's interactive behaviour.
+        Ok(Err(e)) => (true, ArcStr::from(format!("Error: {e}"))),
+        // A ceiling trip unwound just this command; the session stays usable.
+        Err(p) => match metamodelica::heap_limit::oom_from_panic(&*p) {
+            Some(oom) => (true, ArcStr::from(format!("Error: {oom}"))),
+            None => return std::ptr::null_mut(),
+        },
+    };
+    if !keep_running.is_null() {
+        unsafe { *keep_running = if keep { 1 } else { 0 } };
+    }
+
+    // NUL bytes cannot appear in a C string; replace any (there should be none
+    // in a textual reply) so construction cannot fail.
+    match CString::new(reply.as_bytes()) {
+        Ok(c) => c.into_raw(),
+        Err(_) => {
+            let sanitized: Vec<u8> = reply.as_bytes().iter().copied().filter(|&b| b != 0).collect();
+            CString::new(sanitized).unwrap().into_raw()
+        }
+    }
+}
+
+/// Free a string previously returned by [`omc_compiler_eval`].
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_free_string(s: *mut c_char) {
+    if !s.is_null() {
+        // SAFETY: `s` was produced by `CString::into_raw` in this module.
+        unsafe {
+            drop(CString::from_raw(s));
+        }
+    }
+}
+
+/// Request cancellation of any running in-process op — a wasm-jit simulation, or
+/// a long frontend/loader/backend call (cross-thread — an OMEdit Cancel button, a
+/// Ctrl-C handler). The op then returns a "cancelled" error, leaving omc
+/// consistent.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_request_cancel() {
+    capi::request_cancel();
+}
+
+/// Clear the cancel flag; call before starting a new cancellable op so a stale
+/// request from a previous op does not abort it immediately.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_clear_cancel() {
+    capi::clear_cancel();
+}
+
+/// Register a host event-pump callback invoked at every cancel check (pass NULL
+/// to clear). An in-process GUI host (OMEdit) points this at a rate-limited
+/// `processEvents` so a long compile keeps the UI live and the Cancel button
+/// clickable; the host must disable all UI but Cancel while a call is in flight
+/// (the compiler is not reentrant).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_set_pump_callback(cb: Option<extern "C" fn()>) {
+    capi::set_pump_callback(cb);
+}
+
+/// Last reported progress permille (0..=1000, or negative for an indeterminate
+/// spinner). An in-process host reads this from its pump callback to fill a
+/// progress bar during a long compile.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_progress_permille() -> c_int {
+    capi::progress_permille()
+}
+
+/// Last reported progress phase (see the compiler's `PHASE_*` constants:
+/// 0 idle, 1 download, 2 parse, 3 instantiate, 4 backend, 5 simulate).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_progress_phase() -> c_int {
+    capi::progress_phase()
+}

@@ -8,7 +8,6 @@
 model FuncBuiltinPromoteInvalid1
   Real y[2, 2];
   Real r[:] = promote(y, 1);
-  annotation(__OpenModelica_commandLineOptions="--std=experimental");
 end FuncBuiltinPromoteInvalid1;
 
 // Result:

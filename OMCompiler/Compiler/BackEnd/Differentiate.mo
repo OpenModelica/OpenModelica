@@ -802,6 +802,7 @@ algorithm
       list<DAE.Statement> statementLst, restStatements, derivedStatements1, derivedStatements2, else_statementLst, elseif_statementLst;
       String s1,s2;
       list<Option<DAE.Statement>> optDerivedStatements1;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case {} then (listReverse(inStmtsAccum), inFunctionTree);
 
@@ -854,14 +855,14 @@ algorithm
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
       then (derivedStatements2, functions);
 
-    case DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source)::restStatements
+    case DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source, sub_iters=sub_iters)::restStatements
       algorithm
         cref := ComponentReferenceBasics.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
         controlVar := BackendDAE.VAR(cref, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
         inputData := addGlobalVars({controlVar}, inInputData);
         (derivedStatements1, functions) := differentiateStatements(statementLst, inDiffwrtCref, inputData, inDiffType, {}, inFunctionTree, maxIter);
 
-        derivedStatements1 := {DAE.STMT_FOR(type_, iterIsArray, ident, exp, derivedStatements1, source)};
+        derivedStatements1 := {DAE.STMT_FOR(type_, iterIsArray, ident, exp, derivedStatements1, source, sub_iters)};
 
         derivedStatements2 := listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
@@ -1044,7 +1045,7 @@ algorithm
       BackendDAE.VarKind kind;
 
       list<BackendDAE.Var> scalarLst;
-      DAE.Type tp, arrayType;
+      DAE.Type tp, arrayType, compType;
       DAE.Exp e, e1, zero, one;
       DAE.Exp res, res1;
       DAE.ComponentRef cr, cr1;
@@ -1073,8 +1074,22 @@ algorithm
     case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))), _, _, _)
       algorithm
         expl := List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (expl_1, outFunctionTree) := List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        res := DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
+        expl_1 := {};
+        outFunctionTree := inFunctionTree;
+        for comp in expl loop
+          (e1, outFunctionTree) := differentiateExp(comp, inDiffwrtCref, inInputData, inDiffType, outFunctionTree, maxIter);
+          compType := Expression.typeof(comp);
+          if Expression.isZero(e1) and (Types.isString(compType) or Types.isBoolean(compType) or Types.isEnumeration(compType)) then
+            // a String, Boolean or enumeration component has no derivative and
+            // is differentiated to a real zero, which is not type correct in
+            // its slot. Use a zero of its own type instead.
+            // Only the constant is replaced, a differentiation that yields a
+            // seed variable, as the Jacobian does, has to be kept as it is.
+            e1 := zeroOfType(compType);
+          end if;
+          expl_1 := e1 :: expl_1;
+        end for;
+        res := DAE.CALL(path,listReverse(expl_1),DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
       then
         (res, outFunctionTree);
 
@@ -2339,6 +2354,7 @@ algorithm
         diffFuncData := BackendDAE.emptyInputData;
          diffFuncData.matrixName := SOME(funcname);
         (dexplZero, functions) := List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(false), functions);
+        dexplZero := list(typedZeroSeed(a, z) threaded for a in expl1, z in dexplZero);
         // debug dump
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           print("### differentiated argument list:\n");
@@ -2346,7 +2362,7 @@ algorithm
           print(stringDelimitList(List.map(dexpl, ExpressionBasics.printExpStr), ", ") + "\n");
         end if;
         e := DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc,DAE.NoReturn.RETURNS));
-        e := createPartialArguments(ty, dexpl, dexplZero, expl, e);
+        e := createPartialArguments(ty, dexpl, dexplZero, expl, e, inDiffType);
       then
         (e,functions);
 
@@ -2435,7 +2451,7 @@ algorithm
         (dexplZero, functions, success) := tryZeroDiff(expl1, functions, maxIter);
         if success then
           e := DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc,DAE.NoReturn.RETURNS));
-          exp := createPartialArguments(ty, dexpl, dexplZero, expl, e);
+          exp := createPartialArguments(ty, dexpl, dexplZero, expl, e, inDiffType);
         else
           exp := DAE.CALL(dpath,listAppend(expl,dexpl),DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc,DAE.NoReturn.RETURNS));
         end if;
@@ -2495,9 +2511,12 @@ function tryZeroDiff
   input output AvlTreePathFunction.Tree functions;
   input Integer maxIter;
   output Boolean success;
+protected
+  list<DAE.Exp> args = explist;
 algorithm
   try
    (explist, functions) := List.map3Fold(explist, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(false), functions);
+   explist := list(typedZeroSeed(a, z) threaded for a in args, z in explist);
    success := true;
   else
    explist := {};
@@ -2511,6 +2530,7 @@ protected function createPartialArguments
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
   input DAE.Exp inCall;
+  input BackendDAE.DifferentiationType inDiffType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(outputType, inCall)
@@ -2524,18 +2544,30 @@ algorithm
       list<DAE.Var> varLst;
       list<String> varNames;
 
-    case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rPath),varLst=varLst), DAE.CALL(path=path))
+    case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rPath),varLst=varLst), DAE.CALL(path=path, attr=attr))
     algorithm
-      tys := list(DAEUtil.varType(v) for v in varLst);
-      varNames := list(DAEUtil.typeVarIdent(v) for v in varLst);
-      expLst := createPartialArgumentsRecord(tys, varNames, inArgs, inDiffedArgs, inOrginalExpl, inCall);
-    then DAE.RECORD(rPath, expLst, varNames, outputType);
+      // In a function body the result is a statement, so one call with the
+      // actual seeds gives the whole record - the derivative function is linear
+      // in them. Collecting the partials per component instead costs a call per
+      // (component, argument) pair. Everywhere else the result becomes an
+      // equation that BackendEquation.scalarComplexEquations has to be able to
+      // split, and that needs the record.
+      if boolAnd(not List.all(inArgs, isZeroDerivative),
+                 valueEq(inDiffType, BackendDAE.DIFFERENTIATION_FUNCTION())) then
+        e := DAE.CALL(path, listAppend(inOrginalExpl, inArgs), attr);
+      else
+        tys := list(DAEUtil.varType(v) for v in varLst);
+        varNames := list(DAEUtil.typeVarIdent(v) for v in varLst);
+        expLst := createPartialArgumentsRecord(tys, varNames, inArgs, inDiffedArgs, inOrginalExpl, inCall, inDiffType);
+        e := DAE.RECORD(rPath, expLst, varNames, outputType);
+      end if;
+    then e;
 
     case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()), DAE.TSUB(exp=DAE.CALL(path=path, attr=attr)))
     then DAE.CALL(path, listAppend(inOrginalExpl,inArgs), attr);
 
     case (DAE.T_TUPLE(types = tys), _) algorithm
-      expLst := createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, inCall);
+      expLst := createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, inCall, inDiffType);
     then DAE.TUPLE(expLst);
 
     case (_, _)
@@ -2558,10 +2590,11 @@ protected function createPartialArgumentsTuple
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
   input DAE.Exp inCall;
+  input BackendDAE.DifferentiationType inDiffType;
   output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst := list( createPartialArguments(
-                                             tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.TSUB(inCall, number, tp))
+                                             tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.TSUB(inCall, number, tp)), inDiffType
                                            )
                      threaded  for tp in inTypesLst, number  in 1:listLength(inTypesLst));
 end createPartialArgumentsTuple;
@@ -2573,9 +2606,10 @@ protected function createPartialArgumentsRecord
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
   input DAE.Exp inCall;
+  input BackendDAE.DifferentiationType inDiffType;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := list( createPartialArguments(tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.RSUB(inCall, -1, name, tp)) )
+  outExpLst := list( createPartialArguments(tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.RSUB(inCall, -1, name, tp)), inDiffType )
                      threaded  for tp in inTypesLst, name in inVarNames);
 end createPartialArgumentsRecord;
 
@@ -2606,9 +2640,18 @@ for de in inDiffExpl loop
     case (_, DAE.CALL(path=path, attr=attr))
     guard(Types.isRecord(Expression.typeof(de)))
       algorithm
-      dexpLst := List.set(inDiffExplZero, i, de);
-      expLst := listAppend(inOrginalExpl,dexpLst);
-      e := DAE.CALL(path, expLst, attr);
+      // A record valued argument cannot be seeded component-wise with a one,
+      // the derivative of the record itself is passed as seed instead. The
+      // resulting term has to be added to the partial derivatives collected so
+      // far, it must not replace them.
+      if isZeroDerivative(de) then
+        // this argument does not contribute to the derivative
+        e := outExp;
+      else
+        dexpLst := List.set(inDiffExplZero, i, de);
+        expLst := listAppend(inOrginalExpl,dexpLst);
+        e := Expression.expAdd(outExp, DAE.CALL(path, expLst, attr));
+      end if;
     then e;
 
     case (DAE.ARRAY(ty = tp,scalar = b,array = expl), _) algorithm
@@ -3072,7 +3115,7 @@ algorithm
           e := listGet(expl, i);
           // Differentiate exp.
           (e, functionTree) := differentiateExp(e, diffwrtCref, inputData, diffType, functionTree, defaultMaxIter);
-          true := Expression.isZero(e);
+          true := isZeroDerivative(e);
         then
           ();
 
@@ -3101,6 +3144,88 @@ algorithm
 
   outblst := arrayList(ba);
 end checkDerFunctionConds;
+
+protected function zeroOfType
+  "Zero seed of the given type, for arguments and record components that have no
+   derivative of their own. Differentiation yields a real zero for those, which
+   is not type correct in a String, Boolean, enumeration or record slot."
+  input DAE.Type inType;
+  output DAE.Exp outZero;
+algorithm
+  outZero := match inType
+    local
+      Absyn.Path path;
+      String name;
+      list<DAE.Var> varLst;
+
+    case DAE.T_STRING() then DAE.SCONST("");
+    case DAE.T_BOOL() then DAE.BCONST(false);
+
+    case DAE.T_ENUMERATION(path = path, names = name :: _)
+      then DAE.ENUM_LITERAL(AbsynUtil.suffixPath(path, name), 1);
+
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path), varLst = varLst)
+      then DAE.CALL(path, list(zeroOfType(DAEUtil.varType(v)) for v in varLst),
+                    DAE.CALL_ATTR(inType, false, false, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS));
+
+    else Expression.makeConstZero(inType);
+  end match;
+end zeroOfType;
+
+protected function typedZeroSeed
+  "The zero seeds of the arguments of a partially differentiated call are made
+   by differentiating them with respect to a dummy variable, which yields a real
+   zero for an argument that has no derivative of its own. A record, String,
+   Boolean or enumeration argument needs a seed of its own type, a real zero in
+   such a slot does not compile."
+  input DAE.Exp inArg;
+  input DAE.Exp inZero;
+  output DAE.Exp outZero = inZero;
+protected
+  DAE.Type ty;
+algorithm
+  if Expression.isZero(inZero) then
+    ty := Expression.typeof(inArg);
+    if Types.isRecord(ty) or Types.isString(ty) or Types.isBoolean(ty) or Types.isEnumeration(ty) then
+      outZero := zeroOfType(ty);
+    end if;
+  end if;
+end typedZeroSeed;
+
+protected function isZeroDerivative
+  "Returns true if the given differentiated expression is zero. In contrast to
+   Expression.isZero this also handles record valued derivatives, which are
+   built as record constructors with one zero per component, and the seeds of
+   String, Boolean and enumeration components, which have no derivative."
+  input DAE.Exp inExp;
+  output Boolean outZero;
+algorithm
+  outZero := match inExp
+    local
+      list<DAE.Exp> expl;
+      Absyn.Path path, rpath;
+
+    case DAE.RECORD(exps = expl)
+      then List.all(expl, isZeroDerivative);
+
+    // a record constructor call, i.e. the call path is the record path
+    case DAE.CALL(path = path, expLst = expl, attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = rpath))))
+      guard AbsynUtil.pathEqual(path, rpath)
+      then List.all(expl, isZeroDerivative);
+
+    case DAE.ARRAY(array = expl)
+      then List.all(expl, isZeroDerivative);
+
+    // the seed of a String, Boolean or enumeration component, which has no
+    // derivative of its own. A component reference is not one of these, a
+    // Jacobian differentiates such a component to a seed variable.
+    case DAE.SCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
+
+    else Expression.isZero(inExp);
+  end match;
+end isZeroDerivative;
 
 protected function getlowerOrderDerivative "Author: Frenkel TUD"
   input Absyn.Path fname;

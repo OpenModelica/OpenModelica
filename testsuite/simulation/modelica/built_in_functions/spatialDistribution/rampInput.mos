@@ -1,0 +1,58 @@
+// name:                rampInput.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f rampInputSpatialDistribution*
+//
+// A ramp on the inlet makes z linear in the position, so out1 is in0 of one
+// transport time earlier, exactly. Reading the profile at the position of the
+// last stored step instead of the current one lags by one output interval.
+
+loadModel(Modelica); getErrorString();
+loadString("model rampInputSpatialDistribution
+  \"Single conveyor belt with constant positive velocity and a ramp input
+   from the left side.\"
+  extends Modelica.Icons.Example;
+  Real leftInput = time;
+  Real rightInput = 0;
+  Real leftOutput;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {0.0, 0.0};
+  Real v = 1;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end rampInputSpatialDistribution;"); getErrorString();
+
+// Output interval 0.05 s, well outside the comparison tolerance.
+simulate(rampInputSpatialDistribution, stopTime=2.0, numberOfIntervals=40); getErrorString();
+
+val(leftOutput, 0.5);
+val(rightOutput, 0.5);
+val(leftOutput, 1.5);
+val(rightOutput, 1.5);
+val(leftOutput, 2.0);
+val(rightOutput, 2.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "rampInputSpatialDistribution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 40, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'rampInputSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// 0.0
+// 1.5
+// 0.5
+// 2.0
+// 1.0
+// endResult

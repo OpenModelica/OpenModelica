@@ -174,6 +174,8 @@ namespace IAEX
     {
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -195,6 +197,7 @@ namespace IAEX
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     else
     {
       QTextBrowser::keyPressEvent( event );
@@ -210,7 +213,7 @@ namespace IAEX
    * \param name
    * \param type
    */
-  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType type)
+  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType /*type*/)
   {
     emit openLink( &name );
   }
@@ -249,13 +252,6 @@ namespace IAEX
   {
     setFocusPolicy(Qt::NoFocus);
     createTextWidget();
-  }
-
-  TextCell::TextCell(TextCell &t)
-    : Cell(t)
-  {
-    setText(t.text());
-    setStyle(*t.style());
   }
 
   /*!
@@ -686,7 +682,7 @@ namespace IAEX
    *
    * \param readonly The boolean value of readonly property
    */
-  void TextCell::setReadOnly(const bool readonly)
+  void TextCell::setReadOnly(bool readonly)
   {
     if( readonly )
     {
@@ -713,7 +709,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    */
-  void TextCell::setFocus(const bool focus)
+  void TextCell::setFocus(bool focus)
   {
     if(focus)
       text_->setFocus();
@@ -847,7 +843,7 @@ namespace IAEX
    *
    * \return True
    */
-  bool TextCell::isEditable()
+  bool TextCell::isEditable() const
   {
     return true;
   }
@@ -862,7 +858,7 @@ namespace IAEX
    * 2005-11-01 AF, Remade the function to reflect the new
    * QTextEdit
    */
-  void TextCell::viewExpression(const bool expr)
+  void TextCell::viewExpression(bool expr)
   {
     if( expr != isViewExpression() )
     {

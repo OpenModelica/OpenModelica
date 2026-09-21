@@ -224,19 +224,6 @@ void* generic_array_get(const base_array_t* src, size_t sze, ...) {
   return trgt;
 }
 
-void* generic_array_get1(const base_array_t* src, size_t sze, int sub1) {
-    omc_assert_macro(sub1 > 0 && sub1 <= src->dim_size[0]);
-
-    return generic_ptrget(src, sub1 - 1, sze);
-}
-
-void* generic_array_get2(const base_array_t* src, size_t sze, int sub1, int sub2) {
-    omc_assert_macro(sub1 > 0 && sub1 <= src->dim_size[0]);
-    omc_assert_macro(sub2 > 0 && sub2 <= src->dim_size[1]);
-
-    return generic_ptrget(src, ((sub1 - 1) * src->dim_size[1]) + (sub2 - 1), sze);
-}
-
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...) {
   va_list ap;
   va_start(ap,sze);

@@ -80,7 +80,11 @@ algorithm
     case true
       algorithm
         newName := if Autoconf.os == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
-        (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/.openmodelica/libraries/)?(.*/lib/omlibrary/)?(.*/build/(install_cmake/)?)?(.*)$", 8, true, false);
+        // build_cmake/install_cmake is what a CMake build out of the source tree
+        // produces; build/install_cmake is what the testsuite scripts and the CI
+        // jobs use. Strip either, or the paths a test prints are the ones on the
+        // machine that ran it.
+        (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/.openmodelica/libraries/)?(.*/lib/omlibrary/)?(.*/build(_cmake)?/(install_cmake/)?)?(.*)$", 9, true, false);
         friendly := listGet(strs,i);
 
         // Remove the name of any temporary folders used to sandbox a test case,

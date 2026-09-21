@@ -49,7 +49,7 @@ package ConnectorType
   constant Type FLOW                = intBitLShift(1, 1) "A connector element with flow prefix.";
   constant Type STREAM              = intBitLShift(1, 2) "A connector element with stream prefix.";
   constant Type POTENTIALLY_PRESENT = intBitLShift(1, 3) "An element declared inside an expandable connector.";
-  constant Type VIRTUAL             = intBitLShift(1, 4) "A virtual connector used in a connection.";
+  constant Type UNDECLARED          = intBitLShift(1, 4) "An undeclared connector used in a connection.";
   constant Type CONNECTOR           = intBitLShift(1, 5) "A non-expandable connector that contains elements.";
   constant Type EXPANDABLE          = intBitLShift(1, 6) "An expandable connector.";
   constant Type AUGMENTED           = intBitLShift(1, 7) "A variable added during augmentation of an expandable connector.";
@@ -60,8 +60,6 @@ package ConnectorType
   constant Type PREFIX_MASK = intBitOr(POTENTIAL, FLOW_STREAM_MASK);
   // Some kind of connector, where anything inside an expandable connector also counts.
   constant Type CONNECTOR_MASK = intBitOr(CONNECTOR, intBitOr(EXPANDABLE, POTENTIALLY_PRESENT));
-  // An element in an expandable connector.
-  constant Type UNDECLARED_MASK = intBitOr(VIRTUAL, POTENTIALLY_PRESENT);
 
   function fromSCode
     input SCode.ConnectorType scodeCty;
@@ -192,22 +190,13 @@ package ConnectorType
   end setExpandable;
 
   function isUndeclared
-    "Returns true if the connector type has the potentially present or virtual
-     bits set, otherwise false."
+    "Returns true if the connector type represents an undeclared connector, otherwise false."
     input Type cty;
-    output Boolean isExpandableElement;
+    output Boolean undeclared;
   algorithm
-    isExpandableElement := intBitAnd(cty, UNDECLARED_MASK) > 0;
+    undeclared := intBitAnd(cty, UNDECLARED) > 0;
     annotation(__OpenModelica_EarlyInline = true);
   end isUndeclared;
-
-  function isVirtual
-    input Type cty;
-    output Boolean isVirtual;
-  algorithm
-    isVirtual := intBitAnd(cty, VIRTUAL) > 0;
-    annotation(__OpenModelica_EarlyInline = true);
-  end isVirtual;
 
   function isPotentiallyPresent
     input Type cty;
@@ -270,7 +259,7 @@ package ConnectorType
     if intBitAnd(cty, FLOW) > 0                then strl := "flow" :: strl; end if;
     if intBitAnd(cty, STREAM) > 0              then strl := "stream" :: strl; end if;
     if intBitAnd(cty, POTENTIALLY_PRESENT) > 0 then strl := "potentially present" :: strl; end if;
-    if intBitAnd(cty, VIRTUAL) > 0             then strl := "virtual" :: strl; end if;
+    if intBitAnd(cty, UNDECLARED) > 0          then strl := "undeclared" :: strl; end if;
     if intBitAnd(cty, CONNECTOR) > 0           then strl := "connector" :: strl; end if;
     if intBitAnd(cty, EXPANDABLE) > 0          then strl := "expandable" :: strl; end if;
 

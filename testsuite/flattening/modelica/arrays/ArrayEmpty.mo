@@ -1,6 +1,7 @@
 // name:     ArrayEmpty
 // keywords: <insert keywords here>
 // status:   correct
+// suite: disabled
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.9 Empty Arrays (p. 231)

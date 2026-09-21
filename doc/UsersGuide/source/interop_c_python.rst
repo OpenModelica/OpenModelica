@@ -88,7 +88,6 @@ work without changing the linker settings.
 
   void pyRunString(const char *str)
   {
-    Py_SetProgramName(\"pyRunString\");  /* optional but recommended */
     Py_Initialize();
     PyRun_SimpleString(str);
     Py_Finalize();
@@ -99,15 +98,15 @@ work without changing the linker settings.
   model CallExternalPython
   algorithm
     pyRunString("
-  print 'Python says: simulation time',"+String(time)+"
+  print('Python says: simulation time',"+String(time)+")
   ");
   end CallExternalPython;
 
 .. omc-mos ::
   :erroratend:
 
-  system("python-config --cflags > pycflags")
-  system("python-config --ldflags > pyldflags")
+  system("python3-config --cflags > pycflags")
+  system("python3-config --ldflags --embed > pyldflags")
   pycflags := stringReplace(readFile("pycflags"),"\n","");
   pyldflags := stringReplace(readFile("pyldflags"),"\n","");
   setCFlags(getCFlags()+pycflags)
@@ -142,17 +141,18 @@ simulated via the OpenModelica scripting interface:
 .. code-block :: python
   :caption: PythonCaller.py
 
-  #!/usr/bin/python
-  import sys,os
-  global newb = 0.5
-  execfile('CreateMosFile.py')
+  #!/usr/bin/env python3
+  import os
+
+  newb = 0.5
+  exec(open('CreateMosFile.py').read())
   os.popen(r"omc CalledbyPython.mos").read()
-  execfile('RetrResult.py')
+  exec(open('RetrResult.py').read())
 
 .. code-block :: python
   :caption: CreateMosFile.py
 
-  #!/usr/bin/python
+  #!/usr/bin/env python3
   mos_file = open('CalledbyPython.mos','w', 1)
   mos_file.write('loadFile("CalledbyPython.mo");\n')
   mos_file.write('setComponentModifierValue(CalledbyPython,b,$Code(="+str(newb)+"));\n')
@@ -162,11 +162,9 @@ simulated via the OpenModelica scripting interface:
 .. code-block :: python
   :caption: RetrResult.py
 
-  #!/usr/bin/python
-  def zeros(n): #
-    vec = [0.0]
-    for i in range(int(n)-1): vec = vec + [0.0]
-    return vec
+  #!/usr/bin/env python3
+  def zeros(n):
+    return [0.0] * int(n)
   res_file = open("CalledbyPython_res.plt",'r',1)
   line = res_file.readline()
   size = int(res_file.readline().split('=')[1])
@@ -175,11 +173,11 @@ simulated via the OpenModelica scripting interface:
   while line != ['DataSet: time\\n']:
     line = res_file.readline().split(',')[0:1]
   for j in range(int(size)):
-    time[j]=float(res\_file.readline().split(',')[0])
+    time[j]=float(res_file.readline().split(',')[0])
   while line != ['DataSet: y\\n']:
     line=res_file.readline().split(',')[0:1]
   for j in range(int(size)):
-    y[j]=float(res\_file.readline().split(',')[1])
+    y[j]=float(res_file.readline().split(',')[1])
   res_file.close()
 
 A second option of simulating the above Modelica model is to use the
@@ -188,7 +186,7 @@ parameter value in the initial parameter file, CalledbyPython\_init.txt
 instead of using the command setComponentModifierValue. Then the file
 CalledbyPython.exe is just executed.
 
-The third option is to use the Corba interface for invoking the compiler
+The third option is to use the ZeroMQ interface for invoking the compiler
 and then just use the scripting interface to send commands to the
 compiler via this interface.
 

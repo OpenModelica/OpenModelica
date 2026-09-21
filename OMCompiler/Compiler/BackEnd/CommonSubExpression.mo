@@ -130,6 +130,8 @@ protected
   list<BackendDAE.EqSystem> eqSystems = {};
   String daeTypeStr = BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType);
   Boolean isSimulationDAE = stringEq(daeTypeStr, "simulation");
+  // A Jacobian's own globalKnownVars never reach SimCode, so a call there stays an equation.
+  Boolean allowGlobalKnown = not stringEq(daeTypeStr, "jacobian");
 
   HashSet.HashSet globalKnownVarHT;
 
@@ -206,7 +208,7 @@ algorithm
       end if;
 
       // Phase 4: Create CSE equations
-      (orderedEqs_new, orderedVars, globalKnownVars) := createCseEquations(exarray, orderedEqs_new, orderedVars, globalKnownVars, globalKnownVarHT);
+      (orderedEqs_new, orderedVars, globalKnownVars) := createCseEquations(exarray, orderedEqs_new, orderedVars, globalKnownVars, globalKnownVarHT, allowGlobalKnown);
 
       syst.orderedEqs := orderedEqs_new;
       syst.orderedVars := orderedVars;
@@ -484,6 +486,7 @@ protected function createCseEquations
   input output BackendDAE.Variables orderedVars;
   input output BackendDAE.Variables globalKnownVars;
   input output HashSet.HashSet globalKnownVarHT;
+  input Boolean allowGlobalKnown;
 protected
   DAE.Exp cse, call;
   BackendDAE.Equation eq;
@@ -505,7 +508,7 @@ algorithm
     end if;
 
     eq := BackendEquation.generateEquation(cse, call);
-    (globalKnownVarHT, globalKnownVars, orderedVars, eqRedundant, isGlobalKnown) := isEquationRedundant_flatten(eq, globalKnownVarHT, globalKnownVars, orderedVars);
+    (globalKnownVarHT, globalKnownVars, orderedVars, eqRedundant, isGlobalKnown) := isEquationRedundant_flatten(eq, globalKnownVarHT, globalKnownVars, orderedVars, allowGlobalKnown);
 
     if debug then print("\ndebug 1 - eq redundant?\n"); end if;
     if not eqRedundant then
@@ -1013,6 +1016,7 @@ protected function isEquationRedundant_flatten
   input output HashSet.HashSet globalKnownVarHT;
   input output BackendDAE.Variables globalKnownVars;
   input output BackendDAE.Variables orderedVars;
+  input Boolean allowGlobalKnown;
   output Boolean outB "true if 'x=x', else false";
   output Boolean isGlobalKnown = false;
 algorithm
@@ -1028,7 +1032,7 @@ algorithm
       algorithm
         isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
-          isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
+          isGlobalKnown := allowGlobalKnown and allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
           if isGlobalKnown then
             globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(exp1, globalKnownVarHT);
           end if;
@@ -1046,7 +1050,7 @@ algorithm
     algorithm
       isRedundant := ExpressionBasics.expEqual(exp1, exp2);
       if not isRedundant then
-        isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
+        isGlobalKnown := allowGlobalKnown and allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
         if isGlobalKnown then
           for expMem in lhs loop
             // create variable with bind exp
@@ -1067,7 +1071,7 @@ algorithm
       algorithm
         isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
-          isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
+          isGlobalKnown := allowGlobalKnown and allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
           if isGlobalKnown then
             globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(exp1, globalKnownVarHT);
           end if;

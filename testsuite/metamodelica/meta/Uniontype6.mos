@@ -2,6 +2,7 @@
 // keywords: Uniontype
 // status:   correct
 // cflags: -d=-newInst
+// suite: metamodelica
 //
 // Uniontype Testing
 //

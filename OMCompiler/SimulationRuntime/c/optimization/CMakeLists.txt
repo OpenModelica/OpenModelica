@@ -30,6 +30,7 @@ target_link_libraries(OpenModelicaRuntimeCOptimization
     omc::config
     omc::simrt::runtime::headers
     omc::3rd::ipopt
+    omc::3rd::ryu
 )
 
 target_compile_definitions(OpenModelicaRuntimeCOptimization PUBLIC OMC_HAVE_IPOPT)

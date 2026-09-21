@@ -47,7 +47,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
 #include <sys/stat.h>
 
 
@@ -96,7 +95,7 @@ int main(int argc, char* argv[])
   if(!scriptname) {
     std::cout << "OMShell "
          << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << std::endl
-         << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << std::endl << std::endl
+         << "Distributed under OSMC-PL and AGPL3, see www.openmodelica.org" << std::endl << std::endl
          << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << std::endl;
   }
   doOMCCommunication(scriptname);

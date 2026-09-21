@@ -5,7 +5,7 @@ macro(omc_add_antlr_grammar_target input_file output_dir)
 
   add_custom_command(
     DEPENDS ${input_file}
-    COMMAND ${Java_JAVA_EXECUTABLE}
+    COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C.UTF-8 ${Java_JAVA_EXECUTABLE}
     ARGS -cp ${OMAntlr3_ANTLRJAR}
           org.antlr.Tool -Xconversiontimeout 10000
           -o ${output_dir}
@@ -34,7 +34,7 @@ macro(omc_add_antlr_base_lexer_target input_file output_dir)
 
   add_custom_command(
     DEPENDS ${input_file} ${CMAKE_CURRENT_SOURCE_DIR}/BaseModelica_Lexer.g
-    COMMAND ${Java_JAVA_EXECUTABLE}
+    COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C.UTF-8 ${Java_JAVA_EXECUTABLE}
     ARGS -cp ${OMAntlr3_ANTLRJAR}
           org.antlr.Tool -Xconversiontimeout 10000
           -o ${output_dir}

@@ -68,7 +68,7 @@ package RoomHeating_OM
 //Requirments Check
     assert(fanspeed >= 0.01, "UTRC-FCU-002: FCU air damper should be opened at least 0.10.", AssertionLevel.warning);
     assert(EWT - LWT <= 5, "UTRC-FCU-001: Difference between EWT and LWT for HP should be less than 5 C", AssertionLevel.warning);
-    annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), uses(Modelica(version = "3.2.2")));
+    annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), uses(Modelica(version = "4.1.0")));
   end Room;
 
   model Wall
@@ -117,7 +117,7 @@ package RoomHeating_OM
     der(Tisurf) = (hi * aWall * (RAT - Tisurf) + (Tosurf - Tisurf) / R) / C;
     der(Tosurf) = (ho * aWall * (OAT - Tosurf) + (Tisurf - Tosurf) / R) / C;
     lambdaOut = lambda_Wall;
-    annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), uses(Modelica(version = "3.2.2")));
+    annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), uses(Modelica(version = "4.1.0")));
   end Wall;
 
   model RH
@@ -134,7 +134,7 @@ package RoomHeating_OM
     connect(room.RAT, wall.RAT) annotation(Line(points = {{68.92, 4.54}, {79.92, 4.54}, {79.92, 33.54}, {-38.08, 33.54}, {-38.08, 48}, {-34, 48}}, color = {0, 0, 127}));
     connect(fanspeed, room.fanspeed) annotation(Line(points = {{-100, -78}, {0, -78}, {0, -8}, {22, -8}, {22, -8}}, color = {0, 0, 127}));
     connect(valveopen, room.valveopen) annotation(Line(points = {{-100, -32}, {-20, -32}, {-20, 6}, {22, 6}, {22, 6}}, color = {0, 0, 127}));
-    annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), uses(Modelica(version = "3.2.2")));
+    annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), uses(Modelica(version = "4.1.0")));
   end RH;
   annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})));
 end RoomHeating_OM;

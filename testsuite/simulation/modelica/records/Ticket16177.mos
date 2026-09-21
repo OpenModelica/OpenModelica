@@ -1,0 +1,90 @@
+// name:     Ticket16177.mos
+// keywords: record alias RSUB algebraic loop sorting
+// status:   correct
+// teardown_command: rm -rf Ticket16177.Loop* output.log
+//
+// Alias replacement used to skip record field accesses (DAE.RSUB), so an
+// equation referencing a variable only under an RSUB kept a dangling alias
+// cref. Its adjacency row came out empty, the equation was sorted before the
+// algebraic loop it belongs to, and the loop was silently cut: gain.y was
+// evaluated from a stale input.
+// Closed form of the loop below: gain.y = 2*(1 + gain.y) => gain.y = -2.
+// Before the fix the result was gain.y = 2, add.y = 3, with no error or warning.
+
+loadString("
+package Ticket16177
+  record R
+    Real re;
+    Real im;
+  end R;
+
+  connector RInput = input R;
+  connector ROutput = output R;
+
+  function scale \"inlined, so the argument ends up under a record field access\"
+    input Real k;
+    input R u;
+    output R y;
+  algorithm
+    y := R(k*u.re, k*u.im);
+    annotation(Inline = true);
+  end scale;
+
+  block Gain
+    parameter Real k = 2;
+    parameter Boolean useConjugateInput = false;
+    RInput u;
+    ROutput y;
+  equation
+    y = scale(k, if useConjugateInput then R(u.re, -u.im) else u);
+  end Gain;
+
+  block Add
+    RInput u1;
+    RInput u2;
+    ROutput y;
+  equation
+    y.re = u1.re + u2.re;
+    y.im = u1.im + u2.im;
+  end Add;
+
+  block Const
+    parameter R k = R(1, 0);
+    ROutput y;
+  equation
+    y = k;
+  end Const;
+
+  model Loop
+    Const one(k = R(1, 0));
+    Add add;
+    Gain gain(k = 2);
+  equation
+    connect(one.y, add.u1);
+    connect(gain.y, add.u2);
+    connect(add.y, gain.u);
+  end Loop;
+end Ticket16177;
+"); getErrorString();
+
+simulate(Ticket16177.Loop, stopTime = 0.0); getErrorString();
+
+val(gain.y.re, 0.0); getErrorString();
+val(add.y.re, 0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Ticket16177.Loop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Ticket16177.Loop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// ""
+// -1.0
+// ""
+// endResult

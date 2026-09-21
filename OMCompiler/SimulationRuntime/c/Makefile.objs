@@ -45,7 +45,6 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   omc_mmap$(OBJ_EXT) \
                   omc_msvc$(OBJ_EXT) \
                   omc_numbers$(OBJ_EXT) \
-                  parallel_helper$(OBJ_EXT) \
                   rational$(OBJ_EXT) \
                   real_array$(OBJ_EXT) \
                   ringbuffer$(OBJ_EXT) \
@@ -159,6 +158,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               dassl$(OBJ_EXT) \
               gbode_conf$(OBJ_EXT) \
               gbode_ctrl$(OBJ_EXT) \
+              gbode_err$(OBJ_EXT) \
               gbode_events$(OBJ_EXT) \
               gbode_main$(OBJ_EXT) \
               gbode_internal_nls$(OBJ_EXT) \
@@ -169,7 +169,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               jacobian_analysis$(OBJ_EXT) \
-              jacobianSymbolical$(OBJ_EXT) \
               kinsol_b$(OBJ_EXT) \
               kinsolSolver$(OBJ_EXT) \
               linearSolverKlu$(OBJ_EXT) \
@@ -193,7 +192,6 @@ SOLVER_HFILES = cvode_solver.h \
                 external_input.h \
                 discrete_changes.h \
                 ida_solver.h \
-                jacobianSymbolical.h \
                 linearSystem.h \
                 mixedSystem.h \
                 model_help.h \
@@ -251,6 +249,7 @@ RESULTS_FILES = MatVer4.cpp \
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
            ../linearization/linearize$(OBJ_EXT) \
+           jacobian_colpack$(OBJ_EXT) \
            simulation_runtime$(OBJ_EXT) \
            socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
@@ -270,6 +269,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              ../linearization/linearize.h \
              arrayIndex.h \
              eval_dep.h \
+             jacobian_colpack.h \
              jacobian_util.h \
              modelinfo.h \
              omc_simulation_util.h \
@@ -281,7 +281,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              socket.h
 
 FMIPATH = fmi/
-FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
+FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT) FMI3Common$(OBJ_EXT) FMI3ModelExchange$(OBJ_EXT)
 FMIOBJSPATH = $(FMI_OBJS:%=$(BUILDPATH)/$(FMIPATH)%)
 
 GCPATH = gc/
@@ -363,6 +363,10 @@ FMI_ME_OBJS = $(GCOBJSPATH_MINIMAL:$(BUILDPATH)/%=%) $(UTILOBJSPATH:$(BUILDPATH)
   $(BLAS_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
   $(LIBF2C_OBJS:%=./external_solvers/%$(OBJ_EXT))
 FMI_ME_OBJS_BUILDPATH = $(FMI_ME_OBJS:./external_solvers/%=$(BUILDPATH)/external_solvers/%)
+# The libOpenModelicaRuntimeC half of FMI_ME_OBJS, which is all a
+# --simCodeTarget=C+Rust FMU compiles from C; the Rust runtime replaces the rest.
+FMI_ME_RUNTIME_C_OBJS = $(GCOBJSPATH_MINIMAL:$(BUILDPATH)/%=%) $(UTILOBJSPATH:$(BUILDPATH)/%=%) \
+  meta/meta_modelica_catch$(OBJ_EXT)
 
 ALL_HEADERS = $(METAHFILESPATH) $(GCFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(GCPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/ dataReconciliation/
@@ -370,4 +374,4 @@ ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*
 
 BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) meta/meta_modelica_catch$(OBJ_EXT)
 
-COMMON_HEADERS = util/omc_msvc.h util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h
+COMMON_HEADERS = util/omc_msvc.h util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_dll.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h

@@ -48,38 +48,34 @@
 
 namespace IAEX
 {
-   /*! \class CellCommandCenter
-    *
-    * \brief Executes and store commands.
-    *
-    * This class has the responsibility of storing and executing
-    * commands. Support for undo is not implemented yet.
-    *
-    * \todo implement undo/redo functionality. This needs some changes
-    * in the command classes.(Ingemar Axelsson)
-    */
-   CellCommandCenter::CellCommandCenter(CellApplication *a) : app_(a)
-   {
-   }
+  /*! \class CellCommandCenter
+   *
+   * \brief Executes and store commands.
+   *
+   * This class has the responsibility of storing and executing
+   * commands. Support for undo is not implemented yet.
+   *
+   * \todo implement undo/redo functionality. This needs some changes
+   * in the command classes.(Ingemar Axelsson)
+   *
+   * \todo Storing commands has been removed, since it wasn't used and would
+   * need a redesign of the commands to be safe (e.g. making sure they don't
+   * contain stale references).
+   */
+  CellCommandCenter::CellCommandCenter(CellApplication *a) : app_(a)
+  {
+  }
 
-   CellCommandCenter::~CellCommandCenter()
-   {
-      storeCommands();
-   }
-
-  void CellCommandCenter::executeCommand(Command *cmd)
+  void CellCommandCenter::executeCommand(std::unique_ptr<Command> cmd)
   {
     cmd->setApplication(application());
-
-    //Save for undo redo, or atleast for printing.
-    storage_.push_back(cmd);
 
     // 2005-12-01 AF, Added try-catch and messagebox
     try
     {
       cmd->execute();
     }
-    catch( std::exception &e )
+    catch( const std::exception &e )
     {
       QString msg = e.what();
 
@@ -93,25 +89,13 @@ namespace IAEX
     }
   }
 
-   CellApplication *CellCommandCenter::application()
-   {
-      return app_;
-   }
+  CellApplication *CellCommandCenter::application()
+  {
+     return app_;
+  }
 
-   void CellCommandCenter::setApplication(CellApplication *app)
-   {
-      app_ = app;
-   }
-
-   void CellCommandCenter::storeCommands()
-   {
-      std::ofstream diskstorage("lastcommands.txt");
-
-      std::vector<Command *>::iterator i = storage_.begin();
-
-      for(;i!= storage_.end();++i)
-      {
-      diskstorage << (*i)->commandName().toStdString() << std::endl;
-      }
-   }
+  void CellCommandCenter::setApplication(CellApplication *app)
+  {
+     app_ = app;
+  }
 }

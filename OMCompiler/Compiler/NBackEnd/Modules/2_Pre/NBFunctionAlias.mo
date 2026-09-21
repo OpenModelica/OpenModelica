@@ -386,7 +386,7 @@ protected
       else
         str_lst := list((func2(Util.tuple22(tpl)), func1(Util.tuple21(tpl))) for tpl in aux_lst);
         max_length := max(stringLength(Util.tuple21(tpl)) for tpl in str_lst) + 3;
-        str := str + List.toString(str_lst, function functionAliasTplString(max_length = max_length), "", "  ", "\n  ", "\n\n");
+        str := str + List.toStringCustom(str_lst, function functionAliasTplString(max_length = max_length), "", "  ", "\n  ", "\n\n");
       end if;
   end aliasListToString;
 
@@ -814,7 +814,7 @@ protected
       // create record element variables (ignore first output since its the variable itself)
       _ :: children := Variable.expandChildren(Pointer.access(new_var), addDimensions = false);
       for child in children loop
-        (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(BVariable.makeVarPtrCyclic(child, child.name), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
+        (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(BVariable.makeVarPtr(child, child.name), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
       end for;
     elseif init then
       new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;

@@ -1,6 +1,7 @@
 // name: InvalidConnectorType4
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidConnectorType4
@@ -15,7 +16,7 @@ end InvalidConnectorType4;
 
 // Result:
 // Error processing file: InvalidConnectorType4.mo
-// [flattening/modelica/scodeinst/InvalidConnectorType4.mo:14:3-14:18:writable] Error: Cannot connect stream component c2 to non-stream component c1.
+// [flattening/modelica/scodeinst/InvalidConnectorType4.mo:15:3-15:18:writable] Error: Cannot connect stream component c2 to non-stream component c1.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

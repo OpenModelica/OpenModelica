@@ -33,5 +33,5 @@ getClassComment(OpenModelica.Scripting.loadFile);
 // "After constraint"
 // "M comment"
 // "ME comment"
-// "Loads a Modelica file (*.mo)."
+// "Loads a Modelica file (``*.mo``)."
 // endResult

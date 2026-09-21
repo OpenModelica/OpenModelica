@@ -1,0 +1,54 @@
+// name: DynamicSubscriptAliasArray
+// keywords: array alias subscript
+// status: correct
+// teardown_command: rm -rf DynamicSubscriptAliasArray_* DynamicSubscriptAliasArray DynamicSubscriptAliasArray.log DynamicSubscriptAliasArray.wasm
+//
+// A subscript only known at run time on an array whose elements alias unrelated
+// variables (a parameter and two algebraic variables), so the scalarized elements
+// are not one contiguous storage range. wasm-jit used to reject this with
+// "Internal error CodegenWasmJit: cannot resolve `s[k].v` to a simulation
+// variable".
+//
+// Only successful code generation is checked: the C code generator addresses such
+// an element relative to the first one, so `y` differs between the targets.
+
+loadString("
+model DynamicSubscriptAliasArray
+  connector Sig
+    Real v;
+    flow Real f;
+  end Sig;
+  Sig s[3];
+  parameter Real p = 10;
+  Real a, c;
+  Integer k(start = 1, fixed = true);
+  Real y;
+equation
+  a = 1 + time;
+  c = 100 + time;
+  s[1].v = a;
+  s[2].v = p;
+  s[3].v = c;
+  y = s[k].v;
+  when time > 0.3 then
+    k = 2;
+  elsewhen time > 0.6 then
+    k = 3;
+  end when;
+end DynamicSubscriptAliasArray;
+"); getErrorString();
+
+simulate(DynamicSubscriptAliasArray, stopTime = 1.0, numberOfIntervals = 4); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DynamicSubscriptAliasArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 4, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DynamicSubscriptAliasArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

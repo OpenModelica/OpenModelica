@@ -23,17 +23,27 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 # Variable for signifying that we are using the new CMake configuration.
 # We use this to selectively include some cmake source files
 # e.g. simulationRuntime/c/ has two cmake sources that are conditionally
-# included. The old (cmake 2.8) cmake source in there is used for compilation
-# of simulationruntimemsvc by the Makefile.omdev.mingw makefiles.
+# included. The old (cmake 2.8) cmake source in there is used by the legacy
+# standalone Autoconf/Make build.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.
 include(cmake/omc_utils.cmake)
+include(cmake/omc_job_server.cmake)
 include(cmake/omc_target_info.cmake)
 include(cmake/omc_check_exists.cmake)
 
 ## Get the revision info. The version is saved in the variable SOURCE_REVISION
 include(cmake/omc_git_revision.cmake)
+
+# Every configure-time download in the tree lands here. Point it outside the
+# build tree to survive a wipe, or in-source to bundle for an offline tarball.
+set(OM_DOWNLOADS_DIR "${CMAKE_BINARY_DIR}/downloads" CACHE PATH
+    "Cache for everything the configure step downloads.")
+
+# Cross-compiling to Windows (xwin toolchain): fetch PThreads4W and OpenBLAS.
+# Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).
+include(${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/Compiler/OpenModelica.rs/.cmake/windows-deps.cmake)
 
 # Include the small thread library setup we have. This provides the library
 # OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
@@ -51,9 +61,60 @@ omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_Fortran_COMPILER_ID)
 omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
+# `lib/<OM_LIBRARY_ARCH>/omc` holds what omc installs for one target. CMake fills
+# CMAKE_LIBRARY_ARCHITECTURE only where GNU multiarch applies, so Windows and macOS
+# used to flatten into lib/omc with nowhere to put another target's libraries; keep
+# the same <cpu>-<os>-<env> scheme for them.
+if(CMAKE_LIBRARY_ARCHITECTURE)
+  set(OM_LIBRARY_ARCH "${CMAKE_LIBRARY_ARCHITECTURE}")
+else()
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
+    set(_om_arch x86_64)
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+    set(_om_arch aarch64)
+  else()
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _om_arch)
+  endif()
+  if(APPLE)
+    # `universal`, not the CPU: mac-universal.sh lipos the two per-architecture
+    # trees, which only merge where their paths coincide.
+    set(OM_LIBRARY_ARCH "universal-apple-darwin")
+  elseif(WIN32 AND (MINGW OR CYGWIN))
+    set(OM_LIBRARY_ARCH "${_om_arch}-windows-gnu")
+  elseif(WIN32)
+    set(OM_LIBRARY_ARCH "${_om_arch}-windows-msvc")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Arch and friends leave CMAKE_LIBRARY_ARCHITECTURE empty; Autoconf.rs still
+    # computes <cpu>-linux-gnu, so the install has to write there.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "musl")
+      set(OM_LIBRARY_ARCH "${_om_arch}-linux-musl")
+    else()
+      set(OM_LIBRARY_ARCH "${_om_arch}-linux-gnu")
+    endif()
+  else()
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}" _om_os)
+    set(OM_LIBRARY_ARCH "${_om_arch}-${_om_os}")
+  endif()
+endif()
+omc_add_to_report(OM_LIBRARY_ARCH)
+# The name Autoconf gives it, and what every *.in in the tree interpolates.
+set(host_short ${OM_LIBRARY_ARCH})
 
 ## OPTIONS #################################################################################################
-omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+
+# Web (wasm) target: build the browser/Node WebAssembly bundle of omc. It is a
+# Rust-omc build (OM_OMC_ENABLE_RUST) compiled for wasm32-unknown-unknown, so the
+# C libraries and the *Qt* GUI clients are unused. We force Rust mode on and skip
+# the native runtime / 3rdParty / libraries / testsuite subdirectories. The Qt
+# clients (the OM_ENABLE_GUI_CLIENTS subdirs below) are guarded with NOT
+# OM_OMC_WASM rather than forcing the flag off, so OM_ENABLE_GUI_CLIENTS still
+# carries the user's intent into the wasm build — where it selects the OMShell
+# *web* pages (omshell_egui + omshell_dioxus; see omc_rust_setup_wasm). Mode/
+# profile is chosen with RUST_OMC_WASM_MODE.
+omc_option(OM_OMC_WASM "Build only the WebAssembly (browser/Node) omc bundle." OFF)
+if(OM_OMC_WASM)
+  set(OM_OMC_ENABLE_RUST ON CACHE BOOL "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." FORCE)
+endif()
 
 ## On Conda-forge this should be disabled
 omc_option(OM_MACOS_APP_BUNDLE "Build GUI clients as application bundles on macOS" ON)
@@ -61,9 +122,66 @@ mark_as_advanced(OM_MACOS_APP_BUNDLE)
 
 omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
 
-## OMOptim is the legacy optimization GUI. It is disabled by default; enable it
-## with -DOM_OMOPTIM_ENABLE=ON (requires OM_ENABLE_GUI_CLIENTS). See issue #14506.
-omc_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF)
+cmake_dependent_option(OM_ENABLE_OMSIMULATOR "Enable OMSimulator" ON "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_OMSIMULATOR)
+
+# The User's Guide is generated by running an *installed* OpenModelica, so it
+# cannot be part of 'all': build and install the project first, then build the
+# 'usersguide' target. See doc/UsersGuide/CMakeLists.txt.
+omc_option(OM_ENABLE_DOCS "Enable the User's Guide target. Needs Sphinx, pandoc, inkscape and gnuplot." OFF)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/testsuite/CMakeLists.txt")
+  set(OM_TESTSUITE_DEFAULT ON)
+else()
+  set(OM_TESTSUITE_DEFAULT OFF)
+endif()
+cmake_dependent_option(OM_ENABLE_TESTSUITE
+  "Configure the testsuite and the C runtime unit tests (testsuite-depends, ctestsuite-depends, omc-diff)."
+  ${OM_TESTSUITE_DEFAULT} "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_TESTSUITE)
+if(OM_ENABLE_TESTSUITE AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/testsuite/CMakeLists.txt")
+  message(FATAL_ERROR
+    "OM_ENABLE_TESTSUITE is ON, but ${CMAKE_CURRENT_SOURCE_DIR} has no testsuite/ "
+    "(source tarballs do not include it). Configure with -DOM_ENABLE_TESTSUITE=OFF.")
+endif()
+
+# GUI options
+omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+# Qt version (5/6) used by the GUI clients.
+set(OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
+# The Qt clients are unused in the wasm build, so force them off when OM_OMC_WASM is set.
+cmake_dependent_option(OM_ENABLE_OMSHELL    "Enable OMShell gui client"    ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMEDIT     "Enable OMEdit gui client"     ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMSENS_QT  "Enable OMSens_Qt gui client"  ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_OMSHELL)
+omc_add_to_report(OM_ENABLE_OMNOTEBOOK)
+omc_add_to_report(OM_ENABLE_OMEDIT)
+omc_add_to_report(OM_ENABLE_OMSENS_QT)
+omc_add_to_report(OM_OMOPTIM_ENABLE)
+# libomc_result is built with cargo, which a C-only toolchain does not have (the
+# OMDev Windows build is one), so both options default to whether cargo is on
+# PATH rather than to plain ON. Without it the build falls back to the C readers
+# and writers, which cannot handle .arrow. Turning either option on explicitly
+# without a cargo is still a hard error, see rust_result_reader.cmake.
+find_program(CARGO_EXECUTABLE cargo)
+if(CARGO_EXECUTABLE)
+  set(OM_RUST_RESULT_DEFAULT ON)
+else()
+  set(OM_RUST_RESULT_DEFAULT OFF)
+  message(STATUS "cargo not found: defaulting OM_RUST_RESULT_READERS/OM_RUST_RESULT_WRITERS to OFF. "
+                 "The C result readers and writers can not read or write .arrow result files; "
+                 "install a stable Rust toolchain to get them.")
+endif()
+# The GUI clients read result files through libomc_result (needs cargo); OFF
+# compiles the C readers (OM_LEGACY_RESULT_READERS), which cannot open .arrow.
+cmake_dependent_option(OM_RUST_RESULT_READERS "Read result files in the GUI clients through the Rust omc_result library." ${OM_RUST_RESULT_DEFAULT} "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+omc_add_to_report(OM_RUST_RESULT_READERS)
+# The C simulation runtime writes its result files through the same library;
+# OFF keeps the C writers, which cannot write .arrow.
+cmake_dependent_option(OM_RUST_RESULT_WRITERS "Write result files from the C simulation runtime through the Rust omc_result library." ${OM_RUST_RESULT_DEFAULT} "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_RUST_RESULT_WRITERS)
 
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
@@ -120,6 +238,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Installation configurations ###############################################################################
 # Install following GNU conventions (i.e., bin, lib, include, share ...)
+# Force CMAKE_INSTALL_LIBDIR to "lib" instead of letting GNUInstallDirs default to "lib64" on
+# RHEL-based distros (Fedora, AlmaLinux, ...). The compiler hardcodes "<omhome>/lib/..." when
+# generating linker flags for simulated models (see Settings.getInstallationDirectoryPath() usage
+# in OMCompiler/Compiler/Script/CevalScriptBackend.mo), so the install layout must match.
+set(CMAKE_INSTALL_LIBDIR "lib")
 include(GNUInstallDirs)
 
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
@@ -134,9 +257,9 @@ endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
-  cmake_path(APPEND CMAKE_INSTALL_LIBDIR "${CMAKE_LIBRARY_ARCHITECTURE}" "omc")
+  cmake_path(APPEND CMAKE_INSTALL_LIBDIR "${OM_LIBRARY_ARCH}" "omc")
 else()
-  set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/")
+  set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${OM_LIBRARY_ARCH}/omc/")
 endif()
 message(STATUS "CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
 
@@ -148,6 +271,11 @@ else()
 endif()
 message(STATUS "CMAKE_INSTALL_INCLUDEDIR: ${CMAKE_INSTALL_INCLUDEDIR}")
 
+# windows-deps.cmake deferred these until the install dirs were final.
+if(COMMAND om_windows_deps_install)
+  om_windows_deps_install()
+endif()
+
 # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
 if(APPLE)
   set(OM_MACOS_INSTALL_BUNDLEDIR "Applications/")
@@ -158,7 +286,9 @@ endif()
 if(APPLE)
   ## MacOS Bundles end up in bin/<BundleName>.app/Contents/MacOS/
   ## So make sure that the lib dir is referenced from that location as well
-  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR}")
+  # The last two are for the app bundle mac-app-bundle.sh builds; they resolve
+  # nothing in a plain unix prefix.
+  set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR};@loader_path/../Frameworks;@loader_path/../Resources/${CMAKE_INSTALL_LIBDIR}")
 else()
   set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 endif()
@@ -213,6 +343,25 @@ endif()
 ## Subdirectories ##########################################################################################
 # If asked for encryption support, add and configure the OMEncryption directory.
 if(OM_ENABLE_ENCRYPTION)
+  # OMEncryption builds OpenSSL, which is configured by a perl script that, for its MinGW
+  # targets, only accepts a perl reporting paths with forward slashes. In an MSYS2 shell the
+  # first perl in PATH is the MinGW one, which reports MSWin32 style paths and stops that
+  # configure step with "This perl implementation doesn't produce Unix like paths"; the MSYS
+  # perl, which sits in the same directory as cygpath, is the one that works. Point OMEncryption
+  # at it so the encryption build does not depend on the order of PATH. If it is not there we
+  # leave SEMLA_PERL unset and OMEncryption looks for a perl of its own. A perl given on the
+  # command line wins, and it has to be a path CMake can run, so -DSEMLA_PERL=C:/msys64/usr/bin/perl.exe
+  # rather than -DSEMLA_PERL=/usr/bin/perl.exe (an MSYS shell rewrites the latter for you).
+  if(WIN32 AND NOT MSVC AND NOT SEMLA_PERL)
+    find_program(OM_MSYS_CYGPATH NAMES cygpath)
+    mark_as_advanced(OM_MSYS_CYGPATH)
+    if(OM_MSYS_CYGPATH)
+      get_filename_component(om_msys_bin_dir "${OM_MSYS_CYGPATH}" DIRECTORY)
+      find_program(SEMLA_PERL NAMES perl HINTS "${om_msys_bin_dir}" NO_DEFAULT_PATH
+                   DOC "perl used to configure OpenSSL")
+    endif()
+  endif()
+
   omc_add_subdirectory(OMEncryption)
 endif()
 
@@ -221,32 +370,117 @@ set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
 include(CTest)
 enable_testing()
 
+# Code coverage for the compiler and the C/C++ simulation runtimes
+# (-DOM_ENABLE_COVERAGE=ON). Included ahead of the subdirectories it
+# instruments, which read OM_ENABLE_COVERAGE and OM_COVERAGE_COMPILE_OPTIONS.
+include(cmake/modules/OpenModelicaCoverage.cmake)
+
+# libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
+if(OM_RUST_RESULT_READERS OR OM_RUST_RESULT_WRITERS)
+  include(OMCompiler/Compiler/.cmake/rust_result_reader.cmake)
+  omc_result_reader_library()
+endif()
+
 omc_add_subdirectory(OMCompiler)
 
-if(OM_ENABLE_GUI_CLIENTS)
-  # select qt version 5/6
-  set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
-
-  omc_add_subdirectory(OMParser)
-  omc_add_subdirectory(OMPlot)
-  omc_add_subdirectory(OMShell)
-  omc_add_subdirectory(OMNotebook)
+if(OM_ENABLE_OMSIMULATOR)
+  # A cross toolchain re-roots DCPLib's find_path for asio into its sysroot.
+  if(CMAKE_CROSSCOMPILING)
+    set(ASIO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator/3rdParty/asio"
+        CACHE PATH "asio for OMSimulator/3rdParty/DCPLib")
+  endif()
   omc_add_subdirectory(OMSimulator)
-  omc_add_subdirectory(OMEdit)
-  omc_add_subdirectory(OMSens_Qt)
-
-  if(OM_OMOPTIM_ENABLE)
-    omc_add_subdirectory(OMOptim)
+  # ezxml.c skips <unistd.h> on _WIN32 and calls read(); clang-cl rejects that.
+  if(MSVC AND CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(fmi4c PRIVATE -Wno-implicit-function-declaration)
   endif()
 endif()
 
-omc_add_subdirectory(libraries)
-omc_add_subdirectory(testsuite)
+# OMPlot provides OMPlotLib and the omqwt target, needed by OMEdit, OMNotebook
+# and OMOptim, so build it whenever any of those clients is enabled.
+if(OM_ENABLE_OMEDIT OR OM_ENABLE_OMNOTEBOOK OR OM_OMOPTIM_ENABLE)
+  omc_add_subdirectory(OMPlot)
+endif()
+
+if(OM_ENABLE_OMEDIT)
+  omc_add_subdirectory(OMParser)
+  omc_add_subdirectory(OMEdit)
+endif()
+
+if(OM_ENABLE_OMSHELL)
+  omc_add_subdirectory(OMShell)
+endif()
+
+if(OM_ENABLE_OMNOTEBOOK)
+  omc_add_subdirectory(OMNotebook)
+endif()
+
+if(OM_ENABLE_OMSENS_QT)
+  omc_add_subdirectory(OMSens_Qt)
+endif()
+
+if(OM_OMOPTIM_ENABLE)
+  omc_add_subdirectory(OMOptim)
+endif()
+
+# The Modelica libraries and the testsuite are not part of the wasm/web bundle;
+# skip them so `make all` builds only the wasm target in that mode.
+# OM_ENABLE_TESTSUITE is forced OFF there already.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(libraries)
+endif()
+
+if(OM_ENABLE_TESTSUITE)
+  omc_add_subdirectory(testsuite)
+endif()
+
+# doc/ holds the shipped PDFs and the User's Guide, and like testsuite/ it is not in the
+# source tarballs. Unlike the testsuite it costs nothing to configure -- the expensive part,
+# the User's Guide, is already behind OM_ENABLE_DOCS -- so it needs no option of its own.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doc/CMakeLists.txt")
+  omc_add_subdirectory(doc)
+elseif(OM_ENABLE_DOCS)
+  message(FATAL_ERROR
+    "OM_ENABLE_DOCS is ON, but ${CMAKE_CURRENT_SOURCE_DIR} has no doc/ "
+    "(source tarballs do not include it). Configure with -DOM_ENABLE_DOCS=OFF.")
+endif()
 
 ## Packaging ##########################################################################################
+# Settings that hold for every package generator. These have to be set *before*
+# include(CPack) below, which is what writes them into CPackConfig.cmake -- and which also
+# derives CPACK_PACKAGE_FILE_NAME from the name and the version, so setting them later (in
+# the project config file) would leave that name built from CPack's own 0.1.1 default.
+# Generator-specific settings go in OpenModelicaCPackOptions.in.cmake instead: that one is
+# read by cpack once per generator, with CPACK_GENERATOR set.
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VENDOR "Open Source Modelica Consortium")
+set(CPACK_PACKAGE_CONTACT "openmodelica@openmodelica.org")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/OSMC-License.txt")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_BINARY_DIR}/_packages")
+set(CPACK_VERBATIM_VARIABLES ON)
+
+# OM_PACKAGE_VERSION is empty when the source tree has no version to derive one from; see
+# cmake/omc_git_revision.cmake. Leave CPack's defaults alone in that case rather than
+# writing an unusable version into the config -- the DEB and RPM generators refuse to run
+# on it, and the others (TGZ, the developer's `cpack` on a shallow clone) still work.
+if(OM_PACKAGE_VERSION)
+  set(CPACK_PACKAGE_VERSION ${OM_PACKAGE_VERSION})
+  set(CPACK_PACKAGE_VERSION_MAJOR ${OM_PACKAGE_VERSION_MAJOR})
+  set(CPACK_PACKAGE_VERSION_MINOR ${OM_PACKAGE_VERSION_MINOR})
+  set(CPACK_PACKAGE_VERSION_PATCH ${OM_PACKAGE_VERSION_PATCH})
+endif()
+
 # Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.
 # This will generate the output file in the build directory.
-configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
+#
+# @ONLY: cpack runs this file itself, long after this configure, with the CPACK_ variables
+# from CPackConfig.cmake in scope. Only what cpack cannot know -- our version, our source
+# directory -- is substituted here, as @VAR@; a ${VAR} is left for cpack to expand. Without
+# @ONLY every ${CPACK_...} reference in there would be replaced by whatever it happened to
+# hold at configure time, which is how CPACK_DEBIAN_PACKAGE_MAINTAINER used to end up as
+# "OpenModelica Build System <>".
+configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake @ONLY)
 # Tell CPack to use this configured file when it is invoked to create packages.
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
 # Tell CPack about our components (dispaly names, descriptions, dependencies ...)

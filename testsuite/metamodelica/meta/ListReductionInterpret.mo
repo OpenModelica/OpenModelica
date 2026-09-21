@@ -2,6 +2,7 @@
 // cflags: +g=MetaModelica +d=nogen -d=-newInst
 // status: correct
 // teardown_command: rm -rf ListReduction_*
+// suite: metamodelica
 
 class ListReduction
   function myMin

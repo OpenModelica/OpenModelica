@@ -1,6 +1,7 @@
 // name: InvalidExpandableConnector1
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 
@@ -20,7 +21,7 @@ end InvalidExpandableConnector1;
 
 // Result:
 // Error processing file: InvalidExpandableConnector1.mo
-// [InvalidExpandableConnector1.mo:19:3-19:17:writable] Error: Cannot connect expandable connector ec with non-expandable connector c.
+// [InvalidExpandableConnector1.mo:20:3-20:17:writable] Error: Cannot connect expandable connector ec with non-expandable connector c.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

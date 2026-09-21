@@ -20,7 +20,7 @@ system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" QuotedIdentifier_mo
 readFile("QuotedIdentifier_modelDescription.xml");
 
 // Simulate with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator QuotedIdentifier.fmu --mode=me --tolerance=1e-6 --resultFile=\"QuotedIdentifier_dynamic_res.mat\" --stopTime=1.0 --suppressPath=true --tempDir=\"QuotedIdentifier-dynamic-tmp\"", "QuotedIdentifier_me_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator QuotedIdentifier.fmu --mode=me --tolerance=1e-6 --resultFile=\"QuotedIdentifier_dynamic_res.mat\" --stopTime=1.0 --stripRoot --suppressPath --tempDir=\"QuotedIdentifier-dynamic-tmp\"", "QuotedIdentifier_me_systemCall.log"); getErrorString();
 readFile("QuotedIdentifier_me_systemCall.log");
 
 
@@ -29,7 +29,9 @@ readFile("QuotedIdentifier_me_systemCall.log");
 // ""
 // true
 // "QuotedIdentifier.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0
@@ -165,9 +167,16 @@ readFile("QuotedIdentifier_me_systemCall.log");
 // "
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.002000
-// info:    Result file: QuotedIdentifier_dynamic_res.mat (bufferSize=1)
-// info:    Final Statistics for 'model.root':
+// "info: *** FMU Simulation Info ***
+//      - model     : QuotedIdentifier (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
+// info:    maximum step size for 'QuotedIdentifier.root': 0.002000
+// info:    Result file: QuotedIdentifier_dynamic_res.mat (bufferSize=10)
+// info:    Final Statistics for 'QuotedIdentifier.root':
 //          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
 //          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "

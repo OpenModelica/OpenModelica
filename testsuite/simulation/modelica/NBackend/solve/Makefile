@@ -2,6 +2,8 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 solveCallExp.mos \
+scalarFromArrayEquation.mos \
+scalarFromSingleElementArray.mos \
 solveCallTan.mos \
 solveForLoop.mos \
 solveMultaryBinary.mos \
@@ -49,4 +51,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

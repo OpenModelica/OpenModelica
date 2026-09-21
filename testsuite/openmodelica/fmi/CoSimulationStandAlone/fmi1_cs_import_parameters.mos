@@ -1,0 +1,61 @@
+// name:     fmi1_cs_import_parameters
+// keywords: fmi import co-simulation parameter
+// status:   correct
+// teardown_command: rm -rf vanDerPol_cs_st_FMU.mo binaries sources documentation resources model.png modelDescription.xml vanDerPol.log vanDerPol_info.json output.log
+// cflags:   -d=-newInst
+//
+// importFMU1CoSimulationStandAlone computed all sixteen parameter bindings and then never
+// referenced a single one of them, so an imported FMI 1.0 Co-Simulation FMU was never told
+// about its parameters: a modifier on the wrapper was silently dropped and the FMU kept
+// running with its own defaults. The Model Exchange templates have always emitted these
+// setters, and #16354 fixed the order in which they run.
+//
+// vanDerPol declares mu as a parameter with start="1" and value reference 4. The setter has
+// to be emitted, and it has to run before fmi1InitializeSlave, otherwise the FMU computes
+// its calculated parameters from the default values instead.
+//
+// OpenModelica cannot export FMI 1.0 Co-Simulation FMUs, so this imports one of the FMUs
+// that ship with the testsuite. Only the generated wrapper is inspected, never simulated,
+// so the win32-only binaries inside the FMU do not matter.
+//
+
+importFMU("testedFMU/fmusdk1.0.2/vanDerPol.fmu"); getErrorString();
+
+// the parameter reaches the FMU at all
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "flowParamsStart := fmi1Functions\\.fmi1SetRealParameter\\(fmi1cs, \\{4\\.0\\}, \\{mu\\}\\);", 1, true, false);
+
+// and it reaches it before the slave is initialized, the second one being the same two
+// statements the other way around so that the order is really what is being asserted
+regexBool(readFile("vanDerPol_cs_st_FMU.mo"), "fmi1SetRealParameter\\(fmi1cs, \\{4\\.0\\}, \\{mu\\}\\);\n[^\n]*flowInitialized := fmi1Functions\\.fmi1InitializeSlave\\(fmi1cs, flowParamsStart\\);");
+regexBool(readFile("vanDerPol_cs_st_FMU.mo"), "fmi1InitializeSlave\\(fmi1cs, flowParamsStart\\);\n[^\n]*fmi1SetRealParameter\\(fmi1cs, \\{4\\.0\\}, \\{mu\\}\\);");
+
+// the four helpers the setters call, none of which existed in this package before
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "function fmi1SetRealParameter", 1, true, false);
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "function fmi1SetIntegerParameter", 1, true, false);
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "function fmi1SetBooleanParameter", 1, true, false);
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "function fmi1SetStringParameter", 1, true, false);
+
+// the wrapper is still a well formed model
+loadFile("vanDerPol_cs_st_FMU.mo"); getErrorString();
+checkModel(vanDerPol_cs_st_FMU); getErrorString();
+
+// Result:
+// "vanDerPol_cs_st_FMU.mo"
+// "Warning: module = fmi1_xml_get_default_experiment_start: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// Warning: module = fmi1_xml_get_default_experiment_stop: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// Warning: module = fmi1_xml_get_default_experiment_tolerance: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// "
+// (1, {"flowParamsStart := fmi1Functions.fmi1SetRealParameter(fmi1cs, {4.0}, {mu});"})
+// true
+// false
+// (1, {"function fmi1SetRealParameter"})
+// (1, {"function fmi1SetIntegerParameter"})
+// (1, {"function fmi1SetBooleanParameter"})
+// (1, {"function fmi1SetStringParameter"})
+// true
+// ""
+// "Check of vanDerPol_cs_st_FMU completed successfully.
+// Class vanDerPol_cs_st_FMU has 5 equation(s) and 5 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

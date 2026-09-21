@@ -322,6 +322,11 @@ void Peer::ros2(double * y, double& tstart, double tend, IContinuous *continuous
         dgetrs_(&trans, &_dimSys, &dim, T, &_dimSys, P, k2, &_dimSys, &info);
         for(int i=0; i<_dimSys;++ i) y[i]+=0.5*hu*(k1[i]+k2[i]);
     }
+    delete [] T;
+    delete [] D;
+    delete [] k1;
+    delete [] k2;
+    delete [] P;
 }
 
 void Peer::solve(const SOLVERCALL action)

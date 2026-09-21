@@ -42,6 +42,7 @@
 
 #include "ShapeAnnotation.h"
 #include "LineAnnotation.h"
+#include <QRegularExpression>
 
 class Element;
 class TextAnnotation : public ShapeAnnotation
@@ -80,7 +81,7 @@ private:
   ModelInstance::Text *mpText;
 
   void initUpdateTextString();
-  void updateTextStringHelper(QRegExp regExp);
+  void updateTextStringHelper(QRegularExpression regExp);
 public slots:
   void updateTextString(const QString &textString = QString());
 };

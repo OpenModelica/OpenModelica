@@ -1,3 +1,0 @@
-OMC=OPENMODELICAHOME=$(OMBUILDDIR) $(OMBUILDDIR)/bin/omc -d=failtrace
-
-include Makefile.common

@@ -2,6 +2,7 @@
 // keywords: synchronous clocked equations
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 
 loadModel(Modelica, languageStandard="3.3");getErrorString();
 

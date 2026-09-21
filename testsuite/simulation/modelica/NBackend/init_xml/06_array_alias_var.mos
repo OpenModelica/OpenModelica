@@ -2,6 +2,8 @@
 // keywords: NewBackend
 // status: correct
 // teardown_command: rm -f *ArrayAliasVar*
+// suite: cSources
+// suite: disabled
 //
 // Check if init XML generates correct alias variable ID for alias variable
 // withing an array and array alias variables.

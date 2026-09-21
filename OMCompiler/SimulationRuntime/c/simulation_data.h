@@ -151,15 +151,22 @@ typedef enum
  * CSC uses column coloring and CSR uses row coloring.
  * leadindex: size nCols+1 (CSC) or nRows+1 (CSR)
  */
+typedef enum
+{
+  OMC_MATRIX_DENSE = 0,       /* the backend chose a dense factorization */
+  OMC_MATRIX_SPARSE           /* the backend chose a sparse factorization */
+} SOLVER_MATRIX_FORMAT;
+
 typedef struct SPARSE_PATTERN
 {
   /* Primary CSC/CSR representation */
   unsigned int nnz;               /* Number of non-zero elements in matrix, length of array index */
-  unsigned int* leadindex;        /* Array with column/row indices, size nCols+1/nRows+1 */
+  unsigned int* leadindex;        /* Array with column/row indices, size sizeCols+1/nRows+1 */
   unsigned int* index;            /* Array with number of non-zeros indices */
   unsigned int* colorCols;        /* Color coding of columns/rows. First color is `1`, second is `2`, ...
-                                   * Length of array is nCols/nRows */
+                                   * Length of array is sizeCols/nRows */
   unsigned int maxColors;         /* Number of colors */
+  unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
 } SPARSE_PATTERN;
 
 /* NONLINEAR_PATTERN
@@ -202,8 +209,22 @@ typedef struct JACOBIAN
   EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
-  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
-                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
+  modelica_boolean isRowEval;           /* Flag indicating that evalColumn evaluates rows of the represented
+                                           Jacobian J instead of columns (adjoint / reverse mode).
+                                           In that case the struct describes the transpose J^T, i.e.
+                                           sizeCols == number of rows of J    (number of seeds),
+                                           sizeRows == number of columns of J (number of results) and
+                                           sparsePattern is CSC of J^T (== CSR of J) with row coloring. */
+  SPARSE_PATTERN* cscPattern;           /* Column oriented (CSC of J) view of a row evaluated Jacobian.
+                                           Lazily created by getJacobianCscPattern(), owned. NULL otherwise.
+                                           TODO: Is this needed? */
+  /* Bidirectional (star bicoloring) support */
+  modelica_boolean isBidirectional;     /* Runtime switch: evaluate this Jacobian bidirectionally (column + row phase).
+                                           Only allowed if adjointJacobian is set. */
+  struct JACOBIAN* adjointJacobian;     /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
+  unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
+                                           corresponding CSC (column oriented) nz positions of J. Size nnz. */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -248,6 +269,9 @@ typedef struct DATA_ALIAS
   enum ALIAS_TYPE aliasType;           /* 0 variable, 1 parameter, 2 time */
   VAR_INFO info;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
+  modelica_string unit;                /* an alias declares its own unit, */
+  modelica_string displayUnit;         /* displayUnit and relativeQuantity; */
+  modelica_boolean relativeQuantity;   /* only Reals have them */
 } DATA_ALIAS;
 
 typedef DATA_ALIAS DATA_REAL_ALIAS;
@@ -266,6 +290,7 @@ typedef struct REAL_ATTRIBUTE
 {
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
+  modelica_boolean relativeQuantity;   /* = false; a difference, so a conversion adds no offset */
   real_array min;                      /* = {-Inf} */
   real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
@@ -294,7 +319,7 @@ typedef struct STRING_ATTRIBUTE
 } STRING_ATTRIBUTE;
 
 /* Model dimension structures */
-enum DIMENSION_ATTRIBUTE_TYPE{
+enum DIMENSION_ATTRIBUTE_TYPE {
   DIMENSION_BY_START = 0,               /* dimension defined by start */
   DIMENSION_BY_VALUE_REFERENCE = 1      /* dimension defined by value reference of structural parameter */
 };
@@ -398,7 +423,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_integer jacobianIndex;
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
-  modelica_boolean isPatternAvailable;
   NONLINEAR_PATTERN *nonlinearPattern;
   int *eqn_simcode_indices;
   modelica_integer torn_plus_residual_size;
@@ -411,6 +435,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*getIterationVars)(DATA* data, double* array);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
+  SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
   NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
   NLS_LS nlsLinearSolver;              /* nls linear solver */
@@ -444,27 +469,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
 typedef void* NONLINEAR_SYSTEM_DATA;
 #endif
 
-typedef struct LINEAR_SYSTEM_THREAD_DATA
-{
-  void *solverData[2];                 /* [1] is the totalPivot solver
-                                          [0] holds other solvers
-                                          both are used for the default solver */
-  modelica_real *x;                    /* solution vector x */
-  modelica_real *A;                    /* matrix A */
-  modelica_real *b;                    /* vector b */
-
-  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
-  JACOBIAN* jacobian;                  /* jacobian */
-
-  /* Statistics for each thread */
-  unsigned long numberOfCall;          /* number of solving calls of this system */
-  unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
-  unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
-  double totalTime;                    /* save the totalTime */
-  rtclock_t totalTimeClock;            /* time clock for the totalTime */
-  double jacobianTime;                 /* save the time to calculate jacobians */
-} LINEAR_SYSTEM_THREAD_DATA;
-
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 struct LINEAR_SYSTEM_DATA;
 typedef struct LINEAR_SYSTEM_DATA LINEAR_SYSTEM_DATA;
@@ -495,18 +499,24 @@ typedef struct LINEAR_SYSTEM_DATA
 
   modelica_integer method;             /* 0: No Jacobain created for linear system
                                         * 1: Symbolic Jacobian available for linear system */
-  modelica_boolean useSparseSolver;    /* true if sparse solver is used */
+  SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
+  modelica_boolean useSparseSolver;    /* matrixFormat, unless no sparse solver was built in */
 
-  LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
+  /* working data of the solver */
+  void *solverData[2];                 /* [1] is the totalPivot solver
+                                          [0] holds other solvers
+                                          both are used for the default solver */
+  modelica_real *A;                    /* matrix A */
+  modelica_real *b;                    /* vector b */
+  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
+  JACOBIAN* jacobian;                  /* jacobian */
 
-  // ToDo: Gather information from all threads if in parallel region
   modelica_boolean solved;             /* true if solved in current step */
   modelica_boolean failed;             /* true if failed while last try with lapack */
 
   modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
                                           false if `-lv_system` is specified but equationIndex is not in the list, else true */
 
-  // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
   unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
@@ -778,6 +788,12 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
 
   modelica_real oldPosX;
 
+  modelica_boolean startPosXSet;  /* true once startPosX has been captured */
+  modelica_real startPosX;        /* value of x at the first call; x is shifted by
+                                     this so the operator always starts at x = 0.
+                                     Only the change of x (transport distance)
+                                     matters, so a nonzero start value of x is fine. */
+
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;
   int lastStoredEventValue;
@@ -822,6 +838,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean terminal;           /* true at the end of the simulation */
   modelica_boolean discreteCall;       /* true for a discrete step */
   modelica_boolean needToIterate;      /* true if reinit has been activated, iteration about the system is needed */
+  modelica_boolean discreteStateChanged; /* true if the last updateDiscreteSystem moved a discrete variable or a relation */
   modelica_boolean simulationSuccess;  /* =0 the simulation run successful, otherwise an error code is set */ // FIXME why is this a boolean?
   modelica_boolean sampleActivated;    /* true if a sample expresion is going to be actived */
   modelica_boolean solveContinuous;    /* true during continuous integration to avoid zero-crossings jumps */
@@ -924,6 +941,8 @@ typedef struct SIMULATION_INFO
   int* sensitivityParList;             /* used by integrator for sensitivity mode */
 
   JACOBIAN* analyticJacobians;          // TODO Only store information for Jacobian used by integrator here
+  JACOBIAN* odeJacobian;                /* Symbolic ODE Jacobian selected by the integrator (forward A or adjoint ADJ).
+                                           Set by initSymbolicOdeJacobian(), NULL before. Not owned. */
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData; /* Array of non-linear systems */
 

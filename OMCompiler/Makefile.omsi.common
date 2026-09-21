@@ -8,7 +8,7 @@ CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE)
 
 CMAKE_CALL=$(CMAKE) .. -G $(CMAKE_TARGET) -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DCMAKE_INSTALL_LIBDIR=$(LIB_OMC) && $(CMAKE) --build .
 
-.PHONY: OMSIBaseClean OMSICClean OMSIBaseMSVC OMSI OMSIBaseInstall OMSICInstall OMSI-clean OMSICClean OMSICPP OMSICPPinstall
+.PHONY: OMSIBaseClean OMSICClean OMSI OMSIBaseInstall OMSICInstall OMSI-clean OMSICClean OMSICPP OMSICPPinstall
 
 
 #############################
@@ -37,11 +37,6 @@ OMSIBaseInstall: $(SUNDIALS_TARGET) fmil
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 		 $(CMAKE_CALL); \
 	   $(MAKE) install);)
-
-OMSIBaseMSVC: fmil_msvc sundials_msvc
-	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
-	# move folder to build dir
-	cp -R --verbose SimulationRuntime/OMSI/Build_MSVC/tmp/* $(builddir_build)
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \

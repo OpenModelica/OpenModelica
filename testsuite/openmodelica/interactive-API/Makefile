@@ -36,8 +36,11 @@ CopyClass5.mos \
 CopyClass6.mos \
 CopyClass7.mos \
 CopyClass8.mos \
+CopyClass9.mos \
+CopyClass10.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
+daeModeHomotopy.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
@@ -72,6 +75,7 @@ getIconAnnotation.mos \
 getInheritedClasses1.mos \
 getInheritedClasses2.mos \
 getInheritedClasses3.mos \
+getModelFigures1.mos \
 getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
@@ -80,6 +84,7 @@ GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \
+getSimulationOptions4.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\
@@ -143,6 +148,7 @@ setExtendsModifierValue.mos \
 setExtendsModifier.mos \
 setParameterValue.mos \
 setSourceFileListFile.mos \
+setSourceFileMergeAST.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
 StateMachine.mos \
@@ -173,7 +179,8 @@ UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
-Issue14178.mos
+Issue14178.mos \
+Issue16096.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -222,4 +229,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

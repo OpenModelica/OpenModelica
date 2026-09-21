@@ -54,6 +54,7 @@ encapsulated package Interactive
 import Absyn;
 import ProgramUtil;
 import AbsynUtil;
+import Builtin;
 import ConnectionGraph;
 import DAE;
 import FCore;
@@ -713,6 +714,40 @@ algorithm
     outString := "";
   end try;
 end evaluateExprToStr;
+
+public function simulateModel
+  "simulate() against the builtin graph, not the O(program-size) env; empty/non-positive args dropped."
+  input String className;
+  input Real stopTime;
+  input Integer numberOfIntervals;
+  input Real tolerance;
+  input String method;
+  input String simflags;
+  output String result;
+protected
+  list<Absyn.NamedArg> nargs = {};
+  Absyn.Exp callExp;
+  FCore.Graph env;
+  FCore.Cache cache;
+  DAE.Exp sexp;
+  Values.Value value;
+algorithm
+  try
+    if not stringEmpty(simflags) then nargs := Absyn.NAMEDARG("simflags", Absyn.STRING(simflags)) :: nargs; end if;
+    if not stringEmpty(method) then nargs := Absyn.NAMEDARG("method", Absyn.STRING(method)) :: nargs; end if;
+    if tolerance > 0.0 then nargs := Absyn.NAMEDARG("tolerance", Absyn.REAL(realString(tolerance))) :: nargs; end if;
+    if numberOfIntervals > 0 then nargs := Absyn.NAMEDARG("numberOfIntervals", Absyn.INTEGER(numberOfIntervals)) :: nargs; end if;
+    if stopTime > 0.0 then nargs := Absyn.NAMEDARG("stopTime", Absyn.REAL(realString(stopTime))) :: nargs; end if;
+    callExp := Absyn.CALL(Absyn.CREF_IDENT("simulate", {}),
+      Absyn.FUNCTIONARGS({Absyn.CREF(AbsynUtil.pathToCref(Parser.stringPath(className)))}, nargs), {});
+    (_, env) := Builtin.initialGraph(FCore.emptyCache());
+    (cache, sexp, _) := StaticScript.elabExp(FCore.emptyCache(), env, callExp, true, true, DAE.NOPRE(), Absyn.dummyInfo);
+    (_, value) := CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(Absyn.dummyInfo), 0);
+    result := ValuesDump.valString(value);
+  else
+    result := "";
+  end try;
+end simulateModel;
 
 protected function makeTupleCrefs
   input list<Absyn.Exp> inCrefs;
@@ -2113,53 +2148,15 @@ algorithm
 end restComponentReplacementRules;
 
 protected function getComponentsWithType
-"author: x02lucpo
- extracts all the components that have the type"
+  "extracts all the components that have the type"
   input InteractiveTypes.Components inComponents;
   input Absyn.Path inPath;
   output InteractiveTypes.Components outComponents;
+protected
+  list<InteractiveTypes.Component> comps;
 algorithm
-  outComponents:=
-  matchcontinue (inComponents,inPath)
-    local
-      InteractiveTypes.Components comps,res,comps_1,comps_2;
-      InteractiveTypes.Component comp;
-      Absyn.Path comp_path,path;
-    case (comps,_) /* rule  Absyn.path_string(path) => comp_path & print \"extracting comps for: \" & print comp_path & print \"\\n\" & int_eq(1,2) => true --------------------------- get_components_with_type(comps,path) => comps */
-      algorithm
-        true := emptyComponents(comps);
-      then
-        InteractiveTypes.COMPONENTS({},0);
-    case (comps,path)
-      algorithm
-        comp as InteractiveTypes.COMPONENTITEM(_,comp_path,_) := firstComponent(comps);
-        true := AbsynUtil.pathEqual(comp_path, path);
-        res := restComponents(comps);
-        comps_1 := getComponentsWithType(res, path);
-        comps_2 := addComponentToComponents(comp, comps_1);
-      then
-        comps_2;
-    case (comps,path)
-      algorithm
-        comp as InteractiveTypes.EXTENDSITEM(_,comp_path) := firstComponent(comps);
-        true := AbsynUtil.pathEqual(comp_path, path);
-        res := restComponents(comps);
-        comps_1 := getComponentsWithType(res, path);
-        comps_2 := addComponentToComponents(comp, comps_1);
-      then
-        comps_2;
-    case (comps,path)
-      algorithm
-        res := restComponents(comps);
-        comps_1 := getComponentsWithType(res, path);
-      then
-        comps_1;
-    else
-      algorithm
-        print("-get_components_with_type failed\n");
-      then
-        InteractiveTypes.COMPONENTS({},0);
-  end matchcontinue;
+  comps := list(comp for comp guard AbsynUtil.pathEqual(inPath, componentTypePath(comp)) in inComponents.componentLst);
+  outComponents := InteractiveTypes.COMPONENTS(comps, listLength(comps));
 end getComponentsWithType;
 
 protected function extractAllComponents
@@ -2594,6 +2591,16 @@ algorithm
         InteractiveTypes.COMPONENTS((comp :: comps),len_1);
   end match;
 end addComponentToComponents;
+
+function componentTypePath
+  input InteractiveTypes.Component comp;
+  output Absyn.Path path;
+algorithm
+  path := match comp
+    case InteractiveTypes.COMPONENTITEM() then comp.the2;
+    case InteractiveTypes.EXTENDSITEM() then comp.the2;
+  end match;
+end componentTypePath;
 
 protected function isParameterElement
 " Returns true if Element is a component of
@@ -3326,7 +3333,9 @@ algorithm
         cdef := ProgramUtil.getPathedClassInProgram(path, p);
         within_ := ProgramUtil.buildWithin(path);
         cdef_1 := AbsynUtil.setClassFilename(cdef, filename);
-        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        // relocating the class to another file is the whole point here, so the
+        // replacement must be allowed to bring the new file name along
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p, allowFilenameChange = true);
       then
         (true,newp);
     else (false,inProgram);
@@ -4482,7 +4491,7 @@ protected
 algorithm
   str := match cdef
     case Absyn.DERIVED(typeSpec = Absyn.TPATH(arrayDim = SOME(ad)))
-      then List.toString(ad, Dump.printSubscriptStr, "", "{", ",", "}");
+      then List.toString(ad, Dump.printSubscriptStr, List.Style.FLAT_CURLY);
     else "{}";
   end match;
 end getClassDimensions;
@@ -9692,7 +9701,10 @@ end transformFlatElseIfAlgorithm;
 
 public function getDefinitions
 "This function dumps the defined packages, classes and functions to a string.
- The function is used by org.openmodelica.corba.parser.DefinitionsCreator."
+ The function is used by org.openmodelica.corba.parser.DefinitionsCreator in the
+ Java interface, which parses the string returned here. The corba in that package
+ name is historical and does not imply a CORBA connection; OpenModelica no longer
+ has a CORBA interface."
   input  Absyn.Program ast "The AST to dump";
   input  Boolean addFunctions;
   output Values.Value res "An easily parsed string containing all definitions";

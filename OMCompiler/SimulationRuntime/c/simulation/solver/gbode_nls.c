@@ -78,18 +78,16 @@ void GB_KINErrHandler(int error_code, const char *module, const char *function, 
  */
 void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
 {
-  for (int i = 0; i < nonlinsys->size; i++) {
-    // Get the nominal values of the states
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
-    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
-    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
-  }
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  assertStreamPrint(threadData, gbData != NULL && gbData->nominals != NULL && gbData->mins != NULL && gbData->maxs != NULL,
+                    "initializeStaticNLSData_SR: GBODE scalar metadata cache is not available.");
 
-  /* Initialize sparsity pattern */
+  memcpy(nonlinsys->nominal, gbData->nominals, nonlinsys->size * sizeof(double));
+  memcpy(nonlinsys->min, gbData->mins, nonlinsys->size * sizeof(double));
+  memcpy(nonlinsys->max, gbData->maxs, nonlinsys->size * sizeof(double));
+
   if (initSparsePattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
-    nonlinsys->isPatternAvailable = TRUE;
+    nonlinsys->sparsePattern = gbData->sparsePattern_NLS;
   }
 }
 
@@ -105,19 +103,17 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
  */
 void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
 {
-  // This needs to be done each time, the fast states change!
-  for (int i = 0; i < nonlinsys->size; i++) {
-    // Get the nominal values of the states
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
-    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
-    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
-    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
-  }
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  assertStreamPrint(threadData, gbData != NULL && gbData->nominals != NULL && gbData->mins != NULL && gbData->maxs != NULL,
+                    "initializeStaticNLSData_MR: GBODE scalar metadata cache is not available.");
 
-  /* Initialize sparsity pattern, First guess (all states are fast states) */
+  // Initial full-state ordering; fast-state updates remap the arrays in gbodef_main.
+  memcpy(nonlinsys->nominal, gbData->nominals, nonlinsys->size * sizeof(double));
+  memcpy(nonlinsys->min, gbData->mins, nonlinsys->size * sizeof(double));
+  memcpy(nonlinsys->max, gbData->maxs, nonlinsys->size * sizeof(double));
+
   if (initSparsePattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
-    nonlinsys->isPatternAvailable = TRUE;
+    nonlinsys->sparsePattern = gbData->gbfData->sparsePattern_NLS;
   }
 }
 
@@ -133,20 +129,20 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
  */
 void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
 {
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  assertStreamPrint(threadData, gbData != NULL && gbData->nominals != NULL && gbData->mins != NULL && gbData->maxs != NULL,
+                    "initializeStaticNLSData_IRK: GBODE scalar metadata cache is not available.");
 
   for (int i = 0; i < nonlinsys->size; i++) {
-    // Get the nominal values of the states, the non-linear system has size stages*nStates, i.e. [states, states, ...]
+    // non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
-    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
-    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, ii);
-    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, ii);
+    nonlinsys->nominal[i] = gbData->nominals[ii];
+    nonlinsys->min[i]     = gbData->mins[ii];
+    nonlinsys->max[i]     = gbData->maxs[ii];
   }
 
-  /* Initialize sparsity pattern */
   if (initSparsePattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-    nonlinsys->isPatternAvailable = TRUE;
+    nonlinsys->sparsePattern = gbData->sparsePattern_NLS;
   }
 }
 
@@ -192,6 +188,7 @@ void freeNlsDataGB(NONLINEAR_SYSTEM_DATA* nlsData)
   free(nlsData->nominal);
   free(nlsData->min);
   free(nlsData->max);
+  /* sparsePattern is a view of DATA_GBODE / DATA_GBODEF. */
   free(nlsData);
 }
 
@@ -215,6 +212,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
   nlsData = allocNlsDataGB(threadData, gbData->nlSystemSize);
   nlsData->equationIndex = -1;
+
+  modelica_boolean useInternal = gbData->nlsSolverMethod == GB_NLS_INTERNAL;
 
   switch (gbData->type)
   {
@@ -255,10 +254,18 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbData->type);
   }
 
-  nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
+  nlsData->initializeStaticNLSData(data, threadData, nlsData, !useInternal, TRUE);
 
-  gbData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
-  initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
+  if (!useInternal)
+  {
+    gbData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
+    initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
+  }
+  else
+  {
+    /* internal NLS uses its own Jacobian data. */
+    gbData->jacobian = NULL;
+  }
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -278,30 +285,30 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case GB_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_KINSOL_B:
     nlsData->nlsMethod = NLS_KINSOL_B;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
     nlsData->nlsMethod = NLS_NONE;
     nlsData->nlsLinearSolver = LS_NONE;
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, FALSE);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -330,7 +337,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   NONLINEAR_SYSTEM_DATA* nlsData;
 
-  nlsData = allocNlsDataGB(threadData, gbfData->nStates);
+  nlsData = allocNlsDataGB(threadData, gbfData->nlSystemSize);
   nlsData->equationIndex = -1;
 
   switch (gbfData->type)
@@ -358,17 +365,16 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
     break;
   case GM_TYPE_IMPLICIT:
-    // Only works for -gbnls=internal (error should be caught beforehand, if we are not in -gbnls=internal)
-    // As -gbnls=internal does all the stuff from scratch and only really requires the nlsxOld, nlsxExtrapolation and nlsx fields
-    // we must do nothing here except set that pattern is available
-    nlsData->isPatternAvailable = TRUE;
+    /* Fully implicit MR uses the internal method and the GBODEF I + J pattern. */
     nlsData->initializeStaticNLSData = NULL;
     break;
   default:
     throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbfData->type);
   }
 
-  if (nlsData->initializeStaticNLSData) nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
+  if (nlsData->initializeStaticNLSData) {
+    nlsData->initializeStaticNLSData(data, threadData, nlsData, gbfData->nlsSolverMethod != GB_NLS_INTERNAL, TRUE);
+  }
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
@@ -393,30 +399,30 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case GB_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_KINSOL_B:
     nlsData->nlsMethod = NLS_KINSOL_B;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
     nlsData->nlsMethod = NLS_NONE;
     nlsData->nlsLinearSolver = LS_NONE;
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, TRUE);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, TRUE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;

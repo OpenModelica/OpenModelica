@@ -14,6 +14,7 @@ minArr.mos \
 parameterIndex.mos \
 parameterSystem.mos \
 partitioning.mos \
+promotePreferStates.mos \
 simpleForLoop.mos \
 simpleNonlinearLoop.mos \
 solveSingleEquation.mos \
@@ -63,4 +64,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

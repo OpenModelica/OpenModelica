@@ -42,6 +42,7 @@ import DAE;
 import Expression = NFExpression;
 import NFCallAttributes;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import NFPrefixes.{Variability, Purity};
 import Type = NFType;
 import Record = NFRecord;
@@ -91,14 +92,15 @@ public
     ComponentRef ref;
     list<Expression> arguments;
     list<NamedArg> named_args;
-    InstNode call_scope;
+    NFInstNode.ScopeRef call_scope "Weakly: the scope owns the class this call
+      sits in.";
   end UNTYPED_CALL;
 
   record ARG_TYPED_CALL
     ComponentRef ref;
     list<TypedArg> positional_args;
     list<TypedArg> named_args;
-    InstNode call_scope;
+    NFInstNode.ScopeRef call_scope "See UNTYPED_CALL.call_scope.";
   end ARG_TYPED_CALL;
 
   record TYPED_CALL
@@ -272,8 +274,24 @@ public
         outExp := Expression.CALL(ty_call);
       end if;
       outExp := Inline.inlineCallExp(outExp);
+
+      // The parameters of a partial function are boxed, so calling a functional
+      // input argument gives a boxed value. Unbox it here so the rest of the
+      // expression sees the actual type, otherwise the boxed type leaks into
+      // e.g. array constructors and reductions and gives invalid code.
+      if Type.isBoxed(ty) and isUnboxableType(Type.unbox(ty)) and
+         Function.isFunctionPointer(typedFunction(ty_call)) then
+        ty := Type.unbox(ty);
+        outExp := Expression.UNBOX(outExp, ty);
+      end if;
     end if;
   end typeCallExp;
+
+  function isUnboxableType
+    "Returns true for the types that the code generator knows how to unbox."
+    input Type ty;
+    output Boolean unboxable = Type.isScalarBuiltin(ty) or Type.isRecord(ty);
+  end isUnboxableType;
 
   function typeNormalCall
     input output NFCall call;
@@ -371,7 +389,7 @@ public
     list<Expression> args;
     list<TypedArg> typed_args;
     MatchedFunction matchedFunc;
-    InstNode scope;
+    NFInstNode.ScopeRef scope;
     Variability var, arg_var;
     Purity pur, arg_pur;
     Type ty;
@@ -605,8 +623,8 @@ public
     isConstructor := match call
       case UNTYPED_CALL()
         then SCodeUtil.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
-      case TYPED_CALL() guard(not InstNode.isEmpty(call.fn.node))
-        then SCodeUtil.isRecord(InstNode.definition(call.fn.node));
+      case TYPED_CALL() guard(not InstNode.isEmpty(InstNode.fromHandle(call.fn.node)))
+        then SCodeUtil.isRecord(InstNode.definition(InstNode.fromHandle(call.fn.node)));
       else false;
     end match;
   end isRecordConstructor;
@@ -1454,7 +1472,7 @@ public
             else Expression.CAST(cast_ty, callExp);
           end match;
 
-      else Expression.CAST(Type.setArrayElementType(typeOf(call), ty), callExp);
+      else Expression.typeCastGeneric(callExp, ty);
     end match;
   end typeCast;
 
@@ -1508,12 +1526,35 @@ public
           false;
 
       case TYPED_CALL() then Expression.listContains(call.arguments, func);
-      case UNTYPED_ARRAY_CONSTRUCTOR() then Expression.contains(call.exp, func);
-      case TYPED_ARRAY_CONSTRUCTOR() then Expression.contains(call.exp, func);
-      case UNTYPED_REDUCTION() then Expression.contains(call.exp, func);
-      case TYPED_REDUCTION() then Expression.contains(call.exp, func);
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
+      case TYPED_ARRAY_CONSTRUCTOR()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
+      case UNTYPED_REDUCTION()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
+      case TYPED_REDUCTION()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
     end match;
   end containsExp;
+
+  function itersContainExp
+    "An iterator range is a subexpression too: `sum(x[k] for k in i:n)` uses `i`."
+    input list<tuple<InstNode, Expression>> iters;
+    input ContainsPred func;
+    output Boolean res = false;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    for iter in iters loop
+      if Expression.contains(Util.tuple22(iter), func) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end itersContainExp;
 
   function containsExpShallow
     input Call call;
@@ -2461,13 +2502,13 @@ protected
             fn_ref := Function.instFunction(functionName, scope, context, info);
           end try;
         then
-          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
+          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, InstNode.scopeRef(scope)));
 
       else
         algorithm
           fn_ref := Function.instFunction(functionName, scope, context, info);
         then
-          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
+          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, InstNode.scopeRef(scope)));
 
     end match;
   end instNormalCall;
@@ -2585,9 +2626,10 @@ protected
       // If the range is a cref, use it as the iterator type to allow lookup in
       // the iterator.
       ty := match range
-        case Expression.CREF(cref = ComponentRef.CREF(node = range_node))
-          guard InstNode.isComponent(range_node)
-          then Type.COMPLEX(Component.classInstance(InstNode.component(range_node)), ComplexType.CLASS());
+        case Expression.CREF(cref = ComponentRef.CREF())
+          guard InstNode.isComponent(ComponentRef.node(range.cref))
+          then Type.COMPLEX(InstNode.identityCell(Component.classInstance(
+          InstNode.component(ComponentRef.node(range.cref)))), ComplexType.CLASS());
         else Type.UNKNOWN();
       end match;
 
@@ -2612,7 +2654,7 @@ protected
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
     InstContext.Type next_context;
-    Boolean is_structural;
+    Boolean is_structural, has_iterator;
   algorithm
     (call, ty, variability, purity) := match call
       case UNTYPED_ARRAY_CONSTRUCTOR()
@@ -2632,7 +2674,10 @@ protected
 
             (range, iter_ty, iter_var, iter_pur) := Typing.typeIterator(iter, range, next_context, is_structural);
 
-            if is_structural then
+            // Don't try to evaluate the range if it contains an iterator.
+            has_iterator := iter_pur == Purity.IMPURE and Expression.contains(range, Expression.isIterator);
+
+            if is_structural and not has_iterator then
               if InstContext.inRelaxed(context) then
                 range := Ceval.tryEvalExp(range);
               else
@@ -2786,7 +2831,7 @@ protected
       foldExp := match AbsynUtil.pathFirstIdent(Function.name(reductionFn))
         case "sum"
           algorithm
-            Type.COMPLEX(cls = op_node) := reductionType;
+            op_node := Type.complexNode(reductionType);
             op_node := Class.lookupElement("'+'", InstNode.getClass(op_node));
             Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, info);
             {fn} := Function.typeNodeCache(op_node);
@@ -2890,8 +2935,9 @@ protected
     ErrorExt.setCheckpoint("NFCall:checkMatchingFunctions");
 
     matchedFunctions := match call
-      case ARG_TYPED_CALL(ref = ComponentRef.CREF(node = fn_node))
+      case ARG_TYPED_CALL(ref = ComponentRef.CREF())
         algorithm
+          fn_node := ComponentRef.node(call.ref);
           allfuncs := Function.getCachedFuncs(fn_node);
 
           if listLength(allfuncs) > 1 then
@@ -2969,7 +3015,7 @@ protected
   function vectorizeCall
     input NFCall base_call;
     input FunctionMatchKind mk;
-    input InstNode scope;
+    input NFInstNode.ScopeRef scope;
     input SourceInfo info;
     output NFCall vectorized_call;
   protected
@@ -3101,7 +3147,7 @@ protected
       case Type.COMPLEX()
         guard Type.isRecord(ty) and not Function.isNonDefaultRecordConstructor(fn)
         algorithm
-          binding := Component.getBinding(InstNode.component(listGet(fn.outputs, outputIndex)));
+          binding := Component.getBinding(InstNode.component(InstNode.fromHandle(listGet(fn.outputs, outputIndex))));
 
           if Binding.isBound(binding) then
             // If the output has a binding, replace inputs in it and update the type of the output.

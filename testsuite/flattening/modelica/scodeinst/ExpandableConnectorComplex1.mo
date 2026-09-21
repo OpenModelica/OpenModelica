@@ -30,8 +30,8 @@ end ExpandableConnectorComplex1;
 
 // Result:
 // class ExpandableConnectorComplex1
-//   Real bus.a.i "virtual variable in expandable connector";
-//   Real bus.a.v "virtual variable in expandable connector";
+//   Real bus.a.i "variable added to expandable connector";
+//   Real bus.a.v "variable added to expandable connector";
 //   parameter Real m.A = 1.0;
 //   parameter Real m.w = 1.0;
 //   Real m.a.v;

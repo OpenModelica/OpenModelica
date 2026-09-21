@@ -56,8 +56,8 @@ public slots:
 private:
   Plot *mpParentPlot;
 protected:
-  virtual void widgetMousePressEvent(QMouseEvent *event);
-  virtual void widgetMouseReleaseEvent(QMouseEvent *event);
+  virtual void widgetMousePressEvent(QMouseEvent *event) override;
+  virtual void widgetMouseReleaseEvent(QMouseEvent *event) override;
 };
 }
 

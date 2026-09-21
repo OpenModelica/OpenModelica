@@ -284,7 +284,7 @@ protected function isSpecUnitEq "checks if twp spec units are equal (presupposed
   input UnitAbsyn.SpecUnit insu2;
   output Boolean res;
 algorithm
-  res := matchcontinue(insu1,insu2)
+  res := match(insu1,insu2)
     local
       Boolean r1;
       Integer i1a,i1b,i2a,i2b;
@@ -303,16 +303,14 @@ algorithm
         r1 := isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},{}));
       then r1;
 
-    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i1a,i1b)::rest1), UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i2a,i2b)::rest2))
+    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i1a,i1b)::rest1), UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i2a,i2b)::rest2)) guard intEq(i1a, i2a) and intEq(i1b, i2b)
       algorithm
-        true := intEq(i1a, i2a);
-        true := intEq(i1b, i2b);
         r1 := isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},rest2));
       then r1;
 
     else
       then false;
-  end matchcontinue;
+  end match;
 end isSpecUnitEq;
 
 protected function unifyunits
@@ -767,7 +765,7 @@ protected function getParam "returns the next param in list and removes it from 
   output MMath.Rational outexpo;
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;
 algorithm
-  (found,outexpo,outparams) := matchcontinue inparams
+  (found,outexpo,outparams) := match inparams
     local
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,rest2;
       Integer loc2;
@@ -777,9 +775,7 @@ algorithm
 
     case {} then (false,MMath.RATIONAL(1,1),{});
 
-    case (expo,UnitAbsyn.TYPEPARAMETER(_,loc2))::rest
-      algorithm
-        true := intEq(loc2, loc);
+    case (expo,UnitAbsyn.TYPEPARAMETER(_,loc2))::rest guard intEq(loc2, loc)
       then
         (true,expo,rest);
 
@@ -794,7 +790,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::getParam() failed\n");
       then fail();
-  end matchcontinue;
+  end match;
 end getParam;
 
 protected function normalizeParamsValues "normalize the values that the the list of unit parameters points at"

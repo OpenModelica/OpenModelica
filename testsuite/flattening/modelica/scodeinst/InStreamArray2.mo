@@ -52,8 +52,8 @@ end InStreamArray2;
 // equation
 //   m[2].a1.c.p = m[2].a2.c.p;
 //   m[1].a1.c.p = m[1].a2.c.p;
-//   m[1].a2.c.f + m[1].a1.c.f = 0.0;
-//   m[2].a2.c.f + m[2].a1.c.f = 0.0;
+//   m[1].a1.c.f + m[1].a2.c.f = 0.0;
+//   m[2].a1.c.f + m[2].a2.c.f = 0.0;
 //   for $i4 in 1:2 loop
 //     m[$i4].a1.c.p = sin(time);
 //   end for;

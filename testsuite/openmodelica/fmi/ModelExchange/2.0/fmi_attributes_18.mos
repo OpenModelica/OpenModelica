@@ -1,6 +1,6 @@
 // name: fmi_attributes_18.mos
 // status: correct
-// teardown_command: rm -rf fmi_attributes_18.fmu fmi_attributes_18.log fmi_attributes_18.xml fmi_attributes_18_tmp.xml fmi_attributes_18.fmutmp/
+// teardown_command: rm -rf fmi_attributes_18.fmu fmi_attributes_18.log fmi_attributes_18.xml fmi_attributes_18_tmp.xml fmi_attributes_18.fmutmp/ fmi_attributes_18_info.json
 
 setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
 getErrorString();
@@ -35,7 +35,9 @@ readFile("fmi_attributes_18.xml"); getErrorString();
 // true
 // ""
 // "fmi_attributes_18.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

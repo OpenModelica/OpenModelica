@@ -43,6 +43,8 @@
  */
 
 #include "OMEditApplication.h"
+#include "Util/PersistentStorage.h"
+#include "Cloud/CloudTypes.h"
 #ifndef GC_THREADS
 #define GC_THREADS
 #endif
@@ -92,6 +94,7 @@ void messageHandler(QtMsgType type, const QMessageLogContext &ctx, const QString
 static char *g_output = NULL;
 LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 {
+#if defined(__MINGW32__) // symbolised backtrace via bfd; MinGW only (no bfd under MSVC)
   if (g_output == NULL) {
     g_output = (char*) malloc(BUFFER_MAX);
   }
@@ -106,6 +109,9 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
     release_set(set);
     SymCleanup(GetCurrentProcess());
   }
+#else // MSVC/clang-cl: no bfd, report without a symbolised stack trace
+  (void)info;
+#endif
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog(QString(g_output));
   pCrashReportDialog->exec();
@@ -113,7 +119,15 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#else // Unix
+#elif defined(__EMSCRIPTEN__) || (defined(__linux__) && !defined(__GLIBC__)) // wasm, and musl libc (e.g. Alpine): no execinfo/backtrace, no addr2line subprocess
+
+#include <signal.h>
+void signalHandler(int signalNumber)
+{
+  exit(signalNumber);
+}
+
+#else // Unix with execinfo.h (glibc, macOS, FreeBSD, ...)
 
 #include <signal.h>
 #include <execinfo.h>
@@ -185,6 +199,9 @@ void printOMEditUsage()
   fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
   fprintf(stderr, "                                Default: false.\n\n");
 
+  fprintf(stderr, "  --StyleSheet=<file>           Load an additional Qt stylesheet after\n");
+  fprintf(stderr, "                                OMEdit's default stylesheet.\n\n");
+
   fprintf(stderr, "  --paths                       Prints the Qt paths.\n\n");
 
   fprintf(stderr, "files                           List of Modelica files (*.mo) to open.\n");
@@ -225,14 +242,25 @@ int main(int argc, char *argv[])
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
-#ifdef Q_OS_WIN
-  // Set this before creating QApplication. Avoids web engine switch to Direct3DSurface. See issue #15822.
-  qputenv("QSG_RHI_BACKEND", "opengl");
-#endif // #ifdef Q_OS_WIN
 #ifdef Q_OS_LINUX
   qputenv("EGL_LOG_LEVEL", "fatal");
 #endif // #ifdef Q_OS_LINUX
+#if defined(__EMSCRIPTEN__)
+  // Before anything can queue a native event: works around a re-entrancy bug in
+  // Qt's event replay that hangs startup at random. See OMCProxy.cpp.
+  extern void omcInstallPendingEventsGuard();
+  omcInstallPendingEventsGuard();
+#endif
+  // Bring the persisted tree back before anything reads QSettings. On the web
+  // target that is the IndexedDB mirror; natively it only makes sure the settings
+  // directory exists. Failure just means this session starts with no history.
+  PersistentStorage::restore();
   OMEditApplication a(argc, argv, threadData);
+#if defined(__EMSCRIPTEN__)
+  // Needs the event dispatcher, so it cannot go with the guard above.
+  extern void omcInstallPendingEventsShiftGuard();
+  omcInstallPendingEventsShiftGuard();
+#endif
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
 // moved the setting of the handler *after* OMEditApplication application definition
@@ -252,6 +280,13 @@ int main(int argc, char *argv[])
 #endif // #ifdef WIN32
 #endif // #ifdef QT_NO_DEBUG
 
+#if defined(__EMSCRIPTEN__)
+  // From here on omc bridge calls must wait via a nested QEventLoop, not a raw
+  // Asyncify suspend (which corrupts Qt's wasm event pump mid-event). See OMCProxy.
+  extern bool g_omcMainLoopRunning;
+  g_omcMainLoopRunning = true;
+#endif
+  PersistentStorage::startAutoSnapshot();
   return a.exec();
 
   MMC_CATCH_TOP(return execution_failed());

@@ -3,6 +3,7 @@
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml cranes_crane* *.fmutmp
 // cflags: -d=-newInst
+// suite: disabled
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();

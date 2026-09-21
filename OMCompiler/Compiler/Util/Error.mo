@@ -307,8 +307,8 @@ public constant ErrorTypes.Message IF_EQUATION_UNBALANCED = ErrorTypes.MESSAGE(1
   "In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch.");
 public constant ErrorTypes.Message IF_EQUATION_MISSING_ELSE = ErrorTypes.MESSAGE(115, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Missing else-clause in if-equation with non-parameter conditions.");
-public constant ErrorTypes.Message CONNECT_IN_IF = ErrorTypes.MESSAGE(116, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "connect may not be used inside if-equations with non-parametric conditions (found connect(%s, %s)).");
+public constant ErrorTypes.Message IN_NON_EVALUABLE_IF_OR_FOR = ErrorTypes.MESSAGE(116, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "%s may not be used inside if- or for-equations with non-evaluable conditions or iteration ranges.");
 public constant ErrorTypes.Message CONNECT_IN_WHEN = ErrorTypes.MESSAGE(117, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "connect may not be used inside when-equations (found connect(%s, %s)).");
 public constant ErrorTypes.Message CONNECT_INCOMPATIBLE_TYPES = ErrorTypes.MESSAGE(118, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -444,7 +444,7 @@ public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTy
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.");
 public constant ErrorTypes.Message LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "Failed to load package %s (%s) using MODELICAPATH %s.");
+  "Failed to load package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s.");
 public constant ErrorTypes.Message LOAD_FILE_FAILED = ErrorTypes.MESSAGE(185, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Failed to load file %s: %s.");
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -922,6 +922,14 @@ public constant ErrorTypes.Message NON_POSITIVE_NTH_ROOT = ErrorTypes.MESSAGE(42
   "Invalid operation nthRoot(v = %s, n = %s), n must be a positive integer.");
 public constant ErrorTypes.Message NEGATIVE_NTH_ROOT = ErrorTypes.MESSAGE(423, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid operation nthRoot(v = %s, n = %s), v must be non-negative when n is even.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_CONTEXT = ErrorTypes.MESSAGE(424, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "spatialDistribution may only be used as the right hand side of an equation.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT0 = ErrorTypes.MESSAGE(425, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The first output of spatialDistribution may only be ignored if positiveVelocity is true.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT1 = ErrorTypes.MESSAGE(426, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The second output of spatialDistribution may not be ignored.");
+public constant ErrorTypes.Message ELEMENT_IS_NOT_ALLOWED_IN_CONTEXT = ErrorTypes.MESSAGE(427, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "%s is not allowed in %s.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");
@@ -1031,7 +1039,7 @@ public constant ErrorTypes.Message MISSING_INTERFACE_TYPE = ErrorTypes.MESSAGE(5
 public constant ErrorTypes.Message CLASS_NOT_FOUND = ErrorTypes.MESSAGE(555, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "Class %s not found inside class %s.");
 public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(556, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
-  "Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may be wrong).");
+  "Skipped loading package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s (uses-annotation may be wrong).");
 public constant ErrorTypes.Message ROOT_USER_INTERACTIVE = ErrorTypes.MESSAGE(557, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "You are trying to run OpenModelica as a server using the root user.\nThis is a very bad idea:\n* The socket interface does not authenticate the user.\n* OpenModelica allows execution of arbitrary commands.");
 public constant ErrorTypes.Message USES_MISSING_VERSION = ErrorTypes.MESSAGE(558, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -1127,7 +1135,7 @@ public constant ErrorTypes.Message ERROR_PKG_NOT_FOUND_VERSION = ErrorTypes.MESS
 public constant ErrorTypes.Message ERROR_PKG_NOT_EXACT_MATCH = ErrorTypes.MESSAGE(603, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The package index did not contain an entry for package %s of version %s. There are other versions that claim to be compatible: %s.");
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_ON_PATH = ErrorTypes.MESSAGE(604, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "The MODELICAPATH (%s) does not contain %s, so the package index cannot be used.");
+  "OPENMODELICALIBRARY (MODELICAPATH in the language specification) (%s) does not contain %s, so the package index cannot be used.");
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_FOUND = ErrorTypes.MESSAGE(605, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The package index does not exist: %s.");
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_PARSED = ErrorTypes.MESSAGE(606, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1170,6 +1178,10 @@ public constant ErrorTypes.Message WARNING_DEF_USE_UNPROVEN = ErrorTypes.MESSAGE
   "%s was possibly used before it was defined (given a value): it is not defined on all control flow paths leading to the use. Per the Modelica specification using an uninitialized variable is an error.");
 public constant ErrorTypes.Message UNASSIGNED_FUNCTION_OUTPUT_UNPROVEN = ErrorTypes.MESSAGE(625, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "Output parameter %s was possibly not assigned a value: it is not assigned on all control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
+public constant ErrorTypes.Message TEARING_NOT_WORTH_IT = ErrorTypes.MESSAGE(626, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
+  "Tearing is skipped for linear strong component %s: solving it torn to %s iteration variables is estimated at %s flops against %s for the untorn system of size %s.");
+public constant ErrorTypes.Message TEARING_AMPLIFIES_ERROR = ErrorTypes.MESSAGE(627, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
+  "Tearing is skipped for linear strong component %s: substituting through its %s inner equations amplifies an error by 1e%s, which double precision cannot carry.");
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Local variable '%s' shadows another variable.");
@@ -1337,8 +1349,18 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
   "Duplicate elements:\n %s.");
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "File not Found: %s. Compile OpenModelica with Encryption support.");
-public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_NOT_SUPPORTED = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported for FMU export. Please remove the --daeMode flag.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Model Exchange FMU (fmuType=\"%s\") from it. Export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), or remove the --daeMode flag.");
+public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Operation cancelled by user.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_C_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Co-Simulation FMU either. Export with platforms={\"wasm\"}, whose runtime does support it, or remove the --daeMode flag.");
+public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Operation aborted: the time limit set by the alarm ran out.");
+public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  "The Model Exchange FMU carries a DAE formulation as fmi-ls-dae %s, implemented against the draft of %s (commit %s). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.");
+public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
@@ -1418,6 +1440,15 @@ algorithm
       then str;
   end match;
 end getCurrentComponent;
+
+public function checkCancel "Fails if cancellation was requested, either by a user or by the alarm
+  running out. A coarse chokepoint for the frontend/backend driver loops."
+algorithm
+  if System.isCancelled() then
+    addMessage(if System.alarmExpired() then ALARM_EXPIRED else USER_CANCELLED, {});
+    fail();
+  end if;
+end checkCancel;
 
 public function addMessage "Implementation of Relations
   function: addMessage

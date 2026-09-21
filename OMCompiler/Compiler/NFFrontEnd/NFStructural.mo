@@ -255,8 +255,10 @@ public
         Component comp;
         Expression e;
 
-      case Expression.CREF(cref = ComponentRef.CREF(node = node, origin = Origin.CREF))
+      case Expression.CREF(cref = ComponentRef.CREF(origin = Origin.CREF))
         algorithm
+          node := ComponentRef.node(exp.cref);
+
           if InstNode.isComponent(node) then
             comp := InstNode.component(node);
 

@@ -377,7 +377,10 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
       break;
     }
     nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-    /* Next time a timer will activate: */
+  }
+  /* Next time a timer will activate, whether or not one fired now. */
+  if (listLen(data->simulationInfo->intvlTimers) > 0) {
+    nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
     *nextTimerActivationTime = nextTimer->activationTime;
     *nextTimerDefined = TRUE;
   }

@@ -17,6 +17,9 @@ model ExtRecordMemberArguments
     annotation (
 
     Include="
+#include <stddef.h>
+#include <stdio.h>
+
 void foo(const double* myRealMatrix, size_t dim_myRealMatrix_1, size_t dim_myRealMatrix_2, const double myRealVar, const int* myIntegerArray, size_t dim_myIntegerArray_1, int myIntegerVar, const int* myBooleanArray, size_t dim_myBooleanArray_1, int myBooleanVar, const char** myStringArray, size_t dim_myStringArray_1, const char* myStringVar) {
   size_t i, j;
   printf(\"myRealMatrix (%zu x %zu):\\n\", dim_myRealMatrix_1, dim_myRealMatrix_2);

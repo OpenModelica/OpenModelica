@@ -44,9 +44,9 @@ Abstract dataexchange interface for dae system
 
 
 /** typedef for variable, parameter names*/
-typedef boost::container::vector<string> var_names_t;
+typedef std::vector<string> var_names_t;
  /** typedef for the output values kind list, this is a boolean container which indicates if the output variable is a negate alias variable*/
-typedef boost::container::vector<bool> negate_values_t;
+typedef std::vector<bool> negate_values_t;
 /**
  *  Class the holds all information to print output variables in a output file (matlab,textfile,buffer, ...)
  *  Holds a container of pointers for all output variable and parameter stored in the simvars array
@@ -55,7 +55,7 @@ template<typename T>
 struct SimulationOutput
 {
 	/** typedef for the output values list, this is a container which holds pointer for all output variables stored in the simvar array*/
-  typedef boost::container::vector<const T*> values_t;
+  typedef std::vector<const T*> values_t;
 
   /** Container for all output parameter names*/
 	var_names_t  parameterNames;

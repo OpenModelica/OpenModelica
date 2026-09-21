@@ -38,11 +38,18 @@
  */
 
 #include "MainWindow.h"
-/* Keep PlotWindowContainer on top to include OSG first */
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "Cloud/CloudTypes.h"
+#include "Cloud/CloudAccount.h"
+#include "Cloud/CloudBrowserDialog.h"
+#include "Cloud/CloudCache.h"
+#include "Cloud/CloudConflictDialog.h"
+#include "Cloud/CloudMount.h"
+#include "Cloud/CloudProvider.h"
+#include "Cloud/CloudSyncEngine.h"
 #include "Search/FindUsageWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -57,6 +64,8 @@
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
+#include "Util/NavigationManagerView.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
@@ -83,9 +92,53 @@
 #include "CrashReport/CrashReportDialog.h"
 #include "FMI/FMUExportOutputWidget.h"
 #include "PlotCurve.h"
+#include "LoadCompiledModelDialog.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
+#include "LSP/ModelicaLSPClient.h"
 #include <QtSvg/QSvgGenerator>
-#include <QOpenGLWidget>
+#include <QStandardPaths>
+#include <QUrl>
+#include <QDir>
+#include <QFileInfo>
 #include <QNetworkProxyFactory>
+#include <QRegularExpression>
+
+namespace {
+/*!
+ * \brief MdiAreaTabBarMiddleClickEventFilter
+ * Consumes the middle mouse button release event on the QMdiArea tab bar.
+ *
+ * Since Qt 6.11, QTabBar::mouseReleaseEvent() emits tabCloseRequested() on a middle
+ * mouse button release (see commit 571c55dbcd6). The QMdiAreaTabBar already closes
+ * the tab under the cursor on the middle mouse button press, so a single middle
+ * click used to close two tabs (issue #16264): the clicked tab and, because the tab
+ * bar is re-laid out after the press, the tab that shifts into the released position.
+ *
+ * This filter swallows the middle mouse button release so that only the clicked tab
+ * is closed.
+ */
+class MdiAreaTabBarMiddleClickEventFilter : public QObject
+{
+public:
+  explicit MdiAreaTabBarMiddleClickEventFilter(QObject *pParent = 0)
+    : QObject(pParent)
+  {
+  }
+
+  virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
+  {
+    if (pEvent->type() == QEvent::MouseButtonRelease) {
+      QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+      if (pMouseEvent && pMouseEvent->button() == Qt::MiddleButton) {
+        return true;
+      }
+    }
+    return QObject::eventFilter(pObject, pEvent);
+  }
+};
+}
 
 namespace ToolBars {
   QString welcomePerspective = "welcomePerspective";
@@ -111,12 +164,6 @@ namespace ToolBars {
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
 {
-  /* TRICK: Forces the top-level window surface to initialize
-   * as QSurface::OpenGLSurface immediately, preventing later recreation flicker.
-   * See issue #15830.
-   */
-  QOpenGLWidget *dummyGL = new QOpenGLWidget(this);
-  dummyGL->hide();
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
   // Default system font
@@ -139,8 +186,10 @@ MainWindow::MainWindow(QWidget *parent)
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
+#if QT_CONFIG(process)
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+#endif
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   /*! @note The above three lines registers the types for simulaiton threads. Do not remove them. */
   setObjectName("MainWindow");
@@ -163,6 +212,145 @@ MainWindow *MainWindow::instance()
     mpInstance = new MainWindow;
   }
   return mpInstance;
+}
+
+/*!
+ * \brief MainWindow::startLanguageServer
+ * Starts the language server process if it is not already running.
+ * Resolves the executable from the user setting, then the bundled server,
+ * then the system PATH. Skips silently when no usable server is available.
+ */
+void MainWindow::startLanguageServer()
+{
+  if (mpLSPClient) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  const QString configured = pSettings->value("languageServer/executable").toString().trimmed();
+  const QString executable = ModelicaLSPClient::resolveExecutable(configured);
+  if (executable.isEmpty()) {
+    return;
+  }
+  // Warn rather than refuse: a future server may well embed these, and a wrong
+  // guess must not stop it starting. Silence is the thing worth avoiding.
+  const QStringList missing = ModelicaLSPClient::missingRuntimeFiles(executable);
+  if (!missing.isEmpty()) {
+    onLanguageServerLogMessage(tr("Language server is missing %1 in %2. It will start but is "
+                                  "likely to report no hover or go to definition results.")
+                               .arg(missing.join(QStringLiteral(", ")),
+                                    QFileInfo(executable).absolutePath()));
+  }
+  LSPClient *pLSPClient = new ModelicaLSPClient(this);
+  connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
+  connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
+  // A library loaded while the initialize handshake is still in flight cannot be
+  // announced yet, and no further row change would announce it later. Re-sync
+  // once the server is ready; unchanged lists are dropped by updateLibraries().
+  connect(pLSPClient, &LSPClient::initialized, this, &MainWindow::syncLanguageServerLibraries);
+  QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
+  // Optional library roots the server loads so go-to-definition can resolve across files.
+  QStringList libraries = languageServerLibraries();
+  // Only keep the client once it actually launched, otherwise a single failed
+  // launch would block every later retry in this session.
+  if (!pLSPClient->start(executable, rootUri, libraries)) {
+    pLSPClient->deleteLater();
+    return;
+  }
+  mpLSPClient = pLSPClient;
+}
+
+/*!
+ * \brief MainWindow::languageServerLibraries
+ * Library roots the language server should know about: the source directories
+ * of the libraries currently loaded in OMC. Following OMC is the whole list;
+ * there is deliberately no separate setting to keep in step with it.
+ * \return de-duplicated list of library root directories
+ */
+QStringList MainWindow::languageServerLibraries() const
+{
+  QStringList libraries;
+  if (mpLibraryWidget && mpLibraryWidget->getLibraryTreeModel()) {
+    LibraryTreeItem *pRootLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
+    for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); ++i) {
+      LibraryTreeItem *pLibraryTreeItem = pRootLibraryTreeItem->child(i);
+      if (!pLibraryTreeItem || pLibraryTreeItem->getFileName().isEmpty()) {
+        continue;
+      }
+      // The server takes a library root directory, not the package file itself.
+      const QString libraryRoot = QFileInfo(pLibraryTreeItem->getFileName()).absolutePath();
+      if (libraryRoot.isEmpty() || libraries.contains(libraryRoot)) {
+        continue;
+      }
+      // Only a directory holding a package.mo is a library. A standalone class
+      // opened from a plain .mo file lives in an ordinary directory, and
+      // announcing that as a library makes the server warn the user about a
+      // "modelica.libraries" entry they never wrote. The server sees such a
+      // file through textDocument/didOpen anyway.
+      if (!QFileInfo::exists(libraryRoot + QStringLiteral("/package.mo"))) {
+        continue;
+      }
+      libraries.append(libraryRoot);
+    }
+  }
+  return libraries;
+}
+
+/*!
+ * \brief MainWindow::syncLanguageServerLibraries
+ * Tells a running language server about the libraries currently loaded, so a
+ * library loaded after startup can be resolved without restarting the server.
+ * Does nothing when the server is not running; startLanguageServer() already
+ * passes the initial set through the initialization options.
+ */
+void MainWindow::syncLanguageServerLibraries()
+{
+  if (!mpLSPClient || !mpLSPClient->isRunning()) {
+    return;
+  }
+  mpLSPClient->updateLibraries(languageServerLibraries());
+}
+
+/*!
+ * \brief MainWindow::onLanguageServerLogMessage
+ * Writes a language server message to the Messages Browser. All messages are
+ * prefixed with "LSP". The LSP message type (1=Error, 2=Warning, others=Info) is
+ * mapped to the OMEdit message level. Errors are always shown so that startup
+ * failures are visible; informational and warning messages require language
+ * server logging to be enabled.
+ */
+void MainWindow::onLanguageServerLogMessage(QString message, int type)
+{
+  if (message.isEmpty()) {
+    return;
+  }
+  if (type != 1) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    if (!pSettings->value("languageServer/logging", false).toBool()) {
+      return;
+    }
+  }
+  QString level = Helper::notificationLevel;
+  if (type == 1) {
+    level = Helper::errorLevel;
+  } else if (type == 2) {
+    level = Helper::warningLevel;
+  }
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QStringLiteral("LSP: %1").arg(message),
+                                                        Helper::scriptingKind, level));
+}
+
+/*!
+ * \brief MainWindow::stopLanguageServer
+ * Stops and destroys the language server process if it is running.
+ */
+void MainWindow::stopLanguageServer()
+{
+  if (!mpLSPClient) {
+    return;
+  }
+  mpLSPClient->stop();
+  mpLSPClient->deleteLater();
+  mpLSPClient = nullptr;
 }
 
 /*!
@@ -190,7 +378,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #endif
     setbuf(stderr, NULL); // used non-buffered stderr
   }
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Initializing"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Initializing"));
+#endif
   // Create an object of MessagesWidget.
   MessagesWidget::create();
   // Create MessagesDockWidget dock
@@ -206,15 +398,23 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   if (getExitApplicationStatus()) {
     return;
   }
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Reading Settings"));
+#endif
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
-  // create an object of OMSProxy
-  OMSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
+  // Create the NavigationManager which detects the back/forward navigation globally
+  NavigationManager::instance();
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Loading Widgets"));
+#endif
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
   // Create an object of QProgressBar
@@ -222,6 +422,13 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpProgressBar->setMaximumWidth(300);
   mpProgressBar->setTextVisible(false);
   mpProgressBar->setVisible(false);
+  // Cancel button for a running omc operation (parse/instantiate/backend/sim)
+  mpCancelOperationButton = new QToolButton;
+  mpCancelOperationButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpCancelOperationButton->setToolTip(tr("Cancel the running operation"));
+  mpCancelOperationButton->setAutoRaise(true);
+  mpCancelOperationButton->setVisible(false);
+  connect(mpCancelOperationButton, SIGNAL(clicked()), SLOT(cancelOmcOperation()));
   // Position Label
   mpPositionLabel = new Label;
   mpPositionLabel->setMinimumWidth(75);
@@ -257,12 +464,29 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpStatusBar->setContentsMargins(0, 0, 0, 0);
   // add items to statusbar
   mpStatusBar->addPermanentWidget(mpProgressBar);
+  mpStatusBar->addPermanentWidget(mpCancelOperationButton);
   mpStatusBar->addPermanentWidget(mpPositionLabel);
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
   setStatusBar(mpStatusBar);
   // Create an object of LibraryWidget
   mpLibraryWidget = new LibraryWidget(this);
+  // Keep the language server in step with the libraries loaded in OMC. Queued so
+  // the library tree item is fully populated (it has no file name yet when the
+  // row is inserted) before the roots are collected.
+  // Coalesced: loading a library inserts a row per class, so reacting to each
+  // one would rescan the whole tree thousands of times on the GUI thread.
+  // Restarting a zero-timer collapses a burst into a single scan once it ends.
+  mpLanguageServerSyncTimer = new QTimer(this);
+  mpLanguageServerSyncTimer->setSingleShot(true);
+  mpLanguageServerSyncTimer->setInterval(0);
+  connect(mpLanguageServerSyncTimer, &QTimer::timeout, this, &MainWindow::syncLanguageServerLibraries);
+  connect(mpLibraryWidget->getLibraryTreeModel(), &QAbstractItemModel::rowsInserted,
+          mpLanguageServerSyncTimer, QOverload<>::of(&QTimer::start));
+  // Unloading a library shrinks the list; since v0.3.2 the server drops the roots
+  // that disappear from the configuration instead of keeping them resolvable.
+  connect(mpLibraryWidget->getLibraryTreeModel(), &QAbstractItemModel::rowsRemoved,
+          mpLanguageServerSyncTimer, QOverload<>::of(&QTimer::start));
   // Create LibraryDockWidget
   mpLibraryDockWidget = new QDockWidget(Helper::libraries, this);
   mpLibraryDockWidget->setObjectName("Libraries");
@@ -294,6 +518,16 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpSearchDockWidget->setWidget(mpSearchWidget);
   addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
   mpSearchDockWidget->hide();
+  // Create NavigationManagerDockWidget dock
+  if (isDebug()) {
+    mpNavigationManagerDockWidget = new QDockWidget(tr("Navigation Manager"), this);
+    mpNavigationManagerDockWidget->setObjectName("NavigationManager");
+    mpNavigationManagerDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
+    mpNavigationManagerView = new NavigationManagerView(this);
+    mpNavigationManagerDockWidget->setWidget(mpNavigationManagerView);
+    addDockWidget(Qt::BottomDockWidgetArea, mpNavigationManagerDockWidget);
+  }
+#if !defined(__EMSCRIPTEN__)
   // create the GDB adapter instance
   GDBAdapter::create();
   // create stack frames widget
@@ -334,6 +568,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   addDockWidget(Qt::BottomDockWidgetArea, mpGDBLoggerDockWidget);
   // put the GDB logger dock widget and output dock widget as tabbed items.
   tabifyDockWidget(mpGDBLoggerDockWidget, mpTargetOutputDockWidget);
+#endif
   // create an object of DocumentationWidget
   mpDocumentationWidget = new DocumentationWidget(this);
   // Create DocumentationWidget dock
@@ -357,14 +592,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
   // create traceability graph view widget
   //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
+#if !defined(__EMSCRIPTEN__)
   mpTraceabilityInformationURI = new TraceabilityInformationURI(this);
+#endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
   //Create Actions, Toolbar and Menus
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::stepMessage(tr("Creating widgets"));
+#endif
   setAcceptDrops(true);
   createActions();
   createToolbars();
@@ -377,14 +618,16 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
-  // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActionsAndList();
+  updateRecentModelActionsAndList();
   // OMSens plugin
   mpOMSensPlugin = 0;
   // create the Git commands instance
   //mpGitCommands = new GitCommands(this);
+#if !defined(__EMSCRIPTEN__)
   GitCommands::create();
+#endif
   // Create a centralwidget for the main window
   mpCentralStackedWidget = new QStackedWidget;
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
@@ -441,12 +684,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     restoreState(pSettings->value("application/windowState").toByteArray());
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     mRestoringState = false;
+#if !defined(__EMSCRIPTEN__)
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */
     mpStackFramesWidget->getStackFramesTreeWidget()->header()->restoreState(pSettings->value("stackFramesTreeState").toByteArray());
     mpBreakpointsWidget->getBreakpointsTreeView()->header()->restoreState(pSettings->value("breakPointsTreeState").toByteArray());
     mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
     pSettings->endGroup();
+#endif
     if (restoreMessagesWidget) {
       if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
         showMessageBrowser();
@@ -494,6 +739,19 @@ void MainWindow::setNewApiProfiling(bool newApiProfiling)
     mpNewApiProfilingFile = fopen(profilingFilePath.toUtf8().constData(), "w");
 #endif
   }
+}
+
+/*!
+ * \brief MainWindow::getSimulationDialog
+ * Returns the SimulationDialog instance.
+ * \return
+ */
+SimulationDialog* MainWindow::getSimulationDialog()
+{
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
+  return mpSimulationDialog;
 }
 
 /*!
@@ -670,6 +928,50 @@ void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
 }
 
 /*!
+ * \brief MainWindow::addRecentModel
+ * Adds the Modelica class to the recentModelsList settings.
+ * The recent models have their own list so that the recent files list does not get cluttered
+ * with the models opened in the model view e.g. when working with the MSL.
+ * \param nameStructure - the dotted Modelica class name e.g. Path.To.Model
+ */
+void MainWindow::addRecentModel(const QString &nameStructure)
+{
+  if (nameStructure.isEmpty()) {
+    return;
+  }
+  // Store the file of the top level class so that the library can be loaded again
+  // if the class is not loaded when the recent model is opened.
+  QString path;
+  LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+  if (pLibraryTreeItem) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    if (pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isFilePathValid()) {
+      path = pTopLevelLibraryTreeItem->getFileName();
+    }
+  }
+  // Skip models that do not have any file attached to them yet, e.g. newly created and not yet saved models.
+  if (path.isEmpty()) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  // remove the already present RecentFile instance from the list.
+  foreach (QVariant model, models) {
+    RecentFile recentModel = qvariant_cast<RecentFile>(model);
+    if (recentModel.fileName.compare(nameStructure) == 0) {
+      models.removeOne(model);
+    }
+  }
+  RecentFile recentModel;
+  recentModel.fileName = nameStructure;
+  recentModel.encoding = Helper::utf8;
+  recentModel.path = path;
+  models.prepend(QVariant::fromValue(recentModel));
+  pSettings->setValue("recentModelsList/models", models);
+  updateRecentModelActionsAndList();
+}
+
+/*!
  * \brief MainWindow::updateRecentFileActionsAndList
  * Updates the actions of the recent files menu and recent files list on the welcome page.
  */
@@ -712,6 +1014,52 @@ void MainWindow::createRecentFileActions()
     pRecentFileAction->setData(dataList);
     connect(pRecentFileAction, SIGNAL(triggered()), this, SLOT(openRecentFile()));
     mpRecentFilesMenu->addAction(pRecentFileAction);
+  }
+}
+
+/*!
+ * \brief MainWindow::updateRecentModelActionsAndList
+ * Updates the actions of the recent models menu and the recent models list on the welcome page.
+ */
+void MainWindow::updateRecentModelActionsAndList()
+{
+  /* read the new recent models list */
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  int recentModelsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  while (models.size() > recentModelsSize) {
+    models.removeLast();
+  }
+  pSettings->setValue("recentModelsList/models", models);
+  /* Clear the recent models menu. This will also delete the actions.
+   * void QMenu::clear()
+   * Removes all the menu's actions. Actions owned by the menu and not shown in any other widget are deleted.
+   */
+  mpRecentModelsMenu->clear();
+  createRecentModelActions();
+  mpWelcomePageWidget->addRecentModelsListItems();
+}
+
+/*!
+ * \brief MainWindow::createRecentModelActions
+ * Creates the recent model actions.
+ */
+void MainWindow::createRecentModelActions()
+{
+  /* read the new recent models list */
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  int recentModelsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  int numRecentModels = qMin(models.size(), recentModelsSize);
+  for (int i = 0; i < numRecentModels; ++i) {
+    RecentFile recentModel = qvariant_cast<RecentFile>(models[i]);
+    QAction *pRecentModelAction = new QAction(this);
+    pRecentModelAction->setText(recentModel.fileName);
+    QStringList dataList;
+    dataList << recentModel.fileName << recentModel.encoding << recentModel.path;
+    pRecentModelAction->setData(dataList);
+    connect(pRecentModelAction, SIGNAL(triggered()), this, SLOT(openRecentModel()));
+    mpRecentModelsMenu->addAction(pRecentModelAction);
   }
 }
 
@@ -760,6 +1108,17 @@ int MainWindow::askForExit()
 void MainWindow::beforeClosingMainWindow()
 {
   mpAutoSaveTimer->stop();
+  // Add the models currently open in the model view to the recent models list
+  // so that they can be reopened from the recent models list in the next session.
+  if (mpModelWidgetContainer) {
+    // iterate in activation history order so that the most recently used model ends up on top of the list.
+    foreach (QMdiSubWindow *pSubWindow, mpModelWidgetContainer->subWindowList(QMdiArea::ActivationHistoryOrder)) {
+      ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
+      if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isModelica()) {
+        addRecentModel(pModelWidget->getLibraryTreeItem()->getNameStructure());
+      }
+    }
+  }
   // Issue #9101. Close all top level windows
   foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
     if (pWidget == this) {
@@ -785,6 +1144,7 @@ void MainWindow::beforeClosingMainWindow()
   }
 
   QSettings *pSettings = Utilities::getApplicationSettings();
+#if !defined(__EMSCRIPTEN__)
   /* delete the TransformationsWidgets */
   const int size = mTransformationsWidgetHash.size();
   int index = 0;
@@ -818,6 +1178,7 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("breakPointsTreeState", mpBreakpointsWidget->getBreakpointsTreeView()->header()->saveState());
   pSettings->setValue("localsTreeState", mpLocalsWidget->getLocalsTreeView()->header()->saveState());
   pSettings->endGroup();
+#endif
   /* save OMEdit MainWindow geometry state */
   pSettings->setValue("application/geometry", saveGeometry());
   pSettings->setValue("application/windowState", saveState());
@@ -825,8 +1186,9 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
   // save the grid lines
   pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
-  // save the splitter state of welcome page
+  // save the splitters state of welcome page
   pSettings->setValue("welcomePage/splitterState", mpWelcomePageWidget->getSplitter()->saveState());
+  pSettings->setValue("welcomePage/recentSplitterState", mpWelcomePageWidget->getRecentSplitter()->saveState());
   // Delete the FMU directories we created while importing
   if (OptionsDialog::instance()->getFMIPage()->getDeleteFMUDirectoryAndModelCheckBox()->isChecked()) {
     foreach (QString fmuDirectory, mFMUDirectoriesList) {
@@ -854,9 +1216,13 @@ void MainWindow::beforeClosingMainWindow()
   // delete the OptionsDialog object
   OptionsDialog::destroy();
   // delete the GDBAdapter object
+#if !defined(__EMSCRIPTEN__)
   GDBAdapter::destroy();
+#endif
   // delete the GitCommands object
+#if !defined(__EMSCRIPTEN__)
   GitCommands::destroy();
+#endif
   // delete the searchwidget object to call the destructor, to cancel the search operation running on seperate thread
   delete mpSearchWidget;
   // delete the DocumentationWidget object
@@ -882,14 +1248,124 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
     QFileInfo fileInfo(fileUrl.toLocalFile());
     mpProgressBar->setValue(++progressValue);
     // check the file extension
-    QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
-    if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
+    QRegularExpression resultFilesRegExp(Helper::omResultFileTypesRegExp);
+    if (resultFilesRegExp.match(fileInfo.suffix()).hasMatch()) {
       openResultFile(fileInfo.absoluteFilePath());
     } else {
       mpLibraryWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);
     }
   }
   hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::loadCompiledModel
+ * Loads the compiled model and switches to plotting perspective.
+ * \param executableFilePath
+ * \param modelInitFilePath
+ * \param resultFilePath
+ */
+void MainWindow::loadCompiledModel(const QString &executableFilePath, const QString &modelInitFilePath, const QString &resultFilePath)
+{
+  // check if all files belong to the same directory
+  const QString executableDir = QFileInfo(executableFilePath).absolutePath();
+  const QString modelInitDir = QFileInfo(modelInitFilePath).absolutePath();
+  const QString resultDir = QFileInfo(resultFilePath).absolutePath();
+  if (executableDir != modelInitDir || executableDir != resultDir) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          tr("All files must be in the same directory."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  // check if files exists
+  auto checkFileExists = [](const QString &fileName) -> bool {
+    if (QFileInfo::exists(fileName)) {
+      return true;
+    }
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return false;
+  };
+
+  // check if the executable file exists
+  if (!checkFileExists(executableFilePath)) {
+    return;
+  }
+  // check if the model init file exists
+  if (!checkFileExists(modelInitFilePath)) {
+    return;
+  }
+  // check if the result file exists
+  if (!checkFileExists(resultFilePath)) {
+    return;
+  }
+
+  mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, resultFilePath));
+  QFileInfo resultFileInfo(resultFilePath);
+  QStringList list = mpOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
+  // if result file contains variables then switch to plotting perspective and add the variables to the variables tree.
+  if (list.size() > 0) {
+    // build SimulationOptions object from the model init file.
+    // Parse model_init.xml to extract DefaultExperiment values
+    SimulationOptions simulationOptions;
+    QFile initFile(modelInitFilePath);
+    if (initFile.open(QIODevice::ReadOnly)) {
+      QXmlStreamReader xml(&initFile);
+      while (!xml.atEnd() && !xml.hasError()) {
+        if (xml.readNext() == QXmlStreamReader::StartElement) {
+          if (xml.name() == QStringLiteral("fmiModelDescription")) {
+            simulationOptions.setClassName(xml.attributes().value("modelIdentifier").toString());
+          }
+          if (xml.name() == QStringLiteral("DefaultExperiment")) {
+            auto a = xml.attributes();
+            if (!a.value("startTime").isEmpty()) {
+              simulationOptions.setStartTime(a.value("startTime").toString());
+            }
+            if (!a.value("stopTime").isEmpty()) {
+              simulationOptions.setStopTime(a.value("stopTime").toString());
+            }
+            if (!a.value("stepSize").isEmpty()) {
+              simulationOptions.setStepSize(a.value("stepSize").toDouble());
+            }
+            if (!a.value("tolerance").isEmpty()) {
+              simulationOptions.setTolerance(a.value("tolerance").toString());
+            }
+            if (!a.value("solver").isEmpty()) {
+              simulationOptions.setMethod(a.value("solver").toString());
+            }
+            if (!a.value("outputFormat").isEmpty()) {
+              simulationOptions.setOutputFormat(a.value("outputFormat").toString());
+            }
+            if (!a.value("variableFilter").isEmpty()) {
+              simulationOptions.setVariableFilter(a.value("variableFilter").toString());
+            }
+          }
+        }
+      }
+    }
+    simulationOptions.setWorkingDirectory(resultFileInfo.absoluteDir().absolutePath());
+    simulationOptions.setResultFileName(resultFileInfo.fileName());
+
+    QStringList simulationFlags;
+    simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));
+    simulationFlags.append(QString("-stopTime=").append(simulationOptions.getStopTime()));
+    simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
+    simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
+    simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+    simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
+    simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
+    simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
+    simulationFlags.append(QString("-inputPath=%1").arg(simulationOptions.getWorkingDirectory()));
+    simulationFlags.append(QString("-outputPath=%1").arg(simulationOptions.getWorkingDirectory()));
+
+    simulationOptions.setSimulationFlags(simulationFlags);
+    simulationOptions.setIsValid(true);
+
+    switchToPlottingPerspectiveSlot();
+    mpVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, simulationOptions);
+  }
+  mpStatusBar->clearMessage();
 }
 
 /*!
@@ -980,7 +1456,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
   mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false, false);
 }
 
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
 void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!mpSimulationDialog) {
@@ -1189,12 +1665,27 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
   mpStatusBar->clearMessage();
 }
 
+/*!
+ * \brief isNativeFMUPlatform
+ * Returns true if the platform string names the machine OMEdit runs on, i.e. one that can be
+ * built with the local toolchain. Every other value is a host triple naming a target platform.
+ * \param platform
+ * \return
+ */
+static bool isNativeFMUPlatform(const QString &platform)
+{
+  return platform.compare("static") == 0 || platform.compare("dynamic") == 0;
+}
+
 void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
-  // check for supported targetLanguage C or Cpp
+  // check for a targetLanguage that can produce an FMU
   QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
-  if (targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b> and <b>Cpp</b> are supported").arg(targetLanguage),
+  // The wasm targets export inside omc (component + a loader per native platform),
+  // so buildModelFMU finishes the FMU and there is no compile step here.
+  const bool wasmTarget = targetLanguage.compare("wasm") == 0 || targetLanguage.compare("wasm-jit") == 0;
+  if (!wasmTarget && targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b>, <b>Cpp</b>, <b>wasm</b> and <b>wasm-jit</b> are supported").arg(targetLanguage),
                                                                   tr("FMU_EXPORT Failed"), Helper::errorLevel));
     return;
   }
@@ -1235,6 +1726,17 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   } else {
     platforms.append("static"); // default is static
   }
+#if defined(__EMSCRIPTEN__)
+  // A browser omc has no C code generator, so the model always goes into a wasm
+  // FMU. "static"/"dynamic" name the C link modes and mean nothing here; every
+  // other entry is a native platform the FMU should also serve, which is what an
+  // FMI 2.0 FMU needs to be loadable at all.
+  platforms.removeAll("static");
+  platforms.removeAll("dynamic");
+  if (!platforms.contains("wasm")) {
+    platforms.append("wasm");
+  }
+#endif
   if (platforms.empty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
@@ -1250,20 +1752,95 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
   bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
-  bool isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+#if !defined(__EMSCRIPTEN__)
+  /* Any platform other than the one OMEdit runs on needs the cross compilation machinery
+   * of buildModelFMU(). translateModelFMU() only generates the sources, and the CMake
+   * build FmuExportOutputWidget runs afterwards is host native and builds a single
+   * platform, so cross compiled binaries would silently be missing from the FMU.
+   * See https://github.com/OpenModelica/OpenModelica/issues/9509
+   */
+  bool crossCompile = false;
+  foreach (QString platform, platforms) {
+    if (!isNativeFMUPlatform(platform)) {
+      crossCompile = true;
+      break;
+    }
+  }
+
+  if (crossCompile) {
+    mpStatusBar->showMessage(tr("Exporting model %1 as FMU").arg(pLibraryTreeItem->getName()));
+    // buildModelFMU() compiles and zips the FMU itself, there is nothing left for FmuExportOutputWidget to do.
+    QString fmuFileName;
+    {
+      OMCLongOperation longOperation;
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+    }
+    // hide progress bar
+    hideProgressBar();
+    // clear the status bar message
+    mpStatusBar->clearMessage();
+
+    if (fmuFileName.isEmpty()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Export of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
+                                                            "Export Error", Helper::errorLevel));
+      return;
+    }
+    // buildModelFMU() leaves the FMU in the working directory it was called in, move it where the user wants it.
+    QString destination = pLibraryTreeItem->getWhereToMoveFMU().isEmpty()
+                          ? OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()
+                          : pLibraryTreeItem->getWhereToMoveFMU();
+    destination += "/" + QFileInfo(fmuFileName).fileName();
+    if (QFileInfo(fmuFileName).absoluteFilePath() != QFileInfo(destination).absoluteFilePath()) {
+      QFile::remove(destination);
+      if (!QFile::rename(fmuFileName, destination)) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(destination),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+        return;
+      }
+    }
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(destination),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+    return;
+  }
+#endif
+
+  bool isTranslationSuccessful;
+  QString fmuFileName;
+  {
+    OMCLongOperation longOperation;
+    if (wasmTarget) {
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+      isTranslationSuccessful = !fmuFileName.isEmpty();
+    } else {
+      isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+    }
+  }
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
   mpStatusBar->clearMessage();
 
   if (isTranslationSuccessful) {
-    // create a FMU compilation window  similar to simulation process
-    FmuExportOutputWidget * pFmuExportOutputWidget = new FmuExportOutputWidget(pLibraryTreeItem, this);
-    MessagesWidget::instance()->addSimulationOutputTab(pFmuExportOutputWidget, pLibraryTreeItem->getName() + "_fmuExport");
-    if (targetLanguage.compare("C") == 0) {
-      pFmuExportOutputWidget->compileModelCRuntime();
+    if (wasmTarget) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported <b>%1</b>.").arg(fmuFileName),
+                                                            Helper::scriptingKind, Helper::notificationLevel));
+#if defined(__EMSCRIPTEN__)
+      if (!isInsideCloudMount(fmuFileName) && !WasmLocalFiles::download(fmuFileName)) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Could not read the exported FMU <b>%1</b>.").arg(fmuFileName),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+#endif
     } else {
-      pFmuExportOutputWidget->compileModelCppRuntime();
+#if !defined(__EMSCRIPTEN__)
+      // create a FMU compilation window  similar to simulation process
+      FmuExportOutputWidget * pFmuExportOutputWidget = new FmuExportOutputWidget(pLibraryTreeItem, this);
+      MessagesWidget::instance()->addSimulationOutputTab(pFmuExportOutputWidget, pLibraryTreeItem->getName() + "_fmuExport");
+      if (targetLanguage.compare("C") == 0) {
+        pFmuExportOutputWidget->compileModelCRuntime();
+      } else {
+        pFmuExportOutputWidget->compileModelCppRuntime();
+      }
+#endif
     }
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Translation of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
@@ -1536,6 +2113,12 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
  */
 TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(fileName);
+  Q_UNUSED(profiling);
+  Q_UNUSED(checkProfilingExists);
+  return nullptr;
+#else
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
     pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
@@ -1548,6 +2131,7 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   pTransformationsWidget->activateWindow();
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
+#endif
 }
 
 /*!
@@ -1842,15 +2426,26 @@ void MainWindow::switchToWindowMode(QMdiArea *pMdiArea)
 void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
 {
   pMdiArea->setViewMode(QMdiArea::TabbedView);
-#ifdef Q_OS_WIN
-  /* See #15239
-   * When switching to tabbed mode, the order of subwindows is not updated until a tab is moved.
-   * To fix this, we connect to the tabMoved signal and set the active subwindow to the moved window.
-   * This way, the order of subwindows is updated immediately after switching to tabbed mode.
-   * This issue is not seen in Linux.
-   */
   QTabBar* tabBar = pMdiArea->findChild<QTabBar*>();
   if (tabBar) {
+    /* See #16264
+     * Since Qt 6.11 the QTabBar emits tabCloseRequested() on a middle mouse button release.
+     * The QMdiAreaTabBar also closes the tab under the cursor on the middle mouse button press.
+     * Since the tab bar is re-laid out after the press, a single middle click closes two tabs.
+     * Install a filter that swallows the middle mouse button release so that only the clicked tab is closed.
+     */
+    if (!tabBar->property("omeditMdiAreaTabBarMiddleClickFilter").toBool()) {
+      tabBar->setProperty("omeditMdiAreaTabBarMiddleClickFilter", true);
+      MdiAreaTabBarMiddleClickEventFilter *pFilter = new MdiAreaTabBarMiddleClickEventFilter(tabBar);
+      tabBar->installEventFilter(pFilter);
+    }
+#ifdef Q_OS_WIN
+    /* See #15239
+     * When switching to tabbed mode, the order of subwindows is not updated until a tab is moved.
+     * To fix this, we connect to the tabMoved signal and set the active subwindow to the moved window.
+     * This way, the order of subwindows is updated immediately after switching to tabbed mode.
+     * This issue is not seen in Linux.
+     */
     connect(tabBar, &QTabBar::tabMoved, MainWindow::instance(), [pMdiArea](int from, int to) {
       Q_UNUSED(from)
       QMdiSubWindow* movedWindow = pMdiArea->subWindowList().at(to);
@@ -1858,8 +2453,8 @@ void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
         pMdiArea->setActiveSubWindow(movedWindow);
       }
     });
-  }
 #endif // #ifdef Q_OS_WIN
+  }
 }
 
 /*!
@@ -1915,6 +2510,20 @@ void MainWindow::switchToPlottingPerspectiveSlot()
 void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(3);
+}
+
+/*!
+ * \brief MainWindow::switchToPerspectiveTab
+ * Switches to the perspective tab with the given index. Used by the global
+ * back/forward navigation history to restore a perspective switch.
+ * \param tabIndex
+ */
+void MainWindow::switchToPerspectiveTab(int tabIndex)
+{
+  if (tabIndex < 0 || tabIndex >= mpPerspectiveTabbar->count()) {
+    tabIndex = 0;
+  }
+  mpPerspectiveTabbar->setCurrentIndex(tabIndex);
 }
 
 /*!
@@ -1982,6 +2591,29 @@ void MainWindow::openModelicaFile()
   if (fileNames.isEmpty()) {
     return;
   }
+#if defined(__EMSCRIPTEN__)
+  // A file picker cannot hand over a directory, so a zipped library is unpacked
+  // and what it holds is loaded instead of the archive.
+  QStringList pickedFiles;
+  foreach (const QString &file, fileNames) {
+    if (QFileInfo(file).suffix().compare("zip", Qt::CaseInsensitive) == 0) {
+      const QString dir = WasmLocalFiles::expandArchive(file);
+      const QStringList files = dir.isEmpty() ? QStringList() : WasmLocalFiles::libraryFiles(dir);
+      if (files.isEmpty()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+      pickedFiles << files;
+    } else {
+      pickedFiles << file;
+    }
+  }
+  fileNames = pickedFiles;
+  if (fileNames.isEmpty()) {
+    return;
+  }
+#endif
   int progressValue = 0;
   mpProgressBar->setRange(0, fileNames.size());
   showProgressBar();
@@ -2077,6 +2709,16 @@ void MainWindow::loadEncryptedLibrary()
 }
 
 /*!
+ * \brief MainWindow::loadCompiledModel
+ * Opens the LoadCompiledModelDialog.
+ */
+void MainWindow::loadCompiledModel()
+{
+  LoadCompiledModelDialog *pLoadCompiledModelDialog = new LoadCompiledModelDialog(this);
+  pLoadCompiledModelDialog->exec();
+}
+
+/*!
  * \brief MainWindow::showOpenResultFileDialog
  * Shows the dialog to open the result files.
  */
@@ -2148,11 +2790,32 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
  */
 void MainWindow::openDirectory()
 {
+#if defined(__EMSCRIPTEN__)
+  // The browser uploads the picked folder, structure and all, and the library in it
+  // is loaded. The directory is deliberately not added to the Library Browser: QDir
+  // enumerates nothing through the worker-VFS engine, so that node comes up childless,
+  // and painting it traps in Qt's raster engine.
+  const QString dir = WasmLocalFiles::openFolder();
+  if (dir.isEmpty()) {
+    return;
+  }
+  const QStringList files = WasmLocalFiles::libraryFiles(dir);
+  if (files.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(dir),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  foreach (const QString &file, files) {
+    mpLibraryWidget->openFile(file, Helper::utf8, false);
+  }
+#else
   QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (dir.isEmpty()) {
     return;
   }
   mpLibraryWidget->openFile(dir, Helper::utf8, true);
+#endif
 }
 
 /*!
@@ -2184,8 +2847,81 @@ void MainWindow::openRecentFile()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     QStringList dataList = pAction->data().toStringList();
-    mpLibraryWidget->openFile(dataList.at(0), dataList.at(1), true, true);
+    openFileFetchingFromCloud(dataList.at(0), dataList.at(1));
   }
+}
+
+/*!
+ * \brief MainWindow::openRecentModel
+ * Opens the recent model.
+ */
+void MainWindow::openRecentModel()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QStringList dataList = pAction->data().toStringList();
+    showRecentModel(dataList.at(0), dataList.at(1), dataList.at(2));
+  }
+}
+
+/*!
+ * \brief MainWindow::showRecentModel
+ * Shows the Modelica class of a recent models list entry. If the class is not loaded and a path was
+ * stored with the entry then the library file is loaded first and the class is looked up again.
+ * \param nameStructure - the dotted Modelica class name e.g. Path.To.Model
+ * \param encoding
+ * \param path - file to load when the class is not loaded yet
+ */
+void MainWindow::showRecentModel(const QString &nameStructure, const QString &encoding, const QString &path)
+{
+  LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+  // if the class is not loaded yet, try to load the library file it belongs to.
+  // skipAddRecentFile is true so that loading the library does not add its file to the recent files list,
+  // the recent models list entry already represents it.
+  if (!pLibraryTreeItem && !path.isEmpty() && QFile::exists(path)) {
+    mpLibraryWidget->openFile(path, encoding, true, true, false, true);
+    pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+  }
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          tr("Unable to find the class <b>%1</b>. It might not be loaded.").arg(nameStructure),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::openFileFetchingFromCloud
+ * Opens a file, bringing its cloud folder down first if it is not there yet.
+ *
+ * A path inside a mount can be perfectly good and still not exist: on the web
+ * target the working copy is in memory, so after a reload the recent files point
+ * at packages that have to be fetched before they can be opened.
+ */
+void MainWindow::openFileFetchingFromCloud(const QString &fileName, const QString &encoding)
+{
+  const CloudMount mount = CloudMountManager::instance()->mountForPath(fileName);
+  if (!mount.isValid() || QFile::exists(fileName)) {
+    mpLibraryWidget->openFile(fileName, encoding, true, true);
+    return;
+  }
+  CloudAccount *pAccount = CloudAccountManager::instance()->account(mount.accountKey);
+  if (!pAccount || !pAccount->isSignedIn()) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("%1 is in the cloud folder %2. Sign in to that account to open it.")
+                                 .arg(fileName, mount.remoteName));
+    return;
+  }
+  syncMount(mount, pAccount, tr("Fetching %1...").arg(mount.remoteName), [this, fileName, encoding]() {
+    if (QFile::exists(fileName)) {
+      mpLibraryWidget->openFile(fileName, encoding, true, true);
+      return;
+    }
+    MessagesWidget::instance()->addGUIMessage(
+        MessageItem(MessageItem::Modelica, tr("%1 is no longer in the cloud folder.").arg(fileName),
+                    Helper::scriptingKind, Helper::errorLevel));
+  });
 }
 
 /*!
@@ -2208,6 +2944,37 @@ void MainWindow::clearRecentFilesList()
         QSettings *pSettings = Utilities::getApplicationSettings();
         pSettings->remove("recentFilesList/files");
         updateRecentFileActionsAndList();
+      }
+      break;
+    case QMessageBox::No:
+      // No was clicked.
+      break;
+    default:
+      // should never be reached
+      break;
+  }
+}
+
+/*!
+ * \brief MainWindow::clearRecentModelsList
+ * Clears the recent models list. Asks the user for confirmation.
+ */
+void MainWindow::clearRecentModelsList()
+{
+  QMessageBox *pMessageBox = new QMessageBox(this);
+  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
+  pMessageBox->setIcon(QMessageBox::Question);
+  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+  pMessageBox->setText(tr("Are you sure you want to clear recent models?"));
+  pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+  pMessageBox->setDefaultButton(QMessageBox::Yes);
+  int answer = pMessageBox->exec();
+  switch (answer) {
+    case QMessageBox::Yes:
+      {
+        QSettings *pSettings = Utilities::getApplicationSettings();
+        pSettings->remove("recentModelsList/models");
+        updateRecentModelActionsAndList();
       }
       break;
     case QMessageBox::No:
@@ -2565,7 +3332,7 @@ void MainWindow::simulateModel()
  */
 void MainWindow::simulateModelWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     simulateWithAnimation(pModelWidget->getLibraryTreeItem());
@@ -2717,15 +3484,19 @@ void MainWindow::showOpenModelicaCommandPrompt()
 //! Imports the model from FMU
 void MainWindow::importModelFMU()
 {
+#if !defined(__EMSCRIPTEN__)
   ImportFMUDialog *pImportFMUDialog = new ImportFMUDialog(this);
   pImportFMUDialog->exec();
+#endif
 }
 
 //! Imports the model from FMU model description
 void MainWindow::importFMUModelDescription()
 {
+#if !defined(__EMSCRIPTEN__)
   ImportFMUModelDescriptionDialog *pImportFMUModelDescriptionDialog = new ImportFMUModelDescriptionDialog(this);
   pImportFMUModelDescriptionDialog->exec();
+#endif
 }
 
 //! Exports the current model to OMNotebook.
@@ -3039,6 +3810,7 @@ void MainWindow::openTerminal()
     return;
   }
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
+#if QT_CONFIG(process)
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
@@ -3047,11 +3819,15 @@ void MainWindow::openTerminal()
 #else
   process.start(terminalCommand + " " + arguments);
 #endif
-  if (process.error() == QProcess::FailedToStart) {
+  if (process.error() == QProcess::FailedToStart || process.hasStartupError()) {
+    const QString processError = process.startupErrorString().isEmpty() ? process.errorString() : process.startupErrorString();
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")
-                          .arg(terminalCommand, arguments, process.errorString());
+                          .arg(terminalCommand, arguments, processError);
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
+#else
+  Q_UNUSED(arguments); // no local terminal on the web build
+#endif
 }
 
 /*!
@@ -3079,7 +3855,7 @@ void MainWindow::runOMSensPlugin()
   }
 #else
 #ifdef Q_OS_WIN
-    QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
+    QPluginLoader loader(QString("%1/lib/%2/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #else
     QPluginLoader loader(QString("%1/lib/%2/omc/libomsensplugin.so").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #endif
@@ -3391,6 +4167,7 @@ void MainWindow::runDebugConfiguration()
   }
 
   if (pAction) {
+#if !defined(__EMSCRIPTEN__)
     DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
     connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
     DebuggerConfigurationPage* pDebuggerConfigurationPage = pDebuggerConfigurationsDialog->getDebuggerConfigurationPage(pAction->text());
@@ -3398,6 +4175,7 @@ void MainWindow::runDebugConfiguration()
       pDebuggerConfigurationsDialog->runConfiguration(pDebuggerConfigurationPage);
     }
     pDebuggerConfigurationsDialog->deleteLater();
+#endif
   }
 }
 
@@ -3456,6 +4234,84 @@ void MainWindow::toggleAutoSave()
   }
 }
 
+// Cancel setter, one per backend. The compiler polls this flag at its chokepoints
+// (System.checkCancel) and unwinds cooperatively; nothing is force-terminated.
+// extern "C": these are C-linkage symbols (EM_JS / the omc C ABI), so the
+// declarations must not be C++-mangled or the reference won't resolve.
+extern "C" {
+#if defined(__EMSCRIPTEN__)
+void omedit_cancel_sim();                        // omc Web Worker: SharedArrayBuffer store (OMCProxy.cpp)
+#elif defined(OMC_RUST_ABI)
+void omc_compiler_request_cancel();              // Rust omc in-process (libOpenModelicaCompiler)
+#else
+void System_requestCancel();                     // classic C omc runtime
+#endif
+}
+
+/*!
+ * \brief MainWindow::showCancelOperationButton
+ * Shows or hides the status-bar Cancel button for a running omc operation.
+ */
+void MainWindow::showCancelOperationButton(bool show)
+{
+  // May be called by an omc command issued before the status bar is built.
+  if (mpCancelOperationButton) {
+    mpCancelOperationButton->setVisible(show);
+  }
+}
+
+/*!
+ * \brief MainWindow::setOmcOperationRunning
+ * Disables everything but the status-bar Cancel button for the duration of a
+ * long omc operation, so the pumped event loop (omedit_pump_events) can deliver
+ * the Cancel click without re-entering the non-reentrant compiler. Also parks
+ * the auto-save timer, which would otherwise fire an omc command mid-operation.
+ */
+void MainWindow::setOmcOperationRunning(bool running)
+{
+  const bool enabled = !running;
+  if (centralWidget()) {
+    centralWidget()->setEnabled(enabled);
+  }
+  if (menuBar()) {
+    menuBar()->setEnabled(enabled);
+  }
+  for (QToolBar *pToolBar : findChildren<QToolBar*>()) {
+    pToolBar->setEnabled(enabled);
+  }
+  for (QDockWidget *pDockWidget : findChildren<QDockWidget*>()) {
+    pDockWidget->setEnabled(enabled);
+  }
+  if (mpAutoSaveTimer) {
+    if (running) {
+      mAutoSaveWasActive = mpAutoSaveTimer->isActive();
+      mpAutoSaveTimer->stop();
+    } else if (mAutoSaveWasActive) {
+      mpAutoSaveTimer->start();
+    }
+  }
+  // The button is revealed by OMCLongOperation's delayed timer so a quick
+  // operation doesn't flash it; here we only guarantee it is hidden once it ends.
+  if (!running) {
+    showCancelOperationButton(false);
+  }
+}
+
+/*!
+ * \brief MainWindow::cancelOmcOperation
+ * Requests cancellation of the operation omc is currently running.
+ */
+void MainWindow::cancelOmcOperation()
+{
+#if defined(__EMSCRIPTEN__)
+  omedit_cancel_sim();
+#elif defined(OMC_RUST_ABI)
+  omc_compiler_request_cancel();
+#else
+  System_requestCancel();
+#endif
+}
+
 /*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
@@ -3463,6 +4319,7 @@ void MainWindow::toggleAutoSave()
  */
 void MainWindow::perspectiveTabChanged(int tabIndex)
 {
+  NavigationManager::instance()->recordNavigationPoint(tabIndex);
   switch (tabIndex) {
     case 0:
       switchToWelcomePerspective();
@@ -3629,9 +4486,11 @@ void MainWindow::runCRMLTestsuite()
  */
 void MainWindow::showDebugConfigurationsDialog()
 {
+#if !defined(__EMSCRIPTEN__)
   DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
   connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   pDebuggerConfigurationsDialog->exec();
+#endif
 }
 
 /*!
@@ -3641,8 +4500,10 @@ void MainWindow::showDebugConfigurationsDialog()
  */
 void MainWindow::showAttachToProcessDialog()
 {
+#if !defined(__EMSCRIPTEN__)
   AttachToProcessDialog *pAttachToProcessDialog = new AttachToProcessDialog(this);
   pAttachToProcessDialog->exec();
+#endif
 }
 
 /*!
@@ -3652,10 +4513,12 @@ void MainWindow::showAttachToProcessDialog()
  */
 void MainWindow::createGitRepository()
 {
+#if !defined(__EMSCRIPTEN__)
   QString gitRepositoryPath = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (gitRepositoryPath.isEmpty())
     return;
   GitCommands::instance()->createGitRepository(gitRepositoryPath);
+#endif
 }
 
 /*!
@@ -3665,10 +4528,12 @@ void MainWindow::createGitRepository()
  */
 void MainWindow::logCurrentFile()
 {
+#if !defined(__EMSCRIPTEN__)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
      GitCommands::instance()->logCurrentFile(pModelWidget->getLibraryTreeItem()->getFileName());
   }
+#endif
 }
 
 /*!
@@ -3678,10 +4543,12 @@ void MainWindow::logCurrentFile()
  */
 void MainWindow::stageCurrentFileForCommit()
 {
+#if !defined(__EMSCRIPTEN__)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
      GitCommands::instance()->stageCurrentFileForCommit(pModelWidget->getLibraryTreeItem()->getFileName());
   }
+#endif
 }
 
 /*!
@@ -3691,10 +4558,12 @@ void MainWindow::stageCurrentFileForCommit()
  */
 void MainWindow::unstageCurrentFileFromCommit()
 {
+#if !defined(__EMSCRIPTEN__)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
      GitCommands::instance()->unstageCurrentFileFromCommit(pModelWidget->getLibraryTreeItem()->getFileName());
   }
+#endif
 }
 
 /*!
@@ -3704,8 +4573,10 @@ void MainWindow::unstageCurrentFileFromCommit()
  */
 void MainWindow::commitFiles()
 {
+#if !defined(__EMSCRIPTEN__)
   CommitChangesDialog *pCommitChangesDialog = new CommitChangesDialog(this);
   pCommitChangesDialog->exec();
+#endif
 }
 
 /*!
@@ -3715,8 +4586,10 @@ void MainWindow::commitFiles()
  */
 void MainWindow::revertCommit()
 {
+#if !defined(__EMSCRIPTEN__)
   RevertCommitsDialog *pRevertCommitsDialog = new RevertCommitsDialog(this);
   pRevertCommitsDialog->exec();
+#endif
 }
 
 /*!
@@ -3725,8 +4598,10 @@ void MainWindow::revertCommit()
  */
 void MainWindow::cleanWorkingDirectory()
 {
+#if !defined(__EMSCRIPTEN__)
   CleanDialog *pCleanDialog = new CleanDialog(this);
   pCleanDialog->exec();
+#endif
 //  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
 //  if (pModelWidget) {
 //     mpGitCommands->cleanWorkingDirectory();
@@ -3796,6 +4671,10 @@ void MainWindow::createActions()
   mpLoadEncryptedLibraryAction = new QAction(tr("Load Encrypted Library"), this);
   mpLoadEncryptedLibraryAction->setStatusTip(tr("Loads the encrypted Modelica library"));
   connect(mpLoadEncryptedLibraryAction, SIGNAL(triggered()), SLOT(loadEncryptedLibrary()));
+  // open compiled model action
+  mpLoadCompiledModelAction = new QAction(Helper::loadCompiledModel, this);
+  mpLoadCompiledModelAction->setStatusTip(tr("Loads the compiled model"));
+  connect(mpLoadCompiledModelAction, SIGNAL(triggered()), SLOT(loadCompiledModel()));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
@@ -3813,6 +4692,14 @@ void MainWindow::createActions()
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
   connect(mpOpenDirectoryAction, SIGNAL(triggered()), SLOT(openDirectory()));
+  // open from cloud storage action
+  mpOpenFromCloudAction = new QAction(tr("Open from Cloud Storage..."), this);
+  mpOpenFromCloudAction->setStatusTip(tr("Opens a package stored in Google Drive or OneDrive"));
+  connect(mpOpenFromCloudAction, SIGNAL(triggered()), SLOT(openFromCloud()));
+  // save to cloud storage action
+  mpSaveToCloudAction = new QAction(tr("Save to Cloud Storage..."), this);
+  mpSaveToCloudAction->setStatusTip(tr("Saves the active class to Google Drive or OneDrive"));
+  connect(mpSaveToCloudAction, SIGNAL(triggered()), SLOT(saveToCloud()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -3898,6 +4785,9 @@ void MainWindow::createActions()
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
   connect(mpClearRecentFilesAction, SIGNAL(triggered()), SLOT(clearRecentFilesList()));
+  mpClearRecentModelsAction = new QAction(Helper::clearRecentModels, this);
+  mpClearRecentModelsAction->setStatusTip(tr("Clears the recent models list"));
+  connect(mpClearRecentModelsAction, SIGNAL(triggered()), SLOT(clearRecentModelsList()));
   // print  action
   mpPrintModelAction = new QAction(QIcon(":/Resources/icons/print.svg"), tr("Print..."), this);
   mpPrintModelAction->setShortcut(QKeySequence("Ctrl+p"));
@@ -4016,7 +4906,7 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // simulate with animation action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
@@ -4231,7 +5121,7 @@ void MainWindow::createActions()
   mpNewArrayParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-parametric-plot-window.svg"), tr("New Array Parametric Plot Window"), this);
   mpNewArrayParametricPlotWindowAction->setStatusTip(tr("Inserts new array parametric plot window"));
   connect(mpNewArrayParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayParametricPlotWindow()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // new mpAnimationWindowAction plot action
   mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
@@ -4261,9 +5151,6 @@ void MainWindow::createActions()
   // Add connector action
   mpAddConnectorAction = new QAction(QIcon(":/Resources/icons/add-connector.svg"), Helper::addConnector, this);
   mpAddConnectorAction->setStatusTip(Helper::addConnectorTip);
-  // Add bus action
-  mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
-  mpAddBusAction->setStatusTip(Helper::addBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4284,15 +5171,18 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   mpFileMenu->addAction(mpLoadModelicaLibraryAction);
   mpFileMenu->addAction(mpLoadEncryptedLibraryAction);
+  mpFileMenu->addAction(mpLoadCompiledModelAction);
   mpFileMenu->addAction(mpOpenResultFileAction);
   mpFileMenu->addAction(mpOpenTransformationFileAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpUnloadAllAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
+  mpFileMenu->addAction(mpOpenFromCloudAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpSaveAction);
   mpFileMenu->addAction(mpSaveAsAction);
+  mpFileMenu->addAction(mpSaveToCloudAction);
   //menuFile->addAction(saveAllAction);
   mpFileMenu->addAction(mpSaveTotalAction);
   mpFileMenu->addSeparator();
@@ -4341,6 +5231,12 @@ void MainWindow::createMenus()
   // we don't create the recent files actions here. It will be done when WelcomePageWidget is created and updateRecentFileActionsAndList() is called.
   mpFileMenu->addMenu(mpRecentFilesMenu);
   mpFileMenu->addAction(mpClearRecentFilesAction);
+  mpRecentModelsMenu = new QMenu(menuBar());
+  mpRecentModelsMenu->setObjectName("RecentModelsMenu");
+  mpRecentModelsMenu->setTitle(tr("Recent &Models"));
+  // we don't create the recent models actions here. It will be done when WelcomePageWidget is created and updateRecentModelActionsAndList() is called.
+  mpFileMenu->addMenu(mpRecentModelsMenu);
+  mpFileMenu->addAction(mpClearRecentModelsAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpPrintModelAction);
   mpFileMenu->addSeparator();
@@ -4389,11 +5285,16 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
+  if (isDebug()) {
+    pViewWindowsMenu->addAction(mpNavigationManagerDockWidget->toggleViewAction());
+  }
+#if !defined(__EMSCRIPTEN__)
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpLocalsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpTargetOutputDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpGDBLoggerDockWidget->toggleViewAction());
+#endif
   pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCloseWindowAction);
   pViewWindowsMenu->addAction(mpCloseAllWindowsAction);
@@ -4426,7 +5327,6 @@ void MainWindow::createMenus()
   pSSPMenu->addAction(mpDeleteIconAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddConnectorAction);
-  pSSPMenu->addAction(mpAddBusAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
@@ -4442,7 +5342,7 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
 //  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
@@ -4583,11 +5483,13 @@ void MainWindow::switchToWelcomePerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#endif
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup(ToolBars::welcomePerspective);
@@ -4631,11 +5533,13 @@ void MainWindow::switchToModelingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#endif
 }
 
 /*!
@@ -4683,11 +5587,13 @@ void MainWindow::switchToPlottingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#endif
 }
 
 /*!
@@ -4709,11 +5615,13 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->show();
   mpBreakpointsDockWidget->show();
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
+#endif
 }
 
 /*!
@@ -4879,7 +5787,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
 //  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
@@ -4901,7 +5809,7 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpNewArrayPlotWindowAction);
   mpPlotToolBar->addAction(mpNewArrayParametricPlotWindowAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpPlotToolBar->addAction(mpNewAnimationWindowAction);
 #endif
   mpPlotToolBar->addAction(mpDiagramWindowAction);
@@ -4937,7 +5845,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addAction(mpDeleteIconAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
-  mpOMSimulatorToolbar->addAction(mpAddBusAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
   connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));
@@ -5079,15 +5986,19 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setWindowTitle(tr("About %1").arg(Helper::applicationName));
   setAttribute(Qt::WA_DeleteOnClose);
 
+  const QString omsVersionLine = OMSProxy::isCreated()
+      ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
+      : QString();
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
      "<b>Connected to %3 %4 encryption support</b><br />"
-     "<b>Connected to %5</b><br /><br />"
+     "%5"
+     "<br />"
      "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-     "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
-#if defined(WITHOUT_OSG)
+     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
+#if defined(WITHOUT_ANIMATION)
      "<br /><em>Compiled without 3D animation support</em>."
 #endif
      "")
@@ -5099,7 +6010,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 #else
           "without",
 #endif
-          oms_getVersion(),
+          omsVersionLine,
           Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
           QString::fromLatin1(qVersion()));
@@ -5120,9 +6031,11 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
                                        .arg(url));
   pOMContributorsHeadingLabel->setToolTip("");
 
+#if !defined(__EMSCRIPTEN__)
   NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
   connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readOMContributors(QNetworkReply*)));
   pNetworkAccessManager->get(QNetworkRequest(QUrl("https://api.github.com/repos/OpenModelica/OpenModelica/contributors")));
+#endif
 
   mpOMContributorsLabel = new Label;
   mpOMContributorsLabel->setObjectName("OMContributorsLabel");
@@ -5206,9 +6119,11 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
  */
 void AboutOMEditDialog::showReportIssue()
 {
+#if !defined(__EMSCRIPTEN__)
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
   pCrashReportDialog->exec();
+#endif
 }
 
 /*!
@@ -5314,4 +6229,375 @@ bool MessageTab::eventFilter(QObject *pObject, QEvent *pEvent)
     }
   }
   return QObject::eventFilter(pObject, pEvent);
+}
+
+/*!
+ * \brief MainWindow::openFromCloud
+ * Mounts a cloud folder as a local working copy, brings its contents down, and
+ * opens it like any other package - everything downstream sees an ordinary path.
+ *
+ * Nothing here uses QDialog::exec() or a nested QEventLoop, and it must stay that
+ * way: on the WebAssembly build a nested event loop parks the main thread inside
+ * Asyncify, and network replies are never delivered to it - the request completes
+ * in the browser and the finished handler simply never runs. Dialogs are opened
+ * with open() and the flow continues in signal handlers.
+ */
+void MainWindow::openFromCloud()
+{
+  CloudBrowserDialog *pBrowser = new CloudBrowserDialog(CloudBrowserDialog::OpenFolder, this);
+  pBrowser->setAttribute(Qt::WA_DeleteOnClose);
+  connect(pBrowser, &QDialog::accepted, this, [this, pBrowser]() {
+    CloudAccount *pAccount = pBrowser->selectedAccount();
+    if (!pAccount || pBrowser->selectedFolderId().isEmpty()) {
+      return;
+    }
+    const CloudMount mount = CloudMountManager::instance()->addMount(pAccount->key(), pBrowser->selectedFolderId(),
+                                                                    pBrowser->selectedFolderName());
+    QDir().mkpath(mount.localRoot);
+    // Remembered before the dialog goes away: a chosen file is opened on its own
+    // once its folder has come down.
+    const QString chosenFile = pBrowser->selectedFileName();
+    syncMount(mount, pAccount, tr("Fetching %1...").arg(mount.remoteName), [this, mount, chosenFile]() {
+      if (!chosenFile.isEmpty()) {
+        mpLibraryWidget->openFile(mount.localRoot + QLatin1Char('/') + chosenFile, Helper::utf8, true);
+        return;
+      }
+      openMountContents(mount);
+    });
+  });
+  pBrowser->open();
+}
+
+/*!
+ * \brief Forget where the children were last saved.
+ *
+ * saveModelicaLibraryTreeItemFolder() reuses a child's existing path whenever
+ * isFilePathValid(), so without this a package's subpackages are written back to
+ * wherever they came from rather than into the folder being saved to. Cleared,
+ * each child's path is derived from its parent's, which is what puts the whole
+ * package under the new root.
+ */
+static void forgetChildFileNames(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
+    LibraryTreeItem *pChild = pLibraryTreeItem->child(i);
+    pChild->setFileName(QString());
+    pChild->setIsSaved(false);
+    forgetChildFileNames(pChild);
+  }
+}
+
+/*!
+ * \brief MainWindow::saveToCloud
+ * Saves the selected class into a new cloud folder and leaves it mounted, so that
+ * later saves go to the same place.
+ *
+ * The class is written to the working copy with the ordinary save path first -
+ * so package.mo, package.order and any subpackages are laid out exactly as they
+ * would be on disk - and the sync engine then pushes that tree. Nothing here
+ * knows how to upload a Modelica package; it only knows how to put one on a
+ * filesystem and let the engine mirror it.
+ *
+ * Like openFromCloud(), no exec() and no nested event loop: see the comment there.
+ */
+void MainWindow::saveToCloud()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  LibraryTreeItem *pActiveItem = pModelWidget ? pModelWidget->getLibraryTreeItem() : 0;
+  if (!pActiveItem || pActiveItem->getLibraryType() != LibraryTreeItem::Modelica) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Open a Modelica class first; it is the active class that gets saved."));
+    return;
+  }
+  // Saving a class inside a package saves the whole package - that is what
+  // LibraryWidget::saveLibraryTreeItem() does with a non-top-level item - so the
+  // top-level class is what has to be redirected to the cloud folder. Redirecting
+  // the active child instead left the package saving to its old location while a
+  // stray file for the child appeared in the mount.
+  LibraryTreeItem *pLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pActiveItem);
+
+  CloudBrowserDialog *pBrowser = new CloudBrowserDialog(CloudBrowserDialog::SaveFolder, this);
+  pBrowser->setAttribute(Qt::WA_DeleteOnClose);
+  connect(pBrowser, &QDialog::accepted, this, [this, pBrowser, pLibraryTreeItem]() {
+    CloudAccount *pAccount = pBrowser->selectedAccount();
+    if (!pAccount || pBrowser->selectedFolderId().isEmpty()) {
+      return;
+    }
+    // Mount the folder the user picked. No folder is invented here: if they wanted
+    // a new one they made it in the dialog.
+    const CloudMount mount = CloudMountManager::instance()->addMount(pAccount->key(), pBrowser->selectedFolderId(),
+                                                                    pBrowser->selectedFolderName());
+    QDir().mkpath(mount.localRoot);
+
+    // The class keeps the layout it already has - a model stays one .mo file, a
+    // package saved as a directory stays a directory. Forcing a folder structure
+    // turned M.mo into M/package.mo, which is not what saving somewhere else means.
+    const QString className = pLibraryTreeItem->getName();
+    QString fileName;
+    if (pLibraryTreeItem->isSaveFolderStructure()) {
+      fileName = QStringLiteral("%1/%2/package.mo").arg(mount.localRoot, className);
+      QDir().mkpath(QStringLiteral("%1/%2").arg(mount.localRoot, className));
+    } else {
+      fileName = QStringLiteral("%1/%2.mo").arg(mount.localRoot, className);
+    }
+    // The file has to exist before the name will be honoured: isFilePathValid()
+    // tests QFileInfo::exists(), and a name pointing at nothing is treated as no
+    // name at all - whereupon the ordinary save path asks the user for a location
+    // and writes somewhere else entirely.
+    QDir().mkpath(QFileInfo(fileName).absolutePath());
+    // Truncate matters: the worker-VFS file engine only marks a file dirty - and
+    // so only creates it - when the open truncates. A plain WriteOnly open writes
+    // nothing, the file never appears, and isFilePathValid() stays false.
+    QFile placeholder(fileName);
+    if (placeholder.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      placeholder.close();
+    }
+    pLibraryTreeItem->setFileName(fileName);
+    pLibraryTreeItem->setIsSaved(false);
+    forgetChildFileNames(pLibraryTreeItem);
+    if (!mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Could not write %1 to the working copy.").arg(pLibraryTreeItem->getNameStructure()));
+      return;
+    }
+    // The empty file created above only exists to make the save path accept the
+    // name. If the save then wrote somewhere else it is still empty, and uploading
+    // it would put a file holding no class into the user's cloud storage - which
+    // is exactly what happened before the save path was redirected correctly.
+    if (QFileInfo(fileName).size() == 0) {
+      QFile::remove(fileName);
+      cloudLog(QStringLiteral("save left %1 empty; nothing uploaded").arg(fileName));
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("%1 was not written to the cloud folder; nothing was uploaded.")
+                                .arg(pLibraryTreeItem->getNameStructure()));
+      return;
+    }
+    syncMount(mount, pAccount, tr("Uploading %1...").arg(className));
+  });
+  pBrowser->open();
+}
+
+/*!
+ * \brief MainWindow::openMountContents
+ * Loads what a freshly synchronised mount holds.
+ *
+ * A mounted folder is not itself a package unless it has a package.mo. Handing the
+ * bare directory to openFile() only got the folder names into the Libraries
+ * Browser, not the classes inside them, so each entry is opened on its own terms:
+ * a subfolder with a package.mo is a package, a loose .mo file is a class.
+ */
+void MainWindow::openMountContents(const CloudMount &mount)
+{
+  const QString packageFile = mount.localRoot + QStringLiteral("/package.mo");
+  if (QFile::exists(packageFile)) {
+    mpLibraryWidget->openFile(packageFile, Helper::utf8, true);
+    return;
+  }
+  const QStringList names = cloudListDirectory(mount.localRoot);
+  bool openedAnything = false;
+  for (const QString &raw : names) {
+    const bool isFolder = raw.endsWith(QLatin1Char('/'));
+    const QString name = isFolder ? raw.left(raw.size() - 1) : raw;
+    if (name.isEmpty() || name.startsWith(QLatin1Char('.'))) {
+      continue;
+    }
+    const QString path = mount.localRoot + QLatin1Char('/') + name;
+    if (isFolder) {
+      const QString childPackage = path + QStringLiteral("/package.mo");
+      if (QFile::exists(childPackage)) {
+        mpLibraryWidget->openFile(childPackage, Helper::utf8, true);
+        openedAnything = true;
+      }
+    } else if (name.endsWith(QStringLiteral(".mo"), Qt::CaseInsensitive)) {
+      mpLibraryWidget->openFile(path, Helper::utf8, true);
+      openedAnything = true;
+    }
+  }
+  if (!openedAnything) {
+    MessagesWidget::instance()->addGUIMessage(
+        MessageItem(MessageItem::Modelica, tr("%1 holds no Modelica classes.").arg(mount.remoteName),
+                    Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::pushMountInBackground
+ * Sends what was just saved up to the cloud, a moment later.
+ *
+ * Deferred and coalesced: a run per written file would mean several full tree
+ * comparisons for one save.
+ */
+void MainWindow::pushMountInBackground(const QString &mountId)
+{
+  QTimer *pTimer = mAutoPushTimers.value(mountId, 0);
+  if (!pTimer) {
+    pTimer = new QTimer(this);
+    pTimer->setSingleShot(true);
+    pTimer->setInterval(3000);
+    connect(pTimer, &QTimer::timeout, this, [this, mountId, pTimer]() {
+      const CloudMount mount = CloudMountManager::instance()->mount(mountId);
+      if (!mount.isValid() || !mount.autoPush) {
+        return;
+      }
+      if (mSyncingMounts.contains(mountId)) {
+        // Wait for the run in progress rather than dropping this one: it may not
+        // have seen the edit that asked for this push.
+        pTimer->start();
+        return;
+      }
+      CloudAccount *pAccount = CloudAccountManager::instance()->account(mount.accountKey);
+      if (!pAccount || !pAccount->isSignedIn()) {
+        return;
+      }
+      // Cached before the push, so an edit that cannot be uploaded now - offline,
+      // or the token gone - still survives a reload.
+      CloudCache::save(mount);
+      syncMount(mount, pAccount, tr("Saving %1 to the cloud...").arg(mount.remoteName), std::function<void()>(), true);
+    });
+    mAutoPushTimers.insert(mountId, pTimer);
+  }
+  pTimer->start();
+}
+
+/*!
+ * \brief MainWindow::syncMount
+ * Runs one synchronisation of a mount, showing progress and reporting whatever
+ * the engine decides needs a person: conflicts, and deletions large enough to
+ * want confirming.
+ *
+ * A background run - an automatic push after an ordinary save - keeps out of the
+ * way: no progress dialog, and a failure is a message rather than a box. What
+ * needs an answer still asks for one, because a conflict left unanswered is work
+ * left unsaved.
+ */
+void MainWindow::syncMount(const CloudMount &mount, CloudAccount *pAccount, const QString &title,
+                           const std::function<void()> &onSuccess, bool background)
+{
+  if (mSyncingMounts.contains(mount.mountId)) {
+    return;
+  }
+  mSyncingMounts.insert(mount.mountId);
+
+  QPointer<QProgressDialog> pProgress;
+  if (!background) {
+    pProgress = new QProgressDialog(title, Helper::cancel, 0, 0, this);
+    pProgress->setAttribute(Qt::WA_DeleteOnClose);
+    pProgress->setWindowModality(Qt::WindowModal);
+    pProgress->setMinimumDuration(0);
+    pProgress->setValue(0);
+  } else {
+    getStatusBar()->showMessage(title);
+  }
+
+  CloudSyncEngine *pEngine = new CloudSyncEngine(mount, pAccount->provider(), this);
+  if (pProgress) {
+    connect(pProgress, &QProgressDialog::canceled, pEngine, &CloudSyncEngine::cancel);
+  }
+  connect(pEngine, &CloudSyncEngine::progress, this, [this, pProgress](int done, int total, const QString &what) {
+    if (!pProgress) {
+      if (!what.isEmpty()) {
+        getStatusBar()->showMessage(what);
+      }
+      return;
+    }
+    pProgress->setMaximum(total);
+    pProgress->setValue(done);
+    if (!what.isEmpty()) {
+      pProgress->setLabelText(what);
+    }
+  });
+  connect(pEngine, &CloudSyncEngine::skipped, this, [](const QStringList &descriptions) {
+    for (const QString &description : descriptions) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, description, Helper::scriptingKind,
+                                                            Helper::notificationLevel));
+    }
+  });
+  // Deletions are never carried out on the engine's own judgement; the user sees
+  // exactly what would go.
+  connect(pEngine, &CloudSyncEngine::deletionsNeedConfirmation, this,
+          [this, pEngine, pProgress](const QList<SyncAction> &deletions) {
+    if (pProgress) {
+      pProgress->hide();
+    }
+    QStringList names;
+    for (const SyncAction &action : deletions) {
+      names << action.relativePath;
+    }
+    // open(), not the blocking QMessageBox::question: a synchronisation is half
+    // done behind this, and stalling the main thread here is what wedges the
+    // WebAssembly build.
+    QMessageBox *pQuestion = new QMessageBox(QMessageBox::Question,
+                                             QString("%1 - %2").arg(Helper::applicationName, tr("Confirm Deletions")),
+                                             tr("This will move %n file(s) to the cloud service's trash:\n\n%1\n\n"
+                                                "Continue?", "", names.size())
+                                                 .arg(names.join(QLatin1Char('\n'))),
+                                             QMessageBox::Yes | QMessageBox::No, this);
+    pQuestion->setAttribute(Qt::WA_DeleteOnClose);
+    pQuestion->setDefaultButton(QMessageBox::No);
+    connect(pQuestion, &QMessageBox::finished, pEngine, [pEngine, pProgress, pQuestion](int) {
+      if (pProgress) {
+        pProgress->show();
+      }
+      pEngine->confirmDeletions(pQuestion->standardButton(pQuestion->clickedButton()) == QMessageBox::Yes);
+    });
+    pQuestion->open();
+  });
+  connect(pEngine, &CloudSyncEngine::conflictsDetected, this,
+          [this, pEngine, pProgress, mount](const QList<SyncAction> &conflicts) {
+    if (pProgress) {
+      pProgress->hide();
+    }
+    CloudConflictDialog *pDialog = new CloudConflictDialog(mount.remoteName, conflicts, this);
+    connect(pDialog, &QDialog::accepted, pEngine, [pEngine, pProgress, pDialog]() {
+      if (pProgress) {
+        pProgress->show();
+      }
+      pEngine->applyResolutions(pDialog->resolutions());
+    });
+    connect(pDialog, &QDialog::rejected, pEngine, &CloudSyncEngine::cancel);
+    pDialog->open();
+  });
+  connect(pEngine, &CloudSyncEngine::finished, this,
+          [this, pEngine, pProgress, mount, onSuccess, background](const CloudError &error) {
+    mSyncingMounts.remove(mount.mountId);
+    if (pProgress) {
+      pProgress->close();
+    }
+    pEngine->deleteLater();
+    // However the run ended, the manifest now describes the working copy, so the
+    // cache must come from the same state: a cache older than the manifest reads
+    // back as a local edit and uploads over the newer remote.
+    CloudCache::save(mount);
+    if (error.isError() && error.code != CloudError::Cancelled) {
+      const QString text = tr("Could not synchronise %1: %2").arg(mount.remoteName, error.message);
+      if (background) {
+        MessagesWidget::instance()->addGUIMessage(
+            MessageItem(MessageItem::Modelica, text, Helper::scriptingKind, Helper::errorLevel));
+      } else {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), text);
+      }
+      return;
+    }
+    if (error.code == CloudError::Cancelled) {
+      getStatusBar()->showMessage(tr("Synchronisation of %1 was cancelled").arg(mount.remoteName), 5000);
+      return;
+    }
+    getStatusBar()->showMessage(tr("%1 is up to date").arg(mount.remoteName), 5000);
+    if (onSuccess) {
+      onSuccess();
+    }
+  });
+
+  // On the web target the working copy is in memory and empty after a reload.
+  // Putting the cache back first turns a full re-download into a revalidation.
+  if (cloudListDirectory(mount.localRoot).isEmpty()) {
+    CloudCache::restore(mount, [pEngine](int restored) {
+      if (restored > 0) {
+        cloudLog(QStringLiteral("cache: restored %1 file(s)").arg(restored));
+      }
+      pEngine->start();
+    });
+    return;
+  }
+  pEngine->start();
 }

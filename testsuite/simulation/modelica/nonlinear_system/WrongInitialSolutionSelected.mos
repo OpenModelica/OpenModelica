@@ -1,7 +1,8 @@
 // name: WrongInitialSolutionSelected
 // status: correct
-// teardown_command: rm -f WrongInitialSolutionSelected* output.log
+// teardown_command: rm -f SolverFailure.WrongInitialSolutionSelected* output.log
 // cflags: -d=-newInst
+// suite: disabled
 
 loadModel(Modelica, {"3.2.3"});
 loadFile("DebugPackage.mo"); getErrorString();

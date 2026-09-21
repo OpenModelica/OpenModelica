@@ -1,6 +1,7 @@
 // name: OperatorIllegal
 // keywords: operator
 // status: incorrect
+// suite: disabled
 //
 // extending from a record containing operator overloads should be illegal
 //

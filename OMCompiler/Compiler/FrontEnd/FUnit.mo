@@ -877,7 +877,7 @@ protected function popUnit
   output list<String> outCharList;
   output String outUnit;
 algorithm
-  (outCharList, outUnit) := matchcontinue inCharList
+  (outCharList, outUnit) := match inCharList
     local
       String s1, s2;
       list<String> strRest;
@@ -885,18 +885,16 @@ algorithm
     case {}
     then ({}, "");
 
-    case s1::strRest algorithm
-      true := (stringCompare(s1, "a") >= 0) and (stringCompare(s1, "z") <= 0);
+    case s1::strRest guard (stringCompare(s1, "a") >= 0) and (stringCompare(s1, "z") <= 0) algorithm
       (strRest, s2) := popUnit(strRest);
     then (strRest, s1 + s2);
 
-    case s1::strRest algorithm
-      true := (stringCompare(s1, "A") >= 0) and (stringCompare(s1, "Z") <= 0) ;
+    case s1::strRest guard (stringCompare(s1, "A") >= 0) and (stringCompare(s1, "Z") <= 0) algorithm
       (strRest, s2) := popUnit(strRest);
     then (strRest, s1 + s2);
 
     else (inCharList, "");
-  end matchcontinue;
+  end match;
 end popUnit;
 
 protected function popNumber

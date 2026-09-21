@@ -14,10 +14,23 @@ if(NOT MSVC)
   # Clang puts designated-initializer warnings under -Werror=c23-extensions and
   # -Wc++20-extensions / -Wc++23-extensions (warning-level, not
   # extension-level), so -pedantic-errors alone does not promote them to errors.
+  if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:-Werror=c23-extensions>")
+  endif ()
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Werror=c++20-extensions)
-    add_compile_options(-Werror=c23-extensions -Werror=c++23-extensions)
+    add_compile_options(
+      "$<$<COMPILE_LANGUAGE:CXX>:-Werror=c++20-extensions>"
+      "$<$<COMPILE_LANGUAGE:CXX>:-Werror=c++23-extensions>"
+    )
   endif()
+endif()
+
+# Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON), applied directory-wide so
+# every target defined here and in every add_subdirectory() below is covered.
+# See cmake/modules/OpenModelicaCoverage.cmake.
+if(OM_ENABLE_COVERAGE)
+  add_compile_options(${OM_COVERAGE_COMPILE_OPTIONS})
+  add_link_options(--coverage)
 endif()
 
 # ######################################################################################################################
@@ -28,6 +41,7 @@ add_library(omc::simrt::runtime::headers ALIAS OpenModelicaRuntimeCInterface)
 
 set(OMC_SIMRT_PUBLIC_HEADERS
   "ModelicaUtilities.h"
+  "omc_dll.h"
   "omc_inline.h"
   "omc_simulation_settings.h"
   "openmodelica_func.h"
@@ -63,8 +77,9 @@ add_subdirectory(gc)
 add_subdirectory(meta)
 add_subdirectory(util)
 
-# For the moment, we build OpenModelicaRuntimeC as a static library with MSVC.
-# It has some dll exporting issues in it that need to be resolved.
+# Static with MSVC: as its own DLL every global it shares with
+# SimulationRuntimeC would cross a DLL boundary, and the consumers inside this
+# project are not compiled with IMPORT_INTO.
 if(MSVC)
   add_library(OpenModelicaRuntimeC STATIC)
 else()
@@ -146,12 +161,14 @@ if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # WINDOWS_EXPORT_ALL_SYMBOLS only scans the target's own objects, so the
+  # static OpenModelicaRuntimeC's symbols (boxptr_*, the MMC runtime) would sit
+  # in the DLL unexported. Put those objects in it directly.
+  target_sources(SimulationRuntimeC PRIVATE
+    $<TARGET_OBJECTS:OpenModelicaRuntimeCMeta>
+    $<TARGET_OBJECTS:OpenModelicaRuntimeCUtil>
+    $<TARGET_OBJECTS:OpenModelicaRuntimeCGC>)
 endif(MINGW)
-
-if(OM_OMC_ENABLE_PRIMME)
-  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_PRIMME)
-  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::primme)
-endif()
 
 if(OM_OMC_ENABLE_COLPACK)
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_COLPACK)
@@ -176,8 +193,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRE
 # Add C Simulation Runtime unit tests
 # Build with target "ctestsuite-depends"
 # Run test with ctest
-add_subdirectory(
-  ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
-  ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
-  EXCLUDE_FROM_ALL
-)
+# They live in testsuite/, so they follow OM_ENABLE_TESTSUITE (see the top-level CMakeLists.txt).
+if(OM_ENABLE_TESTSUITE)
+  add_subdirectory(
+    ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
+    ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
+    EXCLUDE_FROM_ALL
+  )
+endif()

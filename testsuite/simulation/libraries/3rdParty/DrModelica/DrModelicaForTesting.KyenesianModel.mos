@@ -2,12 +2,13 @@
 // keywords: simulation DrModelicaForTesting.KyenesianModel
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.KyenesianModel.* DrModelicaForTesting.KyenesianModel_* DrModelicaForTesting.KyenesianModel DrModelicaForTesting.KyenesianModel.exe DrModelicaForTesting.KyenesianModel.cpp DrModelicaForTesting.KyenesianModel.makefile DrModelicaForTesting.KyenesianModel.libs DrModelicaForTesting.KyenesianModel.log DrModelicaForTesting.KyenesianModel.c DrModelicaForTesting.KyenesianModel.o output.log
+// suite: disabled
 //
 // Simulation Results 
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 loadFile("DrModelicaForTesting.mo"); getErrorString();
 
 

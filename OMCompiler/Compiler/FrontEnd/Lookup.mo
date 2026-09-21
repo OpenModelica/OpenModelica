@@ -2402,23 +2402,10 @@ public function selectUpdatedEnv
   input FCore.Graph inOldEnv;
   output FCore.Graph outEnv;
 algorithm
-  outEnv := matchcontinue inOldEnv
-    // return old if is top scope!
-    case _
-      algorithm
-        true := FGraph.isTopScope(inNewEnv);
-      then
-        inOldEnv;
-    // if they point to the same env, return the new one
-    case _
-      algorithm
-        true := stringEq(FGraph.getGraphNameStr(inNewEnv),
-                        FGraph.getGraphNameStr(inOldEnv));
-      then
-        inNewEnv;
-
-    else inOldEnv;
-  end matchcontinue;
+  // return the new env only if it is not top scope and points to the same env
+  outEnv := if not FGraph.isTopScope(inNewEnv) and
+               stringEq(FGraph.getGraphNameStr(inNewEnv), FGraph.getGraphNameStr(inOldEnv))
+            then inNewEnv else inOldEnv;
 end selectUpdatedEnv;
 
 protected function buildRecordType ""

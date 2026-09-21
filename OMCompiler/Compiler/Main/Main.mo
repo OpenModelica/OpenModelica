@@ -41,8 +41,7 @@ encapsulated package Main
 
   This is the main program in the Modelica specification.
   It either translates a file given as a command line argument
-  or starts a server loop communicating through CORBA or sockets
-  (The Win32 implementation only implements CORBA)"
+  or starts a server loop communicating through ZeroMQ or sockets"
 
 protected
 import Absyn;
@@ -55,7 +54,6 @@ import CevalScript;
 import CevalScriptBackend;
 import ClockIndexes;
 import Config;
-import Corba;
 import Debug;
 import Dump;
 import DumpGraphviz;
@@ -159,6 +157,8 @@ algorithm
     outResult := makeDebugResult(Flags.DUMP, outResult);
     outResult := makeDebugResult(Flags.DUMP_GRAPHVIZ, outResult);
   end if;
+
+  System.reportProgress(-1, 0) "PHASE_IDLE";
 end handleCommand;
 
 protected function handleCommand2
@@ -386,9 +386,9 @@ algorithm
 end loadLib;
 
 protected function translateFile
-"This function invokes the translator on a source file.  The argument should be
-  a list with a single file name, with the rest of the list being an optional
-  list of libraries and .mo-files if the file is a .mo-file"
+  "This function invokes the translator on a source file.  The argument should be
+   a list with a single file name, with the rest of the list being an optional
+   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
 protected
   String f;
@@ -396,7 +396,9 @@ protected
   Absyn.Path cname;
   Boolean runBackend, runSilent;
   GlobalScript.Statements stmts;
-  String cls, fileNamePrefix;
+  String cls, fileNamePrefix, fmuVersion, fmuType, fmuPlatformsStr;
+  Integer fmuVersionInt;
+  list<String> fmuPlatforms, fmuTypeList;
 algorithm
   // Execute the given script if --cmd is used.
   if not stringEmpty(Flags.getConfigString(Flags.EXECUTE_COMMAND)) then
@@ -444,12 +446,30 @@ algorithm
         cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
         fileNamePrefix := Util.stringReplaceChar(AbsynUtil.pathString(cname), ".", "_");
 
-        runBackend := Config.simulationCg() or Config.simulation();
-        runSilent := Config.silent();
+        if Flags.getConfigBool(Flags.EXPORT_FMU) then
+          fmuVersionInt := Flags.getConfigEnum(Flags.FMU_VERSION);
+          fmuVersion := match fmuVersionInt
+            case 10 then "1.0";
+            case 20 then "2.0";
+            case 30 then "3.0";
+          end match;
+          FlagsUtil.setConfigString(Flags.FMI_VERSION, fmuVersion);
+          fmuTypeList := Flags.getConfigStringList(Flags.FMU_TYPE);
+          fmuType := stringDelimitList(fmuTypeList, "_");
+          fmuPlatformsStr := Flags.getConfigString(Flags.FMU_PLATFORMS);
+          fmuPlatforms := Util.stringSplitAtChar(fmuPlatformsStr, ",");
+          CevalScriptBackend.callBuildModelFMU(FCore.emptyCache(), FGraph.empty(), cname,
+            fmuVersion, fmuType, fileNamePrefix, true, fmuPlatforms, NONE());
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+          System.fflush();
+        else
+          runBackend := Config.simulationCg() or Config.simulation();
+          runSilent := Config.silent();
 
-        CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
-                                                                                fileNamePrefix, runBackend, runSilent, NONE());
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+          CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
+                                                                                  fileNamePrefix, runBackend, runSilent, NONE());
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+        end if;
       then ();
 
     /* Modelica script file .mos */
@@ -479,7 +499,7 @@ algorithm
     case {f} /* A template file .tpl (in the Susan language)*/
       algorithm
         isCodegenTemplateFile(f);
-        TplMain.main(f);
+        TplMain.main(f, Flags.getConfigString(Flags.TPL_OUTPUT_DIR));
       then
         ();
 
@@ -530,18 +550,6 @@ algorithm
   end while;
 end interactivemode;
 
-protected function interactivemodeCorba
-"Initiate the interactive mode using corba communication."
-algorithm
-  try
-    Corba.initialize();
-    serverLoopCorba();
-  else
-    Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
-    Print.printBuf("Exiting!\n");
-  end try;
-end interactivemodeCorba;
-
 protected function interactivemodeZMQ
 "Initiate the interactive mode using ZMQ communication."
 protected
@@ -568,26 +576,6 @@ algorithm
     end if;
   end while;
 end interactivemodeZMQ;
-
-protected function serverLoopCorba
-"This function is the main loop of the server for a CORBA impl."
-protected
-  String str, reply_str;
-  Boolean cont;
-algorithm
-  cont := true;
-  while true loop
-    str := Corba.waitForCommand();
-    (cont, reply_str) := handleCommand(str);
-    if cont then
-      Corba.sendreply(reply_str);
-    else
-      break;
-    end if;
-  end while;
-  Corba.sendreply("quit requested, shutting server down\n");
-  Corba.close();
-end serverLoopCorba;
 
 public function readSettings
   " author: x02lucpo
@@ -626,8 +614,8 @@ public function setWindowsPaths
 algorithm
   () := match inOMHome
     local
-      String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
-      Boolean hasBinDir, hasLibBinDir;
+      String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir, omLibDir;
+      Boolean hasBinDir, hasLibBinDir, isMSVC;
 
     // check if we have OMDEV set
     case omHome
@@ -642,8 +630,12 @@ algorithm
         mingwDir := System.openModelicaPlatform();
         msysBinDir := msysPath + "\\usr\\bin";
         binDir := msysPath + "\\" + mingwDir + "\\bin";
-        // if compiler is gcc
-        if System.getCCompiler() == "gcc" then
+        // An MSVC build ships no MSYS toolchain at all - Compile.bat locates
+        // Visual Studio itself - so there is nothing to search for or report.
+        isMSVC := 0 == System.stringFind(mingwDir, "msvc");
+        if isMSVC then
+          libBinDir := binDir;
+        elseif System.getCCompiler() == "gcc" then
           libBinDir := msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
         else // if is clang
           libBinDir := binDir;
@@ -651,10 +643,16 @@ algorithm
         // do we have bin and lib bin?
         hasBinDir := System.directoryExists(binDir);
         hasLibBinDir := System.directoryExists(libBinDir);
-        if hasBinDir and hasLibBinDir
+        omLibDir := omHome + "\\lib\\" + Autoconf.triple + "\\omc";
+        if isMSVC then
+          oldPath := System.readEnv("PATH");
+          newPath := stringAppendList({omHome, "\\bin;", omLibDir, ";"});
+          newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
+          System.setEnv("PATH",newPath,true);
+        elseif hasBinDir and hasLibBinDir
         then
           oldPath := System.readEnv("PATH");
-          newPath := stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
+          newPath := stringAppendList({omHome, "\\bin;", omLibDir, ";", binDir + ";", libBinDir + ";", msysBinDir + ";"});
           newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
           // print("Path set: " + newPath + "\n");
           System.setEnv("PATH",newPath,true);
@@ -702,6 +700,7 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
+  FlagsUtil.applyNumProcEnvironment();
   setDefaultCC();
   SymbolTable.reset();
   BackendInterfaceImplementation.initializeBackendInterface();
@@ -762,7 +761,7 @@ algorithm
 
   // Don't allow running omc as root due to security risks.
   interactiveMode := Flags.getConfigString(Flags.INTERACTIVE);
-  if System.userIsRoot() and (interactiveMode == "corba" or interactiveMode == "tcp" or interactiveMode == "zmq") then
+  if System.userIsRoot() and (interactiveMode == "tcp" or interactiveMode == "zmq") then
     Error.addMessage(Error.ROOT_USER_INTERACTIVE, {});
     print(ErrorExt.printMessagesStr(false));
     fail();
@@ -781,8 +780,6 @@ algorithm
     readSettings(args);
     if interactiveMode == "tcp" then
       interactivemode();
-    elseif interactiveMode == "corba" then
-      interactivemodeCorba();
     elseif interactiveMode == "zmq" then
       interactivemodeZMQ();
     else // No interactive flag given, try to flatten the file.

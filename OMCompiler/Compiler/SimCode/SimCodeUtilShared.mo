@@ -63,8 +63,10 @@ protected
 import BaseHashTable;
 import ComponentReference;
 import ComponentReferenceBasics;
+import Config;
 import DAEUtil;
 import Error;
+import Flags;
 import List;
 
 public
@@ -109,7 +111,8 @@ algorithm
 end createFunctions;
 
 public function createVarToArrayIndexMapping
-  "Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
+  "Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content.
+   Only the Cpp/OMSI templates and HpcOm read the mappings, other targets get empty tables."
   input SimCode.ModelInfo iModelInfo;
   output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;
   output HashTableCrILst.HashTable oVarToIndexMapping; //same as oVarToArrayIndexMapping, but does not merge array variables into one list
@@ -121,6 +124,12 @@ protected
   Integer var_type;
   array<Integer> currentVarIndices; //current variable index real,int,bool,string
 algorithm
+  if not (Flags.isSet(Flags.HPCOM) or listMember(Config.simCodeTarget(), {"Cpp", "omsic", "omsicpp"})) then
+    oVarToArrayIndexMapping := HashTableCrIListArray.emptyHashTableSized(1);
+    oVarToIndexMapping := HashTableCrILst.emptyHashTableSized(1);
+    return;
+  end if;
+
   // Collect the variable lists into a list for easier handling.
   sim_vars := iModelInfo.vars;
   vars := {

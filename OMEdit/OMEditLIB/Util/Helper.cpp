@@ -53,8 +53,14 @@ QString Helper::userHomeDirectory = "";
 QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OMEditInternal = "OMEditInternal";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
-                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)";
+QString Helper::omFileTypes = QString("All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml%1);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
+                                      ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)%2")
+#if defined(__EMSCRIPTEN__)
+                              // An archive is the only way a browser hands over a library with its Resources/.
+                              .arg(" *.zip", ";;Zipped Libraries (*.zip)");
+#else
+                              .arg("", "");
+#endif
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
@@ -65,12 +71,21 @@ QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info Files (*_info.json)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::csvFileTypes = "CSV Files (*.csv)";
+#ifdef OM_LEGACY_RESULT_READERS
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
 QString Helper::omResultFileTypesRegExp = "\\b(mat|plt|csv)\\b";
+#else
+QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.arrow *.plt *.csv)";
+QString Helper::omResultFileTypesRegExp = "\\b(mat|arrow|plt|csv)\\b";
+#endif
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
+#ifdef OM_LEGACY_RESULT_READERS
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+#else
+QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.arrow *.csv *.fmu);;Visualization MAT(*.mat *.arrow);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+#endif
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
 int Helper::treeIndentation = 20;
 QSize Helper::iconSize = QSize(20, 20);
@@ -82,7 +97,11 @@ QString Helper::busConnectorFormat = "bus/connector";
 QString Helper::cutCopyPasteFormat = "application/OMEdit.cut-copy-paste";
 qreal Helper::shapesStrokeWidth = 2.0;
 int Helper::headingFontSize = 18;
+#ifdef OM_LEGACY_RESULT_READERS
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv";
+#else
+QString Helper::ModelicaSimulationOutputFormats = "mat,arrow,plt,csv";
+#endif
 QString Helper::clockOptions = ",RT,CYC,CPU";
 QString Helper::internalLevel = ".OpenModelica.Scripting.ErrorLevel.internal";
 QString Helper::notificationLevel = ".OpenModelica.Scripting.ErrorLevel.notification";
@@ -146,6 +165,7 @@ QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
+QString Helper::loadCompiledModel;
 QString Helper::newCRMLModel;
 QString Helper::newCRMLModelTip;
 QString Helper::newMOSScript;
@@ -153,6 +173,7 @@ QString Helper::newMOSScriptTip;
 QString Helper::libraries;
 QString Helper::elements;
 QString Helper::clearRecentFiles;
+QString Helper::clearRecentModels;
 QString Helper::encoding;
 QString Helper::fileLabel;
 QString Helper::file;
@@ -189,6 +210,7 @@ QString Helper::removeItem;
 QString Helper::general;
 QString Helper::output;
 QString Helper::parameters;
+QString Helper::parametersTip;
 QString Helper::inputs;
 QString Helper::name;
 QString Helper::startScript;
@@ -414,18 +436,8 @@ QString Helper::addSystem;
 QString Helper::addSystemTip;
 QString Helper::addSubModel;
 QString Helper::addSubModelTip;
-QString Helper::addBus;
-QString Helper::addBusTip;
-QString Helper::editBus;
-QString Helper::addTLMBus;
-QString Helper::addTLMBusTip;
-QString Helper::editTLMBus;
 QString Helper::addConnector;
 QString Helper::addConnectorTip;
-QString Helper::addBusConnection;
-QString Helper::editBusConnection;
-QString Helper::addTLMConnection;
-QString Helper::editTLMConnection;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -475,9 +487,10 @@ void Helper::initHelperVariables()
   Helper::newModelicaClass = tr("Modelica Class");
   Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
-  Helper::createNewModelicaClass = tr("Creates a new Modelica Class");
+  Helper::createNewModelicaClass = tr("Create a new Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
+  Helper::loadCompiledModel = tr("Load Compiled Model");
   Helper::newCRMLModel = tr("CRML Model");
   Helper::newCRMLModelTip = tr("Creates a new CRML Model");
   Helper::newMOSScript = tr("Modelica Script");
@@ -485,6 +498,7 @@ void Helper::initHelperVariables()
   Helper::libraries = tr("Libraries");
   Helper::elements = tr("Elements");
   Helper::clearRecentFiles = tr("Clear Recent Files");
+  Helper::clearRecentModels = tr("Clear Recent Models");
   Helper::encoding = tr("Encoding:");
   Helper::fileLabel = tr("File:");
   Helper::file = tr("File");
@@ -522,6 +536,7 @@ void Helper::initHelperVariables()
   Helper::general = tr("General");
   Helper::output = tr("Output");
   Helper::parameters = tr("Parameters");
+  Helper::parametersTip = tr("Shows the component parameters");
   Helper::inputs = tr("Inputs");
   Helper::name = tr("Name:");
   Helper::startScript = tr("Start Script:");
@@ -747,18 +762,8 @@ void Helper::initHelperVariables()
   Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
   Helper::addSubModel = tr("Add SubModel");
   Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
-  Helper::addBus = tr("Add Bus");
-  Helper::addBusTip = tr("Adds the bus");
-  Helper::editBus = tr("Edit Bus");
-  Helper::addTLMBus = tr("Add TLM Bus");
-  Helper::addTLMBusTip = tr("Adds the TLM bus");
-  Helper::editTLMBus = tr("Edit TLM Bus");
   Helper::addConnector = tr("Add Connector");
   Helper::addConnectorTip = tr("Adds the connector");
-  Helper::addBusConnection = tr("Add Bus Connection");
-  Helper::editBusConnection = tr("Edit Bus Connection");
-  Helper::addTLMConnection = tr("Add TLM Connection");
-  Helper::editTLMConnection = tr("Edit TLM Connection");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");

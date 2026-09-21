@@ -36,17 +36,12 @@
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 #include "../../util/omc_error.h"
-#include "../../util/parallel_helper.h"
 #include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
-
-#ifdef USE_PARJAC
-  #include <omp.h>
-#endif
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
@@ -107,8 +102,8 @@ int freeLapackData(void **voiddata)
 void getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, double* jac)
 {
   int k;
-  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
@@ -139,7 +134,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   int i, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
-  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->solverData[0];
   int success = 1;
 
   /* We are given the number of the linear system.
@@ -156,16 +151,15 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
 
   /* set data */
   _omc_setVectorData(solverData->x, aux_x);
-  _omc_setVectorData(solverData->b, systemData->parDynamicData[omc_get_thread_num()].b);
-  _omc_setMatrixData(solverData->A, systemData->parDynamicData[omc_get_thread_num()].A);
+  _omc_setVectorData(solverData->b, systemData->b);
+  _omc_setMatrixData(solverData->A, systemData->A);
 
-  // ToDo: Make time variables thread safe as this can be called in a parallel region
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
 
     if (!reuseMatrixJac) {
       /* reset matrix A */
-      memset(systemData->parDynamicData[omc_get_thread_num()].A, 0, (systemData->size)*(systemData->size)*sizeof(double));
+      memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
       /* update matrix A */
       systemData->setA(data, threadData, systemData);
     }

@@ -168,6 +168,159 @@ public uniontype ModelVariables
     Integer y1Placement;
     Integer y2Placement;
   end ENUMERATIONVARIABLE;
+
+  /* The records above describe an FMI 1.0 or 2.0 ScalarVariable. FMI 3.0 has a
+     different variable model and gets its own records, so that the import of the
+     older versions keeps working exactly as it did:
+
+       - there is no single Real and no single Integer any more. Float32 and
+         Float64 are separate elements, and so are Int8/16/32/64 and their
+         unsigned counterparts. Grouping them the way Modelica sees them keeps
+         one record per Modelica type; fmiType carries the element the FMU
+         actually used, which the wrapper needs to call the right setter.
+       - any variable can be an array, described by Dimension elements. An empty
+         dimensions list is a scalar.
+       - Binary and Clock have no counterpart in FMI 1.0 or 2.0 at all.
+       - value references are UInt32, so they are Integer here rather than the
+         Real the older records use. */
+
+  record FMI3REALVARIABLE "an FMI 3.0 Float32 or Float64 variable"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType "Float32 or Float64";
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    list<Real> startValue "one element for a scalar, one per element for an array";
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions "empty for a scalar";
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3REALVARIABLE;
+
+  record FMI3INTEGERVARIABLE "an FMI 3.0 Int8/16/32/64 or UInt8/16/32/64 variable"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType "Int8, UInt8, Int16, ... Int64, UInt64";
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    list<Integer> startValue;
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions;
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3INTEGERVARIABLE;
+
+  record FMI3BOOLEANVARIABLE "an FMI 3.0 Boolean variable"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    list<Boolean> startValue;
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions;
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3BOOLEANVARIABLE;
+
+  record FMI3STRINGVARIABLE "an FMI 3.0 String variable"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    list<String> startValue;
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions;
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3STRINGVARIABLE;
+
+  record FMI3BINARYVARIABLE "an FMI 3.0 Binary variable, which Modelica has no type for"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    list<String> startValue "the start attribute, which FMI 3.0 writes as hex";
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions;
+    String mimeType;
+    Integer maxSize "0 when the FMU did not say";
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3BINARYVARIABLE;
+
+  record FMI3CLOCKVARIABLE "an FMI 3.0 Clock variable"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions;
+    String intervalVariability;
+    Real intervalDecimal "0.0 when the FMU did not say";
+    Boolean hasIntervalDecimal;
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3CLOCKVARIABLE;
+
+  record FMI3ENUMERATIONVARIABLE "an FMI 3.0 Enumeration variable"
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String fmiType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    list<Integer> startValue;
+    Boolean isFixed;
+    Integer valueReference;
+    list<Integer> dimensions;
+    String declaredType;
+    Integer x1Placement;
+    Integer x2Placement;
+    Integer y1Placement;
+    Integer y2Placement;
+  end FMI3ENUMERATIONVARIABLE;
 end ModelVariables;
 
 public uniontype FmiImport
@@ -211,6 +364,13 @@ algorithm
     case INFO(fmiVersion = "2.0", fmiType = 1) then "me";
     case INFO(fmiVersion = "2.0", fmiType = 2) then "cs";
     case INFO(fmiVersion = "2.0", fmiType = 3) then "me_cs";
+    /* FMI 3.0 numbers its interface types as flags, so 2, 4 and 8 rather than the
+       1, 2, 3 of FMI 2.0; see fmi3_fmu_kind_enu_t. FMIImpl.c stores the one the
+       import picked, not the set the FMU offers. */
+    case INFO(fmiVersion = "3.0", fmiType = 2) then "me";
+    case INFO(fmiVersion = "3.0", fmiType = 4) then "cs";
+    case INFO(fmiVersion = "3.0", fmiType = 8) then "se";
+    else "";
   end match;
 end getFMIType;
 
@@ -384,6 +544,22 @@ algorithm
       guard tipe == "boolean" and causality == variableCausality
         then true;
     case STRINGVARIABLE(causality=causality)
+      guard tipe == "string" and causality == variableCausality
+        then true;
+    /* The FMI 3.0 records answer to the same type names, so that a caller asking
+       for the real inputs of an FMU does not have to know which FMI version it
+       came from. Binary and Clock have no Modelica type and no name here; they
+       are filtered out until the wrapper knows what to do with them. */
+    case FMI3REALVARIABLE(causality=causality)
+      guard tipe == "real" and causality == variableCausality
+        then true;
+    case FMI3INTEGERVARIABLE(causality=causality)
+      guard tipe == "integer" and causality == variableCausality
+        then true;
+    case FMI3BOOLEANVARIABLE(causality=causality)
+      guard tipe == "boolean" and causality == variableCausality
+        then true;
+    case FMI3STRINGVARIABLE(causality=causality)
       guard tipe == "string" and causality == variableCausality
         then true;
     else then false;

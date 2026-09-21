@@ -1,5 +1,10 @@
+cmake_minimum_required(VERSION 3.10)
 
-if(APPLE)
+project(OpenModelicaSimulationRuntimeParModelica LANGUAGES CXX)
+
+if(OM_FETCH_BOOST)
+  # cmake/OMCBoost.cmake built it into this project.
+elseif(APPLE)
   # MacPorts installs the Boost configuration file in a non-standard location,
   # keep using the old FindBoost module for now.
   find_package(Boost COMPONENTS graph chrono REQUIRED)

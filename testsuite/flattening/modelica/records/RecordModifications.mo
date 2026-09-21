@@ -1,6 +1,7 @@
 // name:     Record Modifications
 // keywords: algorithm
 // status:   correct
+// suite: disabled
 
 package HardMagnetic
 public

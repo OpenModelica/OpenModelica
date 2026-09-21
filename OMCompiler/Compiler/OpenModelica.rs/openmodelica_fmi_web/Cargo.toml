@@ -1,0 +1,28 @@
+# The FMI masters as a wasm module for the browser page: it reads the FMU
+# archive, drives it through host imports that reach the FMU's own wasm, and
+# writes the `.mat` through WASI.
+#
+# `wasm32-wasip1`, so `std::fs` is WASI and the page supplies a small preview1
+# shim (`wasm/fmi-simulator/wasi.js`) rather than this crate inventing a
+# filesystem. Standalone `[workspace]`: nothing in the host workspace links a
+# wasm-only cdylib.
+[package]
+name = "openmodelica_fmi_web"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+openmodelica_fmi = { path = "../openmodelica_fmi" }
+openmodelica_fmi_driver = { path = "../openmodelica_fmi_driver", default-features = false }
+# The page speaks JSON: the model description out, the run options in.
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+
+[workspace]

@@ -163,6 +163,7 @@ DASSL::~DASSL()
     delete solveFunctionStartValues;
   if (solveFunctionEndValues)
     delete solveFunctionEndValues;
+  /* solverValues is owned by (*measureTimeFunctionsArray)[6] and freed by ~MeasureTimeData() */
 #endif
 }
 
@@ -370,16 +371,13 @@ void DASSL::solve(const SOLVERCALL action)
   {
     MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, (*measureTimeFunctionsArray)[1], dasslSolveFunctionHandler);
 
-    long int nst, nfe, nsetups, netf, nni, ncfn;
-    int qlast, qcur;
-    realtype h0u, hlast, hcur, tcur;
+    // DASKR reports its statistics in the integer work array, see writeSimulationInfo().
+    // _iworkAcc holds the counts accumulated over previous restarts, _iwork those of the current one.
+    unsigned long long nst  = _iworkAcc[10] + _iwork[10];   // steps taken
+    unsigned long long nre  = _iworkAcc[11] + _iwork[11];   // residual evaluations
+    unsigned long long netf = _iworkAcc[13] + _iwork[13];   // error test failures
 
-    int flag;
-
-    flag = DASSLGetIntegratorStats(_dasslMem, &nst, &nfe, &nsetups, &netf, &qlast, &qcur, &h0u, &hlast, &hcur, &tcur);
-    flag = DASSLGetNonlinSolvStats(_dasslMem, &nni, &ncfn);
-
-    MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nfe, netf);
+    MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nre, netf);
     (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->_numCalcs += nst;
     (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->add(&solverVals);
   }

@@ -136,6 +136,7 @@ public
     input output VarData varData;
     input output EqData eqData;
     input UnorderedMap<Path, Function> funcMap;
+    input output list<Partition.Partition> twins "partitions of nearly the same system, causalized from this one's matrices";
   end causalizeInterface;
 
 //                           RESOLVING SINGULARITIES

@@ -264,7 +264,8 @@ Set the optional equationBound value"
 algorithm
   oattr := match attr
     local
-      Option<DAE.Exp> e1,e2,e3,e4,e5,e6,so,min,max;
+      Option<DAE.Exp> e1,e2,e3,e4,e5,e6,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> sSelectOption;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOption;
@@ -848,7 +849,7 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-      Option<DAE.Exp> so;
+      Option<DAE.StartOrigin> so;
       Option<DAE.Exp> min,max;
 
     case SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,fn,so))
@@ -893,10 +894,10 @@ end getStartAttr;
 public function getStartOrigin  "
   Return the startOrigin attribute"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
-  output Option<DAE.Exp> startOrigin;
+  output Option<DAE.StartOrigin> startOrigin;
 algorithm startOrigin:= match inVariableAttributesOption
     local
-      Option<DAE.Exp> so;
+      Option<DAE.StartOrigin> so;
     case SOME(DAE.VAR_ATTR_REAL(startOrigin = so)) then so;
     case SOME(DAE.VAR_ATTR_INT(startOrigin = so)) then so;
     case SOME(DAE.VAR_ATTR_BOOL(startOrigin = so)) then so;
@@ -1051,7 +1052,7 @@ end setStartAttrOption;
 public function setStartOrigin "
   sets the startOrigin attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
-  input Option<DAE.Exp> startOrigin;
+  input Option<DAE.StartOrigin> startOrigin;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr := match attr
@@ -1122,7 +1123,8 @@ algorithm
   outAttr:=
   match attr
     local
-      Option<DAE.Exp> q,du,f,n,s,so,min,max;
+      Option<DAE.Exp> q,du,f,n,s,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -1190,7 +1192,8 @@ algorithm
   outAttr:=
   match attr
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.Exp> q,u,du,i,f,n,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -1240,7 +1243,8 @@ algorithm
   outAttr:=
   match attr
     local
-      Option<DAE.Exp> q,u,du,n,ini,so,min,max;
+      Option<DAE.Exp> q,u,du,n,ini,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -1283,7 +1287,8 @@ public function setFinalAttr "
 algorithm
   outAttr := match attr
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.Exp> q,u,du,i,f,n,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -4130,6 +4135,7 @@ algorithm
       list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
       Boolean initialCall,b;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case (DAE.STMT_ASSIGN(type_ = tp,exp1 = e,exp = e2, source = source), extraArg)
       algorithm
@@ -4164,11 +4170,11 @@ algorithm
         stmts1 := if not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1) then (inStmt::{}) else stmts1;
       then (stmts1,extraArg);
 
-    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source), extraArg)
+    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source, sub_iters=sub_iters), extraArg)
       algorithm
         (stmts2, extraArg) := traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) := func(e, extraArg);
-        x := if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source);
+        x := if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source,sub_iters);
       then (x::{},extraArg);
 
     case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source), extraArg)
@@ -4323,6 +4329,7 @@ protected
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
   list<DAE.ComponentRef> conditions;
   Boolean initialCall;
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 algorithm
   for stmt in inStmts loop
     outStmts := matchcontinue stmt
@@ -4361,12 +4368,12 @@ algorithm
         then
           List.append_reverse(stmts1, outStmts);
 
-      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)
+      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source, sub_iters=sub_iters)
         algorithm
           (stmts2, extraArg) := traverseDAEStmts(stmts,func,extraArg);
           (e_1, extraArg) := func(e, stmt, extraArg);
         then
-          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source)::outStmts;
+          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source,sub_iters)::outStmts;
 
       case DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)
         algorithm
@@ -4551,7 +4558,8 @@ Help function to traverseDAE
 algorithm
   (traversedDaeList,oextraArg) := match(attr, iextraArg)
     local
-      Option<DAE.Exp> quantity,unit,displayUnit,min,max,start,fixed,nominal,eb,so;
+      Option<DAE.Exp> quantity,unit,displayUnit,min,max,start,fixed,nominal,eb;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> distribution;

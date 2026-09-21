@@ -1,0 +1,90 @@
+// name: FunctionPointerArray
+// keywords: function pointer, array constructor
+// status: correct
+// teardown_command: rm -rf FunctionPointerArray.Test* output.log
+//
+// Calling a functional input argument gives a boxed value. Check that it's
+// unboxed also when it ends up in an array constructor, an array literal or a
+// reduction, and not just in a scalar context.
+//
+
+loadString("
+package FunctionPointerArray
+  partial function pfunc
+    input Real u;
+    output Real y;
+  end pfunc;
+
+  function func
+    input Real u;
+    output Real y;
+  algorithm
+    y := 2*u;
+  end func;
+
+  function evalArrayConstructor
+    input FunctionPointerArray.pfunc f;
+    input Real u;
+    input Integer n = 3;
+    output Real y;
+  protected
+    Real values[n];
+  algorithm
+    values := {f(u*k) for k in 1:n};
+    y := sum(values);
+  end evalArrayConstructor;
+
+  function evalArrayLiteral
+    input FunctionPointerArray.pfunc f;
+    input Real u;
+    output Real y;
+  protected
+    Real values[3];
+  algorithm
+    values := {f(u), 1.0, f(2*u)};
+    y := sum(values);
+  end evalArrayLiteral;
+
+  function evalReduction
+    input FunctionPointerArray.pfunc f;
+    input Real u;
+    input Integer n = 3;
+    output Real y;
+  algorithm
+    y := sum({f(u*k) for k in 1:n});
+  end evalReduction;
+
+  model Test
+    input Real u = 0; // prevent presolving
+    Real x, y, z;
+  equation
+    x = evalArrayConstructor(function func(), u + 1);
+    y = evalArrayLiteral(function func(), u + 1);
+    z = evalReduction(function func(), u + 1);
+    annotation(experiment(StopTime = 0));
+  end Test;
+end FunctionPointerArray;
+");
+getErrorString();
+
+simulate(FunctionPointerArray.Test);
+val(x, 0);
+val(y, 0);
+val(z, 0);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionPointerArray.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionPointerArray.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 12.0
+// 7.0
+// 12.0
+// ""
+// endResult

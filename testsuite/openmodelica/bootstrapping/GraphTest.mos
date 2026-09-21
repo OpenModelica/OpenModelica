@@ -2,6 +2,7 @@
 // cflags: -g=MetaModelica -d=rml,gen,noevalfunc -d=-newInst
 // status: correct
 // teardown_command: rm -f GraphTest_*
+// suite: metamodelica
 
 echo(false);
 pathPrefix := "../../../OMCompiler/Compiler/Util/";

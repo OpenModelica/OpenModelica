@@ -21,9 +21,9 @@ end DimCyclic5;
 // Result:
 // class DimCyclic5
 //   final parameter Integer a.b.n = 3;
-//   parameter Real a.b.x[1] = x[1];
-//   parameter Real a.b.x[2] = x[2];
-//   parameter Real a.b.x[3] = x[3];
+//   parameter Real a.b.x[1] = 1.0;
+//   parameter Real a.b.x[2] = 2.0;
+//   parameter Real a.b.x[3] = 3.0;
 //   final parameter Integer n = 3;
 //   final parameter Real x[1] = 1.0;
 //   final parameter Real x[2] = 2.0;

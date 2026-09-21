@@ -58,7 +58,7 @@ static inline void mmc_init_stackoverflow(threadData_t *threadData)
 void mmc_init_stackoverflow(threadData_t *threadData);
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData)
 {
   if (oldThreadData)
@@ -67,7 +67,7 @@ static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadD
     mmc_init_stackoverflow(threadData);
 }
 #else
-static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData)
+static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData __attribute__((unused)))
 {
   mmc_init_stackoverflow(threadData);
 }

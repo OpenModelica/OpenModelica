@@ -42,6 +42,16 @@ package TestAliasStream
     port.p = p_atm + rho*g*y;
   end Tank;
 
+  model Pipe
+    FluidPort inlet;
+    FluidPort outlet;
+  equation
+    inlet.p = outlet.p;
+    inlet.w + outlet.w = 0;
+    inlet.h = inStream(outlet.h);
+    outlet.h = inStream(inlet.h);
+  end Pipe;
+
   model TemperatureSensor
     FluidPort port(w(min = 0));
     Real h;

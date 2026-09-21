@@ -1,0 +1,11 @@
+# The tube comparison, without the readers: `diffSimulationResults`'s own
+# algorithm and csv-compare's, shared by `openmodelica_result_files` and the
+# standalone `modelica-result-compare` tool. No dependencies, so it builds
+# anywhere either of them does.
+[package]
+name = "openmodelica_result_diff"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[dependencies]

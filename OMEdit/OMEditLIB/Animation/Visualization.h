@@ -47,145 +47,17 @@
 
 #include <QColor>
 #include <QImage>
-#include <QOpenGLContext> // must be included before OSG headers
-
-#include <osg/Version>
-#include <osg/Uniform>
-#include <osg/Transform>
-#include <osg/AutoTransform>
-#include <osg/MatrixTransform>
-#include <osg/Image>
-#include <osg/Material>
-#include <osg/StateSet>
-#include <osg/Geode>
-#include <osg/Group>
-#include <osg/Node>
-#include <osg/NodeVisitor>
-#include <osg/NodeCallback>
-#include <osg/RenderInfo>
-#include <osgUtil/RenderBin>
-#include <osgUtil/RenderLeaf>
-#include <osgViewer/View>
-
-#include <OpenThreads/Mutex>
-
-#include "ExtraShapes.h"
 
 #include "AnimationUtil.h"
 #include "TimeManager.h"
 #include "rapidxml.hpp"
 
+#include "AnimationScene.h"
 #include "AbstractVisualizer.h"
 #include "Shape.h"
 #include "Vector.h"
 
 class VisualizationAbstract; // Forward declaration for passing a pointer to various constructors before class declaration
-
-class UpdateVisitor : public osg::NodeVisitor
-{
-public:
-  UpdateVisitor();
-  virtual ~UpdateVisitor() = default;
-  UpdateVisitor(const UpdateVisitor& uv) = delete;
-  UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
-  virtual void apply(osg::Geode& node) override;
-  virtual void apply(osg::Transform& node) override;
-#if OSG_MIN_VERSION_REQUIRED(3, 6, 0)
-  virtual void apply(osg::AutoTransform& node) override;
-#else
-  virtual void apply(osg::AutoTransform& node); // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
-#endif
-  virtual void apply(osg::MatrixTransform& node) override;
-  osg::Image* convertImage(const QImage& iImage);
-  void applyTexture(osg::StateSet* ss, const std::string& imagePath);
-  void changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color, const float specular);
-  void changeTransparencyOfMaterial(osg::StateSet* ss, const float transparency);
-  template<typename Vec4Array, unsigned int scale>
-  void changeTransparencyOfGeometry(osg::Geode& geode, const float transparency);
-public:
-  AbstractVisualizerObject* _visualizer;
-  bool _changeMaterialProperties;
-};
-
-class InfoVisitor : public osg::NodeVisitor
-{
-public:
-  InfoVisitor();
-  ~InfoVisitor() = default;
-  InfoVisitor(const InfoVisitor& iv) = delete;
-  InfoVisitor& operator=(const InfoVisitor& iv) = delete;
-  std::string spaces();
-  virtual void apply(osg::Node& node) override;
-  virtual void apply(osg::Geode& node) override;
-private:
-  unsigned int _level;
-};
-
-class AutoTransformDrawCallback : public osgUtil::RenderBin::DrawCallback
-{
-public:
-  AutoTransformDrawCallback();
-  ~AutoTransformDrawCallback() = default;
-  AutoTransformDrawCallback(const AutoTransformDrawCallback& callback) = delete;
-  AutoTransformDrawCallback& operator=(const AutoTransformDrawCallback& callback) = delete;
-  virtual void drawImplementation(osgUtil::RenderBin* bin, osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous) override;
-};
-
-class AutoTransformCullCallback : public osg::NodeCallback
-{
-public:
-  AutoTransformCullCallback(VisualizationAbstract* visualization);
-  ~AutoTransformCullCallback() = default;
-  AutoTransformCullCallback(const AutoTransformCullCallback& callback) = delete;
-  AutoTransformCullCallback& operator=(const AutoTransformCullCallback& callback) = delete;
-  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) override; // Work-around for osg::Callback::run(osg::Object*, osg::Object*) (see OSG commit 977ec20)
-private:
-  osg::ref_ptr<AutoTransformDrawCallback> _atDrawCallback;
-  VisualizationAbstract* _visualization;
-};
-
-class AutoTransformVisualizer : public osg::AutoTransform
-{
-public:
-  AutoTransformVisualizer(AbstractVisualizerObject* visualizer);
-  ~AutoTransformVisualizer() = default;
-  AutoTransformVisualizer(const AutoTransformVisualizer& transform) = delete;
-  AutoTransformVisualizer& operator=(const AutoTransformVisualizer& transform) = delete;
-  AbstractVisualizerObject* getVisualizerObject() const {return _visualizer;}
-private:
-  AbstractVisualizerObject* _visualizer;
-};
-
-class OSGScene
-{
-public:
-  OSGScene(VisualizationAbstract* visualization);
-  ~OSGScene() = default;
-  OSGScene(const OSGScene& osgs) = delete;
-  OSGScene& operator=(const OSGScene& osgs) = delete;
-  osg::ref_ptr<osg::Group> getRootNode();
-  std::string getPath() const;
-  void setPath(const std::string path);
-  void setUpScene(std::vector<ShapeObject>& shapes);
-  void setUpScene(std::vector<VectorObject>& vectors);
-private:
-  osg::ref_ptr<AutoTransformCullCallback> _atCullCallback;
-  osg::ref_ptr<osg::Group> _rootNode;
-  std::string _path;
-};
-
-class OMVisScene
-{
-public:
-  OMVisScene(VisualizationAbstract* visualization);
-  ~OMVisScene() = default;
-  OMVisScene(const OMVisScene& omvs) = delete;
-  OMVisScene& operator=(const OMVisScene& omvs) = delete;
-  OSGScene& getScene();
-  void dumpOSGTreeDebug();
-private:
-  OSGScene _scene;
-};
 
 class OMVisualBase
 {
@@ -219,12 +91,11 @@ public:
   void setUpScene();
 
   void updateVectorCoords(VectorObject& vector, const double time);
-  void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
+  void chooseVectorScales();
 private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
-  UpdateVisitor _updateVisitor;
   VisualizationAbstract* _visualization;
   std::vector<ShapeObject> _shapes;
   std::vector<VectorObject> _vectors;
@@ -237,7 +108,8 @@ public:
   virtual ~VisualizationAbstract() = default;
 
   VisType getVisType() const;
-  OMVisScene* getOMVisScene() const;
+  void setScene(AnimationScene* scene) {mpScene = scene;}
+  AnimationScene* getScene() const;
   OMVisualBase* getBaseData() const;
   TimeManager* getTimeManager() const;
 
@@ -259,19 +131,19 @@ public:
 private:
   const VisType _visType;
 protected:
-  OMVisScene* mpOMVisScene;
+  AnimationScene* mpScene = nullptr;
   OMVisualBase* mpOMVisualBase;
   TimeManager* mpTimeManager;
 };
 
-osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
-osg::Vec3f V3mulMat3(osg::Vec3f V, osg::Matrix3 M);
-osg::Matrix3 Mat3mulMat3(osg::Matrix3 M1, osg::Matrix3 M2);
-osg::Vec3f normalize(osg::Vec3f vec);
-osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
-Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
-void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, std::string type);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir);
+Vec3 Mat3mulV3(Mat3 M, Vec3 V);
+Vec3 V3mulMat3(Vec3 V, Mat3 M);
+Mat3 Mat3mulMat3(Mat3 M1, Mat3 M2);
+Vec3 normalize(Vec3 vec);
+Vec3 cross(Vec3 vec1, Vec3 vec2);
+Directions fixDirections(Vec3 lDir, Vec3 wDir);
+void assemblePokeMatrix(Mat4& M, const Mat3& T, const Vec3& r);
+rAndT rotateModelica2Scene(Mat3 T, Vec3 r, Vec3 r_shape, Vec3 lDir, Vec3 wDir, std::string type);
+rAndT rotateModelica2Scene(Mat3 T, Vec3 r, Vec3 dir);
 
 #endif

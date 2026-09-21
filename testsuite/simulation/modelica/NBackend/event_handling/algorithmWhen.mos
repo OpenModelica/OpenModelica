@@ -50,7 +50,11 @@ val(p,0.41);
 //     resultFile = "EquationEvent_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EquationEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = time >= 0.2
+// |                 | |       | | [2] (pre: false) false = time >= 0.4
 // LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0) -1 = time >= 0.2
+// |                 | |       | | [2] (pre:  0) -1 = time >= 0.4
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | time event at time=0.2
 // |                 | |       | | [0] sample(0.2, 8.7778e+304)
@@ -68,7 +72,11 @@ val(p,0.41);
 //     resultFile = "AlgorithmEvent_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgorithmEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = time >= 0.2
+// |                 | |       | | [2] (pre: false) false = time >= 0.4
 // LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0) -1 = time >= 0.2
+// |                 | |       | | [2] (pre:  0) -1 = time >= 0.4
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | time event at time=0.2
 // |                 | |       | | [0] sample(0.2, 8.7778e+304)

@@ -768,10 +768,10 @@ void _omc_printMatrix(_omc_matrix* mat, const char* name, const enum OMC_LOG_STR
     infoStreamPrint(stream, 1, "%s", name);
     for (i = 0; i < mat->rows; ++i)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for (j = 0; j < mat->cols; ++j)
       {
-        sprintf(buffer, "%s%10g ", buffer, _omc_getMatrixElement(mat, i, j));
+        p += sprintf(p, "%10g ", _omc_getMatrixElement(mat, i, j));
       }
       infoStreamPrint(stream, 0, "%s", buffer);
     }

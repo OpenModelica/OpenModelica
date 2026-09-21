@@ -1,0 +1,54 @@
+// name:      noemit
+// keywords:  simflags noemit outputFormat
+// status:    correct
+//
+// -noemit and -outputFormat=empty write no result file, whatever name the run
+// was given.
+
+loadString("model NoEmit
+  Real x(start=1, fixed=true);
+equation
+  der(x) = -x;
+end NoEmit;"); getErrorString();
+
+echo(false);
+res := simulate(NoEmit, simflags="-noemit");
+echo(true);
+getErrorString();
+res.messages;
+regularFileExists("NoEmit_res.mat");
+echo(false);
+res := simulate(NoEmit, simflags="-noemit -r=NoEmit_named.mat");
+echo(true);
+getErrorString();
+res.messages;
+regularFileExists("NoEmit_named.mat");
+echo(false);
+res := simulate(NoEmit, simflags="-outputFormat=empty -r=NoEmit_forced.mat");
+echo(true);
+getErrorString();
+res.messages;
+regularFileExists("NoEmit_forced.mat");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// false
+// true
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// false
+// true
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// false
+// endResult

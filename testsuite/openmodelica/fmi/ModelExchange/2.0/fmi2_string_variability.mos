@@ -1,0 +1,84 @@
+// name: fmi2_string_variability.mos
+// keywords: FMI 2.0 export variability String
+// status: correct
+//
+// FMI 2.0 allows variability="continuous" only for Real (FMI 2.0 specification,
+// section 2.2.7), and the attribute defaults to "continuous" when it is left out.
+// A String variable used to be written with no variability at all, which made the
+// modelDescription.xml invalid. Every non-Real variable must carry an explicit
+// variability instead. See OpenModelica/OpenModelica#16173.
+//
+// teardown_command: rm -rf fmi2_string_variability.fmu fmi2_string_variability.log fmi2_string_variability_info.json fmi2_string_variability.xml fmi2_string_variability_tmp.xml fmi2_string_variability.fmutmp/
+
+loadString("
+model fmi2_string_variability
+  output Real    y_real;
+  output Integer y_int;
+  output Boolean y_bool;
+  output String  y_string;
+equation
+  y_real = 2.2;
+  y_int = 1;
+  y_bool = true;
+  y_string = \"test\";
+end fmi2_string_variability;
+"); getErrorString();
+
+buildModelFMU(fmi2_string_variability); getErrorString();
+
+// keep only the ModelVariables block
+system("unzip -cqq fmi2_string_variability.fmu modelDescription.xml > fmi2_string_variability_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi2_string_variability_tmp.xml > fmi2_string_variability.xml"); getErrorString();
+readFile("fmi2_string_variability.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi2_string_variability.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"y_real\"
+//     valueReference=\"1\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"y_int\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     >
+//     <Integer/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"y_bool\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     >
+//     <Boolean/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"y_string\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     >
+//     <String/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// endResult

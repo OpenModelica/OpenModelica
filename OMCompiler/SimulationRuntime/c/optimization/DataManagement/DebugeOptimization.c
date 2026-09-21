@@ -57,6 +57,10 @@ void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda){
 
   sprintf(buffer, "%s_%d.csv", optData->ipop.csvOstep,optData->dim.iter);
   pFile = omc_fopen(buffer, "wt");
+  if (!pFile) {
+    fprintf(stderr, "Warning: cannot open %s for writing debug output.\n", buffer);
+    return;
+  }
 
   fprintf(pFile, "%s", "\"time\"");
   for(i = 0; i < nx; ++i){
@@ -129,6 +133,14 @@ void debugeJac(OptData * optData, ipnumber* vopt){
   sJ = optData->s.JderCon;
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = omc_fopen(buffer, "wt");
+  if (!pFile) {
+    fprintf(stderr, "Warning: cannot open %s for writing debug output.\n", buffer);
+    free(vopt_shift);
+    free(h);
+    free(vv);
+    free(JJ);
+    return;
+  }
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
@@ -194,6 +206,14 @@ void debugeJac(OptData * optData, ipnumber* vopt){
 #undef DF_STEP
   sprintf(buffer, "jac_num_step_%i.csv", optData->iter_);
   pFile = omc_fopen(buffer, "wt");
+  if (!pFile) {
+    fprintf(stderr, "Warning: cannot open %s for writing debug output.\n", buffer);
+    free(vopt_shift);
+    free(h);
+    free(vv);
+    free(JJ);
+    return;
+  }
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
@@ -220,6 +240,14 @@ void debugeJac(OptData * optData, ipnumber* vopt){
 
   if(optData->iter_ < 2){
     pFile = omc_fopen("omc_check_jac.py", "wt");
+    if (!pFile) {
+      fprintf(stderr, "Warning: cannot open omc_check_jac.py for writing debug output.\n");
+      free(vopt_shift);
+      free(h);
+      free(vv);
+      free(JJ);
+      return;
+    }
     fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\n\n");
     fprintf(pFile,"  Input i:\n");
     for(j = 0; j < nx; ++j)

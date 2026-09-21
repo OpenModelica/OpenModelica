@@ -41,7 +41,6 @@
 #include "ida_solver.h"
 #include "delay.h"
 #include "events.h"
-#include "util/parallel_helper.h"
 #include "util/varinfo.h"
 #include "util/omc_strdup.h"
 #include "model_help.h"
@@ -282,6 +281,43 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   return retValue;
 }
 
+/*! \fn updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [solverInfo]
+ *
+ *  Re-read the states' nominal (and, for gbode, min and max) attributes. A
+ *  nominal that is a parameter expression is only computed by
+ *  updateBoundVariableAttributes, inside initializeModel, which runs after
+ *  initializeSolverData because DAE mode needs the solver during initialization;
+ *  until then the solver holds the modelDescription default of 1.0.
+ */
+int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  switch (solverInfo->solverMethod)
+  {
+  case S_GBODE:
+    gbode_setVarAttributes(data, solverInfo->solverData);
+    break;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case S_DASSL:
+    dassl_setNominals(data, solverInfo->solverData);
+    break;
+#endif
+#ifdef WITH_SUNDIALS
+  case S_IDA:
+    return ida_solver_setNominals(data, threadData, solverInfo->solverData);
+  case S_CVODE:
+    return cvode_solver_setNominals(data, threadData, solverInfo->solverData);
+#endif
+  default:
+    break;
+  }
+
+  return 0;
+}
+
 /*! \fn freeSolver(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  \param [ref] [data]
@@ -519,13 +555,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenceTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
-#ifdef USE_PARJAC
-      infoStreamPrint(OMC_LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
-      int chunk_size;
-      omp_sched_t kind;
-      omp_get_schedule(&kind, &chunk_size);
-      infoStreamPrint(OMC_LOG_STATS, 0, "Schedule: %i Chunk Size: %i", kind, chunk_size);
-#endif
 
       messageClose(OMC_LOG_STATS);
     }
@@ -661,6 +690,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (0 == retVal){
     retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
     omc_alloc_interface.collect_a_little();
+  }
+
+  /* the nominal values are only final now */
+  if (0 == retVal){
+    retVal = updateSolverNominals(data, threadData, &solverInfo);
   }
 
 #if !defined(OMC_MINIMAL_RUNTIME)

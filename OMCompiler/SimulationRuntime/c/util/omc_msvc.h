@@ -54,8 +54,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define NAN (__NAN.Value)
 #endif
 
-/* for non GNU compilers */
-#ifndef __GNUC__
+/* for non GNU compilers (clang-cl supports __attribute__, so exclude it) */
+#if !defined(__GNUC__) && !defined(__clang__)
 #define __attribute__(x)
 #endif
 
@@ -97,10 +97,10 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 unsigned int alarm (unsigned int seconds);
 
 #include <float.h>
-#if !defined(isinf)
+#if !defined(isinf) && !defined(__clang__)
 #define isinf(d) (!_finite(d) && !_isnan(d))
 #endif
-#if !defined(isnan)
+#if !defined(isnan) && !defined(__clang__)
 #define isnan _isnan
 #endif
 #define fpu_error(x) (isinf(x) || isnan(x))
@@ -112,6 +112,9 @@ unsigned int alarm (unsigned int seconds);
 #define snprintf snprintf_s
 #endif
 #endif
+
+/* POSIX strtok_r is strtok_s on MSVC (identical signature). */
+#define strtok_r strtok_s
 
 #else /* not msvc */
 
@@ -156,13 +159,13 @@ typedef struct {
 
 char* mkdtemp(char *tpl);
 void* omc_dlopen(const char *filename, int flag);
-const char* omc_dlerror();
+const char* omc_dlerror(void);
 void* omc_dlsym(void *handle, const char *symbol);
 int omc_dlclose(void *handle);
 int omc_dladdr(void *addr, Dl_info *info);
 
 void* dlopen(const char *filename, int flag);
-const char* dlerror();
+const char* dlerror(void);
 void* dlsym(void *handle, const char *symbol);
 int dlclose(void *handle);
 int dladdr(void *addr, Dl_info *info);

@@ -1,6 +1,7 @@
 // name: InvalidVariability2
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidVariability2
@@ -14,7 +15,7 @@ end InvalidVariability2;
 
 // Result:
 // Error processing file: InvalidVariability2.mo
-// [flattening/modelica/scodeinst/InvalidVariability2.mo:13:3-13:18:writable] Error: Cannot connect parameter c2 to non-constant/parameter c1.
+// [flattening/modelica/scodeinst/InvalidVariability2.mo:14:3-14:18:writable] Error: Cannot connect parameter c2 to non-constant/parameter c1.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

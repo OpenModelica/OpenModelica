@@ -2,6 +2,7 @@
 // keywords: Option Type
 // status:   correct
 // cflags:   +g=MetaModelica -d=-newInst
+// suite: metamodelica
 //
 // Option Testing
 //

@@ -67,8 +67,6 @@ win32 {
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
-
-  CONFIG += osg
 } else { # Unix libraries and includes
   include(OMEditLIB.unix.config.pri)
 }
@@ -88,12 +86,29 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 SOURCES += Util/Helper.cpp \
-  Search/FindUsageWidget.cpp \
   Util/Utilities.cpp \
+  Util/PersistentStorage.cpp \
+  Cloud/CloudTypes.cpp \
+  Cloud/CloudConfig.cpp \
+  Cloud/CloudAccount.cpp \
+  Cloud/CloudProvider.cpp \
+  Cloud/GoogleDriveProvider.cpp \
+  Cloud/OneDriveProvider.cpp \
+  Cloud/CloudManifest.cpp \
+  Cloud/CloudMount.cpp \
+  Cloud/CloudCache.cpp \
+  Cloud/CloudSyncEngine.cpp \
+  Cloud/CloudBrowserDialog.cpp \
+  Cloud/CloudConflictDialog.cpp \
+  Cloud/OAuth2Client.cpp \
+  Cloud/OAuth2RedirectLoopback.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/DirectoryOrFileSelector.cpp \
+  Util/NavigationManager.cpp \
+  Util/NavigationManagerView.cpp \
   MainWindow.cpp \
+  LoadCompiledModelDialog.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Modeling/Model.cpp \
@@ -189,7 +204,7 @@ SOURCES += Util/Helper.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   OMS/OMSProxy.cpp \
   OMS/ModelDialog.cpp \
-  OMS/BusDialog.cpp \
+  OMS/OMSModel.cpp \
   OMS/ElementPropertiesDialog.cpp \
   OMS/SystemSimulationInformationDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
@@ -203,15 +218,36 @@ SOURCES += Util/Helper.cpp \
   FlatModelica/Parser.cpp \
   MCP/MCPServer.cpp \
   MCP/MCPToolsDiagram.cpp \
-  MCP/MCPToolsSimulation.cpp
+  MCP/MCPToolsSimulation.cpp \
+  Search/FindUsageWidget.cpp \
+  LSP/LSPClient.cpp \
+  LSP/LSPFileWatcher.cpp \
+  LSP/ModelicaLSPClient.cpp \
 
 HEADERS  += Util/Helper.h \
-  Search/FindUsageWidget.h \
+  Util/PersistentStorage.h \
+  Cloud/CloudTypes.h \
+  Cloud/CloudConfig.h \
+  Cloud/CloudAccount.h \
+  Cloud/CloudProvider.h \
+  Cloud/GoogleDriveProvider.h \
+  Cloud/OneDriveProvider.h \
+  Cloud/CloudManifest.h \
+  Cloud/CloudMount.h \
+  Cloud/CloudCache.h \
+  Cloud/CloudSyncEngine.h \
+  Cloud/CloudBrowserDialog.h \
+  Cloud/CloudConflictDialog.h \
+  Cloud/OAuth2Client.h \
+  Cloud/OAuth2Redirect.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
+  Util/NavigationManager.h \
+  Util/NavigationManagerView.h \
   MainWindow.h \
+  LoadCompiledModelDialog.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
   Modeling/Model.h \
@@ -310,7 +346,7 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityInformationURI.h \
   OMS/OMSProxy.h \
   OMS/ModelDialog.h \
-  OMS/BusDialog.h \
+  OMS/OMSModel.h \
   OMS/ElementPropertiesDialog.h \
   OMS/SystemSimulationInformationDialog.h \
   OMS/OMSSimulationDialog.h \
@@ -325,16 +361,21 @@ HEADERS  += Util/Helper.h \
   FlatModelica/ExpressionFuncs.h \
   FlatModelica/Parser.h \
   MCP/MCPServer.h \
-  MCP/MCPServerPrivate.h
+  MCP/MCPServerPrivate.h \
+  Search/FindUsageWidget.h \
+  LSP/LSPClient.h \
+  LSP/LSPFileWatcher.h \
+  LSP/ModelicaLSPClient.h \
+  LSP/LSPProtocol.h \
 
-CONFIG(osg) {
+CONFIG(animation) {
 
-  SOURCES += Animation/OpenGLWidget.cpp \
-    Animation/AbstractAnimationWindow.cpp \
-    Animation/ViewerWidget.cpp \
+  SOURCES += Animation/AbstractAnimationWindow.cpp \
     Animation/AnimationWindow.cpp \
-    Animation/ExtraShapes.cpp \
     Animation/Visualization.cpp \
+    Animation/Quick3D/Quick3DScene.cpp \
+    Animation/Quick3D/Quick3DViewerWidget.cpp \
+    Animation/Quick3D/Quick3DGeometry.cpp \
     Animation/VisualizationMAT.cpp \
     Animation/VisualizationCSV.cpp \
     Animation/VisualizationFMU.cpp \
@@ -344,13 +385,13 @@ CONFIG(osg) {
     Animation/Shape.cpp \
     Animation/Vector.cpp
 
-  HEADERS += Animation/OpenGLWidget.h \
-    Animation/AbstractAnimationWindow.h \
-    Animation/ViewerWidget.h \
+  HEADERS += Animation/AbstractAnimationWindow.h \
     Animation/AnimationWindow.h \
     Animation/AnimationUtil.h \
-    Animation/ExtraShapes.h \
     Animation/Visualization.h \
+    Animation/Quick3D/Quick3DScene.h \
+    Animation/Quick3D/Quick3DViewerWidget.h \
+    Animation/Quick3D/Quick3DGeometry.h \
     Animation/VisualizationMAT.h \
     Animation/VisualizationCSV.h \
     Animation/VisualizationFMU.h \

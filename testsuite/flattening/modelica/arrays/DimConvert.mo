@@ -1,6 +1,7 @@
 // name:     DimConvert
 // keywords: array
 // status:   correct
+// suite: disabled
 //
 // Not yet implemented
 // Drmodelica: 7.7 Built-in Functions (p. 225)

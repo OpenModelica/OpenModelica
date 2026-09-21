@@ -17,7 +17,7 @@ end ExpandableConnector5;
 
 // Result:
 // class ExpandableConnector5
-//   Real ec.y "virtual variable in expandable connector";
+//   Real ec.y "variable added to expandable connector";
 //   output Real y[1];
 //   output Real y[2];
 // equation

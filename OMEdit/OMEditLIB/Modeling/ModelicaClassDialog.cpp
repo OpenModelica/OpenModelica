@@ -37,8 +37,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <limits>
-
 #include "Modeling/ModelicaClassDialog.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
@@ -47,6 +45,10 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Commands.h"
 #include "Modeling/ItemDelegate.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#include "Cloud/CloudMount.h"
+#endif
 
 #include <QApplication>
 #include <QMessageBox>
@@ -87,7 +89,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
   // try to automatically select if user has something in the text box.
   if (!mpLineEdit->text().isEmpty()) {
-    findAndSelectLibraryTreeItem(QRegExp(mpLineEdit->text()));
+    findAndSelectLibraryTreeItem(QRegularExpression(mpLineEdit->text()));
   }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -114,25 +116,6 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
  * Finds the LibraryTreeItem and selects it.
  * \param regExp
  */
-void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegExp &regExp)
-{
-  QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
-  if (proxyIndex.isValid()) {
-    QModelIndex modelIndex = mpLibraryTreeProxyModel->mapToSource(proxyIndex);
-    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
-    if (pLibraryTreeItem) {
-      modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
-      proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
-      mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
-      while (proxyIndex.parent().isValid()) {
-        proxyIndex = proxyIndex.parent();
-        mpLibraryTreeView->expand(proxyIndex);
-      }
-    }
-  }
-}
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression &regExp)
 {
   QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
@@ -150,7 +133,6 @@ void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression 
     }
   }
 }
-#endif
 
 /*!
  * \brief LibraryBrowseDialog::searchClasses
@@ -161,15 +143,9 @@ void LibraryBrowseDialog::searchClasses()
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  QRegularExpression regExp(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
-  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
-#else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
-  mpLibraryTreeProxyModel->setFilterRegExp(regExp);
- #endif
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax);
+  mpLibraryTreeProxyModel->setFilterRegularExpression(regExp);
   // if we have really searched something
   if (!searchText.isEmpty()) {
     findAndSelectLibraryTreeItem(regExp);
@@ -884,7 +860,11 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    connect(&signalMapper, &QSignalMapper::mappedInt, pSelectFileTypeDialog, &QDialog::done);
+#else
     connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
+#endif
     // layout the buttons
     QDialogButtonBox *pButtonBox = new QDialogButtonBox;
     pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);
@@ -1275,9 +1255,10 @@ void RenameClassDialog::renameClass()
 
   if (!MainWindow::instance()->getOMCProxy()->existClass(QString(StringHandler::removeLastWordAfterDot(mNameStructure)).append(".").append(newName)))
   {
-    if (MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName))
+    QList<QString> classes = MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName);
+    if (!classes.isEmpty())
     {
-      newNameStructure = StringHandler::removeFirstLastCurlBrackets(MainWindow::instance()->getOMCProxy()->getResult());
+      newNameStructure = classes.first();
       // Change the name in tree
       //mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
       accept();
@@ -1359,6 +1340,12 @@ void SaveTotalFileDialog::saveTotalModel()
       mpStripCommentsCheckBox->isChecked(),
       mpObfuscateOutputCheckBox->isChecked(),
       mpUseSimplifiedHeuristic->isChecked());
+#if defined(__EMSCRIPTEN__)
+    // Uploaded by the sync engine when it is inside a cloud mount.
+    if (!isInsideCloudMount(fileName)) {
+      WasmLocalFiles::download(fileName);
+    }
+#endif
     accept();
   }
 }

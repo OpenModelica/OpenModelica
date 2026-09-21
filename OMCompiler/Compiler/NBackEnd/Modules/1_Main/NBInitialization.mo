@@ -61,6 +61,7 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
   import BVariable = NBVariable;
+  import PointerWeak;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Causalize = NBCausalize;
   import Inline = NBInline;
@@ -98,6 +99,9 @@ public
           UnorderedSet<ComponentRef> algorithm_outputs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
           UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
+          list<Pointer<Equation>> parameter_eqs, secondary_eqs, primary_aux_eqs;
+          list<Pointer<Variable>> parameter_vars, secondary_vars;
+          list<StrongComponent> primary_comps;
 
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as EqData.EQ_DATA_SIM(equations = equations, initials = initialEqs))
@@ -121,9 +125,26 @@ public
             (variables, initialVars, equations, initialEqs) := createStartEquations(varData.discretes, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete");
             (variables, initialVars, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete State");
             (variables, initialVars, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Clocked State");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " ");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
+            (parameter_eqs, parameter_vars) := createParameterEquations(varData.parameters, new_iters, eqData.uniqueIndex, {}, {});
+            (parameter_eqs, parameter_vars) := createParameterEquations(varData.records, new_iters, eqData.uniqueIndex, parameter_eqs, parameter_vars);
+            (parameter_eqs, parameter_vars) := createParameterEquations(varData.external_objects, new_iters, eqData.uniqueIndex, parameter_eqs, parameter_vars);
+
+            // like the old backend: the primary parameters (not depending on a parameter that is not fixed)
+            // are solved explicitly before the initialization, only the secondary ones are part of it
+            // the function alias variables in the bindings are solved with them if possible
+            (primary_comps, secondary_eqs, secondary_vars, primary_aux_eqs) := selectPrimaryParameters(parameter_eqs, parameter_vars,
+              list(eqn_ptr for eqn_ptr guard(isFunctionAliasBinding(eqn_ptr)) in EquationPointers.toList(initialEqs)), EquationPointers.toList(initialEqs));
+            equations   := EquationPointers.addList(parameter_eqs, equations);
+            initialEqs  := EquationPointers.removeList(primary_aux_eqs, initialEqs);
+            initialEqs  := EquationPointers.addList(secondary_eqs, initialEqs);
+            initialVars := VariablePointers.removeList(list(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn_ptr)))), sourceInfo()) for eqn_ptr in primary_aux_eqs), initialVars);
+            initialVars := VariablePointers.addList(secondary_vars, initialVars);
+            if Flags.isSet(Flags.INITIALIZATION) or Flags.isSet(Flags.DUMP_BINDINGS) then
+              print(List.toStringCustom(secondary_eqs, function Equation.pointerToString(str = "\t"),
+                StringUtil.headline_4("Created Secondary Parameter Binding Equations (" + intString(listLength(secondary_eqs)) + "):"), "", "\n", "", false) + "\n\n");
+              print(List.toStringCustom(primary_comps, function StrongComponent.toString(index = -1),
+                StringUtil.headline_4("Created Primary Parameter Binding Equations (" + intString(listLength(primary_comps)) + "):"), "", "\n", "", false) + "\n\n");
+            end if;
 
             // clone all initial variables and remove clocked variables
             clonedVars := VariablePointers.clone(initialVars);
@@ -136,6 +157,7 @@ public
 
             // add new iterators
             bdae.eqData := eqData;
+            bdae.parameters := primary_comps;
         then BackendDAE.setVarData(bdae, VarData.addTypedList(varData, UnorderedSet.toList(new_iters), NBVariable.VarData.VarType.ITERATOR));
 
         else algorithm
@@ -198,7 +220,7 @@ public
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
-      print(List.toString(start_eqs, function Equation.pointerToString(str = "\t"),
+      print(List.toStringCustom(start_eqs, function Equation.pointerToString(str = "\t"),
         StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "", "\n", "", false) + "\n\n");
     end if;
   end createStartEquations;
@@ -295,7 +317,7 @@ public
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
-      print(List.toString(start_eqs, function Equation.pointerToString(str = "\t"),
+      print(List.toStringCustom(start_eqs, function Equation.pointerToString(str = "\t"),
         StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "", "\n", "", false) + "\n\n");
     end if;
   end createWhenReplacementEquations;
@@ -382,29 +404,245 @@ public
   end createStartVar;
 
   function createParameterEquations
-    "creates parameter equations of the form param = $START.param for all fixed params."
+    "creates the binding equations of the parameters and their initial unknowns"
     input VariablePointers parameters;
-    input output EquationPointers equations;
-    input output EquationPointers initialEqs;
-    input output VariablePointers initialVars;
     input UnorderedSet<VariablePointer> new_iters;
     input Pointer<Integer> idx;
-    input String str "only for debug";
-  protected
-    list<Pointer<Equation>> parameter_eqs = {};
-    list<Pointer<Variable>> initial_param_vars = {};
+    input output list<Pointer<Equation>> parameter_eqs;
+    input output list<Pointer<Variable>> initial_param_vars;
   algorithm
     for var in VariablePointers.toList(parameters) loop
       (parameter_eqs, initial_param_vars) := createParameterEquation(var, new_iters, idx, parameter_eqs, initial_param_vars);
     end for;
-    equations := EquationPointers.addList(parameter_eqs, equations);
-    initialEqs := EquationPointers.addList(parameter_eqs, initialEqs);
-    initialVars := VariablePointers.addList(initial_param_vars, initialVars);
-    if (Flags.isSet(Flags.INITIALIZATION) and not listEmpty(parameter_eqs)) or Flags.isSet(Flags.DUMP_BINDINGS) then
-      print(List.toString(parameter_eqs, function Equation.pointerToString(str = "\t"),
-        StringUtil.headline_4("Created" + str + "Parameter Binding Equations (" + intString(listLength(parameter_eqs)) + "):"), "", "\n", "", false) + "\n\n");
-    end if;
   end createParameterEquations;
+
+  function selectPrimaryParameters
+    "Like the old backend (Initialization.selectInitializationVariablesDAE): a parameter is secondary if it is not
+    fixed or depends on a secondary parameter, all others are primary. The bindings of the primary parameters are
+    sorted by their dependencies and solved explicitly before the initialization. Only bindings of the form
+    p = exp are considered, all other ones (for equations, records, external objects) stay in the initialization."
+    input list<Pointer<Equation>> parameter_eqs;
+    input list<Pointer<Variable>> initial_param_vars;
+    input list<Pointer<Equation>> aux_eqs "bindings of function alias variables";
+    input list<Pointer<Equation>> initial_eqs "all equations of the initialization, what they define is not known";
+    output list<StrongComponent> primary_comps = {};
+    output list<Pointer<Equation>> secondary_eqs = {};
+    output list<Pointer<Variable>> secondary_vars = {};
+    output list<Pointer<Equation>> primary_aux_eqs = {};
+  protected
+    UnorderedSet<ComponentRef> primary = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)    "solved parameters";
+    UnorderedSet<ComponentRef> unresolved = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual) "parameters with a binding equation";
+    UnorderedSet<ComponentRef> duplicates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual) "variables that are defined by several equations";
+    list<Pointer<Equation>> remaining = {}, next, sorted = {};
+    Option<ComponentRef> name_opt;
+    ComponentRef name;
+    Boolean progress = true, ready;
+  algorithm
+    for eqn_ptr in listAppend(parameter_eqs, aux_eqs) loop
+      name_opt := explicitBindingName(eqn_ptr);
+      () := match name_opt
+        case SOME(name) algorithm
+          // a variable that is defined by several equations can not be solved explicitly
+          if UnorderedSet.contains(name, unresolved) then
+            UnorderedSet.add(name, duplicates);
+          end if;
+          UnorderedSet.add(name, unresolved);
+          remaining := eqn_ptr :: remaining;
+        then ();
+        // the target of any other equation can not be solved explicitly here
+        else algorithm
+          () := match Equation.getLHS(Pointer.access(eqn_ptr))
+            case SOME(Expression.CREF(cref = name)) algorithm
+              UnorderedSet.add(ComponentRef.stripSubscriptsAll(name), unresolved);
+            then ();
+            else ();
+          end match;
+        then ();
+      end match;
+    end for;
+    remaining := list(eqn_ptr for eqn_ptr guard(not isDuplicateBinding(eqn_ptr, duplicates)) in listReverse(remaining));
+
+    // everything that is defined by an equation of the initialization is unknown until it is solved as a primary parameter
+    for eqn_ptr in initial_eqs loop
+      () := match Equation.getLHS(Pointer.access(eqn_ptr))
+        case SOME(Expression.CREF(cref = name)) algorithm
+          UnorderedSet.add(ComponentRef.stripSubscriptsAll(name), unresolved);
+        then ();
+        else ();
+      end match;
+    end for;
+
+    // repeatedly take all bindings that only depend on primary parameters
+    while progress and not listEmpty(remaining) loop
+      progress := false;
+      next := {};
+      for eqn_ptr in remaining loop
+        SOME(name) := explicitBindingName(eqn_ptr);
+        ready := true;
+        for dep in UnorderedSet.toList(Expression.extractCrefs(Util.getOption(Equation.getRHS(Pointer.access(eqn_ptr))))) loop
+          if not isPrimaryCref(dep, primary, unresolved) then
+            ready := false;
+            break;
+          end if;
+        end for;
+        if ready then
+          UnorderedSet.add(name, primary);
+          sorted := eqn_ptr :: sorted;
+          progress := true;
+        else
+          next := eqn_ptr :: next;
+        end if;
+      end for;
+      remaining := listReverse(next);
+    end while;
+    sorted := listReverse(sorted);
+
+    primary_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn_ptr, {})) for eqn_ptr in sorted);
+    secondary_eqs := list(eqn_ptr for eqn_ptr guard(not isPrimaryBinding(eqn_ptr, primary)) in parameter_eqs);
+    secondary_vars := list(var for var guard(not UnorderedSet.contains(ComponentRef.stripSubscriptsAll(BVariable.getVarName(var)), primary)) in initial_param_vars);
+    primary_aux_eqs := list(eqn_ptr for eqn_ptr guard(isPrimaryBinding(eqn_ptr, primary)) in aux_eqs);
+  end selectPrimaryParameters;
+
+  function isFunctionAliasBinding
+    "a binding aux = exp of a function alias variable"
+    input Pointer<Equation> eqn_ptr;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(eqn_ptr)
+      local
+        ComponentRef cref;
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref)) then isFunctionAliasCref(cref);
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref), recordSize = NONE()) then isFunctionAliasCref(cref);
+      else false;
+    end match;
+  end isFunctionAliasBinding;
+
+  function isFunctionAliasCref
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
+        then BVariable.isFunctionAlias(BVariable.getVarPointer(cref, sourceInfo()));
+      else false;
+    end match;
+  end isFunctionAliasCref;
+
+  function explicitBindingName
+    "the (unsubscripted) parameter of a binding equation p = exp"
+    input Pointer<Equation> eqn_ptr;
+    output Option<ComponentRef> name;
+  algorithm
+    name := match Pointer.access(eqn_ptr)
+      local
+        ComponentRef cref;
+      // only a binding for a whole variable, not for a part of it or of an element of an array of components
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref)) guard(not hasSubscripts(cref))
+        then SOME(cref);
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref), recordSize = NONE()) guard(not hasSubscripts(cref))
+        then SOME(cref);
+      // a for equation that binds every element of a variable once: x[i, j] = exp
+      case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))})
+        guard(coversVariable(cref, Pointer.access(eqn_ptr)))
+        then SOME(ComponentRef.stripSubscriptsAll(cref));
+      else NONE();
+    end match;
+  end explicitBindingName;
+
+  function coversVariable
+    "the subscripts of the cref are distinct iterators and the equation has as many elements as the variable"
+    input ComponentRef cref;
+    input Equation eqn;
+    output Boolean b;
+  protected
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    UnorderedSet<ComponentRef> iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef iter;
+  algorithm
+    b := not listEmpty(subs);
+    for sub in subs loop
+      if not Subscript.isIterator(sub) then
+        b := false;
+        break;
+      end if;
+      iter := Expression.toCref(Subscript.toExp(sub));
+      if UnorderedSet.contains(iter, iters) then
+        b := false;
+        break;
+      end if;
+      UnorderedSet.add(iter, iters);
+    end for;
+    if b then
+      b := Equation.size(Pointer.create(eqn)) == BVariable.size(BVariable.getVarPointer(ComponentRef.stripSubscriptsAll(cref), sourceInfo()));
+    end if;
+  end coversVariable;
+
+  function hasSubscripts
+    input ComponentRef cref;
+    output Boolean b = not ComponentRef.isEqual(cref, ComponentRef.stripSubscriptsAll(cref));
+  end hasSubscripts;
+
+  function isDuplicateBinding
+    input Pointer<Equation> eqn_ptr;
+    input UnorderedSet<ComponentRef> duplicates;
+    output Boolean b;
+  algorithm
+    b := match explicitBindingName(eqn_ptr)
+      local
+        ComponentRef name;
+      case SOME(name) then UnorderedSet.contains(name, duplicates);
+      else false;
+    end match;
+  end isDuplicateBinding;
+
+  function isPrimaryBinding
+    input Pointer<Equation> eqn_ptr;
+    input UnorderedSet<ComponentRef> primary;
+    output Boolean b;
+  algorithm
+    b := match explicitBindingName(eqn_ptr)
+      local
+        ComponentRef name;
+      case SOME(name) then UnorderedSet.contains(name, primary);
+      else false;
+    end match;
+  end isPrimaryBinding;
+
+  function isPrimaryCref
+    "true if the value of the cref is known before the initialization"
+    input ComponentRef cref;
+    input UnorderedSet<ComponentRef> primary;
+    input UnorderedSet<ComponentRef> unresolved;
+    output Boolean b;
+  protected
+    ComponentRef name = ComponentRef.stripSubscriptsAll(cref);
+    ComponentRef parent = name;
+    Pointer<Variable> var_ptr;
+  algorithm
+    if ComponentRef.isIterator(cref) or UnorderedSet.contains(name, primary) then
+      b := true;
+    else
+      // a parameter (or one of its parents) that has a binding equation which is not solved explicitly
+      b := true;
+      while not ComponentRef.isEmpty(parent) loop
+        if UnorderedSet.contains(parent, unresolved) then
+          b := false;
+          break;
+        end if;
+        parent := ComponentRef.rest(parent);
+      end while;
+
+      // otherwise it has to be a fixed parameter or a constant (e.g. with an evaluable binding)
+      if b then
+        b := match cref
+          case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) algorithm
+            var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          then BVariable.isConst(var_ptr) or (BVariable.isParamOrConst(var_ptr) and BVariable.isFixed(var_ptr));
+          else false;
+        end match;
+      end if;
+    end if;
+  end isPrimaryCref;
 
   function createParameterEquation
     input Pointer<Variable> var;
@@ -413,7 +651,8 @@ public
     input output list<Pointer<Equation>> parameter_eqs;
     input output list<Pointer<Variable>> initial_param_vars;
   protected
-    Pointer<Variable> parent;
+    Pointer<Variable> parent, c_var;
+    PointerWeak<Variable> c_cell;
     Boolean skip;
   algorithm
     if BVariable.isConst(var) then
@@ -439,11 +678,15 @@ public
         initial_param_vars  := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
         parameter_eqs       := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
       else
-        for c_var in BVariable.getRecordChildren(var) loop
+        for c_cell in BVariable.getRecordChildrenCells(var) loop
+          c_var := PointerWeak.upgrade(c_cell);
           if BVariable.isBound(c_var) then
             BVariable.setBindingAsStart(c_var, true);
           end if;
-          (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+          // Only recurse for record children; scalar children are already handled by the parameters pass
+          if BVariable.isRecord(c_var) then
+            (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+          end if;
         end for;
       end if;
 
@@ -453,7 +696,6 @@ public
       if not BVariable.hasEvaluableBinding(var) then
         // add variable to initial unknowns
         initial_param_vars := var :: initial_param_vars;
-        // generate equation only if variable is fixed
         if BVariable.isFixed(var) then
           parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
         end if;
@@ -828,6 +1070,7 @@ public
         Equation new_eqn;
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
+        Algorithm alg;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -855,11 +1098,15 @@ public
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
 
       // reduce the body of algorithms
-      case Equation.ALGORITHM() algorithm
-        stmts := removeWhenEquationAlgorithmBody(eqn.alg.statements);
+      case Equation.ALGORITHM(alg = alg) algorithm
+        stmts := removeWhenEquationAlgorithmBody(alg.statements);
         if not listEmpty(stmts) then
-          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
-          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+          // update alg in-place to preserve original equation kind: re-evaluating via
+          // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
+          alg.statements := stmts;
+          eqn.alg := Algorithm.setInputsOutputs(alg);
+          eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+          new_eqn := eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;

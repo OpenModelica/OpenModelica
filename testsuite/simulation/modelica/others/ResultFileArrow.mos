@@ -1,0 +1,154 @@
+// name: ResultFileArrow
+// keywords: result file arrow alias
+// status: correct
+// suite: arrow
+// teardown_command: rm -f ResultFileArrow_* ResultFileArrow ResultFileArrow.c ResultFileArrow.exe ResultFileArrow.libs ResultFileArrow.log ResultFileArrow.makefile ResultFileArrow.o output.log
+// cflags: -d=-newInst
+//
+// The Arrow result format: aliases (negated Real/Integer, logical Boolean,
+// parameter), units, discrete variables and -single, read back through the
+// scripting API and compared with the .mat run of the same model.
+
+loadString("
+model ResultFileArrow
+  Real x(start=1, fixed=true, unit=\"m\", displayUnit=\"mm\") \"the state\";
+  Real y(unit=\"m\") \"negated alias of x\";
+  Real z \"alias of x\";
+  Integer n(start=0, fixed=true) \"a counter\";
+  Integer m \"negated alias of n\";
+  Boolean b \"x above a half\";
+  Boolean nb \"logical negation of b\";
+  parameter Real p(unit=\"s\") = 2.5 \"a parameter\";
+  parameter Real q = -p \"negated parameter alias\";
+  parameter Integer ip = 3;
+  parameter Boolean bp = true;
+  discrete Real d \"sampled x\";
+  Real v[2] \"an array\";
+  type E = enumeration(one, two, three);
+  E e \"an enumeration\";
+  parameter E ep = E.two;
+  String s \"a String\";
+  parameter String sp = \"hello\";
+equation
+  s = if x > 0.5 then \"high\" else \"low\";
+  e = if x > 0.5 then E.one else E.three;
+  der(x) = -x;
+  y = -x;
+  z = x;
+  m = -n;
+  b = x > 0.5;
+  nb = not b;
+  v = {x, 2*x};
+  when sample(0, 0.1) then
+    n = pre(n) + 1;
+    d = x;
+  end when;
+end ResultFileArrow;
+"); getErrorString();
+
+simulate(ResultFileArrow, stopTime=1.0, numberOfIntervals=10, outputFormat="arrow", fileNamePrefix="ResultFileArrow_a"); getErrorString();
+simulate(ResultFileArrow, stopTime=1.0, numberOfIntervals=10, outputFormat="mat", fileNamePrefix="ResultFileArrow_m"); getErrorString();
+readSimulationResultSize("ResultFileArrow_a_res.arrow");
+readSimulationResultVars("ResultFileArrow_a_res.arrow");
+readSimulationResultVars("ResultFileArrow_a_res.arrow", readParameters=false);
+{val(x, 0.55, "ResultFileArrow_a_res.arrow"), val(x, 0.55, "ResultFileArrow_m_res.mat")};
+{val(y, 0.55, "ResultFileArrow_a_res.arrow"), val(y, 0.55, "ResultFileArrow_m_res.mat")};
+{val(z, 0.55, "ResultFileArrow_a_res.arrow"), val(z, 0.55, "ResultFileArrow_m_res.mat")};
+{val(n, 0.55, "ResultFileArrow_a_res.arrow"), val(n, 0.55, "ResultFileArrow_m_res.mat")};
+{val(m, 0.55, "ResultFileArrow_a_res.arrow"), val(m, 0.55, "ResultFileArrow_m_res.mat")};
+{val(b, 0.95, "ResultFileArrow_a_res.arrow"), val(b, 0.95, "ResultFileArrow_m_res.mat")};
+{val(nb, 0.95, "ResultFileArrow_a_res.arrow"), val(nb, 0.95, "ResultFileArrow_m_res.mat")};
+{val(v[2], 0.55, "ResultFileArrow_a_res.arrow"), val(v[2], 0.55, "ResultFileArrow_m_res.mat")};
+{val(p, 0.5, "ResultFileArrow_a_res.arrow"), val(q, 0.5, "ResultFileArrow_a_res.arrow"), val(ip, 0.5, "ResultFileArrow_a_res.arrow"), val(bp, 0.5, "ResultFileArrow_a_res.arrow")};
+{val(d, 0.55, "ResultFileArrow_a_res.arrow"), val(d, 0.55, "ResultFileArrow_m_res.mat")};
+{val(e, 0.95, "ResultFileArrow_a_res.arrow"), val(e, 0.95, "ResultFileArrow_m_res.mat"), val(ep, 0.5, "ResultFileArrow_a_res.arrow")};
+diffSimulationResults("ResultFileArrow_a_res.arrow", "ResultFileArrow_m_res.mat", "ResultFileArrow_diff", relTol=1e-12); getErrorString();
+filterSimulationResults("ResultFileArrow_m_res.mat", "ResultFileArrow_fm.arrow", {"x", "y", "n", "q"}); getErrorString();
+readSimulationResultVars("ResultFileArrow_fm.arrow"); {val(y, 0.55, "ResultFileArrow_fm.arrow"), val(q, 0.5, "ResultFileArrow_fm.arrow")};
+filterSimulationResults("ResultFileArrow_a_res.arrow", "ResultFileArrow_fa.mat", {"x", "y", "n", "q"}); getErrorString();
+readSimulationResultVars("ResultFileArrow_fa.mat"); {val(y, 0.55, "ResultFileArrow_fa.mat"), val(q, 0.5, "ResultFileArrow_fa.mat")};
+simulate(ResultFileArrow, stopTime=1.0, numberOfIntervals=10, outputFormat="arrow", fileNamePrefix="ResultFileArrow_s", simflags="-single"); getErrorString();
+{val(y, 0.55, "ResultFileArrow_s_res.arrow"), val(nb, 0.95, "ResultFileArrow_s_res.arrow")};
+simulate(ResultFileArrow, stopTime=1.0, numberOfIntervals=10, outputFormat="arrow", fileNamePrefix="ResultFileArrow_ya", simflags="-mat_sync=3"); getErrorString();
+simulate(ResultFileArrow, stopTime=1.0, numberOfIntervals=10, outputFormat="mat", fileNamePrefix="ResultFileArrow_ym", simflags="-mat_sync=3"); getErrorString();
+diffSimulationResults("ResultFileArrow_ya_res.arrow", "ResultFileArrow_a_res.arrow", "ResultFileArrow_diff", relTol=1e-12); getErrorString();
+diffSimulationResults("ResultFileArrow_ym_res.mat", "ResultFileArrow_m_res.mat", "ResultFileArrow_diff", relTol=1e-12); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileArrow_a_res.arrow",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_a', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "ResultFileArrow_m_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_m', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 28
+// {"b", "bp", "d", "der(x)", "e", "ep", "ip", "m", "n", "nb", "p", "q", "s", "sp", "time", "v[1]", "v[2]", "x", "y", "z"}
+// {"b", "d", "der(x)", "e", "m", "n", "nb", "s", "time", "v[1]", "v[2]", "x", "y", "z"}
+// {0.5776679475028246, 0.5776679475028246}
+// {-0.5776679475028246, -0.5776679475028246}
+// {0.5776679475028246, 0.5776679475028246}
+// {6.0, 6.0}
+// {-6.0, -6.0}
+// {0.0, 0.0}
+// {1.0, 1.0}
+// {1.1553358950056491, 1.1553358950056491}
+// {2.5, -2.5, 3.0, 1.0}
+// {0.6065278101424606, 0.6065278101424606}
+// {3.0, 3.0, 2.0}
+// (true, {})
+// ""
+// true
+// ""
+// {"n", "q", "time", "x", "y"}
+// {-0.5776679475028246, -2.5}
+// true
+// ""
+// {"n", "q", "time", "x", "y"}
+// {-0.5776679475028246, -2.5}
+// record SimulationResult
+//     resultFile = "ResultFileArrow_s_res.arrow",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_s', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = '-single'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {-0.5776679515838623, 1.0}
+// record SimulationResult
+//     resultFile = "ResultFileArrow_ya_res.arrow",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_ya', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = '-mat_sync=3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "ResultFileArrow_ym_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_ym', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-mat_sync=3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// (true, {})
+// ""
+// (true, {})
+// ""
+// endResult

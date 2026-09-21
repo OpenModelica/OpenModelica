@@ -164,6 +164,37 @@ static inline void addHashLongVar(hash_long_var **ht, long key, omc_ModelVariabl
   HASH_ADD_INT( *ht, id, v );
 }
 
+static inline void freeHashStringString(hash_string_string *ht)
+{
+  hash_string_string *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    free((void*)c->id);
+    free((void*)c->val);
+    free(c);
+  }
+}
+
+static inline void freeHashLongVar(hash_long_var *ht)
+{
+  hash_long_var *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    freeHashStringString(c->val);
+    HASH_DEL(ht, c);
+    free(c);
+  }
+}
+
+static inline void freeHashStringLong(hash_string_long *ht)
+{
+  hash_string_long *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    free((void*)c->id);
+    free(c);
+  }
+}
+
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
 
@@ -558,6 +589,7 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   read_array_var_real(&attribute->max, findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
+  attribute->relativeQuantity = read_value_bool(findHashStringStringEmpty(var_map, "relativeQuantity"));
 
   if (omc_useStream[OMC_LOG_DEBUG])
   {
@@ -825,7 +857,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    fclose(file);
+    free(mi);
     throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
 
@@ -838,6 +870,8 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(initXMLData == NULL) {
     file = omc_fopen(filename, "r");
     if(!file) {
+      free(mi);
+      XML_ParserFree(parser);
       throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
     }
 
@@ -873,6 +907,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
     }
   }
 
+  XML_ParserFree(parser);
   return mi;
 }
 
@@ -1005,6 +1040,11 @@ void read_alias_var(DATA_ALIAS* alias,
   {
     read_var_info(*findHashLongVar(aliasHashMap, i), &alias[i].info);
 
+    /* Empty for the types that have no unit, and for an alias that declares none. */
+    alias[i].unit = read_value_string(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "unit"));
+    alias[i].displayUnit = read_value_string(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "displayUnit"));
+    alias[i].relativeQuantity = read_value_bool(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "relativeQuantity"));
+
     aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
     if (0 == strcmp(aliasTmp, "negatedAlias")) {
       alias[i].negate = 1;
@@ -1134,6 +1174,26 @@ void read_input_xml(MODEL_DATA* modelData,
   calculateAllScalarLength(modelData);
 
   free((char*)filename);
+  freeHashStringString(mi->md);
+  freeHashStringString(mi->de);
+  freeHashLongVar(mi->rSta);
+  freeHashLongVar(mi->rDer);
+  freeHashLongVar(mi->rAlg);
+  freeHashLongVar(mi->rPar);
+  freeHashLongVar(mi->rAli);
+  freeHashLongVar(mi->rSen);
+  freeHashLongVar(mi->iAlg);
+  freeHashLongVar(mi->iPar);
+  freeHashLongVar(mi->iAli);
+  freeHashLongVar(mi->bAlg);
+  freeHashLongVar(mi->bPar);
+  freeHashLongVar(mi->bAli);
+  freeHashLongVar(mi->sAlg);
+  freeHashLongVar(mi->sPar);
+  freeHashLongVar(mi->sAli);
+  freeHashStringLong(mapAlias);
+  freeHashStringLong(mapAliasParam);
+  freeHashStringLong(mapAliasSen);
   free(mi);
 }
 
@@ -1524,6 +1584,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
         warningStreamPrint(OMC_LOG_STDOUT, 0, "simulation_input_xml.c: override variable name not found in model: %s\n", it->id);
       }
     }
+    freeHashStringLong(mOverridesUses);
 
     infoStreamPrint(OMC_LOG_SOLVER, 0, "override done!");
   } else {

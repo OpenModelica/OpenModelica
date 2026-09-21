@@ -5,6 +5,7 @@ ManyEvents.mos \
 ManyEventsManyConditions.mos \
 TransmissionLineModelica.mos \
 DistributionSystemModelicaIndividual.mos \
+DistributionSystemModelicaIndividualSparse.mos \
 Table.mos \
 TimeTable.mos \
 Verification_Table.mos \
@@ -71,4 +72,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

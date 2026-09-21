@@ -1,6 +1,7 @@
 // name:     RedeclareVisibility2
 // keywords: redeclare, modification, constant
 // status:   incorrect
+// suite: disabled
 //
 // Checks that it's not allowed to modify a protected element with a replacement.
 //
@@ -16,7 +17,7 @@ end RedeclareVisibility2;
 
 // Result:
 // Error processing file: RedeclareVisibility2.mo
-// [RedeclareVisibility2.mo:13:3-13:32:writable] Error: Variable m: Attempt to modify protected element m.x
+// [RedeclareVisibility2.mo:14:3-14:32:writable] Error: Variable m: Attempt to modify protected element m.x
 // Error: Error occurred while flattening model RedeclareVisibility2
 //
 // # Error encountered! Exiting...

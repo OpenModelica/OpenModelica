@@ -37,8 +37,12 @@
 #include "PlotWindow.h"
 #include "OMPlot.h"
 #include "PlotZoomer.h"
+#ifdef OM_LEGACY_RESULT_READERS
 #include "util/read_csv.h"
 #include "util/read_matlab4.h"
+#else
+#include "omc_result.h"
+#endif
 #include "PlotCurve.h"
 #include "PlotPicker.h"
 #include "Legend.h"
@@ -66,17 +70,20 @@
 #include <QPainter>
 #include <QPrinter>
 #include <QPrintDialog>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QStack>
 #include <QLineEdit>
 #include <QColorDialog>
 
 using namespace OMPlot;
 
+static const QRegularExpression DER_VARIABLE_NAME_REGEX(QRegularExpression::anchoredPattern("der\\(\\D(\\w)*\\)"));
+
+
 static const QString ERROR_INTERVAL_SIZE_NOT_SPECIFIED = QObject::tr("Interval size not specified.");
 static const QString ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH = QObject::tr("Arrays must be of the same length in array parametric plot.");
 static const QString ERROR_UNKNOWN_TIME_UNIT = QObject::tr("Unknown time unit in plotArray(Parametric).");
-static const QString ERROR_FILE_NOT_FOUND = QObject::tr("File not found");
+static const QString ERROR_MSG_FILE_NOT_FOUND = QObject::tr("File not found");
 static const QString ERROR_FAILED_TO_OPEN_FILE = QObject::tr("Failed to open simulation result file");
 static const QString ERROR_CORRUPTED_FILE = QObject::tr("Corrupted file");
 static const QString ERROR_COULD_NOT_DETERMINE_VARIABLE_NAME = QObject::tr("Could not determine the variable name!");
@@ -87,6 +94,59 @@ static const QString ERROR_FAILED_TO_LOAD_VARIABLE = QObject::tr("Failed to load
 static const QString ERROR_VARIABLE_DOES_NOT_EXIST = QObject::tr("Variable doesn't exist");
 static const QString ERROR_ARRAY_VARIABLE_DOES_NOT_EXIST = QObject::tr("Array variable doesn't exist");
 static const QString ERROR_PARAMETER_DOES_NOT_HAVE_VALUE = QObject::tr("Parameter doesn't have a value");
+
+#ifndef OM_LEGACY_RESULT_READERS
+/* The formats the Rust reader opens (.plt keeps OMPlot's own text parser). */
+static bool isReaderFile(const QString &fileName)
+{
+  return fileName.endsWith("csv") || fileName.endsWith("mat") || fileName.endsWith("arrow");
+}
+
+static omc::ResultFile openResultFile(const QString &windowTitle, const QFile &file)
+{
+  try {
+    return omc::ResultFile(file.fileName().toStdString());
+  } catch (const omc::ResultError &e) {
+    throw PlotException(windowTitle, e.what());
+  }
+}
+
+/* Every variable of the file as one row of values: its trajectory, or a
+ * parameter's value repeated over the rows. Throws when it cannot be read. */
+static std::vector<double> readValues(const QString &windowTitle, const omc::ResultFile &result, const QString &variable)
+{
+  std::string name = variable.toStdString();
+  if (!result.hasVariable(name)) {
+    throw NoVariableException(windowTitle, ERROR_VARIABLE_DOES_NOT_EXIST, variable);
+  }
+  std::vector<double> values = result.values(name);
+  if (values.empty()) {
+    throw NoVariableException(windowTitle, result.isParameter(name) ? ERROR_PARAMETER_DOES_NOT_HAVE_VALUE : ERROR_CORRUPTED_FILE, variable);
+  }
+  return values;
+}
+
+/* The elements var[1], var[2], ... (der(var[i]) for a derivative) at `time`. */
+static QList<double> readArrayAt(const omc::ResultFile &result, const QString &variable, double time)
+{
+  QList<double> res;
+  for (int i = 1; ; i++) {
+    QString varNameQS = variable;
+    if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()) {
+      varNameQS.chop(1);
+      varNameQS.append("[" + QString::number(i) + "])");
+    } else {
+      varNameQS.append("[" + QString::number(i) + "]");
+    }
+    double value = 0.0;
+    if (!result.valueAt(varNameQS.toStdString(), time, value)) {
+      break;
+    }
+    res.push_back(value);
+  }
+  return res;
+}
+#endif
 
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, int toolbarIconSize)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
@@ -254,7 +314,6 @@ void PlotWindow::initializePlot(QStringList arguments)
     }
     updatePlot();
   }
-  
 }
 
 void PlotWindow::setVariablesList(QStringList variables)
@@ -271,7 +330,7 @@ void PlotWindow::initializeFile(QString file)
 {
   mFile.setFileName(file);
   if (!mFile.exists()) {
-    throw NoFileException(windowTitle(), ERROR_FILE_NOT_FOUND, file);
+    throw NoFileException(windowTitle(), ERROR_MSG_FILE_NOT_FOUND, file);
   }
 }
 
@@ -328,6 +387,17 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
     // close the file
     mFile.close();
   }
+#ifndef OM_LEGACY_RESULT_READERS
+  else if (isReaderFile(mFile.fileName()))
+  {
+    omc::ResultFile result = openResultFile(windowTitle(), mFile);
+    if (result.rows() < 1) {
+      throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
+    start = result.startTime();
+    stop = result.stopTime();
+  }
+#else
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
@@ -365,7 +435,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
 
     // close the file
     omc_free_matlab4_reader(&reader);
-  } else {
+  }
+#endif
+  else {
     throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
   }
 }
@@ -450,6 +522,11 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpLogYCheckBox = new QCheckBox(tr("Log Y"), this);
   connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
   toolBar->addWidget(mpLogYCheckBox);
+  toolBar->addSeparator();
+  mpAlignZeroCheckBox = new QCheckBox(tr("Align zero"), this);
+  mpAlignZeroCheckBox->setToolTip(tr("Align zero on left and right Y-axes"));
+  connect(mpAlignZeroCheckBox, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
+  toolBar->addWidget(mpAlignZeroCheckBox);
   toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
@@ -556,6 +633,57 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     // close the file
     mFile.close();
   }
+#ifndef OM_LEGACY_RESULT_READERS
+  else if (isReaderFile(mFile.fileName()))
+  {
+    QStringList variablesPlotted;
+    omc::ResultFile result = openResultFile(windowTitle(), mFile);
+    if (result.rows() < 1) {
+      throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
+    QString timeName = QString::fromStdString(result.timeName());
+    if (timeName != "time") {
+      setXLabel(timeName);
+    }
+    std::vector<double> timeVals = readValues(windowTitle(), result, timeName);
+    const double startTime = result.startTime(), stopTime = result.stopTime();
+    for (const std::string &name : result.variables()) {
+      QString variable = QString::fromStdString(name);
+      if (variable == timeName || !(mVariablesList.contains(variable) || isPlotAll())) {
+        continue;
+      }
+      variablesPlotted.append(variable);
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), timeName, getXUnit(), getXDisplayUnit(), variable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      if (result.isParameter(name)) {
+        double value = 0.0;
+        if (!result.valueAt(name, startTime, value)) {
+          throw NoVariableException(windowTitle(), ERROR_PARAMETER_DOES_NOT_HAVE_VALUE, variable);
+        }
+        pPlotCurve->addXAxisValue(startTime);
+        pPlotCurve->addYAxisValue(value);
+        pPlotCurve->addXAxisValue(stopTime);
+        pPlotCurve->addYAxisValue(value);
+      } else {
+        std::vector<double> vals = readValues(windowTitle(), result, variable);
+        for (size_t i = 0; i < timeVals.size() && i < vals.size(); i++) {
+          pPlotCurve->addXAxisValue(timeVals[i]);
+          pPlotCurve->addYAxisValue(vals[i]);
+        }
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      mpPlot->replot();
+    }
+    if (isPlot())
+      checkForErrors(mVariablesList, variablesPlotted);
+  }
+#else
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
@@ -699,6 +827,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     // close the file
     omc_free_matlab4_reader(&reader);
   }
+#endif
 }
 
 void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
@@ -802,6 +931,28 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       // close the file
       mFile.close();
     }
+#ifndef OM_LEGACY_RESULT_READERS
+    else if (isReaderFile(mFile.fileName()))
+    {
+      omc::ResultFile result = openResultFile(windowTitle(), mFile);
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      std::vector<double> xVals = readValues(windowTitle(), result, xVariable);
+      std::vector<double> yVals = readValues(windowTitle(), result, yVariable);
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      for (size_t i = 0; i < xVals.size() && i < yVals.size(); i++) {
+        pPlotCurve->addXAxisValue(xVals[i]);
+        pPlotCurve->addYAxisValue(yVals[i]);
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      mpPlot->replot();
+    }
+#else
     //PLOT CSV
     else if (mFile.fileName().endsWith("csv"))
     {
@@ -938,6 +1089,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       mpPlot->replot();
       omc_free_matlab4_reader(&reader);
     }
+#endif
   }
 }
 
@@ -994,7 +1146,7 @@ void PlotWindow::readPLTArray(QTextStream &textStream, QString variable, double 
   {
     //read the values
     QString variableWithInd = variable;
-    if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(variableWithInd)){
+    if (DER_VARIABLE_NAME_REGEX.match(variableWithInd).hasMatch()){
       variableWithInd.chop(1);
       variableWithInd.append("["+QString::number(index)+"])");
     } else {
@@ -1111,6 +1263,43 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     }
     mFile.close();
   }
+#ifndef OM_LEGACY_RESULT_READERS
+  else if (isReaderFile(mFile.fileName()))
+  {
+    omc::ResultFile result = openResultFile(windowTitle(), mFile);
+    if (result.rows() < 1) {
+      throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
+    const double startTime = result.startTime(), stopTime = result.stopTime();
+    if (time < startTime || stopTime < time) {
+      TimeOutOfBoundsException timeOutOfBoundsException(windowTitle(), QFileInfo(mFile), startTime, stopTime);
+      if (mTimeOutOfBounds) {
+        throw RecurringPlotException(timeOutOfBoundsException);
+      }
+      mTimeOutOfBounds = true;
+      throw timeOutOfBoundsException;
+    } else {
+      mTimeOutOfBounds = false;
+    }
+    foreach (QString variable, mVariablesList) {
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "array index", getXUnit(), getXDisplayUnit(), variable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      QList<double> res = readArrayAt(result, variable, time);
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      for (int j = 0; j < res.count(); j++) {
+        pPlotCurve->addXAxisValue(j + 1);
+        pPlotCurve->addYAxisValue(res[j]);
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      updateTimeText();
+    }
+  }
+#else
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
@@ -1151,7 +1340,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       int i = 1;
       do {
         QString varNameQS = (*itVarList);
-        if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+        if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
           varNameQS.chop(1);
           varNameQS.append("["+QString::number(i)+"])");
         } else {
@@ -1218,7 +1407,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         int i = 1;
         do {
           QString varNameQS = (*itVarList);
-          if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+          if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
             varNameQS.chop(1);
             varNameQS.append("["+QString::number(i)+"])");
           } else {
@@ -1248,6 +1437,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       // close the file
       omc_free_matlab4_reader(&reader);
     }
+#endif
 }
 
 void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
@@ -1344,6 +1534,45 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       updateTimeText();
       mFile.close();
     }
+#ifndef OM_LEGACY_RESULT_READERS
+    else if (isReaderFile(mFile.fileName()))
+    {
+      omc::ResultFile result = openResultFile(windowTitle(), mFile);
+      if (result.rows() < 1) {
+        throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+      }
+      const double startTime = result.startTime(), stopTime = result.stopTime();
+      if (time < startTime || stopTime < time) {
+        TimeOutOfBoundsException timeOutOfBoundsException(windowTitle(), QFileInfo(mFile), startTime, stopTime);
+        if (mTimeOutOfBounds) {
+          throw RecurringPlotException(timeOutOfBoundsException);
+        }
+        mTimeOutOfBounds = true;
+        throw timeOutOfBoundsException;
+      } else {
+        mTimeOutOfBounds = false;
+      }
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      QList<double> xRes = readArrayAt(result, xVariable, time);
+      QList<double> yRes = readArrayAt(result, yVariable, time);
+      if (xRes.count() != yRes.count()) {
+        throw PlotException(windowTitle(), ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH);
+      }
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      for (int i = 0; i < xRes.count(); i++) {
+        pPlotCurve->addXAxisValue(xRes[i]);
+        pPlotCurve->addYAxisValue(yRes[i]);
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      updateTimeText();
+    }
+#else
     //    //PLOT CSV
     else if (mFile.fileName().endsWith("csv"))
     {
@@ -1387,7 +1616,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         double *arrElement;
         for (int i = 1; ;i++){
           QString varNameQS = varPair[j];
-          if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+          if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
             varNameQS.chop(1);
             varNameQS.append("["+QString::number(i)+"])");
           } else {
@@ -1466,7 +1695,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         int i = 1;
         do {
           QString varNameQS = varPair[j];
-          if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+          if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
             varNameQS.chop(1);
             varNameQS.append("["+QString::number(i)+"])");
           } else {
@@ -1497,6 +1726,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       updateTimeText();
       omc_free_matlab4_reader(&reader);
     }
+#endif
   }
 }
 
@@ -1559,6 +1789,8 @@ void PlotWindow::updatePlot()
     if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
       mpPlot->getPlotZoomer()->setZoomBase(false);
     }
+    alignYAxisZero();
+    mpPlot->replot();
   }
 }
 
@@ -1822,7 +2054,53 @@ void PlotWindow::fitInView()
   mpPlot->setAxisAutoScale(QwtPlot::yRight);
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpPlot->replot();
+  alignYAxisZero();
+  mpPlot->replot();
   mpPlot->getPlotZoomer()->setZoomBase(false);
+}
+
+/*!
+ * \brief PlotWindow::alignYAxisZero
+ * Aligns the visible left and right linear y-axes so that zero has the same
+ * position on both axes.
+ * The ranges are only expanded, preserving all plotted data, and logarithmic
+ * or single-axis plots are left unchanged.
+ */
+void PlotWindow::alignYAxisZero()
+{
+  // Zero cannot be aligned on logarithmic axes or when one of the axes is hidden.
+  if (!mAlignZero || mpLogYCheckBox->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
+      || !mpPlot->axisWidget(QwtPlot::yRight)->isVisible()) {
+    return;
+  }
+
+  const QwtScaleDiv leftScale = mpPlot->axisScaleDiv(QwtPlot::yLeft);
+  const QwtScaleDiv rightScale = mpPlot->axisScaleDiv(QwtPlot::yRight);
+  const double leftMin = leftScale.lowerBound();
+  const double leftMax = leftScale.upperBound();
+  const double rightMin = rightScale.lowerBound();
+  const double rightMax = rightScale.upperBound();
+  const double leftNegative = qMax(0.0, -leftMin);
+  const double leftPositive = qMax(0.0, leftMax);
+  const double rightNegative = qMax(0.0, -rightMin);
+  const double rightPositive = qMax(0.0, rightMax);
+
+  // A range that does not contain zero has no meaningful zero position.
+  if ((leftNegative == 0.0 && leftPositive == 0.0) || (rightNegative == 0.0 && rightPositive == 0.0)) {
+    return;
+  }
+
+  // Calculate the normalized zero position and use the farther position for both axes.
+  const double leftZeroPosition = leftNegative / (leftNegative + leftPositive);
+  const double rightZeroPosition = rightNegative / (rightNegative + rightPositive);
+  const double zeroPosition = qBound(1e-6, qMax(leftZeroPosition, rightZeroPosition), 1.0 - 1e-6);
+
+  // Expand each axis independently while keeping all existing values visible.
+  const double leftRange = qMax(leftNegative / zeroPosition, leftPositive / (1.0 - zeroPosition));
+  const double rightRange = qMax(rightNegative / zeroPosition, rightPositive / (1.0 - zeroPosition));
+
+  mpPlot->setAxisScale(QwtPlot::yLeft, -leftRange * zeroPosition, leftRange * (1.0 - zeroPosition));
+  mpPlot->setAxisScale(QwtPlot::yRight, -rightRange * zeroPosition, rightRange * (1.0 - zeroPosition));
 }
 
 void PlotWindow::updateCurves()
@@ -2010,6 +2288,23 @@ void PlotWindow::setLogY(bool on)
   bool state = mpLogYCheckBox->blockSignals(true);
   mpLogYCheckBox->setChecked(on);
   mpLogYCheckBox->blockSignals(state);
+  updatePlot();
+}
+
+/*!
+ * \brief PlotWindow::setAlignZero
+ * Sets whether the left and right y-axis zero positions should be aligned.
+ * Synchronizes the toolbar control and refreshes the plot.
+ * \param on
+ */
+void PlotWindow::setAlignZero(bool on)
+{
+  mAlignZero = on;
+  if (mpAlignZeroCheckBox) {
+    const bool state = mpAlignZeroCheckBox->blockSignals(true);
+    mpAlignZeroCheckBox->setChecked(on);
+    mpAlignZeroCheckBox->blockSignals(state);
+  }
   updatePlot();
 }
 
@@ -2403,6 +2698,8 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
   mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits() && mpPlotWindow->canHavePrefixUnits());
   mpPrefixUnitsCheckbox->setEnabled(mpPlotWindow->canHavePrefixUnits());
+  mpAlignZeroCheckbox = new QCheckBox(tr("Align zero on left and right Y-axes"));
+  mpAlignZeroCheckbox->setChecked(mpPlotWindow->getAlignZero());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
@@ -2411,6 +2708,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpYRightAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpPrefixUnitsCheckbox);
+  pRangeTabVerticalLayout->addWidget(mpAlignZeroCheckbox);
   mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
@@ -2544,6 +2842,7 @@ void SetupDialog::applySetup()
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
+  mpPlotWindow->setAlignZero(mpAlignZeroCheckbox->isChecked());
   // set the range
   if (mpAutoScaleCheckbox->isChecked()) {
     mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::xBottom);

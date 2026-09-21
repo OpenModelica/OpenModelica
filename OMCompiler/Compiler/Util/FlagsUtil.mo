@@ -44,10 +44,10 @@ import Flags;
 
 protected
 
-import Corba;
 import Error;
 import ErrorExt;
 import Global;
+import IOStream;
 import List;
 import Print;
 import Settings;
@@ -95,7 +95,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.TRANSFORMS_BEFORE_DUMP,
   Flags.DAE_DUMP_GRAPHV,
   Flags.INTERACTIVE_TCP,
-  Flags.INTERACTIVE_CORBA,
   Flags.INTERACTIVE_DUMP,
   Flags.RELIDX,
   Flags.DUMP_REPL,
@@ -260,7 +259,9 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DEBUG_ADJOINT,
   Flags.FLOW_ALIAS_ELIMINATION,
   Flags.DUMP_CHECK_MODEL,
-  Flags.CHECK_DEF_USE
+  Flags.CHECK_DEF_USE,
+  Flags.TEARING_COST,
+  Flags.OMEDIT
 };
 
 protected
@@ -290,7 +291,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.KEEP_ARRAYS,
   Flags.MODELICA_OUTPUT,
   Flags.SILENT,
-  Flags.CORBA_SESSION,
   Flags.NUM_PROC,
   Flags.INST_CLASS,
   Flags.VECTORIZATION_LIMIT,
@@ -313,7 +313,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SCALARIZE_MINMAX,
   Flags.STRICT,
   Flags.SCALARIZE_BINDINGS,
-  Flags.CORBA_OBJECT_REFERENCE_FILE_PATH,
   Flags.HPCOM_SCHEDULER,
   Flags.HPCOM_CODE,
   Flags.REWRITE_RULES_FILE,
@@ -431,7 +430,16 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SIM_CODE_SCALARIZE,
   Flags.EXECUTE_COMMAND,
   Flags.MOO_DYNAMIC_OPTIMIZATION,
-  Flags.FMI_EXTRA_ANNOTATIONS
+  Flags.FMI_EXTRA_ANNOTATIONS,
+  Flags.INTERACTIVE_DUMP_FORMAT,
+  Flags.EXPORT_FMU,
+  Flags.FMU_TYPE,
+  Flags.FMU_PLATFORMS,
+  Flags.FMU_VERSION,
+  Flags.TEARING_COST_MARGIN,
+  Flags.FMU_NATIVE_PLATFORMS,
+  Flags.TPL_OUTPUT_DIR,
+  Flags.FMU_DIRECTORY
 };
 
 public function new
@@ -476,6 +484,11 @@ algorithm
       checkConfigFlags();
       flags := Flags.FLAGS(createDebugFlags(), createConfigFlags());
       saveFlags(flags);
+      // Not in Flags.TARGET itself: a constant's initialiser cannot reach
+      // another package. new() calls readArgs() after this, so --target wins.
+      if StringUtil.startsWith(System.openModelicaPlatform(), "msvc") then
+        setConfigString(Flags.TARGET, "msvc");
+      end if;
     else
       print("Flag loading failed!\n");
       flags := Flags.NO_FLAGS();
@@ -1050,6 +1063,14 @@ algorithm
     // A multiple-string value.
     case (_, Flags.STRING_LIST_FLAG(), _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
 
+    // No value, and an enumeration that spells one of its values "true": the flag
+    // used to be a boolean one, so keep --flag meaning --flag=true.
+    case ("", Flags.ENUM_FLAG(validValues = enums), _)
+      algorithm
+        i := Util.assoc("true", enums);
+      then
+        Flags.ENUM_FLAG(i, enums);
+
     // An enumeration value.
     case (_, Flags.ENUM_FLAG(validValues = enums), _)
       algorithm
@@ -1169,13 +1190,6 @@ algorithm
     // The error message might get lost, so also print it directly here.
     print("The flag -d=interactive is depreciated. Please use --interactive=tcp instead.\n");
   end if;
-  if Flags.isSet(Flags.INTERACTIVE_CORBA) then
-    disableDebug(Flags.INTERACTIVE_CORBA);
-    setConfigString(Flags.INTERACTIVE, "corba");
-    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactiveCorba", "--interactive=corba"});
-    // The error message might get lost, so also print it directly here.
-    print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba instead.\n");
-  end if;
   // add other deprecated flags here...
 
   // CONFIG_FLAGS
@@ -1218,7 +1232,6 @@ algorithm
   () := matchcontinue inValue
     local
       Boolean value;
-      String corba_name, corba_objid_path;
 
     // +showErrorMessages needs to be sent to the C runtime.
     case _
@@ -1226,24 +1239,6 @@ algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
         Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
-      then
-        ();
-
-    // The corba object reference file path needs to be sent to the C runtime.
-    case _
-      algorithm
-        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
-        Flags.STRING_FLAG(data = corba_objid_path) := inValue;
-        Corba.setObjectReferenceFilePath(corba_objid_path);
-      then
-        ();
-
-    // The corba session name needs to be sent to the C runtime.
-    case _
-      algorithm
-        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
-        Flags.STRING_FLAG(data = corba_name) := inValue;
-        Corba.setSessionName(corba_name);
       then
         ();
 
@@ -1338,14 +1333,17 @@ public function printHelp
   "Prints out help for the given list of topics."
   input list<String> inTopics;
   output String help;
+protected
+  IOStream.IOStream s;
 algorithm
   help := matchcontinue inTopics
     local
       String desc;
-      list<String> rest_topics, strs, data;
-      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8,str9,str9a,str9b,str10;
+      list<String> rest_topics, data;
+      String str, name;
       Flags.ConfigFlag config_flag;
       list<tuple<String,String>> topics;
+      Option<String> short_name;
 
     case {} then printUsage();
 
@@ -1357,91 +1355,105 @@ algorithm
 
     case {"topics"}
       algorithm
+        s := IOStream.create("topics");
+        s := IOStream.append(s, "The available topics (help(\"topics\")) are as follows:\n");
+
         topics := {
           //("mos","Help on the command-line and scripting environments, including OMShell and OMNotebook."),
           ("omc","The command-line options available for omc."),
           ("debug","Flags that enable debugging, diagnostics, and research prototypes."),
           ("optmodules","Flags that determine which symbolic methods are used to produce the causalized equation system."),
           ("simulation","The command-line options available for simulation executables generated by OpenModelica."),
-          ("<flagname>","Displays option descriptions for multi-option flag <flagname>."),
+          ("<flagname>","Displays option descriptions for flag <flagname>."),
           ("topics","This help-text.")
         };
-        str := "The available topics (help(\"topics\")) are as follows:\n";
-        strs := List.map(topics,makeTopicString);
-        help := str + stringDelimitList(strs,"\n") + "\n";
-      then help;
+
+        s := IOStream.append(s, stringDelimitList(list(makeTopicString(t) for t in topics), "\n"));
+        s := IOStream.append(s, "\n");
+      then
+        IOStream.string(s);
 
     case {"simulation"}
-      algorithm
-        help := "The simulation executable takes the following flags:\n\n" + System.getSimulationHelpText(true);
-      then help;
+      then "The simulation executable takes the following flags:\n\n" + System.getSimulationHelpText(true);
 
     case {"simulation-sphinxoutput"}
-      algorithm
-        help := "The simulation executable takes the following flags:\n\n" + System.getSimulationHelpText(true,sphinx=true);
-      then help;
+      then "The simulation executable takes the following flags:\n\n" + System.getSimulationHelpText(true,sphinx=true);
 
     case {"debug"}
       algorithm
-        str1 := "The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n";
-        str2 := "The available flags are (+ are enabled by default, - are disabled):\n\n";
-        strs := list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags));
-        help := stringAppendList(str1 :: str2 :: strs);
-      then help;
+        s := IOStream.create("debug");
+        s := IOStream.append(s, "The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
+        s := IOStream.append(s, "The available flags are (+ are enabled by default, - are disabled):\n\n");
+        s := IOStream.appendList(s, list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags)));
+      then
+        IOStream.string(s);
 
     case {"optmodules"}
       algorithm
+        s := IOStream.create("optmodules");
         // pre-optimization
-        str1 := "The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.";
-        str1 := stringAppendList(StringUtil.wordWrap(str1,System.getTerminalWidth(),"\n"));
+        s := IOStream.append(s, wrapToTerminal("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list."));
         Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.PRE_OPT_MODULES;
-        str1a := "The modules used by default are:" + "\n--preOptModules=" + stringDelimitList(data, ",");
-        str1b := "The valid modules are:";
-        str2 := printFlagValidOptionsDesc(Flags.PRE_OPT_MODULES);
+        s := IOStream.append(s, "\n\nThe modules used by default are:\n--preOptModules=");
+        s := IOStream.append(s, stringDelimitList(data, ","));
+        s := IOStream.append(s, "\n\nThe valid modules are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.PRE_OPT_MODULES));
+        s := IOStream.append(s, "\n");
 
         // matching
-        str3 := "The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.";
-        str3 := stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str3a)) := Flags.MATCHING_ALGORITHM;
-        str3a := "The method used by default is:" + "\n--matchingAlgorithm=" + str3a;
-        str3b := "The valid methods are:";
-        str4 := printFlagValidOptionsDesc(Flags.MATCHING_ALGORITHM);
+        s := IOStream.append(s, wrapToTerminal("\nThe --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str)) := Flags.MATCHING_ALGORITHM;
+        s := IOStream.append(s, "\n\nThe method used by default is:\n--matchingAlgorithm=");
+        s := IOStream.append(s, str);
+        s := IOStream.append(s, "\n\nThe valid methods are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.MATCHING_ALGORITHM));
+        s := IOStream.append(s, "\n");
 
         // index reduction
-        str5 := "The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.";
-        str5 := stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str5a)) := Flags.INDEX_REDUCTION_METHOD;
-        str5a := "The method used by default is:" + "\n--indexReductionMethod=" + str5a;
-        str5b := "The valid methods are:";
-        str6 := printFlagValidOptionsDesc(Flags.INDEX_REDUCTION_METHOD);
+        s := IOStream.append(s, wrapToTerminal("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str)) := Flags.INDEX_REDUCTION_METHOD;
+        s := IOStream.append(s, "\n\nThe method used by default is:\n--indexReductionMethod=");
+        s := IOStream.append(s, str);
+        s := IOStream.append(s, "\n\nThe valid methods are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.INDEX_REDUCTION_METHOD));
+        s := IOStream.append(s, "\n");
 
         // post-optimization (initialization)
-        str7 := "The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.";
-        str7 := stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
+        s := IOStream.append(s, wrapToTerminal("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list."));
         Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.INIT_OPT_MODULES;
-        str7a := "The modules used by default are:" + "\n--initOptModules=" + stringDelimitList(data, ",");
-        str7b := "The valid modules are:";
-        str8 := printFlagValidOptionsDesc(Flags.INIT_OPT_MODULES);
+        s := IOStream.append(s, "\n\nThe modules used by default are:\n--initOptModules=" + stringDelimitList(data, ","));
+        s := IOStream.append(s, "\n\nThe valid modules are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.INIT_OPT_MODULES));
+        s := IOStream.append(s, "\n");
 
         // post-optimization (simulation)
-        str9 := "The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.";
-        str9 := stringAppendList(StringUtil.wordWrap(str9,System.getTerminalWidth(),"\n"));
+        s := IOStream.append(s, wrapToTerminal("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list."));
         Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.POST_OPT_MODULES;
-        str9a := "The modules used by default are:" + "\n--postOptModules=" + stringDelimitList(data, ",");
-        str9b := "The valid modules are:";
-        str10 := printFlagValidOptionsDesc(Flags.POST_OPT_MODULES);
-
-        help := stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n",str9,"\n\n",str9a,"\n\n",str9b,"\n",str10,"\n"});
-      then help;
+        s := IOStream.append(s, "\n\nThe modules used by default are:\n--postOptModules=" + stringDelimitList(data, ","));
+        s := IOStream.append(s, "\n\nThe valid modules are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.POST_OPT_MODULES));
+        s := IOStream.append(s, "\n");
+      then
+        IOStream.string(s);
 
     case {str}
       algorithm
-        config_flag as Flags.CONFIG_FLAG(name=name,description=desc) := List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str1 := "-" + name;
-        str2 := stringAppendList(StringUtil.wordWrap(desc, System.getTerminalWidth(), "\n"));
-        str := printFlagValidOptionsDesc(config_flag);
-        help := stringAppendList({str1,"\n",str2,"\n",str});
-      then help;
+        s := IOStream.create("flag");
+        config_flag as Flags.CONFIG_FLAG(name=name, shortname=short_name, description=desc) := List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
+
+        if isSome(short_name) then
+          s := IOStream.append(s, "-" + Util.getOption(short_name) + ", ");
+        end if;
+
+        s := IOStream.append(s, "--" + name);
+        s := IOStream.append(s, "\n");
+        s := IOStream.append(s, wrapToTerminal(desc));
+        s := IOStream.append(s, "\n\n");
+        s := IOStream.append(s, "Valid arguments:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(config_flag));
+        s := IOStream.append(s, "\n");
+      then
+        IOStream.string(s);
 
     case {str}
       then "I'm sorry, I don't know what " + str + " is.\n";
@@ -1516,7 +1528,7 @@ algorithm
   Print.clearBuf();
   Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
   Print.printBuf("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n");
-  Print.printBuf("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n");
+  Print.printBuf("Distributed under OSMC-PL and AGPL3, see www.openmodelica.org\n\n");
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
   Print.printBuf("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
   Print.printBuf("\n* Options:\n");
@@ -1533,6 +1545,8 @@ algorithm
   Print.printBuf("  omc Script.mos           will run the commands from Script.mos.\n");
   Print.printBuf("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n");
   Print.printBuf("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce\n                            flattened Model1 on standard output.\n");
+  Print.printBuf("  omc --export-fmu -i MyPackage.Examples.Hello --fmiVersion=2.0\n                           ./MyPackage/package.mo\n                           will load the local package and export the model as an FMU.\n");
+  Print.printBuf("  omc --export-fmu -i MyModel --fmiVersion=2.0 MyModel.mo Modelica\n                           will load MyModel.mo and the Modelica Standard Library,\n                           then export MyModel as an FMU.\n");
   Print.printBuf("  *.mo (Modelica files)\n");
   //Print.printBuf("\t*.mof (Flat Modelica files)\n");
   Print.printBuf("  *.mos (Modelica Script files)\n\n");
@@ -1787,10 +1801,35 @@ protected function printFlagValidOptionsDesc
   input Flags.ConfigFlag inFlag;
   output String outString;
 protected
-  list<tuple<String, String>> options;
+  list<tuple<String, String>> desc_options;
+  list<String> str_options;
+  list<tuple<String, Integer>> enum_options;
 algorithm
-  Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = options))) := inFlag;
-  outString := sum(printFlagOptionDesc(o) for o in options);
+  outString := match inFlag
+    // String flag with a description for each valid option.
+    case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = desc_options)))
+      then stringAppendList(list(printFlagOptionDesc(o) for o in desc_options));
+
+    // String flag with valid options but no descriptions.
+    case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_OPTION(options = str_options)))
+      then stringDelimitList(str_options, ", ");
+
+    // Enum flag.
+    case Flags.CONFIG_FLAG(defaultValue = Flags.FlagData.ENUM_FLAG(validValues = enum_options))
+      then stringDelimitList(list(Util.tuple21(v) for v in enum_options), ", ");
+
+    // For other flags, give a generic description of the type of value they expect.
+    else
+      match inFlag.defaultValue
+        case Flags.FlagData.BOOL_FLAG()        then "false, true";
+        case Flags.FlagData.INT_FLAG()         then "An Integer value.";
+        case Flags.FlagData.INT_LIST_FLAG()    then "A comma-separated list of Integer values.";
+        case Flags.FlagData.REAL_FLAG()        then "A Real value.";
+        case Flags.FlagData.STRING_FLAG()      then "A String value";
+        case Flags.FlagData.STRING_LIST_FLAG() then "A comma-separated list of String values.";
+        else "Unknown";
+      end match;
+  end match;
 end printFlagValidOptionsDesc;
 
 protected function sphinxMathMode
@@ -1928,7 +1967,7 @@ algorithm
     case Flags.BOOL_FLAG() then boolString(flagData.data);
     case Flags.INT_FLAG() then intString(flagData.data);
     case Flags.INT_LIST_FLAG()
-      then List.toString(flagData.data, intString, "", "", ",", "", false);
+      then List.toStringCustom(flagData.data, intString, "", "", ",", "", false);
 
     case Flags.REAL_FLAG() then realString(flagData.data);
     case Flags.STRING_FLAG() then flagData.data;
@@ -1993,6 +2032,25 @@ function splitCSV
   input String value;
   output list<String> outValues = System.strtok(value, ",");
 end splitCSV;
+
+function wrapToTerminal
+  input String str;
+  output String outStr = stringAppendList(StringUtil.wordWrap(str, System.getTerminalWidth(), "\n"));
+end wrapToTerminal;
+
+public function applyNumProcEnvironment
+  "Bound OpenBLAS's thread pool, which it sizes from the environment when it
+   loads and which costs 128 MiB of address space per thread. An OpenMP build
+   (the MSYS2 package used on Windows) ignores OPENBLAS_NUM_THREADS and reads
+   only OMP_NUM_THREADS, so both are set. Called wherever -n is applied rather
+   than from Main.init alone: a setCommandLineOptions is still ahead of whatever
+   first loads the library."
+algorithm
+  if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
+    System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
+    System.setEnv("OMP_NUM_THREADS", "1", false);
+  end if;
+end applyNumProcEnvironment;
 
 annotation(__OpenModelica_Interface="util");
 end FlagsUtil;

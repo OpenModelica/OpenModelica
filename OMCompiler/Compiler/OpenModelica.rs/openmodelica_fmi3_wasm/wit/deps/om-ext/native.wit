@@ -1,0 +1,25 @@
+package om:ext@0.1.0;
+
+/// `external "C"` functions the model needs that no wasm library beside it
+/// defines, served by the host from a platform library — an OpenModelica
+/// extension. The FMU's `resources/native_externals.txt` names the functions
+/// and the libraries; a host without them answers every call with an error.
+interface native {
+  /// One C argument or result, copied across the boundary.
+  variant value {
+    int(s32),
+    real(f64),
+    str(string),
+    /// An array's elements, row-major, in the element's C representation
+    /// (`double`, or 32-bit `int` for Integer and Boolean).
+    bytes(list<u8>),
+    /// An external object: an opaque handle the host owns.
+    handle(u32),
+  }
+
+  /// Call function `index` of the table with the C arguments in declaration
+  /// order, `_Out_` scalars and Strings left out. The result is the C return
+  /// value (if any), then each `_Out_` scalar or String, then the elements of
+  /// each `_Out_` array, in argument order.
+  call: func(index: u32, args: list<value>) -> result<list<value>, string>;
+}

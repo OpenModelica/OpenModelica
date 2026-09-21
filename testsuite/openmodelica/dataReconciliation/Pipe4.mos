@@ -196,6 +196,11 @@ getErrorString();
 // 2: y2 type: Real
 //
 //
+// Parameters in SET_S (1)
+// ========================================
+// 1: q:PARAM()  = 1.0  type: Real
+//
+//
 //
 // Automatic Verification Steps of DataReconciliation Algorithm
 // ==========================================================================
@@ -251,7 +256,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Pipe4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe4_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Pipe4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe4_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!

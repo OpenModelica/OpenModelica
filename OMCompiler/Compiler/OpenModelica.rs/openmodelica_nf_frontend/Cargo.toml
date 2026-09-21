@@ -1,0 +1,45 @@
+[package]
+name = "openmodelica_nf_frontend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_error.workspace = true
+metamodelica.workspace=true
+openmodelica_frontend_types.workspace=true
+openmodelica_frontend_dump.workspace=true
+openmodelica_util.workspace=true
+openmodelica_util_datatypes_basic.workspace=true
+openmodelica_ast.workspace=true
+# openmodelica_frontend.workspace=true # Should not be needed - in OM, NF is compiled without it
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true
+libc.workspace=true
+
+# libffi drives FFI.callFunction (external "C" evaluation via dlopen+libffi),
+# which is native-only; wasm uses the FFI_wasm.rs stub and the wasm JIT instead.
+# On Windows-MSVC libffi-sys is made to work via a workspace [patch] that
+# assembles the GNU-syntax win64.S with clang-cl instead of the MASM trampoline
+# (which needs the unavailable ml64) — see the root Cargo.toml.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libffi = { workspace = true, optional = true }
+
+# `external "C"` evaluation on wasm: the side module is loaded and called by the
+# same engine the wasm-jit simulations use (FFI_wasm.rs, openmodelica_wasm_jit::
+# ext_eval). wasmtime has no wasm backend, so it must be the wasmer one.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+openmodelica_wasm_jit = { workspace = true, features = ["engine-wasmer"] }
+
+[build-dependencies]
+cc.workspace=true
+
+
+[features]
+# Compile-time evaluation of `external "C"` functions (dlopen + libffi). On by
+# default; without it FFI.callFunction reports the path unavailable, as it
+# already does on wasm, and neither libffi nor the C++ exception barrier is
+# built.
+default = ["ffi"]
+ffi = ["dep:libffi"]

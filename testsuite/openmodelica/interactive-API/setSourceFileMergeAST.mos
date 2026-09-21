@@ -1,0 +1,77 @@
+// status: correct
+// cflags: -d=-newInst
+// Tests that setSourceFile also updates the file of the elements that are
+// stored in the same file as the class. Otherwise loadString with merge=true,
+// which keeps the elements of the old class that come from another file,
+// duplicates the elements of the class that got a new source file. See #16384.
+
+// A package stored with a folder structure, i.e. each class in its own file.
+loadString("within ;
+package P
+end P;", "P/package.mo");
+getErrorString();
+loadString("within P;
+package SP
+end SP;", "P/SP/package.mo");
+getErrorString();
+loadString("within P.SP;
+model M
+  parameter Real a;
+end M;", "P/SP/M.mo");
+getErrorString();
+
+// Saving M in another file, e.g. after the package it belongs to was renamed.
+setSourceFile(P.SP.M, "P/SP2/M.mo");
+getErrorString();
+getClassInformation(P.SP.M);
+getErrorString();
+
+// Reloading the package like OMEdit does when its text is edited.
+loadString("within P;
+package SP
+end SP;", "P/SP/package.mo", "UTF-8", true, true, true, false);
+getErrorString();
+getClassNames(P, true, true, false, false, true, false);
+getErrorString();
+listFile(P.SP.M);
+getErrorString();
+
+// Removing an element of M must stick.
+loadString("within P.SP;
+model M
+  parameter Real b;
+end M;", "P/SP2/M.mo", "UTF-8", true, true, true, false);
+getErrorString();
+listFile(P.SP.M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// ("model", "", false, false, false, "P/SP2/M.mo", false, 2, 1, 4, 6, {}, false, false, "", "", false, "", "", "", "", "")
+// ""
+// true
+// ""
+// {P, P.SP, P.SP.M}
+// ""
+// "within P.SP;
+//
+// model M
+//   parameter Real a;
+// end M;"
+// ""
+// true
+// ""
+// "within P.SP;
+//
+// model M
+//   parameter Real b;
+// end M;"
+// ""
+// endResult

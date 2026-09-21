@@ -1,0 +1,17 @@
+[package]
+name = "openmodelica_simulation_runtime_fmu"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "SimulationRuntimeRust"
+crate-type = ["staticlib"]
+
+[dependencies]
+runtime = { package = "openmodelica_simulation_runtime", path = "../openmodelica_simulation_runtime", default-features = false, features = ["fmu-lapack", "fmi"] }
+
+[workspace]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -49,13 +49,13 @@ public
   import Events = NBEvents;
   import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
-  import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBStrongComponent.CountCollector;
   import NBPartition;
   import NBPartition.Partition;
 
 protected
+  import PointerWeak;
   // Old Frontend imports
   import Absyn.Path;
 
@@ -74,6 +74,8 @@ protected
   import FlatModel = NFFlatModel;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
+  import NFInstNode;
+  import MutableWeak;
   import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
@@ -82,6 +84,7 @@ protected
   import Variable = NFVariable;
 
   // New Backend imports
+  import Adjacency = NBAdjacency;
   import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
@@ -117,6 +120,7 @@ public
     Option<list<Partition>> init_0        "Partitions for initialization with lambda = 0 (homotopy)";
     // add init_1 for lambda = 1? (test for efficency)
     Option<list<Partition>> dae           "Partitions for dae mode";
+    list<StrongComponent> parameters      "explicitly solved bindings of the primary parameters in evaluation order, computed before the initialization";
 
     VarData varData                       "Variable data";
     EqData eqData                         "Equation data";
@@ -131,9 +135,7 @@ public
     JacobianType jacType              "type of jacobian";
     VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
-    //Adjacency.Matrix sparsity         "new sparsity pattern";
-    SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
-    SparsityColoring sparsityColoring "Coloring information";
+    Adjacency.Matrix sparsity         "new sparsity pattern";
     Boolean isAdjoint                 "is this an adjoint jacobian?";
   end JACOBIAN;
 
@@ -180,7 +182,7 @@ public
         for i in 1:arrayLength(bdae.comps) loop
           tmp := tmp + StrongComponent.toString(bdae.comps[i], i) + "\n";
         end for;
-        tmp := tmp + SparsityPattern.toString(bdae.sparsityPattern) + "\n" + SparsityColoring.toString(bdae.sparsityColoring);
+        tmp := tmp + Adjacency.Matrix.toString(bdae.sparsity);
       then tmp;
 
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
@@ -268,7 +270,7 @@ public
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
   function main
@@ -289,7 +291,7 @@ public
     if listEmpty(followEquations) then
       eq_filter_opt := NONE();
     else
-      print(List.toString(followEquations, Util.id, "[debugFilterEquations] filtering for equations: ") + "\n\n");
+      print(List.toStringCustom(followEquations, Util.id, "[debugFilterEquations] filtering for equations: ") + "\n\n");
       eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
     end if;
 
@@ -367,7 +369,9 @@ public
     Real clock_time;
     tuple<Integer, Integer> varSizes, eqnSizes;
   algorithm
+    System.reportProgress(-1, 4) "PHASE_BACKEND";
     for module in modules loop
+      Error.checkCancel();
       (func, name) := module;
       if  Flags.isSet(Flags.FAILTRACE) then
         debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
@@ -597,6 +601,7 @@ protected
         local
           Boolean natural;
           Pointer<Variable> der_ptr;
+          ComponentRef der_cref;
 
         // do nothing for size 0 variables, they get removed
         // Note: record elements need to exist in the full
@@ -616,11 +621,24 @@ protected
 
         case VariableKind.STATE(natural = natural) algorithm
           if not natural then
-            (_, der_ptr) := BVariable.makeDerVar(BVariable.getVarName(lowVar_ptr));
+            // Check if a frontend $DER variable already exists in variables.
+            // If so, reuse it (promote to STATE_DER) to avoid a pointer identity
+            // mismatch: equation dep_crefs are lowered to point to the frontend
+            // variable, but makeDerVar would create a separate new pointer.
+            (der_cref, der_ptr) := BVariable.makeDerVar(BVariable.getVarName(lowVar_ptr));
+            if VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(der_cref), variables) then
+              der_ptr := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(der_cref), NONE());
+              // Promote the existing frontend variable to STATE_DER.
+              // It is already in unknowns_lst/initials_lst from its ALGEBRAIC dispatch;
+              // it will be filtered out of algebraics_lst after the loop.
+              BVariable.setStateDerKind(der_ptr, lowVar_ptr);
+            else
+              variables := VariablePointers.add(der_ptr, variables);
+              unknowns_lst := der_ptr :: unknowns_lst;
+              initials_lst := der_ptr :: initials_lst;
+            end if;
             BVariable.setStateDerivativeVar(lowVar_ptr, der_ptr);
             derivatives_lst := der_ptr :: derivatives_lst;
-            unknowns_lst := der_ptr :: unknowns_lst;
-            initials_lst := der_ptr :: initials_lst;
             forced_states := lowVar_ptr :: forced_states;
           end if;
 
@@ -692,6 +710,10 @@ protected
       end match;
     end for;
 
+    // Remove any variables that were promoted from ALGEBRAIC to STATE_DER during
+    // the dispatch loop (e.g. frontend $DER.x variables for StateSelect.prefer states).
+    algebraics_lst := list(p for p guard(not BVariable.isStateDerivative(p)) in algebraics_lst);
+
     // create pointer arrays
     unknowns        := VariablePointers.fromList(unknowns_lst, scalarized);
     knowns          := VariablePointers.fromList(knowns_lst, scalarized);
@@ -742,7 +764,7 @@ protected
       if listEmpty(forced_states) then
         print("\t<no states>\n\n");
       else
-        print(List.toString(forced_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(forced_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
   end lowerVariableData;
@@ -771,7 +793,7 @@ protected
       var.typeAttributes := {};
 
       // This creates a cyclic dependency, be aware of that!
-      (var_ptr, _) := BVariable.makeVarPtrCyclic(var, var.name);
+      (var_ptr, _) := BVariable.makeVarPtr(var, var.name);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
       fail();
@@ -822,9 +844,9 @@ protected
 
       // get external object class
       case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(ty)));
       case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(elemTy)));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX()) algorithm
@@ -884,9 +906,12 @@ protected
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())) for child in var.children);
+        varKind.children := list(PointerWeak.downgrade(
+          VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())))
+          for child in var.children);
         // set parent for all children
-        varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
+        varKind.children := list(PointerWeak.downgrade(
+          BVariable.setParent(PointerWeak.upgrade(child), var_ptr)) for child in varKind.children);
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
@@ -894,6 +919,15 @@ protected
     end match;
     Pointer.update(var_ptr, var);
   end lowerRecordChildren;
+
+  public function lowerUnkownRecordChildren
+    input Pointer<Variable> var_ptr;
+    input VariablePointers variables;
+  algorithm
+    if BVariable.isUnknownRecord(var_ptr) then
+      lowerRecordChildren(var_ptr, variables);
+    end if;
+  end lowerUnkownRecordChildren;
 
   protected function lowerEquationData
     "Lowers all equations to backend structure.
@@ -1016,7 +1050,7 @@ protected
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
         stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
-        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), NFInstNode.NO_SCOPE, frontend_equation.source);
         alg  := Algorithm.setInputsOutputs(alg);
       then {lowerAlgorithm(alg, init)};
 
@@ -1088,7 +1122,7 @@ protected
 
             // if the body was an algorithm (asserts) merge it back to an algorithm
             if isAlgorithm then
-              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), NFInstNode.NO_SCOPE, frontend_equation.source);
               alg       := Algorithm.setInputsOutputs(alg);
               size      := sum(ComponentRef.size(out, false) for out in alg.outputs);
               body_elem := Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), Equation.getAttributes(body_elem));
@@ -1503,12 +1537,12 @@ protected
       then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables, complete));
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
-        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables, complete = complete)) for tpl in call.iters);
         exp.call := call;
       then exp;
 
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
-        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables, complete = complete)) for tpl in call.iters);
         exp.call := call;
       then exp;
 
@@ -1608,12 +1642,16 @@ protected
   function lowerInstNode
     input output InstNode node;
     input VariablePointers variables;
+    input Boolean complete = true;
   protected
     ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
     Pointer<Variable> var;
   algorithm
-    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), SOME(sourceInfo()));
-    node := InstNode.VAR_NODE(InstNode.name(node), var);
+    try
+      var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
+      node := InstNode.VAR_NODE(InstNode.name(node), PointerWeak.downgrade(var));
+    else
+    end try;
   end lowerInstNode;
 
 public
@@ -1630,7 +1668,8 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), var);
+          qual.node := ComponentRef.storeNode(InstNode.VAR_NODE(
+            InstNode.name(ComponentRef.node(qual)), PointerWeak.downgrade(var)));
       then qual;
 
       else cref;
@@ -1868,8 +1907,8 @@ public
     input UnorderedSet<ComponentRef> set;
   algorithm
     () := match cref
-      case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
-      case ComponentRef.CREF(node = InstNode.NAME_NODE()) then ();
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) then ();
+      case ComponentRef.CREF() guard InstNode.isName(ComponentRef.node(cref)) then ();
       case ComponentRef.CREF() algorithm
         UnorderedSet.add(cref, set);
       then ();

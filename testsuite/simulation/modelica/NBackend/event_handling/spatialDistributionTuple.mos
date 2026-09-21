@@ -1,0 +1,42 @@
+// name: spatialDistributionTuple
+// keywords: NewBackend spatialDistribution tuple
+// status: correct
+//
+// A spatialDistribution tuple equation whose outputs are subscripted elements
+// of size-1 arrays. It was not recognized as solvable for these outputs and
+// SimCode failed with Solve.UNPROCESSED.
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+  model spatialDistributionTuple
+    parameter Integer nC = 1;
+    Real inA[nC], inB[nC];
+    Real outA[nC], outB[nC];
+    Real x(start = 1, fixed = true);
+  equation
+    der(x) = 1;
+    for i in 1:nC loop
+      inA[i] = 1 + time;
+      inB[i] = 2;
+      (outA[i], outB[i]) = spatialDistribution(inA[i], inB[i], x / 10, true, {0.0, 1.0}, {0.0, 0.0});
+    end for;
+  end spatialDistributionTuple;
+"); getErrorString();
+
+simulate(spatialDistributionTuple, stopTime=1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "spatialDistributionTuple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'spatialDistributionTuple', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,187 @@
+// name: getModelFigures1
+// keywords: figures annotation Documentation
+// status: correct
+//
+// Tests the getModelFigures() scripting API, which returns the `figures`
+// sub-annotation of Documentation as OpenModelica.Scripting.Figure records.
+// getModelFigures only reads the annotation AST, so the curve result references
+// (integrator.y, x, ...) need not resolve to actual components. The first model
+// reproduces the `figures` annotation of Modelica.Blocks.Examples.PID_Controller
+// (MSL 4.1.0) so the test does not have to load the whole MSL. Every record field
+// is always present (Modelica records have no optionals); axis bounds use the
+// optional-as-array idiom (Real[:], empty = auto-range). See
+// HANDOFF-web-simulator-widget.md for the record design.
+
+loadString("
+model PID_Controller \"Demonstrate usage of a Continuous.LimPID controller\"
+  annotation(Documentation(info=\"<html></html>\", figures = {
+    Figure(
+      title = \"Anti-windup compensation\", identifier = \"anti-windup\", preferred = true,
+      plots = {
+        Plot(title = \"Reference tracking\", identifier = \"tracking\", curves = {
+          Curve(y = integrator.y, legend = \"Reference speed\"),
+          Curve(y = inertia1.w,   legend = \"Actual speed\")}),
+        Plot(title = \"Anti-windup limiter\", identifier = \"limiter\", curves = {
+          Curve(y = PI.limiter.u, legend = \"Input to the anti-windup limiter\"),
+          Curve(y = PI.y,         legend = \"Controller output\")})},
+      caption = \"%(plot:tracking) Reference speed (%(variable:integrator.y)) and the actual speed (%(variable:inertia1.w)).\")}));
+end PID_Controller;
+"); getErrorString();
+
+// Axis bounds (optional-as-array), Log scale, zOrder and a phase-plane curve
+// whose x overrides the default \"time\".
+loadString("
+model Phase
+  annotation(Documentation(figures = {
+    Figure(title = \"Phase plane\", plots = {
+      Plot(curves = {Curve(x = x, y = y, legend = \"orbit\", zOrder = 3)},
+           x = Axis(min = -2.0, max = 2.0, unit = \"m\", label = \"x\"),
+           y = Axis(scale = Log(base = 2)))})}));
+end Phase;
+"); getErrorString();
+
+// A model with no figures annotation returns an empty array.
+loadString("model N end N;"); getErrorString();
+
+getModelFigures(PID_Controller); getErrorString();
+getModelFigures(Phase); getErrorString();
+getModelFigures(N); getErrorString();
+
+setCommandLineOptions("--interactiveDumpFormat=json");
+
+getModelFigures(PID_Controller); getErrorString();
+getModelFigures(Phase); getErrorString();
+getModelFigures(N); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {record OpenModelica.Scripting.Figure
+//     title = "Anti-windup compensation",
+//     identifier = "anti-windup",
+//     group = "",
+//     preferred = true,
+//     plots = {record OpenModelica.Scripting.Plot
+//     title = "Reference tracking",
+//     identifier = "tracking",
+//     curves = {record OpenModelica.Scripting.Curve
+//     x = "time",
+//     y = "integrator.y",
+//     legend = "Reference speed",
+//     zOrder = 0
+// end OpenModelica.Scripting.Curve;, record OpenModelica.Scripting.Curve
+//     x = "time",
+//     y = "inertia1.w",
+//     legend = "Actual speed",
+//     zOrder = 0
+// end OpenModelica.Scripting.Curve;},
+//     x = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;,
+//     y = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;
+// end OpenModelica.Scripting.Plot;, record OpenModelica.Scripting.Plot
+//     title = "Anti-windup limiter",
+//     identifier = "limiter",
+//     curves = {record OpenModelica.Scripting.Curve
+//     x = "time",
+//     y = "PI.limiter.u",
+//     legend = "Input to the anti-windup limiter",
+//     zOrder = 0
+// end OpenModelica.Scripting.Curve;, record OpenModelica.Scripting.Curve
+//     x = "time",
+//     y = "PI.y",
+//     legend = "Controller output",
+//     zOrder = 0
+// end OpenModelica.Scripting.Curve;},
+//     x = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;,
+//     y = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;
+// end OpenModelica.Scripting.Plot;},
+//     caption = "%(plot:tracking) Reference speed (%(variable:integrator.y)) and the actual speed (%(variable:inertia1.w))."
+// end OpenModelica.Scripting.Figure;}
+// ""
+// {record OpenModelica.Scripting.Figure
+//     title = "Phase plane",
+//     identifier = "",
+//     group = "",
+//     preferred = false,
+//     plots = {record OpenModelica.Scripting.Plot
+//     title = "",
+//     identifier = "",
+//     curves = {record OpenModelica.Scripting.Curve
+//     x = "x",
+//     y = "y",
+//     legend = "orbit",
+//     zOrder = 3
+// end OpenModelica.Scripting.Curve;},
+//     x = record OpenModelica.Scripting.Axis
+//     min = {-2.0},
+//     max = {2.0},
+//     unit = "m",
+//     label = "x",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Linear",
+//     base = 10
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;,
+//     y = record OpenModelica.Scripting.Axis
+//     min = {},
+//     max = {},
+//     unit = "",
+//     label = "",
+//     scale = record OpenModelica.Scripting.AxisScale
+//     scaleType = "Log",
+//     base = 2
+// end OpenModelica.Scripting.AxisScale;
+// end OpenModelica.Scripting.Axis;
+// end OpenModelica.Scripting.Plot;},
+//     caption = ""
+// end OpenModelica.Scripting.Figure;}
+// ""
+// {}
+// ""
+// true
+// [{"title":"Anti-windup compensation","identifier":"anti-windup","group":"","preferred":true,"plots":[{"title":"Reference tracking","identifier":"tracking","curves":[{"x":"time","y":"integrator.y","legend":"Reference speed","zOrder":0},{"x":"time","y":"inertia1.w","legend":"Actual speed","zOrder":0}],"x":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}}},{"title":"Anti-windup limiter","identifier":"limiter","curves":[{"x":"time","y":"PI.limiter.u","legend":"Input to the anti-windup limiter","zOrder":0},{"x":"time","y":"PI.y","legend":"Controller output","zOrder":0}],"x":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Linear","base":10}}}],"caption":"%(plot:tracking) Reference speed (%(variable:integrator.y)) and the actual speed (%(variable:inertia1.w))."}]
+// ""
+// [{"title":"Phase plane","identifier":"","group":"","preferred":false,"plots":[{"title":"","identifier":"","curves":[{"x":"x","y":"y","legend":"orbit","zOrder":3}],"x":{"min":[-2.0],"max":[2.0],"unit":"m","label":"x","scale":{"scaleType":"Linear","base":10}},"y":{"min":[],"max":[],"unit":"","label":"","scale":{"scaleType":"Log","base":2}}}],"caption":""}]
+// ""
+// []
+// ""
+// endResult

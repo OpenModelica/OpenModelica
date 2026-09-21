@@ -31,4 +31,5 @@ jobs:
             OMParser                                   \
             OMPlot                                     \
             OMSens_Qt                                  \
-            OMShell
+            OMShell                                    \
+            OMSimulator

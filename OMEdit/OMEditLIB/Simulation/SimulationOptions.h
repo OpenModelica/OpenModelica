@@ -110,7 +110,11 @@ public:
     setLogStreams(QStringList() << "LOG_STDOUT" << "LOG_ASSERT" << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
+#if defined(__EMSCRIPTEN__)
+    setOutputFormat("arrow");
+#else
     setOutputFormat("mat");
+#endif
     setSinglePrecision(false);
     setFileNamePrefix("");
     setResultFileName("");
@@ -129,7 +133,11 @@ public:
     setReSimulate(false);
     setWorkingDirectory("");
     setFileName("");
+#if defined(__EMSCRIPTEN__)
+    setTargetLanguage("wasm-jit"); // the web build simulates in the omc worker via wasm-jit
+#else
     setTargetLanguage("C");
+#endif
   }
 
   void setClassName(const QString &className) {mClassName = className;}

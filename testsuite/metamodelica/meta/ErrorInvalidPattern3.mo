@@ -1,6 +1,7 @@
 // name: ErrorInvalidPattern3
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 package ErrorInvalidPattern3
 
 uniontype Ut
@@ -25,7 +26,7 @@ end ErrorInvalidPattern3;
 
 // Result:
 // Error processing file: ErrorInvalidPattern3.mo
-// [metamodelica/meta/ErrorInvalidPattern3.mo:17:10-17:40:writable] Error: Invalid named fields: exp,exp. Valid field names: exp.
+// [metamodelica/meta/ErrorInvalidPattern3.mo:18:10-18:40:writable] Error: Invalid named fields: exp,exp. Valid field names: exp.
 // Error: Error occurred while flattening model ErrorInvalidPattern3
 //
 // # Error encountered! Exiting...

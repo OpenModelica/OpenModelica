@@ -1671,27 +1671,25 @@ public function parenthesize
   input Boolean rightOpParenthesis "true for right hand side operators";
   output String outString;
 algorithm
-  outString := matchcontinue (inString1,inInteger2,inInteger3,rightOpParenthesis)
+  outString := match (inString1,inInteger2,inInteger3,rightOpParenthesis)
     local
       String str_1,str;
       Integer pparent,pexpr;
 
     // expr, prio. parent expr, prio. expr
-    case (str,pparent,pexpr,_)
+    case (str,pparent,pexpr,_) guard (pparent > pexpr)
       algorithm
-        true := (pparent > pexpr);
         str_1 := stringAppendList({"(",str,")"});
       then str_1;
 
     // If priorites are equal and str is from right hand side, parenthesize to make left associative
-    case (str,pparent,pexpr,true)
+    case (str,pparent,pexpr,true) guard (pparent == pexpr)
       algorithm
-        true := (pparent == pexpr);
         str_1 := stringAppendList({"(",str,")"});
       then
         str_1;
     case (str,_,_,_) then str;
-  end matchcontinue;
+  end match;
 end parenthesize;
 
 public function clockKindString "

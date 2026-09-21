@@ -36,7 +36,7 @@ pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
 threadData_t *OMC_MAIN_THREADDATA_NAME = 0;
 #endif
 
-void mmc_init_nogc(void)
+static void mmc_init_nogc_once(void)
 {
 #if defined(OM_HAVE_PTHREADS)
   pthread_key_create(&mmc_thread_data_key,NULL);
@@ -45,6 +45,22 @@ void mmc_init_nogc(void)
   /* Stack overflow detection is too expensive and fun for small targets
    * C-code is usually not generated for stack overflow detection anyway... */
   init_metamodelica_segv_handler();
+#endif
+}
+
+/* The key and the signal handler's alternate stack are per process, but
+ * fmi{1,2,3}Instantiate calls this once per instance. */
+void mmc_init_nogc(void)
+{
+#if defined(OM_HAVE_PTHREADS)
+  static pthread_once_t nogc_once = PTHREAD_ONCE_INIT;
+  pthread_once(&nogc_once, mmc_init_nogc_once);
+#else
+  static int initialized = 0;
+  if (!initialized) {
+    initialized = 1;
+    mmc_init_nogc_once();
+  }
 #endif
 }
 

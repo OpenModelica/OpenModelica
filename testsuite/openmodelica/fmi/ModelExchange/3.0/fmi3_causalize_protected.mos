@@ -1,0 +1,22 @@
+// name: fmi3_causalize_protected.mos
+// keywords: FMI 3.0 export flange causalization protected connector
+// status: correct
+// teardown_command: rm -rf CauerLowPassOPV.fmutmp/ CauerLowPassOPV.log CauerLowPassOPV_*
+//
+// FMI 3.0 flange causalization (issue #15686) exposes an unconnected acausal
+// connector as a causal FMU boundary, dropping its `flow = 0` equation. Only a
+// *public* connector is a boundary: CauerLowPassOPV wires its op-amps together
+// through 19 protected pins, and causalizing those dropped 19 equations without
+// giving the backend a known input in return ("Too few equations,
+// under-determined system. The model has 221 equation(s) and 240 variable(s)").
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+translateModelFMU(Modelica.Electrical.Analog.Examples.CauerLowPassOPV, version="3.0", fmuType="me"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// endResult

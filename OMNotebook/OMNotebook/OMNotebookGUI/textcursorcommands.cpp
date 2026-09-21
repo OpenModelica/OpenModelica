@@ -314,19 +314,16 @@ namespace IAEX
       editor->setAlignment( (Qt::Alignment)alignment_ );
 
       // create a rule for the alignment
-      Rule *rule;
-      if( (Qt::Alignment)alignment_ == Qt::AlignLeft )
-        rule = new Rule( "TextAlignment", "Left" );
-      else if( (Qt::Alignment)alignment_ == Qt::AlignRight )
-        rule = new Rule( "TextAlignment", "Right" );
-      else if( (Qt::Alignment)alignment_ == Qt::AlignHCenter )
-        rule = new Rule( "TextAlignment", "Center" );
-      else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
-        rule = new Rule( "TextAlignment", "Justify" );
-      else
-        rule = new Rule( "TextAlignment", "Left" );
+      QString alignment_str;
+      switch (alignment_) {
+        case Qt::AlignLeft:    alignment_str = "Left";    break;
+        case Qt::AlignRight:   alignment_str = "Right";   break;
+        case Qt::AlignHCenter: alignment_str = "Center";  break;
+        case Qt::AlignJustify: alignment_str = "Justify"; break;
+        default:               alignment_str = "Left";    break;
+      }
 
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"TextAlignment", alignment_str});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->setAlignment( alignment_ );
@@ -379,10 +376,7 @@ namespace IAEX
       editor->document()->rootFrame()->setFrameFormat( format );
 
       // create a rule for the margin
-      QString ruleValue;
-      ruleValue.setNum( margin_ );
-      Rule *rule = new Rule( "OMNotebook_Margin", ruleValue );
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"OMNotebook_Margin", QString::number(margin_)});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->textFrameFormat()->setMargin( margin_ );
@@ -411,10 +405,7 @@ namespace IAEX
       editor->document()->rootFrame()->setFrameFormat( format );
 
       // create a rule for the padding
-      QString ruleValue;
-      ruleValue.setNum( padding_ );
-      Rule *rule = new Rule( "OMNotebook_Padding", ruleValue );
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"OMNotebook_Padding", QString::number(padding_)});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->textFrameFormat()->setPadding( padding_ );
@@ -443,10 +434,7 @@ namespace IAEX
       editor->document()->rootFrame()->setFrameFormat( format );
 
       // create a rule for the border
-      QString ruleValue;
-      ruleValue.setNum( border_ );
-      Rule *rule = new Rule( "OMNotebook_Border", ruleValue );
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"OMNotebook_Border", QString::number(border_)});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->textFrameFormat()->setBorder( border_ );
@@ -466,8 +454,8 @@ namespace IAEX
     QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
     if( !cursor.isNull() )
     {
-      QImage* image = new QImage( filepath_ );
-      if( !image->isNull() )
+      QImage image( filepath_ );
+      if( !image.isNull() )
       {
         QString imagename = document()->addImage( image );
 

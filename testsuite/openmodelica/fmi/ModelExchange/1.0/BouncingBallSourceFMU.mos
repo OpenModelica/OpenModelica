@@ -2,6 +2,7 @@
 // status: erroneous
 // teardown_command: rm -rf modelDescription.xml BouncingBall.fmu BouncingBall.fmutmp
 // cflags: -d=-newInst
+// suite: disabled
 // Event handling in FMU Import
 //
 

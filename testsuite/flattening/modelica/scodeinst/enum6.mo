@@ -1,6 +1,7 @@
 // name: enum6.mo
 // keywords:
 // status: correct
+// suite: disabled
 //
 
 model M

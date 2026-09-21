@@ -569,11 +569,13 @@ void TextAnnotation::initUpdateTextString()
  * Helper function for TextAnnotation::updateTextString()
  * \param regExp
  */
-void TextAnnotation::updateTextStringHelper(QRegExp regExp)
+void TextAnnotation::updateTextStringHelper(QRegularExpression regExp)
 {
   int pos = 0;
-  while ((pos = regExp.indexIn(mTextString, pos)) != -1) {
-    QString variable = regExp.cap(0).trimmed();
+  QRegularExpressionMatch match = regExp.match(mTextString, pos);
+  while (match.hasMatch()) {
+    pos = match.capturedStart();
+    QString variable = match.captured(0).trimmed();
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
       variable = StringHandler::removeFirstLastCurlBrackets(variable);
@@ -632,7 +634,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
               textValueWithDisplayUnit = QString("%1 %2").arg(textValue, OMPlot::Plot::convertUnitToSymbol(unit.first));
             }
           }
-          mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
+          mTextString.replace(pos, match.capturedLength(0), textValueWithDisplayUnit);
           pos += textValueWithDisplayUnit.length();
         } else { /* if the value of %\\W* is empty then remove the % sign. */
           mTextString.replace(pos, 1, "");
@@ -641,8 +643,9 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         mTextString.replace(pos, 1, "");
       }
     } else {
-      pos += regExp.matchedLength();
+      pos += match.capturedLength(0);
     }
+    match = regExp.match(mTextString, pos);
   }
 }
 
@@ -676,7 +679,7 @@ void TextAnnotation::updateTextString(const QString &textString)
   if (pLineAnnotation) {
     if (mTextString.toLower().contains("%condition")) {
       if (!pLineAnnotation->getCondition().isEmpty()) {
-        mTextString.replace(QRegExp("%condition"), pLineAnnotation->getCondition());
+        mTextString.replace(QRegularExpression("%condition"), pLineAnnotation->getCondition());
       }
       if (pLineAnnotation->getPriority() > 1) {
         mTextString.prepend(QString("%1: ").arg(pLineAnnotation->getPriority()));
@@ -694,14 +697,14 @@ void TextAnnotation::updateTextString(const QString &textString)
         if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
           name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
         }
-        mTextString.replace(QRegExp("%name"), name);
+        mTextString.replace(QRegularExpression("%name"), name);
       }
       if (mTextString.toLower().contains("%class")) {
-        mTextString.replace(QRegExp("%class"), mpElement->getClassName());
+        mTextString.replace(QRegularExpression("%class"), mpElement->getClassName());
       }
     } else {
       if (mTextString.toLower().contains("%class")) {
-        mTextString.replace(QRegExp("%class"), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getName());
+        mTextString.replace(QRegularExpression("%class"), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getName());
       }
     }
 
@@ -709,12 +712,12 @@ void TextAnnotation::updateTextString(const QString &textString)
       return;
     }
     /* handle variables now */
-    updateTextStringHelper(QRegExp("(%%|%\\{?\\w+(\\.\\w+)*\\}?)"));
+    updateTextStringHelper(QRegularExpression("(%%|%\\{?\\w+(\\.\\w+)*\\}?)"));
     /* call again with non-word characters so invalid % can be removed. */
-    updateTextStringHelper(QRegExp("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
+    updateTextStringHelper(QRegularExpression("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
     /* handle %% */
     if (mTextString.toLower().contains("%%")) {
-      mTextString.replace(QRegExp("%%"), "%");
+      mTextString.replace(QRegularExpression("%%"), "%");
     }
   }
 }

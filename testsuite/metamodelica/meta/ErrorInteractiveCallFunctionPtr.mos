@@ -2,6 +2,7 @@
 // cflags: -g=MetaModelica -d=gen -d=-newInst
 // teardown_command: rm -f ErrorInteractiveCallFunctionPtr_*
 // status: correct
+// suite: metamodelica
 
 loadFile("ErrorInteractiveCallFunctionPtr.mo");
 ErrorInteractiveCallFunctionPtr.func(intAdd,1,2);

@@ -1,7 +1,19 @@
 encapsulated package RuntimeSources
   constant String fmu_sources_dir = "/@SOURCE_FMU_SOURCES_DIR@";
 
+  // The Rust crates a --simCodeTarget=C+Rust source FMU carries, in the checkout's
+  // own layout: the manifests reach openmodelica_lapack by a relative path.
+  // Installed by SimulationRuntime/rust/CMakeLists.txt, and only when that build
+  // enabled the Rust runtime at all.
+  constant String fmu_rust_sources_dir = "/@SOURCE_FMU_RUST_SOURCES_DIR@";
+  constant String fmu_rust_manifest = "SimulationRuntime/rust/Cargo.toml";
+
   constant list<String> simrt_c_sources={@SOURCE_FMU_COMMON_FILES@};
+
+  // The libOpenModelicaRuntimeC half of simrt_c_sources: what a
+  // --simCodeTarget=C+Rust FMU still compiles from C, because the Rust runtime
+  // replaces only what libSimulationRuntimeC covers.
+  constant list<String> simrt_c_runtime_sources={@SOURCE_FMU_RUNTIME_C_FILES@};
 
   constant list<String> simrt_c_headers={@SOURCE_FMU_COMMON_HEADERS@};
 
@@ -42,22 +54,38 @@ encapsulated package RuntimeSources
                                              "_FMU.c"};
 
 
-  constant list<String> sundials_headers={"sundials/cvode/cvode_ls.h",
+  constant list<String> sundials_headers={"sundials/cvode/cvode.h",
+                                          "sundials/cvode/cvode_ls.h",
                                           "sundials/cvode/cvode_proj.h",
-                                          "sundials/cvode/cvode.h",
+                                          "sundials/nvector/nvector_serial.h",
+                                          "sundials/sundials/priv/sundials_context_impl.h",
+                                          "sundials/sundials/priv/sundials_errors_impl.h",
+                                          "sundials/sundials/sundials_adaptcontroller.h",
+                                          "sundials/sundials/sundials_adjointcheckpointscheme.h",
+                                          "sundials/sundials/sundials_adjointstepper.h",
                                           "sundials/sundials/sundials_config.h",
+                                          "sundials/sundials/sundials_context.h",
+                                          "sundials/sundials/sundials_core.h",
                                           "sundials/sundials/sundials_dense.h",
                                           "sundials/sundials/sundials_direct.h",
+                                          "sundials/sundials/sundials_domeigestimator.h",
+                                          "sundials/sundials/sundials_errors.h",
+                                          "sundials/sundials/sundials_export.h",
                                           "sundials/sundials/sundials_iterative.h",
                                           "sundials/sundials/sundials_linearsolver.h",
+                                          "sundials/sundials/sundials_logger.h",
+                                          "sundials/sundials/sundials_math.h",
                                           "sundials/sundials/sundials_matrix.h",
+                                          "sundials/sundials/sundials_memory.h",
                                           "sundials/sundials/sundials_nonlinearsolver.h",
+                                          "sundials/sundials/sundials_nvector.h",
+                                          "sundials/sundials/sundials_profiler.h",
+                                          "sundials/sundials/sundials_stepper.h",
                                           "sundials/sundials/sundials_types.h",
+                                          "sundials/sundials/sundials_version.h",
                                           "sundials/sunlinsol/sunlinsol_dense.h",
                                           "sundials/sunmatrix/sunmatrix_dense.h",
-                                          "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h",
-                                          "sundials/nvector/nvector_serial.h",
-                                          "sundials/sundials/sundials_nvector.h"};
+                                          "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h"};
 
   constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 

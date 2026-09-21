@@ -31,6 +31,10 @@ PCH_FILE=@PCH_FILE@
 H_FILE=@H_FILE@
 BUILD_TYPE=@BUILD_TYPE@
 SYSTEM_CFLAGS=@SYSTEM_CFLAGS@
+# Extra flags for linking generated code against this runtime. Empty unless the
+# runtime was built with -DOM_ENABLE_COVERAGE=ON, which needs the gcov runtime
+# linked into anything that statically links the instrumented libraries.
+SYSTEM_LDFLAGS=@SYSTEM_LDFLAGS@
 ADDITIONAL_DEFINES=@ADDITIONAL_DEFINES@
 
 SCOREP_INCLUDE=@SCOREP_INCLUDE_@

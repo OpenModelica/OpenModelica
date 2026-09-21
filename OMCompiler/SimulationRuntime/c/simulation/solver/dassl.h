@@ -41,7 +41,7 @@ typedef struct DASSL_DATA{
   unsigned int dasslStepsFreq;  /* value specifies the output frequency regarding to time steps. Used in dasslSteps mode. */
   double dasslStepsTime;        /* value specifies the time increment when output happens. Used in dasslSteps mode. */
   int dasslRootFinding;         /* if TRUE then the internal root finding is used */
-  int dasslJacobian;            /* specifies the method to calculate the jacobian matrix */
+  JACOBIAN_METHOD dasslJacobian;/* specifies the method to calculate the jacobian matrix */
   int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
 
   long N;
@@ -58,6 +58,8 @@ typedef struct DASSL_DATA{
   double *rwork;
   double *rtol;
   double *atol;
+  double *nominal;              /* |nominal| per state, floored at 1e-32; atol is tolerance times it */
+  double jacNominalFactor;      /* -jacobianNominalFactor */
 
   int ng;
   int *jroot;
@@ -78,10 +80,6 @@ typedef struct DASSL_DATA{
   int (*zeroCrossingFunction)(int *neqm, double *t, double *y, double *yp,
                               int *ng, double *gout, double *rpar, int* ipar);
 
-#ifdef USE_PARJAC
-  JACOBIAN* jacColumns;         /* thread local analytic jacobians */
-#endif
-  int allocatedParMem;          /* indicated if parallel memory was allocated, 0=false, 1=true*/
 } DASSL_DATA;
 
 /* main dassl function to make a step */
@@ -90,6 +88,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 /* initial main dassl Data */
 int dassl_initial(DATA* data, threadData_t *threadData,
                   SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
+
+/* read the nominal values into the tolerances and the Jacobian's step floor */
+void dassl_setNominals(DATA* data, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
 int dassl_deinitial(DATA* data, DASSL_DATA *dasslData);

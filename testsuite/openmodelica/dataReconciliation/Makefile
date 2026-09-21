@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 BASELINE = ../../rtest -b
 
 TESTFILES = \
+assert.mos\
 DistillationTower.mos\
 VDI2048Exple.mos\
 Pipe1.mos\
@@ -42,6 +43,7 @@ TSP_FourFlows.mos\
 TSP_FourFlows1.mos\
 TSP_FourFlows3.mos\
 TSP_FourFlows8.mos\
+TSP_FourFlows10.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -55,7 +57,6 @@ TSP_FourFlows9.mos\
 TSP_FourFlows11.mos\
 TSP_Pipe6.mos\
 TSP_Pipe5.mos\
-TSP_FourFlows10.mos\
 TSP_Pipe3.mos\
 TSP_Splitter6.mos\
 TSP_Pipe2.mos\
@@ -118,4 +119,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

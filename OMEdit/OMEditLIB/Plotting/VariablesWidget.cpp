@@ -51,12 +51,15 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 #include "PlotCurve.h"
+#include "Util/NavigationManager.h"
 
 #include <QObject>
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QMenu>
+#include <QRegularExpression>
 #include <QToolBar>
+#include <algorithm>
 
 using namespace OMPlot;
 
@@ -177,7 +180,7 @@ bool VariablesTreeItem::isMainArrayProtected() const
 
 QIcon VariablesTreeItem::getVariableTreeItemIcon(QString name) const
 {
-  if (name.endsWith(".mat"))
+  if (name.endsWith(".mat") || name.endsWith(".arrow"))
     return QIcon(":/Resources/icons/mat.svg");
   else if (name.endsWith(".plt"))
     return QIcon(":/Resources/icons/plt.svg");
@@ -693,6 +696,50 @@ void VariablesTreeModel::removeVariableTreeItem(VariablesTreeItem *pVariablesTre
 }
 
 /*!
+ * \brief sortVariablesTreeItemChildren
+ * Recursively sorts a tree item's children by the natural sort of their display
+ * name. The comparator calls the non-virtual VariablesTreeItem::data, so unlike
+ * QSortFilterProxyModel::lessThan there is no virtual call_indirect (which traps
+ * under Asyncify on wasm).
+ * \param pVariablesTreeItem
+ */
+static void sortVariablesTreeItemChildren(VariablesTreeItem *pVariablesTreeItem)
+{
+  std::sort(pVariablesTreeItem->mChildren.begin(), pVariablesTreeItem->mChildren.end(),
+            [](VariablesTreeItem *pLeft, VariablesTreeItem *pRight) {
+              return StringHandler::naturalSort(pLeft->data(0, Qt::DisplayRole).toString(),
+                                                pRight->data(0, Qt::DisplayRole).toString());
+            });
+  for (VariablesTreeItem *pChild : pVariablesTreeItem->mChildren) {
+    sortVariablesTreeItemChildren(pChild);
+  }
+}
+
+/*!
+ * \brief VariablesTreeModel::sortVariablesTreeItems
+ * Sorts the variable tree in place (each node's children by natural sort),
+ * preserving persistent indexes. Used on wasm instead of the proxy sort.
+ */
+void VariablesTreeModel::sortVariablesTreeItems()
+{
+  emit layoutAboutToBeChanged();
+  const QModelIndexList oldIndexes = persistentIndexList();
+  QVector<VariablesTreeItem*> items;
+  items.reserve(oldIndexes.size());
+  for (const QModelIndex &index : oldIndexes) {
+    items << static_cast<VariablesTreeItem*>(index.internalPointer());
+  }
+  sortVariablesTreeItemChildren(mpRootVariablesTreeItem);
+  for (int i = 0; i < oldIndexes.size(); ++i) {
+    VariablesTreeItem *pItem = items.at(i);
+    if (pItem) {
+      changePersistentIndex(oldIndexes.at(i), createIndex(pItem->row(), oldIndexes.at(i).column(), pItem));
+    }
+  }
+  emit layoutChanged();
+}
+
+/*!
  * \brief VariablesTreeModel::insertVariablesItems
  * Inserts the variables in the Variable Browser.
  * \param fileName
@@ -709,7 +756,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   } else {
     toolTip = tr("Simulation Result File: %1\n%2: %3/%4").arg(fileName).arg(Helper::fileLocation).arg(filePath).arg(fileName);
   }
-  QRegularExpression resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
+  QRegularExpression resultTypeRegExp("(\\.mat|\\.plt|\\.csv|\\.arrow|_res.mat|_res.plt|_res.csv|_res.arrow)");
   QString text(QString(fileName).remove(resultTypeRegExp));
   QVector<QVariant> variabledata;
   variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QStringList() << QStringList() << QStringList() << "dummy.json" << false;
@@ -743,6 +790,24 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     infoFileName = QString("%1_info.json").arg(text);
   }
   bool readingVariablesFromInitFile = false;
+#if defined(__EMSCRIPTEN__)
+  // _init.xml lives in omc's cwd (the working directory) in the worker VFS; read it
+  // from there (QFile can't reach the worker store).
+  extern QByteArray omcWorkerReadFile(const char *path);
+  QByteArray initData = omcWorkerReadFile(QString("%1/%2").arg(filePath, initFileName).toUtf8().constData());
+  if (!initData.isEmpty()) {
+    QXmlStreamReader initXmlReader(initData);
+    readingVariablesFromInitFile = variablesList.isEmpty();
+    parseInitXml(initXmlReader, simulationOptions, &variablesList);
+    if (initXmlReader.hasError()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFileName, initXmlReader.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFileName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+#else
   QFile initFile(QString("%1%2%3").arg(filePath, QDir::separator(), initFileName));
   if (initFile.exists()) {
     if (initFile.open(QIODevice::ReadOnly)) {
@@ -751,11 +816,20 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QXmlStreamReader initXmlReader(data);
       readingVariablesFromInitFile = variablesList.isEmpty();
       parseInitXml(initXmlReader, simulationOptions, &variablesList);
+      if (initXmlReader.hasError()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFile.fileName(), initXmlReader.errorString()),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
     } else {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                             .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
+  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
+    // No init file and no variable list given: the Variable Browser will be empty.
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFile.fileName()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
+#endif
 
   QMap<QString,QSet<QString>> usedInitialVars;
   QMap<QString,QSet<QString>> usedVars;
@@ -793,7 +867,8 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
     MainWindow::instance()->printStandardOutAndErrorFilesMessages();
   }
-  /* open the .mat file */
+  /* open the result file, for the final values */
+#ifdef OM_LEGACY_RESULT_READERS
   ModelicaMatReader matReader;
   matReader.file = 0;
   const char *msg[] = {""};
@@ -804,6 +879,17 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                                             .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
     }
   }
+#else
+  omc::ResultFile matReader;
+  if (fileName.endsWith(".mat") || fileName.endsWith(".arrow")) {
+    try {
+      matReader.open(QString(filePath + "/" + fileName).toStdString());
+    } catch (const omc::ResultError &e) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(filePath + "/" + fileName)
+                                                            .arg(QString(e.what())), Helper::scriptingKind, Helper::errorLevel));
+    }
+  }
+#endif
   // create hash based VariableNode
   VariableNode *pTopVariableNode = new VariableNode(variabledata);
   // remove time from variables list
@@ -952,10 +1038,12 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   insertVariablesItems(pTopVariableNode, pTopVariablesTreeItem);
   // Delete VariableNode
   delete pTopVariableNode;
+#ifdef OM_LEGACY_RESULT_READERS
   /* close the .mat file */
   if (fileName.endsWith(".mat") && matReader.file) {
     omc_free_matlab4_reader(&matReader);
   }
+#endif
   /* Ticket #3016.
    * If you only have one model the message "You must select a class to re-simulate" is annoying.
    * A default behavior of selecting the (single) model would be good.
@@ -1131,7 +1219,7 @@ ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlRead
  * \param displayUnit
  * \param description
  */
-void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble,
+void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble,
                                                 QString *variability, QString *unit, QString *displayUnit, QString *description)
 {
   ScalarVariable scalarVariable = mScalarVariablesHash.value(variableToFind);
@@ -1141,7 +1229,8 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     *variability = scalarVariable.variability;
     if (*changeAble) {
       *value = scalarVariable.start;
-    } else { /* Read the final value of the variable. Only mat result files are supported. */
+    } else { /* Read the final value of the variable from the result file. */
+#ifdef OM_LEGACY_RESULT_READERS
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
         ModelicaMatVariable_t *var = omc_matlab4_find_var(pMatReader, variableToFind.toUtf8().constData());
@@ -1150,6 +1239,15 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
           *value = StringHandler::number(res);
         }
       }
+#else
+      if (pMatReader->isOpen()) {
+        *value = "";
+        double res = 0.0;
+        if (pMatReader->valueAt(variableToFind.toStdString(), pMatReader->stopTime(), res)) {
+          *value = StringHandler::number(res);
+        }
+      }
+#endif
     }
     *unit = scalarVariable.unit;
     *displayUnit = scalarVariable.displayUnit;
@@ -1197,13 +1295,8 @@ void VariablesTreeModel::filterDependencies()
     foreach(QString s, uses) {
       escapedUses << s.replace("[","[[]").replace("]","[]]").replace("[[[]]","[[]").replace("(","[(]").replace(")","[)]").replace(".","[.]");
     }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QRegularExpression regexp("^" + escapedUses.join("|") + "$");
     mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegularExpression(regexp);
-#else
-    QRegExp regexp("^" + escapedUses.join("|") + "$");
-    mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegExp(regexp);
-#endif
   }
 }
 
@@ -1231,9 +1324,11 @@ void VariablesTreeModel::openTransformationsBrowser()
           checkForProfilingFiles = false;
         }
       }
+#if !defined(__EMSCRIPTEN__)
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, checkForProfilingFiles);
       pTransformationsWidget->selectEquation(equationIndex);
       pTransformationsWidget->fetchEquationData(equationIndex);
+#endif
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
@@ -1263,11 +1358,7 @@ VariableTreeProxyModel::VariableTreeProxyModel(QObject *parent)
  */
 bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (!filterRegularExpression().pattern().isEmpty()) {
-#else
-  if (!filterRegExp().isEmpty()) {
-#endif
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if (index.isValid()) {
       // if any of children matches the filter, then current index matches the filter as well
@@ -1281,25 +1372,13 @@ bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
       if (pVariablesTreeItem) {
         QString variableName = pVariablesTreeItem->getVariableName();
-        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|\\.arrow|_res.mat|_res.plt|_res.csv|_res.arrow)"));
         return variableName.contains(filterRegularExpression());
-#else
-        return variableName.contains(filterRegExp());
-#endif
       } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         return sourceModel()->data(index).toString().contains(filterRegularExpression());
-#else
-        return sourceModel()->data(index).toString().contains(filterRegExp());
-#endif
       }
       QString key = sourceModel()->data(index, filterRole()).toString();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return key.contains(filterRegularExpression());
-#else
-      return key.contains(filterRegExp());
-#endif
     }
   }
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -1478,8 +1557,10 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpVariablesTreeView->setColumnWidth(3, 70);
   mpVariablesTreeView->setColumnHidden(2, true); // hide Unit column
   mpLastActiveSubWindow = 0;
+#ifdef OM_LEGACY_RESULT_READERS
   mModelicaMatReader.file = 0;
   mpCSVData = 0;
+#endif
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -1530,11 +1611,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   MainWindow::instance()->getStatusBar()->showMessage(tr("Loading simulation result variables"));
   // In order to improve the response time of insertVariablesItems function we should disbale sorting and clear the filter.
   mpVariablesTreeView->setSortingEnabled(false);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression(""));
-#else
-  mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
-#endif
   // insert the plot variables
   bool updateVariables = mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
   // update the plot variables tree
@@ -1543,8 +1620,18 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   }
   mOpenedResultFileName = "";
   initializeVisualization();
+#if defined(__EMSCRIPTEN__)
+  // QSortFilterProxyModel::sort traps under Asyncify on wasm: the proxy's
+  // lessThan virtual dispatch is a call_indirect whose function pointer is
+  // threaded through Asyncify's instrumentation and gets mis-typed. Sort the
+  // source items directly instead (a non-virtual comparator, no call_indirect)
+  // and leave the proxy's own sorting off — the proxy then shows source order.
+  mpVariablesTreeModel->sortVariablesTreeItems();
+  mpVariablesTreeView->setSortingEnabled(false);
+#else
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
+#endif
   // since we cleared the filter above so we need to apply it back.
   findVariables();
   MainWindow::instance()->getStatusBar()->clearMessage();
@@ -1789,7 +1876,23 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
+#if defined(__EMSCRIPTEN__)
+    // wasm-jit takes changes only via -override (it never re-reads _init.xml, which
+    // also lives in the unreachable omc worker VFS): pass the changed values that way.
+    QHash<QString, QHash<QString, QString> > changed;
+    readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
+    QStringList overrides;
+    for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
+      overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
+    }
+    if (!overrides.isEmpty()) {
+      QStringList flags = simulationOptions.getSimulationFlags();
+      flags << QString("-override=%1").arg(overrides.join(","));
+      simulationOptions.setSimulationFlags(flags);
+    }
+#else
     updateInitXmlFile(pVariablesTreeItem, simulationOptions);
+#endif
   }
 
   if (showSetup) {
@@ -1911,6 +2014,11 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 {
   double value = 0.0;
   bool found = false;
+#ifndef OM_LEGACY_RESULT_READERS
+  if (mResultFile.isOpen()) {
+    found = mResultFile.valueAt(variable.toStdString(), time, value);
+  }
+#else
   const double tolerance = 1e-12;
 
   if (mModelicaMatReader.file) {
@@ -1961,6 +2069,7 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
     }
     textStream.seek(0);
   }
+#endif
 
   if (reportError && !found) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.",
@@ -2324,6 +2433,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
             pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
+#if !defined(__EMSCRIPTEN__)
             OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
             if (pOpcUaClient) {
               Variable *pCurveData = *pOpcUaClient->getVariables()->find(plotVariable);
@@ -2334,15 +2444,18 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pCurveData->setAxisVectors(memory);
               pOpcUaClient->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
             }
+#endif
           }
         }
       } else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
         // remove the variable from the data fetch list
+#if !defined(__EMSCRIPTEN__)
         OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
         if (pOpcUaClient) {
           Variable *pCurveData = *pOpcUaClient->getVariables()->find(pVariablesTreeItem->getPlotVariable());
           pOpcUaClient->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
         }
+#endif
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           /* FIX: Make sure to remove the right curve when implementing several interactive simulations at the same time */
           if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getYVariable())) {
@@ -2577,10 +2690,16 @@ void VariablesWidget::valueEntered(const QModelIndex &index)
       pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
     }
     int port = pVariablesTreeRootItem->getSimulationOptions().getInteractiveSimulationPortNumber();
+#if !defined(__EMSCRIPTEN__)
     OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
     if (pOpcUaClient) {
       pOpcUaClient->writeValue(variableValue, variableName);
     }
+#else
+    Q_UNUSED(port);
+    Q_UNUSED(variableValue);
+    Q_UNUSED(variableName);
+#endif
 
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);
@@ -2610,6 +2729,7 @@ void VariablesWidget::selectInteractivePlotWindow(VariablesTreeItem *pVariablesT
  */
 void VariablesWidget::closeResultFile()
 {
+#ifdef OM_LEGACY_RESULT_READERS
   if (mModelicaMatReader.file) {
     omc_free_matlab4_reader(&mModelicaMatReader);
     mModelicaMatReader.file = 0;
@@ -2621,6 +2741,9 @@ void VariablesWidget::closeResultFile()
   if (mPlotFileReader.isOpen()) {
     mPlotFileReader.close();
   }
+#else
+  mResultFile.close();
+#endif
   mOpenedResultFileName = "";
 }
 
@@ -2638,6 +2761,16 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
     QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
     bool errorOpeningFile = false;
     QString errorString = "";
+#ifndef OM_LEGACY_RESULT_READERS
+    try {
+      mResultFile.open(fileName.toStdString());
+      startTime = mResultFile.startTime();
+      stopTime = mResultFile.stopTime();
+    } catch (const omc::ResultError &e) {
+      errorOpeningFile = true;
+      errorString = e.what();
+    }
+#else
     if (pVariablesTreeItem->getFileName().endsWith(".mat")) {
       const char *msg[] = {""};
       if (0 == (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
@@ -2702,6 +2835,7 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
         errorString = mPlotFileReader.errorString();
       }
     }
+#endif
     // check file opening error
     if (errorOpeningFile) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -2877,6 +3011,8 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  // record the navigation point when a different plot window is shown so the back/forward navigation can restore it.
+  NavigationManager::instance()->recordNavigationPoint(pSubWindow);
   /* update the tree variables to last active PlotWindow
    * This is done to fix issue #12911.
    * See also VariablesWidget::plotVariables
@@ -2976,15 +3112,9 @@ void VariablesWidget::findVariables()
 {
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax
-  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegularExpression(regExp);
-#else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(findText, caseSensitivity, syntax);
-  mpVariableTreeProxyModel->setFilterRegExp(regExp);
-#endif
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpVariablesTreeView->expandAll();

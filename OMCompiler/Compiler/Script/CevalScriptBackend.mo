@@ -85,6 +85,7 @@ import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
+import ContainerImage;
 import Dump;
 import Error;
 import ErrorExt;
@@ -119,6 +120,7 @@ import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
 import Obfuscate;
+import OMGraphics;
 import PackageManagement;
 import Parser;
 import Print;
@@ -184,6 +186,19 @@ protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResu
   { ("timeTotal",      Values.REAL(0.0)),
     ("timeSimulation", Values.REAL(0.0)),
     ("timeCompile",    Values.REAL(0.0)),
+    ("timeTemplates",  Values.REAL(0.0)),
+    ("timeSimCode",    Values.REAL(0.0)),
+    ("timeBackend",    Values.REAL(0.0)),
+    ("timeFrontend",   Values.REAL(0.0))
+  };
+
+// The build-phase times only (reversed order), for paths that skip translate/
+// build (resimulateExecutable) but still run the model: createSimulationResult-
+// FromcallModelExecutable adds the real timeTotal/timeSimulation, and these keep
+// the result a complete SimulationResult record (0.0 for the phases not run)
+// instead of a truncated one missing fields.
+protected constant list<tuple<String,Values.Value>> zeroBuildPhaseResultValues =
+  { ("timeCompile",    Values.REAL(0.0)),
     ("timeTemplates",  Values.REAL(0.0)),
     ("timeSimCode",    Values.REAL(0.0)),
     ("timeBackend",    Values.REAL(0.0)),
@@ -557,7 +572,8 @@ algorithm
   start_time := Expression.toReal(options.startTime);
   stop_time := Expression.toReal(options.stopTime);
   options.stepSize := DAE.RCONST(interval);
-  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval));
+  // Round to nearest integer
+  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval + 0.5));
 end setSimulationOptionsInterval;
 
 protected function simOptionsAsString
@@ -655,7 +671,7 @@ algorithm
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
@@ -671,6 +687,7 @@ algorithm
       array<list<Integer>> m;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,v,v1,v2;
+      SimCode.SimulationSettings simSettings;
       Integer i,i1,resI;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel, direction;
@@ -1250,9 +1267,10 @@ algorithm
     case ("translateModelFMU", _)
       then Values.STRING("");
 
-    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
+    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
       algorithm
-        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
+        simSettings := fmuSimulationSettings(className, filenameprefix, str3);
+        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         ret_val;
 
@@ -1424,7 +1442,19 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        if Config.simCodeTarget() == "omsicpp" then
+        // resimulateExecutable is the last (new) argument; pull it off so the rest
+        // of the pipeline sees the original simulate() argument list.
+        resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+        vals := List.stripLast(vals);
+
+        if resimulateExecutable <> "" then
+          // Skip translation and build; simulate the already-built model directly.
+          b := true;
+          executable := resimulateExecutable;
+          compileDir := System.pwd() + Autoconf.pathDelimiter;
+          simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+          resultValues := zeroBuildPhaseResultValues;
+        elseif Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
          (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1441,7 +1471,7 @@ algorithm
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           executable := filenameprefix;
           simflags:="";
-          resultValues:={};
+          resultValues:=zeroBuildPhaseResultValues;
         elseif not Config.simCodeTarget() == "omsic" then
           (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         else
@@ -1471,9 +1501,12 @@ algorithm
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
            // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable.
+           // writes the result file directly, instead of spawning an executable;
+           // the wasm target runs the standalone module in a wasmtime subprocess.
            if Config.simCodeTarget() == "wasm-jit" then
              resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           elseif Config.simCodeTarget() == "wasm" then
+             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
            else
              resI := System.systemCallRestrictedEnv(sim_call, logFile);
            end if;
@@ -1499,7 +1532,7 @@ algorithm
         str := AbsynUtil.pathString(className);
         res := "Failed to build model: " + str;
       then
-        createSimulationResultFailure(res, simOptionsAsString(vals));
+        createSimulationResultFailure(res, simOptionsAsString(List.stripLast(vals)));
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
@@ -1508,7 +1541,7 @@ algorithm
         createSimulationResultFailure(
           "Simulation failed for model: " + str +
           "\nEnvironment variable OPENMODELICAHOME not set.",
-          simOptionsAsString(vals));
+          simOptionsAsString(List.stripLast(vals)));
 
     case ("moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
                         Values.INTEGER(direction)})
@@ -1542,8 +1575,11 @@ algorithm
       algorithm
         p := SymbolTable.getAbsyn();
         absynClass := ProgramUtil.getPathedClassInProgram(classpath, p);
-        p := copyClass(absynClass, name, InteractiveUtil.parseWithinPath(path), classpath, p);
-        SymbolTable.setAbsyn(p);
+        within_ := InteractiveUtil.parseWithinPath(path);
+        p := copyClass(absynClass, name, within_, classpath, p);
+        absynClass := ProgramUtil.getPathedClassInProgram(
+          match within_ case Absyn.WITHIN() then ProgramUtil.joinPaths(name, within_.path); else Absyn.IDENT(name); end match, p);
+        SymbolTable.setAbsynLoaded(p, Absyn.PROGRAM({absynClass}, within_));
       then
         Values.BOOL(true);
 
@@ -1575,11 +1611,19 @@ algorithm
             0 := System.removeFile(logFile);
           end if;
           strlinearizeTime := realString(linearizeTime);
-          sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
+          simflags := "-l=" + strlinearizeTime + " " + simflags;
+          sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-          if 0 == System.systemCallRestrictedEnv(sim_call, logFile) then
+          // The wasm-jit target runs the JIT-compiled model in-process, as `simulate` does.
+          if Config.simCodeTarget() == "wasm-jit" then
+            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+          else
+            resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          end if;
+          if 0 == resI then
             result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1643,7 +1687,15 @@ algorithm
           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          // As in the simulate() case: the wasm-jit target runs the JIT-compiled
+          // model in-process instead of spawning an executable.
+          if Config.simCodeTarget() == "wasm-jit" then
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+          elseif Config.simCodeTarget() == "wasm" then
+            resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
+          else
+            resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          end if;
           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
           result_file := "";
@@ -2227,13 +2279,19 @@ algorithm
         stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
         Values.INTEGER(numberOfIntervals) := Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
-        if numberOfIntervals == 0 then
-          numberOfIntervals := if interval > 0.0 then integer(ceil((stopTime - startTime)/interval)) else 0;
+        if numberOfIntervals == 0 and interval > 0.0 then
+          numberOfIntervals := integer(ceil((stopTime - startTime)/interval));
         else
-          interval := (stopTime-startTime) / max(numberOfIntervals,1);
+          // What simulate() runs (SimCodeMain.createSimulationSettings): an
+          // Interval annotation longer than the experiment is one step to stopTime.
+          numberOfIntervals := max(numberOfIntervals, 1);
+          interval := (stopTime-startTime) / numberOfIntervals;
         end if;
       then
         Values.TUPLE({Values.REAL(startTime), Values.REAL(stopTime), Values.REAL(tolerance), Values.INTEGER(numberOfIntervals), Values.REAL(interval)});
+
+    case ("getModelFigures",{Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then getModelFigures(classpath, SymbolTable.getAbsyn());
 
     case ("getAnnotationNamedModifiers",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname)})
       then getAnnotationNamedModifiers(classpath, annotationname, SymbolTable.getAbsyn());
@@ -2328,31 +2386,6 @@ algorithm
         str := Interactive.getDerivedClassModifierValue(absynClass, path);
       then
         Values.STRING(str);
-
-    case ("getAstAsCorbaString",{Values.STRING("<interactive>")})
-      algorithm
-        Print.clearBuf();
-        Dump.getAstAsCorbaString(SymbolTable.getAbsyn());
-        str := Print.getString();
-        Print.clearBuf();
-      then
-        Values.STRING(str);
-
-    case ("getAstAsCorbaString",{Values.STRING(str)})
-      algorithm
-        Print.clearBuf();
-        Dump.getAstAsCorbaString(SymbolTable.getAbsyn());
-        Print.writeBuf(str);
-        Print.clearBuf();
-        str := "Wrote result to file: " + str;
-      then
-        Values.STRING(str);
-
-    case ("getAstAsCorbaString",_)
-      algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"getAstAsCorbaString failed"});
-      then
-        Values.STRING("");
 
     case ("readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)})
       algorithm
@@ -2692,7 +2725,11 @@ algorithm
            Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
       algorithm
         (p, b) := InteractiveUtil.setElementModifier(classpath, path, mod, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        if b then
+          SymbolTable.setAbsynClass(p, ProgramUtil.getPathedClassInProgram(classpath, p), classpath);
+        else
+          SymbolTable.setAbsyn(p);
+        end if;
       then
         Values.BOOL(b);
 
@@ -3294,7 +3331,7 @@ algorithm
     case ("deleteClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (b, p) := Interactive.deleteClass(classpath, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        SymbolTable.setAbsynDeleted(p, classpath);
       then
         ValuesMake.makeBoolean(b);
 
@@ -3710,6 +3747,10 @@ algorithm
     case (_, _)
       guard Error.getNumErrorMessages() == numError
       algorithm
+        // A user cancel unwinds with its message rolled back by the failed
+        // speculation above; re-emit it here (the accepted branch) so it is not
+        // masked by the generic "no error message" below.
+        Error.checkCancel();
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Instantiation of " + AbsynUtil.pathString(className) + " failed with no error message."});
         FlagsUtil.set(Flags.SCODE_INST, nf_inst_actual);
@@ -3835,6 +3876,7 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
+  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -3868,10 +3910,16 @@ algorithm
       String cmd;
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
+      String externalIncludeDirsFile;
       list<String> dockerImgArgs;
+      ContainerImage.ContainerImage dockerImage;
+      list<String> dockerArguments;
+      String dockerRunArgs;
+      Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
       algorithm
@@ -3913,6 +3961,12 @@ algorithm
         then();
     case crossTriple::"docker"::"run"::dockerImgArgs
       algorithm
+        (dockerImage, dockerArguments) := ContainerImage.parseWithArgs(dockerImgArgs);
+        dockerImage := ContainerImage.getDigestSha(dockerImage);
+        Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
+        (_, isTrustedImage) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
+        dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage);
+
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
 
@@ -3921,6 +3975,20 @@ algorithm
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
+        end if;
+
+        // Only download trusted images automatically, and only if the signature
+        // can be verified. Images that are already on this machine are used as is.
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
+          if ContainerImage.isCosignAvailable() then
+            // Verify the image in the registry first, it's only downloaded if the signature is valid.
+            ContainerImage.assertSignature(dockerImage);
+            ContainerImage.pull(dockerImage);
+          else
+            Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
+            Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
+            fail();
+          end if;
         end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
@@ -3946,8 +4014,20 @@ algorithm
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-        // Copy the external library files to the container
+        // Copy the external library and include files to the container
         (locations,_) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        // SimCodeMain noted the external include directories of the model next to the
+        // generated sources. Without them the cross compiler can't find the headers of
+        // external libraries. See https://github.com/OpenModelica/OpenModelica/issues/9509
+        externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
+        if System.regularFileExists(externalIncludeDirsFile) then
+          locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
+        end if;
+        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
+        // copy it for a model that has no external libraries of its own.
+        if needs3rdPartyLibs then
+          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
+        end if;
         for loc in locations loop
           if System.directoryExists(loc) then
             // Create path
@@ -3969,12 +4049,20 @@ algorithm
         else
           fmiTarget := "";
         end if;
-        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+
+        if isTrustedImage then
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
+        else
+          cmake_toolchain := "";
+        end if;
+
+        cmakeCall := "cmake " + cmake_toolchain +
+                            "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
                             "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
-        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                " sh -c " + dquote +
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3988,21 +4076,26 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
-          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                  " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
           cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz");
+          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+            // Otherwise the failure only surfaces later as "Build commands returned
+            // success, but <name>.fmu does not exist".
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            fail();
+          end if;
         else
           cmd := "docker cp " + containerID + ":/data/" + fmutmp + "/ .";
           runDockerCmd(cmd, dockerLogFile, cleanup=false, volumeID=volumeID, containerID=containerID);
         end if;
 
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=dockerLogFile);
+        System.systemCall("docker volume rm " + volumeID, outFile=dockerLogFile);
 
         // Copy log file into resources directory
         System.copyFile(dockerLogFile, logfile);
@@ -4033,10 +4126,10 @@ algorithm
 
     if cleanup then
       if not stringEqual(containerID, "") then
-        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
       end if;
       if not stringEqual(volumeID, "") then
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       end if;
     end if;
 
@@ -4095,6 +4188,7 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   String FMUType = inFMUType;
+  Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4118,10 +4212,14 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
     success := false;
     outValue := Values.STRING("");
-    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    if FMI.isFMIMEType(FMUType) then
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
+    else
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+    end if;
     return;
   end if;
 
@@ -4135,12 +4233,25 @@ algorithm
     defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
     simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
   end if;
+  // The wasm FMU export uses the wasm-jit code generator, as buildModelFMU does;
+  // the flag change is reverted by translateModelFMU's saveFlags wrapper.
+  if isWasmFMU then
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
+    FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(List.select(platforms, isNotWasmPlatform), ","));
+  end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
 
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, isWasmFMU),
+                                            cache, inEnv, className, filenameprefix, true, Flags.getConfigBool(Flags.DAE_MODE), true, SOME(simSettings));
+    // A wasm translation wrote no FMU: it lowered the model kernel and kept it,
+    // so force its JIT compile (and resolve its external "C") here, as
+    // buildModel's compile phase does. The model is then ready to simulate and
+    // the buildModelFMU that follows only links and renders.
+    if success and isWasmFMU then
+      CodegenWasmJit.finishCompile(filenameprefix);
+    end if;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
     success :=false;
@@ -4150,9 +4261,9 @@ algorithm
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
 end callTranslateModelFMU;
 
-protected function generateFMI3GraphicalRepresentation
-  "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
-   model instance (issue #15219) for the *graphical* side only, this renders the
+public function generateFMI3GraphicalRepresentation
+  "FMI 3.0 graphical user annotations (issue #15686 task 9). From an in-memory
+   structure holding the model's graphics alone (issue #15219), this renders the
    model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0
    <GraphicalRepresentation> to terminalsAndIcons.xml, and for every placed
    connector component renders its port icon to terminalsAndIcons/<iconBaseName>.png
@@ -4169,15 +4280,13 @@ protected function generateFMI3GraphicalRepresentation
   input String fmutmp;
   input String modelIdentifier;
 protected
-  Integer handle, nConn, i, pngOk;
+  Integer handle, nConn, i;
   String svg, grepr, modelName, taiDir, taiFile, content;
   String info, cname, ibase, sx1, sy1, sx2, sy2, csvg, tgr;
   list<String> parts;
 algorithm
   try
-    // Full in-memory model instance: the model Icon plus the connector components
-    // (placement + connector-type icons). Graphics only.
-    Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
+    Values.INTEGER(handle) := NFApi.getModelInstanceIconReference(className);
     if handle > 0 then
       // Inner try so the model-instance handle is released on EVERY exit path
       // (a failure in the graphics work below must not leak the reference).
@@ -4189,17 +4298,16 @@ algorithm
       taiDir := fmutmp + "/terminalsAndIcons/";
       taiFile := taiDir + "terminalsAndIcons.xml";
 
-      svg := OMGraphics_iconSVGFromHandle(handle, modelName);
-      grepr := OMGraphics_graphicalRepresentationXMLFromHandle(handle, 0.5);
-      nConn := OMGraphics_placedConnectorCount(handle);
+      svg := OMGraphics.iconSVGFromHandle(handle, modelName);
+      grepr := OMGraphics.graphicalRepresentationXMLFromHandle(handle, 0.5);
+      nConn := OMGraphics.placedConnectorCount(handle);
 
       // model icon -> terminalsAndIcons/icon.png (mandatory) + icon.svg (optional
       // companion). The fixed name "icon" is the FMI 3.0 convention for the FMU
       // icon "without terminals".
       if svg <> "" then
         Util.createDirectoryTree(taiDir);
-        pngOk := OMGraphics_writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png");
-        if pngOk == 1 then
+        if OMGraphics.writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png") then
           System.writeFile(taiDir + "icon.svg", svg);
         else
           // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
@@ -4224,7 +4332,7 @@ algorithm
         // direction) is produced by SimCode from the flat model; here we only add
         // the graphics, matched to the existing <Terminal> by the connector name.
         for i in 0:nConn-1 loop
-          info := OMGraphics_placedConnectorInfo(handle, i);
+          info := OMGraphics.placedConnectorInfo(handle, i);
           parts := System.strtok(info, "\t"); // name, iconBaseName, x1, y1, x2, y2
           if listLength(parts) == 6 then
             cname := listGet(parts, 1);
@@ -4239,9 +4347,8 @@ algorithm
               // (mandatory) + <ibase>.svg (optional). iconBaseName is mandatory on
               // TerminalGraphicalRepresentation, so only emit the element when the
               // PNG was actually written (a dangling iconBaseName is invalid).
-              pngOk := OMGraphics_writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png");
-              if pngOk == 1 then
-                csvg := OMGraphics_placedConnectorIconSVG(handle, i);
+              if OMGraphics.writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png") then
+                csvg := OMGraphics.placedConnectorIconSVG(handle, i);
                 if csvg <> "" then
                   System.writeFile(taiDir + ibase + ".svg", csvg);
                 end if;
@@ -4329,70 +4436,154 @@ algorithm
   end if;
 end insertBeforeTerminalClose;
 
-protected function OMGraphics_iconSVGFromHandle
-  "Render the model Icon (issue #15219 model-instance reference handle) to an SVG
-   document via the OMGraphics runtime library. Empty string if there is no icon."
-  input Integer handle;
-  input String modelName;
-  output String svg;
-  external "C" svg = OMGraphics_iconSVGFromHandle(handle, modelName) annotation(Library = "omcruntime");
-end OMGraphics_iconSVGFromHandle;
+protected function fmuMethodToSimulationFlag
+  "`buildModelFMU(method=...)` names the integrator a Co-Simulation FMU embeds,
+   but an FMU reads its solver from `resources/<prefix>_flags.json`, which only
+   `--fmiFlags` writes. So fold an explicit method in there, unless the caller
+   already said `s:`.
 
-protected function OMGraphics_graphicalRepresentationXMLFromHandle
-  "Build the FMI 3.0 <GraphicalRepresentation> element for the model Icon (issue
-   #15219 model-instance reference handle). Empty string if there is no icon."
-  input Integer handle;
-  input Real scaleToMm;
-  output String xml;
-  external "C" xml = OMGraphics_graphicalRepresentationXMLFromHandle(handle, scaleToMm) annotation(Library = "omcruntime");
-end OMGraphics_graphicalRepresentationXMLFromHandle;
+   Only a method the FMU can integrate with: C's `FMI2CS_initializeSolverData`
+   takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
+   `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
+   wasm-jit driver set. An unaccepted method is left out, and the FMU falls back
+   to what it defaults to without one: euler for C, the model's own method (else
+   DASKR) for wasm."
+  input String method;
+  input Boolean isWasmFMU;
+protected
+  list<String> fmiFlags;
+  list<String> accepted = if isWasmFMU then CodegenWasmJit.fmuCsSolvers() else {"euler", "cvode"};
+algorithm
+  if method == "<default>" or not listMember(method, accepted) then
+    return;
+  end if;
+  fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  for f in fmiFlags loop
+    if StringUtil.startsWith(f, "s:") then
+      return;
+    end if;
+  end for;
+  // `none` and a `*.json` path are whole-value settings, not a list to extend.
+  if not listEmpty(fmiFlags) and not stringEq(listHead(fmiFlags), "default") then
+    return;
+  end if;
+  FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, {"s:" + method});
+end fmuMethodToSimulationFlag;
 
-protected function OMGraphics_placedConnectorCount
-  "Number of top-level connector components that have a graphical placement (the
-   graphical ports of the model)."
-  input Integer handle;
-  output Integer n;
-  external "C" n = OMGraphics_placedConnectorCount(handle) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorCount;
+protected function fmuAnnotationSimulationFlags
+  "A wasm FMU runs the model with the flags simulate() would: the class's
+   __OpenModelica_simulationFlags go into --fmiFlags, whose `_flags.json` the FMU
+   applies when it instantiates. A flag already named wins, and one the FMU cannot
+   honour is left out rather than baked in to fail at the importer's first
+   instantiate. A C FMU reads only a few flags and warns about the rest, so it
+   keeps to what --fmiFlags said."
+  input Absyn.Path className;
+  input Boolean isWasmFMU;
+protected
+  list<String> fmiFlags, names = {}, folded = {};
+  list<Absyn.ElementArg> args;
+  Option<Absyn.Modification> mod;
+  String name, value;
+algorithm
+  if not isWasmFMU or Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
+    return;
+  end if;
+  fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  if listLength(fmiFlags) == 1 and stringEq(listHead(fmiFlags), "default") then
+    fmiFlags := {};
+  end if;
+  // `none` and a `*.json` path are whole-value settings, not a list to extend.
+  for f in fmiFlags loop
+    if not stringEq(f, "default") and not (listLength(Util.stringSplitAtChar(f, ":")) == 2) then
+      return;
+    end if;
+    names := listHead(Util.stringSplitAtChar(f, ":")) :: names;
+  end for;
+  loadProgram(className);
+  mod := ProgramUtil.getNamedAnnotationExp(className, SymbolTable.getAbsyn(),
+    Absyn.IDENT("__OpenModelica_simulationFlags"), SOME(NONE()), Util.id);
+  args := match mod
+    case SOME(Absyn.CLASSMOD(elementArgLst = args)) then args;
+    else {};
+  end match;
+  for arg in args loop
+    name := AbsynUtil.pathString(AbsynUtil.elementArgName(arg));
+    value := fmuSimulationFlagValue(arg);
+    if not listMember(name, names) then
+      if CodegenWasmJit.fmuAcceptsFlag(name, value) then
+        folded := (name + ":" + value) :: folded;
+      else
+        Error.addCompilerNotification("Leaving the __OpenModelica_simulationFlags entry " + name
+          + "=\"" + value + "\" out of the FMU: it cannot honour it.");
+      end if;
+    end if;
+  end for;
+  if not listEmpty(folded) then
+    FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, listAppend(fmiFlags, listReverse(folded)));
+  end if;
+end fmuAnnotationSimulationFlags;
 
-protected function OMGraphics_placedConnectorInfo
-  "Tab-separated graphical info for placed connector `index`:
-   name, iconBaseName, x1, y1, x2, y2 (placement bounding box in icon coordinates)."
-  input Integer handle;
-  input Integer index;
-  output String info;
-  external "C" info = OMGraphics_placedConnectorInfo(handle, index) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorInfo;
+protected function fmuSimulationFlagValue
+  "One __OpenModelica_simulationFlags entry as a `_flags.json` value; empty for a
+   flag that takes none."
+  input Absyn.ElementArg arg;
+  output String value;
+algorithm
+  value := match arg
+    local
+      Absyn.Exp exp;
+    case Absyn.ElementArg.MODIFICATION(modification =
+        SOME(Absyn.Modification.CLASSMOD(eqMod = Absyn.EqMod.EQMOD(exp = exp))))
+      then
+        match exp
+          case Absyn.STRING("()") then "";
+          case Absyn.STRING() then exp.value;
+          else Dump.printExpStr(exp);
+        end match;
+    else "";
+  end match;
+end fmuSimulationFlagValue;
 
-protected function OMGraphics_placedConnectorIconSVG
-  "Render the connector-type icon (the port symbol) of placed connector `index`
-   to SVG. Empty string if it has no icon."
-  input Integer handle;
-  input Integer index;
-  output String svg;
-  external "C" svg = OMGraphics_placedConnectorIconSVG(handle, index) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorIconSVG;
+protected function reportFMUPlatformsBuilt
+  "The platform progress the C export reports around each platform's compile.
+   A wasm FMU is already linked by the time `translateModel` returns, so the pair
+   is reported once the .fmu is there — which is where the C export's own
+   messages land relative to the translation's, so the log reads the same either
+   way."
+  input list<String> platforms;
+protected
+  Integer platformIndex = 0, platformCount = listLength(platforms);
+  String platformName;
+algorithm
+  for platform in platforms loop
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+  end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+end reportFMUPlatformsBuilt;
 
-protected function OMGraphics_writeIconPNGFromHandle
-  "Rasterise the model Icon to a PNG and write it to `path` (FMI 3.0 requires a
-   PNG icon file). Returns 1 on success, 0 otherwise. PNG bytes are binary, so
-   the C side writes the file rather than returning it as a String."
-  input Integer handle;
-  input String modelName;
-  input String path;
-  output Integer ok;
-  external "C" ok = OMGraphics_writeIconPNGFromHandle(handle, modelName, path) annotation(Library = "omcruntime");
-end OMGraphics_writeIconPNGFromHandle;
-
-protected function OMGraphics_writePlacedConnectorIconPNG
-  "Rasterise placed connector `index`'s port icon to a PNG and write it to
-   `path`. Returns 1 on success, 0 otherwise."
-  input Integer handle;
-  input Integer index;
-  input String path;
-  output Integer ok;
-  external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
-end OMGraphics_writePlacedConnectorIconPNG;
+protected function fmuSimulationSettings
+  "The SimulationSettings an FMU export runs with: the model's experiment defaults,
+   with `method` folded in when it is not \"<default>\" (a Co-Simulation FMU embeds
+   its integrator, so the solver is chosen at export time)."
+  input Absyn.Path className;
+  input String inFileNamePrefix;
+  input String method = "<default>";
+  output SimCode.SimulationSettings simSettings;
+protected
+  String filenameprefix;
+algorithm
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
+  simSettings := convertSimulationOptionsToSimCode(
+    buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions)));
+  if method <> "<default>" then
+    simSettings.method := method;
+  end if;
+end fmuSimulationSettings;
 
 protected function buildModelFMU
   input FCore.Cache inCache;
@@ -4404,10 +4595,12 @@ protected function buildModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  input String method = "<default>" "`buildModelFMU(method=)`, folded into --fmiFlags where the FMU accepts it";
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
   Flags.Flag flags;
+  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4415,19 +4608,27 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
+    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
+    // hand so one export does not pick the solver for the next. `saveFlags` will
+    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
+    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+    fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
+    fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
+      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
+      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
   end if;
 end buildModelFMU;
 
-protected function callBuildModelFMU
+public function callBuildModelFMU
  " Author: Frenkel TUD
    Translates a model into target code and writes also a makefile."
   input FCore.Cache inCache;
@@ -4445,11 +4646,23 @@ protected
   Boolean success;
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
-  InteractiveTypes.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
-  list<String> libs;
+  list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
+  Boolean needs3rdPartyLibs;
+  Integer platformIndex, platformCount;
+  String platformName;
   String FMUType = inFMUType;
+  // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
+  // is the C export's business even under the wasm simCodeTarget.
+  Boolean wasmRequested = listMember("wasm", platforms);
+  Boolean wasmTarget = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
+  Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
+  Option<SimCode.SimCode> keptSimCode;
+  SimCode.SimCode keptTranslation;
+  // Reached through the target, the caller still wants an FMU the ordinary
+  // tooling can load, so it gets this machine's platform too.
+  list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4466,13 +4679,22 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
     return;
   end if;
+  if wasmRequested and FMUVersion == "1.0" then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
+    return;
+  end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
     outValue := Values.STRING("");
-    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    if FMI.isFMIMEType(FMUType) then
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
+    else
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+    end if;
     return;
   end if;
 
@@ -4483,14 +4705,36 @@ algorithm
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else
-    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
-    simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
+    simSettings := fmuSimulationSettings(className, inFileNamePrefix);
+  end if;
+  // The wasm FMU export uses the wasm-jit code generator; the flag change is
+  // reverted by buildModelFMU's saveFlags wrapper.
+  if isWasmFMU then
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
+    // Every other entry names a native platform the FMU should also serve.
+    FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(nativePlatforms, ","));
+  elseif wasmTarget then
+    // A browser omc has no C code generator and says so from there.
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "C");
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  // A translateModelFMU of this model, this FMI version and this kind of
+  // interface, off the program still loaded and under the flags still set, has
+  // already done the translation: render the metadata and link the adapter onto
+  // the kernel it left rather than translating again. The flags are read after
+  // the munging above so both phases fingerprint the same state.
+  keptSimCode := if isWasmFMU then SimCodeMain.fmuTranslationFor(FMUVersion, FMUType, className, SOME(simSettings)) else NONE();
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    if isSome(keptSimCode) then
+      SOME(keptTranslation) := keptSimCode;
+      Error.addCompilerNotification("Exporting the translation translateModelFMU already made; the model is not translated again.");
+      SimCodeMain.emitWasmFMU(keptTranslation, FMUVersion, FMUType, SymbolTable.getAbsyn());
+      success := true;
+    else
+      (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, false),
+                                              cache, inEnv, className, filenameprefix, true, Flags.getConfigBool(Flags.DAE_MODE), true, SOME(simSettings));
+    end if;
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -4510,13 +4754,19 @@ algorithm
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 
-  // FMI 3.0 graphical user annotations (issue #15686 task 9): render the model
-  // Icon to icons/<modelIdentifier>.svg and add a <GraphicalRepresentation> to
-  // terminalsAndIcons.xml. Done here (after translateModel, before the FMU is
-  // packed) for the C target; the OMGraphics renderer consumes the in-memory
-  // model-instance annotation reference (issue #15219).
-  if FMUVersion == "3.0" and Config.simCodeTarget() == "C" then
-    generateFMI3GraphicalRepresentation(className, fmutmp, filenameprefix);
+  // wasm FMU: CodegenWasmJit.emitMeFmu already wrote the self-contained
+  // <name>.fmu (component linked in Rust, ZIP assembled in Rust) — nothing to
+  // build or zip. Just confirm it exists. With --fmuDirectory it is an unzipped
+  // directory of that name instead.
+  if isWasmFMU then
+    if not (System.regularFileExists(fmuTargetName + ".fmu")
+            or (Flags.getConfigBool(Flags.FMU_DIRECTORY) and System.directoryExists(fmuTargetName + ".fmu"))) then
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"wasm FMU export produced no " + fmuTargetName + ".fmu"});
+      outValue := Values.STRING("");
+      return;
+    end if;
+    reportFMUPlatformsBuilt(platforms);
+    return;
   end if;
 
   if Config.simCodeTarget() == "Cpp" then
@@ -4545,18 +4795,37 @@ algorithm
     return;
   end if;
 
+  // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
+  needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
+
   // Configure and build the FMU with CMake
+  // Compiling for several platforms takes minutes per platform, so report which one is
+  // being built. Error.checkCancel() hands the thread to the host UI between platforms,
+  // which is what keeps OMEdit responsive and lets Cancel through.
+  platformCount := listLength(platforms);
+  platformIndex := 0;
   for platform in platforms loop
-    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    Error.checkCancel();
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+
+    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
+    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+  System.reportProgressMessage("Packing FMU");
+  Error.checkCancel();
 
-  // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
-  if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+  // check for '--fmiSources=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
+  if Flags.getConfigEnum(Flags.FMI_SOURCES) == Flags.FMI_SOURCES_NONE or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
     if not System.removeDirectory(fmutmp + "/sources/") then
       Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
     end if;
@@ -4579,6 +4848,24 @@ algorithm
     end if;
   end if;
 end callBuildModelFMU;
+
+protected function isWasmFMUExport
+  "Whether `buildModelFMU` takes the wasm (fmi-ls-wasm) route: the `wasm` platform
+   was asked for, or the simCodeTarget is already a wasm one. FMI 1.0 never does."
+  input String FMUVersion;
+  input list<String> platforms;
+  output Boolean isWasm;
+algorithm
+  isWasm := (listMember("wasm", platforms) or Config.simCodeTarget() == "wasm-jit"
+             or Config.simCodeTarget() == "wasm") and FMUVersion <> "1.0";
+end isWasmFMUExport;
+
+protected function isNotWasmPlatform
+  "\"static\"/\"dynamic\" are the C target's own platform names, meaningless once
+   the export is a wasm one; every other entry names a native platform."
+  input String platform;
+  output Boolean keep = not (platform == "wasm" or platform == "static" or platform == "dynamic");
+end isNotWasmPlatform;
 
 protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
@@ -6056,10 +6343,13 @@ algorithm
             // compile of the model's wasm modules now so its cost is attributed
             // to timeCompile (this clock) rather than leaking into
             // timeSimulation at runSimulation.
-            if Config.simCodeTarget() <> "wasm-jit" then
-              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
-            else
+            if Config.simCodeTarget() == "wasm-jit" then
               CodegenWasmJit.finishCompile(filenameprefix);
+            elseif Config.simCodeTarget() == "wasm" then
+              // The standalone module was already produced in emitStandalone;
+              // there is nothing to compile/link here.
+            else
+              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
             end if;
           else
             success := false;
@@ -6093,7 +6383,7 @@ algorithm
       list<Absyn.ElementArg> args;
 
     case SOME(Absyn.CLASSMOD(elementArgLst = args))
-      then List.toString(args, formatSimulationFlagString, "", "-", " -", "", false);
+      then List.toStringCustom(args, formatSimulationFlagString, "", "-", " -", "", false);
 
     else "";
   end match;
@@ -6438,25 +6728,8 @@ protected function applyRewriteRulesOnBackend
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue inBackendDAE
-    local
-
-    // no rewrites!
-    case _
-      algorithm
-        true := RewriteRules.noRewriteRulesBackEnd();
-      then
-        inBackendDAE;
-
-    // some rewrites
-    case _
-      algorithm
-        false := RewriteRules.noRewriteRulesBackEnd();
-        outBackendDAE := BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
-      then
-        outBackendDAE;
-
-  end matchcontinue;
+  outBackendDAE := if RewriteRules.noRewriteRulesBackEnd() then inBackendDAE
+                   else BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
 end applyRewriteRulesOnBackend;
 
 protected function getClassnamesInClassList
@@ -8617,6 +8890,290 @@ algorithm
       then (c1, "");
   end match;
 end getComponentitemsName;
+
+function getModelFigures
+  "The figures sub-annotation of Documentation, as Scripting.Figure records."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Option<list<Values.Value>> ofigs;
+  list<Values.Value> figs;
+algorithm
+  cls := ProgramUtil.getPathedClassInProgram(classPath, program);
+  ofigs := AbsynUtil.getNamedAnnotationInClass(cls,
+    Absyn.QUALIFIED("Documentation", Absyn.IDENT("figures")), figuresFromMod);
+  figs := match ofigs case SOME(figs) then figs; else {}; end match;
+  result := ValuesMake.makeArray(figs);
+end getModelFigures;
+
+function figuresFromMod
+  input Option<Absyn.Modification> mod;
+  output list<Values.Value> figures;
+algorithm
+  figures := match mod
+    local
+      Absyn.Exp exp;
+    case SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp)))
+      then list(figureValue(e) for e in figureExpElements(exp));
+    else {};
+  end match;
+end figuresFromMod;
+
+function figureExpElements
+  "Array elements of a figures/plots/curves value, or the value itself if scalar."
+  input Absyn.Exp exp;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match exp
+    case Absyn.ARRAY() then exp.arrayExp;
+    else {exp};
+  end match;
+end figureExpElements;
+
+function figureValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<Values.Value> plots;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "group", "preferred", "plots", "caption"});
+  plots := match figureArgExp(args, "plots")
+    local Absyn.Exp e;
+    case SOME(e) then list(plotValue(p) for p in figureExpElements(e));
+    else {};
+  end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Figure"),
+    {figureStringArg(args, "title", ""),
+     figureStringArg(args, "identifier", ""),
+     figureStringArg(args, "group", ""),
+     figureBoolArg(args, "preferred", false),
+     ValuesMake.makeArray(plots),
+     figureStringArg(args, "caption", "")},
+    {"title", "identifier", "group", "preferred", "plots", "caption"}, -1);
+end figureValue;
+
+function plotValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<Values.Value> curves;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "curves", "x", "y"});
+  curves := match figureArgExp(args, "curves")
+    local Absyn.Exp e;
+    case SOME(e) then list(curveValue(c) for c in figureExpElements(e));
+    else {};
+  end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Plot"),
+    {figureStringArg(args, "title", ""),
+     figureStringArg(args, "identifier", ""),
+     ValuesMake.makeArray(curves),
+     axisValue(figureArgExp(args, "x")),
+     axisValue(figureArgExp(args, "y"))},
+    {"title", "identifier", "curves", "x", "y"}, -1);
+end plotValue;
+
+function curveValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := figureArgs(exp, {"x", "y", "legend", "zOrder"});
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Curve"),
+    {figureRefArg(args, "x", "time"),
+     figureRefArg(args, "y", ""),
+     figureStringArg(args, "legend", ""),
+     figureIntArg2(args, "zOrder", 0)},
+    {"x", "y", "legend", "zOrder"}, -1);
+end curveValue;
+
+function axisValue
+  input Option<Absyn.Exp> oexp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := match oexp case SOME(_) then figureArgs(Util.getOption(oexp), {"min", "max", "unit", "label", "scale"}); else {}; end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Axis"),
+    {figureRealBoundArg(args, "min"),
+     figureRealBoundArg(args, "max"),
+     figureStringArg(args, "unit", ""),
+     figureStringArg(args, "label", ""),
+     axisScaleValue(figureArgExp(args, "scale"))},
+    {"min", "max", "unit", "label", "scale"}, -1);
+end axisValue;
+
+function axisScaleValue
+  input Option<Absyn.Exp> oexp;
+  output Values.Value value;
+protected
+  String scaleType = "Linear";
+  Integer base = 10;
+algorithm
+  _ := match oexp
+    local
+      Absyn.ComponentRef cr;
+      Absyn.FunctionArgs fargs;
+    case SOME(Absyn.CALL(function_ = cr, functionArgs = fargs))
+      algorithm
+        scaleType := AbsynUtil.crefIdent(cr);
+        base := figureIntArg(figureArgs(Absyn.CALL(cr, fargs, {}), {"base"}), "base", 10);
+      then ();
+    else ();
+  end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.AxisScale"),
+    {Values.STRING(scaleType), Values.INTEGER(base)},
+    {"scaleType", "base"}, -1);
+end axisScaleValue;
+
+function figureArgs
+  "Maps a record-constructor call's arguments to (fieldName, exp) pairs;
+   positional args by declared field order, named args by name."
+  input Absyn.Exp exp;
+  input list<String> fieldNames;
+  output list<tuple<String, Absyn.Exp>> args = {};
+protected
+  list<Absyn.Exp> pos;
+  list<Absyn.NamedArg> named;
+  list<String> names = fieldNames;
+  String name;
+algorithm
+  () := match exp
+    case Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = pos, argNames = named))
+      algorithm
+        for e in pos loop
+          name :: names := names;
+          args := (name, e) :: args;
+        end for;
+        for na in named loop
+          args := (na.argName, na.argValue) :: args;
+        end for;
+      then ();
+    else ();
+  end match;
+end figureArgs;
+
+function figureArgExp
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Absyn.Exp> oexp = NONE();
+protected
+  String n;
+  Absyn.Exp e;
+algorithm
+  for a in args loop
+    (n, e) := a;
+    if n == name then
+      oexp := SOME(e);
+      return;
+    end if;
+  end for;
+end figureArgExp;
+
+function figureStringArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input String default;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    case SOME(Absyn.STRING()) then Values.STRING(figureArgString(args, name, default));
+    else Values.STRING(default);
+  end match;
+end figureStringArg;
+
+function figureArgString
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input String default;
+  output String value;
+algorithm
+  value := match figureArgExp(args, name)
+    local String s;
+    case SOME(Absyn.STRING(value = s)) then s;
+    else default;
+  end match;
+end figureArgString;
+
+function figureRefArg
+  "A Curve x/y result reference, serialized as its Modelica source text."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input String default;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then Values.STRING(Dump.printExpStr(e));
+    else Values.STRING(default);
+  end match;
+end figureRefArg;
+
+function figureBoolArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input Boolean default;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Boolean b;
+    case SOME(Absyn.BOOL(value = b)) then Values.BOOL(b);
+    else Values.BOOL(default);
+  end match;
+end figureBoolArg;
+
+function figureIntArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input Integer default;
+  output Integer value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Integer i;
+    case SOME(Absyn.INTEGER(value = i)) then i;
+    else default;
+  end match;
+end figureIntArg;
+
+function figureRealBoundArg
+  "An axis bound: empty Real[:] when absent (auto), length 1 when given."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then ValuesMake.makeArray({Values.REAL(figureExpReal(e))});
+    else ValuesMake.makeArray({});
+  end match;
+end figureRealBoundArg;
+
+function figureExpReal
+  input Absyn.Exp exp;
+  output Real value;
+algorithm
+  value := match exp
+    local Integer i; String s;
+    case Absyn.INTEGER(value = i) then intReal(i);
+    case Absyn.REAL(value = s) then stringReal(s);
+    case Absyn.UNARY(op = Absyn.UMINUS()) then -figureExpReal(exp.exp);
+    else 0.0;
+  end match;
+end figureExpReal;
+
+function figureIntArg2
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input Integer default;
+  output Values.Value value;
+algorithm
+  value := Values.INTEGER(figureIntArg(args, name, default));
+end figureIntArg2;
 
 function getAnnotationNamedModifiers
   input Absyn.Path classPath;

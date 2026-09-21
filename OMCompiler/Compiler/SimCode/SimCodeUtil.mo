@@ -75,6 +75,7 @@ protected
 import AbsynUtil;
 import Array;
 import Autoconf;
+import AvlSetInt;
 import AvlSetString;
 import AvlTreeCRToInt;
 import BackendDAEOptimize;
@@ -89,6 +90,7 @@ import BaseHashTable;
 import Builtin;
 import CheckModel;
 import ClassInf;
+import ClockIndexes;
 import CommonSubExpression.isCSECref;
 import ComponentReference;
 import ComponentReferenceBasics;
@@ -128,14 +130,20 @@ import SimCodeUtilShared;
 import Static;
 import StringUtil;
 import SymbolicJacobian;
+import SymbolTable;
 import System;
 import TypesDump;
+import UnitAbsyn;
+import UnitAbsynBuilder;
+import UnitParserExt;
 import Util;
 import ValuesUtil;
 import VisualXML;
+import FindZeroCrossings;
 import ZeroCrossings;
 import ReduceDAE;
 import Settings;
+import UnorderedMap;
 import UnorderedSet;
 
 protected constant String UNDERLINE = "========================================";
@@ -254,13 +262,16 @@ protected
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCodeFunction.MakefileParams makefileParams;
   SimCode.ModelInfo modelInfo;
+  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literalsAcc = literals;
+  list<SimCodeFunction.RecordDeclaration> recordDeclsAcc = recordDecls;
+  AvlTreePathFunction.Tree fmiDerInitFuncTree;
   HashTable.HashTable crefToClockIndexHT;
   array<Integer> systemIndexMap;
   list<BackendDAE.EqSystem> clockedSysts, contSysts;
   //list<BackendDAE.Equation> paramAsserts, remEqLst;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
-  DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
+  BackendDAE.ZeroCrossingSet de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
   list<DAE.ComponentRef> discreteModelVars, iterationVarsLst1, iterationVarsLst2;
@@ -383,7 +394,7 @@ algorithm
     timeEvents := eventInfo.timeEvents;
     (zeroCrossings,relations,sampleZC) := match eventInfo
       case BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingsSet, relations=de_relations, samples=sampleZCSet)
-      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEnded.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
+      then (ZeroCrossings.toList(zeroCrossingsSet), ZeroCrossings.toList(de_relations), ZeroCrossings.toList(sampleZCSet));
     end match;
     if ifcpp then
       zeroCrossings := listAppend(relations, sampleZC);
@@ -602,14 +613,22 @@ algorithm
 
     // collect fmi partial derivative (FMI 2.0 and 3.0 both expose a ModelStructure)
     if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
-      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex, fmiDerInitFuncTree) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+      // the FMIDERINIT jacobian is created here, i.e. after the functions have been
+      // elaborated, so the functions it calls on its own have to be added now
+      (modelInfo, literalsAcc, recordDeclsAcc) := addFmiDerInitFunctions(program, fmiDerInitFuncTree,
+        BackendDAEUtil.getFunctions(inBackendDAE.shared), modelInfo, literalsAcc, recordDeclsAcc);
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
 
     // Collect FMI sim flags
     if isFMU then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       fmiSimulationFlags := createFMISimulationFlags();
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
     end if;
 
     // collect symbolic jacobians in linear loops of the overall jacobians
@@ -768,7 +787,7 @@ algorithm
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {}, // Set by the traversal below...
-      recordDecls                 = recordDecls,
+      recordDecls                 = recordDeclsAcc,
       externalFunctionIncludes    = externalFunctionIncludes,
       generic_loop_calls          = {}, // only used in new backend
       localKnownVars              = localKnownVars,
@@ -791,7 +810,7 @@ algorithm
       stateSets                   = stateSets,
       constraints                 = constraints,
       classAttributes             = classAttributes,
-      zeroCrossings               = ZeroCrossings.updateIndices(zeroCrossings),
+      zeroCrossings               = FindZeroCrossings.setOperatorZeroCrossingIndices(ZeroCrossings.updateIndices(zeroCrossings)),
       relations                   = ZeroCrossings.updateIndices(relations),
       timeEvents                  = timeEvents,
       discreteModelVars           = discreteModelVars,
@@ -820,7 +839,7 @@ algorithm
       scalarized                  = true
     );
 
-    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
+    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literalsAcc);
     simCode := setSimCodeLiterals(simCode, listReverse(lits));
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
@@ -1510,6 +1529,35 @@ algorithm
   end for;
 end jacobianColumnsAreEmpty;
 
+public function stripAsubIfNoIter
+  "Strips a RELATION's optionExpisASUB (see the comment on DAE.RELATION, and
+  NBEvents.mo's asubTuple) whenever the caller has no regenerated for-loop of its
+  own around this expression (hasIter = false). optionExpisASUB names the iterator
+  cref a state-event condition was originally wrapped in, so CodegenCFunctions.tpl's
+  zero-crossing template can offset storedRelations[] per iteration -- but that only
+  compiles when the SAME for-loop is regenerated at the call site, giving the
+  iterator an actual in-scope C variable. When the caller has already fully unrolled
+  this expression into an independent scalar occurrence (hasIter = false), the
+  RELATION's own index is already correct standalone, and the stored iterator cref
+  has no corresponding loop variable to reference: codegen falls back to emitting
+  its bare (often source-level, e.g. \"i\") name, which doesn't compile (see
+  PNlib.Test2.mos and the other tests this fixes in CodegenC.tpl's zeroCrossingTpl/
+  relationTpl, the only current callers)."
+  input DAE.Exp exp;
+  input Boolean hasIter;
+  output DAE.Exp outExp;
+algorithm
+  outExp := if hasIter then exp else match exp
+    case DAE.RELATION(optionExpisASUB = SOME(_))
+      then DAE.RELATION(exp.exp1, exp.operator, exp.exp2, exp.index, NONE());
+    case DAE.LBINARY()
+      then DAE.LBINARY(stripAsubIfNoIter(exp.exp1, hasIter), exp.operator, stripAsubIfNoIter(exp.exp2, hasIter));
+    case DAE.LUNARY()
+      then DAE.LUNARY(exp.operator, stripAsubIfNoIter(exp.exp, hasIter));
+    else exp;
+  end match;
+end stripAsubIfNoIter;
+
 // =============================================================================
 // section to create SimCode.Equations from BackendDAE.Equation
 //
@@ -1527,7 +1575,7 @@ tuple<Integer /*uniqueEqIndex*/,
       list<tuple<Integer,Integer>> /*eqBackendSimCodeMapping*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
-protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
+protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, Boolean>;
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -1552,11 +1600,17 @@ protected function createEquationsForSystems "Some kind of comments would be ver
 protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
+  array<AvlSetInt.Tree> zcVars;
+  Integer sysIdx = 0;
 algorithm
   try
-    arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
+    arg := (shared, createAlgebraicEquations);
+    zcVars := BackendDAEUtil.zeroCrossingVarIndices(inSysts, inAllZeroCrossings);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
-    foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+    for syst in inSysts loop
+      sysIdx := sysIdx + 1;
+      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), arg, foldArg);
+    end for;
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
     oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
     oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
@@ -1569,6 +1623,7 @@ end createEquationsForSystems;
 
 protected function createEquationsForSystems1
   input BackendDAE.EqSystem inSyst;
+  input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing";
   input CreateEquationsForSystemsArg inArg;
   input CreateEquationsForSystemsFold inFold;
   output CreateEquationsForSystemsFold outFold;
@@ -1587,7 +1642,6 @@ algorithm
       AvlTreePathFunction.Tree funcs;
       list<tuple<Integer,Integer>> eqSccMapping, eqBackendSimCodeMapping;
       SimCode.BackendMapping backendMapping;
-      list<BackendDAE.ZeroCrossing> zeroCrossings;
       BackendDAE.Shared shared;
       Boolean createAlgebraicEquations;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
@@ -1596,7 +1650,7 @@ algorithm
           BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
         end if;
 
-        (shared, zeroCrossings, createAlgebraicEquations) := inArg;
+        (shared, createAlgebraicEquations) := inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) := inFold;
 
@@ -1606,7 +1660,7 @@ algorithm
         stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
-        zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zeroCrossings, zceqnsmarks, ass1);
+        zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zcVars, zceqnsmarks, ass1);
 
         (odeEquations1, algebraicEquations1, allEquations1, equationsForZeroCrossings1, uniqueEqIndex,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) :=
@@ -2165,37 +2219,20 @@ protected function updateZeroCrossEqnIndex
   input list<BackendDAE.ZeroCrossing> izeroCrossings;
   input list<tuple<Integer, Integer>> eqBackendSimCodeMapping;
   input Integer numEqnsinArray;
-  output list<BackendDAE.ZeroCrossing> ozeroCrossings;
+  output list<BackendDAE.ZeroCrossing> ozeroCrossings = {};
 protected
   array<Integer> mappingArray;
+  DAE.Exp exp;
+  list<Integer> occurEquLst;
+  Option<list<BackendDAE.SimIterator>> iter;
 algorithm
   mappingArray := convertListMappingToArray(eqBackendSimCodeMapping, numEqnsinArray);
-  ozeroCrossings := updateZeroCrossEqnIndexHelp(izeroCrossings, mappingArray, {});
+  for zc in izeroCrossings loop
+    BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst, iter=iter) := zc;
+    ozeroCrossings := BackendDAE.ZERO_CROSSING(0, exp, convertListIndx(occurEquLst, mappingArray), iter)::ozeroCrossings;
+  end for;
+  ozeroCrossings := Dangerous.listReverseInPlace(ozeroCrossings);
 end updateZeroCrossEqnIndex;
-
-protected function updateZeroCrossEqnIndexHelp
-  input list<BackendDAE.ZeroCrossing> izeroCrossings;
-  input array<Integer> eqBackendSimCodeMappingArray;
-  input list<BackendDAE.ZeroCrossing> iAccum;
-  output list<BackendDAE.ZeroCrossing> ozeroCrossings;
-algorithm
- ozeroCrossings := match izeroCrossings
- local
-    DAE.Exp exp;
-    list<Integer> occurEquLst;
-    list<BackendDAE.ZeroCrossing> rest;
-    Option<list<BackendDAE.SimIterator>> iter;
-
-   case {} then Dangerous.listReverseInPlace(iAccum);
-
-   case BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst,iter=iter)::rest
-     algorithm
-       occurEquLst := convertListIndx(occurEquLst, eqBackendSimCodeMappingArray);
-       ozeroCrossings := updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(0, exp, occurEquLst, iter)::iAccum);
-     then
-       ozeroCrossings;
-  end match;
-end updateZeroCrossEqnIndexHelp;
 
 protected function convertListMappingToArray
   input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,BackendEqnIndx>
@@ -3046,7 +3083,8 @@ algorithm
 
     case DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest algorithm
       cr := ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-    then createTempVars(rest, cr, itempvars);
+      ttmpvars := createTempVars(ty.varLst, cr, itempvars);
+    then createTempVars(rest, inCrefPrefix, ttmpvars);
 
     case DAE.TYPES_VAR(name=name, ty=ty)::rest
       algorithm
@@ -3378,6 +3416,7 @@ algorithm
     local
       DAE.Exp left, right;
       list<DAE.Exp> elems;
+      list<DAE.Var> varLst;
 
     // parse arrays
     case(left as DAE.ARRAY(), right as DAE.CREF()) algorithm
@@ -3396,6 +3435,14 @@ algorithm
       end try;
     then (outSimEqn, ouniqueEqIndex);
 
+    // parse records: a record inside a record is a record expression on the
+    // left while the right hand side is still a cref
+    case(DAE.RECORD(exps = elems, ty = DAE.T_COMPLEX(varLst = varLst)), right as DAE.CREF())
+    then assignRecordElements(elems, varLst, right.componentRef, source, eqAttr, ouniqueEqIndex);
+
+    case(DAE.CALL(expLst = elems, attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = varLst))), right as DAE.CREF())
+    then assignRecordElements(elems, varLst, right.componentRef, source, eqAttr, ouniqueEqIndex);
+
     // kabdelhak: is this case needed? probably handled fine by simple assign
     // case(_, DAE.ARRAY()) algorithm
 
@@ -3404,6 +3451,31 @@ algorithm
     then ({eqn}, ouniqueEqIndex);
   end match;
 end makeSES_SIMPLE_ASSIGNwithArray;
+
+protected function assignRecordElements
+  "Assigns each element of a record expression from the matching element of the
+   record the given cref names. Neither side is a cref that could be assigned as
+   a whole, since the left hand side is an expression over scalarized variables."
+  input list<DAE.Exp> elems;
+  input list<DAE.Var> varLst;
+  input DAE.ComponentRef cref;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
+  input Integer iuniqueEqIndex;
+  output list<SimCode.SimEqSystem> outSimEqn = {};
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+protected
+  list<SimCode.SimEqSystem> eqns;
+  SimCode.SimEqSystem eqn;
+algorithm
+  for tpl in List.zip(elems, list(Expression.generateCrefsExpFromExpVar(v, cref) for v in varLst)) loop
+    (eqns, ouniqueEqIndex) := makeSES_SIMPLE_ASSIGNwithArray(tpl, source, eqAttr, ouniqueEqIndex);
+    for eqn in eqns loop
+      outSimEqn := eqn :: outSimEqn;
+    end for;
+  end for;
+  outSimEqn := listReverse(outSimEqn);
+end assignRecordElements;
 
 protected function makeSolved
   input BackendDAE.Equation eq;
@@ -4779,7 +4851,7 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false)), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "")), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
                                       (sparsepatternComRefs, sparsepatternComRefsT, _, _),
@@ -4854,7 +4926,7 @@ algorithm
 
         (allEquations, constantEqns, uniqueEqIndex, tempvars) := getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, tempvars);
 
-      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false)), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "")), uniqueEqIndex, tempvars);
 
     else
       algorithm
@@ -5120,7 +5192,7 @@ algorithm
         seedVars := List.map1(seedVars, setSimVarKind, BackendDAE.SEED_VAR());
         seedVars := List.map1(seedVars, setSimVarMatrixName, SOME(name));
 
-        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false);
+        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "");
         linearModelMatrices := tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) := createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
@@ -5226,7 +5298,7 @@ algorithm
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
 
-        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false);
+        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "");
         linearModelMatrices := tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) := createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
@@ -5886,21 +5958,33 @@ protected
   list<SimCode.SpatialDistribution> spatial_lst;
   Mutable<Integer> maxIndex_ptr = Mutable.create(-1);
 algorithm
-  (_,spatial_lst) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), {}));
+  // Traverse top-down so we can keep track of the guard condition of the
+  // enclosing if-branch a spatialDistribution() operator sits in. The
+  // storeSpatialDistribution() callback must be guarded by the same condition
+  (_, (_, spatial_lst)) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsTopDownHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (NONE(), {})));
   spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(spatial_lst, Mutable.access(maxIndex_ptr));
 end extractSpatialDistributionInfo;
 
 function extractSpatialDistributionInfoExp
+  "Top-down expression traversal that collects every spatialDistribution() call
+   together with the guard condition of the enclosing if-branch it sits in.
+   The condition is carried in the traversal argument and conjoined per branch
+   (then = cond, else = not cond) so the generated storeSpatialDistribution
+   callback can be guarded by the same event as the operator's evaluation."
   input output DAE.Exp callExp;
-  input output list<SimCode.SpatialDistribution> spatialInfo;
+  output Boolean cont "Continue descending flag for Expression.traverseExpTopDown";
+  input output tuple<Option<DAE.Exp>, list<SimCode.SpatialDistribution>> tpl "current guard condition and collected operators";
   input Mutable<Integer> maxIndex_ptr;
 algorithm
-  spatialInfo := match callExp
+  (cont, tpl) := match callExp
     local
       Integer i, initSize;
-      DAE.Exp in0, in1, pos, dir, initPnts, initVals;
+      DAE.Exp in0, in1, pos, dir, initPnts, initVals, cond, tb, fb;
+      Option<DAE.Exp> curCond;
+      list<SimCode.SpatialDistribution> spatialInfo;
     case DAE.CALL(path = Absyn.IDENT("spatialDistribution"), expLst={DAE.ICONST(i), in0, in1, pos, dir, initPnts, initVals})
       algorithm
+        (curCond, spatialInfo) := tpl;
         if i > Mutable.access(maxIndex_ptr) then
           Mutable.update(maxIndex_ptr, i);
         end if;
@@ -5908,10 +5992,35 @@ algorithm
           Error.addInternalError("function extractDelayedExpressions failed: initialPoints and initialValues of spatialDistribution are not of the same size.", sourceInfo());
         end if;
         initSize := Expression.sizeOf(Expression.typeof(initPnts));
-    then SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize) :: spatialInfo;
-    else spatialInfo;
+        spatialInfo := SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize, curCond) :: spatialInfo;
+    then (true, (curCond, spatialInfo));
+
+    // Descend into the branches ourselves so the accumulated guard condition
+    // can differ between the then- and else-branch. Return cont=false to keep
+    // the generic traversal from visiting the children a second time.
+    case DAE.IFEXP(cond, tb, fb)
+      algorithm
+        (curCond, spatialInfo) := tpl;
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(cond, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (curCond, spatialInfo));
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(tb, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (SOME(combineGuardCondition(curCond, cond)), spatialInfo));
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(fb, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (SOME(combineGuardCondition(curCond, Expression.negate(cond))), spatialInfo));
+    then (false, (curCond, spatialInfo));
+
+    else (true, tpl);
   end match;
 end extractSpatialDistributionInfoExp;
+
+function combineGuardCondition
+  "Conjoins an outer guard condition (if any) with a branch condition."
+  input Option<DAE.Exp> outerCond;
+  input DAE.Exp branchCond;
+  output DAE.Exp cond;
+algorithm
+  cond := match outerCond
+    case SOME(cond) then DAE.LBINARY(cond, DAE.AND(DAE.T_BOOL_DEFAULT), branchCond);
+    else branchCond;
+  end match;
+end combineGuardCondition;
 
 public function createExtObjInfo
   input BackendDAE.Shared shared;
@@ -8438,12 +8547,12 @@ algorithm
 
     case SimCode.IF_GENERIC_CALL() algorithm
       str := "if generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
-      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
+      str := str + List.toString(call.branches, simBranchString, List.Style.NEWLINE);
     then str;
 
     case SimCode.WHEN_GENERIC_CALL() algorithm
       str := "when generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
-      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
+      str := str + List.toString(call.branches, simBranchString, List.Style.NEWLINE);
     then str;
 
     else "";
@@ -8466,14 +8575,14 @@ algorithm
     case SimCode.SIM_BRANCH() algorithm
       b := isSome(branch.condition);
       str := if b then "if " + ExpressionBasics.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
-      str := str + List.toString(branch.body, simBranchBodyString, "  ", "  ", "\n", "");
+      str := str + List.toString(branch.body, simBranchBodyString, List.Style.NEWLINE_INDENT);
       str := if b then str + "end if;" else str;
     then str;
 
     case SimCode.SIM_BRANCH_STMT() algorithm
       b := isSome(branch.condition);
       str := if b then "if " + ExpressionBasics.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
-      str := str + List.toString(branch.body, DAEDump.ppStatementStr, "  ", "  ", "\n", "");
+      str := str + List.toString(branch.body, DAEDump.ppStatementStr, List.Style.NEWLINE_INDENT);
       str := if b then str + "\nend if;" else str;
     then str;
 
@@ -9175,14 +9284,14 @@ algorithm
     case SimCode.SES_GENERIC_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_GENERIC_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
-        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, "", "{", ", ", "}", true, 10) + "\n";
+        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
     then s;
 
     case SimCode.SES_ENTWINED_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_ENTWINED_ASSIGN)\n";
-        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, "", "{", ", ", "}", true, 10) + "\n";
-        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, "", "\t", "\n", "");
+        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, List.Style.NEWLINE_TAB);
         s := s + "\n";
     then s;
 
@@ -9470,7 +9579,7 @@ algorithm
   print("\nequationsForZeroCrossings:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
   print("\ngeneric calls:\n" + UNDERLINE + "\n");
-  print(List.toString(simCode.generic_loop_calls, simGenericCallString, "", "", "\n", ""));
+  print(List.toString(simCode.generic_loop_calls, simGenericCallString, List.Style.NEWLINE));
   print("\njacobianEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);
@@ -9755,20 +9864,77 @@ algorithm
           unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
         end try;
       end if;
+      // A variable may only name a display unit that is itself declared.
+      if not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, var.unit)
+         and not BaseHashSet.has(var.displayUnit, unitNameKeys) then
+        unitNameKeys := BaseHashSet.add(var.displayUnit, unitNameKeys);
+        unitDefinitions := displayUnitDefinition(var.unit, var.displayUnit) :: unitDefinitions;
+      end if;
     end if;
   end for;
 end getFmiUnitDefinitionsHelper;
 
+protected function displayUnitDefinition
+  "The display unit as a unit in its own right: the dimensions of the unit it
+   displays, and the factor and offset taking a value in it to SI."
+  input String unit;
+  input String displayUnit;
+  output SimCode.UnitDefinition definition;
+protected
+  Integer s, m, kg, A, K, mol, cd;
+  Real factor, offset, toUnit, toUnitOffset;
+  Boolean converts;
+algorithm
+  try
+    SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor, offset) :=
+      transformUnitToBaseUnit(Unit.parseUnitString(unit));
+    // Compose value_unit = toUnit*value_display + toUnitOffset with the unit's
+    // own value_SI = factor*value_unit + offset.
+    (converts, toUnit, toUnitOffset) := unitConversion(unit, displayUnit);
+    true := converts;
+    definition := SimCode.UNITDEFINITION(displayUnit,
+      SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*toUnit, factor*toUnitOffset + offset));
+  else
+    // No dimensions, so nothing nests it and no variable may name it.
+    definition := SimCode.UNITDEFINITION(displayUnit, SimCode.NOBASEUNIT());
+  end try;
+end displayUnitDefinition;
+
+public function unitConversion
+  "CevalScriptBackend's convertUnits: value_to = factor*value_from + offset, and
+   false where the two are of different dimensions."
+  input String to;
+  input String from;
+  output Boolean converts = false;
+  output Real factor = 1.0;
+  output Real offset = 0.0;
+protected
+  UnitAbsyn.Unit u1, u2;
+  Real factor1, factor2, offset1, offset2;
+algorithm
+  try
+    UnitParserExt.initSIUnits();
+    (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
+    (u2, factor2, offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(from, NONE());
+    true := valueEq(u1, u2);
+    factor := factor2/factor1;
+    offset := (offset2 - offset1)/factor1;
+    converts := true;
+  else
+  end try;
+end unitConversion;
+
 public function transformUnitToBaseUnit
-  "translate Unit.UNIT to SimCode.BASEUNIT"
+  "translate Unit.UNIT to SimCode.BASEUNIT. NFUnit counts mass in grams, so the
+   factor picks up 10^-3 per kg; the offset is already in SI."
   input Unit.Unit unit;
   output SimCode.BaseUnit baseUnit;
 protected
   Integer mol, cd, m, s, A, K, kg;
-  Real factor;
+  Real factor, offset;
 algorithm
-  Unit.UNIT(s, m, kg, A, K, mol, cd, factor) := unit;
-  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), 0.0);
+  Unit.UNIT(s, m, kg, A, K, mol, cd, factor, offset) := unit;
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), offset);
 end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
@@ -10334,21 +10500,21 @@ algorithm
 end startValueIsConstOrDefault;
 
 protected function updateStartValue
-  "function which updates Start value of an expression
-   depending on the initial = EXACT or APPROX and causality = INPUT "
+  "FMI requires a literal start value for a variable that is initial=exact or
+   approx, or an input; those get the type default when the model's start is
+   missing or is an expression. Every other variable keeps its start expression:
+   it is the same field the code generators read `$START.x` from, and the FMI
+   templates render only a literal anyway."
   input BackendDAE.Var var;
   input output Option<DAE.Exp> startValue;
   input SimCodeVar.Initial initial_;
   input SimCodeVar.Causality causality;
 algorithm
-  // update start value for FMI 2.0 and 3.0
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30())
+     and (isInitialExactOrApprox(initial_) or isCausalityInput(causality)) then
     startValue := match startValue
-      case SOME(_) guard isInitialExactOrApprox(initial_) then startValue;
-      case NONE() guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
-      case SOME(_) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
-      case NONE() guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
-      else startValueIsConstOrDefault(startValue, var.varType);
+      case SOME(_) then startValueIsConstOrDefault(startValue, var.varType);
+      else setDefaultStartValue(var.varType);
     end match;
   end if;
 end updateStartValue;
@@ -10441,32 +10607,13 @@ protected function getMinMaxValues "extract min/max values from BackendDAE.Varia
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
 algorithm
-  (outMinValue, outMaxValue) := matchcontinue inDAELowVar
-    local
-      Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Exp minValue, maxValue;
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (SOME(minValue), SOME(maxValue)) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(minValue);
-      // true = Expression.isConstValue(maxValue);
-    then (SOME(minValue), SOME(maxValue));
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (SOME(minValue), NONE()) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(minValue);
-    then (SOME(minValue), NONE());
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (NONE(), SOME(maxValue)) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(maxValue);
-    then (NONE(), SOME(maxValue));
-
+  // Real, Integer and enumeration variables can all carry min/max (see #15947).
+  (outMinValue, outMaxValue) := match inDAELowVar.varType
+    case DAE.T_REAL()        then DAEUtil.getMinMaxValues(inDAELowVar.values);
+    case DAE.T_INTEGER()     then DAEUtil.getMinMaxValues(inDAELowVar.values);
+    case DAE.T_ENUMERATION() then DAEUtil.getMinMaxValues(inDAELowVar.values);
     else (NONE(), NONE());
-  end matchcontinue;
+  end match;
 end getMinMaxValues;
 
 protected function getStartValue "Extract initial value from BackendDAE.Var, if it has any"
@@ -12117,6 +12264,21 @@ algorithm
   (oVarIndexList,_) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
 end getVarIndexListByMapping;
 
+public function getVarIndexHeadByMapping "author: phannebohm
+  Return the head of variable indices stored for the given variable in the mapping-table, similar to getVarIndexListByMapping. This function is used by susan."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  input Boolean iColumnMajor;
+  input String iIndexForUndefinedReferences;
+  output String oVarIndex;
+protected
+  list<String> varIndexList;
+algorithm
+  // TODO make this more efficient by not generating the whole varIndexList
+  (varIndexList,_) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
+  oVarIndex := listHead(varIndexList);
+end getVarIndexHeadByMapping;
+
 public function getVarIndexByMapping "author: marcusw
   Return the variable index stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
@@ -13642,7 +13804,7 @@ protected
   String pathToFile;
   String msg;
   String tmpName, tmpValue;
-  list<String> tmpSplitted;
+  list<String> tmpSplitted, tmpRest;
   list<tuple<String,String>> nameValueTuples = {} ;
 algorithm
   fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
@@ -13682,21 +13844,25 @@ algorithm
   // --fmiFlags=s:cvode,nls:homotopy
   else
     for flag in fmiFlagsList loop
-      // Check each flag
+      // A flag that takes no value is its name alone (`noRestart`); a value may
+      // itself contain a colon.
       tmpSplitted := Util.stringSplitAtChar(flag,":");
-      if not listLength(tmpSplitted) == 2 then
+      if listEmpty(tmpSplitted) then
         if printWarning then
-          msg := "Can't process flag \"" + flag + "\".\nSeperate flag name and flag value with \":\".\n";
+          msg := "Can't process flag \"" + flag + "\".\nIt names no simulation flag.\n";
           Error.addCompilerWarning(msg);
         end if;
-        fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
-        return;
+        continue;
       end if;
-      {tmpName, tmpValue} := tmpSplitted;
+      tmpName :: tmpRest := tmpSplitted;
+      tmpValue := stringDelimitList(tmpRest, ":");
 
       // Save value
       if stringEqual(tmpName, "s") then
-        if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
+        // euler/cvode is what C's FMI2CS_initializeSolverData accepts; another
+        // target links its own driver and validates against its own solver set.
+        if Config.simCodeTarget() == "C"
+           and not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
           if printWarning then
             msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
             Error.addCompilerWarning(msg);
@@ -13728,6 +13894,7 @@ public function createFMIModelStructure
   output SimCode.ModelInfo outModelInfo = inModelInfo;
   output list<SimCode.JacobianMatrix> symJacs = {};
   output Integer uniqueEqIndex = inUniqueEqIndex;
+  output AvlTreePathFunction.Tree outFmiDerInitFuncTree = AvlTreePathFunction.new() "functions the FMIDERINIT jacobian calls, may hold functions created by the differentiation";
 protected
    BackendDAE.SparsePatternCrefs spTA, spTA1;
    SimCode.SparsityPattern sparseInts;
@@ -13743,7 +13910,6 @@ protected
    Option<SimCode.JacobianMatrix> contPartSimDer, initPartSimDer = NONE();
    SimCodeVar.SimVars vars;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
-   list<Integer> intLst;
    BackendDAE.SymbolicJacobians fmiDerInit = {};
    list<SimCode.JacobianMatrix> symJacsInit={}, symJacFMIINIT={};
    list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {}, sortedknownCrefs = {};
@@ -13771,8 +13937,7 @@ algorithm
     allUnknowns := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
     // get derivatives pattern
-    intLst := list(getVariableFMIIndex(v) for v in inModelInfo.vars.derivativeVars);
-    derivatives := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
+    derivatives := fmiUnknownsOf(inModelInfo.vars.derivativeVars, allUnknowns);
 
     // get output pattern
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
@@ -13780,13 +13945,11 @@ algorithm
     varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar); // check for outputs in boolAlgVar
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
     allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
-    intLst := list(getVariableFMIIndex(v) for v in allOutputVars);
-    outputs := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
+    outputs := fmiUnknownsOf(allOutputVars, allUnknowns);
 
     // get discrete states pattern
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    intLst := list(getVariableFMIIndex(v) for v in clockedStates);
-    discreteStates := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
+    discreteStates := fmiUnknownsOf(clockedStates, allUnknowns);
 
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
@@ -13823,7 +13986,7 @@ algorithm
 
     // get FMI initialUnknowns list with dependencies
     if not listEmpty(tmpInitialUnknowns) then
-      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs, outFmiDerInitFuncTree) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
     else
       allInitialUnknowns := {};
     end if;
@@ -13855,7 +14018,8 @@ algorithm
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs)));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
+          fmi3ArrayGroups(inModelInfo)));
 else
   // create empty model structure
   try
@@ -13907,13 +14071,91 @@ else
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {})));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
+          fmi3ArrayGroups(inModelInfo)));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
   end try;
 end try;
 end createFMIModelStructure;
+
+protected function collectUsedFmiDerInitFunctions
+  "returns the functions of the given tree that the FMIDERINIT jacobian equations call"
+  input BackendDAE.SymbolicJacobians fmiDerInit;
+  input AvlTreePathFunction.Tree fmiDerInitFuncTree;
+  output AvlTreePathFunction.Tree usedFuncs = AvlTreePathFunction.new();
+protected
+  BackendDAE.BackendDAE jacDAE;
+algorithm
+  for jac in fmiDerInit loop
+    () := match jac
+      case (SOME((jacDAE, _, _, _, _, _)), _, _, _)
+        algorithm
+          usedFuncs := BackendDAEOptimize.removeUnusedFunctions(jacDAE.eqs, jacDAE.shared, {}, fmiDerInitFuncTree, usedFuncs);
+        then ();
+      else ();
+    end match;
+  end for;
+end collectUsedFmiDerInitFunctions;
+
+protected function addFmiDerInitFunctions
+  "The FMIDERINIT jacobian is created after the functions have been elaborated, and
+   differentiating it symbolically can call functions that nothing else in the model calls,
+   e.g. a partial derivative created on the fly or the function of a derivative annotation
+   that got removed by removeUnusedFunctions. Elaborate those and add them here, otherwise
+   the generated code calls functions that are never defined."
+  input Absyn.Program program;
+  input AvlTreePathFunction.Tree fmiDerInitFuncTree "functions the FMIDERINIT jacobian calls";
+  input AvlTreePathFunction.Tree elaboratedFuncTree "functions that are elaborated already";
+  input output SimCode.ModelInfo modelInfo;
+  input output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
+  output list<SimCodeFunction.RecordDeclaration> outRecordDecls = recordDecls;
+protected
+  list<DAE.Function> newFuncs;
+  list<DAE.Exp> lits;
+  list<SimCodeFunction.Function> simFuncs;
+  list<SimCodeFunction.RecordDeclaration> newRecordDecls;
+  list<String> knownRecordDecls;
+algorithm
+  // keep the ones that are not elaborated yet
+  newFuncs := list(func for func guard
+    isNone(AvlTreePathFunction.getOpt(elaboratedFuncTree, DAEUtil.functionName(func)))
+    in DAEUtil.getFunctionList(fmiDerInitFuncTree));
+
+  if listEmpty(newFuncs) then
+    return;
+  end if;
+
+  // same treatment the elaborated functions got in SimCodeUtilShared.createFunctions,
+  // continuing the literal count so the indices of the existing literals still hold
+  newFuncs := Inline.inlineCallsInFunctions(newFuncs, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
+  (newFuncs, literals) := DAEUtil.traverseDAEFunctions(newFuncs, SimCodeFunctionUtil.findLiteralsHelper, literals);
+  (_, _, lits) := literals;
+  (simFuncs, newRecordDecls) := SimCodeFunctionUtil.elaborateFunctions(program, newFuncs, {}, lits, {});
+
+  modelInfo.functions := listAppend(modelInfo.functions, simFuncs);
+
+  // add the record declarations that are not declared already, the new ones are sorted
+  // by their dependencies already and nothing declared before can depend on them
+  knownRecordDecls := list(recordDeclarationName(rd) for rd in recordDecls);
+  newRecordDecls := list(rd for rd guard
+    not listMember(recordDeclarationName(rd), knownRecordDecls) in newRecordDecls);
+  outRecordDecls := listAppend(recordDecls, newRecordDecls);
+end addFmiDerInitFunctions;
+
+protected function recordDeclarationName
+  "returns the name a record declaration is generated under"
+  input SimCodeFunction.RecordDeclaration recordDecl;
+  output String name;
+algorithm
+  name := match recordDecl
+    case SimCodeFunction.RECORD_DECL_FULL() then recordDecl.name;
+    case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() then recordDecl.ctor_name;
+    case SimCodeFunction.RECORD_DECL_DEF() then AbsynUtil.pathString(recordDecl.path);
+  end match;
+end recordDeclarationName;
 
 protected function isInitialApproxOrCalculatedSimVar
   "return true if the initial attribute is CALCULATED or APPROX else false"
@@ -14004,6 +14246,7 @@ protected function getFmiInitialUnknowns
   output BackendDAE.SymbolicJacobians fmiDerInit = {} "partial derivative of initDAE";
   output list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {} "sorted crefs of unknowns";
   output list<tuple<Integer, DAE.ComponentRef>> sortedknownCrefs = {} "sorted crefs of knowns";
+  output AvlTreePathFunction.Tree fmiDerInitFuncTree = AvlTreePathFunction.new() "functions the partial derivative of initDAE calls";
 protected
   list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs, crefs;
   DAE.ComponentRef cref;
@@ -14019,11 +14262,12 @@ protected
   BackendDAE.EqSystems eqs;
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
-  String strMatchingAlgorithm, strIndexReductionMethod;
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
-  array<Integer> match1,match2;
+  BackendDAE.StrongComponents comps;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> match1,match2,mapIncRowEqn;
   Boolean debug = false;
-  UnorderedSet<DAE.ComponentRef> initialUnknowns;
+  UnorderedSet<DAE.ComponentRef> initialUnknowns, indepCrefSet;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
   initialUnknowns := UnorderedSet.fromList(initialUnknownCrefs,
@@ -14062,18 +14306,21 @@ algorithm
     end if;
   end for;
 
-  // Calculate adjacencyMatrix, with the newly added equations and vars
-  (outAdjacencyMatrix, _, _, _) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
+  // Calculate adjacencyMatrix, with the newly added equations and vars. The
+  // function tree is what the BLT sorting below passes, so one matrix serves both.
+  (currentSystem, outAdjacencyMatrix, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(
+    currentSystem, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   // Perform the match on the adjacencyMatrix
   (match1, match2) := Matching.PerfectMatching(outAdjacencyMatrix);
-  currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
-  // update the DAE with the new matching information
-  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
+  comps := BackendDAEUtil.getStrongComponents(currentSystem);
+  currentSystem.matching := BackendDAE.MATCHING(match1, match2, comps);
 
-  // run the matching algorithm on the newly created DAE
-  strMatchingAlgorithm := BackendDAEUtil.getMatchingAlgorithmString();
-  strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
-  tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
+  // All causalizeDAE would still do on a matched system is sort it into BLT form,
+  // rebuilding the adjacency matrix to get there.
+  if listEmpty(comps) then
+    (currentSystem, _) := BackendDAETransform.strongComponentsScalar(currentSystem, shared, mapEqnIncRow, mapIncRowEqn);
+  end if;
+  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
 
   if debug then
     BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");
@@ -14097,26 +14344,27 @@ algorithm
   //tmpBDAE1 := BackendDAEUtil.copyBackendDAE(tmpBDAE);
 
   // Calculate the dependecies of initialUnknowns
-  (sparsePattern, sparseColoring) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
+  (sparsePattern, sparseColoring) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars, withColoring = not Flags.isSet(Flags.DIS_SYMJAC_FMI20));
   if debug then
     dumpFmiInitialUnknownsDependencies(sparsePattern, "FmiInitialUnknownDependency");
   end if;
 
   // collect all variables from sparsePattern
   (_, rowspt, (indepCrefs, depCrefs), _) := sparsePattern;
-  vars1 := getSimVars2Crefs(indepCrefs, crefSimVarHT);
-  vars2 := getSimVars2Crefs(depCrefs, crefSimVarHT);
+  vars1 := getSimVars2Crefs(simVarCrefs(indepCrefs, crefSimVarHT), crefSimVarHT);
+  vars2 := getSimVars2Crefs(simVarCrefs(depCrefs, crefSimVarHT), crefSimVarHT);
 
   vars2 := listAppend(vars1, vars2);
 
   // collect the dependency list from sparse pattern
   indepCrefs := {};
   depCrefs := {};
+  indepCrefSet := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
   for i in rowspt loop
     (cref, crefs) := i;
     depCrefs := cref :: depCrefs;
     for cr in crefs loop
-      if not listMember(cr, indepCrefs) then
+      if UnorderedSet.add(cr, indepCrefSet) then
         indepCrefs := cr :: indepCrefs;
       end if;
     end for;
@@ -14133,7 +14381,10 @@ algorithm
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
     end if;
-    fmiDerInit := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    (fmiDerInit, fmiDerInitFuncTree) := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    // the jacobian can call functions that nothing else calls, keep track of them so that
+    // they can be elaborated later on, the tree of initDAE itself is not filtered at all
+    fmiDerInitFuncTree := collectUsedFmiDerInitFunctions(fmiDerInit, fmiDerInitFuncTree);
 
     // sort the cref according to FMIINDEX, to be used by fmi2GetDirectionalDerivative()
     sortedknownCrefs := sortInitialUnknowsSimVars(getSimVars2Crefs(indepCrefs, crefSimVarHT));
@@ -14141,10 +14392,58 @@ algorithm
   end if;
 
   // sort the vars with FMI Index
-  sparseInts := sortSparsePattern(vars2, rowspt, true);
+  sparseInts := sortSparsePattern(vars2, expandSparsePatternCrefs(rowspt, crefSimVarHT), true);
   // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
+
+protected function simVarCrefs
+  "The SimVar names of backend variables: a whole array or record the SimVars
+   are scalarized to becomes its elements."
+  input list<DAE.ComponentRef> crefs;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  output list<DAE.ComponentRef> outCrefs = {};
+protected
+  SimCodeVar.SimVar sv;
+  Boolean aggregate;
+algorithm
+  for cr in crefs loop
+    aggregate := match ComponentReference.crefLastType(cr)
+      case DAE.T_ARRAY() then true;
+      case DAE.T_COMPLEX() then true;
+      else false;
+    end match;
+    try
+      // the table maps a whole-array cref to its first element's SimVar
+      true := aggregate;
+      sv := BaseHashTable.get(cr, crefSimVarHT);
+      outCrefs := if ComponentReferenceBasics.crefEqual(sv.name, cr) then cr :: outCrefs
+                  else List.append_reverse(ComponentReference.expandCref(cr, true), outCrefs);
+    else
+      outCrefs := cr :: outCrefs;
+    end try;
+  end for;
+  outCrefs := listReverse(outCrefs);
+end simVarCrefs;
+
+protected function expandSparsePatternCrefs
+  "The rows in SimVar names: one row per element of an array unknown."
+  input BackendDAE.SparsePatternCrefs rows;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  output BackendDAE.SparsePatternCrefs outRows = {};
+protected
+  DAE.ComponentRef cref;
+  list<DAE.ComponentRef> crefs, deps;
+algorithm
+  for row in rows loop
+    (cref, crefs) := row;
+    deps := simVarCrefs(crefs, crefSimVarHT);
+    for cr in simVarCrefs({cref}, crefSimVarHT) loop
+      outRows := (cr, deps) :: outRows;
+    end for;
+  end for;
+  outRows := listReverse(outRows);
+end expandSparsePatternCrefs;
 
 protected function getDependentAndIndepentVarsForJacobian
  "function which returns the rows and columns vars for jacobian matrix which will
@@ -14198,7 +14497,7 @@ protected
   Boolean isConst = false;
 algorithm
   for var in inVar loop
-    cref := BackendVariable.varCref(var);
+    cref := listHead(simVarCrefs({BackendVariable.varCref(var)}, crefSimVarHT));
     // get depVars, which is basically list of InitialUnknowns extracted according to FMI-2.0 specification from SimVar,
     if UnorderedSet.contains(cref, initialUnknowns) then
       outdepVars := var::outdepVars;
@@ -14302,18 +14601,19 @@ algorithm
   end match;
 end isOutputSimVar;
 
-protected function isFmiUnknown
-  input Integer index;
-  input SimCode.FmiUnknown inFMIUnknown;
-  output Boolean out;
+protected function fmiUnknownsOf
+  "The unknowns that are one of the variables, in the unknowns' order."
+  input list<SimCodeVar.SimVar> vars;
+  input list<SimCode.FmiUnknown> unknowns;
+  output list<SimCode.FmiUnknown> selected;
+protected
+  UnorderedSet<Integer> indices = UnorderedSet.new(Util.id, intEq, Util.nextPrime(listLength(vars)));
 algorithm
-  out := match inFMIUnknown
-    local
-      Integer i;
-    case SimCode.FMIUNKNOWN(index=i) guard (intEq(i,index))  then true;
-    else false;
-  end match;
-end isFmiUnknown;
+  for v in vars loop
+    UnorderedSet.add(getVariableFMIIndex(v), indices);
+  end for;
+  selected := list(u for u guard UnorderedSet.contains(u.index, indices) in unknowns);
+end fmiUnknownsOf;
 
 protected function translateSparsePatterInts2FMIUnknown
 "function translates simVar integers to fmi unknowns."
@@ -14692,13 +14992,13 @@ public function getFMI3TypeOffset
   input SimCode.ModelInfo inModelInfo;
   output Integer outOffset;
 protected
-  SimCodeVar.SimVars vars = inModelInfo.vars;
-  // per-scalar counts so the offsets match the contiguous scalar realVars layout
-  // (an array variable occupies getNumElems scalar slots).
-  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
-  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
-  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
-  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
+  // Per-scalar counts from varInfo (O(1)). Re-counting the variable lists here on
+  // every call is O(n) and this runs once per variable, i.e. O(n^2) overall.
+  SimCode.VarInfo vi = inModelInfo.varInfo;
+  Integer numReal = 2*vi.numStateVars + vi.numAlgVars + vi.numDiscreteReal + vi.numParams + vi.numAlgAliasVars;
+  Integer numInteger = vi.numIntAlgVars + vi.numIntParams + vi.numIntAliasVars;
+  Integer numBoolean = vi.numBoolAlgVars + vi.numBoolParams + vi.numBoolAliasVars;
+  Integer numString = vi.numStringAlgVars + vi.numStringParamVars + vi.numStringAliasVars;
 algorithm
   outOffset := match inType
     local DAE.Type aty;
@@ -14715,6 +15015,20 @@ algorithm
     else 0;
   end match;
 end getFMI3TypeOffset;
+
+public function getFMI2ValueReferenceOffsets
+  "The offsets that turn an FMI 2.0 value reference, which is unique only per base
+   type, into the globally unique FMI 3.0 one, in the order Real, Integer, Boolean,
+   String. The wasm FMU export ships them with the FMU so its loader can serve the
+   FMI 2.0 API from a component that speaks FMI 3.0."
+  input SimCode.ModelInfo modelInfo;
+  output list<Integer> offsets;
+algorithm
+  offsets := {getFMI3TypeOffset(DAE.T_REAL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_INTEGER_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_BOOL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_STRING_DEFAULT, modelInfo)};
+end getFMI2ValueReferenceOffsets;
 
 public function getFMI3ValueReference
   "Returns the globally unique value reference of a variable for the FMI 3.0
@@ -14736,6 +15050,101 @@ algorithm
   outValueReference := String(offset + localRef);
 end getFMI3ValueReference;
 
+protected function fmi3ModelVariableLists
+  "The variable lists in the order the FMI indices were handed out."
+  input SimCodeVar.SimVars vars;
+  output list<list<SimCodeVar.SimVar>> allLists;
+algorithm
+  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
+               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
+               vars.inputVars, vars.outputVars,
+               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
+               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+end fmi3ModelVariableLists;
+
+public function cacheFMI3ValueReferences
+  "Build the FMI index -> value reference table the <ModelStructure> emitter reads,
+   and keep it for as long as one is being written (see clearFMI3ValueReferences).
+
+   Without it every unknown and every one of its dependencies searches all
+   seventeen variable lists for its index, which on a model with thousands of
+   variables is most of what exporting an FMI 3.0 FMU costs: FullRobot spent 15 of
+   its 33 export seconds in that search."
+  input SimCode.SimCode simCode;
+  // Susan calls this for its effect; the empty string is what it interpolates.
+  output String dummy = "";
+protected
+  list<list<SimCodeVar.SimVar>> allLists = fmi3ModelVariableLists(simCode.modelInfo.vars);
+  array<String> table;
+  Integer n = 0, i;
+algorithm
+  for lst in allLists loop
+    for v in lst loop
+      n := intMax(n, getVariableFMIIndex(v));
+    end for;
+  end for;
+  // Index 0 is no variable's, so an unmapped entry keeps its own number as the
+  // uncached lookup did.
+  table := arrayCreate(n, "");
+  for lst in allLists loop
+    for v in lst loop
+      i := getVariableFMIIndex(v);
+      if i > 0 and i <= n and stringEmpty(arrayGet(table, i)) then
+        arrayUpdate(table, i, getFMI3ValueReference(v, simCode));
+      end if;
+    end for;
+  end for;
+  setGlobalRoot(Global.fmi3ValueReferenceCache, SOME(table));
+end cacheFMI3ValueReferences;
+
+public function clearFMI3ValueReferences
+  "Drop what cacheFMI3ValueReferences built, so the next model builds its own."
+  output String dummy = "";
+algorithm
+  setGlobalRoot(Global.fmi3ValueReferenceCache, NONE());
+end clearFMI3ValueReferences;
+
+public function fmi3UnknownDependencyAttributes
+  "The dependencies and dependenciesKind attributes of a <ModelStructure> entry,
+   the dependencies mapped from FMI indices to value references."
+  input SimCode.SimCode simCode;
+  input SimCode.FmiUnknown unknown;
+  output String attributes = "";
+protected
+  Option<array<String>> cache = getGlobalRoot(Global.fmi3ValueReferenceCache);
+  list<String> vrs = {};
+algorithm
+  if not listEmpty(unknown.dependencies) then
+    for d in unknown.dependencies loop
+      vrs := match cache
+        local array<String> table;
+        case SOME(table) guard d > 0 and d <= arrayLength(table) and not stringEmpty(arrayGet(table, d))
+          then arrayGet(table, d) :: vrs;
+        else getFMI3ValueReferenceFromFMIIndex(simCode, d) :: vrs;
+      end match;
+    end for;
+    attributes := " dependencies=\"" + stringDelimitList(listReverse(vrs), " ") + "\"";
+  end if;
+  if not listEmpty(unknown.dependenciesKind) then
+    attributes := attributes + " dependenciesKind=\"" + stringDelimitList(unknown.dependenciesKind, " ") + "\"";
+  end if;
+end fmi3UnknownDependencyAttributes;
+
+public function fmiDependenciesString
+  "Space separated, as the FMI 2.0 ModelStructure dependencies attribute."
+  input list<Integer> dependencies;
+  output String str;
+algorithm
+  str := stringDelimitList(list(intString(d) for d in dependencies), " ");
+end fmiDependenciesString;
+
+public function fmiDependenciesKindString
+  input list<String> kinds;
+  output String str;
+algorithm
+  str := stringDelimitList(kinds, " ");
+end fmiDependenciesKindString;
+
 public function getFMI3ValueReferenceFromFMIIndex
   "Maps an FMI variable index (the 1-based position in the ModelVariables list as
    stored in the FmiModelStructure unknowns/dependencies) to the globally unique
@@ -14749,17 +15158,20 @@ public function getFMI3ValueReferenceFromFMIIndex
   input Integer inFMIIndex;
   output String outValueReference;
 protected
-  SimCode.ModelInfo modelInfo = inSimCode.modelInfo;
-  SimCodeVar.SimVars vars = modelInfo.vars;
-  list<list<SimCodeVar.SimVar>> allLists;
+  SimCodeVar.SimVars vars = inSimCode.modelInfo.vars;
+  Option<array<String>> cache;
+  array<String> table;
   Option<SimCodeVar.SimVar> found = NONE();
 algorithm
-  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
-               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
-               vars.inputVars, vars.outputVars,
-               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
-               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
-  for lst in allLists loop
+  cache := getGlobalRoot(Global.fmi3ValueReferenceCache);
+  if isSome(cache) then
+    SOME(table) := cache;
+    if inFMIIndex > 0 and inFMIIndex <= arrayLength(table) and not stringEmpty(arrayGet(table, inFMIIndex)) then
+      outValueReference := arrayGet(table, inFMIIndex);
+      return;
+    end if;
+  end if;
+  for lst in fmi3ModelVariableLists(vars) loop
     for v in lst loop
       if intEq(getVariableFMIIndex(v), inFMIIndex) then
         found := SOME(v);
@@ -14780,25 +15192,123 @@ end getFMI3ValueReferenceFromFMIIndex;
 public function getFMI3TimeValueReference
   "Returns a value reference for the independent variable (time) that does not
    collide with any model variable. It is the first free value reference past the
-   real/integer/boolean/string blocks. The same value is emitted as a #define
-   (FMI3_TIME_VR) into the generated FMI 3.0 model code.
+   real/integer/boolean/string/binary/clock blocks. The same value is emitted as a
+   #define (FMI3_TIME_VR) into the generated FMI 3.0 model code.
    author: adrpo"
   input SimCode.SimCode inSimCode;
   output String outValueReference;
-protected
-  SimCodeVar.SimVars vars = inSimCode.modelInfo.vars;
-  // per-scalar counts (an array variable occupies getNumElems scalar slots), so
-  // that time comes after the real/integer/boolean/string scalar blocks.
-  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
-  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
-  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
-  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
-  // external objects (FMI 3.0 Binary) and clocks occupy their own blocks before time
-  Integer numExtObj = numScalarElems(vars.extObjVars);
-  Integer numClock = listLength(inSimCode.clockedPartitions);
 algorithm
-  outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj + numClock);
+  outValueReference := String(getFMI3ClockVROffset(inSimCode.modelInfo) + listLength(inSimCode.clockedPartitions));
 end getFMI3TimeValueReference;
+
+public function exportDaeAlgebraicStates
+  "fmi-ls-dae: the algebraic states are unknowns the importer sets, so they are in
+   the model description whatever --fmiFilter hides, as the states are."
+  input output SimCode.ModelInfo modelInfo;
+  input list<SimCodeVar.SimVar> algebraicStateVars;
+protected
+  HashSet.HashSet crefs = HashSet.emptyHashSet();
+  SimCodeVar.SimVars vars;
+algorithm
+  for v in algebraicStateVars loop
+    crefs := BaseHashSet.add(v.name, crefs);
+  end for;
+  vars := modelInfo.vars;
+  vars.algVars := list(exportIfAlgebraicState(v, crefs) for v in vars.algVars);
+  modelInfo.vars := vars;
+end exportDaeAlgebraicStates;
+
+protected function exportIfAlgebraicState
+  input output SimCodeVar.SimVar v;
+  input HashSet.HashSet crefs;
+algorithm
+  if isNone(v.exportVar) and BaseHashSet.has(v.name, crefs) then
+    v.exportVar := SOME(if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX
+                        then ComponentReference.getConcealedCref() else v.name);
+  end if;
+end exportIfAlgebraicState;
+
+public constant String FMI_LS_DAE_VERSION = "1.0.0-alpha.1";
+public constant String FMI_LS_DAE_DRAFT_DATE = "2026-09-02";
+public constant String FMI_LS_DAE_DRAFT_COMMIT = "78313f4";
+
+public function fmiLsDaeVersion
+  "The version of fmi-ls-dae the manifest declares. FMI_LS_DAE_DRAFT_DATE and
+   FMI_LS_DAE_DRAFT_COMMIT name the revision of github.com/modelica/fmi-ls-dae
+   the export was written against, which the export reports since the layered
+   standard is still a draft."
+  output String version = FMI_LS_DAE_VERSION;
+end fmiLsDaeVersion;
+
+public function getFMI3DaeModeValueReference
+  "fmi-ls-dae: the value reference of the structural parameter that switches a
+   --daeMode FMU into DAE mode, the first one past the event indicators. The
+   residuals follow it (fmi3DaeResiduals); the wasm emitter
+   (CodegenWasmJit.build_fmi_vrs) assigns the same numbers."
+  input SimCode.SimCode simCode;
+  output String vr;
+algorithm
+  vr := String(stringInt(getFMI3TimeValueReference(simCode)) + simCode.modelInfo.varInfo.numZeroCrossings + 1);
+end getFMI3DaeModeValueReference;
+
+public function fmi3DaeResiduals
+  "fmi-ls-dae: the residuals of a --daeMode model as (valueReference, dependency
+   attributes): the value references follow the DAE-mode switch's, and the
+   dependencies and dependenciesKind attributes of each <Residual> are read
+   off the rows of the DAE-mode Jacobian's transposed sparsity. A state column
+   stands for the state and its derivative both, since DAE-mode differentiation
+   folds der(x) into x ($cj * x.Seed); the other columns are the algebraic
+   variables. No attributes without a pattern, which the standard reads as a
+   dependency on every known."
+  input SimCode.SimCode simCode;
+  output list<tuple<String, String>> residuals = {};
+protected
+  SimCode.DaeModeData dmd;
+  Option<list<list<Integer>>> rows;
+  list<list<Integer>> rest;
+  list<Integer> cols;
+  array<String> stateVRs, algebraicVRs;
+  Integer numStates, daeModeVR;
+  String vr, attributes;
+  list<String> acc;
+algorithm
+  SOME(dmd) := simCode.daeModeData;
+  daeModeVR := stringInt(getFMI3DaeModeValueReference(simCode));
+  rows := match dmd.sparsityPattern
+    local SimCode.JacobianMatrix jm;
+    case SOME(jm) then SOME(list(Util.tuple22(e) for e in jm.sparsityT));
+    else NONE();
+  end match;
+  numStates := numScalarElems(simCode.modelInfo.vars.stateVars);
+  stateVRs := listArray(list(getFMI3ValueReference(v, simCode) for v in simCode.modelInfo.vars.stateVars));
+  algebraicVRs := listArray(list(getFMI3ValueReference(v, simCode) for v in dmd.algebraicVars));
+  for var in dmd.residualVars loop
+    attributes := "";
+    if isSome(rows) then
+      SOME(rest) := rows;
+      if listEmpty(rest) then
+        cols := {};
+      else
+        cols := listHead(rest);
+        rows := SOME(listRest(rest));
+      end if;
+      acc := {};
+      for c in cols loop
+        if c < numStates then
+          vr := arrayGet(stateVRs, c + 1);
+          acc := String(stringInt(vr) + numStates) :: vr :: acc;
+        else
+          acc := arrayGet(algebraicVRs, c - numStates + 1) :: acc;
+        end if;
+      end for;
+      acc := listReverse(acc);
+      attributes := " dependencies=\"" + stringDelimitList(acc, " ") + "\" dependenciesKind=\""
+        + stringDelimitList(list("dependent" for s in acc), " ") + "\"";
+    end if;
+    residuals := (String(daeModeVR + 1 + var.index), attributes) :: residuals;
+  end for;
+  residuals := listReverse(residuals);
+end fmi3DaeResiduals;
 
 public function getLocalValueReference
  "returns the local value reference of current OMSIFuncton of a variable for
@@ -15173,10 +15683,48 @@ protected
 algorithm
   ocode := getGlobalRoot(Global.optionSimCode);
   code := match ocode
-    case SOME(code) then code;
+    local SimCode.SimCode c;
+    case SOME(c) then c;
     else algorithm Error.addInternalError("Tried to generate code that requires the SimCode structure, but this is not set (function context?)", sourceInfo()); then fail();
   end match;
 end getSimCode;
+
+public function isContiguousArrayCref
+  "Whether the scalarized elements of an array cref occupy consecutive slots of
+   one variable array, so the C target may address them through the first one."
+  input DAE.ComponentRef inCref;
+  output Boolean outContiguous = true;
+protected
+  SimCode.SimCode simCode = getSimCode();
+  SimCodeVar.SimVar v;
+  Integer next = -1;
+  Boolean param, firstParam = false;
+algorithm
+  if not simCode.scalarized then
+    return;
+  end if;
+  for cr in ComponentReference.expandCref(inCref, true) loop
+    v := cref2simvar(cr, simCode);
+    // A cref the SimCode does not know is addressed through some other value
+    // array (a Jacobian's own), where the elements are consecutive again.
+    if v.index < 0 then
+      return;
+    end if;
+    // Parameters live in their own value array (`varArrayName`).
+    param := match v.varKind case BackendDAE.PARAM() then true; else false; end match;
+    if next == -1 then
+      firstParam := param;
+    end if;
+    outContiguous := match v.aliasvar
+      case SimCodeVar.NOALIAS() then param == firstParam and (next == -1 or v.index == next);
+      else false;
+    end match;
+    if not outContiguous then
+      return;
+    end if;
+    next := v.index + 1;
+  end for;
+end isContiguousArrayCref;
 
 public function cref2simvar
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
@@ -15198,6 +15746,15 @@ algorithm
     outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end try;
 end cref2simvar;
+
+public function simVarExactFromHT
+"Used by templates to find the SIMVAR that is stored for exactly this cref (no array offset lookup)."
+  input DAE.ComponentRef inCref;
+  input HashTableCrefSimVar.HashTable crefToSimVarHT;
+  output Option<SimCodeVar.SimVar> outSimVar;
+algorithm
+  outSimVar := if BaseHashTable.hasKey(inCref, crefToSimVarHT) then SOME(BaseHashTable.get(inCref, crefToSimVarHT)) else NONE();
+end simVarExactFromHT;
 
 public function simVarFromHT
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
@@ -15312,17 +15869,17 @@ public function codegenExpSanityCheck "Handle some things that Susan cannot hand
 "
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
-protected
-  list<SimCodeVar.SimVar> vars;
-  SimCode.SimCode simCode;
-  Integer index;
-  list<DAE.ComponentRef> crf_lst;
 algorithm
   if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
   end if;
 
   e := match e
+    local
+      list<SimCodeVar.SimVar> vars;
+      SimCode.SimCode simCode;
+      Integer index;
+      list<DAE.ComponentRef> crf_lst;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();
@@ -15389,21 +15946,41 @@ end filterScalarLiteralAssignments;
 
 public function sortSimpleAssignmentBasedOnLhs
   input output list<SimCode.SimEqSystem> eqs;
+protected
+  SimCode.SimCode simCode = getSimCode();
 algorithm
-  eqs := List.sort(eqs, function lhsGreaterThan(simCode=getSimCode()));
+  eqs := list(Util.tuple21(e) for e in List.sort(list((eq, lhsSortKey(eq, simCode)) for eq in eqs), keyedLhsGreaterThan));
 end sortSimpleAssignmentBasedOnLhs;
 
-protected function lhsGreaterThan
-  input SimCode.SimEqSystem eq1,eq2;
+protected function lhsSortKey
+  "Type, kind and index of a simple assignment's variable; none for other equations."
+  input SimCode.SimEqSystem eq;
   input SimCode.SimCode simCode;
+  output Option<tuple<Integer, Integer, Integer>> key;
+algorithm
+  key := match eq
+    local
+      SimCodeVar.SimVar v;
+    case SimCode.SES_SIMPLE_ASSIGN()
+      algorithm
+        v := cref2simvar(eq.cref, simCode);
+      then SOME((valueConstructor(v.type_), valueConstructor(v.varKind), v.index));
+    else NONE();
+  end match;
+end lhsSortKey;
+
+protected function keyedLhsGreaterThan
+  input tuple<SimCode.SimEqSystem, Option<tuple<Integer, Integer, Integer>>> e1, e2;
   output Boolean b;
 algorithm
-  b := match (eq1,eq2)
-    case (SimCode.SES_SIMPLE_ASSIGN(),SimCode.SES_SIMPLE_ASSIGN())
-      then simvarGraterThan(cref2simvar(eq1.cref, simCode), cref2simvar(eq2.cref, simCode));
+  b := match (e1, e2)
+    local
+      Integer t1, k1, i1, t2, k2, i2;
+    case ((_, SOME((t1, k1, i1))), (_, SOME((t2, k2, i2))))
+      then if t1 == t2 then (if k1 == k2 then i1 > i2 else k1 > k2) else t1 > t2;
     else false;
   end match;
-end lhsGreaterThan;
+end keyedLhsGreaterThan;
 
 protected function simvarGraterThan
   input SimCodeVar.SimVar v1,v2;
@@ -15468,6 +16045,18 @@ public function lookupVR
 algorithm
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
 end lookupVR;
+
+public function isFMUSimCode
+  "True when this SimCode was built for an FMU export, so `valueReferences` --
+   what lookupVR and the FMI alias tables index -- is filled."
+  input SimCode.SimCode simCode;
+  output Boolean isFMU;
+algorithm
+  isFMU := match simCode.valueReferences
+    case AvlTreeCRToInt.EMPTY() then false;
+    else true;
+  end match;
+end isFMUSimCode;
 
 public function lookupVRForRealOutputDerivative
   "function which maps output Real var ValueReference to an internal real variable ValueReference of
@@ -15563,8 +16152,349 @@ algorithm
     NONE(),
     NONE(),
     SimCode.FMIDISCRETESTATES({}),
-    SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {})));
+    SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
+    fmi3ArrayGroups(modelInfo)));
 end createMinimalFMIModelStructure;
+
+protected function fmi3ArrayGroups
+  "The arrays the FMI 3.0 modelDescription.xml lists as one variable each:
+   all elements exported, consecutive in row-major order and alike but for the
+   start value; a state array only together with its derivative array."
+  input SimCode.ModelInfo modelInfo;
+  output list<SimCode.FmiArray> arrays = {};
+protected
+  SimCodeVar.SimVars vars = modelInfo.vars;
+  UnorderedSet<DAE.ComponentRef> aliasTargets;
+  UnorderedMap<DAE.ComponentRef, SimCode.FmiArray> ders;
+  list<SimCode.FmiArray> stateArrays;
+algorithm
+  if not FMI.isFMIVersion30() or Config.simCodeTarget() == "Cpp" or Flags.getConfigBool(Flags.DAE_MODE) then
+    return;
+  end if;
+  aliasTargets := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for lst in {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars} loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        UnorderedSet.add(getAliasVarCref(v), aliasTargets);
+      end if;
+    end for;
+  end for;
+  stateArrays := fmi3ArraysOfList(vars.stateVars, aliasTargets);
+  ders := UnorderedMap.new<SimCode.FmiArray>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for a in fmi3ArraysOfList(vars.derivativeVars, aliasTargets) loop
+    UnorderedMap.add(a.first, a, ders);
+  end for;
+  for a in stateArrays loop
+    arrays := match UnorderedMap.get(ComponentReference.crefPrefixDer(a.first), ders)
+      local SimCode.FmiArray d;
+      case SOME(d) then d :: a :: arrays;
+      else arrays;
+    end match;
+  end for;
+  for lst in {vars.algVars, vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
+              vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars} loop
+    arrays := List.append_reverse(fmi3ArraysOfList(lst, aliasTargets), arrays);
+  end for;
+  arrays := listReverse(arrays);
+end fmi3ArrayGroups;
+
+protected function getAliasVarCref
+  input SimCodeVar.SimVar var;
+  output DAE.ComponentRef cref;
+algorithm
+  cref := match var.aliasvar
+    local DAE.ComponentRef cr;
+    case SimCodeVar.ALIAS(varName = cr) then cr;
+    case SimCodeVar.NEGATEDALIAS(varName = cr) then cr;
+    else var.name;
+  end match;
+end getAliasVarCref;
+
+protected function fmi3ArraysOfList
+  input list<SimCodeVar.SimVar> vars;
+  input UnorderedSet<DAE.ComponentRef> aliasTargets;
+  output list<SimCode.FmiArray> arrays = {};
+protected
+  list<SimCodeVar.SimVar> rest = vars;
+  SimCodeVar.SimVar v;
+  Integer n;
+algorithm
+  while not listEmpty(rest) loop
+    v :: rest := rest;
+    if isSome(v.arrayCref) and not listEmpty(v.numArrayElement) and not Types.isArray(v.type_) then
+      n := fmi3ArrayRun(v, rest, aliasTargets);
+      if n > 1 then
+        arrays := SimCode.FMIARRAY(v.name, getVariableFMIIndex(v), n) :: arrays;
+        rest := List.stripN(rest, n - 1);
+      end if;
+    end if;
+  end while;
+  arrays := listReverse(arrays);
+end fmi3ArraysOfList;
+
+protected function fmi3ArrayRun
+  "The size of first's array if the SimVars after it complete it, else 0."
+  input SimCodeVar.SimVar first;
+  input list<SimCodeVar.SimVar> rest;
+  input UnorderedSet<DAE.ComponentRef> aliasTargets;
+  output Integer n = 0;
+protected
+  list<Integer> dims = list(stringInt(d) for d in first.numArrayElement);
+  list<list<DAE.Subscript>> subs = fmi3ArraySubscripts(dims);
+  list<SimCodeVar.SimVar> vars = rest;
+  SimCodeVar.SimVar v;
+  DAE.ComponentRef prefix = ComponentReferenceBasics.crefStripLastSubs(first.name);
+  Integer fmiIndex = getVariableFMIIndex(first);
+algorithm
+  if listLength(subs) < 2 or fmiIndex <= 0
+     or not ExpressionBasics.subscriptEqual(ComponentReference.crefLastSubs(first.name), listHead(subs))
+     or not fmi3ArrayElementOk(first, first, aliasTargets, fmiIndex) then
+    return;
+  end if;
+  for sub in listRest(subs) loop
+    if listEmpty(vars) then
+      return;
+    end if;
+    v :: vars := vars;
+    fmiIndex := fmiIndex + 1;
+    if isSome(v.arrayCref)
+       or not ComponentReferenceBasics.crefEqual(ComponentReferenceBasics.crefStripLastSubs(v.name), prefix)
+       or not ExpressionBasics.subscriptEqual(ComponentReference.crefLastSubs(v.name), sub)
+       or not fmi3ArrayElementOk(first, v, aliasTargets, fmiIndex) then
+      return;
+    end if;
+  end for;
+  n := listLength(subs);
+end fmi3ArrayRun;
+
+protected function fmi3ArraySubscripts
+  "The subscripts of every element of an array with these dimensions, row major."
+  input list<Integer> dims;
+  output list<list<DAE.Subscript>> subs = {};
+protected
+  Integer d;
+  list<Integer> rest;
+  list<list<DAE.Subscript>> tails;
+algorithm
+  subs := match dims
+    case {} then {{}};
+    case d :: rest
+      algorithm
+        tails := fmi3ArraySubscripts(rest);
+        for i in 1:d loop
+          for tail in tails loop
+            subs := (DAE.INDEX(DAE.ICONST(i)) :: tail) :: subs;
+          end for;
+        end for;
+      then listReverse(subs);
+  end match;
+end fmi3ArraySubscripts;
+
+protected function fmi3ArrayElementOk
+  input SimCodeVar.SimVar first;
+  input SimCodeVar.SimVar v;
+  input UnorderedSet<DAE.ComponentRef> aliasTargets;
+  input Integer fmiIndex;
+  output Boolean ok;
+algorithm
+  ok := match (first.aliasvar, v.aliasvar)
+    case (SimCodeVar.NOALIAS(), SimCodeVar.NOALIAS()) then true;
+    else false;
+  end match;
+  ok := ok and isSome(v.exportVar) and getVariableFMIIndex(v) == fmiIndex
+    and not UnorderedSet.contains(v.name, aliasTargets)
+    and valueEq(first.type_, v.type_) and fmi3SameVarKind(first.varKind, v.varKind)
+    and first.comment == v.comment and first.unit == v.unit and first.displayUnit == v.displayUnit
+    and valueEq(first.minValue, v.minValue) and valueEq(first.maxValue, v.maxValue)
+    and valueEq(first.nominalValue, v.nominalValue)
+    and first.isFixed == v.isFixed and first.isDiscrete == v.isDiscrete
+    and valueEq(first.causality, v.causality) and valueEq(first.variability, v.variability)
+    and valueEq(first.initial_, v.initial_)
+    and first.isValueChangeable == v.isValueChangeable and first.isProtected == v.isProtected
+    and valueEq(first.hideResult, v.hideResult) and first.isEncrypted == v.isEncrypted
+    and first.relativeQuantity == v.relativeQuantity and first.isConnectorFlow == v.isConnectorFlow
+    and valueEq(first.numArrayElement, v.numArrayElement)
+    and isSome(first.initialValue) == isSome(v.initialValue)
+    and fmi3ScalarStartOk(v);
+end fmi3ArrayElementOk;
+
+protected function fmi3SameVarKind
+  input BackendDAE.VarKind k1;
+  input BackendDAE.VarKind k2;
+  output Boolean same;
+algorithm
+  same := match (k1, k2)
+    case (BackendDAE.STATE(), BackendDAE.STATE()) then true;
+    case (BackendDAE.STATE_DER(), BackendDAE.STATE_DER()) then true;
+    case (BackendDAE.CLOCKED_STATE(), BackendDAE.CLOCKED_STATE()) then true;
+    else valueEq(k1, k2);
+  end match;
+end fmi3SameVarKind;
+
+protected function fmi3ScalarStartOk
+  "Where ArrayStartString3 emits a start, it must be one literal per element."
+  input SimCodeVar.SimVar v;
+  output Boolean ok = true;
+protected
+  Boolean emitted;
+algorithm
+  emitted := match (v.varKind, v.initial_)
+    case (BackendDAE.STATE(), _) then true;
+    case (_, SOME(SimCodeVar.EXACT())) then true;
+    case (_, SOME(SimCodeVar.APPROX())) then true;
+    else isCausalityInputSimVar(v);
+  end match;
+  if emitted then
+    ok := match v.initialValue
+      local DAE.Exp e;
+      case SOME(e) then listLength(getFMIArrayStartValues(e)) == 1;
+      else true;
+    end match;
+  end if;
+end fmi3ScalarStartOk;
+
+public function fmi3ArrayView
+  "The SimCode the FMI 3.0 modelDescription.xml is rendered from: one SimVar
+   and one ModelStructure entry per array of modelStructure.fmiArrays."
+  input SimCode.SimCode simCode;
+  output SimCode.SimCode view = simCode;
+protected
+  SimCode.FmiModelStructure ms;
+  SimCode.ModelInfo mi;
+  SimCodeVar.SimVars vars;
+  SimCode.FmiInitialUnknowns iu;
+  UnorderedMap<DAE.ComponentRef, Integer> firsts;
+  UnorderedMap<Integer, Integer> rep;
+algorithm
+  if isNone(simCode.modelStructure) then
+    return;
+  end if;
+  SOME(ms) := simCode.modelStructure;
+  if listEmpty(ms.fmiArrays) then
+    return;
+  end if;
+  firsts := UnorderedMap.new<Integer>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  rep := UnorderedMap.new<Integer>(Util.id, intEq);
+  for a in ms.fmiArrays loop
+    UnorderedMap.add(a.first, a.numElements, firsts);
+    for k in 1:a.numElements - 1 loop
+      UnorderedMap.add(a.fmiIndex + k, a.fmiIndex, rep);
+    end for;
+  end for;
+  mi := simCode.modelInfo;
+  vars := mi.vars;
+  vars.stateVars := fmi3CollapseArrays(vars.stateVars, firsts);
+  vars.derivativeVars := fmi3CollapseArrays(vars.derivativeVars, firsts);
+  vars.algVars := fmi3CollapseArrays(vars.algVars, firsts);
+  vars.discreteAlgVars := fmi3CollapseArrays(vars.discreteAlgVars, firsts);
+  vars.paramVars := fmi3CollapseArrays(vars.paramVars, firsts);
+  vars.intAlgVars := fmi3CollapseArrays(vars.intAlgVars, firsts);
+  vars.intParamVars := fmi3CollapseArrays(vars.intParamVars, firsts);
+  vars.boolAlgVars := fmi3CollapseArrays(vars.boolAlgVars, firsts);
+  vars.boolParamVars := fmi3CollapseArrays(vars.boolParamVars, firsts);
+  vars.stringAlgVars := fmi3CollapseArrays(vars.stringAlgVars, firsts);
+  vars.stringParamVars := fmi3CollapseArrays(vars.stringParamVars, firsts);
+  mi.vars := vars;
+  view.modelInfo := mi;
+  ms.fmiOutputs := SimCode.FMIOUTPUTS(fmi3CollapseUnknowns(ms.fmiOutputs.fmiUnknownsList, rep));
+  ms.fmiDerivatives := SimCode.FMIDERIVATIVES(fmi3CollapseUnknowns(ms.fmiDerivatives.fmiUnknownsList, rep));
+  ms.fmiDiscreteStates := SimCode.FMIDISCRETESTATES(fmi3CollapseUnknowns(ms.fmiDiscreteStates.fmiUnknownsList, rep));
+  iu := ms.fmiInitialUnknowns;
+  iu.fmiUnknownsList := fmi3CollapseUnknowns(iu.fmiUnknownsList, rep);
+  ms.fmiInitialUnknowns := iu;
+  view.modelStructure := SOME(ms);
+end fmi3ArrayView;
+
+protected function fmi3CollapseArrays
+  input list<SimCodeVar.SimVar> vars;
+  input UnorderedMap<DAE.ComponentRef, Integer> firsts "first element -> number of elements";
+  output list<SimCodeVar.SimVar> outVars = {};
+protected
+  list<SimCodeVar.SimVar> rest = vars, elements;
+  SimCodeVar.SimVar v;
+  Integer n;
+algorithm
+  while not listEmpty(rest) loop
+    v :: rest := rest;
+    n := UnorderedMap.getOrDefault(v.name, firsts, 0);
+    if n > 1 then
+      (elements, rest) := List.split(rest, n - 1);
+      v := fmi3ArrayVar(v, elements);
+    end if;
+    outVars := v :: outVars;
+  end while;
+  outVars := listReverse(outVars);
+end fmi3CollapseArrays;
+
+protected function fmi3ArrayVar
+  "The array variable of first and the elements after it."
+  input SimCodeVar.SimVar first;
+  input list<SimCodeVar.SimVar> others;
+  output SimCodeVar.SimVar var = first;
+algorithm
+  var.type_ := DAE.T_ARRAY(first.type_, list(DAE.DIM_INTEGER(stringInt(d)) for d in first.numArrayElement));
+  var.exportVar := SOME(ComponentReferenceBasics.crefStripLastSubs(Util.getOption(first.exportVar)));
+  var.initialValue := match first.initialValue
+    case SOME(_) then SOME(DAE.ARRAY(var.type_, true, list(Util.getOption(v.initialValue) for v in first :: others)));
+    else NONE();
+  end match;
+end fmi3ArrayVar;
+
+protected function fmi3CollapseUnknowns
+  input list<SimCode.FmiUnknown> unknowns;
+  input UnorderedMap<Integer, Integer> rep "element FMI index -> the array's";
+  output list<SimCode.FmiUnknown> outUnknowns = {};
+protected
+  UnorderedMap<Integer, Integer> slot = UnorderedMap.new<Integer>(Util.id, intEq) "representative -> position in deps";
+  array<list<Integer>> deps = arrayCreate(listLength(unknowns), {});
+  list<Integer> order = {}, ds;
+  Integer r, i, n = 0;
+algorithm
+  for u in unknowns loop
+    r := UnorderedMap.getOrDefault(u.index, rep, u.index);
+    ds := list(UnorderedMap.getOrDefault(d, rep, d) for d in u.dependencies);
+    i := UnorderedMap.getOrDefault(r, slot, 0);
+    if i == 0 then
+      n := n + 1;
+      i := n;
+      UnorderedMap.add(r, i, slot);
+      order := r :: order;
+    end if;
+    arrayUpdate(deps, i, listAppend(ds, arrayGet(deps, i)));
+  end for;
+  for r in order loop
+    ds := List.sortedUnique(List.sort(arrayGet(deps, UnorderedMap.getOrFail(r, slot)), intGt), intEq);
+    outUnknowns := SimCode.FMIUNKNOWN(r, ds, List.fill("dependent", listLength(ds))) :: outUnknowns;
+  end for;
+end fmi3CollapseUnknowns;
+
+public function fmi3ArrayDefines
+  "The FMI 3.0 array variables as (value reference, number of elements) tables
+   for fmu3_model_interface.c, sorted by value reference."
+  input SimCode.SimCode simCode;
+  output String defines;
+protected
+  list<tuple<Integer, Integer>> arrays = {};
+  SimCode.HashTableCrefToSimVar ht;
+  SimCodeVar.SimVar v;
+algorithm
+  _ := match simCode.modelStructure
+    local SimCode.FmiModelStructure ms;
+    case SOME(ms) guard not listEmpty(ms.fmiArrays)
+      algorithm
+        ht := createCrefToSimVarHT(simCode.modelInfo);
+        for a in ms.fmiArrays loop
+          v := BaseHashTable.get(a.first, ht);
+          arrays := (stringInt(getFMI3ValueReference(v, simCode)), a.numElements) :: arrays;
+        end for;
+        arrays := List.sort(arrays, Util.compareTupleIntGt);
+      then ();
+    else ();
+  end match;
+  defines := "#define FMI3_NUMBER_OF_ARRAYS " + intString(listLength(arrays)) + "\n"
+    + "#define FMI3_ARRAY_VRS { " + stringDelimitList(list(intString(Util.tuple21(a)) for a in arrays), ", ") + " }\n"
+    + "#define FMI3_ARRAY_LENGTHS { " + stringDelimitList(list(intString(Util.tuple22(a)) for a in arrays), ", ") + " }";
+end fmi3ArrayDefines;
 
 public function isFMI3NestableAlias
   "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its
@@ -15591,28 +16521,119 @@ algorithm
   end match;
 end isFMI3NestableAlias;
 
-public function getFMI3VariableAliases
-  "Return the SimVars that are FMI 3.0 <Alias> members of the variable `canonical`:
-   the nestable (see isFMI3NestableAlias) positive aliases whose alias target is
-   `canonical`. FMI 3.0 represents these as <Alias> child elements sharing the
-   canonical variable's valueReference, rather than as separate variables."
+protected function fmi3AliasTargetValueReference
+  "The value reference the nestable alias `v` shares with its target, i.e. the
+   value reference of the canonical variable it is an <Alias> of. `None` when the
+   target is not a variable this FMU exports."
+  input SimCodeVar.SimVar v;
   input SimCode.SimCode simCode;
-  input DAE.ComponentRef canonical;
+  output Option<Integer> vr;
+algorithm
+  vr := match v.aliasvar
+    local
+      DAE.ComponentRef cr;
+      Integer local_;
+    case SimCodeVar.ALIAS(varName = cr)
+      then match AvlTreeCRToInt.getOpt(simCode.valueReferences, cr)
+        case SOME(local_) then SOME(getFMI3TypeOffset(v.type_, simCode.modelInfo) + local_);
+        else NONE();
+      end match;
+    else NONE();
+  end match;
+end fmi3AliasTargetValueReference;
+
+public function cacheFMI3VariableAliases
+  "Build the value reference -> <Alias> members table getFMI3VariableAliases reads,
+   and keep it for as long as one modelDescription.xml is being written (see
+   clearFMI3VariableAliases).
+
+   Without it every variable emitted searches every alias the model has for the
+   ones nested under it, which is quadratic and is what rendering an FMI 3.0
+   modelDescription.xml costs: 14 of FullRobot's 24 export seconds."
+  input SimCode.SimCode simCode;
+  // Susan calls this for its effect; the empty string is what it interpolates.
+  output String dummy = "";
+protected
+  SimCodeVar.SimVars vars = simCode.modelInfo.vars;
+  list<list<SimCodeVar.SimVar>> aliasLists =
+    {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+  array<list<SimCodeVar.SimVar>> table;
+  Integer n = 0, vr;
+algorithm
+  // Two passes: the table is indexed by value reference, whose range is only
+  // known once every alias has been resolved.
+  for lst in aliasLists loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        n := match fmi3AliasTargetValueReference(v, simCode) case SOME(vr) then intMax(n, vr + 1); else n; end match;
+      end if;
+    end for;
+  end for;
+  table := arrayCreate(n, {});
+  for lst in aliasLists loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        _ := match fmi3AliasTargetValueReference(v, simCode)
+          case SOME(vr)
+            algorithm arrayUpdate(table, vr + 1, v :: arrayGet(table, vr + 1)); then ();
+          else ();
+        end match;
+      end if;
+    end for;
+  end for;
+  for i in 1:n loop
+    arrayUpdate(table, i, listReverse(arrayGet(table, i)));
+  end for;
+  setGlobalRoot(Global.fmi3VariableAliasCache, SOME(table));
+end cacheFMI3VariableAliases;
+
+public function clearFMI3VariableAliases
+  "Drop what cacheFMI3VariableAliases built, so the next model builds its own."
+  output String dummy = "";
+algorithm
+  setGlobalRoot(Global.fmi3VariableAliasCache, NONE());
+end clearFMI3VariableAliases;
+
+public function getFMI3VariableAliases
+  "Return the SimVars that are FMI 3.0 <Alias> members of `canonical`: the nestable
+   (see isFMI3NestableAlias) positive aliases whose alias target is `canonical`.
+   FMI 3.0 represents these as <Alias> child elements sharing the canonical
+   variable's valueReference, rather than as separate variables."
+  input SimCode.SimCode simCode;
+  input SimCodeVar.SimVar canonical;
   output list<SimCodeVar.SimVar> aliases = {};
 protected
   SimCodeVar.SimVars vars = simCode.modelInfo.vars;
-  list<SimCodeVar.SimVar> all;
+  Option<array<list<SimCodeVar.SimVar>>> cached;
+  array<list<SimCodeVar.SimVar>> table;
+  Integer vr;
 algorithm
-  all := List.flatten({vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
-  for v in all loop
-    if isFMI3NestableAlias(v) then
-      _ := match v.aliasvar
-        local DAE.ComponentRef cr;
-        case SimCodeVar.ALIAS(varName = cr) guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical)
-          algorithm aliases := v :: aliases; then ();
-        else ();
-      end match;
+  cached := getGlobalRoot(Global.fmi3VariableAliasCache);
+  if isSome(cached) then
+    SOME(table) := cached;
+    vr := getFMI3TypeOffset(canonical.type_, simCode.modelInfo)
+          + (match AvlTreeCRToInt.getOpt(simCode.valueReferences, canonical.name)
+             local Integer local_;
+             case SOME(local_) then local_;
+             else -1;
+             end match);
+    if vr >= 0 and vr < arrayLength(table) then
+      aliases := arrayGet(table, vr + 1);
     end if;
+    return;
+  end if;
+  for lst in {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars} loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        _ := match v.aliasvar
+          local DAE.ComponentRef cr;
+          case SimCodeVar.ALIAS(varName = cr)
+            guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical.name)
+            algorithm aliases := v :: aliases; then ();
+          else ();
+        end match;
+      end if;
+    end for;
   end for;
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;
@@ -15759,6 +16780,422 @@ algorithm
     else NONE();
   end matchcontinue;
 end connectorMemberOf;
+
+public function getFMI3Figures
+  "The model's Documentation(figures=...) annotation, resolved against the exported
+   SimVars, for CodegenFMU3 to emit as the OpenModelica <Figures> vendor annotation.
+   Curves that do not reference an exported variable (and plots/figures thereby left
+   empty) are dropped; an empty result writes no annotation. C and wasm FMU export."
+  input SimCode.SimCode simCode;
+  output list<SimCode.FmiFigure> figures = {};
+protected
+  Absyn.Program program;
+  Absyn.Class cls;
+  Option<list<Absyn.Exp>> ofigs;
+  list<Absyn.Exp> figExps;
+  list<tuple<String, DAE.ComponentRef>> nameMap;
+  list<SimCode.FmiTerminal> terminals;
+  SimCode.FmiFigure fig;
+algorithm
+  program := SymbolTable.getAbsyn();
+  try
+    cls := ProgramUtil.getPathedClassInProgram(simCode.modelInfo.name, program);
+  else
+    return;
+  end try;
+  ofigs := AbsynUtil.getNamedAnnotationInClass(cls,
+    Absyn.QUALIFIED("Documentation", Absyn.IDENT("figures")), figureExpsFromMod);
+  figExps := match ofigs case SOME(figExps) then figExps; else {}; end match;
+  if listEmpty(figExps) then
+    return;
+  end if;
+  nameMap := buildFmiFigureNameMap(simCode);
+  terminals := getFMI3Terminals(simCode);
+  for e in figExps loop
+    fig := fmiFigureFromExp(e, nameMap, terminals);
+    if not listEmpty(fig.plots) then
+      figures := fig :: figures;
+    end if;
+  end for;
+  figures := listReverse(figures);
+end getFMI3Figures;
+
+public function getFMI3VisualizationResource
+  "The <name>_visual.xml resource -d=visxml exported, or \"\" if none. CodegenFMU3
+   emits it as the OpenModelica <Visualization> vendor annotation."
+  input SimCode.SimCode simCode;
+  output String resource = "";
+protected
+  String path;
+algorithm
+  if Flags.isSet(Flags.VISUAL_XML) then
+    path := simCode.fileNamePrefix + "_visual.xml";
+    if System.regularFileExists(path) then
+      resource := simCode.fileNamePrefix + "_visual.xml";
+    end if;
+  end if;
+end getFMI3VisualizationResource;
+
+protected function figureExpsFromMod
+  input Option<Absyn.Modification> mod;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match mod
+    local Absyn.Exp exp;
+    case SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp))) then figureExpElements(exp);
+    else {};
+  end match;
+end figureExpsFromMod;
+
+protected function figureExpElements
+  input Absyn.Exp exp;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match exp
+    case Absyn.ARRAY() then exp.arrayExp;
+    else {exp};
+  end match;
+end figureExpElements;
+
+protected function buildFmiFigureNameMap "name -> cref over every exported SimVar, to resolve curve references"
+  input SimCode.SimCode simCode;
+  output list<tuple<String, DAE.ComponentRef>> nameMap = {};
+protected
+  SimCodeVar.SimVars vars;
+  list<SimCodeVar.SimVar> allVars;
+algorithm
+  vars := simCode.modelInfo.vars;
+  allVars := List.flatten({vars.stateVars, vars.derivativeVars, vars.algVars,
+    vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
+    vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
+    vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
+  for v in allVars loop
+    nameMap := (ComponentReference.crefStr(v.name), v.name) :: nameMap;
+  end for;
+end buildFmiFigureNameMap;
+
+protected function fmiFigureFromExp
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output SimCode.FmiFigure figure;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<SimCode.FmiPlot> plots;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "group", "preferred", "plots", "caption"});
+  plots := fmiPlotsFromExp(figureArgExp(args, "plots"), nameMap, terminals);
+  figure := SimCode.FMI_FIGURE(
+    figureStrArg(args, "title"),
+    figureStrArg(args, "group"),
+    figureBoolFlag(args, "preferred"),
+    figureStrArg(args, "caption"),
+    plots);
+end fmiFigureFromExp;
+
+protected function fmiPlotsFromExp
+  input Option<Absyn.Exp> oexp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output list<SimCode.FmiPlot> plots = {};
+protected
+  list<Absyn.Exp> elems;
+  Option<SimCode.FmiPlot> op;
+algorithm
+  elems := match oexp local Absyn.Exp e; case SOME(e) then figureExpElements(e); else {}; end match;
+  for e in elems loop
+    op := fmiPlotFromExp(e, nameMap, terminals);
+    if isSome(op) then
+      plots := Util.getOption(op) :: plots;
+    end if;
+  end for;
+  plots := listReverse(plots);
+end fmiPlotsFromExp;
+
+protected function fmiPlotFromExp
+  "A resolved plot, or NONE() when no curve resolved to an exported variable."
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<SimCode.FmiPlot> oplot;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<SimCode.FmiCurve> curves;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "curves", "x", "y"});
+  curves := fmiCurvesFromExp(figureArgExp(args, "curves"), nameMap);
+  if listEmpty(curves) then
+    oplot := NONE();
+  else
+    oplot := SOME(SimCode.FMI_PLOT(
+      figureStrArg(args, "title"),
+      curves,
+      fmiAxisFromArg(figureArgExp(args, "x")),
+      fmiAxisFromArg(figureArgExp(args, "y")),
+      curvesCommonTerminal(curves, terminals)));
+  end if;
+end fmiPlotFromExp;
+
+protected function fmiCurvesFromExp
+  input Option<Absyn.Exp> oexp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output list<SimCode.FmiCurve> curves = {};
+protected
+  list<Absyn.Exp> elems;
+  Option<SimCode.FmiCurve> oc;
+algorithm
+  elems := match oexp local Absyn.Exp e; case SOME(e) then figureExpElements(e); else {}; end match;
+  for e in elems loop
+    oc := fmiCurveFromExp(e, nameMap);
+    if isSome(oc) then
+      curves := Util.getOption(oc) :: curves;
+    end if;
+  end for;
+  curves := listReverse(curves);
+end fmiCurvesFromExp;
+
+protected function fmiCurveFromExp
+  "A resolved curve, or NONE() when y (or a given non-time x) is not an exported
+   variable. Only plain variable references resolve, not derived expressions."
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output Option<SimCode.FmiCurve> ocurve = NONE();
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  Option<DAE.ComponentRef> yref, xVar;
+  DAE.ComponentRef yc;
+  Boolean dropX;
+algorithm
+  args := figureArgs(exp, {"x", "y", "legend"});
+  yref := match figureArgExp(args, "y") local Absyn.Exp e; case SOME(e) then resolveFigureRef(e, nameMap); else NONE(); end match;
+  if isNone(yref) then
+    return;
+  end if;
+  SOME(yc) := yref;
+  xVar := NONE();
+  dropX := false;
+  () := match figureArgExp(args, "x")
+    local Absyn.Exp xe;
+    case NONE() then ();
+    case SOME(xe) guard isFigureTime(xe) then ();
+    case SOME(xe)
+      algorithm
+        xVar := resolveFigureRef(xe, nameMap);
+        dropX := isNone(xVar);
+      then ();
+  end match;
+  if dropX then
+    return;
+  end if;
+  ocurve := SOME(SimCode.FMI_CURVE(xVar, yc, figureStrArg(args, "legend")));
+end fmiCurveFromExp;
+
+protected function fmiAxisFromArg
+  input Option<Absyn.Exp> oexp;
+  output SimCode.FmiFigureAxis axis;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := match oexp local Absyn.Exp e; case SOME(e) then figureArgs(e, {"min", "max", "unit", "label", "scale"}); else {}; end match;
+  axis := SimCode.FMI_FIGURE_AXIS(
+    figureStrArg(args, "label"),
+    figureStrArg(args, "unit"),
+    figureBoundArg(args, "min"),
+    figureBoundArg(args, "max"),
+    figureScaleIsLog(figureArgExp(args, "scale")));
+end fmiAxisFromArg;
+
+protected function resolveFigureRef "the exported cref a curve x/y names, or NONE() if not a plain exported-var reference"
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output Option<DAE.ComponentRef> ocref;
+algorithm
+  ocref := match exp
+    local Absyn.ComponentRef acr;
+    case Absyn.CREF(componentRef = acr) then lookupFigureName(nameMap, AbsynUtil.crefString(acr));
+    else NONE();
+  end match;
+end resolveFigureRef;
+
+protected function isFigureTime
+  input Absyn.Exp exp;
+  output Boolean isTime;
+algorithm
+  isTime := match exp
+    local Absyn.ComponentRef acr;
+    case Absyn.CREF(componentRef = acr) then stringEq(AbsynUtil.crefString(acr), "time");
+    else false;
+  end match;
+end isFigureTime;
+
+protected function lookupFigureName
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input String key;
+  output Option<DAE.ComponentRef> ocref = NONE();
+protected
+  String k;
+  DAE.ComponentRef c;
+algorithm
+  for e in nameMap loop
+    (k, c) := e;
+    if stringEq(k, key) then
+      ocref := SOME(c);
+      return;
+    end if;
+  end for;
+end lookupFigureName;
+
+protected function curvesCommonTerminal "the terminal shared by all curves y-vars, else NONE()"
+  input list<SimCode.FmiCurve> curves;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<String> terminal = NONE();
+protected
+  Option<String> t;
+  Boolean first = true;
+algorithm
+  for c in curves loop
+    t := crefTerminalName(c.yVariable, terminals);
+    if isNone(t) then
+      terminal := NONE();
+      return;
+    end if;
+    if first then
+      terminal := t;
+      first := false;
+    elseif not stringEq(Util.getOption(t), Util.getOption(terminal)) then
+      terminal := NONE();
+      return;
+    end if;
+  end for;
+  if first then
+    terminal := NONE();
+  end if;
+end curvesCommonTerminal;
+
+protected function crefTerminalName
+  input DAE.ComponentRef cref;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<String> name = NONE();
+protected
+  String key;
+algorithm
+  key := ComponentReference.crefStr(cref);
+  for t in terminals loop
+    for m in t.members loop
+      if stringEq(ComponentReference.crefStr(m.variable), key) then
+        name := SOME(t.name);
+        return;
+      end if;
+    end for;
+  end for;
+end crefTerminalName;
+
+protected function figureArgs
+  "Maps a record-constructor call's arguments to (fieldName, exp) pairs; positional
+   args by declared field order, named args by name."
+  input Absyn.Exp exp;
+  input list<String> fieldNames;
+  output list<tuple<String, Absyn.Exp>> args = {};
+protected
+  list<Absyn.Exp> pos;
+  list<Absyn.NamedArg> named;
+  list<String> names = fieldNames;
+  String name;
+algorithm
+  () := match exp
+    case Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = pos, argNames = named))
+      algorithm
+        for e in pos loop
+          name :: names := names;
+          args := (name, e) :: args;
+        end for;
+        for na in named loop
+          args := (na.argName, na.argValue) :: args;
+        end for;
+      then ();
+    else ();
+  end match;
+end figureArgs;
+
+protected function figureArgExp
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Absyn.Exp> oexp = NONE();
+protected
+  String n;
+  Absyn.Exp e;
+algorithm
+  for a in args loop
+    (n, e) := a;
+    if n == name then
+      oexp := SOME(e);
+      return;
+    end if;
+  end for;
+end figureArgExp;
+
+protected function figureStrArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output String value;
+algorithm
+  value := match figureArgExp(args, name)
+    local String s;
+    case SOME(Absyn.STRING(value = s)) then s;
+    else "";
+  end match;
+end figureStrArg;
+
+protected function figureBoolFlag
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Boolean value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Boolean b;
+    case SOME(Absyn.BOOL(value = b)) then b;
+    else false;
+  end match;
+end figureBoolFlag;
+
+protected function figureBoundArg
+  "An axis bound: NONE() when absent (auto), SOME when explicitly set."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Real> value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then SOME(figureExpReal(e));
+    else NONE();
+  end match;
+end figureBoundArg;
+
+protected function figureExpReal
+  input Absyn.Exp exp;
+  output Real value;
+algorithm
+  value := match exp
+    local Integer i; String s;
+    case Absyn.INTEGER(value = i) then intReal(i);
+    case Absyn.REAL(value = s) then stringReal(s);
+    case Absyn.UNARY(op = Absyn.UMINUS()) then -figureExpReal(exp.exp);
+    else 0.0;
+  end match;
+end figureExpReal;
+
+protected function figureScaleIsLog
+  "Whether an axis scale argument denotes the logarithmic scale (Scale.Log)."
+  input Option<Absyn.Exp> oexp;
+  output Boolean isLog;
+algorithm
+  isLog := match oexp
+    local Absyn.ComponentRef cr;
+    case SOME(Absyn.CALL(function_ = cr)) then stringEq(AbsynUtil.crefIdent(cr), "Log");
+    case SOME(Absyn.CREF(componentRef = cr)) then stringEq(AbsynUtil.crefIdent(cr), "Log");
+    else false;
+  end match;
+end figureScaleIsLog;
 
 protected function crefConnectorSplit
   "Split a cref at its outermost connector-typed qualifier: returns the connector
@@ -16053,7 +17490,8 @@ algorithm
 
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
         locations := stringDelimitList(locations_lst, ";");
-        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
+        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/"
+                               + ";" + Settings.getInstallationDirectoryPath() + "/lib/" + Config.targetTriple() + "/omc";
         str := "@echo off\n"
                 + "SET PATH=" + locations + ";%PATH%;\n"
                 + "SET ERRORLEVEL=\n"
@@ -16090,10 +17528,13 @@ function getDirectoriesForDLLsFromLinkLibs
   output list<String> outLibs = {};
 algorithm
   for str in libsAndLinkDirs loop
+    /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15714
+     * strip exactly the first 2 characters (e.g) -lexternalfuncl to externalfuncl and "-LC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
+    */
     if StringUtil.startsWith(str, "\"-L") then
-      outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
+      outLocations := listAppend({substring(str, 4, stringLength(str)-1)}, outLocations);
     elseif StringUtil.startsWith(str, "-l") then
-      outLibs := listAppend({System.trim(str, "-l")}, outLibs);
+      outLibs := listAppend({substring(str, 3, stringLength(str))}, outLibs);
     end if;
   end for;
   outLocations := listReverse(outLocations);
@@ -16117,7 +17558,8 @@ end getCmakeCrossPlatformSuffixes;
 public function getCmakeLinkLibrariesCode
   "Generate CMake code to find and link all input libraries."
   input list<String> libs;
-  output String cmakecode = "";
+  output String needModelicaExternalC = "OFF";
+  output String cmakeCode = "";
 protected
   list<String> locations;
   list<String> libraries;
@@ -16131,19 +17573,44 @@ algorithm
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
-  cmakecode := cmakecode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
+  cmakeCode := cmakeCode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
+  /* The directories above were resolved for the platform omc is running on. When
+   * cross compiling add the Resources/Library sub directories of the target platform.
+   */
+  cmakeCode := cmakeCode + "om_add_target_library_directories(EXTERNAL_LIBDIRECTORIES)\n";
   /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12640
    * in windows cmake does not find .dll suffixes using find_library(), the default is ".lib" & ".a" we need to explicitly
    * specify to look for ".dll" suffix
   */
-  cmakecode := cmakecode + getCmakeCrossPlatformSuffixes() + "\n";
+  cmakeCode := cmakeCode + getCmakeCrossPlatformSuffixes() + "\n";
   for lib in libraries loop
-    cmakecode := cmakecode + "find_library(" + lib + "\n" +
-                 "             NAMES " + lib + "\n" +
-                 "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
-                 "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                 "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
+    // Special handling for ModelicaExternalC, we always copy the sources into the FMU
+    if List.contains({"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}, lib, stringEqual) then
+      needModelicaExternalC := "ON";
+    // zlib is referred to from MSL Tables, but by default not used by ModelicaMatIO
+    elseif lib == "zlib" then
+      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
+                  "             NAMES " + lib + "\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "if(NOT " + lib + ")\n" +
+                  "  message(WARNING \"Could not find library zlib\")" + "\n" +
+                  "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
+                  "else()\n" +
+                  "  message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
+                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+                  "endif()\n";
+    else
+      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
+                  "             NAMES " + lib + "\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "if(NOT " + lib + ")\n" +
+                  "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
+                  "endif()\n" +
+                  "message(STATUS \"Linking ${" + lib + "}\")\n" +
+                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
+                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n";
+    end if;
   end for;
 end getCmakeLinkLibrariesCode;
 
@@ -16155,7 +17622,9 @@ public function getCmakeSundialsLinkCode
 algorithm
   if cvodeFmiFlagIsSet(fmiSimulationFlags) then
     needCvode := "ON";
-    cvodeDirectory := "\"" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+    // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
+    // see getCmakeLinkLibrariesCode. It is empty for a normal build.
+    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 
@@ -16194,14 +17663,22 @@ algorithm
   end match;
 end cvodeFmiFlagIsSet;
 
+public function stripIncludeFlag
+  "Directory of a makefileParams include entry, which is of the form \"-I<directory>\",
+   quotes included. Strips exactly the first 3 characters and the trailing quote, e.g.
+   \"-IC:/FmuWithStaticLibEndsWithI\" to C:/FmuWithStaticLibEndsWithI."
+  input String include;
+  output String directory = substring(include, 4, stringLength(include)-1);
+end stripIncludeFlag;
+
 public function make2CMakeInclude
   "Convert makefile include directories to CMake include directories"
   input list<String> includes;
-  output String cmakecode = "";
+  output String cmakeCode = "";
 algorithm
   for include in includes loop
-    cmakecode := cmakecode + "\n                                               " +
-                 "\"" + System.trim(include, "\"-I") + "\"";
+    cmakeCode := cmakeCode + "\n                                               " +
+                 "\"${DOCKER_VOL_DIR}" + stripIncludeFlag(include) + "\"";
   end for;
 end make2CMakeInclude;
 
@@ -16239,6 +17716,77 @@ algorithm
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
+
+protected function matrixFormatC
+  "The SOLVER_MATRIX_FORMAT for a system of this shape. An unknown count, which is
+   any pattern only built at runtime, counts as dense."
+  input Integer size;
+  input Option<Integer> nnz;
+  input Boolean isLinear;
+  output String format;
+protected
+  Integer entries = Util.getOptionOrDefault(nnz, size * size);
+algorithm
+  format := if BackendDAEUtil.useSparseSolver(size, entries, isLinear) then "OMC_MATRIX_SPARSE" else "OMC_MATRIX_DENSE";
+end matrixFormatC;
+
+public function linearSystemMatrixFormat
+  "Format for this linear system, counting nonzeros off the Jacobian's sparsity
+   where there is one, which is what the runtime used to measure itself."
+  input SimCode.LinearSystem ls;
+  output String format;
+protected
+  Option<Integer> nnz;
+algorithm
+  nnz := sparsityNonzeros(ls.jacobianMatrix);
+  if isNone(nnz) then
+    // No sparsity info at all -- fall back to the simJac entry count.
+    nnz := simJacNonzeros(ls.simJac);
+  end if;
+  format := matrixFormatC(listLength(ls.vars), nnz, true);
+end linearSystemMatrixFormat;
+
+public function nonlinearSystemMatrixFormat
+  "Format for this nonlinear system."
+  input SimCode.NonlinearSystem nls;
+  output String format;
+algorithm
+  format := match nls
+    case SimCode.NONLINEARSYSTEM()
+      then matrixFormatC(listLength(nls.crefs), sparsityNonzeros(nls.jacobianMatrix), false);
+  end match;
+end nonlinearSystemMatrixFormat;
+
+protected function simJacNonzeros
+  "Entries of A, which a torn system does not give elementwise."
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  output Option<Integer> nnz = if listEmpty(simJac) then NONE() else SOME(listLength(simJac));
+end simJacNonzeros;
+
+protected function sparsityNonzeros
+  "Entries of a Jacobian's sparsity pattern, unknown without one."
+  input Option<SimCode.JacobianMatrix> ojac;
+  output Option<Integer> nnz;
+protected
+  Integer entries = 0;
+algorithm
+  nnz := match ojac
+    local
+      SimCode.SparsityPattern sparsity;
+      list<SimCode.SparsityRow> rows;
+    case SOME(SimCode.JAC_MATRIX(sparsity = sparsity)) guard not listEmpty(sparsity) algorithm
+      for col in sparsity loop
+        entries := entries + listLength(Util.tuple22(col));
+      end for;
+    then SOME(entries);
+    case SOME(SimCode.JAC_MATRIX(sparsityMatrix = SimCode.Sparsity.SPARSITY(rows = rows))) algorithm
+      for row in rows loop
+        entries := entries + listLength(row.dependencies);
+      end for;
+    then SOME(entries);
+    else NONE();
+  end match;
+end sparsityNonzeros;
 
 public function getExpNominal
   "Returns the nominal value of an expression.

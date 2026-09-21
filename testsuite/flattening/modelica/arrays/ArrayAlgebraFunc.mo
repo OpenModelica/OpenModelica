@@ -1,6 +1,7 @@
 // name:     ArrayAlgebraFunc
 // keywords: <insert keywords here>
 // status:   correct
+// suite: disabled
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.7 Built-in Functions (p. 225)

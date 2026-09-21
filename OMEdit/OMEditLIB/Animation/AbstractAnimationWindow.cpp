@@ -37,23 +37,23 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include <QOpenGLContext> // must be included before OSG headers
-
-#include <osg/MatrixTransform>
-#include <osg/Vec3>
-#include <osgDB/ReadFile>
-
 #include "AbstractAnimationWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
-#include "ViewerWidget.h"
+#include "Quick3D/Quick3DViewerWidget.h"
 #include "Visualization.h"
 #include "VisualizationMAT.h"
 #include "VisualizationCSV.h"
 
 #include <QDockWidget>
+#include <QGridLayout>
+#include <QFrame>
+
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
 
 /*!
  * \class AbstractAnimationWindow
@@ -65,7 +65,6 @@
  */
 AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
   : QMainWindow(pParent),
-//    osgViewer::CompositeViewer(),
     mPathName(""),
     mFileName(""),
     mpVisualization(nullptr),
@@ -85,13 +84,12 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpPerspectiveDropDownBox(nullptr),
     mpRotateCameraLeftAction(nullptr),
     mpRotateCameraRightAction(nullptr),
-    mCameraInitialized(false),
     mSliderRange(1000)
 {
   // to distinguish this widget as a subwindow among the plotwindows
   setObjectName(QString("animationWindow"));
   //the viewer widget
-  mpViewerWidget = new ViewerWidget(this);
+  mpViewerWidget = new Quick3DViewerWidget(this);
   // we need to set the minimum height so that visualization window is still shown when we cascade windows.
   mpViewerWidget->setMinimumHeight(100);
   // toolbar icon size
@@ -115,7 +113,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
  * \brief AbstractAnimationWindow::openAnimationFile
  * \param fileName
  */
-void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCamera)
+void AbstractAnimationWindow::openAnimationFile(QString fileName)
 {
   std::string file = fileName.toStdString();
   if (file.compare("")) {
@@ -148,11 +146,6 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCame
       }
       if (isFMU(mFileName)) {
         initInteractiveControlPanel();
-      }
-
-      if(stashCamera && !mCameraInitialized) {         // mCameraInitialized is used to make sure the view is never stashed
-        mCameraInitialized = true;      // before the camera is initialized the first time
-        stashView();
       }
     }
   }
@@ -246,12 +239,14 @@ void AbstractAnimationWindow::createActions()
  */
 void AbstractAnimationWindow::updateControlPanelValues()
 {
+#if !defined(__EMSCRIPTEN__)
   if (getVisualization()) {
     VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     for (int stateIdx = 0; stateIdx < mSpinBoxVector.size(); stateIdx++) {
       mStateLabels.at(stateIdx)->setText(QString::number(FMUvis->getFMU()->getFMUData()->_states[stateIdx]));
     }
   }
+#endif
 }
 
 /*!
@@ -259,6 +254,7 @@ void AbstractAnimationWindow::updateControlPanelValues()
  */
 void AbstractAnimationWindow::initInteractiveControlPanel()
 {
+#if !defined(__EMSCRIPTEN__)
   if (getVisualization()) {
     VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     QWidget *widget = new QWidget(this);
@@ -333,6 +329,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
                                                           Helper::scriptingKind, Helper::errorLevel));
     mpAnimationParameterDockerWidget->hide();
   }
+#endif
 }
 
 /*!
@@ -342,6 +339,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
  */
 void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
 {
+#if !defined(__EMSCRIPTEN__)
   if (idx>=0) {
     VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     if (FMUvis) {
@@ -350,33 +348,11 @@ void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
     FMUvis->updateSystem();
     mpViewerWidget->update();
   }
+#else
+  Q_UNUSED(val); Q_UNUSED(idx);
+#endif
 }
 
-
-/*!
- * \brief AbstractAnimationWindow::clearView
- */
-void AbstractAnimationWindow::clearView()
-{
-  if (mpViewerWidget) {
-    mpViewerWidget->getSceneView()->setSceneData(0);
-    popView();
-    mpViewerWidget->update();
-  }
-}
-
-void AbstractAnimationWindow::stashView()
-{
-  if(!mCameraInitialized) return;
-  mStashedViewMatrix = mpViewerWidget->getSceneView()->getCameraManipulator()->getMatrix();
-}
-
-void AbstractAnimationWindow::popView()
-{
-  if(!mCameraInitialized) return;
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mStashedViewMatrix);
-  mpViewerWidget->update();
-}
 
 /*!
  * \brief AbstractAnimationWindow::loadVisualization
@@ -398,45 +374,70 @@ bool AbstractAnimationWindow::loadVisualization()
                                                           Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
-  //load the XML File, build osgTree, get initial values for the visualizers
+  //load the XML File, build the scene tree, get initial values for the visualizers
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
+#if defined(__EMSCRIPTEN__)
+    // Dump the worker store to the JS console so we can see whether/where omc
+    // wrote the file (printf/stdout does not reach the browser console here).
+    extern QStringList omcWorkerListDir(const char *path);
+    QString dir = QString::fromStdString(mPathName.empty() ? std::string("/") : mPathName);
+    QString trace = QStringLiteral("[OMEDIT_TRACE] visual.xml missing. Worker VFS '%1': %2 | '/': %3")
+                      .arg(dir,
+                           omcWorkerListDir(dir.toUtf8().constData()).join(QStringLiteral(", ")),
+                           omcWorkerListDir("/").join(QStringLiteral(", ")));
+    EM_ASM({ console.log(UTF8ToString($0)); }, trace.toUtf8().constData());
+#endif
     return false;
   } else {
+    // The Qt Quick 3D shell loads asynchronously; wait for it so the data
+    // classes can be wired to a real scene (and fail cleanly instead of
+    // dereferencing a null scene).
+    if (!mpViewerWidget->ensureScene()) {
+      QString msg = tr("Could not initialize the 3D scene for %1.").arg(QString(mFileName.c_str()));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
+                                                            Helper::errorLevel));
+      return false;
+    }
     //init visualization
     if (visType == VisType::MAT) {
       mpVisualization = new VisualizationMAT(mFileName, mPathName);
     } else if (visType == VisType::CSV) {
       mpVisualization = new VisualizationCSV(mFileName, mPathName);
+#if !defined(__EMSCRIPTEN__)
     } else if (visType == VisType::FMU) {
       mpVisualization = new VisualizationFMU(mFileName, mPathName);
+#endif
     } else {
       QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::errorLevel));
       return false;
     }
+    mpVisualization->setScene(mpViewerWidget->getScene());
     connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualization->initData();
     mpVisualization->setUpScene();
     mpVisualization->initVisualization();
-    //add scene for the chosen visualization
-    mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode().get());
-    //choose suitable scales for the vector visualizers so that they fit well in the scene
-    mpVisualization->getBaseData()->chooseVectorScales(mpViewerWidget->getSceneView(), mpViewerWidget->getFrameMutex(), std::bind(&ViewerWidget::frame, mpViewerWidget));
+    mpVisualization->getBaseData()->chooseVectorScales();
+    // Only now do shapes and arrows have their real size, so frame the camera.
+    mpViewerWidget->fitToScene();
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
   //open settings dialog for FMU simulation
+#if !defined(__EMSCRIPTEN__)
   if (visType == VisType::FMU) {
     openFMUSettingsDialog(dynamic_cast<VisualizationFMU*>(mpVisualization));
     mpInteractiveControlAction->setEnabled(true);
     initInteractiveControlPanel();
   }
-  else {
+  else
+#endif
+  {
     mpInteractiveControlAction->setEnabled(false);
     mpAnimationParameterDockerWidget->hide();
   }
@@ -444,109 +445,24 @@ bool AbstractAnimationWindow::loadVisualization()
   return true;
 }
 
-/*!
- * \brief AbstractAnimationWindow::resetCamera
- * resets the camera position
- */
-void AbstractAnimationWindow::resetCamera()
-{
-  mpViewerWidget->getSceneView()->home();
-  mpViewerWidget->update();
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionIsometric
- * sets the camera position to isometric view
- */
-void AbstractAnimationWindow::cameraPositionIsometric()
-{
-  double d = computeDistanceToOrigin();
-  osg::Matrixd mat = osg::Matrixd(0.7071, 0, -0.7071, 0,
-                                  -0.409, 0.816, -0.409, 0,
-                                  0.57735,  0.57735, 0.57735, 0,
-                                  0.57735*d, 0.57735*d, 0.57735*d, 1);
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
-  mpViewerWidget->update();
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionSide
- * sets the camera position to Side
- */
-void AbstractAnimationWindow::cameraPositionSide()
-{
-  double d = computeDistanceToOrigin();
-  osg::Matrixd mat = osg::Matrixd(1, 0, 0, 0,
-                                  0, 1, 0, 0,
-                                  0, 0, 1, 0,
-                                  0, 0, d, 1);
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
-  mpViewerWidget->update();
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionFront
- * sets the camera position to Front
- */
-void AbstractAnimationWindow::cameraPositionFront()
-{
-  double d = computeDistanceToOrigin();
-  osg::Matrixd mat = osg::Matrixd(0, 0, 1, 0,
-                                  1, 0, 0, 0,
-                                  0, 1, 0, 0,
-                                  0, d, 0, 1);
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
-  mpViewerWidget->update();
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionTop
- * sets the camera position to Top
- */
-void AbstractAnimationWindow::cameraPositionTop()
-{
-  double d = computeDistanceToOrigin();
-  osg::Matrixd mat = osg::Matrixd( 0, 0,-1, 0,
-                                   0, 1, 0, 0,
-                                   1, 0, 0, 0,
-                                   d, 0, 0, 1);
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
-  mpViewerWidget->update();
-}
-
-/*!
- * \brief AbstractAnimationWindow::computeDistanceToOrigin
- * computes distance to origin using pythagoras theorem
- */
-double AbstractAnimationWindow::computeDistanceToOrigin()
-{
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
-  osg::Matrixd mat = manipulator->getMatrix();
-  //assemble
-
-  //Compute distance to center using pythagoras theorem
-  double d = sqrt(abs(mat(3,0))*abs(mat(3,0))+
-                  abs(mat(3,1))*abs(mat(3,1))+
-                  abs(mat(3,2))*abs(mat(3,2)));
-
-  //If d is very small (~0), set it to 1 as default
-  if(d < 1e-10) {
-    d=1;
-  }
-
-  return d;
-}
+void AbstractAnimationWindow::resetCamera() { if (mpViewerWidget) mpViewerWidget->fitToScene(); }
+void AbstractAnimationWindow::cameraPositionIsometric() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Isometric); }
+void AbstractAnimationWindow::cameraPositionSide() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Side); }
+void AbstractAnimationWindow::cameraPositionFront() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Front); }
+void AbstractAnimationWindow::cameraPositionTop() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Top); }
 
 /*!
  * \brief AbstractAnimationWindow::openFMUSettingsDialog
  * Opens a dialog to set the settings for the FMU visualization
  * \param pVisualizationFMU
  */
+#if !defined(__EMSCRIPTEN__)
 void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualizationFMU)
 {
   FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizationFMU);
   pFMUSettingsDialog->exec();
 }
+#endif
 
 /*!
  * \brief AbstractAnimationWindow::updateScene
@@ -726,47 +642,8 @@ void AbstractAnimationWindow::setPerspective(int value)
   }
 }
 
-/*!
- * \brief AbstractAnimationWindow::rotateCameraLeft
- * rotates the camera 90 degress left about the line of sight
- */
-void AbstractAnimationWindow::rotateCameraLeft()
-{
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
-  osg::Matrixd mat = manipulator->getMatrix();
-  osg::Camera *pCamera = mpViewerWidget->getSceneView()->getCamera();
-
-  osg::Vec3d eye, center, up;
-  pCamera->getViewMatrixAsLookAt(eye, center, up);
-  osg::Vec3d rotationAxis = center-eye;
-
-  osg::Matrixd rotMatrix;
-  rotMatrix.makeRotate(3.1415/2.0, rotationAxis);
-
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat*rotMatrix);
-  mpViewerWidget->update();
-}
-
-/*!
- * \brief AbstractAnimationWindow::rotateCameraRight
- * rotates the camera 90 degress right about the line of sight
- */
-void AbstractAnimationWindow::rotateCameraRight()
-{
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
-  osg::Matrixd mat = manipulator->getMatrix();
-  osg::Camera *pCamera = mpViewerWidget->getSceneView()->getCamera();
-
-  osg::Vec3d eye, center, up;
-  pCamera->getViewMatrixAsLookAt(eye, center, up);
-  osg::Vec3d rotationAxis = center-eye;
-
-  osg::Matrixd rotMatrix;
-  rotMatrix.makeRotate(-3.1415/2.0, rotationAxis);
-
-  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat*rotMatrix);
-  mpViewerWidget->update();
-}
+void AbstractAnimationWindow::rotateCameraLeft() { if (mpViewerWidget) mpViewerWidget->orbitCamera(-15.0f, 0.0f); }
+void AbstractAnimationWindow::rotateCameraRight() { if (mpViewerWidget) mpViewerWidget->orbitCamera(15.0f, 0.0f); }
 
 /*!
  * \brief DoubleSpinBoxIndexed::DoubleSpinBoxIndexed

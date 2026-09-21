@@ -125,6 +125,9 @@ typedef struct {
   fmi3Float64 stopTime;
 
   int _need_update;
+  int _held_assert_logged;
+  int _event_found;
+  int _terminate_simulation_requested;
   int _has_jacobian;
   int _has_jacobian_intialization;
   JACOBIAN* fmiDerJac;

@@ -89,6 +89,7 @@ extern int solver_main(DATA* data, threadData_t *threadData, const char* init_in
 
 /* Provide solver interface to interactive stuff */
 extern int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+extern int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
 
 extern int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,

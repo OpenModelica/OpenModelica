@@ -1,8 +1,8 @@
 // name:     External Object with String parameter input
 // keywords: initialization
 // status:   correct
-// setup_command: gcc -c -o ExtObjStringParam.ext.o ExtObjStringParam.ext.c
-// teardown_command: rm -rf ExtObjStringParam_* ExtObjStringParam ExtObjStringParam.exe ExtObjStringParam.ext.o ExtObjStringParam.cpp ExtObjStringParam.conv.cpp ExtObjStringParam.makefile ExtObjStringParam.libs ExtObjStringParam.log ExtObjStringParam2_* ExtObjStringParam2 ExtObjStringParam2.exe ExtObjStringParam2.cpp ExtObjStringParam2.conv.cpp ExtObjStringParam2.makefile ExtObjStringParam2.libs ExtObjStringParam2.log output.log
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ExtObjStringParam.ext$OMC_EXTLIB_EXT ExtObjStringParam.ext.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -rf ExtObjStringParam_* ExtObjStringParam ExtObjStringParam.exe ExtObjStringParam.ext$OMC_EXTLIB_EXT ExtObjStringParam.cpp ExtObjStringParam.conv.cpp ExtObjStringParam.makefile ExtObjStringParam.libs ExtObjStringParam.log ExtObjStringParam2_* ExtObjStringParam2 ExtObjStringParam2.exe ExtObjStringParam2.cpp ExtObjStringParam2.conv.cpp ExtObjStringParam2.makefile ExtObjStringParam2.libs ExtObjStringParam2.log output.log
 // depends: sampledata.xml
 // depends: ExtObjStringParam.ext.c
 // depends: ExtObjStringParam.ext.h

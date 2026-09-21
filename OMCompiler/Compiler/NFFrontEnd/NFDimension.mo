@@ -51,6 +51,7 @@ public
   import Class = NFClass;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import Type = NFType;
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
@@ -59,7 +60,8 @@ public
 
   record RAW_DIM
     Absyn.Subscript dim;
-    InstNode scope;
+    NFInstNode.ScopeRef scope "Weakly: the class tree owns the scope this
+      dimension was written in.";
   end RAW_DIM;
 
   record UNTYPED
@@ -350,6 +352,26 @@ public
     end match;
   end isEqualKnownSize;
 
+  function isSame
+    input Dimension dim1;
+    input Dimension dim2;
+    output Boolean same;
+  algorithm
+    same := match (dim1, dim2)
+      case (RAW_DIM(), RAW_DIM())
+        then InstNode.isSame(InstNode.borrow(dim1.scope), InstNode.borrow(dim2.scope)) and
+             AbsynUtil.subscriptEqual(dim1.dim, dim2.dim);
+      case (UNTYPED(), UNTYPED()) then Expression.isEqual(dim1.dimension, dim2.dimension);
+      case (INTEGER(), INTEGER()) then dim1.size == dim2.size;
+      case (BOOLEAN(), BOOLEAN()) then true;
+      case (ENUM(), ENUM()) then Type.isEqual(dim1.enumType, dim2.enumType);
+      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (UNKNOWN(), UNKNOWN()) then true;
+      else false;
+    end match;
+  end isSame;
+
   function isSizeOf
     "Returns true if the dimension is size(node, index)."
     input Dimension dim;
@@ -508,7 +530,7 @@ public
     input String name = "";
     output String str;
   algorithm
-    str := List.toString(dims, function toFlatString(format = format), name, "[", ", ", "]", false);
+    str := List.toStringCustom(dims, function toFlatString(format = format), name, "[", ", ", "]", false);
   end toFlatStringList;
 
   function endExp

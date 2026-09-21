@@ -376,12 +376,12 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
  * @brief Print name(s) of scalar or array variable.
  *
  * For array variables names for all array elements are printed in the form
- * `"<name>[dim1][dim2]...[dimN]"` and for state derivatives in
- * `"der(<name>[dim1][dim2]...[dimN])"`.
+ * `"<name>[dim1,dim2,...,dimN]"` and for state derivatives in
+ * `"der(<name>[dim1,dim2,...,dimN])"`.
  *
  * If array variable is a state derivative assumes that `name` has format
  * `"der(<name>)"`. Will overwrite last character of `name` with array suffix
- * `"[dim1][dim2]...[dimN])"`.
+ * `"[dim1,dim2,...,dimN])"`.
  *
  * TODO: Move to a place where CSV can use it as well.
  *
@@ -435,8 +435,12 @@ char *printArrayName(char *buffer,
     }
     for (size_t k = 0; k < dimension->numberOfDimensions; ++k)
     {
-      written += snprintf(buffer + written, maxlen - written, "[%zu]", idx[k]);
+      /* Modelica uses comma separated subscripts inside a single pair of
+         brackets, e.g. "m[1,2]", so that names match the ones used by val()
+         and the scalarized code path. */
+      written += snprintf(buffer + written, maxlen - written, (k == 0) ? "[%zu" : ",%zu", idx[k]);
     }
+    written += snprintf(buffer + written, maxlen - written, "]");
     if (isStateDerivative)
     {
       written += snprintf(buffer + written, maxlen - written, ")");
@@ -1514,28 +1518,25 @@ void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data *)self->storage;
 
-  rt_tick(SIM_TIMER_OUTPUT);
-
-  if (!matData->pFile)
+  if (!matData)
   {
-    rt_accumulate(SIM_TIMER_OUTPUT);
     return;
   }
 
-  if (matData->nEmits > 0)
+  rt_tick(SIM_TIMER_OUTPUT);
+
+  if (matData->pFile)
   {
-    updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
-    matData->nEmits = 0;
+    if (matData->nEmits > 0)
+    {
+      updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
+    }
+    fclose(matData->pFile);
   }
 
-  if (matData->data_2)
-  {
-    free(matData->data_2);
-    matData->data_2 = NULL;
-  }
-
-  fclose(matData->pFile);
-  matData->pFile = NULL;
+  free(matData->data_2);
+  delete matData;
+  self->storage = NULL;
 
   rt_accumulate(SIM_TIMER_OUTPUT);
 }

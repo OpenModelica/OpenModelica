@@ -1307,7 +1307,7 @@ public function merge
   input ConnectionGraph inGraph2;
   output ConnectionGraph outGraph;
 algorithm
-  outGraph := matchcontinue(inGraph1, inGraph2)
+  outGraph := match(inGraph1, inGraph2)
     local
       Boolean updateGraph, updateGraph1, updateGraph2;
       DefiniteRoots definiteRoots, definiteRoots1, definiteRoots2;
@@ -1327,9 +1327,7 @@ algorithm
         inGraph2;
 
     // they are equal, return any
-    case (_, _)
-      algorithm
-        true := valueEq(inGraph1, inGraph2);
+    case (_, _) guard valueEq(inGraph1, inGraph2)
       then
         inGraph1;
 
@@ -1350,7 +1348,7 @@ algorithm
         connections    := List.union(connections1, connections2);
       then
         GRAPH(updateGraph,definiteRoots,potentialRoots,uniqueRoots,branches,connections);
-  end matchcontinue;
+  end match;
 end merge;
 
 /***********************************************************************************************************************/

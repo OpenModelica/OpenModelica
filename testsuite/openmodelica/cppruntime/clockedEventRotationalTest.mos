@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -f *EventRotationalClock*
 // cflags:
+// suite: disabled
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

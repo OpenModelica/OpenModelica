@@ -1900,6 +1900,21 @@ algorithm
   end match;
 end crefStripSubs;
 
+public function crefRenameSeedRoot
+"Replaces a seed cref's root ident ($SEED_<jacName>.rest) with $SEED_<newJacName>"
+  input DAE.ComponentRef inCref;
+  input String newJacName;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match inCref
+    case DAE.CREF_IDENT()
+      then ComponentReferenceBasics.makeCrefIdent("$SEED_" + newJacName, inCref.identType, inCref.subscriptLst);
+
+    case DAE.CREF_QUAL()
+      then ComponentReferenceBasics.makeCrefQual("$SEED_" + newJacName, inCref.identType, inCref.subscriptLst, inCref.componentRef);
+  end match;
+end crefRenameSeedRoot;
+
 public function crefStripSubsExceptModelSubs
 "Removes all subscript of a componentref expcept for model subscripts"
   input DAE.ComponentRef inCref;

@@ -93,6 +93,7 @@ BuiltinAttribute23.mo \
 BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
+BuiltinAttribute27.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -202,6 +203,7 @@ CevalRecord5.mo \
 CevalRecord6.mo \
 CevalRecord7.mo \
 CevalRecord8.mo \
+CevalRecord9.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray3.mo \
@@ -550,6 +552,7 @@ ForEquation4.mo \
 ForEquation5.mo \
 ForEquation6.mo \
 ForEquation7.mo \
+ForEquation8.mo \
 ForEquationEnum1.mo \
 ForEquationEnum2.mo \
 ForEquationNonParam.mo \
@@ -769,6 +772,11 @@ IfExpression14.mo \
 IfExpression15.mo \
 IfExpression16.mo \
 IfExpression17.mo \
+IfExpression18.mo \
+IfExpression19.mo \
+IfExpression20.mo \
+IfExpression21.mo \
+IfExpression22.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -920,6 +928,7 @@ MultiInheritanceRedeclare2.mo \
 NoEvent1.mo \
 NoEvent2.mo \
 NonConnectorFlow1.mo \
+NonLiteralRange1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NonFixedConstant1.mo \
@@ -1034,6 +1043,7 @@ RecordBinding15.mo \
 RecordBinding16.mo \
 RecordBinding17.mo \
 RecordBinding18.mo \
+RecordBinding19.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \
@@ -1250,6 +1260,7 @@ WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
 WhenIllegalContext4.mo \
+WhenIllegalContext5.mo \
 WhenInitial1.mo \
 WhenInitial2.mo \
 WhenInitial3.mo \
@@ -1360,4 +1371,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -13,10 +13,8 @@ it's default configuration. All commands should be executed in the
     make omc
 
   Windows:
-    make -f Makefile.omdev.mingw runtimeCPPinstall
-
-    (if the visual studio compiler should be used):
-    make -f Makefile.omdev.mingw runtimeCPPmsvcinstall
+    The C++ runtime is built as part of the normal CMake build; see
+    OM_OMC_ENABLE_CPP_RUNTIME in ../../../README.cmake.md.
 
 
 ==============================================
@@ -41,29 +39,6 @@ to configure. The following arguments are available at the moment:
   USE_KLU
 
 e.g.: configure --with-cppruntime --with-cppruntime-args=BUILDTYPE=Debug,RUNTIME_PROFILING,CPP_03
-
-For further details, see the description below.
-
-
-============================================
-CONFIGURING THE SIMULATION RUNTIME (Windows)
-============================================
-If you want to change the behaviour of cpp runtime, you can pass
-arguments directly to the makefile. Multiple arguments are separated through
-spaces as usual. The available arguments differ slightly from the linux ones,
-because not all libraries are available on both systems.
-
-  BOOST_STATIC_LINKING="true"
-  BOOST_REALPATHS="true"
-  RUNTIME_PROFILING="true"
-  SCOREP="true"
-  SCOREP_HOME=”...”
-  FMU_SUNDIALS="true"
-  PARALLEL_OUTPUT="true"
-  USE_LOGGER="false"
-  BUILDTYPE=[Release,Debug]
-  USE_KLU=["true","false"]
-e.g.: make -f Makefile.omdev.mingw runtimeCPPmsvcinstall BOOST_STATIC_LINKING="true" USE_LOGGER="false"
 
 For further details, see the description below.
 

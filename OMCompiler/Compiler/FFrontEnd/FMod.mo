@@ -165,14 +165,12 @@ protected function compactSubMod2
   output SCode.SubMod outMod;
   output Boolean outFound;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inNewMod)
+  (outMod, outFound) := match(inExistingMod, inNewMod)
     local
       String name1, name2;
       SCode.SubMod submod;
 
-    case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2))
-      algorithm
-        false := stringEqual(name1, name2);
+    case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2)) guard not stringEqual(name1, name2)
       then
         (inExistingMod, false);
 
@@ -182,7 +180,7 @@ algorithm
       then
         (submod, true);
 
-  end matchcontinue;
+  end match;
 end compactSubMod2;
 
 protected function mergeSubModsInSameScope

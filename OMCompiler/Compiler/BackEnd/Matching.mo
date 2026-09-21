@@ -46,6 +46,7 @@ import DAE;
 
 protected
 
+import Absyn;
 import Array;
 import BackendDAEEXT;
 import BackendDAEUtil;
@@ -66,6 +67,7 @@ import IndexReduction;
 import Inline;
 import List;
 import MetaModelica.Dangerous;
+import UnorderedMap;
 import UnorderedSet;
 import Util;
 import Sorting;
@@ -125,7 +127,7 @@ public function ContinueMatching "
 protected
   Integer i, j;
   array<Integer> eMarkIx, vMarkIx;
-  Integer eMarkN=0, vMarkN=0;
+  Integer eMarkN=0, vMarkN=0, eDead=0, vDead=0;
   Boolean success;
 algorithm
   vMark := arrayCreate(nVars, false);
@@ -137,11 +139,16 @@ algorithm
   while i <= nEqns loop
     j := ass2[i];
     if not (j>0 and ass1[j] == i) then
-      clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
-      clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
-      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
-      if not success then
+      // What a failed search visited is closed under alternating paths, so it
+      // stays marked and later searches skip it.
+      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, eDead, vDead);
+      if success then
+        clearMarks(eMark, eMarkIx, eDead, eMarkN);
+        clearMarks(vMark, vMarkIx, vDead, vMarkN);
+      else
         perfectMatching := false;
+        eDead := eMarkN;
+        vDead := vMarkN;
         if stopAtSingularity then
           return;
         end if;
@@ -150,6 +157,16 @@ algorithm
     i := i+1;
   end while;
 end ContinueMatching;
+
+protected function clearMarks "Sets arr[arrIx[from+1:to]] to false"
+  input array<Boolean> arr;
+  input array<Integer> arrIx;
+  input Integer from, to;
+algorithm
+  for i in from+1:to loop
+    arrayUpdate(arr, arrIx[i], false);
+  end for;
+end clearMarks;
 
 public function BBMatching
   input BackendDAE.EqSystem inSys;
@@ -226,6 +243,7 @@ algorithm
 end BBMatching;
 
 protected function BBPathFound
+  "Searches an augmenting path starting at equation i."
   input Integer i;
   input BackendDAE.AdjacencyMatrix m;
   input array<Boolean> eMark;
@@ -236,38 +254,66 @@ protected function BBPathFound
   input array<Integer> vMarkIx;
   output Boolean success=false;
   input output Integer eMarkN, vMarkN;
+protected
+  list<tuple<Integer, Integer, list<Integer>>> stack = {} "(eqn, var descended through, vars left to try)";
+  list<Integer> vars = {};
+  Integer eqn = i, var, parent;
+  Boolean enter = true, descended;
 algorithm
-  if arrayGet(eMark, i) then
-    return;
-  end if;
-  arrayUpdate(eMark, i, true);
-  eMarkN := eMarkN+1;
-  arrayUpdate(eMarkIx, eMarkN, i);
+  while true loop
+    if enter then
+      enter := false;
+      vars := {};
+      if not arrayGet(eMark, eqn) then
+        arrayUpdate(eMark, eqn, true);
+        eMarkN := eMarkN+1;
+        arrayUpdate(eMarkIx, eMarkN, eqn);
 
-  for j in m[i] loop
-    // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and ass1[j] <= 0) then
-      success := true;
-      arrayUpdate(ass1, j, i);
-      arrayUpdate(ass2, i, j);
-      return;
-    end if;
-  end for;
+        for j in m[eqn] loop
+          // negative entries in adjacence matrix belong to states!!!
+          if (j>0 and ass1[j] <= 0) then
+            success := true;
+            arrayUpdate(ass1, j, eqn);
+            arrayUpdate(ass2, eqn, j);
+            break;
+          end if;
+        end for;
 
-  for j in m[i] loop
-    // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and not vMark[j]) then
-      arrayUpdate(vMark, j, true);
-      vMarkN := vMarkN+1;
-      arrayUpdate(vMarkIx, vMarkN, j);
-      (success, eMarkN, vMarkN) := BBPathFound(ass1[j], m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, eMarkN, vMarkN);
-      if success then
-        arrayUpdate(ass1, j, i);
-        arrayUpdate(ass2, i, j);
-        return;
+        if success then
+          for frame in stack loop
+            (parent, var, _) := frame;
+            arrayUpdate(ass1, var, parent);
+            arrayUpdate(ass2, parent, var);
+          end for;
+          return;
+        end if;
+        vars := m[eqn];
       end if;
     end if;
-  end for;
+
+    descended := false;
+    while not listEmpty(vars) loop
+      var::vars := vars;
+      // negative entries in adjacence matrix belong to states!!!
+      if (var>0 and not vMark[var]) then
+        arrayUpdate(vMark, var, true);
+        vMarkN := vMarkN+1;
+        arrayUpdate(vMarkIx, vMarkN, var);
+        stack := (eqn, var, vars)::stack;
+        eqn := ass1[var];
+        enter := true;
+        descended := true;
+        break;
+      end if;
+    end while;
+
+    if not descended then
+      if listEmpty(stack) then
+        return;
+      end if;
+      (eqn, _, vars)::stack := stack;
+    end if;
+  end while;
 end BBPathFound;
 
 protected function BBCheapMatching
@@ -4287,19 +4333,10 @@ protected function PR_Global_Relabel_init_l_label
   input Integer max;
   input array<Integer> l_label;
 algorithm
-  () := matchcontinue l_label
-    case _
-      algorithm
-        true := intGt(i,ne);
-      then
-        ();
-    else
-      algorithm
-        arrayUpdate(l_label,i,max);
-        PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
-      then
-        ();
-  end matchcontinue;
+  if not intGt(i,ne) then
+    arrayUpdate(l_label,i,max);
+    PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
+  end if;
 end PR_Global_Relabel_init_l_label;
 
 protected function PR_Global_Relabel_init_r_label
@@ -4789,27 +4826,18 @@ protected function ks_rand_cheapmatching1
   input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
+protected
+  list<Integer> onecolums1,onerows1;
+  Integer c;
+  Boolean b;
 algorithm
-  () := matchcontinue ass2
-    local
-      list<Integer> onecolums1,onerows1;
-      Integer c;
-      Boolean b;
-      case _
-        algorithm
-          false := intLe(i,ne);
-        then
-          ();
-      case _
-        algorithm
-          ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
-          c := randarr[i];
-          b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
-          (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
-          ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
-        then
-          ();
-    end matchcontinue;
+  if intLe(i,ne) then
+    ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
+    c := randarr[i];
+    b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
+    (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+    ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+  end if;
 end ks_rand_cheapmatching1;
 
 protected function ks_rand_cheapmatching2
@@ -5602,6 +5630,7 @@ protected function matchingExternal
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
+  Error.checkCancel();
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,internalCall,isyst,inMatchingOptions)
     local
@@ -5749,12 +5778,22 @@ protected
   list<Integer> flat_unassignedStates, flat_eqns, unmatched1;
   array<Integer> scalarToArrayMap;
   list<BackendDAE.Var> artificialStates = {}, undiffable_artificial = {};
-  list<BackendDAE.Equation> residuals, equations = {};
+  list<BackendDAE.Equation> equations = {};
+  list<tuple<BackendDAE.Equation, Option<list<DAE.Exp>>>> eqn_forms = {};
+  list<DAE.Exp> residual_exps;
+  Option<list<DAE.Exp>> opt_exps;
+  array<BackendDAE.Var> state_array;
+  array<list<BackendDAE.Equation>> failed_eqns;
+  UnorderedMap<DAE.ComponentRef, Integer> state_map;
+  UnorderedSet<Integer> eqn_states;
+  UnorderedSet<Integer> visited_states = UnorderedSet.new(Util.id, intEq);
+  UnorderedSet<Integer> visited_eqns = UnorderedSet.new(Util.id, intEq);
+  Integer arrayIdx, n_states;
   BackendDAE.Var var;
+  BackendDAE.Equation form_eqn;
   DAE.ComponentRef cr;
-  DAE.Exp residualExp;
+  DAE.Exp residualExp, diffExp;
   BackendDAE.AdjacencyMatrix m, mt, m1, m1t;
-  Boolean unique_flag;
   String msg;
 algorithm
   try
@@ -5769,51 +5808,99 @@ algorithm
   flat_unassignedStates := List.flatten(unassignedStates);
   // Collect artificial states
   for state in flat_unassignedStates loop
-    var := BackendVariable.getVarAt(syst.orderedVars, state);
-    if BackendVariable.isArtificialState(var) and not listMember(var, artificialStates) then
-      artificialStates := var :: artificialStates;
+    if UnorderedSet.add(state, visited_states) then
+      var := BackendVariable.getVarAt(syst.orderedVars, state);
+      if BackendVariable.isArtificialState(var) then
+        artificialStates := var :: artificialStates;
+      end if;
     end if;
   end for;
+  if listEmpty(artificialStates) then
+    return;
+  end if;
   flat_eqns := List.flatten(eqns_1); // use eqns_1 (without discrete)
   SOME((_, scalarToArrayMap, _, _, _)) := syst.mapping;
-  for eqn in flat_eqns loop
+  for scalar_eqn in flat_eqns loop
     try
-      equations := BackendEquation.get(syst.orderedEqs, scalarToArrayMap[eqn]) :: equations;
+      arrayIdx := scalarToArrayMap[scalar_eqn];
+      if UnorderedSet.add(arrayIdx, visited_eqns) then
+        equations := BackendEquation.get(syst.orderedEqs, arrayIdx) :: equations;
+      end if;
     else
       // equation can't be found -- scalar index to array index failed?
     end try;
   end for;
-  for var in artificialStates loop
-    unique_flag := false;
-    for eqn in equations loop
-      try
-        residuals := BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree);
-        for res in residuals loop
-          BackendDAE.RESIDUAL_EQUATION(exp = residualExp) := res;
-          cr := BackendVariable.varCref(var);
-          // Only check if the equation actually contains the cref
-          if Expression.expHasCref(residualExp, cr) then
-            // Check if the equation can be differentiated by the artificial state
-            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
-            residualExp := Expression.replaceDerOpInExp(residualExp);
-            Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
-            // Check if the equation contains smooth(0, cr)
-            false := Expression.expHasCrefInSmoothZero(residualExp, cr);
-          end if;
-        end for;
-      else
-        if Flags.isSet(Flags.BLT_DUMP) then
+  state_array := listArray(artificialStates);
+  n_states := arrayLength(state_array);
+  failed_eqns := arrayCreate(n_states, {});
+  state_map := UnorderedMap.new<Integer>(ComponentReferenceBasics.hashComponentRef,
+                                         ComponentReferenceBasics.crefEqual, Util.nextPrime(n_states));
+  for i in 1:n_states loop
+    UnorderedMap.add(BackendVariable.varCref(state_array[i]), i, state_map);
+  end for;
+  // The residual form is state independent; an equation without one stays
+  // undiffable for every artificial state.
+  for eqn in equations loop
+    Error.checkCancel();
+    try
+      residual_exps := {};
+      for res in BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree) loop
+        BackendDAE.RESIDUAL_EQUATION(exp = residualExp) := res;
+        residual_exps := residualExp :: residual_exps;
+      end for;
+      eqn_forms := (eqn, SOME(listReverse(residual_exps))) :: eqn_forms;
+    else
+      eqn_forms := (eqn, NONE()) :: eqn_forms;
+    end try;
+  end for;
+  // Look up the states an equation mentions instead of scanning all equations
+  // for every state.
+  for form in listReverse(eqn_forms) loop
+    (form_eqn, opt_exps) := form;
+    if isNone(opt_exps) then
+      for i in 1:n_states loop
+        failed_eqns[i] := form_eqn :: failed_eqns[i];
+      end for;
+    else
+      SOME(residual_exps) := opt_exps;
+      eqn_states := UnorderedSet.new(Util.id, intEq);
+      for res_exp in residual_exps loop
+        Expression.traverseExpTopDown(res_exp, function collectArtificialStates(stateMap = state_map, states = eqn_states), false);
+      end for;
+      for i in UnorderedSet.toList(eqn_states) loop
+        Error.checkCancel();
+        cr := BackendVariable.varCref(state_array[i]);
+        try
+          for res_exp in residual_exps loop
+            // Only check if the equation actually contains the cref
+            if Expression.expHasCref(res_exp, cr) then
+              // Check if the equation can be differentiated by the artificial state
+              (diffExp,_,_) := Inline.forceInlineExp(res_exp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
+              diffExp := Expression.replaceDerOpInExp(diffExp);
+              Differentiate.differentiateExpSolve(diffExp, cr, SOME(shared.functionTree));
+              // Check if the equation contains smooth(0, cr)
+              false := Expression.expHasCrefInSmoothZero(diffExp, cr);
+            end if;
+          end for;
+        else
+          failed_eqns[i] := form_eqn :: failed_eqns[i];
+        end try;
+      end for;
+    end if;
+  end for;
+  for i in 1:n_states loop
+    if not listEmpty(failed_eqns[i]) then
+      var := state_array[i];
+      if Flags.isSet(Flags.BLT_DUMP) then
+        for eqn in listReverse(failed_eqns[i]) loop
           print("### The Equation ### \n" + BackendDump.equationString(eqn) +
                 "\n\n--- could not be differentiated for artificial variable ---\n " +
                  ComponentReferenceBasics.printComponentRefStr(var.varName) + ".\n\n");
-        end if;
-        // revert the varKind from STATE to VARIABLE
-        if not unique_flag then
-          undiffable_artificial := BackendVariable.setVarKind(var, BackendDAE.VARIABLE()) :: undiffable_artificial;
-          unique_flag := true;
-        end if;
-      end try;
-    end for;
+        end for;
+      end if;
+      // revert the varKind from STATE to VARIABLE
+      undiffable_artificial := BackendVariable.setVarKind(var, BackendDAE.VARIABLE()) :: undiffable_artificial;
+    end if;
   end for;
 
   if not listEmpty(undiffable_artificial) then
@@ -5853,6 +5940,32 @@ algorithm
   end if;
 end sanityCheckArtificialStates;
 
+protected function collectArtificialStates
+  "Collects the indices of the artificial states occurring in the expression.
+   Mirrors Expression.expHasCref, which does not look inside pre()."
+  input DAE.Exp exp;
+  input Boolean arg;
+  input UnorderedMap<DAE.ComponentRef, Integer> stateMap;
+  input UnorderedSet<Integer> states;
+  output DAE.Exp outExp = exp;
+  output Boolean cont;
+  output Boolean outArg = arg;
+protected
+  Integer index;
+algorithm
+  cont := match exp
+    case DAE.CALL(path = Absyn.IDENT("pre")) then false;
+    case DAE.CREF()
+      algorithm
+        () := match UnorderedMap.get(exp.componentRef, stateMap)
+          case SOME(index) algorithm UnorderedSet.add(index, states); then ();
+          else ();
+        end match;
+      then true;
+    else true;
+  end match;
+end collectArtificialStates;
+
 protected function removeEdgesToDiscreteEquations""
   input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixT mt;
@@ -5884,6 +5997,7 @@ algorithm
   end for;
   idx := 1;
   for eq in BackendEquation.equationList(eqs) loop
+    Error.checkCancel();
     //print("Check equation "+BackendDump.equationString(eq)+"\n");
     isDiscrete := BackendEquation.isWhenEquationOrDiscreteAlgorithm(eq,vars);
     if isDiscrete then
@@ -5934,6 +6048,7 @@ algorithm
   functionTree := shared.functionTree;
   idx := 1;
   for eq in BackendEquation.equationList(eqs) loop
+    Error.checkCancel();
     (hasNoDerAnno,noDerInputs) := BackendDAEUtil.isFuncCallWithNoDerAnnotation(eq,functionTree);
     if hasNoDerAnno then
       (_,varIdxs) := BackendVariable.getVarLst(noDerInputs,vars);
@@ -6220,6 +6335,7 @@ algorithm
     case e::rest
       guard not intGt(colummarks[e],0)
       algorithm
+        Error.checkCancel();
         // row is not visited
         // if it is a multi dim equation take all scalare equations
         e1 := mapIncRowEqn[e];
@@ -6461,23 +6577,15 @@ protected function checkAssignment
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inUnassigned;
   output list<Integer> outUnassigned;
+protected
+  list<Integer> unassigned;
 algorithm
-  outUnassigned := matchcontinue inUnassigned
-    local
-      Integer r;
-      list<Integer> unassigned;
-    case _
-      algorithm
-        true := intGt(indx,ne);
-      then
-        inUnassigned;
-    case _
-      algorithm
-        r := ass1[indx];
-        unassigned := List.consOnTrue(intLt(r,0), indx, inUnassigned);
-      then
-        checkAssignment(indx+1,ne,ass1,ass2,unassigned);
-  end matchcontinue;
+  if intGt(indx,ne) then
+    outUnassigned := inUnassigned;
+  else
+    unassigned := List.consOnTrue(intLt(ass1[indx],0), indx, inUnassigned);
+    outUnassigned := checkAssignment(indx+1,ne,ass1,ass2,unassigned);
+  end if;
 end checkAssignment;
 
 protected function getAssignment
@@ -6488,11 +6596,8 @@ protected function getAssignment
   output array<Integer> ass1 "ass[eqnindx]=varindx";
   output array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
-  (ass1,ass2) := matchcontinue(clearMatching, iSyst)
-    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
-      algorithm
-        true := intGe(nVars,arrayLength(ass1));
-        true := intGe(nEqns,arrayLength(ass2));
+  (ass1,ass2) := match(clearMatching, iSyst)
+    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))) guard intGe(nVars,arrayLength(ass1)) and intGe(nEqns,arrayLength(ass2))
       then
         (ass2,ass1);
     else
@@ -6501,7 +6606,7 @@ algorithm
         ass1 := arrayCreate(nVars,-1);
       then
         (ass2,ass1);
-  end matchcontinue;
+  end match;
 end getAssignment;
 
 // =============================================================================

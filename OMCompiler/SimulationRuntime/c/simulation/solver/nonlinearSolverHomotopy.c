@@ -167,6 +167,21 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
   assertStreamPrint(NULL, NULL != homotopyData, "allocationHomotopyData() failed!");
 
+  /* fJac/fJacx0/debug_fJac receive evalJacobian's dense output, which is
+   * strided by the analytic Jacobian's OWN sizeCols -- this can exceed the
+   * NLS's genuine unknown count `size` for a partial-slice Jacobian that
+   * needs extra addressable (but not genuinely-unknown) seed columns for
+   * symbolic subscript correctness (see NBJacobian.mo's
+   * partialSliceSeedCandidates whole-array fallback). Size those three
+   * buffers off the larger of the two so evalJacobian never writes past the
+   * allocation; every other field below stays sized to the genuine `size`
+   * (the Newton/homotopy iteration itself must never see phantom unknowns). */
+  size_t jacCols = size + 1;
+  if (userData != NULL && userData->analyticJacobian != NULL &&
+      (size_t)userData->analyticJacobian->sizeCols > jacCols) {
+    jacCols = (size_t)userData->analyticJacobian->sizeCols;
+  }
+
   homotopyData->initialized = FALSE;
   homotopyData->n = size;
   homotopyData->m = size + 1;
@@ -184,7 +199,8 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->hvecScaled = (double*) calloc(size,sizeof(double));
   homotopyData->dxScaled = (double*) calloc(size,sizeof(double));
 
-  homotopyData->xScaling = (double*) calloc((size+1),sizeof(double));
+  /* indexed up to jacobian->sizeCols in getAnalyticalJacobianHomotopy's column-scaling loop */
+  homotopyData->xScaling = (double*) calloc(jacCols,sizeof(double));
 
   homotopyData->f1 = (double*) calloc(size,sizeof(double));
   homotopyData->f2 = (double*) calloc(size,sizeof(double));
@@ -197,12 +213,12 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->x1 = (double*) calloc((size+1),sizeof(double));
   homotopyData->finit = (double*) calloc(size,sizeof(double));
   homotopyData->fx0 = (double*) calloc(size,sizeof(double));
-  homotopyData->fJac = (double*) calloc((size*(size+1)),sizeof(double));
-  homotopyData->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->fJac = (double*) calloc((size*jacCols),sizeof(double));
+  homotopyData->fJacx0 = (double*) calloc((size*jacCols),sizeof(double));
 
   /* debug arrays */
   homotopyData->debug_dx = (double*) calloc(size,sizeof(double));
-  homotopyData->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->debug_fJac = (double*) calloc((size*jacCols),sizeof(double));
 
    /* homotopy */
   homotopyData->y0 = (double*) calloc((size+1),sizeof(double));
@@ -213,9 +229,9 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
   homotopyData->dy2 = (double*) calloc((size+1),sizeof(double));
   homotopyData->hvec = (double*) calloc(size,sizeof(double));
-  homotopyData->hJac = (double*) calloc(size*(size+1),sizeof(double));
-  homotopyData->hJac2 = (double*) calloc((size+1)*(size+2),sizeof(double));
-  homotopyData->hJacInit = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->hJac = (double*) calloc(size*jacCols,sizeof(double));
+  homotopyData->hJac2 = (double*) calloc((size+1)*(jacCols+1),sizeof(double));
+  homotopyData->hJacInit = (double*) calloc(size*jacCols,sizeof(double));
   homotopyData->ones = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
@@ -409,19 +425,19 @@ void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, in
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[indRow[i] + indCol[j]*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %16.8g", buffer, matrix[indRow[i] + indCol[j]*(m-1)]);
+          p += sprintf(p, " %16.8g", matrix[indRow[i] + indCol[j]*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -442,19 +458,19 @@ void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %16.8g", buffer, matrix[i + j*(m-1)]);
+          p += sprintf(p, " %16.8g", matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -472,21 +488,23 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%16.8g", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
+        p += sprintf(p, "%16.8g", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %16.8g", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -502,21 +520,23 @@ void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, in
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%d", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %d", buffer, vector[i]);
+        p += sprintf(p, "%d", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %d", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -532,21 +552,23 @@ void debugVectorInt(int logName, char* vectorName, int* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%d", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %d", buffer, vector[i]);
+        p += sprintf(p, "%d", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %d", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -842,12 +864,24 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, NULL, jac, TRUE);
 
-  /* apply scaling to each column */
-  for (j = 0; j < jacobian->sizeCols; j++) {
-    for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
-      l = sp->index[ii];
-      k = j*jacobian->sizeRows + l;
-      jac[k] *= solverData->xScaling[j];
+  if (!sp) return 0; /* pattern removed; jac is zeroed, solver will fail numerically */
+
+  /* apply scaling to each column; must use the same row stride evalJacobian
+   * used to fill jac (min(sizeRows, sizeCols), not always sizeCols -- see
+   * jacobian_util.c:evalJacobian). Using sizeCols unconditionally here
+   * misaligns every scaling write whenever sizeCols > sizeRows (a genuinely
+   * rectangular Jacobian, not just NLS's "auxiliary rows beyond sizeCols"
+   * case), corrupting entries evalJacobian never touched while leaving the
+   * real ones unscaled. */
+  {
+    const int denseRows = jacobian->sizeRows < jacobian->sizeCols ? jacobian->sizeRows : jacobian->sizeCols;
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
+        l = sp->index[ii];
+        if (l >= denseRows) continue; /* skip auxiliary rows */
+        k = j*denseRows + l;
+        jac[k] *= solverData->xScaling[j];
+      }
     }
   }
 
@@ -913,9 +947,15 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
 
   /* TODO: change input to residualFunc from data to systemData */
   nlsData->residualFunc(&resUserData, x, f, &iflag);
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
   solverData->numberOfFunctionEvaluations++;
 
   return 0;
@@ -935,9 +975,15 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
   int retVal;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
 
   /* TODO: change input to residualFunc from data to systemData */
   retVal = nlsData->residualFuncConstraints(&resUserData, x, f, &iflag);
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
   solverData->numberOfFunctionEvaluations++;
 
   return retVal;
@@ -952,6 +998,9 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
 static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
 {
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
 
   /* performance measurement */
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
@@ -983,6 +1032,9 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
   /* performance measurement and statistics */
   nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
   nlsData->numberOfJEval++;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
 
   return 0;
 }
@@ -2289,13 +2341,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       {
         debugString(OMC_LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.01;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.01;
       }
       if (tries == 2)
       {
         debugString(OMC_LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.1;
       }
     }
     if (success != NLS_SOLVED) {

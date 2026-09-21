@@ -1,0 +1,53 @@
+// name: FlowAliasFixedStart1
+// status: correct
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+    stream Real s;
+  end C;
+
+  model A
+    C c;
+  end A;
+
+  model FlowAliasFixedStart1
+    A a1(c(f(fixed = true, start = -1.0)));
+    A a2(c(f(fixed = true, start = 1.0)));
+  equation
+    connect(a1.c, a2.c);
+    a1.c.e = 1.0;
+    a2.c.s = 1.0;
+    a1.c.f = 1.0;
+    a1.c.s = 2.0;
+  end FlowAliasFixedStart1;
+");
+
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(FlowAliasFixedStart1); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// "//! base 0.1.0
+// package 'FlowAliasFixedStart1'
+//   model 'FlowAliasFixedStart1'
+//     Real 'a1.c.e';
+//     Real 'a1.c.s';
+//     Real 'a2.c.e';
+//     Real 'a2.c.s';
+//     Real 'a2.c.f'(start = 1.0, fixed = true);
+//     Real 'a1.c.f'(fixed = true, start = -1.0) = -'a2.c.f' \"Alias variable\";
+//   equation
+//     'a1.c.e' = 'a2.c.e';
+//     'a1.c.e' = 1.0;
+//     'a2.c.s' = 1.0;
+//     -'a2.c.f' = 1.0;
+//     'a1.c.s' = 2.0;
+//   end 'FlowAliasFixedStart1';
+// end 'FlowAliasFixedStart1';
+// "
+// ""
+// endResult

@@ -21,9 +21,9 @@ end ExpandableConnector4;
 
 // Result:
 // class ExpandableConnector4
-//   Real a[3].ec.y "virtual variable in expandable connector";
-//   Real a[2].ec.y "virtual variable in expandable connector";
-//   Real a[1].ec.y "virtual variable in expandable connector";
+//   Real a[3].ec.y "variable added to expandable connector";
+//   Real a[2].ec.y "variable added to expandable connector";
+//   Real a[1].ec.y "variable added to expandable connector";
 //   Real a[1].y = 0.0;
 //   Real a[2].y = 0.0;
 //   Real a[3].y = 0.0;

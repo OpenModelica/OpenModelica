@@ -80,6 +80,7 @@ extern modelica_metatype boxptr_stringUpdateStringChar(threadData_t *,metamodeli
 extern modelica_integer stringHash(metamodelica_string_const);
 extern modelica_integer stringHashDjb2(metamodelica_string_const s);
 extern modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_integer hash);
+extern modelica_integer intHashDjb2Continue(modelica_integer i, modelica_integer hash);
 extern modelica_integer stringHashDjb2Mod(metamodelica_string_const s,modelica_integer mod);
 extern modelica_integer stringHashSdbm(metamodelica_string_const str);
 #define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z))
@@ -216,7 +217,7 @@ extern metamodelica_string referencePointerString(modelica_metatype ptr);
 
 #include "meta_modelica_builtin_boxvar.h"
 
-extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLDataDirection extern struct record_description SourceInfo_SOURCEINFO__desc;
 #define SourceInfo__SOURCEINFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification) (mmc_mk_box8(3,&SourceInfo_SOURCEINFO__desc,fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification))
 
 #if defined(__cplusplus)

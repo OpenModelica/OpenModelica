@@ -40,7 +40,7 @@
 #ifndef CEDITOR_H
 #define CEDITOR_H
 
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSyntaxHighlighter>
 #include <QPlainTextEdit>
 
@@ -77,7 +77,7 @@ private:
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
-    QRegExp mPattern;
+    QRegularExpression mPattern;
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;

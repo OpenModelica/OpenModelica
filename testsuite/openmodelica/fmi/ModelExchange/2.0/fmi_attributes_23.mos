@@ -42,17 +42,39 @@ readFile("fmi_attributes_23_index.html"); getErrorString();
 // true
 // ""
 // "fmi_attributes_23.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
-// "<html><h2>TestModel</h2></html>
+// "<!DOCTYPE html>
+// <html lang=\"en\">
+// <head>
+// <meta charset=\"utf-8\">
+// <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+// <title>fmi_attributes_23</title>
+// <style>
+//   :root { color-scheme: light dark; }
+//   body { margin: 0 auto; padding: 1.5rem; max-width: 50rem; line-height: 1.5;
+//          font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+//   h1 { font-size: 1.5rem; margin: 0 0 .2rem; }
+//   .svgiconhead { height: 32px; width: 32px; object-fit: contain; vertical-align: middle; }
+//   .fmu-desc { margin: 0 0 1.5rem; font-style: italic; opacity: .8; }
+//   img { max-width: 100%; height: auto; }
+//   table { border-collapse: collapse; }
+//   td, th { border: 1px solid; border-color: color-mix(in srgb, currentColor 30%, transparent);
+//            padding: .2rem .5rem; }
+//   pre, code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+// </style>
+// </head>
+// <body>
 // <h1>fmi_attributes_23</h1>
-// <p> <i>model description text example </i> </p>
-// <h4> <u> Information </u> </h4><html>
-//   <p>The linear resistor connects the branch voltage <em>v</em> with the branch current <em>i</em> by <em>i*R = v</em>. The Resistance <em>R</em> is allowed to be positive, zero, or negative.</p>
-//   </html>
-// <h4> <u> Revisions </u> </h4><html>
-//   <ul>
+// <p class=\"fmu-desc\">model description text example </p>
+// <h2>TestModel</h2>
+// <h2>Information</h2>
+// <p>The linear resistor connects the branch voltage <em>v</em> with the branch current <em>i</em> by <em>i*R = v</em>. The Resistance <em>R</em> is allowed to be positive, zero, or negative.</p>
+// <h2>Revisions</h2>
+// <ul>
 //   <li><em> August 07, 2009   </em>
 //          by Anton Haumer<br> temperature dependency of resistance added<br>
 //          </li>
@@ -63,7 +85,8 @@ readFile("fmi_attributes_23_index.html"); getErrorString();
 //          by Christoph Clauss<br> initially implemented<br>
 //          </li>
 //   </ul>
-//   </html>
+// </body>
+// </html>
 // "
 // ""
 // endResult

@@ -3433,20 +3433,11 @@ protected function nextGreaterPowerOf2_impl
   input Real n;
   input Integer pow;
   output Integer powOf2;
+protected
+  Real p;
 algorithm
-  powOf2 := matchcontinue pow
-  local
-    Integer n2;
-  case _
-    algorithm
-      true := n <=. realPow(2.0,intReal(pow));
-    then realInt(realPow(2.0,intReal(pow)));
-  case _
-    algorithm
-      true := n >. realPow(2.0,intReal(pow));
-      n2 := nextGreaterPowerOf2_impl(n,pow+1);
-    then n2;
-  end matchcontinue;
+  p := realPow(2.0,intReal(pow));
+  powOf2 := if n <= p then realInt(p) else nextGreaterPowerOf2_impl(n,pow+1);
 end nextGreaterPowerOf2_impl;
 
 public function mergeSimpleNodes "author: Waurich TUD 2013-07
@@ -3687,17 +3678,13 @@ protected
   tuple<Integer, Real> head;
   list<tuple<Integer, Real>> rest;
 algorithm
-  oHighestTuple := matchcontinue(iExecCosts, iHighestTuple)
-    case((head as (_,currentCost))::rest, (_,highestCost))
-      algorithm
-        true := realGt(currentCost, highestCost);
+  oHighestTuple := match(iExecCosts, iHighestTuple)
+    case((head as (_,currentCost))::rest, (_,highestCost)) guard realGt(currentCost, highestCost)
       then getHighestExecCost(rest, head);
-    case((head as (_,currentCost))::rest, (_,highestCost))
-      algorithm
-        true := realGt(currentCost, highestCost);
+    case(_::rest, _)
       then getHighestExecCost(rest, iHighestTuple);
     else iHighestTuple;
-  end matchcontinue;
+  end match;
 end getHighestExecCost;
 
 public function contractNodesInGraph "author: marcusw
@@ -4062,14 +4049,7 @@ protected function compareListLengthOnTrue "author: Waurich TUD 2013-07
   input list<Integer> inLst;
   output Boolean equalLength;
 algorithm
-  equalLength := matchcontinue inLst
-    case _
-      algorithm
-        true := intEq(inValue,listLength(inLst));
-      then
-        true;
-    else false;
-  end matchcontinue;
+  equalLength := intEq(inValue,listLength(inLst));
 end compareListLengthOnTrue;
 
 protected function getMergedSystemData "author: Waurich TUD 2013-07
@@ -5127,23 +5107,14 @@ protected
   BackendDAE.StrongComponents comps;
   list<tuple<BackendDAE.EqSystem,Integer>> eqSysts;
 algorithm
-  oNodeComps_Mapping := matchcontinue iNodeComps_Mapping
-    case (nodeIdx,(comps,eqSysts))
-      algorithm
-        true := intGe(nodeMark,0);
-      then ((nodeIdx+1,(comps,eqSysts)));
-    case (nodeIdx,(comps,eqSysts))
-      algorithm
-        true := intEq(nodeMark,-2);
-      then ((nodeIdx+1,(comps,eqSysts)));
-    case (nodeIdx,(comps,eqSysts))
-      algorithm
-        comp := arrayGet(systComps,nodeIdx);
-        eqSyst := arrayGet(iCompEqSysMapping,nodeIdx);
-        comps := comp :: comps;
-        eqSysts := eqSyst :: eqSysts;
-      then ((nodeIdx+1,(comps,eqSysts)));
-  end matchcontinue;
+  (nodeIdx,(comps,eqSysts)) := iNodeComps_Mapping;
+  if not (intGe(nodeMark,0) or intEq(nodeMark,-2)) then
+    comp := arrayGet(systComps,nodeIdx);
+    eqSyst := arrayGet(iCompEqSysMapping,nodeIdx);
+    comps := comp :: comps;
+    eqSysts := eqSyst :: eqSysts;
+  end if;
+  oNodeComps_Mapping := ((nodeIdx+1,(comps,eqSysts)));
 end getGraphComponents2;
 
 protected function componentsEqual "author: marcusw
@@ -5328,15 +5299,13 @@ protected
   list<Integer> criticalPath;
   list<tuple<Real,list<Integer>>> rest;
 algorithm
-  oLongestPathIndex := matchcontinue iCriticalPaths
-    case (cpCost, criticalPath)::rest
-      algorithm
-        true := realGt(cpCost, iLongestPath);
+  oLongestPathIndex := match iCriticalPaths
+    case (cpCost, criticalPath)::rest guard realGt(cpCost, iLongestPath)
       then getCriticalPath2(rest, iListIdx+1, cpCost, iListIdx);
     case (cpCost, criticalPath)::rest
       then getCriticalPath2(rest, iListIdx+1, iLongestPath, iLongestPathIndex);
     else iLongestPathIndex;
-  end matchcontinue;
+  end match;
 end getCriticalPath2;
 
 protected function addUpExeCostsForNode "author: marcusw
@@ -5789,15 +5758,13 @@ protected
   Communication head;
   Communications rest;
 algorithm
-  oHighestTuple := matchcontinue(iCommCosts, iHighestTuple)
-    case((head as COMMUNICATION(requiredTime=currentCost))::rest, COMMUNICATION(requiredTime=highestCost))
-      algorithm
-        true := realGt(currentCost, highestCost);
+  oHighestTuple := match(iCommCosts, iHighestTuple)
+    case((head as COMMUNICATION(requiredTime=currentCost))::rest, COMMUNICATION(requiredTime=highestCost)) guard realGt(currentCost, highestCost)
       then getHighestCommCost(rest, head);
     case(head::rest,_)
       then getHighestCommCost(rest, iHighestTuple);
     else iHighestTuple;
-  end matchcontinue;
+  end match;
 end getHighestCommCost;
 
 public function sumUpExeCosts "author: Waurich TUD 2014-07
@@ -6578,15 +6545,13 @@ protected
   Integer eqIdx, sccIdx;
   list<tuple<Integer,Integer>> rest;
 algorithm
-  oIndex := matchcontinue iEquationSccMapping
-    case (eqIdx,sccIdx)::rest
-      algorithm
-        true := intGt(sccIdx,iHighestIndex);
+  oIndex := match iEquationSccMapping
+    case (eqIdx,sccIdx)::rest guard intGt(sccIdx,iHighestIndex)
       then findHighestSccIdxInMapping(rest,sccIdx);
     case (eqIdx,sccIdx)::rest
       then findHighestSccIdxInMapping(rest,iHighestIndex);
     else iHighestIndex;
-  end matchcontinue;
+  end match;
 end findHighestSccIdxInMapping;
 
 protected function removeDummyStateFromMapping "author: marcusw
@@ -6606,10 +6571,8 @@ protected
   Integer eqIdx,sccIdx;
   tuple<Integer,Integer> newElem;
 algorithm
-  oNewList := matchcontinue iTuple
-    case (eqIdx,sccIdx)
-      algorithm
-        true := intEq(sccIdx,1);
+  oNewList := match iTuple
+    case (eqIdx,sccIdx) guard intEq(sccIdx,1)
       then iNewList;
     case (eqIdx,sccIdx)
       algorithm
@@ -6619,7 +6582,7 @@ algorithm
       algorithm
         print("removeDummyStateFromMapping1 failed\n");
     then iNewList;
-  end matchcontinue;
+  end match;
 end removeDummyStateFromMapping1;
 
 protected function convertToSccSimEqMapping "author: marcusw

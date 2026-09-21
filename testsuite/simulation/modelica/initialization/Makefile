@@ -54,6 +54,7 @@ scaling1.mos \
 scaling2.mos \
 SingularInitial.mos \
 singularJacobian.mos \
+solveTupleFunction.mos \
 startValue.mos \
 startValue1.mos \
 startValue2.mos \
@@ -90,6 +91,7 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 redundantInitialEquations.mos \
 conflictingStartValues.mos \
 conflictingStartValues2.mos \
+startAttributePriority.mos \
 Ticket5340.mos \
 
 
@@ -138,4 +140,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -1,5 +1,6 @@
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 // Based on ticket #3653
 
 setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();

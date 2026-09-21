@@ -20,7 +20,6 @@ diffSimulationResults("ModelicaTest.Media.TestAllProperties.IncompleteMedia.Refe
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
-// "
+// ""
 // (true, {})
 // endResult

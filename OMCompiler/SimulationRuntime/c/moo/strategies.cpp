@@ -169,7 +169,7 @@ int MatEmitter::operator()(const PrimalDualTrajectory& trajectory) {
         sim_result.emit(&sim_result, data, threadData);
     }
 
-    sim_result.free(&sim_result, data, threadData);
+    deinitializeResultData(data, threadData);
 
     return 0;
 }

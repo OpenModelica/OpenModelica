@@ -12,8 +12,12 @@ if bool then
   else
     exit(1);
   end if;
-  writeFile("OpenModelicaScriptingAPIQt.cpp", b);
-  writeFile("OpenModelicaScriptingAPIQt.h", c);
+  OpenModelica.Scripting.writeFile("OpenModelicaScriptingAPIQt.tmp.cpp", b);
+  bool := OpenModelica.Scripting.compareFilesAndMove("OpenModelicaScriptingAPIQt.tmp.cpp", "OpenModelicaScriptingAPIQt.cpp");
+  OpenModelica.Scripting.deleteFile("OpenModelicaScriptingAPIQt.tmp.cpp");
+  OpenModelica.Scripting.writeFile("OpenModelicaScriptingAPIQt.tmp.h", c);
+  bool := OpenModelica.Scripting.compareFilesAndMove("OpenModelicaScriptingAPIQt.tmp.h", "OpenModelicaScriptingAPIQt.h");
+  OpenModelica.Scripting.deleteFile("OpenModelicaScriptingAPIQt.tmp.h");
 end if;
 if not bool then
   print("Failed to generate OpenModelicaScriptingAPI; falling back to old generated one until new tarball exists: " + getErrorString());

@@ -80,7 +80,6 @@ import CodegenMidToC;
 import CodegenWasmJitFunctions;
 import ComponentReference;
 import Config;
-import Corba;
 import DAEUtil;
 import Debug;
 import Dump;
@@ -106,6 +105,7 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
+import NFApi;
 import PackageManagement;
 import Parser;
 import Print;
@@ -453,7 +453,7 @@ algorithm
 end checkUsesAndUpdateProgram;
 
 public function loadModel
-  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
+  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the OPENMODELICALIBRARY (MODELICAPATH in the language specification) */>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
@@ -711,7 +711,7 @@ algorithm
       list<Values.Value> vals, cvars;
       Absyn.Path path,classpath,className,parentClass;
       SCode.Program sp;
-      Absyn.Program p,newp;
+      Absyn.Program p,newp,parsed;
       list<Absyn.Program> newps;
       DAE.Type ty;
       list<DAE.Type> tys;
@@ -854,12 +854,14 @@ algorithm
     case ("clear",{})
       algorithm
         SymbolTable.reset();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
     case ("clearProgram",{})
       algorithm
         SymbolTable.clearProgram();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
@@ -990,6 +992,7 @@ algorithm
         b := Flags.isSet(Flags.SCODE_INST);
         strs := System.strtok(str, " ");
         {} := FlagsUtil.readArgs(strs);
+        FlagsUtil.applyNumProcEnvironment();
         outCache := FCore.emptyCache();
 
         if b <> Flags.isSet(Flags.SCODE_INST) then
@@ -1139,6 +1142,15 @@ algorithm
         Values.REAL(System.realtimeTock(i));
 
     case ("timerTock",_)
+      then Values.REAL(-1.0);
+
+    case ("timerAccumulated",{Values.INTEGER(i)})
+      algorithm
+        true := System.realtimeNtick(i) > 0;
+      then
+        Values.REAL(System.realtimeAccumulated(i));
+
+    case ("timerAccumulated",_)
       then Values.REAL(-1.0);
 
     case ("readFile",{Values.STRING(str)})
@@ -1478,10 +1490,10 @@ algorithm
     case ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
-        newp := Parser.parsestring(str,name);
-        newp := checkUsesAndUpdateProgram(newp, SymbolTable.getAbsyn(), b,
+        parsed := Parser.parsestring(str,name);
+        newp := checkUsesAndUpdateProgram(parsed, SymbolTable.getAbsyn(), b,
           Settings.getModelicaPath(Testsuite.isRunning()), b1, requireExactVersion, mergeAST);
-        SymbolTable.setAbsyn(newp);
+        SymbolTable.setAbsynLoaded(newp, parsed);
         outCache := FCore.emptyCache();
       then
         Values.BOOL(true);
@@ -2348,6 +2360,20 @@ algorithm
           libHandle := System.loadLibrary(fileName + Autoconf.dllExt, relativePath = true, printDebug = print_debug);
           funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
           newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
+          // lookupFunction takes a reference on the library, so freeing the
+          // library alone only drops the count from two to one and the shared
+          // object is never unloaded. On Windows that keeps the file locked, and
+          // the next call to the same function cannot relink its .dll: the code
+          // generation fails and the call silently evaluates to nothing.
+          //
+          // Only Windows needs the unload. Unix can relink a loaded .so, since
+          // that just replaces the inode, and unloading there would change
+          // behaviour: a generated function's shared object carries static state
+          // that currently survives between calls in a session, e.g. the seed
+          // behind System.realRand (openmodelica/bootstrapping/System.mos).
+          if Autoconf.os == "Windows_NT" then
+            System.freeFunction(funcHandle, print_debug);
+          end if;
           System.freeLibrary(libHandle, print_debug);
         end if;
         execStat("executeFunction("+AbsynUtil.pathString(funcpath)+")");
@@ -2841,18 +2867,16 @@ protected function getChangedClass
   input String suffix;
   output String name;
 algorithm
-  name := matchcontinue elt
+  name := match elt
     local
       String fileName;
-    case SCode.CLASS(name=name,info=SOURCEINFO())
-      algorithm
-        false := System.regularFileExists(name + suffix);
+    case SCode.CLASS(name=name,info=SOURCEINFO()) guard not System.regularFileExists(name + suffix)
       then name;
     case SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName))
       algorithm
         true := System.fileIsNewerThan(fileName, name + suffix);
       then name;
-  end matchcontinue;
+  end match;
 end getChangedClass;
 
 protected function isChanged
@@ -3242,7 +3266,7 @@ protected
   list<String> vars;
   String omhome, omlib, omcpath, systemPath, omdev, os, touch_file, usercflags;
   String workdir, uname, senddata, gcc, gccVersion, confcmd;
-  Boolean omcfound, touch_res, rm_res, have_corba, gcc_res;
+  Boolean omcfound, touch_res, rm_res, gcc_res;
   list<Values.Value> vals;
 algorithm
   vars := {"OPENMODELICAHOME",
@@ -3261,7 +3285,6 @@ algorithm
            "C_COMPILER",
            "C_COMPILER_VERSION",
            "C_COMPILER_RESPONDING",
-           "HAVE_CORBA",
            "CONFIGURE_CMDLINE"};
   omhome := Settings.getInstallationDirectoryPath();
   omlib := Settings.getModelicaPath(Testsuite.isRunning());
@@ -3280,7 +3303,6 @@ algorithm
   // _ = System.platform();
   senddata := Autoconf.ldflags_runtime;
   gcc := System.getCCompiler();
-  have_corba := Corba.haveCorba();
   System.systemCall("rm -f " + touch_file, "");
   gcc_res := 0 == System.systemCall(gcc + " --version", touch_file);
   gccVersion := System.readFile(touch_file);
@@ -3302,7 +3324,6 @@ algorithm
            Values.STRING(gcc),
            Values.STRING(gccVersion),
            Values.BOOL(gcc_res),
-           Values.BOOL(have_corba),
            Values.STRING(confcmd)};
 
   res := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"), vals, vars, -1);

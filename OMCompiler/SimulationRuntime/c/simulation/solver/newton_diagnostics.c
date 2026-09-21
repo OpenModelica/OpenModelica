@@ -129,7 +129,7 @@ double** getJacobian( DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DAT
   if (systemData->jacobianIndex != -1) {
     jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
 
-    jac = (modelica_real*) calloc(jacobian->sizeRows * jacobian->sizeCols, sizeof(modelica_real*));
+    jac = (modelica_real*) calloc(jacobian->sizeRows * jacobian->sizeCols, sizeof(modelica_real));
     assertStreamPrint(threadData, NULL != jac, "out of memory");
 
     /* call generic dense Jacobian */
@@ -1213,6 +1213,19 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   if (p == 0) {
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics terminated: no non-linear equations!");
+    free(x0);
+    free(f);
+    free(dx);
+    for (i = 0; i < m; i++)
+      free(fx[i]);
+    free(fx);
+    for (i = 0; i < m; i++) {
+      for (j = 0; j < m; j++)
+        free(fxx[i][j]);
+      free(fxx[i]);
+    }
+    free(fxx);
+    free(n_idx);
     return;
   }
 

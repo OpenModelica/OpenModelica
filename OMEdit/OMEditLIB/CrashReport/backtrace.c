@@ -11,7 +11,7 @@
 /* adrpo commented this out as this is a C file compiled with gcc so it NEVER get QT_NO_DEBUG
  * #ifdef QT_NO_DEBUG
  */
-#if defined(_WIN32)
+#if defined(__MINGW32__)  // bfd-based backtrace: MinGW only (no bfd under MSVC/clang-cl)
 #include "backtrace.h"
 
 void

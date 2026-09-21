@@ -1,0 +1,122 @@
+//! Stand-in for [`crate::Curl`] where libcurl is not linked: the wasm build,
+//! which has no libcurl at all, and a native build without the `curl` feature
+//! (`omgendoc`, which downloads nothing and would otherwise drag in libcurl's
+//! TLS/LDAP/SSH/krb5 tail).
+//!
+//! # wasm
+//!
+//! Browser/Node-wasm implementation of [`crate::Curl`]. The native module
+//! downloads over libcurl (which has no wasm target); on wasm the *host*
+//! environment performs the transfer instead, because `omc_eval` runs
+//! synchronously and cannot await a `fetch()` from inside the compiler call.
+//!
+//! So this module does no network I/O of its own. `multiDownload` checks the
+//! in-memory VFS (`openmodelica_wasi`) for each requested file: a file already
+//! present counts as downloaded; a missing one is recorded as *pending* and the
+//! call reports failure (which makes the caller, e.g. `installPackage`, abort
+//! cleanly). The wasm host — the OMShell Web Worker in the browser, or
+//! `omc-cli.js` under Node — then drains the pending list with
+//! [`take_pending_downloads`], fetches each file (the browser host streams it so
+//! it can report download progress), stages the bytes with `wasi_write_file`, and
+//! re-runs the command. On the re-run the files are in the VFS, so `multiDownload`
+//! succeeds and the command proceeds. A package install needs only a couple of
+//! files (the index, then the library zip), so the command re-runs a handful of
+//! times; the work before each download is cheap next to the transfer itself.
+
+#![allow(non_snake_case)]
+
+#[cfg(target_arch = "wasm32")]
+use std::cell::RefCell;
+#[allow(unused_imports)]
+use std::sync::Arc;
+
+use metamodelica::Result;
+use arcstr::ArcStr;
+
+use metamodelica::List;
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    /// `(mirror URLs, target filename)` items the last `multiDownload` requested
+    /// but could not satisfy from the VFS. Drained by [`take_pending_downloads`].
+    static PENDING: RefCell<Vec<(Vec<String>, String)>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Take and clear the files `multiDownload` asked for but did not find in the VFS.
+/// The wasm host fetches each (trying the mirrors in order), writes the bytes to
+/// the VFS, and re-runs the command. See the module docs.
+#[cfg(target_arch = "wasm32")]
+pub fn take_pending_downloads() -> Vec<(Vec<String>, String)> {
+    PENDING.with(|p| std::mem::take(&mut *p.borrow_mut()))
+}
+
+/// Built without the `curl` feature: nothing can be fetched here. A file already
+/// on disk still counts as downloaded, so an already-installed package keeps
+/// working; anything else is an error naming the missing file.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn multiDownload(
+    urlFileList: List<(List<ArcStr>, ArcStr)>,
+    _maxParallel: i32,
+) -> Result<bool> {
+    let mut all_present = true;
+    let mut cur = urlFileList;
+    while let metamodelica::ListNode::Cons { head: (_urls, filename), tail } = &*cur {
+        if !std::path::Path::new(filename.as_str()).exists() {
+            openmodelica_util::Error::addMessage(
+                openmodelica_error::ErrorTypes::Message {
+                    id: -1,
+                    ty: openmodelica_error::ErrorTypes::MessageType::SIMULATION,
+                    severity: openmodelica_error::ErrorTypes::Severity::ERROR,
+                    message: arcstr::literal!(
+                        "Cannot download %s: this build has no download support."
+                    ),
+                },
+                metamodelica::cons(filename.clone(), metamodelica::nil()),
+            )?;
+            all_present = false;
+        }
+        let tail = tail.clone();
+        cur = tail;
+    }
+    Ok(all_present)
+}
+
+/// For each `(mirror URLs, target filename)`, succeed if the file is already in
+/// the VFS; otherwise record it as pending and fail. `maxParallel` is unused — the
+/// host fetches the pending list. Returns whether every file was already present.
+#[cfg(target_arch = "wasm32")]
+pub fn multiDownload(
+    urlFileList: List<(List<ArcStr>, ArcStr)>,
+    _maxParallel: i32,
+) -> Result<bool> {
+    let mut all_present = true;
+
+    let mut cur = urlFileList;
+    while let metamodelica::ListNode::Cons { head: (urls, filename), tail } = &*cur {
+        if openmodelica_wasi::read(filename.as_str()).is_none() {
+            // Flatten this item's mirror URLs and record it for the host to fetch.
+            // A single command can ask for the same file repeatedly before it is
+            // fetched (installPackage consults the package index once per package
+            // it resolves, and the index is only cached after a successful read),
+            // so record each target filename at most once.
+            let name = filename.as_str();
+            let dup = PENDING.with(|p| p.borrow().iter().any(|(_, f)| f == name));
+            if !dup {
+                let mut mirrors: Vec<String> = Vec::new();
+                let mut u = urls.clone();
+                while let metamodelica::ListNode::Cons { head, tail } = &*u {
+                    mirrors.push(head.to_string());
+                    let tail = tail.clone();
+                    u = tail;
+                }
+                PENDING.with(|p| p.borrow_mut().push((mirrors, filename.to_string())));
+            }
+            all_present = false;
+        }
+
+        let tail = tail.clone();
+        cur = tail;
+    }
+
+    Ok(all_present)
+}

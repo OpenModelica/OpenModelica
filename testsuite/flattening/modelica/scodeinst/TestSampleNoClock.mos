@@ -23,7 +23,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 // algorithm
 //   if size(table, 1) == 0 then
 //     index := 0;
-//     nextTime := 9.999999999999999e+59;
+//     nextTime := 1e60;
 //     y := startValue;
 //   elseif size(table, 1) == 1 then
 //     index := 1;
@@ -31,7 +31,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //       nextTime := table[1];
 //       y := startValue;
 //     else
-//       nextTime := 9.999999999999999e+59;
+//       nextTime := 1e60;
 //       y := not startValue;
 //     end if;
 //   else
@@ -45,7 +45,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //       j := j + 1;
 //     end while;
 //     if j > n then
-//       nextTime := 9.999999999999999e+59;
+//       nextTime := 1e60;
 //     else
 //       nextTime := table[j];
 //     end if;
@@ -185,7 +185,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   parameter Real booleanTable.table[6](quantity = \"Time\", unit = \"s\") = 9.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
 //   parameter Real booleanTable.table[7](quantity = \"Time\", unit = \"s\") = 11.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
 //   Boolean booleanTable.y \"Connector of Boolean output signal\";
-//   protected parameter Integer booleanTable.n = 7 \"Number of table points\";
+//   protected final parameter Integer booleanTable.n = 7 \"Number of table points\";
 //   protected Real booleanTable.nextTime(quantity = \"Time\", unit = \"s\");
 //   protected Integer booleanTable.index \"Index of actual table entry\";
 //   parameter Boolean changing.pre_u_start = false \"Value of pre(u) at initial time\";
@@ -339,12 +339,12 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //     onDelay.t_next := time - 1.0;
 //   end when;
 // algorithm
-//   when time >= pre(booleanTable.nextTime) and booleanTable.n > 0 then
-//     if booleanTable.index < booleanTable.n then
+//   when time >= pre(booleanTable.nextTime) then
+//     if booleanTable.index < 7 then
 //       booleanTable.index := booleanTable.index + 1;
 //       booleanTable.nextTime := booleanTable.table[booleanTable.index];
 //       booleanTable.y := not booleanTable.y;
-//     elseif booleanTable.index == booleanTable.n then
+//     elseif booleanTable.index == 7 then
 //       booleanTable.index := booleanTable.index + 1;
 //       booleanTable.y := not booleanTable.y;
 //     end if;

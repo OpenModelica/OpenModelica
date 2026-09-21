@@ -66,10 +66,788 @@ void omc_System_initGarbageCollector(void *threadData);
 #if defined(_WIN32)
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
+#if !defined(__EMSCRIPTEN__) && defined(OMC_RUST_ABI)
+void omc_compiler_clear_cancel();                       // Rust in-process: reset the cancel flag per op
+void omc_compiler_set_pump_callback(void (*cb)(void));  // register the event-pump callback
+int omc_compiler_progress_permille();                   // 0..1000, or <0 for indeterminate
+int omc_compiler_progress_phase();                      // PHASE_* (0 idle)
+#elif !defined(__EMSCRIPTEN__)
+void System_clearCancel();                              // classic C omc runtime
+void System_setPumpCallback(void (*cb)(void));
+int System_progressPermille();
+int System_progressPhase();
+const char* System_progressMessage();                   // label of the step in progress, "" if none
+#endif
 }
 
 #include <QMessageBox>
 #include <QStringBuilder>
+#include <QCoreApplication>
+#include <QRegularExpression>
+
+// Progress phase (compiler PHASE_* / metamodelica::cancel) → user-facing label.
+// Shared by the wasm worker-wait UI and the native pump-driven progress bar.
+static QString omcPhaseLabel(int phase) {
+  switch (phase) {
+    case 1: return QObject::tr("Downloading…");
+    case 2: return QObject::tr("Parsing…");
+    case 3: return QObject::tr("Instantiating…");
+    case 4: return QObject::tr("Compiling model…");
+    case 5: return QObject::tr("Simulating…");
+    default: return QString();
+  }
+}
+
+#if defined(__EMSCRIPTEN__)
+#include <cstdlib>
+#include <emscripten.h>
+#include <emscripten/em_js.h>
+#include <emscripten/val.h>
+#include <QEventLoop>
+#include <QTimer>
+#include <QVarLengthArray>
+#include <QPair>
+#include <QtCore/private/qwasmsuspendresumecontrol_p.h>
+
+// omc runs in the shared omc_worker.js Web Worker. Calls are posted without
+// suspending; the reply is stashed by id and the C++ side waits for it. A raw
+// Asyncify suspend is only safe before Qt's loop runs (it corrupts Qt's wasm
+// event pump mid-event), so once running we suspend a nested QEventLoop instead.
+bool g_omcMainLoopRunning = false;
+
+EM_JS(void, omedit_worker_setup, (const char *ver), {
+  if (Module.__omcWorker) return;
+  // Cache-bust the worker URL with the build id (workers cache past a hard-reload).
+  const url = new URL("../omc_worker.js", document.baseURI);
+  url.search = "v=" + UTF8ToString(ver);
+  const w = new Worker(url, { type: "module" });
+  Module.__omcWorker = w;
+  // Cooperative cancel + live progress: a shared "control block" the omc worker
+  // polls/writes (needs cross-origin isolation for SharedArrayBuffer). A long omc
+  // call blocks the worker, so cancel can't be a message — the main thread writes
+  // control[0], the worker reads it; the worker writes progress into control[1]/[2].
+  // Layout (Int32Array): [0] cancel, [1] progress permille, [2] phase, [3] generation.
+  Module.__omcControlView = null;
+  try {
+    if (typeof SharedArrayBuffer !== "undefined" && self.crossOriginIsolated) {
+      const cbuf = new SharedArrayBuffer(16);
+      Module.__omcControlView = new Int32Array(cbuf);
+      w.postMessage({ cmd: "controlBuf", buf: cbuf });
+    }
+  } catch (e) { Module.__omcControlView = null; }
+  Module.__omcPending = null;
+  Module.__omcMsgId = 0;
+  Module.__omcCallId = 0;
+  Module.__omcReplies = {};
+  Module.__omcCallPromises = {};
+  Module.__omcQueue = Promise.resolve();
+  Module.__omcSend = (msg) => {
+    const run = () => new Promise((resolve) => {
+      Module.__omcPending = resolve;
+      w.postMessage(msg);
+    });
+    const p = Module.__omcQueue.then(run);
+    Module.__omcQueue = p.catch(() => {});
+    return p;
+  };
+  // Post a worker message, returning a fresh call id; when the reply arrives it is
+  // stashed in __omcReplies[id] for the C++ side to poll/take. id-keyed so a
+  // reentrant call made while another's nested loop is spinning stays unambiguous.
+  // Resume the suspended nested loop the instant a reply lands (vs polling).
+  Module.__omcWake = () => {
+    const i = Module.__omcWakeIndex;
+    if (i === undefined) return;
+    const c = Module.qtSuspendResumeControl;
+    const h = c && c.eventHandlers && c.eventHandlers[i];
+    if (h) h();
+  };
+  Module.__omcPostCall = (msg) => {
+    const id = ++Module.__omcCallId;
+    Module.__omcCallPromises[id] = Module.__omcSend(msg).then((reply) => {
+      Module.__omcReplies[id] = reply || {};
+      Module.__omcWake();
+    }).catch((e) => {
+      Module.__omcReplies[id] = { __bridgeError: String(e) };
+      Module.__omcWake();
+    });
+    return id;
+  };
+  Module.__omcSetStatus = (p) => {
+    const amt = p ? (p.total > 0 ? Math.round(100 * p.done / p.total) + "%"
+                                 : Math.round(p.done / 1024) + " KiB") : "";
+    // Drive the HTML startup splash bar with the real download progress, if it is
+    // up and the library-tree pass has not yet claimed it (once it has, this fires
+    // on every worker reply and would keep resetting the determinate bar).
+    const sfill = Module.__omeditSplashDeterminate ? null : document.querySelector("#omedit-splash .bar > div");
+    const smsg = Module.__omeditSplashDeterminate ? null : document.getElementById("omedit-splash-msg");
+    if (sfill) {
+      if (p && p.total > 0) {
+        sfill.style.animation = "none";
+        sfill.style.transform = "none";
+        sfill.style.width = (100 * p.done / p.total) + "%";
+      } else {
+        // finished or unknown size: restore the indeterminate slide
+        sfill.style.animation = "";
+        sfill.style.transform = "";
+        sfill.style.width = "40%";
+      }
+    }
+    if (smsg && p) smsg.textContent = "Downloading libraries… " + amt;
+    let el = document.getElementById("omcStatus");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "omcStatus";
+      el.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;"
+        + "font:12px sans-serif;padding:3px 8px;background:#2b2b2b;color:#e0e0e0;";
+      document.body.appendChild(el);
+    }
+    if (!p) { el.style.display = "none"; return; }
+    el.textContent = "Downloading " + p.file + "  " + amt;
+    el.style.display = "block";
+  };
+  w.onmessage = (e) => {
+    const m = e.data;
+    if (m && m.kind === "progress") { Module.__omcSetStatus(m); return; }
+    Module.__omcSetStatus(null);
+    const resolve = Module.__omcPending;     // serialised queue → one in flight
+    Module.__omcPending = null;
+    if (resolve) resolve(m);
+  };
+});
+
+// Non-suspending posts; replies collected via __omcReplies[id]. omedit_post_abi
+// is called by the generated bridge (OpenModelicaScriptingAPIQtBridge.cpp).
+EM_JS(int, omedit_post_init, (), {
+  return Module.__omcPostCall({ cmd: "init", installMsl: false });
+});
+EM_JS(char *, omedit_take_init_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  if (r && r.ok) return stringToNewUTF8("");
+  return stringToNewUTF8((r && (r.error || r.__bridgeError)) || "omc worker init failed");
+});
+EM_JS(int, omedit_post_eval, (const char *src), {
+  // keepErrors: OMEdit reads diagnostics itself (printMessagesStringInternal),
+  // so the worker must not drain omc's Error buffer into the reply.
+  return Module.__omcPostCall({ cmd: "eval", src: UTF8ToString(src), keepErrors: true });
+});
+EM_JS(int, omedit_post_abi, (const char *req), {
+  return Module.__omcPostCall({ cmd: "abi", request: UTF8ToString(req), id: ++Module.__omcMsgId });
+});
+EM_JS(int, omedit_call_ready, (int id), {
+  return Object.prototype.hasOwnProperty.call(Module.__omcReplies, id) ? 1 : 0;
+});
+EM_JS(char *, omedit_take_eval_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  // A worker-level failure (omc trapped, or the bridge threw) is the only error
+  // signal for these cases — omc's Error buffer is unreadable after a trap. Stash
+  // it so sendCommand can surface it; normal diagnostics still flow via the ABI.
+  Module.__omcLastEvalError = (r && (r.error || r.__bridgeError)) || "";
+  return stringToNewUTF8((r && r.result) || "");
+});
+EM_JS(char *, omedit_take_last_eval_error, (), {
+  const e = Module.__omcLastEvalError || "";
+  Module.__omcLastEvalError = "";
+  return stringToNewUTF8(e);
+});
+EM_JS(char *, omedit_take_abi_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  if (r && typeof r.response === "string") return stringToNewUTF8(r.response);
+  if (r && r.__bridgeError) return stringToNewUTF8(JSON.stringify({ error: "omc bridge call failed: " + r.__bridgeError }));
+  return stringToNewUTF8('{"error":"no response from omc worker"}');
+});
+
+/*!
+ * The pre-main-loop wait, which suspends this stack through Asyncify.
+ *
+ * Qt's DOM event handlers must be told to *only queue* while that is the case.
+ * Left alone they take the else branch of
+ *
+ *   if (control.resume) resume(); else if (control.asyncifyEnabled) {} else
+ *     Module.qtSendPendingEvents();
+ *
+ * and call synchronously into a module whose stack is unwound, which corrupts the
+ * pending-event replay - the intermittent "Cannot read properties of undefined
+ * (reading 'index')" in QWasmSuspendResumeControl::sendPendingEvents() during
+ * startup. Qt sets that flag around its own suspends but cannot know about ours.
+ * Whether it fires depends on a DOM event landing in the window, which is why it
+ * looks random and why anything that lengthens startup makes it more likely.
+ */
+EM_ASYNC_JS(void, omedit_await_call, (int id), {
+  const control = Module.qtSuspendResumeControl;
+  const wasEnabled = control ? control.asyncifyEnabled : false;
+  if (control) control.asyncifyEnabled = true;
+  try {
+    const p = Module.__omcCallPromises[id];
+    if (p) { try { await p; } catch (e) {} }
+  } finally {
+    if (control) control.asyncifyEnabled = wasEnabled;
+  }
+});
+
+EM_JS(void, omedit_wake_now, (), { if (Module.__omcWake) Module.__omcWake(); });
+
+/*!
+ * Work around a re-entrancy bug in Qt's WebAssembly event replay.
+ *
+ * QWasmSuspendResumeControl::sendPendingEvents() reads the queue length once and
+ * then shifts that many entries:
+ *
+ *   int count = pendingEvents["length"].as<int>();
+ *   while (count-- > 0) {
+ *       val event = pendingEvents.call<val>("shift");
+ *       auto it = m_eventHandlers.find(event["index"].as<int>());
+ *
+ * If anything drains the queue while that loop is running, shift() starts
+ * returning undefined and event["index"] throws - the intermittent "Cannot read
+ * properties of undefined (reading 'index')" that hangs startup. A DOM event
+ * arriving whenever the stack yields calls Module.qtSendPendingEvents()
+ * synchronously, which is exactly such a drain.
+ *
+ * The guard makes a nested call a no-op. Nothing is lost: entries queued during
+ * the outer loop stay in the array (its count was fixed before they arrived) and
+ * are replayed on the dispatcher's next pass.
+ *
+ * A property setter is used because Qt assigns Module.qtSendPendingEvents itself,
+ * after this runs.
+ */
+#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+EM_JS(void, omedit_guard_pending_events, (), {
+  if (Module.__omeditPendingEventsGuard) return;
+  Module.__omeditPendingEventsGuard = true;
+  let real = null;
+  let draining = false;
+  const wrapper = function () {
+    if (draining || !real) return;
+    draining = true;
+    try {
+      return real.apply(this, arguments);
+    } finally {
+      draining = false;
+    }
+  };
+  try {
+    Object.defineProperty(Module, "qtSendPendingEvents", {
+      configurable: true,
+      get() { return wrapper; },
+      set(fn) { real = fn; }
+    });
+  } catch (e) {
+    console.warn("[OMEdit] could not guard qtSendPendingEvents", e);
+  }
+});
+
+/*!
+ * Make an over-run of that loop harmless.
+ *
+ * The guard above only closes the JS route into a nested drain; one starting
+ * inside wasm - a handler that pumps events, reaching sendPendingEvents() through
+ * processEvents() - is invisible from there, and that is evidently what happens.
+ * So instead of preventing the over-run, make it survivable: shift() on an
+ * exhausted queue returns an entry pointing at a handler that does nothing,
+ * rather than undefined. The extra iterations then run a no-op instead of
+ * dereferencing undefined.
+ *
+ * Fixed in Qt 6.11: the loop there re-evaluates pendingEvents["length"] in its
+ * condition and splices at a bounds-checked index instead of blindly shifting.
+ * The 6.10 branch still has the old form and the fix was not backported (it comes
+ * with an m_eventFilter member 6.10.2 does not have). DELETE THIS, and
+ * omedit_guard_pending_events() with it, when the wasm kit moves to 6.11 - it
+ * compiles out there already, so nothing breaks in the meantime; this is only
+ * dead weight to be removed.
+ */
+EM_JS(void, omedit_patch_pending_shift, (int noopIndex), {
+  const control = Module.qtSuspendResumeControl;
+  if (!control || !Array.isArray(control.pendingEvents)) return;
+  const queue = control.pendingEvents;
+  if (queue.__omeditPatchedShift) return;
+  const realShift = Array.prototype.shift;
+  Object.defineProperty(queue, "__omeditPatchedShift", { value: true });
+  queue.shift = function () {
+    if (this.length > 0) {
+      return realShift.call(this);
+    }
+    return { index: noopIndex, arg: undefined };
+  };
+});
+#endif // Qt < 6.11
+
+void omcInstallPendingEventsGuard()
+{
+#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+  omedit_guard_pending_events();
+#endif
+}
+
+void omcInstallPendingEventsShiftGuard()
+{
+#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+  QWasmSuspendResumeControl *pControl = QWasmSuspendResumeControl::get();
+  if (!pControl) {
+    return;
+  }
+  // Registered once; its index is what an exhausted shift() hands back.
+  static const uint32_t noopHandler = pControl->registerEventHandler([](emscripten::val) {});
+  omedit_patch_pending_shift(int(noopHandler));
+#endif
+}
+
+// Cooperative cancel + progress control block (shared with the omc worker).
+// Available only when cross-origin isolated (SharedArrayBuffer);
+// omedit_cancel_available reports it. Indices: 0 cancel, 1 progress, 2 phase,
+// 3 generation.
+EM_JS(int, omedit_cancel_available, (), {
+  return Module.__omcControlView ? 1 : 0;
+});
+EM_JS(void, omedit_cancel_sim, (), {
+  if (Module.__omcControlView) Atomics.store(Module.__omcControlView, 0, 1);
+});
+// Clear the cancel flag and reset progress at the start of a new op; bump the
+// generation so a late progress write from the previous op is ignored.
+EM_JS(void, omedit_clear_cancel, (), {
+  const v = Module.__omcControlView;
+  if (v) {
+    Atomics.store(v, 0, 0);
+    Atomics.store(v, 1, -1);
+    Atomics.store(v, 2, 0);
+    Atomics.add(v, 3, 1);
+  }
+});
+// Read current progress permille (-1 indeterminate) / phase for the UI timer.
+EM_JS(int, omedit_progress_permille, (), {
+  return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 1) : -1;
+});
+EM_JS(int, omedit_progress_phase, (), {
+  return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 2) : 0;
+});
+
+static QVarLengthArray<QEventLoop *> g_omcWaitStack;
+static bool g_omcWakeInstalled = false;
+
+static void ensureWakeInstalled() {
+  if (g_omcWakeInstalled) return;
+  QWasmSuspendResumeControl *ctl = QWasmSuspendResumeControl::get();
+  if (!ctl) return;
+  uint32_t idx = ctl->registerEventHandler([](emscripten::val) {
+    if (!g_omcWaitStack.isEmpty()) g_omcWaitStack.last()->quit();
+  });
+  EM_ASM({ Module.__omcWakeIndex = $0; }, idx);
+  g_omcWakeInstalled = true;
+}
+
+// Read the worker's progress control block and reflect it on the main-window
+// status bar while a blocking call is in flight. Sets ownsBar when it is the
+// one that made the bar visible, so the wait can restore it on completion.
+static void omcDriveProgressUi(bool &ownsBar, bool &ownsCancel) {
+  int phase = omedit_progress_phase();
+  if (phase == 0) return; // PHASE_IDLE — nothing running to report
+  MainWindow *w = MainWindow::instance();
+  // The status bar / progress bar are built partway through MainWindow's
+  // constructor, but omc commands (getVersion, …) run before that from the
+  // OMCProxy constructor — and the wait's QTimer can fire during them. Bail
+  // until they exist so we never make a virtual call on an uninitialised member.
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    ownsBar = true;
+    w->showProgressBar();
+  }
+  int permille = omedit_progress_permille();
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  ownsCancel = true;
+  w->showCancelOperationButton(true);
+  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+}
+
+// Restore whatever this wait made visible. The bar and cancel button are
+// tracked separately: a wait may show the Cancel button while another widget
+// already owns the progress bar, and must still hide the button on completion.
+static void omcClearProgressUi(bool ownsBar, bool ownsCancel) {
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  if (ownsCancel) w->showCancelOperationButton(false);
+  if (ownsBar) {
+    w->hideProgressBar();
+    w->getProgressBar()->setRange(0, 100);
+    w->getStatusBar()->clearMessage();
+  }
+}
+
+void omcWorkerWaitReply(int id) {
+  if (omedit_call_ready(id)) return;
+  if (!g_omcMainLoopRunning) {
+    omedit_await_call(id);
+    return;
+  }
+  ensureWakeInstalled();
+  QEventLoop loop;
+  if (!g_omcWakeInstalled) {
+    QTimer poll;
+    QObject::connect(&poll, &QTimer::timeout, &loop, [&loop, id]() {
+      if (omedit_call_ready(id)) loop.quit();
+    });
+    poll.start(1);
+    loop.exec();
+    return;
+  }
+  // Only the outermost wait drives the progress UI (nested calls would fight
+  // over the same status bar) and only when the shared control block exists
+  // (cross-origin isolated); a quick call finishes before the 100 ms tick, so
+  // the bar never flashes for trivial requests.
+  bool outermost = g_omcWaitStack.isEmpty();
+  g_omcWaitStack.append(&loop);
+  QTimer progressTimer;
+  bool ownsBar = false;
+  bool ownsCancel = false;
+  if (outermost && omedit_cancel_available()) {
+    QObject::connect(&progressTimer, &QTimer::timeout, &loop, [&ownsBar, &ownsCancel]() {
+      omcDriveProgressUi(ownsBar, ownsCancel);
+    });
+    progressTimer.start(100);
+  }
+  while (!omedit_call_ready(id)) loop.exec();
+  progressTimer.stop();
+  g_omcWaitStack.removeLast();
+  if (ownsBar || ownsCancel) omcClearProgressUi(ownsBar, ownsCancel);
+  if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
+}
+
+// Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
+// installMsl=false: OMEdit loads libraries itself as ordinary commands. Returns
+// "" on success or an error string (caller frees with free()).
+static char *omedit_worker_init() {
+  omedit_worker_setup(__DATE__ "T" __TIME__); // spawn worker, cache-busted by build id
+  int id = omedit_post_init();
+  omcWorkerWaitReply(id);
+  return omedit_take_init_result(id);
+}
+
+// String command path (replaces omc_Main_handleCommand). Returns the reply
+// string (caller frees with free()).
+static char *omedit_worker_eval(const char *src) {
+  int id = omedit_post_eval(src);
+  omcWorkerWaitReply(id);
+  return omedit_take_eval_result(id);
+}
+
+// Worker-VFS file read, backing the QAbstractFileEngine (wasm/worker_vfs_engine.cpp).
+EM_JS(int, omedit_worker_ready, (), {
+  return (Module.__omcWorker && Module.__omcSend) ? 1 : 0;
+});
+EM_JS(int, omedit_post_vfs_get, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsGet", path: UTF8ToString(path) });
+});
+EM_JS(char *, omedit_take_vfs_bytes, (int id, int *outLen), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const bytes = r && r.bytes;
+  if (!bytes) { HEAP32[outLen >> 2] = -1; return 0; }
+  const len = bytes.length;
+  const ptr = _malloc(len || 1);
+  HEAPU8.set(bytes, ptr);
+  HEAP32[outLen >> 2] = len;
+  return ptr;
+});
+
+QByteArray omcWorkerReadFile(const char *path) {
+  if (!omedit_worker_ready()) return QByteArray();
+  int id = omedit_post_vfs_get(path);
+  omcWorkerWaitReply(id);
+  int len = -1;
+  char *p = omedit_take_vfs_bytes(id, &len);
+  if (!p || len < 0) { if (p) free(p); return QByteArray(); }
+  QByteArray data(p, len);
+  free(p);
+  return data;
+}
+
+// Worker-VFS file write, backing the QAbstractFileEngine's write side; entries are
+// overwritten, there is no remove. Deliberately does NOT wait for the reply: files
+// get written from anywhere (a QSettings sync, a destructor, code before exec()) and
+// blocking on the worker there corrupts Qt's pending-event machinery. Ordering holds
+// anyway — Module.__omcSend is one serialised queue.
+EM_JS(void, omedit_post_vfs_put, (const char *path, const char *bytes, int len), {
+  Module.__omcSend({ cmd: "vfsPut", path: UTF8ToString(path),
+                     bytes: HEAPU8.slice(bytes, bytes + len) })
+    .then((r) => { if (!r || !r.ok) console.error("[OMEdit-wasm] vfsPut refused", UTF8ToString(path)); })
+    .catch((e) => console.error("[OMEdit-wasm] vfsPut failed", e));
+});
+
+bool omcWorkerWriteFile(const char *path, const QByteArray &data)
+{
+  if (!omedit_worker_ready()) return false;
+  omedit_post_vfs_put(path, data.constData(), data.size());
+  return true;
+}
+
+// Remove and rename, for the cloud sync engine. Unlike the write above these do
+// wait for the reply: they only run from sync code (post-exec, event loop up), and
+// a delete whose outcome is unknown cannot be reconciled against the manifest.
+EM_JS(int, omedit_post_vfs_remove, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsRemove", path: UTF8ToString(path) });
+});
+EM_JS(int, omedit_post_vfs_rename, (const char *from, const char *to), {
+  return Module.__omcPostCall({ cmd: "vfsRename", from: UTF8ToString(from), to: UTF8ToString(to) });
+});
+EM_JS(int, omedit_take_vfs_ok, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return r && r.ok ? 1 : 0;
+});
+
+bool omcWorkerRemoveFile(const char *path)
+{
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_remove(path);
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_ok(id) != 0;
+}
+
+bool omcWorkerRenameFile(const char *from, const char *to)
+{
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_rename(from, to);
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_ok(id) != 0;
+}
+
+// Bulk write: restoring a cached package tree in one round trip. Returns how many
+// files the worker actually wrote, so the caller can verify the restore is complete
+// before it trusts the working copy (see CloudMount::workingCopyComplete).
+EM_JS(int, omedit_post_vfs_put_many, (), {
+  const entries = Module.__omeditVfsBatch || [];
+  Module.__omeditVfsBatch = null;
+  return Module.__omcPostCall({ cmd: "vfsPutMany", entries });
+});
+EM_JS(void, omedit_vfs_batch_add, (const char *path, const char *bytes, int len), {
+  if (!Module.__omeditVfsBatch) Module.__omeditVfsBatch = [];
+  Module.__omeditVfsBatch.push({ path: UTF8ToString(path),
+                                 bytes: HEAPU8.slice(bytes, bytes + len) });
+});
+EM_JS(int, omedit_take_vfs_written, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return (r && typeof r.written === "number") ? r.written : -1;
+});
+
+int omcWorkerWriteFiles(const QList<QPair<QString, QByteArray> > &files)
+{
+  if (!omedit_worker_ready()) return -1;
+  for (const auto &file : files) {
+    omedit_vfs_batch_add(file.first.toUtf8().constData(), file.second.constData(), file.second.size());
+  }
+  int id = omedit_post_vfs_put_many();
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_written(id);
+}
+
+// Expand a zip into the worker store (omc_vfs_load_zip), so a library picked as an
+// archive lands with its directory structure. Returns the file count, -1 on failure.
+EM_JS(int, omedit_post_vfs_load_zip, (const char *mount, const char *bytes, int len), {
+  return Module.__omcPostCall({ cmd: "vfsLoadZip", mount: UTF8ToString(mount),
+                                bytes: HEAPU8.slice(bytes, bytes + len) });
+});
+
+int omcWorkerLoadZip(const char *mount, const QByteArray &data)
+{
+  if (!omedit_worker_ready()) return -1;
+  int id = omedit_post_vfs_load_zip(mount, data.constData(), data.size());
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_written(id);
+}
+
+// Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.
+// Returns the immediate child names of dir; directories carry a trailing '/'.
+EM_JS(int, omedit_post_vfs_list, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsList", path: UTF8ToString(path) });
+});
+EM_JS(char *, omedit_take_vfs_list, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const entries = (r && r.entries) || [];
+  const s = entries.map(e => e.name + (e.isDir ? "/" : "")).join("\n");
+  const len = lengthBytesUTF8(s) + 1;
+  const ptr = _malloc(len);
+  stringToUTF8(s, ptr, len);
+  return ptr;
+});
+
+QStringList omcWorkerListDir(const char *path) {
+  QStringList out;
+  if (!omedit_worker_ready()) return out;
+  int id = omedit_post_vfs_list(path);
+  omcWorkerWaitReply(id);
+  char *p = omedit_take_vfs_list(id);
+  if (!p) return out;
+  QString s = QString::fromUtf8(p);
+  free(p);
+  if (!s.isEmpty()) out = s.split('\n', Qt::SkipEmptyParts);
+  return out;
+}
+
+// Copy a worker-VFS file into the page MEMFS at the same path, for readers that
+// use raw C stdio (fopen) instead of QFile — e.g. OMPlot's .mat/.csv readers,
+// which the QAbstractFileEngine cannot intercept. Returns true if staged.
+EM_JS(int, omedit_stage_into_memfs, (int id, const char *path), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const bytes = r && r.bytes;
+  if (!bytes) return 0;
+  const p = UTF8ToString(path);
+  try {
+    const slash = p.lastIndexOf("/");
+    if (slash > 0) FS.mkdirTree(p.substring(0, slash));
+    FS.writeFile(p, bytes);
+    return 1;
+  } catch (e) { return 0; }
+});
+
+bool omcWorkerStageFile(const char *path) {
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_get(path);
+  omcWorkerWaitReply(id);
+  return omedit_stage_into_memfs(id, path) != 0;
+}
+#endif // __EMSCRIPTEN__
+
+#if !defined(__EMSCRIPTEN__)
+// omc runs in-process on the UI thread, so a long compile would freeze the GUI.
+// omc invokes this at every cancel check (System.checkCancel); it hands the
+// thread back to Qt so the Cancel click is delivered (flipping the flag omc then
+// reads) and progress repaints. Rate-limited — checkCancel fires per class.
+// Reentering omc is prevented by OMCLongOperation disabling all UI but Cancel.
+// Reflect the compiler's last-reported progress (read via the backend getters)
+// on the status bar while an in-process op is in flight. Tracks whether it was
+// the one that made the bar visible so the scope can restore it on completion.
+static bool g_omcNativeOwnsBar = false;
+static void omcDriveNativeProgress()
+{
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+#if defined(OMC_RUST_ABI)
+  int phase = omc_compiler_progress_phase();
+  int permille = omc_compiler_progress_permille();
+  // The Rust runtime has no message channel yet, so the phase label is all there is.
+  const QString label = omcPhaseLabel(phase);
+#else
+  int phase = System_progressPhase();
+  int permille = System_progressPermille();
+  // A step that names itself, e.g. which FMU platform is being built, says more
+  // than the generic phase label.
+  const char *message = System_progressMessage();
+  const QString label = (message && *message) ? QString::fromUtf8(message) : omcPhaseLabel(phase);
+#endif
+  if (phase == 0) return; // nothing reported yet
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    g_omcNativeOwnsBar = true;
+    w->showProgressBar();
+  }
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  w->getStatusBar()->showMessage(label);
+}
+
+static void omcClearNativeProgress()
+{
+  if (!g_omcNativeOwnsBar) return;
+  g_omcNativeOwnsBar = false;
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  w->hideProgressBar();
+  w->getProgressBar()->setRange(0, 100);
+  w->getStatusBar()->clearMessage();
+}
+
+extern "C" void omedit_pump_events()
+{
+  static QElapsedTimer sLastPump;
+  if (sLastPump.isValid() && sLastPump.elapsed() < 40) {
+    return;
+  }
+  sLastPump.restart();
+  omcDriveNativeProgress();
+  QCoreApplication::processEvents();
+}
+
+static void omedit_set_pump(bool install)
+{
+#if defined(OMC_RUST_ABI)
+  omc_compiler_set_pump_callback(install ? omedit_pump_events : nullptr);
+#else
+  System_setPumpCallback(install ? omedit_pump_events : nullptr);
+#endif
+}
+#endif // !__EMSCRIPTEN__
+
+static int g_omcLongOperationDepth = 0;
+
+/*!
+ * \brief OMCLongOperation::OMCLongOperation
+ */
+OMCLongOperation::OMCLongOperation()
+{
+  g_omcLongOperationDepth++;
+#if !defined(__EMSCRIPTEN__)
+  if (g_omcLongOperationDepth > 1) {
+    return;
+  }
+#if defined(OMC_RUST_ABI)
+  omc_compiler_clear_cancel();
+#else
+  System_clearCancel();
+#endif
+  omedit_set_pump(true);
+  if (MainWindow::instance()) {
+    MainWindow::instance()->setOmcOperationRunning(true);
+  }
+  // Delayed so a quick operation never flashes the button. The UI-disable above
+  // is immediate — the pump can fire before this fires.
+  mShowCancelButtonTimer.setSingleShot(true);
+  QObject::connect(&mShowCancelButtonTimer, &QTimer::timeout, []() {
+    if (MainWindow::instance()) MainWindow::instance()->showCancelOperationButton(true);
+  });
+  mShowCancelButtonTimer.start(100);
+#endif
+}
+
+/*!
+ * \brief OMCLongOperation::~OMCLongOperation
+ */
+OMCLongOperation::~OMCLongOperation()
+{
+  g_omcLongOperationDepth--;
+#if !defined(__EMSCRIPTEN__)
+  if (g_omcLongOperationDepth > 0) {
+    return;
+  }
+  mShowCancelButtonTimer.stop();
+  omedit_set_pump(false);
+  omcClearNativeProgress();
+  if (MainWindow::instance()) {
+    MainWindow::instance()->setOmcOperationRunning(false);
+  }
+#endif
+}
 
 /*!
  * \class OMCProxy
@@ -253,10 +1031,29 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 #else
   mpCommandsLogFile = fopen(commandsLogFilePath.toUtf8().constData(), "w");
 #endif
+  // Unbuffered: a crash mid-startup still leaves the last command on disk.
+  if (mpCommunicationLogFile) setvbuf(mpCommunicationLogFile, NULL, _IONBF, 0);
+  if (mpCommandsLogFile) setvbuf(mpCommandsLogFile, NULL, _IONBF, 0);
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? QLocale::system() : settingsLocale;
+#if defined(__EMSCRIPTEN__)
+  // omc runs in the Web Worker: spawn + initialise it instead of an in-process
+  // MMC runtime. The plot/loadModel callbacks are delivered as worker messages
+  // (TODO) rather than threadData function pointers. threadData is null here.
+  (void) settingsLocale;
+  {
+    char *initErr = omedit_worker_init();
+    QString initError = QString::fromUtf8(initErr);
+    free(initErr);
+    if (!initError.isEmpty()) {
+      fprintf(stderr, "OMEdit: omc worker init failed: %s\n", initError.toUtf8().constData());
+      return false;
+    }
+  }
+  mpOMCInterface = new OMCInterface(threadData);
+#else
   void *args = mmc_mk_nil();
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toUtf8().constData()), args);
@@ -270,10 +1067,12 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
+#endif
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
+  setOMEditDebugFlag();
   // get OpenModelica version
   QString version = getVersion();
   Helper::OpenModelicaVersion = version;
@@ -305,6 +1104,13 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   changeDirectory(tmpPath);
   // set the user home directory variable.
   Helper::userHomeDirectory = getHomeDirectoryPath();
+#if defined(__EMSCRIPTEN__)
+  // wasm-jit is the worker's simulation target; MSL isn't bundled, so fetch it
+  // before loadSystemLibraries runs.
+  setCommandLineOptions("--simCodeTarget=wasm-jit");
+  updatePackageIndex();
+  installPackage("Modelica", "", false);
+#endif
   return true;
 }
 
@@ -344,6 +1150,28 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 
   MMC_TRY_STACK()
 
+#if defined(__EMSCRIPTEN__)
+  // String command path routed to the omc Web Worker (no in-process MMC).
+  (void) reply_str;
+  (void) threadData;
+  {
+    char *r = omedit_worker_eval(expression.toUtf8().constData());
+    mResult = QString::fromUtf8(r);
+    free(r);
+    // Surface a worker-level failure (omc trapped, or the bridge threw). omc's
+    // stderr is invisible on the web and its Error buffer is unreadable after a
+    // trap, so this is the only place these reach the user.
+    char *werr = omedit_take_last_eval_error();
+    QString workerError = QString::fromUtf8(werr);
+    free(werr);
+    if (!workerError.isEmpty()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, workerError, Helper::scriptingKind, Helper::errorLevel));
+    }
+    if (expression == "quit()") {
+      return;
+    }
+  }
+#else
   if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toUtf8().constData()), &reply_str)) {
     if (expression == "quit()") {
       return;
@@ -351,6 +1179,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
+#endif
   double elapsed = (double)commandTime.elapsed() / 1000.0;
   logResponse(expression, mResult.trimmed(), elapsed, saveToHistory);
 
@@ -555,7 +1384,7 @@ void OMCProxy::openOMCDiffWidget()
 }
 
 /*!
-  Removes the CORBA IOR file. We only call this method when we are unable to connect to OMC.\n
+  Removes the OMC object reference file. We only call this method when we are unable to connect to OMC.\n
   In normal case OMCProxy::stopServer will delete that file.
   */
 void OMCProxy::removeObjectRefFile()
@@ -564,7 +1393,7 @@ void OMCProxy::removeObjectRefFile()
 }
 
 /*!
-  Removes the CORBA IOR file.\n
+  Removes the OMC object reference file.\n
   Shows an error message that OMEdit connection with OMC is lost and exit the application.
   \see OMCProxy::removeObjectRefFile()
   */
@@ -587,6 +1416,35 @@ void OMCProxy::exitApplication()
 QString OMCProxy::getErrorString(bool warningsAsErrors)
 {
   return mpOMCInterface->getErrorString(warningsAsErrors);
+}
+
+/*!
+ * \brief OMCProxy::evaluateConstant
+ * Evaluates a fully qualified name in the scripting environment and returns its value,
+ * e.g. Modelica.Constants.eps gives 2.220446049250313e-16.
+ * Used for names that are not elements of the model at hand, like a constant declared
+ * somewhere else in the library.
+ * \param name
+ * \return the value as a Modelica literal, or an empty string if the name has no value.
+ */
+QString OMCProxy::evaluateConstant(const QString &name)
+{
+  /* Only a dotted sequence of identifiers is evaluated so that the scripting environment
+   * is never handed anything but a name.
+   */
+  static QRegularExpression qualifiedName("^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$");
+  if (!qualifiedName.match(name).hasMatch()) {
+    return "";
+  }
+  sendCommand(name);
+  const QString result = getResult().trimmed();
+  if (result.isEmpty()) {
+    /* A name that has no value leaves an error behind. Consume it since the caller
+     * handles the name as unknown instead of showing the error to the user.
+     */
+    getErrorString();
+  }
+  return result;
 }
 
 /*!
@@ -791,7 +1649,9 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
           LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
           LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(lib);
           if (!pLibraryTreeItem) {
+#if !defined(__EMSCRIPTEN__)
             SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, lib), Qt::AlignRight, Qt::white);
+#endif
             pLibraryTreeModel->createLibraryTreeItem(lib, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
           }
         } else {
@@ -1824,15 +2684,17 @@ bool OMCProxy::existClass(QString className)
 }
 
 /*!
-  Renames a class.
-  \param oldName - the class old name.
-  \param newName - the class new name.
-  \return true on success.
-  */
-bool OMCProxy::renameClass(QString oldName, QString newName)
+ * \brief OMCProxy::renameClass
+ * Renames a class and updates references to it.
+ * \param oldName - The path of the class to rename.
+ * \param newName - The new non-qualified name of the class.
+ * \return Returns a list of classes that were changed.
+ */
+QList<QString> OMCProxy::renameClass(QString oldName, QString newName)
 {
-  sendCommand("renameClass(" + oldName + ", " + newName + ")");
-  return StringHandler::unparseBool(getResult());
+  QList<QString> result = mpOMCInterface->renameClass(oldName, newName);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
@@ -2500,10 +3362,10 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
  * \param includeResources
  * \return
  */
-QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources)
+QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources, QString method)
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources);
+  QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources, method);
   printMessagesStringInternal();
   return fmuFileName;
 }
@@ -2689,11 +3551,22 @@ bool OMCProxy::clearCommandLineOptions()
 {
   bool result = mpOMCInterface->clearCommandLineOptions();
   if (result) {
+    setOMEditDebugFlag();
     return true;
   } else {
     printMessagesStringInternal();
     return false;
   }
+}
+
+/*!
+ * \brief OMCProxy::setOMEditDebugFlag
+ * Tells omc that OMEdit is its host, so it emits the output only a GUI reads.
+ * A property of the session, hence re-applied whenever the options are cleared.
+ */
+void OMCProxy::setOMEditDebugFlag()
+{
+  setCommandLineOptions("-d=omedit");
 }
 
 bool OMCProxy::enableNewInstantiation()
@@ -2715,33 +3588,30 @@ bool OMCProxy::disableNewInstantiation()
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
   // get img src tags
-  QRegExp imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
-  imgRegExp.setMinimal(true);
+  QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatchIterator imgIterator = imgRegExp.globalMatch(documentation);
   QStringList attributeMatches;
   QStringList tagMatches;
-  int offset = 0;
-  while((offset = imgRegExp.indexIn(documentation, offset)) != -1) {
-    offset += imgRegExp.matchedLength();
-    tagMatches.append(imgRegExp.cap(0)); // complete tag
-    attributeMatches.append(imgRegExp.cap(1)); // attribute
+  while (imgIterator.hasNext()) {
+    QRegularExpressionMatch match = imgIterator.next();
+    tagMatches.append(match.captured(0)); // complete tag
+    attributeMatches.append(match.captured(1)); // attribute
   }
   // get script src tags
-  QRegExp scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
-  scriptRegExp.setMinimal(true);
-  offset = 0;
-  while((offset = scriptRegExp.indexIn(documentation, offset)) != -1) {
-    offset += scriptRegExp.matchedLength();
-    tagMatches.append(scriptRegExp.cap(0)); // complete tag
-    attributeMatches.append(scriptRegExp.cap(1));
+  QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatchIterator scriptIterator = scriptRegExp.globalMatch(documentation);
+  while (scriptIterator.hasNext()) {
+    QRegularExpressionMatch match = scriptIterator.next();
+    tagMatches.append(match.captured(0)); // complete tag
+    attributeMatches.append(match.captured(1));
   }
   // get link href tags
-  QRegExp linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
-  linkRegExp.setMinimal(true);
-  offset = 0;
-  while((offset = linkRegExp.indexIn(documentation, offset)) != -1) {
-    offset += linkRegExp.matchedLength();
-    tagMatches.append(linkRegExp.cap(0)); // complete tag
-    attributeMatches.append(linkRegExp.cap(1));
+  QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatchIterator linkIterator = linkRegExp.globalMatch(documentation);
+  while (linkIterator.hasNext()) {
+    QRegularExpressionMatch match = linkIterator.next();
+    tagMatches.append(match.captured(0)); // complete tag
+    attributeMatches.append(match.captured(1));
   }
   // go through the list of links and convert them if needed.
   foreach (QString attribute, attributeMatches) {
@@ -3433,8 +4303,10 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * OpenModelicaCompiler. _get returns the boxed (list-form) JSON value for a handle and
  * _release frees the registry slot.
  */
+#if !defined(__EMSCRIPTEN__)
 extern "C" void* ModelInstanceReference_get(int handle);
 extern "C" int ModelInstanceReference_release(int handle);
+#endif
 
 /*!
  * \brief OMCProxy::jsonValueFromMM
@@ -3458,7 +4330,9 @@ static QString stringFromMM(void *mmString)
 }
 #endif
 
-#ifdef OMC_RUST_ABI
+// Not on wasm: the boxed value lives in the worker, so getModelInstance() uses
+// the JSON-string path instead and this walker is never referenced.
+#if defined(OMC_RUST_ABI) && !defined(__EMSCRIPTEN__)
 // Rust omc port: the boxed value is the port's own JSON tree, walked through the
 // typed omc_json_* C ABI (openmodelica_backend_main::ModelInstanceReference)
 // rather than MMC record/cons-cell macros. Node kinds match the MMC version's
@@ -3507,7 +4381,7 @@ QJsonValue OMCProxy::jsonValueFromMM(void *value)
       return QJsonValue(QJsonValue::Null);
   }
 }
-#else
+#elif !defined(OMC_RUST_ABI)
 QJsonValue OMCProxy::jsonValueFromMM(void *value)
 {
   // A boxed uniontype record stores its record_description in slot 0 and its fields in slots 1..n.
@@ -3547,7 +4421,7 @@ QJsonValue OMCProxy::jsonValueFromMM(void *value)
   // JSON.NULL, and defensively JSON.OBJECT/JSON.ARRAY which should never reach here after normalisation.
   return QJsonValue(QJsonValue::Null);
 }
-#endif
+#endif // jsonValueFromMM (not on wasm)
 
 /*!
  * \brief OMCProxy::getModelInstance
@@ -3562,6 +4436,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   // skipping JSON.toString (omc) and QJsonDocument::fromJson (OMEdit). Gated behind --NAPINoJson=true.
   // mpOMCInterface is the in-process linked compiler library, so the boxed value's address is valid here.
   // Falls back to the JSON-string path on failure (handle <= 0).
+  // Not on wasm: omc runs in a Web Worker, so the boxed value's address is not
+  // valid on the main thread — always use the JSON-string path below (the string
+  // crosses the bridge fine and QJsonDocument parses it here).
+#if !defined(__EMSCRIPTEN__)
   if (MainWindow::instance()->isNewApiNoJson()) {
     QElapsedTimer refTimer;
     if (MainWindow::instance()->isNewApiProfiling()) {
@@ -3593,6 +4471,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     // handle <= 0: fall through to the JSON-string path below.
   }
+#endif // reference-walker path (not on wasm)
 
   QElapsedTimer timer;
   if (MainWindow::instance()->isNewApiProfiling()) {

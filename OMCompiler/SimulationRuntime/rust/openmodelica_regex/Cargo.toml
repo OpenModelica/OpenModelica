@@ -1,0 +1,14 @@
+# POSIX `regex(3)` over the `regex` crate, shared by everything that used to call
+# `regcomp`: the `System.regex` builtin and both simulation runtimes'
+# `variableFilter`. Its own crate because the runtime cannot depend on
+# openmodelica_util, which has no src/lib.rs until mmtorust has run.
+[package]
+name = "openmodelica_regex"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[lib]
+
+[dependencies]
+regex = "1"

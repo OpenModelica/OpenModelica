@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Inline BibTeX crossref fields.
 
-import bibtexparser
-import re, sys
+pybtex, which sphinxcontrib-bibtex parses the bibliography with, does not expand
+``crossref``, so an entry inheriting its venue from a ``@proceedings`` parent
+would be rendered without it. Copy every field and person role the child does
+not define itself from its parent and drop the ``crossref``.
+"""
 
-with open(sys.argv[1], 'rb') as bibtex_file:
-    bibtex_str = bibtex_file.read().decode("utf-8")
-# Work-around for new (broken?) bibtexparser
-for (m,month) in [("jan","January"),("feb","February"),("mar","March"),("apr","April"),("may","May"),("jun","June"),("jul","July"),("aug","August"),("sep","September"),("oct","October"),("nov","November"),("dec","December")]:
-  bibtex_str = re.sub(r"\n *month *= *%s *" % m, " \nmonth={%s}\n" % month, bibtex_str, flags=re.IGNORECASE)
-bib_database = bibtexparser.loads(bibtex_str)
+import sys
 
-for e in bib_database.entries:
-  if 'crossref' in e:
-    e2 = bib_database.entries_dict[e['crossref']]
-    for k in e2.keys():
-      if not k in e:
-        e[k] = e2[k]
-    del(e['crossref'])
-    if 'pdf' in e:
-      del(e['pdf']) # Not used by the template and contains %20 sometimes...
+from pybtex.database import parse_file
 
-open(sys.argv[2], "wb").write(bibtexparser.dumps(bib_database).encode("utf-8"))
+bib = parse_file(sys.argv[1], "bibtex")
+
+for entry in bib.entries.values():
+    parent_key = entry.fields.get("crossref")
+    if parent_key is None:
+        continue
+    parent = bib.entries[parent_key]
+    for name, value in parent.fields.items():
+        entry.fields.setdefault(name, value)
+    for role, persons in parent.persons.items():
+        if role not in entry.persons:
+            entry.persons[role] = persons
+    del entry.fields["crossref"]
+    if "pdf" in entry.fields:
+        del entry.fields["pdf"]  # Not used by the template and contains %20 sometimes...
+
+bib.to_file(sys.argv[2], "bibtex")

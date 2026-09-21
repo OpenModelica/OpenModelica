@@ -1,6 +1,7 @@
 // name: RecordPrefixes.mo
 // keywords: record
 // status: incorrect
+// suite: disabled
 //
 // Tests that prefixed components can't be used in records.
 //

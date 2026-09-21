@@ -165,6 +165,7 @@ public:
   int row() const;
   EquationTreeItem *parent() {return mpParentEquationTreeItem;}
   int getEquationIndex();
+  const OMEquation* getOMEquation() const {return mpOMEquation;}
 private:
   const OMEquation *mpOMEquation = nullptr;
   QVector<EquationTreeItem*> mChildren;
@@ -176,7 +177,7 @@ class EquationTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
 public:
-  EquationTreeModel(QObject *parent = nullptr);
+  EquationTreeModel(const QList<OMEquation*> &equations, QObject *parent = nullptr);
   int columnCount(const QModelIndex &parent = QModelIndex()) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
@@ -186,8 +187,12 @@ public:
   void insertEquations(const QList<OMEquation*>& equations, bool nestedEquations);
   EquationTreeItem* findEquationTreeItem(int equationIndex, EquationTreeItem *pEquationTreeItem = 0) const;
   QModelIndex equationTreeItemIndex(const EquationTreeItem *pEquationTreeItem) const;
+  QString aliasedEquationText(const OMEquation *pOMEquation) const;
 private:
   EquationTreeItem *mpRootEquationTreeItem;
+  /*! The equations of the whole model, so that an alias equation can be displayed together
+   * with the text of the equation it is an alias of (issue #16812). */
+  const QList<OMEquation*> &mEquations;
 
   void insertNestedEquations(EquationTreeItem *pParentItem, int index, const QList<OMEquation*> &equations);
 };
@@ -278,9 +283,11 @@ private:
   void parseProfiling(QString fileName);
 private slots:
   void loadTransformations();
+  void fetchVariableDataFromEquationVariable(const QModelIndex &index);
 public slots:
   void findVariables();
   void fetchVariableData(const QModelIndex &index);
+  void fetchVariableData(const QString &variableName);
   void fetchEquationData(const QModelIndex &index);
   void filterEquationOperations(int index);
 };

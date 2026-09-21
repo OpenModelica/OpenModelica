@@ -4,12 +4,23 @@ TESTFILES = \
 Alias.mos \
 Alias2.mos \
 Alias_test1.mos \
+Alias_test_fixed_start_param.mos \
 Alias_test3.mos \
 Alias_test4.mos \
 Alias_test5.mos \
 ArrayAlias1.mos \
 ArrayAlias2.mos \
 Alias_pre.mos \
+AliasCyclic.mos \
+AliasCyclic1.mos \
+AliasCyclic2.mos \
+AliasCyclic3.mos \
+AliasCyclic4.mos \
+AliasCyclic5.mos \
+AliasCyclic6.mos \
+AliasCyclic7.mos \
+AliasCyclic8.mos \
+AliasStartPriority.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -55,4 +66,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -217,7 +217,6 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   double timeStamp;
   double time0, time1, value0, value1;
   double timedif;
-  double dt0;
   double dt1;
   double retVal;
   int i;
@@ -285,9 +284,9 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
     /* FIXME instead of linear, do the same interpolation order as the integrator */
     else {
       timedif = time1 - time0;
-      dt0 = time1 - timeStamp;
       dt1 = timeStamp - time0;
-      retVal = (value0 * dt0 + value1 * dt1) / timedif;
+      /* Exact when value0 == value1, unlike (value0*dt0 + value1*dt1)/timedif */
+      retVal = value0 + (value1 - value0) * (dt1 / timedif);
       return retVal;
     }
   }

@@ -2,6 +2,7 @@
 // keywords: MetaModelica
 // status:   correct
 // cflags:   +g=MetaModelica -d=-newInst
+// suite: metamodelica
 //
 // Testing nested complex datatypes, like tuple, list, option...
 loadFile("ComplicatedInteractive.mo");
@@ -47,16 +48,16 @@ getErrorString();
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
 // {(2, 3.5), (2, 3.5), (2, 3.5), (1, 7.5), (2, 3.5), (2, 3.5)}
 //
-// "[metamodelica/meta/ComplicatedInteractive.mos:20:1-20:93:writable] Error: Type mismatch for positional argument 1 in ComplicatedInteractive.LI2(rcf=Tuple(#(1), List(Tuple(#(1.0), NONE()), Tuple(#(1.0), SOME(List(#(true))))))). The argument has type:
+// "[metamodelica/meta/ComplicatedInteractive.mos:21:1-21:93:writable] Error: Type mismatch for positional argument 1 in ComplicatedInteractive.LI2(rcf=Tuple(#(1), List(Tuple(#(1.0), NONE()), Tuple(#(1.0), SOME(List(#(true))))))). The argument has type:
 //   tuple<#Integer, list<tuple<#Real, Option<list<#Boolean>>>>>
 // expected type:
 //   tuple<#Real, list<tuple<#Real, Option<list<#Integer>>>>>
-// [metamodelica/meta/ComplicatedInteractive.mos:20:1-20:93:writable] Error: In record constructor ComplicatedInteractive.LI2.RecordWithComplicatedTypes: Failed to match types:
+// [metamodelica/meta/ComplicatedInteractive.mos:21:1-21:93:writable] Error: In record constructor ComplicatedInteractive.LI2.RecordWithComplicatedTypes: Failed to match types:
 //     actual:   tuple<#Integer, list<tuple<#Real, Option<list<#Boolean>>>>>
 //     expected: (tuple<#Real, list<tuple<#Real, Option<list<#Integer>>>>>)
 // "
 //
-// "[metamodelica/meta/ComplicatedInteractive.mos:22:1-22:58:writable] Error: Type mismatch for positional argument 1 in ComplicatedInteractive.NewComplicatedThingy(opt=SOME(List(#(true)))). The argument has type:
+// "[metamodelica/meta/ComplicatedInteractive.mos:23:1-23:58:writable] Error: Type mismatch for positional argument 1 in ComplicatedInteractive.NewComplicatedThingy(opt=SOME(List(#(true)))). The argument has type:
 //   Option<list<#Boolean>>
 // expected type:
 //   Option<list<#Integer>>

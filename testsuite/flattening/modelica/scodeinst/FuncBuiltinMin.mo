@@ -1,6 +1,7 @@
 // name: FuncBuiltinMin
 // keywords: min
 // status: correct
+// suite: 63bit
 //
 // Tests the builtin min operator.
 //

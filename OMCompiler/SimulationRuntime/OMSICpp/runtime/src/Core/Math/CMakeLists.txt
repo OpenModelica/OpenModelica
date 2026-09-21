@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5...4.3)
+cmake_minimum_required(VERSION 3.10...4.3)
 
 project(${MathName})
 
@@ -26,5 +26,6 @@ install(FILES ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Functions.h
   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/ILapack.h
   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/OMAPI.h
   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Array.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Matrix.h
   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/ArraySlice.h
   DESTINATION include/omc/omsicpp/Core/Math)

@@ -1,0 +1,97 @@
+// name: GetModelInstanceEnum3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+model M
+  type E = enumeration(a, b, c);
+  E e[:] = {e for e in E};
+end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"e\",
+//       \"type\": {
+//         \"name\": \"M.E\",
+//         \"restriction\": \"type\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"extends\",
+//             \"baseClass\": \"enumeration\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"a\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"b\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"c\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 3,
+//           \"columnEnd\": 32
+//         }
+//       },
+//       \"dims\": {
+//         \"absyn\": [
+//           \":\"
+//         ],
+//         \"typed\": [
+//           \"E\"
+//         ]
+//       },
+//       \"modifiers\": \"{e for e in E}\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"iterator_call\",
+//           \"name\": \"$array\",
+//           \"exp\": {
+//             \"$kind\": \"cref\",
+//             \"parts\": [
+//               {
+//                 \"name\": \"e\"
+//               }
+//             ]
+//           },
+//           \"iterators\": [
+//             {
+//               \"name\": \"e\",
+//               \"range\": {
+//                 \"$kind\": \"typename\",
+//                 \"name\": \"E\"
+//               }
+//             }
+//           ]
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 1,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 6
+//   }
+// }"
+// endResult

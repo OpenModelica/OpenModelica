@@ -1,7 +1,7 @@
 // name: FMUResourceTest
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf binaries sources resources modelDescription.xml FMUResourceTest_Test* FMUResourceTest.Test* output.log
+// teardown_command: rm -rf @ binaries sources resources modelDescription.xml FMUResourceTest_Test* FMUResourceTest.Test* output.log
 // cflags: -d=newInst
 //
 
@@ -29,7 +29,9 @@ res.resultFile;
 // true
 // true
 // "FMUResourceTest.TestResource.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "FMUResourceTest_TestResource_me_FMU.mo"
 // ""
 // true

@@ -443,7 +443,7 @@ public
       local
         Absyn.Path path;
 
-      case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
+      case INTEGER() then intHashDjb2Continue(exp.value, hash);
       case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
       case STRING() then stringHashDjb2Continue(exp.value, hash);
       case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);
@@ -2031,9 +2031,9 @@ public
         list<String> fields;
 
       // Cref is simple identifier, i
-      case CREF(cref = ComponentRef.CREF(node = node))
+      case CREF(cref = ComponentRef.CREF())
         guard ComponentRef.isSimple(exp.cref)
-        then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
+        then if InstNode.refEqual(iterator, ComponentRef.node(exp.cref)) then iteratorValue else exp;
 
       // Cref is qualified identifier, i.x
       case CREF(cref = ComponentRef.CREF())
@@ -2072,11 +2072,9 @@ public
       output Boolean res;
     algorithm
       res := match exp
-        local
-          InstNode node;
-
-        case CREF(cref = ComponentRef.CREF(node = node))
-          then InstNode.refEqual(node, iterator);
+        // Only the first (last in stored order) part of a cref can be an iterator: `i.x`.
+        case CREF() guard ComponentRef.isIterator(exp.cref)
+          then InstNode.refEqual(ComponentRef.node(ComponentRef.last(exp.cref)), iterator);
         else false;
       end match;
     end containsIterator2;
@@ -2211,7 +2209,7 @@ public
                         ) + ":" + operandString(exp.stop, exp, false);
 
       case TUPLE() then "(" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, toString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
+      case RECORD() then List.toStringCustom(exp.elements, toString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
       case CALL() then Call.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
                         (
@@ -2315,7 +2313,7 @@ public
                         ) + ":" + operandFlatString(exp.stop, exp, false, format);
 
       case TUPLE() then "(" + stringDelimitList(list(toFlatString(e, format) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, function toFlatString(format = format), Type.toFlatString(exp.ty, format), "(", ", ", ")", true);
+      case RECORD() then List.toStringCustom(exp.elements, function toFlatString(format = format), Type.toFlatString(exp.ty, format), "(", ", ", ")", true);
       case CALL() then Call.toFlatString(exp.call, format);
       case SIZE() then "size(" + toFlatString(exp.exp, format) +
                         (
@@ -2556,14 +2554,17 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> varPointer;
+        PointerWeak<Variable> varPointer;
         Option<Expression> nominal;
         Operator operator;
         Operator.SizeClassification sizeClass;
 
       // replace variables with their nominal values
-      case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
-        nominal := Variable.getNominal(Pointer.access(varPointer));
+      case CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref))
+      algorithm
+        InstNode.VAR_NODE(varPointer = varPointer) := ComponentRef.node(exp.cref);
+        nominal := Variable.getNominal(Pointer.access(PointerWeak.upgrade(varPointer)));
       then Util.getOptionOrDefault(nominal, exp);
 
       // remove negation
@@ -2864,19 +2865,18 @@ public
 
   function dimensionCount
     input Expression exp;
+    input Boolean isDim = false;
     output Integer dimCount;
   algorithm
     dimCount := match exp
+      // Typenames expand to arrays when used as e.g. iteration ranges, but when used as a
+      // dimension they work the same as an Integer and are treated as scalars.
+      case TYPENAME() then if isDim then 0 else 1;
       case ARRAY(ty = Type.UNKNOWN())
         then 1 + dimensionCount(arrayGet(exp.elements, 1));
-      case ARRAY() then Type.dimensionCount(exp.ty);
-      case RANGE() then Type.dimensionCount(exp.ty);
-      case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
-      case CAST() then dimensionCount(exp.exp);
-      case SUBSCRIPTED_EXP() then Type.dimensionCount(exp.ty);
-      case TUPLE_ELEMENT() then Type.dimensionCount(exp.ty);
-      // TODO: Add more expressions.
-      else 0;
+      case MATRIX() then 2;
+      case SIZE() then if isNone(exp.dimIndex) then dimensionCount(exp.exp) else 0;
+      else Type.dimensionCount(typeOf(exp));
     end match;
   end dimensionCount;
 
@@ -4839,6 +4839,7 @@ public
       case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
       case CALL() then Call.isNonPositive(exp.call);
+      case ARRAY() then Array.all(exp.elements, isNonPositive);
       else false;
     end match;
   end isNonPositive;
@@ -5130,7 +5131,7 @@ public
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
-      case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
+      case Type.COMPLEX() then makeOperatorRecordZero(Type.complexNode(ty));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
       then fail();
@@ -5621,7 +5622,9 @@ public
             (outExp, expanded) := ExpandExp.expand(exp);
           end if;
 
-          if expanded then
+          // The ARRAY case above is what consumes the expansion; recursing on
+          // anything else would not terminate.
+          if expanded and isArray(outExp) then
             outExp := promote2(outExp, true, dims, types);
           else
             outExp := CALL(Call.makeTypedCall(
@@ -5957,8 +5960,9 @@ public
         ComponentRef cref;
         array<Expression> arr;
 
-      case RECORD(ty = Type.COMPLEX(cls = node))
+      case RECORD(ty = Type.COMPLEX())
         algorithm
+          node := Type.complexNode(recordExp.ty);
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
         then
@@ -5966,7 +5970,7 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -5975,9 +5979,10 @@ public
         then
           CREF(ty, cref);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
@@ -5985,8 +5990,9 @@ public
         then
           makeEmptyArray(ty);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
           arr := Array.map(recordExp.elements, function nthRecordElement(index = index));
           ty := Type.liftArrayLeft(typeOf(arrayGet(arr, 1)),
@@ -6006,7 +6012,7 @@ public
       else
         algorithm
           ty := typeOf(recordExp);
-          Type.COMPLEX(cls = node) := Type.arrayElementType(ty);
+          node := Type.complexNode(Type.arrayElementType(ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := Type.liftArrayLeftList(
@@ -6036,14 +6042,15 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(typeOf(recordExp));
+          node := Type.complexNode(Type.arrayElementType(typeOf(recordExp)));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
-        then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
+        then makeEmptyArray(InstNode.getType(Class.nthComponent(index,
+          InstNode.getClass(Type.complexNode(Type.arrayElementType(recordExp.ty))))));
 
       case ARRAY()
         algorithm
@@ -6052,8 +6059,9 @@ public
         then
           makeArray(ty, arr);
 
-      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node),
@@ -6075,7 +6083,7 @@ public
 
       else
         algorithm
-          Type.COMPLEX(cls = node) := typeOf(recordExp);
+          node := Type.complexNode(typeOf(recordExp));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));
@@ -6111,8 +6119,9 @@ public
 
       case RANGE()
         algorithm
-          exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), Absyn.dummyInfo);
+          exp.ty := TypeCheck.keepRangeSize(
+            TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
+              typeOf(exp.start), Absyn.dummyInfo), exp.ty);
         then
           ();
 
@@ -6316,8 +6325,8 @@ public
     output Boolean matching;
   algorithm
     matching := match sub
-      case Subscript.SPLIT_INDEX() then InstNode.refEqual(sub.node, node);
-      case Subscript.SPLIT_PROXY() then InstNode.refEqual(sub.parent, node);
+      case Subscript.SPLIT_INDEX() then InstNode.refEqual(InstNode.borrow(sub.node), node);
+      case Subscript.SPLIT_PROXY() then InstNode.refEqual(InstNode.borrow(sub.parent), node);
       else false;
     end match;
   end filterSplitIndices2;
@@ -6657,7 +6666,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.STRING("typename"), json);
-          json := JSON.addPair("name", JSON.makeString(Type.toString(exp.ty)), json);
+          json := JSON.addPair("name", JSON.makeString(Type.typenameString(Type.arrayElementType(exp.ty))), json);
         then
           json;
 
@@ -6986,12 +6995,14 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> var;
+        PointerWeak<Variable> var;
         Integer v;
 
       // backend replacement
-      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
-      then match Pointer.access(var)
+      case Expression.CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref)) and ComponentRef.isResizable(exp.cref)
+      then match Pointer.access(PointerWeak.upgrade(
+          InstNode.varPointer(ComponentRef.node(exp.cref))))
           // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);

@@ -162,7 +162,7 @@ algorithm
       SourceInfo info;
       String cname_str;
       Absyn.Path className;
-      DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
+      DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags,resimulateExecutable;
       DAE.Exp fileNamePrefix,options,outputFormat,variableFilter;
       InteractiveTypes.SimulationOptions defaulSimOpt;
       FCore.Cache cache;
@@ -222,9 +222,14 @@ algorithm
           Static.getOptionalNamedArg(cache, env, impl, "simflags", DAE.T_STRING_DEFAULT,
                               args, CevalScriptBackend.getSimulationOption(defaulSimOpt, "simflags"),
                               pre, info);
+        (cache,resimulateExecutable) :=
+          Static.getOptionalNamedArg(cache, env, impl, "resimulateExecutable", DAE.T_STRING_DEFAULT,
+                              args, DAE.SCONST(""),
+                              pre, info);
 
       then
         (cache,
+         listAppend(
          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),
           startTime,
           stopTime,
@@ -236,7 +241,9 @@ algorithm
           outputFormat,
           variableFilter,
           cflags,
-          simflags});
+          simflags},
+          // resimulateExecutable is a simulate()-only argument
+          if callName == "simulate" then {resimulateExecutable} else {}));
 
   end match;
 end getSimulationArguments;
@@ -253,7 +260,8 @@ constant list<String> VALID_SIMULATE_ARGS = {
   "outputFormat",
   "variableFilter",
   "cflags",
-  "simflags"
+  "simflags",
+  "resimulateExecutable"
 };
 
 function checkSimulationArguments

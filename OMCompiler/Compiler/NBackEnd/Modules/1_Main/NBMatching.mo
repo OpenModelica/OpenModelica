@@ -49,6 +49,7 @@ protected
   // NF import
   import NFFunction.Function;
   import Variable = NFVariable;
+  import ComponentRef = NFComponentRef;
 
   // NB import
   import Adjacency = NBAdjacency;
@@ -65,6 +66,7 @@ protected
   // Util import
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
+  import Vector;
   import NBSlice.IntLst;
   import StringUtil;
 public
@@ -116,6 +118,8 @@ public
     end if;
   end regular;
 
+  constant Integer MAX_INDEX_REDUCTION_RESTARTS = 20 "index reduction restarts after which the system is considered unresolvable";
+
   function singular
     "author: kabdelhak
     Matching algorithm for bipartite graphs by Constantinos C. Pantelides.
@@ -141,6 +145,7 @@ public
     input Partition.Kind kind;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean clear = true              "start from scratch if true";
+    input Integer restarts = 0              "number of index reduction restarts so far";
   protected
     list<list<Integer>> marked_eqns;
     Option<Adjacency.Mapping> mapping;
@@ -177,10 +182,75 @@ public
         matching := regular(EMPTY_MATCHING, adj);
       else
         // ####### REDO INDEX REDUCTION IF NECESSARY #######
-        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, kind, transposed);
+        // a structurally singular system (e.g. over-determined) never becomes regular by differentiation
+        if restarts >= MAX_INDEX_REDUCTION_RESTARTS then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not resolve the structural singularity after "
+            + intString(restarts) + " index reduction steps. The system is probably over-determined or has a too high index."});
+          fail();
+        end if;
+        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, kind, transposed, restarts = restarts + 1);
       end if;
     end if;
   end singular;
+
+  function fromSeed
+    "the matching of a causalized partition with nearly the same equations and
+    variables, transferred by name. A pair is kept when the variable is still a
+    solvable occurrence of the equation, the rest is left for the matching
+    algorithm to repair."
+    input Partition.Partition seed;
+    input Adjacency.Matrix adj;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    output Matching matching = EMPTY_MATCHING;
+  protected
+    Matching seed_matching;
+    Adjacency.Mapping seed_map, map;
+    array<Integer> var_to_eqn, eqn_to_var, data, var_index;
+    Integer e, v, eqn, var, eqn_start, eqn_len, seed_start, seed_len, seed_var_start, var_start, var_len, offset, first;
+  algorithm
+    if isNone(seed.matching) or isNone(seed.adjacencyMatrix) then return; end if;
+    seed_matching := Util.getOption(seed.matching);
+    () := match (Adjacency.Matrix.getMappingOpt(Util.getOption(seed.adjacencyMatrix)), adj)
+      case (SOME(seed_map), Adjacency.Matrix.FINAL(mapping = map)) algorithm
+        var_index := arrayCreate(arrayLength(seed_map.var_AtS), -1);
+        for i in 1:arrayLength(var_index) loop
+          var_index[i] := VariablePointers.getVarIndex(vars, BVariable.getVarName(VariablePointers.getVarAt(seed.unknowns, i)));
+        end for;
+        data := Adjacency.IntMatrix.entries(adj.m);
+        var_to_eqn := arrayCreate(arrayLength(map.var_StA), -1);
+        eqn_to_var := arrayCreate(arrayLength(map.eqn_StA), -1);
+        for i in 1:arrayLength(seed_map.eqn_AtS) loop
+          e := EquationPointers.getEqnIndex(eqns, Equation.getEqnName(EquationPointers.getEqnAt(seed.equations, i)));
+          if e < 1 then continue; end if;
+          (seed_start, seed_len) := seed_map.eqn_AtS[i];
+          (eqn_start, eqn_len) := map.eqn_AtS[e];
+          for k in 0:min(seed_len, eqn_len) - 1 loop
+            v := seed_matching.eqn_to_var[seed_start + k];
+            if v < 1 then continue; end if;
+            (seed_var_start, _) := seed_map.var_AtS[seed_map.var_StA[v]];
+            offset := v - seed_var_start;
+            v := var_index[seed_map.var_StA[v]];
+            if v < 1 then continue; end if;
+            (var_start, var_len) := map.var_AtS[v];
+            if offset >= var_len then continue; end if;
+            var := var_start + offset;
+            eqn := eqn_start + k;
+            first := adj.m.start[eqn];
+            for p in first:first + adj.m.len[eqn] - 1 loop
+              if data[p] == var then
+                eqn_to_var[eqn] := var;
+                var_to_eqn[var] := eqn;
+                break;
+              end if;
+            end for;
+          end for;
+        end for;
+        matching := MATCHING(var_to_eqn, eqn_to_var);
+      then ();
+      else ();
+    end match;
+  end fromSeed;
 
   function continue_
     input output Matching matching;
@@ -234,13 +304,13 @@ public
   function getAssignments
     "expands the assignments with -1 if needed"
     input Matching matching;
-    input array<list<Integer>> m;
-    input array<list<Integer>> mT;
+    input Adjacency.IntMatrix m;
+    input Adjacency.IntMatrix mT;
     output array<Integer> var_to_eqn;
     output array<Integer> eqn_to_var;
   protected
-    Integer nVars = arrayLength(mT);
-    Integer nEqns = arrayLength(m);
+    Integer nVars = Adjacency.IntMatrix.rows(mT);
+    Integer nEqns = Adjacency.IntMatrix.rows(m);
   algorithm
     var_to_eqn := Array.expandToSize(nVars, matching.var_to_eqn, -1);
     eqn_to_var := Array.expandToSize(nEqns, matching.eqn_to_var, -1);
@@ -317,6 +387,32 @@ public
       end for;
     end if;
   end getMatches;
+
+  function getMatchedVars
+    "returns the variables from the map that have at least one matched scalar element"
+    input Matching matching;
+    input Option<Adjacency.Mapping> mapping_opt;
+    input UnorderedMap<ComponentRef, Integer> vars_map;
+    input VariablePointers variables;
+    output list<VariablePointer> matched = {};
+  protected
+    Integer start, size;
+  algorithm
+    for arr_idx in UnorderedMap.valueList(vars_map) loop
+      (start, size) := match mapping_opt
+        local
+          Adjacency.Mapping mapping;
+        case SOME(mapping) then mapping.var_AtS[arr_idx];
+        else (arr_idx, 1);
+      end match;
+      for scal_idx in start:start+size-1 loop
+        if scal_idx <= arrayLength(matching.var_to_eqn) and matching.var_to_eqn[scal_idx] > 0 then
+          matched := ExpandableArray.get(arr_idx, variables.varArr) :: matched;
+          break;
+        end if;
+      end for;
+    end for;
+  end getMatchedVars;
 
 protected
   function toStringSingle
@@ -426,18 +522,18 @@ protected
   end augmentPath;
 
   function PFPlusExternal
-    input array<list<Integer>> m;
+    input Adjacency.IntMatrix m;
     input output array<Integer> ass1;
     input output array<Integer> ass2;
     input Boolean clear;
     // this needs partially = true to get computed. Otherwise it fails on singular partitions
     output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
-    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = BackendUtil.countElem(m);
+    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = Adjacency.IntMatrix.nonZeroCount(m);
     Integer cheap = 0, algIndx = 5 "PFPlusExternal index";
   algorithm
     BackendDAEEXT.setAssignment(n2, n1, ass2, ass1);
-    BackendDAEEXT.setAdjacencyMatrix(n1, n2, nonZero, m);
+    BackendDAEEXT.setAdjacencyMatrixFlat(n1, n2, nonZero, m.start, m.len, Vector.rawArray(m.data));
     BackendDAEEXT.matching(n1, n2, algIndx, cheap, 1.0, if clear then 1 else 0);
     BackendDAEEXT.getAssignment(ass2, ass1);
   end PFPlusExternal;

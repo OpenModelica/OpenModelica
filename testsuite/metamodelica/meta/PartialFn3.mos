@@ -2,6 +2,7 @@
 // keywords: PartialFn
 // status:   incorrect
 // cflags: -d=-newInst
+// suite: metamodelica
 //
 // Partial Function Testing
 //

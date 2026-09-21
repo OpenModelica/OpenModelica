@@ -39,12 +39,16 @@ SUBDIRS = Util \
   Homotopy \
   Expression \
   ModelInstance \
+  TabbedView \
   VariableValue \
   Utilities \
   StringHandler \
   DynamicAnnotation \
   AutoCompletion \
-  MergeExtendsModifiers
+  MergeExtendsModifiers \
+  LanguageServer \
+  RecentModels \
+  OuterParameterDialog
 
 BrowseMSL.depends = Util
 Diagram.depends = Util
@@ -52,9 +56,13 @@ Transformation.depends = Util
 Homotopy.depends = Util
 Expression.depends = Util
 ModelInstance.depends = Util
+TabbedView.depends = Util
 VariableValue.depends = Util
 Utilities.depends = Util
 StringHandler.depends = Util
 DynamicAnnotation.depends = Util
 AutoCompletion.depends = Util
 MergeExtendsModifiers.depends = Util
+LanguageServer.depends = Util
+RecentModels.depends = Util
+OuterParameterDialog.depends = Util

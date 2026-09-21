@@ -1,6 +1,7 @@
 // name: InheritanceRestrictions
 // keywords: inheritance
 // status: incorrect
+// suite: disabled
 //
 // Tests inheritance of specialized classes
 //

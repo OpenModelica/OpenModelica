@@ -3109,25 +3109,11 @@ public function checkFunctionVarType
   input String inVarName;
   input SourceInfo inInfo;
 algorithm
-  () := matchcontinue inInfo
-    local
-      String ty_str;
-
-    case _
-      algorithm
-        true := Types.isValidFunctionVarType(inType);
-      then
-        ();
-
-    else
-      algorithm
-        ty_str := TypesDump.getTypeName(inType);
-        Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
-          {ty_str, inVarName}, inInfo);
-      then
-        fail();
-
-  end matchcontinue;
+  if not Types.isValidFunctionVarType(inType) then
+    Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
+      {TypesDump.getTypeName(inType), inVarName}, inInfo);
+    fail();
+  end if;
 end checkFunctionVarType;
 
 public function liftNonBasicTypes
@@ -3140,15 +3126,13 @@ public function liftNonBasicTypes
   input DAE.Dimension dimt;
   output DAE.Type outTp;
 algorithm
-  outTp:= matchcontinue tp
+  outTp:= match tp
     local DAE.Type ty;
-    case DAE.T_SUBTYPE_BASIC(complexType = ty)
-      algorithm
-        false := listEmpty(TypesDump.getDimensions(ty));
+    case DAE.T_SUBTYPE_BASIC(complexType = ty) guard not listEmpty(TypesDump.getDimensions(ty))
       then
         tp;
     else Types.liftArray(tp, dimt);
-  end matchcontinue;
+  end match;
 end liftNonBasicTypes;
 
 public function checkHigherVariability
@@ -5699,32 +5683,23 @@ public function sortInnerFirstTplLstElementMod
   elements first in the given list of elements"
   input list<tuple<SCode.Element, DAE.Mod>> inTplLstElementMod;
   output list<tuple<SCode.Element, DAE.Mod>> outTplLstElementMod;
+protected
+  list<tuple<SCode.Element, DAE.Mod>> innerElts, innerouterElts, otherElts, innerModelicaServices, innerModelica, innerOthers;
 algorithm
-  outTplLstElementMod := matchcontinue inTplLstElementMod
-    local
-      list<tuple<SCode.Element, DAE.Mod>> innerElts, innerouterElts, otherElts, sorted, innerModelicaServices, innerModelica, innerOthers;
+  // no sorting if we don't have any inner/outer in the model
+  if not System.getHasInnerOuterDefinitions() then
+    outTplLstElementMod := inTplLstElementMod;
+    return;
+  end if;
 
-    // no sorting if we don't have any inner/outer in the model
-    case _
-      algorithm
-        false := System.getHasInnerOuterDefinitions();
-      then
-        inTplLstElementMod;
+  // split into inner, inner outer and other elements
+  (innerElts, innerouterElts, otherElts) := splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
+  // sort the inners to put Modelica types first!
+  (innerModelicaServices, innerModelica, innerOthers) := splitInners(innerElts, {}, {}, {});
 
-    // do sorting only if we have inner-outer
-    case _
-      algorithm
-        // split into inner, inner outer and other elements
-        (innerElts, innerouterElts, otherElts) := splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
-        // sort the inners to put Modelica types first!
-        (innerModelicaServices, innerModelica, innerOthers) := splitInners(innerElts, {}, {}, {});
-
-        // put the inner elements first
-        // put the innerouter elements second
-        sorted := listAppend(innerModelicaServices, listAppend(innerModelica, listAppend(innerOthers, listAppend(innerouterElts, otherElts))));
-      then
-        sorted;
-  end matchcontinue;
+  // put the inner elements first
+  // put the innerouter elements second
+  outTplLstElementMod := listAppend(innerModelicaServices, listAppend(innerModelica, listAppend(innerOthers, listAppend(innerouterElts, otherElts))));
 end sortInnerFirstTplLstElementMod;
 
 protected function splitInners
@@ -7169,21 +7144,10 @@ public function selectModifiers
   output DAE.Mod bindingMod;
   output DAE.Mod classMod;
 algorithm
-  (bindingMod, classMod) := matchcontinue typePath
-    local
-    // if the thing we got from merging is a redeclare
-    // for a component of a basic type, skip it!
-    case _
-      algorithm
-        true := redeclareBasicType(fromMerging);
-      then
-        (fromRedeclareType, fromRedeclareType);
-
-    // any other is fine!
-    else
-      then
-        (fromMerging, fromRedeclareType);
-  end matchcontinue;
+  // if the thing we got from merging is a redeclare
+  // for a component of a basic type, skip it!
+  bindingMod := if redeclareBasicType(fromMerging) then fromRedeclareType else fromMerging;
+  classMod := fromRedeclareType;
 end selectModifiers;
 
 public function redeclareBasicType

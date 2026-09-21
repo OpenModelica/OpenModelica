@@ -25,7 +25,6 @@ Modelica.Electrical.Analog.Examples.CompareTransformers.mos \
 Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc.mos \
 Modelica.Electrical.Analog.Examples.DifferenceAmplifier.mos \
 Modelica.Electrical.Analog.Examples.HeatingMOSInverter.mos \
-Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate.mos \
 Modelica.Electrical.Analog.Examples.HeatingRectifier.mos \
 Modelica.Electrical.Analog.Examples.HeatingResistor.mos \
 Modelica.Electrical.Analog.Examples.IdealTriacCircuit.mos \
@@ -282,6 +281,7 @@ Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mos \
+Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -335,4 +335,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

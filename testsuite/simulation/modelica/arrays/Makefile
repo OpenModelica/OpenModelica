@@ -7,6 +7,7 @@ ABCDsystem.plt.mos \
 AlgorithmArrayEqn.mos \
 AppendElement.mos \
 ArrayAddSub1.mos \
+ArrayBox.mos \
 ArrayDivError.mos \
 ArrayEquation.mos \
 ArrayExponentiation.mos \
@@ -32,6 +33,8 @@ Bug3916.mos \
 ConstructFunc.mos \
 crefIndex.mos \
 DimConvert.mos \
+ConstantSubscriptOutOfRange.mos \
+DynamicSubscriptAliasArray.mos \
 gc.mos \
 gc2980.mos \
 Issue14470.mos \
@@ -103,4 +106,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
