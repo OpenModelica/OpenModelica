@@ -42,6 +42,26 @@ endif()
 set(CPACK_COMPONENTS_GROUPING IGNORE)
 
 
+## The openmodelica metapackage ###################################################################
+# What the 'meta' component (cmake/packaging/components.cmake) depends on -- the whole point of it.
+# Only the DEB and RPM generators build a metapackage.
+#
+# The 1.27.1 package's list, not everything a build produces: omlibrary and simrtcpp are reached
+# by Recommends from omedit and omc instead. Intersected with CPACK_COMPONENTS_ALL at cpack time,
+# because the build decides which components exist (no omedit without the GUI clients, none of
+# omlibrary under --no-omlibrary) and one depending on a package nobody built is one apt refuses
+# to install.
+if(CPACK_GENERATOR MATCHES "^(DEB|RPM)$")
+  set(CPACK_COMPONENT_META_DEPENDS "")
+  foreach(_om_meta_component IN ITEMS
+          omc omplot omshell omshellterminal omnotebook drmodelica drcontrol omedit omsimulator)
+    if(_om_meta_component IN_LIST CPACK_COMPONENTS_ALL)
+      list(APPEND CPACK_COMPONENT_META_DEPENDS ${_om_meta_component})
+    endif()
+  endforeach()
+endif()
+
+
 ## Package Generator specific variables. ##########################################################################################
 
 if(CPACK_GENERATOR STREQUAL "DEB")
@@ -62,7 +82,7 @@ if(CPACK_GENERATOR STREQUAL "DEB")
 
   set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenModelica Build System <${CPACK_PACKAGE_CONTACT}>")
 
-  # Enable component based packaging (omc, omedit, omsimulator, fmu, simrtcpp ...)
+  # Enable component based packaging (omc, omedit, omsimulator, simrtcpp ...)
   # See the file common.cmake for a list of the components.
   set(CPACK_DEB_COMPONENT_INSTALL ON)
 
@@ -81,6 +101,10 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # Allow setting our own inter-component dependencies
   set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
 
+  # Without this the metapackage would be called openmodelica-meta, after its component. The
+  # name people (and the install instructions) actually use is the bare one.
+  set(CPACK_DEBIAN_META_PACKAGE_NAME "openmodelica")
+
   # Simulating a model means generating C and building it, so omc needs a compiler, a make
   # and a cmake at *run* time. dpkg-shlibdeps cannot find these -- omc executes them, it
   # does not link them -- so they are named here.
@@ -92,6 +116,30 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # required gcc-gfortran for the same reason.
   set(CPACK_DEBIAN_OMC_PACKAGE_DEPENDS
       "clang, cmake, build-essential, gfortran, libexpat1-dev, liblapack-dev, zip, unzip")
+
+  # What omc can use but runs without, as the Autoconf packaging recommended them from this same
+  # package. A Recommends rather than a Depends because none of it is needed to compile and
+  # simulate a model, and because apt quietly skips one it cannot satisfy -- which is what armhf
+  # needs, having no simrtcpp. (libomccpp was amd64-only for the same reason; CPack builds the
+  # C++ runtime on arm64 as well.)
+  #
+  # simrtcpp is the C++ simulation runtime, reached with --simCodeTarget=Cpp; omplot is what
+  # plot() calls; gnuplot and xsltproc are what the profiling report (--profiling, and the
+  # blocks+html debug flag) shells out to. The 1.27.1 list also had libsaxonb-java, which nothing
+  # in the sources refers to any more.
+  set(_om_deb_version "${CPACK_PACKAGE_VERSION}-${CPACK_DEBIAN_PACKAGE_RELEASE}")
+  set(CPACK_DEBIAN_OMC_PACKAGE_RECOMMENDS
+      "openmodelica-simrtcpp (= ${_om_deb_version}), openmodelica-omplot (= ${_om_deb_version}), \
+gnuplot-nox, xsltproc")
+
+  # OMEdit runs without either, so neither is a Depends: omsens is the sensitivity-analysis plugin
+  # it loads if it is there, and omlibrary is the Modelica library cache -- OMEdit opens and edits
+  # models without it, but every model that imports Modelica.* needs it, so an OMEdit installed on
+  # its own is of little use. The Autoconf packaging pulled the plugin in by having omedit depend
+  # on libomsensplugin; the dependency runs the other way here (a plugin needs its host, not the
+  # other way round), so a Recommends is what keeps a default install the same.
+  set(CPACK_DEBIAN_OMEDIT_PACKAGE_RECOMMENDS
+      "openmodelica-omsens (= ${_om_deb_version}), openmodelica-omlibrary (= ${_om_deb_version})")
 
   # Set the section control field
   # https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections
@@ -112,9 +160,23 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   # 1.28.0~dev~701~g50d49aa2dd still upgrades to 1.28.0.
   set(CPACK_RPM_PACKAGE_VERSION "@OM_PACKAGE_VERSION_RPM@")
 
-  # Enable component based packaging (omc, omedit, omsimulator, fmu, simrtcpp ...)
+  # Enable component based packaging (omc, omedit, omsimulator, simrtcpp ...)
   # See the file common.cmake for a list of the components.
   set(CPACK_RPM_COMPONENT_INSTALL ON)
+
+  # As for DEB above: the metapackage is "openmodelica", not "openmodelica-meta".
+  set(CPACK_RPM_META_PACKAGE_NAME "openmodelica")
+
+  # The same weak dependencies the DEB packages carry above. rpm has no package named
+  # gnuplot-nox or xsltproc -- what each distribution calls them differs -- so those two are
+  # asked for by the file they provide, which rpm resolves through its file index. Our own
+  # packages are pinned with the spec's own %{version}-%{release}, which rpmbuild expands.
+  # CPack drops these tags by itself on an rpm too old to support weak dependencies.
+  set(CPACK_RPM_OMC_PACKAGE_RECOMMENDS
+      "openmodelica-simrtcpp = %{version}-%{release}, openmodelica-omplot = %{version}-%{release}, \
+/usr/bin/gnuplot, /usr/bin/xsltproc")
+  set(CPACK_RPM_OMEDIT_PACKAGE_RECOMMENDS
+      "openmodelica-omsens = %{version}-%{release}, openmodelica-omlibrary = %{version}-%{release}")
 
   set(CPACK_RPM_PACKAGE_LICENSE ${CPACK_RESOURCE_FILE_LICENSE})
 
