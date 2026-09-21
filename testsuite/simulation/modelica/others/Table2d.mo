@@ -1,5 +1,5 @@
 model Table2d
-  Modelica.Blocks.Tables.CombiTable2D combitable2d1(tableOnFile = true,
+  Modelica.Blocks.Tables.CombiTable2Ds combitable2d1(tableOnFile = true,
       tableName = "tab1", fileName = "Table2d.txt");
   Modelica.Blocks.Sources.Constant zeile(k = 60);
   Modelica.Blocks.Sources.Constant const(k = 2);

@@ -210,7 +210,7 @@ package DrModelicaForTesting
 
 
   model ArrayDim1
-    import Modelica.SIunits.Voltage;
+    import Modelica.Units.SI.Voltage;
     parameter Integer n = 1;
     parameter Integer m = 2;
     parameter Integer k = 3;
@@ -247,7 +247,7 @@ package DrModelicaForTesting
   end ArrayDim1;
 
   model ArrayDim2
-    import Modelica.SIunits.Voltage;
+    import Modelica.Units.SI.Voltage;
     parameter Integer n = 1;
     parameter Integer m = 2;
     parameter Integer k = 3;
@@ -561,15 +561,15 @@ package Modelica
 end Modelica;
 
   connector Pin
-    import Modelica.SIunits.Voltage;
-    import Modelica.SIunits.Current;
+    import Modelica.Units.SI.Voltage;
+    import Modelica.Units.SI.Current;
     Voltage v;
     flow Current i;
   end Pin;
 
   partial model TwoPin "Superclass of elements with two electrical pins"
-    import Modelica.SIunits.Voltage;
-    import Modelica.SIunits.Current;
+    import Modelica.Units.SI.Voltage;
+    import Modelica.Units.SI.Current;
     Pin p;
     Pin n;
     Voltage v;
@@ -1968,7 +1968,7 @@ end Modelica;
   end GameOfLife;
 
   model BasicVolume1  "First version with physical types"
-    import Modelica.SIunits.*;
+    import Modelica.Units.SI.*;
     parameter Real               R = 287;
     Pressure    P;
     Volume      V;
@@ -1987,7 +1987,7 @@ end Modelica;
   end BasicVolume1;
 
   model BasicVolume2  "Conservation of Mass"
-    import Modelica.SIunits.*;
+    import Modelica.Units.SI.*;
     parameter SpecificHeatCapacity R = 287;
     Pressure       P;
     Volume         V;
@@ -2014,7 +2014,7 @@ end Modelica;
 
 
   model BasicVolume3
-    import Modelica.SIunits.*;
+    import Modelica.Units.SI.*;
     parameter SpecificInternalEnergy u_0 = 209058;  // Added!  Air at T=293K
     parameter SpecificHeatCapacity   c_v = 717;     // Added!
     parameter Temperature            T_0 = 293;     // Added!
@@ -2057,7 +2057,7 @@ end Modelica;
 
 
   model SimpleValveFlow
-    import Modelica.SIunits;
+    import SIunits = Modelica.Units.SI;
     parameter SIunits.Area A = 1e-4;
     parameter Real         beta = 5.0e-5;
     SIunits.Pressure       P_in, P_out;
@@ -2110,7 +2110,7 @@ end Modelica;
 
 
   function initialPressure
-    import Modelica.SIunits.*;
+    import Modelica.Units.SI.*;
     input Integer n;
     output Real p[n];
   protected
@@ -2122,7 +2122,7 @@ end Modelica;
   end initialPressure;
 
   model WaveEquationSample
-    import Modelica.SIunits;
+    import SIunits = Modelica.Units.SI;
     parameter SIunits.Length   L=10 "Length of duct";
     parameter Integer          n=30 "Number of sections";
     parameter SIunits.Length   dL=L/n "Section length";

@@ -8,7 +8,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+loadModel(Modelica);
 buildModelFMU(Modelica.Electrical.Analog.Examples.ChuaCircuit, version="1.0");
 getErrorString();
 
