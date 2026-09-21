@@ -258,8 +258,12 @@ void makeLibsAndCacheCMake() {
  * Perform sanity check.
  *
  * Run script testsuite/sanity-check/runSanity.sh for C and C++ runtime.
- * On Windows an install directory with spaces and the smoke set of testsuite
- * tests in testsuite/windows.tests are run as well.
+ * On Windows an install directory with spaces is checked as well. The
+ * Windows testsuite smoke set runs separately, see runWindowsTestsuite() and
+ * the 'testsuite-windows' stage: it is its own stage rather than part of the
+ * build/sanity-check step so a test failure is reported distinctly from a
+ * build failure, and so the stage can grow (more tests, more Windows
+ * compute) without touching the build step at all.
  *
  * @param installDir  Path to omc installation directory.
  * @param buildCpp    True if omc was build with Cpp runtime.
@@ -286,23 +290,33 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
       move "${installDir} but with spaces" "${installDir}"
     """)
-    // The tests are listed in testsuite/windows.tests rather than here, so that
-    // a developer on Windows can run exactly what CI runs. runWindowsTests.sh
-    // returns non-zero if any of them fails; the shell script this replaced ran
-    // rtest line by line and only ever reported the last one's status.
-    bat (label: "Sanity check - testsuite", script: """
-      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-      set MSYSTEM=UCRT64
-      set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin;${WORKSPACE}\\${installDir}\\lib\\omc\\omsicpp;${WORKSPACE}\\${installDir}\\lib\\omc\\cpp
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/runWindowsTests.sh"
-    """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     if (buildCpp) {
       sh label: 'Sanity check - Cpp', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     }
   }
+}
+
+/*
+ * Run the Windows testsuite smoke set (testsuite/runWindowsTests.sh) against
+ * an installed omc. Split out of sanityCheck() so it can run as its own
+ * 'tests + extras' stage: see testWindowsSmoke().
+ *
+ * A test opts into this set by tagging its own header '// win: yes' (see
+ * testsuite/rtest's -platform/RTEST_PLATFORM); there is no separate list of
+ * Windows tests to maintain here or on disk.
+ *
+ * @param installDir  Path to omc installation directory.
+ */
+void runWindowsTestsuite(String installDir) {
+  bat (label: "Windows testsuite", script: """
+    If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+    set MSYSTEM=UCRT64
+    set MSYS2_PATH_TYPE=inherit
+    set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin;${WORKSPACE}\\${installDir}\\lib\\omc\\omsicpp;${WORKSPACE}\\${installDir}\\lib\\omc\\cpp
+    %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/runWindowsTests.sh"
+  """)
 }
 
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
@@ -372,6 +386,10 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
       """)
       sanityCheck('build', true)
+      // For the 'testsuite-windows' stage (testWindowsSmoke()): same 'build/**'
+      // shape the other CMake stashes use, so the tests it runs need nothing
+      // beyond the install tree.
+      stash name: 'omc-cmake-windows', includes: 'build/**'
     }
   }
   else if (isMac()) {
@@ -1188,6 +1206,21 @@ void partestCMakeStashed(stashName, partition, partitionmodulo) {
     // hdf5: unlike the autotools build, this one links the system HDF5, which
     // gives it MAT v7.3.
     partest(partition, partitionmodulo, true, '-suites=+hdf5')
+  }
+}
+
+// The 'testsuite-windows' stage (see buildOMC_CMake()'s Windows branch for
+// where 'omc-cmake-windows' is stashed). Split out of sanityCheck() so a
+// failure here is reported as a distinct testsuite failure rather than a
+// build failure, and so this stage can grow -- more tests, more Windows
+// compute -- without ever touching the build step.
+void testWindowsSmoke() {
+  standardSetup()
+  unstash 'omc-cmake-windows'
+  withEnv (["OMDEV=C:\\OMDevUCRT",
+            "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+    cloneOMDev()
+    runWindowsTestsuite('build')
   }
 }
 

@@ -2,6 +2,7 @@
 // keywords: ffi
 // status:   correct
 // cflags: -d=newInst
+// win: yes
 //
 //
 
@@ -12,7 +13,7 @@ instantiateModel(FFITest.ExternalC.ModelicaInternal_countLines); getErrorString(
 // true
 // ""
 // "class FFITest.ExternalC.ModelicaInternal_countLines
-//   constant Integer lines = 19;
+//   constant Integer lines = 20;
 // end FFITest.ExternalC.ModelicaInternal_countLines;
 // "
 // ""
