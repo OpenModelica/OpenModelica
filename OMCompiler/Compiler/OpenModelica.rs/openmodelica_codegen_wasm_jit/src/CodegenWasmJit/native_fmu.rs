@@ -23,6 +23,10 @@ pub struct Platform {
     /// What the user may write in `platforms={...}` besides `fmi`.
     pub aliases: &'static [&'static str],
     pub triple: &'static str,
+    /// `lib/<libdir>/omc`: this platform's shelf in an omc install, the same name
+    /// `Autoconf::triple` gives there. Keyed on the target, not the host, so a
+    /// loader for a platform omc does not run on still has somewhere to live.
+    pub libdir: &'static str,
     /// Shared-library extension, with the dot. FMI names the binary
     /// `<modelIdentifier><ext>` — no `lib` prefix, unlike the platform itself.
     pub ext: &'static str,
@@ -31,12 +35,12 @@ pub struct Platform {
 /// No 32-bit entries: the component is compiled by cranelift, whose only
 /// backends are x86-64, aarch64, riscv64 and s390x.
 pub const PLATFORMS: &[Platform] = &[
-    Platform { fmi: "x86_64-linux", fmi2: "linux64", aliases: &["linux64", "x86_64-unknown-linux-gnu"], triple: "x86_64-unknown-linux-gnu", ext: ".so" },
-    Platform { fmi: "aarch64-linux", fmi2: "aarch64-linux", aliases: &["linuxarm64", "aarch64-unknown-linux-gnu"], triple: "aarch64-unknown-linux-gnu", ext: ".so" },
-    Platform { fmi: "x86_64-windows", fmi2: "win64", aliases: &["win64", "x86_64-pc-windows-msvc"], triple: "x86_64-pc-windows-msvc", ext: ".dll" },
-    Platform { fmi: "aarch64-windows", fmi2: "aarch64-windows", aliases: &["winarm64", "aarch64-pc-windows-msvc"], triple: "aarch64-pc-windows-msvc", ext: ".dll" },
-    Platform { fmi: "x86_64-darwin", fmi2: "darwin64", aliases: &["darwin64", "x86_64-apple-darwin"], triple: "x86_64-apple-darwin", ext: ".dylib" },
-    Platform { fmi: "aarch64-darwin", fmi2: "aarch64-darwin", aliases: &["darwinarm64", "aarch64-apple-darwin"], triple: "aarch64-apple-darwin", ext: ".dylib" },
+    Platform { fmi: "x86_64-linux", fmi2: "linux64", aliases: &["linux64", "x86_64-unknown-linux-gnu"], triple: "x86_64-unknown-linux-gnu", libdir: "x86_64-linux-gnu", ext: ".so" },
+    Platform { fmi: "aarch64-linux", fmi2: "aarch64-linux", aliases: &["linuxarm64", "aarch64-unknown-linux-gnu"], triple: "aarch64-unknown-linux-gnu", libdir: "aarch64-linux-gnu", ext: ".so" },
+    Platform { fmi: "x86_64-windows", fmi2: "win64", aliases: &["win64", "x86_64-pc-windows-msvc"], triple: "x86_64-pc-windows-msvc", libdir: "x86_64-windows-msvc", ext: ".dll" },
+    Platform { fmi: "aarch64-windows", fmi2: "aarch64-windows", aliases: &["winarm64", "aarch64-pc-windows-msvc"], triple: "aarch64-pc-windows-msvc", libdir: "aarch64-windows-msvc", ext: ".dll" },
+    Platform { fmi: "x86_64-darwin", fmi2: "darwin64", aliases: &["darwin64", "x86_64-apple-darwin"], triple: "x86_64-apple-darwin", libdir: "x86_64-apple-darwin", ext: ".dylib" },
+    Platform { fmi: "aarch64-darwin", fmi2: "aarch64-darwin", aliases: &["darwinarm64", "aarch64-apple-darwin"], triple: "aarch64-apple-darwin", libdir: "aarch64-apple-darwin", ext: ".dylib" },
 ];
 
 /// The `binaries/` directory this platform's loader goes in, for an FMU of
@@ -74,7 +78,7 @@ pub fn lookup(name: &str) -> Option<&'static Platform> {
 }
 
 /// The loader for this platform, if this omc can reach one: from
-/// `lib/omc/fmu-loaders/` natively, from the web bundle through the host on wasm
+/// `lib/<libdir>/omc/` natively, from the web bundle through the host on wasm
 /// ([`set_loader_source`]). Which exist is decided by `OMC_FMU_NATIVE_TARGETS`
 /// when omc is built.
 pub fn loader(p: &Platform) -> Option<Vec<u8>> {
@@ -135,26 +139,30 @@ fn host_platforms() -> Vec<String> {
     LOADER_PLATFORMS.with(|p| p.borrow().clone())
 }
 
-/// Where `make install` puts the loader libraries, one `<platform><ext>` each.
+/// `lib/<libdir>/omc/fmu-loader<ext>`: that platform's shelf, not the host's.
 #[cfg(not(target_arch = "wasm32"))]
-fn loaders_dir() -> std::path::PathBuf {
+fn loader_path(p: &Platform) -> std::path::PathBuf {
     let home = openmodelica_util::Settings::getInstallationDirectoryPath()
         .map(|p| p.to_string())
         .unwrap_or_default();
-    std::path::PathBuf::from(home).join("lib/omc/fmu-loaders")
+    std::path::PathBuf::from(home)
+        .join("lib")
+        .join(p.libdir)
+        .join("omc")
+        .join(format!("fmu-loader{}", p.ext))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn host_loader(platform: &str) -> Option<Vec<u8>> {
     let p = PLATFORMS.iter().find(|p| p.fmi == platform)?;
-    std::fs::read(loaders_dir().join(format!("{platform}{}", p.ext))).ok()
+    std::fs::read(loader_path(p)).ok()
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn host_platforms() -> Vec<String> {
     PLATFORMS
         .iter()
-        .filter(|p| loaders_dir().join(format!("{}{}", p.fmi, p.ext)).is_file())
+        .filter(|p| loader_path(p).is_file())
         .map(|p| p.fmi.to_owned())
         .collect()
 }

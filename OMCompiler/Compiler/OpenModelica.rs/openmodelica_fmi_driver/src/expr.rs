@@ -111,6 +111,25 @@ impl Expr {
         Ok(e)
     }
 
+    /// A comma-separated list, for an array variable's elements. Commas inside a
+    /// function call belong to the call, not to the list.
+    pub fn parse_list(text: &str) -> Result<Vec<Expr>, ParseError> {
+        let mut p = Parser { s: text.as_bytes(), i: 0 };
+        let mut out = Vec::new();
+        loop {
+            p.space();
+            out.push(p.ternary()?);
+            p.space();
+            if !p.eat(",") {
+                break;
+            }
+        }
+        if p.i != p.s.len() {
+            return Err(p.error("unexpected trailing input"));
+        }
+        Ok(out)
+    }
+
     pub fn eval(&self, t: f64) -> f64 {
         match self {
             Expr::Const(v) => *v,

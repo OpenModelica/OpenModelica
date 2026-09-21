@@ -13,7 +13,7 @@ pub enum Error {
     InitialAlgorithmsNotAllowed { info: Info },
     PderNotAllowed { info: Info },
     OverloadNotAllowed { info: Info },
-    WithinNotAllowed { path: Arc<Absyn::Path> },
+    WithinNotAllowed { path: metamodelica::Ref<Absyn::Path> },
     ConstraintsNotAllowed { info: Info },
     DefineUnitNotAllowed { info: Info },
     TextElementNotAllowed { info: Info },
@@ -58,30 +58,30 @@ pub struct Class {
 pub enum ClassDef {
     Parts {
         type_vars: Vec<String>,
-        class_attrs: Vec<Arc<Absyn::NamedArg>>,
+        class_attrs: Vec<metamodelica::Ref<Absyn::NamedArg>>,
         members: Vec<ClassMember>,
-        algorithms: Vec<Arc<Absyn::AlgorithmItem>>,
+        algorithms: Vec<metamodelica::Ref<Absyn::AlgorithmItem>>,
         external: Option<ExternalSection>,
-        annotations: Vec<Arc<Absyn::Annotation>>,
+        annotations: Vec<metamodelica::Ref<Absyn::Annotation>>,
         comment: Option<String>,
     },
     Derived {
-        type_spec: Arc<Absyn::TypeSpec>,
+        type_spec: metamodelica::Ref<Absyn::TypeSpec>,
         attributes: Absyn::ElementAttributes,
         arguments: Vec<Absyn::ElementArg>,
-        comment: Option<Arc<Absyn::Comment>>,
+        comment: Option<metamodelica::Ref<Absyn::Comment>>,
     },
     Enumeration {
-        enum_literals: Arc<Absyn::EnumDef>,
-        comment: Option<Arc<Absyn::Comment>>,
+        enum_literals: metamodelica::Ref<Absyn::EnumDef>,
+        comment: Option<metamodelica::Ref<Absyn::Comment>>,
     },
     ClassExtends {
         base_class_name: String,
         modifications: Vec<Absyn::ElementArg>,
         comment: Option<String>,
         members: Vec<ClassMember>,
-        algorithms: Vec<Arc<Absyn::AlgorithmItem>>,
-        annotations: Vec<Arc<Absyn::Annotation>>,
+        algorithms: Vec<metamodelica::Ref<Absyn::AlgorithmItem>>,
+        annotations: Vec<metamodelica::Ref<Absyn::Annotation>>,
     },
 }
 
@@ -109,11 +109,11 @@ pub struct ComponentMember {
     pub info: Info,
     pub variability: Absyn::Variability,
     pub direction: Absyn::Direction,
-    pub type_spec: Arc<Absyn::TypeSpec>,
+    pub type_spec: metamodelica::Ref<Absyn::TypeSpec>,
     pub name: String,
-    pub modification: Option<Arc<Absyn::Modification>>,
-    pub condition: Option<Arc<Absyn::Exp>>,
-    pub comment: Option<Arc<Absyn::Comment>>,
+    pub modification: Option<metamodelica::Ref<Absyn::Modification>>,
+    pub condition: Option<metamodelica::Ref<Absyn::Exp>>,
+    pub comment: Option<metamodelica::Ref<Absyn::Comment>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -132,9 +132,9 @@ pub struct ExtendsMember {
     pub final_prefix: bool,
     pub redeclare_keywords: Option<Absyn::RedeclareKeywords>,
     pub info: Info,
-    pub path: Arc<Absyn::Path>,
+    pub path: metamodelica::Ref<Absyn::Path>,
     pub element_args: Vec<Absyn::ElementArg>,
-    pub annotation: Option<Arc<Absyn::Annotation>>,
+    pub annotation: Option<metamodelica::Ref<Absyn::Annotation>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -142,13 +142,13 @@ pub struct ImportMember {
     pub visibility: Visibility,
     pub info: Info,
     pub import: Absyn::Import,
-    pub comment: Option<Arc<Absyn::Comment>>,
+    pub comment: Option<metamodelica::Ref<Absyn::Comment>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExternalSection {
-    pub decl: Arc<Absyn::ExternalDecl>,
-    pub annotation: Option<Arc<Absyn::Annotation>>,
+    pub decl: metamodelica::Ref<Absyn::ExternalDecl>,
+    pub annotation: Option<metamodelica::Ref<Absyn::Annotation>>,
 }
 
 pub fn from_program(prog: &Absyn::Program) -> Result<Program, Error> {
@@ -195,6 +195,97 @@ fn extract_crate_name(body: &ClassDef) -> Option<String> {
     None
 }
 
+/// True if `body` carries `annotation(<name> = true)`.
+pub fn class_has_boolean_annotation(body: &ClassDef, name: &str) -> bool {
+    let annotations = match body {
+        ClassDef::Parts { annotations, .. } | ClassDef::ClassExtends { annotations, .. } => {
+            annotations
+        }
+        _ => return false,
+    };
+    annotations.iter().any(|ann| {
+        let Absyn::Annotation { elementArgs } = &**ann;
+        (&**elementArgs).into_iter().any(|arg| {
+            matches!(
+                arg.as_ref(),
+                Absyn::ElementArg::MODIFICATION { path, modification: Some(m), .. }
+                    if matches!(&**path, Absyn::Path::IDENT { name: n } if &**n == name)
+                        && matches!(&**m, Absyn::Modification { eqMod, .. }
+                            if matches!(&**eqMod, Absyn::EqMod::EQMOD { exp, .. }
+                                if matches!(exp.as_ref(), Absyn::Exp::BOOL { value: true })))
+            )
+        })
+    })
+}
+
+/// Retired class qnames, published once per run by [`set_retired`].
+///
+/// A process-wide `OnceLock` rather than a field on the codegen context: the
+/// consumers are free functions in `typedexp`/`codegen` that have no context
+/// argument, and the set is immutable for the life of the process.
+static RETIRED: std::sync::OnceLock<std::collections::BTreeSet<String>> =
+    std::sync::OnceLock::new();
+
+pub fn set_retired(retired: std::collections::BTreeSet<String>) {
+    let _ = RETIRED.set(retired);
+}
+
+/// True if `qname` (dotted, fully qualified) names a retired class.
+pub fn is_retired_qname(qname: &str) -> bool {
+    RETIRED.get().is_some_and(|r| r.contains(qname))
+}
+
+/// True if `name` is the simple name of a retired class. MetaModelica refers to
+/// a uniontype variant without naming the uniontype (`DAE.EVAL_SINGLETON_TYPE_FUNCTION`,
+/// not `DAE.EvaluateSingletonType.EVAL_SINGLETON_TYPE_FUNCTION`), so a source
+/// reference cannot always be resolved to a qname here.
+pub fn is_retired_simple_name(name: &str) -> bool {
+    let simple = name.rsplit('.').next().unwrap_or(name);
+    RETIRED
+        .get()
+        .is_some_and(|r| r.iter().any(|q| q.rsplit('.').next() == Some(simple)))
+}
+
+/// Annotation marking a construct the Rust port deliberately does not carry
+/// over. See [`strip_retired`].
+pub const RETIRED_ANNOTATION: &str = "__OpenModelica_Retired";
+
+/// Drop the fields of every class annotated [`RETIRED_ANNOTATION`], returning
+/// their qualified names.
+///
+/// The bootstrap C compiler still needs these constructs (it instantiates
+/// MetaModelica uniontypes while compiling the compiler sources), so they stay
+/// in the `.mo`. The Rust port sheds them: a fieldless record seeds as a unit
+/// variant, which keeps its field types out of the containment graph entirely.
+/// Codegen turns constructions into `unreachable!()` and drops match arms.
+pub fn strip_retired(classes: &mut [Class]) -> std::collections::BTreeSet<String> {
+    fn walk(c: &mut Class, prefix: &str, out: &mut std::collections::BTreeSet<String>) {
+        let qname =
+            if prefix.is_empty() { c.name.clone() } else { format!("{prefix}.{}", c.name) };
+        if class_has_boolean_annotation(&c.body, RETIRED_ANNOTATION) {
+            out.insert(qname.clone());
+            if let ClassDef::Parts { members, .. } = &mut c.body {
+                members.retain(|m| !matches!(m, ClassMember::Component(_)));
+            }
+        }
+        if let ClassDef::Parts { members, .. } | ClassDef::ClassExtends { members, .. } =
+            &mut c.body
+        {
+            for m in members.iter_mut() {
+                if let ClassMember::ClassDef(cd) = m {
+                    walk(&mut cd.class_def, &qname, out);
+                }
+            }
+        }
+    }
+
+    let mut out = std::collections::BTreeSet::new();
+    for c in classes.iter_mut() {
+        walk(c, "", &mut out);
+    }
+    out
+}
+
 fn interface_to_crate(interface: &str) -> Option<String> {
     match interface {
         "backend" => Some("openmodelica_backend".to_owned()),
@@ -205,6 +296,7 @@ fn interface_to_crate(interface: &str) -> Option<String> {
         "backend_util" => Some("openmodelica_backend_util".to_owned()),
         "nbackend" => Some("openmodelica_nbackend".to_owned()),
         "nf_frontend" => Some("openmodelica_nf_frontend".to_owned()),
+        "nf_api" => Some("openmodelica_nf_api".to_owned()),
         "frontend" => Some("openmodelica_frontend".to_owned()),
         "frontend_base" => Some("openmodelica_frontend_base".to_owned()),
         "parser" => Some("openmodelica_ast".to_owned()),
@@ -236,6 +328,7 @@ fn interface_to_crate(interface: &str) -> Option<String> {
         "backend_main" => Some("openmodelica_backend_main".to_owned()),
         "codegen_wasm_jit" => Some("openmodelica_codegen_wasm_jit".to_owned()),
         "omgraphics" => Some("openmodelica_omgraphics".to_owned()),
+        "loader" => Some("openmodelica_loader".to_owned()),
         _ => None,
     }
 }
@@ -338,7 +431,7 @@ fn convert_class_part(
     part: Absyn::ClassPart,
     class_info: &Info,
     members: &mut Vec<ClassMember>,
-    algorithms: &mut Vec<Arc<Absyn::AlgorithmItem>>,
+    algorithms: &mut Vec<metamodelica::Ref<Absyn::AlgorithmItem>>,
     external: &mut Option<ExternalSection>,
 ) -> Result<(), Error> {
     match part {
@@ -372,7 +465,7 @@ fn is_nf_builtin(info: &Info) -> bool {
 }
 
 fn convert_element_items(
-    items: metamodelica::List<Arc<Absyn::ElementItem>>,
+    items: metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
     visibility: Visibility,
     class_info: &Info,
     members: &mut Vec<ClassMember>,

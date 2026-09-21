@@ -54,6 +54,7 @@ public
   import NFFunction.Function;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
+  import ExpandExp = NFExpandExp;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -202,6 +203,7 @@ public
           UnorderedSet<ComponentRef> output_crefs, input_crefs, solved_inputs;
           list<tuple<ComponentRef, ComponentRef>> tmp_crefs;
           list<Pointer<Variable>> tmp_vars;
+          Boolean is_mixed;
           list<Pointer<Equation>> tmp_eqns;
           Pointer<Integer> idx;
           UnorderedMap<ComponentRef, ComponentRef> cref_repl;
@@ -213,7 +215,12 @@ public
 
         // solve component that was simplified
         case StrongComponent.MULTI_COMPONENT(vars = {var_slice}) guard(not Equation.isCompound(Slice.getT(comp.eqn))) algorithm
-          (solved_comps, implicit_index) := solveStrongComponent(StrongComponent.createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, comp.eqn), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          // var_slice can be a genuine partial slice; resolve the cref that actually
+          // occurs in the equation with the matching size instead of the bare declared
+          // name (var_cref is documented to carry subscripts, see the comment below).
+          var_cref := if Slice.isFull(var_slice) then BVariable.getVarName(Slice.getT(var_slice))
+            else Slice.resolveSlicedCref(BVariable.getVarName(Slice.getT(var_slice)), Pointer.access(Slice.getT(comp.eqn)), Slice.size(var_slice, function BVariable.size(resize = false)));
+          (solved_comps, implicit_index) := solveStrongComponent(StrongComponent.createSliceOrSingle(var_cref, var_slice, comp.eqn), funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then (solved_comps, Status.UNPROCESSED); // status is unknown, but does not matter because errors were handled in the recursive call.
 
         case StrongComponent.MULTI_COMPONENT() algorithm
@@ -282,8 +289,10 @@ public
                 Pointer.update(eqn_ptr, Equation.map(eqn, function Replacements.applySimpleExp(replacements = exp_repl)));
                 // create the algebraic loop, already torn
                 strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
-                // ToDo: set all the booleans correctly
-                solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status, true);
+                // a loop over discrete variables is mixed and must not get a Jacobian
+                is_mixed := List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isDiscontinuous(staticAsContinuous = Partition.kindIsInitial(kind)));
+                // ToDo: set the other booleans correctly
+                solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, is_mixed, false, solve_status, true);
 
                 // add new equations and new variables
                 EqData.addTypedList(eqData, tmp_eqns, NBEquation.EqData.EqType.CONTINUOUS);
@@ -533,8 +542,12 @@ public
 
       case Equation.IF_EQUATION() algorithm
         (if_body, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(list(Slice.getT(v) for v in var_slices)), funcMap, kind, implicit_index, slicing_map, iter, varData, eqData);
-        eqn.body := if_body;
-      then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), status);
+        // keep the original equation if a branch is implicit, it is used as the residual
+        if status == Status.EXPLICIT then
+          eqn.body := if_body;
+          eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+        end if;
+      then (eqn_slice, status);
 
       // ToDo: inverse algorithms
       case Equation.ALGORITHM()
@@ -631,7 +644,7 @@ public
       // For equations are expected to only have one body equation at this point
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
         // create indexed variable to trick matching algorithm to solve for it
-        indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref, sourceInfo()), cref);
+        indexed_var := BVariable.makeVarPtr(BVariable.getVar(cref, sourceInfo()), cref);
         dummy := Iterator.dummy(eqn.iter);
         (body_slice, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcMap, kind, implicit_index, slicing_map, dummy, varData, eqData);
         eqn.body := {Pointer.access(Slice.getT(body_slice))};
@@ -655,6 +668,28 @@ public
     end match;
   end solveEquation;
 
+  function singleElement
+    "expands an array expression of size one and returns its only scalar element"
+    input Expression exp;
+    output Option<Expression> element = NONE();
+  protected
+    Expression expanded;
+    Boolean success;
+  algorithm
+    if not Type.isArray(Expression.typeOf(exp)) then
+      element := SOME(exp);
+      return;
+    end if;
+
+    (expanded, success) := ExpandExp.expand(exp, true);
+    if success then
+      element := match expanded
+        case Expression.ARRAY() guard(arrayLength(expanded.elements) == 1) then singleElement(expanded.elements[1]);
+        else NONE();
+      end match;
+    end if;
+  end singleElement;
+
   function solveBody
     input output Equation eqn;
     input ComponentRef cref;
@@ -674,6 +709,17 @@ public
       fixed_cref := getVarSlice(fixed_cref, SOME(cref), eqn);
     else
       fixed_cref := cref;
+      // a scalar solved from a single element array equation, e.g. mXi = m * Xi for Real[1] mXi, Xi:
+      // use the scalar equation, otherwise the solution is array valued
+      eqn := match eqn
+        local
+          Option<Expression> lhs, rhs;
+        case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ty) and Type.sizeOf(eqn.ty) == 1) algorithm
+          lhs := singleElement(eqn.lhs);
+          rhs := singleElement(eqn.rhs);
+        then if isSome(lhs) and isSome(rhs) then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Util.getOption(lhs), Util.getOption(rhs), eqn.source, eqn.attr) else eqn;
+        else eqn;
+      end match;
     end if;
 
     if Flags.isSet(Flags.DUMP_SOLVE) then
@@ -732,6 +778,7 @@ public
     IfEquationBody else_if;
     list<StrongComponent> comps, solved_comps;
     list<Pointer<Equation>> new_then_eqns = {};
+    Boolean explicit = true;
   algorithm
     // causalize this branch equations for the unknowns
     (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns), kind, iter = iter);
@@ -739,9 +786,20 @@ public
     for comp in comps loop
       (solved_comps, implicit_index) := solveStrongComponent(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       for solved_comp in solved_comps loop
-        new_then_eqns := StrongComponent.toSolvedEquation(solved_comp) :: new_then_eqns;
+        if StrongComponent.getSolveStatus(solved_comp) == Status.EXPLICIT then
+          new_then_eqns := StrongComponent.toSolvedEquation(solved_comp) :: new_then_eqns;
+        else
+          explicit := false;
+        end if;
       end for;
     end for;
+
+    // a branch that can only be solved implicitly makes the whole if equation implicit
+    if not explicit then
+      status := Status.IMPLICIT;
+      return;
+    end if;
+
     body.then_eqns := listReverse(new_then_eqns);
     // if there is an else branch -> go deeper
     if isSome(body.else_if) then
@@ -1569,12 +1627,16 @@ protected
   protected
     list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
     UnorderedMap<ComponentRef, Boolean> map;
+    UnorderedMap<ComponentRef, Integer> sizes;
+    ComponentRef stripped;
   algorithm
     if List.compareLength(filtered_exps, vars) == 0 then
-      map := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+      map   := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+      sizes := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
       for var in vars loop
         UnorderedMap.add(BVariable.getVarName(var), false, map);
+        UnorderedMap.add(BVariable.getVarName(var), BVariable.size(var), sizes);
       end for;
       // set the map entry for all variables that occur to true
       for exp in filtered_exps loop
@@ -1582,6 +1644,17 @@ protected
           case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
             UnorderedMap.add(exp.cref, true, map);
           then ();
+
+          // a subscripted element that covers the whole variable, e.g. x[1] for Real[1] x
+          case Expression.CREF() algorithm
+            stripped := ComponentRef.stripSubscriptsAll(exp.cref);
+            if UnorderedMap.contains(stripped, map) and UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp)) then
+              UnorderedMap.add(stripped, true, map);
+            else
+              return;
+            end if;
+          then ();
+
           else algorithm return; then ();
         end match;
       end for;
@@ -1653,7 +1726,7 @@ protected
     output Status solve_status;
   protected
     Pointer<Variable> var_ptr = BVariable.getVarPointer(var_cref, sourceInfo());
-    list<ComponentRef> slices_lst;
+    list<ComponentRef> slices_lst, filtered;
     Option<Pointer<Variable>> record_parent;
     function checkReference
       input ComponentRef var_cref;
@@ -1687,8 +1760,16 @@ protected
       elseif listEmpty(slices_lst) then
         solve_status := Status.UNSOLVABLE;
       else
-        // todo: choose best slice of list if more than one.
-        solve_status := Status.IMPLICIT;
+        // more than one candidate slice occurs (e.g. the whole variable on one side and
+        // a partial slice on the other) -- narrow down with the same size check used for
+        // the single-candidate case above.
+        filtered := list(c for c guard(checkReference(c, reference)) in slices_lst);
+        if List.hasOneElement(filtered) then
+          var_cref := listHead(filtered);
+          solve_status := Status.UNPROCESSED;
+        else
+          solve_status := Status.IMPLICIT;
+        end if;
       end if;
     end if;
   end getVarSlice;

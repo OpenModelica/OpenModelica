@@ -35,6 +35,28 @@ fn run(cmd: &mut Command, what: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Detach a nested build from this one's cargo environment: the flags, and the
+/// `CARGO_PROFILE_*` overrides that outrank a manifest's own `[profile]`.
+///
+/// Each crate below is a standalone workspace whose release profile sets
+/// `lto = true`. A wasm side module needs that for correctness, not size:
+/// without it every symbol stays exported, and a PIC build then reaches its own
+/// statics through `GOT.mem` globals the component linker fills only after the
+/// instantiation that runs a model module's `start`.
+fn detach_cargo_env(cmd: &mut Command) {
+    for (key, _) in std::env::vars_os() {
+        let key = key.to_string_lossy();
+        // `CARGO_TARGET_<TRIPLE>_RUSTFLAGS` outranks the `RUSTFLAGS` set below it.
+        let flags = key.starts_with("CARGO_TARGET_") && key.ends_with("_RUSTFLAGS");
+        if flags || key.starts_with("CARGO_PROFILE_") {
+            cmd.env_remove(key.as_ref());
+        }
+    }
+    cmd.env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_BUILD_RUSTFLAGS")
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+}
+
 /// `items.iter().map(f)`, one thread each, results in input order; a worker panic
 /// resurfaces here. Spawning all at once does not oversubscribe: the nested
 /// cargos share this build's jobserver through `CARGO_MAKEFLAGS`.
@@ -99,7 +121,6 @@ fn main() {
         s.spawn(|| {
             build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir)
         });
-        s.spawn(|| build_external_c_wasm(&crate_dir, &out_dir));
         s.spawn(|| {
             let adapters = build_fmi3_me_adapter(&crate_dir, &out_dir, sundials_dir.is_some());
             build_solver_dylinks(&out_dir, sundials_dir, &adapters);
@@ -108,6 +129,12 @@ fn main() {
         s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
         s.spawn(|| build_lapack_dylink(&crate_dir, &out_dir));
     });
+
+    write_ondemand_index(&out_dir);
+    publish_prebuilt(&out_dir);
+
+    // openmodelica_wasi_libc's OUT_DIR, handed over by its `links` metadata.
+    println!("cargo::rustc-env=OMC_WASI_BLOB_DIR={}", env("DEP_OMC_WASI_BLOBS_DIR"));
 }
 
 /// Build the **fused** artifact runtime: the FMI 3.0 adapter, the in-wasm driver
@@ -130,13 +157,16 @@ fn build_wasip1_fused_adapter(
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
+    if prebuilt_in(&dest, &stamp) {
+        return;
+    }
     let adapter_dir = crate_dir
         .parent()
         .expect("crate has a parent dir")
         .join("openmodelica_fmi3_wasm");
     let features = match sundials_dir {
-        Some(_) => "me,cs,capi,sundials,host_lin_solve",
-        None => "me,cs,capi,host_lin_solve",
+        Some(_) => "me,cs,capi,sundials,host_lin_solve,wasm",
+        None => "me,cs,capi,host_lin_solve,wasm",
     };
     // The adapter's sources as well as the runtime's, and how it is built: any of
     // them changing produces a different blob, and a stamp that misses one serves
@@ -175,11 +205,8 @@ fn build_wasip1_fused_adapter(
         // runtime's own cdylib artifact (unused) references the sink this crate
         // defines. sccache goes with the outer build's other wrappers.
         .env("RUSTFLAGS", rustflags)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WRAPPER")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER")
-        ;
+        .env_remove("RUSTC_WRAPPER");
+    detach_cargo_env(&mut cmd);
     match sundials_dir {
         Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
         None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
@@ -230,7 +257,9 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         }
     }
 
-    let (digest, files) = hash_inputs(&loader_dir, &[]);
+    // The loader binds the adapter's WIT, so a changed interface rebuilds it too.
+    let wit_dir = loader_dir.parent().expect("crate has a parent dir").join("openmodelica_fmi3_wasm").join("wit");
+    let (digest, files) = hash_inputs(&loader_dir, &[wit_dir]);
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }
@@ -274,6 +303,8 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         requested: bool,
         platform: String,
         artifact: String,
+        /// Install-relative path: `<libdir>/omc/fmu-loader<ext>`.
+        rel: String,
         ext: String,
         dest: PathBuf,
         stamp: PathBuf,
@@ -282,7 +313,7 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     }
     let mut loaders = Vec::new();
     for (target, requested) in &targets {
-        let Some((platform, artifact)) = loader_artifact_name(target) else {
+        let Some((platform, artifact, libdir)) = loader_artifact_name(target) else {
             let msg = format!(
                 "{target} cannot be an FMU platform: the component is compiled by cranelift, \
                  which only has x86-64 and aarch64 backends among the platforms FMI names"
@@ -302,10 +333,17 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
             && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash);
         let ext =
             Path::new(&artifact).extension().and_then(|e| e.to_str()).unwrap_or("so").to_owned();
-        let handed_over = prebuilt
-            .as_ref()
-            .map(|d| d.join(format!("{platform}.{ext}")))
-            .filter(|f| f.is_file());
+        let rel = format!("{libdir}/omc/fmu-loader.{ext}");
+        let handed_over = prebuilt.as_ref().map(|d| d.join(&rel)).filter(|f| f.is_file());
+        // A hand-over missing a loader is a stale one. Cross-building instead is no
+        // recovery: it needs a toolchain such a build is assumed not to have.
+        assert!(
+            handed_over.is_some() || prebuilt.is_none() || cached || !*requested || optional,
+            "{} has no {rel}: it was produced by an incompatible build. Rebuild the \
+             hand-over (the `rust_wasm_artifacts` target) or unset OMC_FMU_LOADERS_IN \
+             to cross-build the loaders here instead.",
+            prebuilt.as_ref().expect("checked above").display()
+        );
         if let (false, Some(f)) = (cached, &handed_over) {
             copy(f, &dest);
             std::fs::write(&stamp, &hash).ok();
@@ -315,6 +353,7 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
             requested: *requested,
             platform,
             artifact,
+            rel,
             ext,
             dest,
             stamp,
@@ -357,7 +396,7 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     let mut index = String::new();
     let mut xwin_results_iter = xwin_results.into_iter();
     for (l, outcome) in loaders.iter().zip(built) {
-        let Loader { target, platform, ext, .. } = l;
+        let Loader { target, platform, ext, rel, .. } = l;
         // MSVC targets were built sequentially (not through par_map)
         let outcome = if l.target.ends_with("-msvc") && l.build {
             xwin_results_iter.next().unwrap()
@@ -377,17 +416,21 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
             println!("cargo:warning={msg}");
             continue;
         }
-        copy(&l.dest, &staging.join(format!("{platform}.{ext}")));
+        let dest = staging.join(rel);
+        std::fs::create_dir_all(dest.parent().expect("a loader path has a parent"))
+            .expect("create the FMU loader directory");
+        copy(&l.dest, &dest);
         index.push_str(&format!(
-            "{}{{\"platform\":{platform:?},\"triple\":{target:?},\"file\":\"{platform}.{ext}\",\"ext\":\".{ext}\"}}",
+            "{}{{\"platform\":{platform:?},\"triple\":{target:?},\"file\":{rel:?},\"ext\":\".{ext}\"}}",
             if index.is_empty() { "" } else { "," }
         ));
     }
     std::fs::write(staging.join("index.json"), format!("[{index}]\n")).expect("write the loader index");
 }
 
-/// `(FMI platform tuple, artifact file name)` for a rustc target triple.
-fn loader_artifact_name(target: &str) -> Option<(String, String)> {
+/// `(FMI platform tuple, library file name, `lib/<libdir>/omc` component)`. The
+/// libdir must agree with the `PLATFORMS` table in `CodegenWasmJit/native_fmu.rs`.
+fn loader_artifact_name(target: &str) -> Option<(String, String, String)> {
     let arch = target.split('-').next()?;
     let arch = match arch {
         "x86_64" => "x86_64",
@@ -395,30 +438,44 @@ fn loader_artifact_name(target: &str) -> Option<(String, String)> {
         _ => return None,
     };
     let stem = "openmodelica_fmi_ls_wasm_to_native";
-    let (os, artifact) = if target.contains("windows") {
-        ("windows", format!("{stem}.dll"))
+    let (os, env, artifact) = if target.contains("windows") {
+        let env = if target.ends_with("-gnu") { "gnu" } else { "msvc" };
+        ("windows", env, format!("{stem}.dll"))
     } else if target.contains("darwin") || target.contains("apple") {
-        ("darwin", format!("lib{stem}.dylib"))
+        ("darwin", "", format!("lib{stem}.dylib"))
     } else if target.contains("linux") {
-        ("linux", format!("lib{stem}.so"))
+        let env = if target.ends_with("-musl") { "musl" } else { "gnu" };
+        ("linux", env, format!("lib{stem}.so"))
     } else {
         return None;
     };
-    Some((format!("{arch}-{os}"), artifact))
+    let libdir = if os == "darwin" {
+        format!("{arch}-apple-darwin")
+    } else {
+        format!("{arch}-{os}-{env}")
+    };
+    Some((format!("{arch}-{os}"), artifact, libdir))
 }
+
+/// The glibc the `*-linux-gnu` loaders are built against: EL8's, the oldest
+/// distribution omc ships to. zig links its own stubs, so the floor follows the
+/// triple and not the build host — which is why the host's own loader is built
+/// this way too rather than a second time by whoever needs an older one.
+const LINUX_LOADER_GLIBC: &str = "2.28";
 
 /// The cargo subcommand that can *link* for `target`: the loader is an ordinary
 /// native library (`wasmtime-wasi` compiles a C fiber), so a cross target needs a
 /// cross C toolchain — cargo-xwin for the MSVC CRT/SDK, cargo-zigbuild for the
-/// rest. `OMC_FMU_NATIVE_CARGO_<triple with _ for ->` overrides one target, e.g.
-/// to use a real cross gcc.
+/// rest. The host's own `*-linux-gnu` goes through zigbuild as well, for the
+/// glibc floor above. `OMC_FMU_NATIVE_CARGO_<triple with _ for ->` overrides one
+/// target, e.g. to use a real cross gcc.
 fn cargo_subcommand(target: &str) -> Vec<String> {
     let key = format!("OMC_FMU_NATIVE_CARGO_{}", target.replace('-', "_"));
     println!("cargo:rerun-if-env-changed={key}");
     if let Ok(v) = std::env::var(&key) {
         return v.split_whitespace().map(str::to_owned).collect();
     }
-    let sub = if target == env("HOST") {
+    let sub = if target == env("HOST") && !target.ends_with("-linux-gnu") {
         vec!["build"]
     } else if target.ends_with("-msvc") {
         vec!["xwin", "build"]
@@ -485,43 +542,56 @@ fn build_native_loader(
 ) -> Result<PathBuf, String> {
     let target_dir = out_dir.join(format!("fmu-loader-target-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    let mut cmd = Command::new(cargo);
-    cross_toolchain_cache(&mut cmd);
-    if !xwin_arch.is_empty() {
-        cmd.env("XWIN_ARCH", xwin_arch);
-    }
-    if target.contains("apple") {
-        match macos_sdk {
-            // zig reports a nonexistent sysroot as the same "framework not found".
-            Some(sdk) if !Path::new(sdk).join("System/Library/Frameworks").is_dir() => {
-                return Err(format!("{sdk} is not a macOS SDK (no System/Library/Frameworks)"));
-            }
-            Some(sdk) => {
-                cmd.env("SDKROOT", sdk);
-            }
-            // A macOS host has its own SDK, found through xcrun.
-            None if env("HOST").contains("apple") => {}
-            None => {
-                return Err("no macOS SDK: point OMC_FMU_MACOS_SDK (CMake RUST_OMC_MACOS_SDK) \
-                            or SDKROOT at an unpacked MacOSX<version>.sdk"
-                    .to_owned())
-            }
+    let command = |sub: &[String], tgt: &str| -> Result<Command, String> {
+        let mut cmd = Command::new(&cargo);
+        cross_toolchain_cache(&mut cmd);
+        if !xwin_arch.is_empty() {
+            cmd.env("XWIN_ARCH", xwin_arch);
         }
-        // ld64 defaults the install name to the output path, which would put this
-        // build directory in every exported FMU.
-        cmd.env("RUSTFLAGS", format!("-Clink-arg=-Wl,-install_name,@rpath/{artifact}"));
-    } else {
-        cmd.env_remove("RUSTFLAGS");
+        if target.contains("apple") {
+            match macos_sdk {
+                // zig reports a nonexistent sysroot as the same "framework not found".
+                Some(sdk) if !Path::new(sdk).join("System/Library/Frameworks").is_dir() => {
+                    return Err(format!("{sdk} is not a macOS SDK (no System/Library/Frameworks)"));
+                }
+                Some(sdk) => {
+                    cmd.env("SDKROOT", sdk);
+                }
+                // A macOS host has its own SDK, found through xcrun.
+                None if env("HOST").contains("apple") => {}
+                None => {
+                    return Err("no macOS SDK: point OMC_FMU_MACOS_SDK (CMake RUST_OMC_MACOS_SDK) \
+                                or SDKROOT at an unpacked MacOSX<version>.sdk"
+                        .to_owned());
+                }
+            }
+            // ld64 defaults the install name to the output path, which would put this
+            // build directory in every exported FMU.
+            cmd.env("RUSTFLAGS", format!("-Clink-arg=-Wl,-install_name,@rpath/{artifact}"));
+        } else {
+            cmd.env_remove("RUSTFLAGS");
+        }
+        cmd.current_dir(loader_dir)
+            .args(sub)
+            .args(["--release", "--target", tgt])
+            .arg("--target-dir")
+            .arg(&target_dir);
+        detach_cargo_env(&mut cmd);
+        Ok(cmd)
+    };
+    let sub = cargo_subcommand(target);
+    // cargo-zigbuild strips the version before cargo sees the triple, so the
+    // artifact still lands under the plain one.
+    let pinned = sub.first().is_some_and(|s| s == "zigbuild") && target.ends_with("-linux-gnu");
+    let tgt = if pinned { format!("{target}.{LINUX_LOADER_GLIBC}") } else { target.to_owned() };
+    let mut outcome = run(&mut command(&sub, &tgt)?, &format!("cargo build for {tgt}"));
+    if outcome.is_err() && pinned && target == env("HOST") {
+        // Without zig a native build still gets its own platform, at this host's
+        // glibc instead of the pinned one.
+        let native = [String::from("build")];
+        outcome = run(&mut command(&native, target)?, &format!("cargo build for {target}"));
     }
-    cmd.current_dir(loader_dir)
-        .args(cargo_subcommand(target))
-        .args(["--release", "--target", target])
-        .arg("--target-dir")
-        .arg(&target_dir)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
-    run(&mut cmd, &format!("cargo build for {target}"))?;
+    outcome?;
     let produced = target_dir.join(target).join("release").join(artifact);
     if !produced.exists() {
         return Err(format!("expected library not found at {}", produced.display()));
@@ -544,6 +614,9 @@ fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
     if let Ok(path) = std::env::var("OMC_LAPACK_WASM") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
 
@@ -588,16 +661,108 @@ fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, Strin
         .args(["--features", "fortran-abi"])
         .arg("--target-dir")
         .arg(&target_dir)
-        .env("RUSTFLAGS", rustflags)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .env("RUSTFLAGS", rustflags);
+    detach_cargo_env(&mut cmd);
     run(&mut cmd, "cargo build (LAPACK dylink)")?;
     let produced = target_dir.join(target).join("release").join("openmodelica_lapack.wasm");
     if !produced.exists() {
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
     }
     Ok(produced)
+}
+
+/// What `blobs_ondemand!` in src/blobs.rs declares, and whether the file comes
+/// from `openmodelica_wasi_libc`'s OUT_DIR rather than this crate's. Only what a
+/// model's `external` declaration can name is indexed; the rest of the family is
+/// reached through `dylink.0` NEEDED.
+const ONDEMAND_BLOBS: &[(&str, bool)] = &[
+    ("liblapack.wasm", false),
+    ("ModelicaExternalC.wasm", true),
+    ("ModelicaStandardTables.wasm", true),
+    ("ModelicaIO.wasm", true),
+    // Not ModelicaMatIO, zlib or libc: nothing a model declares names a symbol of
+    // theirs — they are reached as what ModelicaIO needs — and MatIO carries the
+    // 3000 `H5*` of the HDF5 that gives it MAT v7.3.
+];
+
+/// Read off the modules, so the index cannot drift from what they export.
+/// Whether an export is a name a model's `external` declaration could name. A PIC
+/// library is linked `--export-all`, which also exposes every mangled internal,
+/// the loader's own `__wasm_*`/`__dso_handle` and the allocator — none callable
+/// from Modelica, and 100 KB of index if left in.
+fn model_callable(name: &str) -> bool {
+    if matches!(name, "malloc" | "free" | "_initialize") || name.starts_with("__") {
+        return false;
+    }
+    // `_R` is Rust's v0 mangling, `_Z` C++'s (and Rust's legacy).
+    if name.starts_with("_R") || name.starts_with("_Z") {
+        return false;
+    }
+    let mut chars = name.chars();
+    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+fn write_ondemand_index(out_dir: &Path) {
+    let mut out = String::from("[");
+    let mut written = 0;
+    let wasi_dir = PathBuf::from(env("DEP_OMC_WASI_BLOBS_DIR"));
+    for (file, from_wasi_libc) in ONDEMAND_BLOBS {
+        let dir = if *from_wasi_libc { &wasi_dir } else { out_dir };
+        let Ok(bytes) = std::fs::read(dir.join(file)) else { continue };
+        if written > 0 {
+            out.push(',');
+        }
+        written += 1;
+        out.push_str(&format!("\n  {{\"file\": {}, \"exports\": [", json_str(file)));
+        let names: Vec<String> =
+            exported_functions(&bytes).into_iter().filter(|n| model_callable(n)).collect();
+        for (k, n) in names.iter().enumerate() {
+            out.push_str(if k == 0 { "\n    " } else { ",\n    " });
+            out.push_str(&json_str(n));
+        }
+        out.push_str("\n  ]}");
+    }
+    out.push_str("\n]\n");
+    std::fs::write(out_dir.join("index.json"), out).expect("write the on-demand blob index");
+}
+
+fn json_str(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' | '\\' => {
+                out.push('\\');
+                out.push(c);
+            }
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Exported functions only; [`exported_names`] keeps memories and globals too.
+fn exported_functions(module: &[u8]) -> std::collections::BTreeSet<String> {
+    let mut out = std::collections::BTreeSet::new();
+    sections(module, |id, start| {
+        if id != 7 {
+            return;
+        }
+        let mut p = start;
+        for _ in 0..leb(module, &mut p) {
+            let n = name(module, &mut p);
+            let kind = module[p];
+            p += 1;
+            leb(module, &mut p); // index
+            if kind == 0 {
+                out.insert(n);
+            }
+        }
+    });
+    out
 }
 
 /// Build + embed the model-agnostic FMI3 ME adapter (`openmodelica_fmi3_wasm`) as
@@ -641,12 +806,17 @@ fn wasm_opt(path: &Path) {
         .map(|s| s.success())
         .unwrap_or(false)
         && std::fs::metadata(&tmp).map(|m| m.len() > 0).unwrap_or(false);
-    if ok {
-        std::fs::rename(&tmp, path).ok();
-    } else {
+    if !ok {
         std::fs::remove_file(&tmp).ok();
-        println!("cargo:warning=wasm-opt failed on {}; using it unoptimized", path.display());
+        // Never silently: an unoptimized blob is several times the size, and the
+        // layout that comes with it is what a wasm FMU's allocator faults on.
+        panic!(
+            "wasm-opt failed on {}. Fix the binaryen invocation, or build with \
+             -DRUST_OMC_WASM_OPT=OFF to leave every blob unoptimized.",
+            path.display()
+        );
     }
+    std::fs::rename(&tmp, path).expect("replace the blob with the wasm-opt output");
 }
 
 /// Part of every stamp that covers a wasm-opt'd module: turning binaryen on or off
@@ -729,6 +899,17 @@ fn build_solver_dylinks(out_dir: &Path, sundials_dir: Option<&Path>, adapters: &
                 copy(&dir.join(&f), &out_dir.join(&f));
             }
         }
+        return;
+    }
+    // All or nothing: linking one group needs the wasm toolchain the hand-over
+    // exists to avoid, so a partial set is no better than none.
+    let stamp = out_dir.join("solver_dylinks.hash");
+    if all.iter().all(|g| {
+        ["", "_stub"].iter().all(|kind| {
+            let f = out_dir.join(format!("solver_{}{kind}.wasm", g.name));
+            prebuilt_in(&f, &stamp)
+        })
+    }) {
         return;
     }
     if sundials_dir.is_none() {
@@ -1200,7 +1381,8 @@ struct AdapterVariant {
     name: &'static str,
     /// Human label for diagnostics.
     label: &'static str,
-    /// `cargo build` feature args (empty = default features → Model Exchange).
+    /// `cargo build` feature args. `wasm` is in every one: these are the component
+    /// builds, and without it the crate is the bare FMI state machine a native FMU links.
     cargo_args: &'static [&'static str],
 }
 
@@ -1216,13 +1398,13 @@ const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant {
         name: "me",
         label: "ME",
-        cargo_args: &["--no-default-features", "--features", "me,sundials"],
+        cargo_args: &["--no-default-features", "--features", "me,sundials,wasm"],
     },
     // One me_cs adapter, with the solver bundle as imports `SOLVER_LIBRARIES` resolves.
     AdapterVariant {
         name: "mecs",
         label: "me_cs",
-        cargo_args: &["--no-default-features", "--features", "me,cs,sundials"],
+        cargo_args: &["--no-default-features", "--features", "me,cs,sundials,wasm"],
     },
     // The same me_cs adapter with an FMI 3.0 C API instead of the component's WIT
     // exports, for a host that links it as a dylink library: it is then a *fixed*
@@ -1231,7 +1413,7 @@ const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant {
         name: "mecs_capi",
         label: "me_cs (C API)",
-        cargo_args: &["--no-default-features", "--features", "me,cs,capi"],
+        cargo_args: &["--no-default-features", "--features", "me,cs,capi,wasm"],
     },
 ];
 
@@ -1250,6 +1432,9 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant, sund
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
+    if prebuilt_in(&dest, &stamp) {
+        return;
+    }
 
     // Every crate the adapter reaches through a `path` dep, transitively: the
     // runtime and sim_meta are only the first hop — sim_meta reaches daskr, and a
@@ -1258,7 +1443,7 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant, sund
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }
-    let hash = format!("{digest}-{}-{sundials}-{}", v.name, wasm_opt_key());
+    let hash = format!("{digest}-{}-{}-{sundials}-{}", v.name, v.cargo_args.join(","), wasm_opt_key());
     if dest.exists()
         && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
         && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
@@ -1312,185 +1497,27 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
         -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
         -Clink-arg=--allow-undefined -Ctarget-feature=+simd128";
     let mut cmd = Command::new(cargo);
+    // `rustc --crate-type cdylib`, not `build`: the crate also builds as an `rlib`
+    // for the native FMU, and `lto = true` does not apply to a build that produces
+    // both. Without it nothing is internalized, so a dylink module -- which exports
+    // every symbol that is not hidden -- keeps the std and faer machinery
+    // `panic = "immediate-abort"` exists to make unreachable. That is 82 KB of
+    // static data against 210 KB, and the larger one moves `__heap_base` into a
+    // layout the FMU's allocator faults on.
     cmd.current_dir(adapter_dir)
-        .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
+        .args(["rustc", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
         .args(v.cargo_args)
+        .args(["--crate-type", "cdylib"])
         .arg("--target-dir")
         .arg(&target_dir)
-        .env("RUSTFLAGS", rustflags)
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .env("RUSTFLAGS", rustflags);
+    detach_cargo_env(&mut cmd);
     run(&mut cmd, &format!("cargo build (dylink, {})", v.label))?;
     let produced = target_dir.join(target).join("release").join("openmodelica_fmi3_wasm.wasm");
     if !produced.exists() {
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
     }
     Ok(produced)
-}
-
-/// The `env` imports `sim_runtime_wasmer::define_external_imports` binds. Any other
-/// undefined symbol is a link error, see `build_external_c_wasm`.
-///
-/// The `Modelica*` entry points are not among them: the side module carries
-/// `external_c_callbacks.c`, the same one an FMU links, so a `%g` is interpolated
-/// by `vsnprintf` before the host ever sees the message. Only allocation stays
-/// host-side (`OM_EXT_HOST_ALLOC`) — the buffer lives in the side module's own
-/// memory and the trampoline frees it after copying it out.
-const HOST_PROVIDED: &[&str] = &[
-    "rt_ext_error",
-    "rt_ext_message",
-    "rt_ext_warning",
-    "ModelicaAllocateString",
-    "ModelicaAllocateStringWithErrorReturn",
-    "ModelicaInternal_getTime",
-    "ModelicaInternal_getpid",
-    "usertab",
-];
-
-/// `--export-all` keeps older MSL compatibility entry points present, but exports
-/// functions only — hence `__stack_pointer`, which the recovery path restores.
-const EXTRA_LINK_ARGS: &[&str] = &["-Wl,--export-all", "-Wl,--export=__stack_pointer"];
-
-/// Build + embed the ModelicaExternalC WASI side module (`modelicaexternalc.wasm`)
-/// for the web (wasmer) simulation host. Provides `ext.Modelica*_*` external functions
-/// (native uses libffi + `.so` instead). Compiled with `clang --target=wasm32-wasip1
-/// --sysroot=OMC_WASI_PIC_SYSROOT`. Uses the same PIC wasi-libc sysroot as the dylink
-/// module built by openmodelica_wasi_libc.
-///
-/// Mandatory: a failed build is a hard error (no placeholder).
-fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
-    let dest = out_dir.join("modelicaexternalc.wasm");
-    let stamp = out_dir.join("modelicaexternalc.wasm.hash");
-
-    // Check for prebuilt override (CI hand-off) before requiring OMC_EXTERNAL_C_SOURCES.
-    println!("cargo:rerun-if-env-changed=OMC_WASM_EXTERNAL_C");
-    if let Ok(path) = std::env::var("OMC_WASM_EXTERNAL_C") {
-        copy(Path::new(&path), &dest);
-        std::fs::write(&stamp, format!("override:{path}")).ok();
-        return;
-    }
-
-    println!("cargo:rerun-if-env-changed=OMC_EXTERNAL_C_SOURCES");
-    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES")
-        .map(PathBuf::from)
-        .expect("OMC_EXTERNAL_C_SOURCES not set (CMake provides it)");
-
-    let stubs = crate_dir.join("external_c_stubs.c");
-    let callbacks = crate_dir.join("../openmodelica_wasi_libc/external_c_callbacks.c");
-    let sources = [
-        "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
-        "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
-        "ModelicaInternal.c", "ModelicaFFT.c",
-    ];
-    let src_paths: Vec<PathBuf> = sources.iter().map(|s| c_sources.join(s)).collect();
-
-    println!("cargo:rerun-if-changed={}", stubs.display());
-    println!("cargo:rerun-if-changed={}", callbacks.display());
-    for src in &src_paths {
-        println!("cargo:rerun-if-changed={}", src.display());
-    }
-
-    // Verify all sources exist.
-    for src in &src_paths {
-        if !src.exists() {
-            panic!("missing C source: {}", src.display());
-        }
-    }
-
-    let zlib_dir = c_sources.join("zlib");
-    let mut zlib_srcs = collect_c_files(&zlib_dir);
-    zlib_srcs.sort();
-    for z in &zlib_srcs {
-        println!("cargo:rerun-if-changed={}", z.display());
-    }
-
-    println!("cargo:rerun-if-env-changed=OMC_WASI_CLANG");
-    println!("cargo:rerun-if-env-changed=OMC_WASI_PIC_SYSROOT");
-    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
-    let sysroot = std::env::var("OMC_WASI_PIC_SYSROOT")
-        .expect("OMC_WASI_PIC_SYSROOT not set (CMake provides it)");
-    let hdf5 = wasm_hdf5();
-
-    let all_srcs: Vec<_> = src_paths.iter().chain(zlib_srcs.iter()).collect();
-    let hash = {
-        let mut h: u64 = 0xcbf29ce484222325;
-        let mut mix = |bytes: &[u8]| for &byte in bytes { h ^= byte as u64; h = h.wrapping_mul(0x100000001b3); };
-        for f in all_srcs.iter().copied().chain([&stubs, &callbacks]) {
-            if let Ok(b) = std::fs::read(f) { mix(&b); }
-        }
-        mix(clang.as_bytes());
-        mix(sysroot.as_bytes());
-        if let Some((_, archive)) = &hdf5 {
-            if let Ok(b) = std::fs::read(archive) { mix(&b); }
-        }
-        for s in HOST_PROVIDED { mix(s.as_bytes()); }
-        for s in EXTRA_LINK_ARGS { mix(s.as_bytes()); }
-        format!("{h:016x}")
-    };
-    if dest.exists() && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
-        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash) {
-        return;
-    }
-
-    // `-mexec-model=reactor`: exports `_initialize` (runs ctors), no `_start`.
-    // `-nodefaultlibs` means `-lc` has to be explicit.
-    //
-    // `--allow-undefined-file` rather than blanket `--allow-undefined`: a sysroot that
-    // fails to provide libc must be a link error, not a module whose `malloc`/`strlen`/
-    // `__wasi_init_tp` quietly turn into imports the host cannot satisfy.
-    let permit = out_dir.join("modelicaexternalc.imports");
-    std::fs::write(&permit, HOST_PROVIDED.join("\n")).expect("write import permit list");
-    let builtins = find_wasm_builtins().ok_or_else(|| {
-        "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
-    }).unwrap_or_else(|e| panic!("{e}"));
-    let mut cmd = Command::new(&clang);
-    // `-D_POSIX_VERSION` as for the dylink build; see `openmodelica_wasi_libc`.
-    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor", "-D_POSIX_VERSION=200809L",
-               "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB", "-DOM_EXT_HOST_ALLOC",
-               "-Wno-error=implicit-function-declaration"])
-        .arg(format!("--sysroot={sysroot}"))
-        .arg("-I").arg(&c_sources)
-        .arg("-I").arg(&zlib_dir)
-        .args(&all_srcs).arg(&stubs).arg(&callbacks)
-        .arg("-lc");
-    if let Some((include, archive)) = &hdf5 {
-        // HDF5's plugin loader's dlopen/dlsym are stubbed in
-        // external_c_callbacks.c, so they never reach HOST_PROVIDED.
-        cmd.arg("-DHAVE_HDF5=1").arg("-I").arg(include).arg(archive);
-    }
-    cmd.arg(&builtins)
-        .args(EXTRA_LINK_ARGS)
-        .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
-        .arg("-o").arg(&dest);
-    let what = format!("{clang} (modelicaexternalc.wasm, --target=wasm32-wasip1, sysroot {sysroot})");
-    run(&mut cmd, &what).unwrap_or_else(|e| panic!("{e}"));
-    if !std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false) {
-        panic!("modelicaexternalc.wasm is empty");
-    }
-    std::fs::write(&stamp, &hash).ok();
-}
-
-/// The `.c` files directly under `dir` (non-recursive), for the bundled zlib.
-fn collect_c_files(dir: &Path) -> Vec<PathBuf> {
-    let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
-    rd.flatten().map(|e| e.path())
-        .filter(|p| p.extension().map(|x| x == "c").unwrap_or(false))
-        .collect()
-}
-
-/// The HDF5 wasm install tree (`OMC_WASM_HDF5_DIR`, from CMake's
-/// rust_hdf5_wasm) that gives ModelicaMatIO its MAT v7.3 support. Absent, v7.3
-/// files are rejected at `Mat_Open`.
-fn wasm_hdf5() -> Option<(PathBuf, PathBuf)> {
-    println!("cargo:rerun-if-env-changed=OMC_WASM_HDF5_DIR");
-    let dir = PathBuf::from(std::env::var("OMC_WASM_HDF5_DIR").ok()?);
-    let archive = dir.join("lib/libhdf5.a");
-    println!("cargo:rerun-if-changed={}", archive.display());
-    if !archive.exists() {
-        panic!("OMC_WASM_HDF5_DIR={} has no lib/libhdf5.a", dir.display());
-    }
-    Some((dir.join("include"), archive))
 }
 
 /// Locate the clang wasm builtins archive (`libclang_rt.builtins-wasm32.a`).
@@ -1592,6 +1619,9 @@ fn build_jit_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, dest:
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
+    if prebuilt_in(dest, &stamp) {
+        return;
+    }
 
     // Cache hit: the cached wasm is present and its inputs are unchanged.
     if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(hash) {
@@ -1656,6 +1686,9 @@ fn build_wasip1_runtime(
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
 
@@ -1732,6 +1765,9 @@ fn build_wasip1_interactive_runtime(
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1_INTERACTIVE") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
 
@@ -1822,10 +1858,8 @@ fn build_runtime_wasm_named(
         .arg("--target-dir")
         .arg(&target_dir)
         // Don't inherit the host build's flags/backend selection.
-        .env_remove("RUSTFLAGS")
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+        .env_remove("RUSTFLAGS");
+    detach_cargo_env(&mut cmd);
     match sundials_dir {
         Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
         // Cargo's env is inherited; clear a stale outer setting so the nested build
@@ -1943,6 +1977,49 @@ fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) {
 fn copy(from: &Path, to: &Path) {
     std::fs::copy(from, to)
         .unwrap_or_else(|e| panic!("copy {} -> {}: {e}", from.display(), to.display()));
+}
+
+/// The blobs this script produces are wasm whatever platform omc itself is being
+/// built for, so a multi-stage CI builds them once and hands them over:
+/// `OMC_WASM_PREBUILT_OUT` collects them, `OMC_WASM_PREBUILT_IN` takes them. A
+/// build reading them needs no wasm toolchain, which is what lets the Windows
+/// and macOS cross builds run without one. Missing from the directory, a blob is
+/// built as usual. Trusted, not checked, like the per-blob overrides above.
+///
+/// True when `dest` was filled from the hand-over, in which case the caller is
+/// done: the stamp is written so nothing downstream rebuilds it either.
+fn prebuilt_in(dest: &Path, stamp: &Path) -> bool {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_IN");
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else { return false };
+    let name = dest.file_name().expect("a blob has a file name");
+    let src = PathBuf::from(dir).join(name);
+    if !src.is_file() {
+        return false;
+    }
+    copy(&src, dest);
+    std::fs::write(stamp, format!("prebuilt:{}", src.display())).ok();
+    true
+}
+
+/// Copy every blob in `out_dir` to `OMC_WASM_PREBUILT_OUT` (a later build's
+/// `OMC_WASM_PREBUILT_IN`) and to `OMC_WASM_BLOB_OUT`, which the install rule ships.
+fn publish_prebuilt(out_dir: &Path) {
+    for var in ["OMC_WASM_PREBUILT_OUT", "OMC_WASM_BLOB_OUT"] {
+        println!("cargo:rerun-if-env-changed={var}");
+        let Some(dir) = std::env::var_os(var) else { continue };
+        let dir = PathBuf::from(dir);
+        std::fs::create_dir_all(&dir).expect("create the wasm blob directory");
+        for e in std::fs::read_dir(out_dir).expect("read OUT_DIR").flatten() {
+            let p = e.path();
+            // The blobs only: not the nested cargo target directories, and not the
+            // FMU loaders (OMC_FMU_LOADERS_OUT's job).
+            let take = p.extension().is_some_and(|x| x == "wasm")
+                || p.file_name().is_some_and(|x| x == "index.json");
+            if take && p.is_file() {
+                copy(&p, &dir.join(p.file_name().expect("a blob has a file name")));
+            }
+        }
+    }
 }
 
 fn env(key: &str) -> String {

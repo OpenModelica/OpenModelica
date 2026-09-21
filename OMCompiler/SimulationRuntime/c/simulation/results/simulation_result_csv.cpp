@@ -284,8 +284,12 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
 void omc_csv_free(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   FILE *fout = (FILE*) self->storage;
+  if (!fout) {
+    return;
+  }
   rt_tick(SIM_TIMER_OUTPUT);
   fclose(fout);
+  self->storage = NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 

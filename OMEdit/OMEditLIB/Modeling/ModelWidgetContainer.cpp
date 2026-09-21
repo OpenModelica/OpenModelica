@@ -963,6 +963,8 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
   GraphicsView *pIconGraphicsView = mpModelWidget->getIconGraphicsView();
   GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
 
+  // Hide the protected elements if the view is diagram view and the access is documentation or lower.
+  bool hideProtected = isDiagramView() && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::documentation;
   // if element is of connector type.
   if (pComponent && pComponent->isConnector()) {
     // Connector type elements exists on icon view as well
@@ -1002,6 +1004,9 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
         pIconGraphicsView->clearSelection(pIconElement);
       }
     }
+  }
+  if (hideProtected) {
+    pDiagramElement->setVisible(pComponent->isPublic());
   }
 }
 
@@ -5682,7 +5687,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(pItem->text(), pItem->data(Qt::UserRole).toString(), true, true);
+  MainWindow::instance()->openFileFetchingFromCloud(pItem->text(), pItem->data(Qt::UserRole).toString());
 }
 
 void WelcomePageWidget::openRecentModelItem(QListWidgetItem *pItem)
@@ -6837,16 +6842,17 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
 {
   if (mCreateModelWidgetComponents) {
     LibraryTreeItem::Access access = mpLibraryTreeItem->getAccess();
+    // We enable diagram view so we can see public components same as we did in GraphicsView::drawElements(). See #15263.
     switch (access) {
       case LibraryTreeItem::icon:
-        mpIconViewToolButton->setChecked(true);
-        mpDiagramViewToolButton->setEnabled(false);
+        mpDiagramViewToolButton->setEnabled(true);
+        mpDiagramViewToolButton->setChecked(true);
         mpTextViewToolButton->setEnabled(false);
         mpDocumentationViewToolButton->setEnabled(false);
         break;
       case LibraryTreeItem::documentation:
-        mpIconViewToolButton->setChecked(true);
-        mpDiagramViewToolButton->setEnabled(false);
+        mpDiagramViewToolButton->setEnabled(true);
+        mpDiagramViewToolButton->setChecked(true);
         mpTextViewToolButton->setEnabled(false);
         mpDocumentationViewToolButton->setEnabled(true);
         break;
@@ -8439,7 +8445,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms)));
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   MainWindow::instance()->getSimulateWithAnimationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
 #endif
   MainWindow::instance()->getSimulateModelInteractiveAction()->setEnabled(enabled && oms);

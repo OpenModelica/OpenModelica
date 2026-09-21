@@ -32,6 +32,9 @@ import init, {
   wasi_path_filestat_get,
   wasi_readdir,
   wasi_write_file,
+  wasi_write_files,
+  wasi_remove,
+  wasi_rename,
   omc_take_pending_downloads,
   omc_take_plot_commands,
 } from "./omc/OpenModelicaCompiler.js";
@@ -39,6 +42,7 @@ import init, {
 // OMEdit web client). A named import of a missing export would break the worker
 // for OMShell/OMNotebook, so reach it through the namespace and feature-detect it.
 import * as OmcModule from "./omc/OpenModelicaCompiler.js";
+import { installWasmBlobs } from "./wasm-blobs.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
@@ -189,6 +193,11 @@ async function doInit(installMsl) {
   if (typeof OmcModule.omc_enable_progress_sink === "function") {
     OmcModule.omc_enable_progress_sink();
   }
+  // The bundle's side modules (feature-detected).
+  if (typeof OmcModule.omc_enable_wasm_blobs === "function") {
+    installWasmBlobs();
+    OmcModule.omc_enable_wasm_blobs();
+  }
   // The browser omc has no pre-installed library, so install the MSL to make the
   // shell immediately usable. Best-effort: a failure (e.g. no network) only
   // surfaces its diagnostics, it does not stop the shell from starting. A client
@@ -281,6 +290,32 @@ self.onmessage = async (e) => {
       let ok = true;
       try { wasi_write_file(msg.path, msg.bytes); } catch (e) { ok = false; }
       self.postMessage({ kind: "vfsPutResult", id: msg.id, ok });
+    } else if (msg.cmd === "vfsPutMany") {
+      // Bulk write, for restoring a cached cloud package tree in one round trip
+      // rather than one per file. `written` lets the page verify completeness.
+      let written = 0;
+      try { written = wasi_write_files(msg.entries); } catch (e) { written = -1; }
+      self.postMessage({ kind: "vfsPutManyResult", id: msg.id, written });
+    } else if (msg.cmd === "vfsLoadZip") {
+      // A zipped library the GUI picked: unzipped straight into this store, so
+      // loadFile finds the Resources/ next to the .mo.
+      let written = -1;
+      let error = "";
+      try {
+        written = OmcModule.omc_vfs_load_zip(msg.mount, msg.bytes);
+      } catch (e) {
+        error = String(e);
+      }
+      self.postMessage({ kind: "vfsLoadZipResult", id: msg.id, written, error });
+    } else if (msg.cmd === "vfsRemove") {
+      // File or whole subtree; the store's directories are implicit.
+      let ok = false;
+      try { ok = wasi_remove(msg.path); } catch (e) { ok = false; }
+      self.postMessage({ kind: "vfsRemoveResult", id: msg.id, ok });
+    } else if (msg.cmd === "vfsRename") {
+      let ok = false;
+      try { ok = wasi_rename(msg.from, msg.to); } catch (e) { ok = false; }
+      self.postMessage({ kind: "vfsRenameResult", id: msg.id, ok });
     } else if (msg.cmd === "vfsStat") {
       // WASI path_filestat_get's size (-1 if absent), for the file engine's size().
       let size;

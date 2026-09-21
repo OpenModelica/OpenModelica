@@ -3,6 +3,7 @@
 
 use std::process::ExitCode;
 
+use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::file::{ResultFile, Tolerances, diff_all, diff_variable};
 
 const USAGE: &str = "\
@@ -16,6 +17,9 @@ usage: omplot <command> [options] ...
   convert IN OUT [VAR...]         write OUT (.mat/.arrow/.csv by suffix) from IN
 options:
   --relTol X --relTolDiffMinMax X --rangeDelta X   tolerances for diff/tube
+  --algorithm rectangle|ellipse|ellipse2014        tube algorithm
+                                  (ellipse2014 = diffSimulationResults, default)
+  --nominalValue X                rectangle/ellipse tube-height floor
   --intervals N                   resample convert's output onto N equidistant steps
   --single                        convert: store the reals in single precision
 FILE suffixes: .mat .arrow .csv .plt";
@@ -38,6 +42,11 @@ fn parse(argv: &[String]) -> Result<Opts, String> {
             "--relTol" => o.tol.reltol = num(a)?,
             "--relTolDiffMinMax" => o.tol.reltol_diff_min_max = num(a)?,
             "--rangeDelta" => o.tol.range_delta = num(a)?,
+            "--nominalValue" => o.tol.nominal_value = num(a)?,
+            "--algorithm" => {
+                let v = it.next().ok_or("--algorithm needs a value")?;
+                o.tol.algorithm = Algorithm::parse(v)?;
+            }
             "--intervals" => o.intervals = num(a)? as u32,
             "--single" => o.single = true,
             _ if a.starts_with("--") => return Err(format!("unknown option {a}")),

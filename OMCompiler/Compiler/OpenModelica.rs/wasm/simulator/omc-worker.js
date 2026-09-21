@@ -11,6 +11,7 @@ import init, {
   omc_enable_cancel_poll, omc_enable_fmu_aot, omc_fmu_platforms,
   omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
   omc_fmu_cs_solvers,
+  omc_enable_wasm_blobs,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters, omc_sim_units,
@@ -21,6 +22,7 @@ import init, {
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 // Compiles an exported FMU's component for a native platform, in its own worker.
 import { installFmuAot } from '../fmu-aot.js';
+import { installWasmBlobs } from '../wasm-blobs.js';
 
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
@@ -316,6 +318,8 @@ self.onmessage = async (ev) => {
         // 0 (no cancel) until the page shares a control block, so it is a no-op then.
         globalThis.__omcPollCancel = () => (cancelFlag ? Atomics.load(cancelFlag, 0) : 0);
         omc_enable_cancel_poll();
+        installWasmBlobs();
+        omc_enable_wasm_blobs();
         if (fmuAot) omc_enable_fmu_aot();
         if (driverMode !== null) omc_set_inwasm_driver(driverMode);
         // Emit the MultiBody visualization scene (<model>_visual.xml) for every
@@ -324,6 +328,7 @@ self.onmessage = async (ev) => {
         // so this API call is how the option gets set (models may still opt in via
         // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
         omc_eval('setCommandLineOptions("-d=visxml")');
+        for (const flag of a.flags || []) omc_eval(`setCommandLineOptions("${esc(flag)}")`);
         reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options(),
                 fmuCsSolvers: omc_fmu_cs_solvers(), fmuPlatforms: fmuAot ? omc_fmu_platforms() : [] });
         break;
@@ -338,11 +343,23 @@ self.onmessage = async (ev) => {
         reply({ ok: true });
         break;
       }
-      case 'installMSL': {
-        await evalWithDownloads('installPackage(Modelica)', status);
-        status('Loading Modelica library…');
-        await evalWithDownloads('loadModel(Modelica)', status);   // into the symbol table (list/simulate by name)
+      case 'installLibrary': {
+        // A version pins both calls: installPackage puts that release in the
+        // VFS, loadModel makes it resolvable by name, and without the priority
+        // it would take whichever release is already there.
+        const name = a.name || 'Modelica';
+        const exact = a.version ? `, "${esc(a.version)}", exactMatch=true` : '';
+        const priority = a.version ? `, {"${esc(a.version)}"}` : '';
+        await evalWithDownloads(`installPackage(${name}${exact})`, status);
+        status('Loading ' + name + '…');
+        await evalWithDownloads(`loadModel(${name}${priority})`, status);
         reply({ ok: true, message: omc_eval('getErrorString()').trim() });
+        break;
+      }
+      case 'checkModel': {
+        const report = unquote(await evalWithDownloads(`checkModel(${a.name})`, status));
+        const errors = unquote(omc_eval('getErrorString()'));
+        reply({ ok: true, report, errors });
         break;
       }
       case 'loadSource': {

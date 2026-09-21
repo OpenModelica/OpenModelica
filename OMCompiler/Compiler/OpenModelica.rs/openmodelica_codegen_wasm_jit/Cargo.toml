@@ -9,8 +9,6 @@ openmodelica_wasi.workspace = true
 openmodelica_modelica_utilities.workspace = true
 # Host-side wasm execution engine (drivers, sim runtime, model, wasm artifacts).
 openmodelica_wasm_jit.workspace = true
-# External-"C" wasm-FMU artifacts, consumed by the FMU linker.
-openmodelica_wasi_libc.workspace = true
 openmodelica_mat_writer.workspace = true
 openmodelica_plt_writer.workspace = true
 # `-iif=<file>`: C's `importStartValues` reads the initialization file with the
@@ -42,11 +40,11 @@ wasm-encoder = { workspace = true, features = ["wasmparser"] }
 # component via wit_component::Linker. Pure Rust → works in the browser omc too
 # (no external wasm-merge). wasmparser reads the model for the reencode. Pinned to
 # the same 0.252 wasm-tools release as wasm-encoder to avoid type skew.
-wit-component = "0.252"
-wasmparser = "0.252"
+wit-component = "0.259"
+wasmparser = "0.259"
 # Deflate for the in-process FMU ZIP writer. Pure Rust, so the browser omc
 # compresses the same way the native one does.
-miniz_oxide = "0.8"
+miniz_oxide = "0.9"
 
 [features]
 # The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit

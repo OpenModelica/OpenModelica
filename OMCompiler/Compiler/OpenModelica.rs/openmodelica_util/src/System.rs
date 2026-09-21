@@ -396,10 +396,25 @@ const DEFAULT_LINKER: &str = if cfg!(windows) {
 // DEFAULT_CFLAGS = "-DOM_HAVE_PTHREADS @RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
 // on Unix; the MinGW section adds -mstackrealign and drops -fPIC (meaningless
 // on Windows, gcc ignores it / clang warns).
+/// x86-only tuning for the generated simulation code. Passing it anywhere else
+/// fails the build: clang answers `-mfpmath=sse` with "unknown FP unit 'sse'",
+/// which is every C-target simulation on Apple Silicon and on aarch64 Linux.
+const X86_CFLAGS: &str = if cfg!(target_arch = "x86_64") { " -mfpmath=sse" } else { "" };
+const X86_CFLAGS_WINDOWS: &str =
+    if cfg!(target_arch = "x86_64") { " -mstackrealign -msse2 -mfpmath=sse" } else { "" };
+
 const DEFAULT_CFLAGS: &str = if cfg!(windows) {
-    "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+    const_str::concat!(
+        "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions",
+        X86_CFLAGS_WINDOWS,
+        " ${MODELICAUSERCFLAGS}"
+    )
 } else {
-    "-DOM_HAVE_PTHREADS -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -Wno-parentheses-equality ${MODELICAUSERCFLAGS}"
+    const_str::concat!(
+        "-DOM_HAVE_PTHREADS -fPIC -falign-functions",
+        X86_CFLAGS,
+        " -fno-dollars-in-identifiers -Wno-parentheses-equality ${MODELICAUSERCFLAGS}"
+    )
 };
 const DEFAULT_LDFLAGS: &str = if cfg!(windows) {
     "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
@@ -512,9 +527,9 @@ pub fn winGetSystemDirectory() -> ArcStr {
 }
 
 pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
-    // Spawn /bin/sh -c <command>; if outFile is non-empty, redirect both
-    // stdout and stderr there. Returns the child's exit code, or -1 on
-    // spawn failure.
+    // Spawn the command through the platform shell; if outFile is non-empty,
+    // redirect both stdout and stderr there. Returns the child's exit code, or
+    // -1 on spawn failure.
     use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
@@ -523,10 +538,31 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         let _ = std::io::stdout().flush();
     };
     flush();
-    let mut cmd = Command::new("/bin/sh");
-    cmd.arg("-c").arg(command.as_str());
+    #[cfg(windows)]
+    let mut cmd = {
+        use std::os::windows::process::CommandExt;
+        // `SystemImpl__runProcess`. The command is a cmd.exe line
+        // (`set X=Y&& prog args`), so it must reach cmd unquoted.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let mut cmd = Command::new("cmd.exe");
+        cmd.raw_arg(format!("/c \"{}\"", command.as_str()));
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd
+    };
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut cmd = Command::new("/bin/sh");
+        cmd.arg("-c").arg(command.as_str());
+        cmd
+    };
     if !outFile.is_empty() {
-        match fs::File::create(outFile.as_str()) {
+        // C appends on both; unix here has always truncated, so only the new
+        // path follows the C runtime.
+        #[cfg(windows)]
+        let opened = fs::OpenOptions::new().append(true).create(true).open(outFile.as_str());
+        #[cfg(not(windows))]
+        let opened = fs::File::create(outFile.as_str());
+        match opened {
             Ok(f) => {
                 let f2 = match f.try_clone() {
                     Ok(c) => c,
@@ -566,10 +602,45 @@ pub fn popen(command: ArcStr) -> (ArcStr, i32) {
     }
 }
 
-pub fn systemCallParallel(_inStrings: List<ArcStr>, _numThreads: i32) -> List<i32> {
-    // Fan-out N shell commands across a thread pool and collect the exit
-    // codes. Not used by code paths exercised today; defer until needed.
-    todo!("System.systemCallParallel: parallel shell-out not yet ported")
+/// `numThreads` workers pulling off a shared index, exit codes collected in
+/// input order (C's `systemCallWorkerThread`).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn systemCallParallel(inStrings: List<ArcStr>, numThreads: i32) -> List<i32> {
+    use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
+
+    let calls: Vec<ArcStr> = (&*inStrings).into_iter().cloned().collect();
+    if calls.is_empty() {
+        return metamodelica::nil();
+    }
+    if calls.len() == 1 {
+        return list_from_vec(vec![systemCall(calls[0].clone(), literal!(""))]);
+    }
+    let threads = (numThreads.max(1) as usize).min(calls.len());
+    let next = AtomicUsize::new(0);
+    let results: Vec<AtomicI32> = calls.iter().map(|_| AtomicI32::new(-1)).collect();
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| loop {
+                let i = next.fetch_add(1, Ordering::Relaxed);
+                if i >= calls.len() {
+                    break;
+                }
+                results[i].store(systemCall(calls[i].clone(), literal!("")), Ordering::Relaxed);
+            });
+        }
+    });
+    list_from_vec(results.into_iter().map(AtomicI32::into_inner).collect())
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn systemCallParallel(inStrings: List<ArcStr>, _numThreads: i32) -> List<i32> {
+    // No OS threads and no subprocesses in the browser; keep the shape.
+    list_from_vec(
+        (&*inStrings)
+            .into_iter()
+            .map(|c| systemCall(c.clone(), literal!("")))
+            .collect(),
+    )
 }
 
 pub fn spawnCall(_path: ArcStr, _str: ArcStr) -> i32 {
@@ -1698,7 +1769,11 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
 
 /// `@MODELICA_SPEC_PLATFORM@`: the Modelica spec's `<os><bitness>`. macOS is
 /// darwin64 on aarch64 too, since its libraries are universal binaries.
-const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
+const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWasm {
+    // The spec names no wasm platform; a wasm library is installed under the
+    // triple it was built for, as `SimCodeFunctionUtil.wasmLibraryTriple` says.
+    "wasm32-wasip1"
+} else if Autoconf::isWindows {
     if Autoconf::is64Bit { "win64" } else { "win32" }
 } else if cfg!(target_os = "macos") {
     if Autoconf::is64Bit { "darwin64" } else { "darwin32" }
@@ -1708,9 +1783,16 @@ const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
     "linux32"
 };
 
-/// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows
-/// where it names the toolchain. The Rust port targets windows-msvc.
-const OPENMODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
+/// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows where
+/// it names the toolchain, as the table in OMCompiler/omc_config.h does. The
+/// MinGW distribution is MSYS2's UCRT64.
+const OPENMODELICA_SPEC_PLATFORM: &str = if Autoconf::isWasm {
+    // The second spelling, for a library with no OS dependency at all: such a
+    // module is built for bare `wasm32` and runs under either ABI.
+    "wasm32"
+} else if cfg!(all(windows, target_env = "gnu")) {
+    if Autoconf::is64Bit { "ucrt64" } else { "mingw32" }
+} else if Autoconf::isWindows {
     if Autoconf::is64Bit { "msvc64" } else { "msvc32" }
 } else {
     const_str::concat!(Autoconf::target_arch_str, "-", Autoconf::os)
@@ -1726,7 +1808,9 @@ pub fn openModelicaPlatform() -> ArcStr {
 
 /// `@OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE@`: a second spelling to search,
 /// for Windows' ucrt64/mingw64 and for CMake's arm64 vs config.guess' aarch64.
-const OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE: &str = if Autoconf::isWindows {
+const OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE: &str = if cfg!(all(windows, target_env = "gnu")) {
+    if Autoconf::is64Bit { "mingw64" } else { "" }
+} else if Autoconf::isWindows {
     ""
 } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
     "arm64-darwin"
@@ -2408,6 +2492,22 @@ pub fn alarm(seconds: i32) -> i32 {
     use std::sync::atomic::{AtomicBool, Ordering};
     static HANDLER_INSTALLED: AtomicBool = AtomicBool::new(false);
 
+    // libc binds neither of these for Apple: SI_USER is only in the Linux
+    // modules, and its siginfo_t there is opaque with accessors while Apple's
+    // has plain fields.
+    #[cfg(target_vendor = "apple")]
+    const SI_USER: core::ffi::c_int = 0x10001; // <sys/signal.h>
+    #[cfg(not(target_vendor = "apple"))]
+    const SI_USER: core::ffi::c_int = libc::SI_USER;
+    #[cfg(target_vendor = "apple")]
+    unsafe fn si_pid(si: *const libc::siginfo_t) -> libc::pid_t {
+        unsafe { (*si).si_pid }
+    }
+    #[cfg(not(target_vendor = "apple"))]
+    unsafe fn si_pid(si: *const libc::siginfo_t) -> libc::pid_t {
+        unsafe { (*si).si_pid() }
+    }
+
     extern "C" fn alarm_handler(
         signo: core::ffi::c_int,
         si: *mut libc::siginfo_t,
@@ -2416,7 +2516,7 @@ pub fn alarm(seconds: i32) -> i32 {
         use std::sync::atomic::Ordering::{Relaxed, SeqCst};
         unsafe {
             // Our own group broadcast coming back, not a second deadline.
-            if !si.is_null() && (*si).si_code == libc::SI_USER && (*si).si_pid() == libc::getpid() {
+            if !si.is_null() && (*si).si_code == SI_USER && si_pid(si) == libc::getpid() {
                 return;
             }
             if !ALARM_EXPIRED.swap(true, SeqCst) {

@@ -129,6 +129,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_extobj_arg_i32", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_extobj_arg_str", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_extobj_arg_arr", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_extobj_arg_rec", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_strcmp", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_substring", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_int_string", &[WTy::I32], &[WTy::I32]),
@@ -343,6 +344,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_f77_arr_out", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     // A `char*` a shared-memory `external "C"` returned or wrote, as a `String`.
     ("rt_str_from_cstr", &[WTy::I32], &[WTy::I32]),
+    // A `String[…]` output: its elements released before the call, and the
+    // `char*`s the callee wrote over them read back after it.
+    ("rt_str_array_clear", &[WTy::I32], &[]),
+    ("rt_str_array_from_cstr", &[WTy::I32], &[]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -377,5 +382,5 @@ pub(crate) fn rt_index(name: &str) -> Result<u32> {
 /// `generateFunctionName` (`AbsynUtil.pathStringUnquoteReplaceDot(path, "_")`).
 /// Used as the key that resolves a `CALL` to one of the generated functions.
 pub(crate) fn mangle(path: &Absyn::Path) -> Result<String> {
-    Ok(AbsynUtil::pathStringUnquoteReplaceDot(Arc::new(path.clone()), arcstr::literal!("_"))?.to_string())
+    Ok(AbsynUtil::pathStringUnquoteReplaceDot(metamodelica::Ref::new(path.clone()), arcstr::literal!("_"))?.to_string())
 }

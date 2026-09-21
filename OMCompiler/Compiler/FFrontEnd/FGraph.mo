@@ -168,7 +168,7 @@ public function topScope
 algorithm
   // leave only the top scope
   outGraph := match inGraph
-    case FCore.G() then arrayGet(inGraph.top.graph, 1);
+    case FCore.G() then FCore.G(inGraph.top, {inGraph.top.node});
   end match;
 end topScope;
 
@@ -189,18 +189,14 @@ protected
   Scope s;
   Ref nr;
   Id id;
-  array<Graph> ag;
   Top top;
 algorithm
   id := System.tmpTickIndex(Global.fgraph_nextId);
   n := FNode.new(FNode.topNodeName, id, {}, FCore.TOP());
   nr := FNode.toRef(n);
   s := {nr};
-  ag := Dangerous.arrayCreateNoInit(1, emptyGraph);
-  top := FCore.GTOP(ag,inGraphName,nr,FCore.EXTRA(inPath));
+  top := FCore.GTOP(inGraphName,nr,FCore.EXTRA(inPath));
   outGraph := FCore.G(top,s);
-  // Creates a cycle, but faster to get the initial environment
-  arrayUpdate(ag, 1, FCore.G(top, {nr}));
 end new;
 
 public function node
@@ -246,8 +242,6 @@ algorithm
       Top t;
       Ref nt;
       Scope s;
-      array<Graph> ag;
-
     case FCore.G(t, s)
       algorithm
         // make a new top
@@ -258,10 +252,8 @@ algorithm
         (g, nt) := FNode.copyRef(nt, inGraph);
         // update scope references
         s := List.map1r(s, FNode.lookupRefFromRef, nt);
-        ag := arrayCreate(1, emptyGraph);
-        t := FCore.GTOP(ag, t.name, nt, t.extra);
+        t := FCore.GTOP(t.name, nt, t.extra);
         g := FCore.G(t, s);
-        arrayUpdate(ag, 1, g);
       then g;
 
   end match;
@@ -282,7 +274,7 @@ algorithm
       Ref pr, r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       DAE.Var v;
@@ -389,7 +381,7 @@ algorithm
       Ref pr, r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       DAE.Var v;
@@ -439,7 +431,7 @@ algorithm
       Ref pr, r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       Kind k;
@@ -483,7 +475,7 @@ algorithm
       Ref r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       Kind k;

@@ -41,6 +41,7 @@ import Error;
 import Component = NFComponent;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import Operator = NFOperator;
 import NFOperator.Op;
 import Typing = NFTyping;
@@ -342,10 +343,12 @@ protected
   InstNode c;
 algorithm
   exp := match cref
-    case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
-      guard not ComponentRef.isIterator(cref) and
+    case ComponentRef.CREF()
+      guard InstNode.isComponent(ComponentRef.node(cref)) and
+            not ComponentRef.isIterator(cref) and
             ComponentRef.nodeVariability(cref) <= Variability.NON_STRUCTURAL_PARAMETER
-      then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts, liftExp);
+      then evalComponentBinding(ComponentRef.node(cref), cref, defaultExp, target,
+                                evalSubscripts, liftExp);
 
     else defaultExp;
   end match;
@@ -575,7 +578,7 @@ algorithm
   outSubscript := match subscript
     case Subscript.SPLIT_INDEX()
       algorithm
-        osubs := UnorderedMap.get(subscript.node, subMap);
+        osubs := UnorderedMap.get(InstNode.borrow(subscript.node), subMap);
 
         if isSome(osubs) then
           SOME(subs) := osubs;
@@ -662,7 +665,7 @@ function makeComponentBinding
   output Binding binding;
 protected
   Type ty;
-  InstNode rec_node;
+  NFInstNode.ScopeRef rec_node;
   Expression exp;
 algorithm
   binding := matchcontinue component
@@ -677,7 +680,7 @@ algorithm
     // A record component without an explicit binding, create one from its children.
     case Component.COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))
       algorithm
-        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref, target);
+        exp := makeRecordBindingExp(component.classInst, InstNode.borrow(rec_node), component.ty, cref, target);
         binding := Binding.CEVAL_BINDING(exp);
 
         if not ComponentRef.hasSubscripts(cref) then
@@ -692,7 +695,7 @@ algorithm
       algorithm
         exp := Expression.mapCrefScalars(Expression.fromCref(cref),
           function makeRecordBindingExp(typeNode = component.classInst,
-            recordNode = rec_node, recordType = ty, target = target));
+            recordNode = InstNode.borrow(rec_node), recordType = ty, target = target));
 
         binding := Binding.CEVAL_BINDING(exp);
 
@@ -772,7 +775,7 @@ algorithm
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
-    cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
+    cr := ComponentRef.prefixCref(c, ty, {}, cref);
     arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
@@ -1108,6 +1111,18 @@ algorithm
   end match;
 end evalBinarySub;
 
+function expandLiteralRange
+  "A range operand can still be unevaluated here, e.g. 1 + (1:2) from an iterator
+   substituted into a subscript. Turn a literal range into an array."
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.RANGE() guard Expression.isLiteral(exp)
+      then Expression.mapSplitExpressions(exp, evalRangeExp);
+    else exp;
+  end match;
+end expandLiteralRange;
+
 function evalMultaryAddSub
   input list<Expression> arguments;
   input list<Expression> inv_arguments;
@@ -1117,12 +1132,12 @@ function evalMultaryAddSub
 algorithm
   // add up all arguments
   for arg in arguments loop
-    exp := evalBinaryAdd(exp, arg);
+    exp := evalBinaryAdd(exp, expandLiteralRange(arg));
   end for;
 
   // subtract all inverse arguments
   for arg in inv_arguments loop
-    exp := evalBinarySub(exp, arg);
+    exp := evalBinarySub(exp, expandLiteralRange(arg));
   end for;
 
   // return a boolean that is set to true if its the neutral element
@@ -1249,12 +1264,12 @@ function evalMultaryMulDiv
 algorithm
   // multiply all arguments
   for arg in arguments loop
-    exp := evalBinaryMul(exp, arg);
+    exp := evalBinaryMul(exp, expandLiteralRange(arg));
   end for;
 
   // divide all inverse arguments
   for arg in inv_arguments loop
-    exp := evalBinaryDiv(exp, arg, noTarget);
+    exp := evalBinaryDiv(exp, expandLiteralRange(arg), noTarget);
   end for;
 
   // return a boolean that is set to true if its the neutral element
@@ -2944,7 +2959,9 @@ function evalBuiltinSqrt
   output Expression result;
 algorithm
   result := match arg
-    case Expression.REAL() then Expression.REAL(sqrt(arg.value));
+    case Expression.REAL() guard arg.value >= 0.0 then Expression.REAL(sqrt(arg.value));
+    // Left for the generated code's assertion rather than folded to NaN.
+    case Expression.REAL() then fail();
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalBuiltinSqrt;

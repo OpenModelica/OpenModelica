@@ -48,7 +48,7 @@ use counters::{
 };
 use solverflags::Nls;
 use core::cell::UnsafeCell;
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 /// The parts of a run that belong to the runtime around this solver: how a model
 /// error ends the evaluation, and where a side file goes.
@@ -409,16 +409,117 @@ pub const ERROR_EVENTHANDLING: u32 = 4;
 /// it catches as [`ERROR_INTEGRATOR`] does, while a violated `assert()` reports as
 /// [`ERROR_SIMULATION`]'s does — C's FMU export never raises the stage.
 pub const ERROR_FMI_CALL: u32 = 5;
-static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
 
-/// Address of [`ERROR_STAGE`], so a driver marks a region with a store rather than
-/// a call per evaluation (as for [`eval_context_addr`]).
+/// The state one solve owns. `--parmodauto` puts two tasks inside a solve at the
+/// same time, so every thread keeps its own: the recoverable-assert flags, the
+/// error stage the solver region swaps, the nesting depths, and the counter bases a
+/// solve differences over itself. They stay `AtomicU32` rather than plain cells
+/// because the hosts hand some of their addresses to generated code
+/// ([`error_stage_addr`], [`no_throw_div_zero_addr`], [`note_slot`]).
+struct Flags {
+    /// C's `threadData->currentErrorStage`, as two words the driver stores into:
+    /// `[0]` the stage, `[1]` set when a model error was absorbed there.
+    error_stage: [AtomicU32; 2],
+    /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `depth` > 0 a
+    /// failed model `assert()` records itself in `assert_hit` and returns instead
+    /// of trapping; `eval` then turns that trial into a huge residual so the solver
+    /// backs off.
+    depth: AtomicU32,
+    assert_hit: AtomicU32,
+    /// Outcome of the last *completed* evaluation, read after `eval` returns.
+    eval_hit: AtomicU32,
+    /// C's `assertCalled`, sticky over one solver attempt.
+    assert_seen: AtomicU32,
+    /// The same two, narrowed to a rejection the *model* caused. C's `residualFunc`
+    /// throws on a non-finite iteration variable as the guard below rejects one, but
+    /// only this target's linear algebra reaches that state (a rank-deficient
+    /// Jacobian steps to inf where C's does not), so reporting the guard as a model
+    /// throw prints C's assert block for solver states C never enters.
+    eval_threw: AtomicU32,
+    throw_seen: AtomicU32,
+    /// Dynamic tearing: a violated `CONSTRAINT_DT` inside the casual set's
+    /// residual, which C's `f_con` reports by returning 1 — the emitted residual is
+    /// a `void` callback, so this flag stands in for that return. [`solve_nls`]
+    /// clears it before each evaluation and the sites C checks the return at read
+    /// it back.
+    dt_violated: AtomicU32,
+    /// C's `noThrowDivZero`, which is *sticky*: `solve_linear_system` and
+    /// `solve_nonlinear_system` both raise it, but only the end of a nonlinear
+    /// solve (and `initializeModel`) lowers it again — so a model whose algebraic
+    /// systems are all linear tolerates every division by zero after its first
+    /// solve. `runOptimizer` holds it over the whole optimization, hence the
+    /// exported address.
+    no_throw_div_zero: AtomicU32,
+    /// Nonzero while a Jacobian is being formed: C counts `numberOfFEval` in
+    /// `wrapper_fvec`, which the FD Jacobian does not go through.
+    jac_depth: AtomicU32,
+    /// C's `numberOfJEval`: `wrapper_fvec_der` counts an analytic and an FD
+    /// Jacobian alike. [`solve_nls`] takes the difference over its own call.
+    jac_evals: AtomicU64,
+    /// This thread's share of `STAT_NLS_ITER` / `STAT_NLS_RES`. The process-wide
+    /// counters are what the run reports; a solve's own share has to be counted
+    /// where no other task can add to it.
+    iters: AtomicU64,
+    res_evals: AtomicU64,
+}
+
+impl Flags {
+    const fn new() -> Flags {
+        Flags {
+            error_stage: [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)],
+            depth: AtomicU32::new(0),
+            assert_hit: AtomicU32::new(0),
+            eval_hit: AtomicU32::new(0),
+            assert_seen: AtomicU32::new(0),
+            eval_threw: AtomicU32::new(0),
+            throw_seen: AtomicU32::new(0),
+            dt_violated: AtomicU32::new(0),
+            no_throw_div_zero: AtomicU32::new(0),
+            jac_depth: AtomicU32::new(0),
+            jac_evals: AtomicU64::new(0),
+            iters: AtomicU64::new(0),
+            res_evals: AtomicU64::new(0),
+        }
+    }
+}
+
+/// The calling thread's [`Flags`]. Leaked rather than dropped with the thread: the
+/// addresses handed out live as long as anything can reach them, and a run has one
+/// set per worker.
+#[cfg(feature = "std")]
+fn flags() -> &'static Flags {
+    std::thread_local! {
+        static F: &'static Flags = alloc::boxed::Box::leak(alloc::boxed::Box::new(Flags::new()));
+    }
+    F.with(|f| *f)
+}
+
+/// The in-wasm runtime is single-threaded and keeps one set.
+#[cfg(not(feature = "std"))]
+fn flags() -> &'static Flags {
+    static F: Flags = Flags::new();
+    &F
+}
+
+/// C's `stat_inc`, plus the calling thread's own copy of the two counters a solve
+/// differences over itself.
+fn nls_stat_inc(kind: u32) {
+    stat_inc(kind);
+    match kind {
+        STAT_NLS_ITER => flags().iters.fetch_add(1, Ordering::Relaxed),
+        STAT_NLS_RES => flags().res_evals.fetch_add(1, Ordering::Relaxed),
+        _ => 0,
+    };
+}
+
+/// Address of the calling thread's error stage, so a driver marks a region with a
+/// store rather than a call per evaluation (as for [`eval_context_addr`]).
 pub fn error_stage_addr() -> usize {
-    ERROR_STAGE.as_ptr() as usize
+    flags().error_stage.as_ptr() as usize
 }
 
 pub fn error_stage() -> u32 {
-    ERROR_STAGE[0].load(Ordering::Relaxed)
+    flags().error_stage[0].load(Ordering::Relaxed)
 }
 
 /// C's `saveJumpState`: the stage held over the solver region and put back after.
@@ -426,57 +527,33 @@ struct StageGuard(u32);
 
 impl Drop for StageGuard {
     fn drop(&mut self) {
-        ERROR_STAGE[0].store(self.0, Ordering::Relaxed);
+        flags().error_stage[0].store(self.0, Ordering::Relaxed);
     }
 }
 
 fn enter_nls_stage() -> StageGuard {
-    let saved = ERROR_STAGE[0].swap(ERROR_NONLINEARSOLVER, Ordering::Relaxed);
+    let saved = flags().error_stage[0].swap(ERROR_NONLINEARSOLVER, Ordering::Relaxed);
     StageGuard(saved)
 }
-
-/// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
-/// failed model `assert()` records itself in `NLS_ASSERT_HIT` and returns instead of
-/// trapping; `eval` then turns that trial into a huge residual so the solver backs off.
-static NLS_DEPTH: AtomicU32 = AtomicU32::new(0);
-static NLS_ASSERT_HIT: AtomicU32 = AtomicU32::new(0);
-/// Outcome of the last *completed* evaluation, read after `eval` returns.
-static NLS_EVAL_HIT: AtomicU32 = AtomicU32::new(0);
-/// C's `assertCalled`, sticky over one solver attempt.
-static NLS_ASSERT_SEEN: AtomicU32 = AtomicU32::new(0);
-/// The same two, narrowed to a rejection the *model* caused. C's `residualFunc`
-/// throws on a non-finite iteration variable as the guard below rejects one, but
-/// only this target's linear algebra reaches that state (a rank-deficient Jacobian
-/// steps to inf where C's does not), so reporting the guard as a model throw prints
-/// C's assert block for solver states C never enters.
-static NLS_EVAL_THREW: AtomicU32 = AtomicU32::new(0);
-static NLS_THROW_SEEN: AtomicU32 = AtomicU32::new(0);
 
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
 
-
-/// Dynamic tearing: a violated `CONSTRAINT_DT` inside the casual set's residual,
-/// which C's `f_con` reports by returning 1 — the emitted residual is a `void`
-/// callback, so this flag stands in for that return. [`solve_nls`] clears it before
-/// each evaluation and the sites C checks the return at read it back.
-static DT_VIOLATED: AtomicU32 = AtomicU32::new(0);
-
 /// Whether the last residual evaluation violated a local constraint of a casual
 /// tearing set.
 pub fn dt_violated() -> bool {
-    DT_VIOLATED.load(Ordering::Relaxed) != 0
+    flags().dt_violated.load(Ordering::Relaxed) != 0
 }
 
 /// A host whose residual reports a violated local constraint by return value
 /// rather than by calling [`dt_local_violated`] (C's `f_con`, whose generated form
 /// returns 1) marks the evaluation here.
 pub fn dt_note_violated() {
-    DT_VIOLATED.store(1, Ordering::Relaxed);
+    flags().dt_violated.store(1, Ordering::Relaxed);
 }
 
 fn dt_clear() {
-    DT_VIOLATED.store(0, Ordering::Relaxed);
+    flags().dt_violated.store(0, Ordering::Relaxed);
 }
 
 /// C's `createGlobalConstraints`, run before the casual set is solved: report the
@@ -492,14 +569,14 @@ pub fn dt_cons_violated(msg: &str, local: bool) {
 }
 
 /// C's `createLocalConstraints`, run inside the casual set's residual: report the
-/// constraint and fail this evaluation ([`DT_VIOLATED`] is `f_con`'s return 1).
+/// constraint and fail this evaluation (`Flags::dt_violated` is `f_con`'s return 1).
 pub fn dt_local_violated(msg: &str) {
     dt_cons_violated(msg, true);
     omclog::debug_string(
         omclog::DT,
         "Local constraints of the casual tearing set are violated! Let's fail...",
     );
-    DT_VIOLATED.store(1, Ordering::Relaxed);
+    flags().dt_violated.store(1, Ordering::Relaxed);
 }
 
 /// C's `equationLinear`/`equationNonlinear` entry line, and the casual-set variant
@@ -545,54 +622,54 @@ fn dt_strict_fallback(model: &mut dyn NlsModel) -> bool {
 
 /// Whether the last residual evaluation hit a recoverable model assert.
 pub fn assert_hit() -> bool {
-    NLS_EVAL_HIT.load(Ordering::Relaxed) != 0
+    flags().eval_hit.load(Ordering::Relaxed) != 0
 }
 
 /// The same for the last evaluation, and for the attempt: did the model throw?
 fn eval_threw() -> bool {
-    NLS_EVAL_THREW.load(Ordering::Relaxed) != 0
+    flags().eval_threw.load(Ordering::Relaxed) != 0
 }
 
 fn attempt_threw() -> bool {
-    NLS_THROW_SEEN.load(Ordering::Relaxed) != 0
+    flags().throw_seen.load(Ordering::Relaxed) != 0
 }
 
 /// Take over the hit flag: a residual routinely runs a nested [`solve_nls`], whose
 /// evaluations must not consume the enclosing one's.
 fn enter_eval() -> u32 {
-    NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
-    NLS_ASSERT_HIT.swap(0, Ordering::Relaxed)
+    flags().depth.fetch_add(1, Ordering::Relaxed);
+    flags().assert_hit.swap(0, Ordering::Relaxed)
 }
 
 /// Restore the enclosing evaluation's flag; reports this one's hit.
 fn leave_eval(saved: u32) -> bool {
-    NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
-    let hit = NLS_ASSERT_HIT.swap(saved, Ordering::Relaxed) != 0;
+    flags().depth.fetch_sub(1, Ordering::Relaxed);
+    let hit = flags().assert_hit.swap(saved, Ordering::Relaxed) != 0;
     note_eval_hit(hit, hit);
     hit
 }
 
 pub fn note_eval_hit(hit: bool, threw: bool) {
-    NLS_EVAL_HIT.store(hit as u32, Ordering::Relaxed);
-    NLS_EVAL_THREW.store(threw as u32, Ordering::Relaxed);
+    flags().eval_hit.store(hit as u32, Ordering::Relaxed);
+    flags().eval_threw.store(threw as u32, Ordering::Relaxed);
     if hit {
-        NLS_ASSERT_SEEN.store(1, Ordering::Relaxed);
+        flags().assert_seen.store(1, Ordering::Relaxed);
     }
     if threw {
-        NLS_THROW_SEEN.store(1, Ordering::Relaxed);
+        flags().throw_seen.store(1, Ordering::Relaxed);
     }
 }
 
 /// Open C's `MMC_TRY_INTERNAL` around one solver attempt.
 fn arm_attempt() {
-    NLS_ASSERT_SEEN.store(0, Ordering::Relaxed);
-    NLS_THROW_SEEN.store(0, Ordering::Relaxed);
+    flags().assert_seen.store(0, Ordering::Relaxed);
+    flags().throw_seen.store(0, Ordering::Relaxed);
 }
 
 /// The `abort` MINPACK polls. Without it the dogleg grinds against
 /// [`ASSERT_RESIDUAL`] to `maxfev`, where C's `longjmp` leaves at once.
 fn attempt_aborted() -> bool {
-    NLS_ASSERT_SEEN.load(Ordering::Relaxed) != 0
+    flags().assert_seen.load(Ordering::Relaxed) != 0
 }
 
 /// Whether a `throwStreamPrint` model error unwinds into a catcher: the solver
@@ -602,7 +679,7 @@ fn attempt_aborted() -> bool {
 /// residual, or the integrator's? True ⇒ the model records the assert via
 /// [`note_assert`] and bails out instead of ending the run.
 pub fn recovering() -> bool {
-    NLS_DEPTH.load(Ordering::Relaxed) > 0
+    flags().depth.load(Ordering::Relaxed) > 0
         || matches!(error_stage(), ERROR_INTEGRATOR | ERROR_NONLINEARSOLVER | ERROR_FMI_CALL)
 }
 
@@ -621,14 +698,15 @@ pub fn note_assert() {
 /// C's stage switch in `va_throwStreamPrint`, which unlike the assert one leaves
 /// the integrator region ungated.
 pub fn throw_logged() -> bool {
-    ERROR_STAGE[0].load(Ordering::Relaxed) != ERROR_NONLINEARSOLVER
+    flags().error_stage[0].load(Ordering::Relaxed) != ERROR_NONLINEARSOLVER
         || omclog::active(omclog::NLS)
 }
 
 /// Where [`rt_nls_note_assert`] records: the residual's own flag, or the
 /// integrator region's when the model error is not inside a residual.
 fn note_slot() -> &'static AtomicU32 {
-    if NLS_DEPTH.load(Ordering::Relaxed) > 0 { &NLS_ASSERT_HIT } else { &ERROR_STAGE[1] }
+    let f = flags();
+    if f.depth.load(Ordering::Relaxed) > 0 { &f.assert_hit } else { &f.error_stage[1] }
 }
 
 /// A model error where C's generated code calls `throwStreamPrint` — an invalid
@@ -667,25 +745,19 @@ pub fn throw_stream(s: &str) {
     note_assert();
 }
 
-/// C's `noThrowDivZero`, which is *sticky*: `solve_linear_system` and
-/// `solve_nonlinear_system` both raise it, but only the end of a nonlinear solve
-/// (and `initializeModel`) lowers it again — so a model whose algebraic systems
-/// are all linear tolerates every division by zero after its first solve.
-/// `runOptimizer` holds it over the whole optimization, hence the exported address.
-static NO_THROW_DIV_ZERO: AtomicU32 = AtomicU32::new(0);
-
 /// Address of C's `noThrowDivZero`, which `runOptimizer` holds over the whole
 /// optimization.
 pub fn no_throw_div_zero_addr() -> usize {
-    (&NO_THROW_DIV_ZERO) as *const AtomicU32 as usize
+    (&flags().no_throw_div_zero) as *const AtomicU32 as usize
 }
 
 pub fn set_no_throw_div_zero(on: bool) {
-    NO_THROW_DIV_ZERO.store(on as u32, Ordering::Relaxed);
+    flags().no_throw_div_zero.store(on as u32, Ordering::Relaxed);
 }
 
 pub fn no_throw_div_zero() -> bool {
-    NLS_DEPTH.load(Ordering::Relaxed) > 0 || NO_THROW_DIV_ZERO.load(Ordering::Relaxed) != 0
+    let f = flags();
+    f.depth.load(Ordering::Relaxed) > 0 || f.no_throw_div_zero.load(Ordering::Relaxed) != 0
 }
 
 /// sqrt(DBL_EPSILON): the classic forward-difference relative step.
@@ -721,6 +793,39 @@ pub fn enorm(v: &[f64]) -> f64 {
     fmath::sqrt(s)
 }
 
+/// The dense LU behind the Newton step; see the `system-lapack` feature.
+#[cfg(feature = "system-lapack")]
+mod dense_lu {
+    unsafe extern "C" {
+        fn dgetrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
+                   info: *mut i32);
+        fn dgetrs_(trans: *const u8, n: *const i32, nrhs: *const i32, a: *const f64,
+                   lda: *const i32, ipiv: *const i32, b: *mut f64, ldb: *const i32,
+                   info: *mut i32, trans_len: usize);
+    }
+    pub fn getrf(n: usize, lu: &mut [f64], ipiv: &mut [i32]) -> i32 {
+        let (n, mut info) = (n as i32, 0);
+        unsafe { dgetrf_(&n, &n, lu.as_mut_ptr(), &n, ipiv.as_mut_ptr(), &mut info) };
+        info
+    }
+    pub fn getrs(n: usize, lu: &[f64], ipiv: &[i32], b: &mut [f64]) {
+        let (n, one, mut info) = (n as i32, 1, 0);
+        unsafe {
+            dgetrs_(b"N".as_ptr(), &n, &one, lu.as_ptr(), &n, ipiv.as_ptr(), b.as_mut_ptr(), &n,
+                    &mut info, 1)
+        };
+    }
+}
+#[cfg(not(feature = "system-lapack"))]
+mod dense_lu {
+    pub fn getrf(n: usize, lu: &mut [f64], ipiv: &mut [i32]) -> i32 {
+        openmodelica_lapack::dgetrf(n, n, lu, n, ipiv)
+    }
+    pub fn getrs(n: usize, lu: &[f64], ipiv: &[i32], b: &mut [f64]) {
+        openmodelica_lapack::dgetrs("N", n, 1, lu, n, ipiv, b, n);
+    }
+}
+
 /// Solve the dense `n`×`n` system `A x = b` in place (`A` column-major, `b ← x`).
 /// Returns `true` on success, `false` on a singular/failed factorization (in
 /// which case `b` is unchanged). Shared by [`newton_solve`] and `rt_linsolve`.
@@ -733,10 +838,10 @@ pub fn lu_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
 pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
     let mut lu = a[..n * n].to_vec();
     let mut ipiv = alloc::vec![0i32; n];
-    if openmodelica_lapack::dgetrf(n, n, &mut lu, n, &mut ipiv) != 0 {
+    if dense_lu::getrf(n, &mut lu, &mut ipiv) != 0 {
         return None;
     }
-    openmodelica_lapack::dgetrs("N", n, 1, &lu, n, &ipiv, b, n);
+    dense_lu::getrs(n, &lu, &ipiv, b);
     Some((0..n).map(|k| lu[k * n + k]).product())
 }
 
@@ -746,11 +851,11 @@ pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
 pub fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
     let mut lu = a[..n * n].to_vec();
     let mut ipiv = alloc::vec![0i32; n];
-    let info = openmodelica_lapack::dgetrf(n, n, &mut lu, n, &mut ipiv);
+    let info = dense_lu::getrf(n, &mut lu, &mut ipiv);
     if info != 0 {
         return Some((info.max(1) - 1) as usize);
     }
-    openmodelica_lapack::dgetrs("N", n, 1, &lu, n, &ipiv, b, n);
+    dense_lu::getrs(n, &lu, &ipiv, b);
     None
 }
 
@@ -2413,48 +2518,81 @@ pub fn history_clean(h: &mut dyn History, time: f64) {
     h.set_len(0);
 }
 
-/// C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,JEval}`: per system,
-/// cumulative over the run, keyed by equation index.
-struct CountersCell(UnsafeCell<alloc::collections::BTreeMap<u32, [u64; 3]>>);
-unsafe impl Sync for CountersCell {}
-static COUNTERS: CountersCell = CountersCell(UnsafeCell::new(alloc::collections::BTreeMap::new()));
+/// The per-system rosters: C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,
+/// JEval}` cumulative over the run, the iteration-variable names, and the
+/// Newton-diagnostics blob — all keyed by equation index, and all three reached
+/// only with a log stream on. A parallel `--parmodauto` run puts two threads inside
+/// a solve at once, so one lock covers them; values sit in `Box`es, so a reference
+/// handed out stays valid while another thread inserts. Only `clear_names` /
+/// `clear_diag` drop them, and the host calls those between runs.
+struct Rosters {
+    lock: AtomicU32,
+    counters: UnsafeCell<alloc::collections::BTreeMap<u32, alloc::boxed::Box<[AtomicU64; 3]>>>,
+    names: UnsafeCell<alloc::collections::BTreeMap<u32, alloc::boxed::Box<[alloc::string::String]>>>,
+    diag: UnsafeCell<alloc::collections::BTreeMap<u32, alloc::boxed::Box<newton_diagnostics::DiagInfo>>>,
+}
+unsafe impl Sync for Rosters {}
+static ROSTERS: Rosters = Rosters {
+    lock: AtomicU32::new(0),
+    counters: UnsafeCell::new(alloc::collections::BTreeMap::new()),
+    names: UnsafeCell::new(alloc::collections::BTreeMap::new()),
+    diag: UnsafeCell::new(alloc::collections::BTreeMap::new()),
+};
 
-/// Nonzero while a Jacobian is being formed: C counts `numberOfFEval` in
-/// `wrapper_fvec`, which the FD Jacobian does not go through.
-static JAC_DEPTH: AtomicU32 = AtomicU32::new(0);
-
-/// C's `numberOfJEval`: `wrapper_fvec_der` counts an analytic and an FD Jacobian
-/// alike. [`solve_nls`] takes the difference over its own call.
-static JAC_EVALS: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
-
-fn note_jac_eval() {
-    JAC_EVALS.fetch_add(1, Ordering::Relaxed);
+/// Uncontended in every run but a parallel `--parmodauto` one, and taken only where
+/// a log stream already costs far more.
+fn locked<R>(f: impl FnOnce() -> R) -> R {
+    while ROSTERS.lock.compare_exchange_weak(0, 1, Ordering::Acquire, Ordering::Relaxed).is_err() {
+        core::hint::spin_loop();
+    }
+    let out = f();
+    ROSTERS.lock.store(0, Ordering::Release);
+    out
 }
 
-/// C's `numberOfIterations`, `numberOfFEval` and `numberOfJEval` as run totals; a
-/// solve's own share is the difference across it, less what a nested solve took.
+fn note_jac_eval() {
+    flags().jac_evals.fetch_add(1, Ordering::Relaxed);
+}
+
+/// The iterations a KINSOL solve took, which SUNDIALS counts rather than
+/// [`nls_stat_inc`] (C reads them back with `KINGetNumNonlinSolvIters`).
+fn note_nls_iters(n: u64) {
+    for _ in 0..n {
+        stat_inc(STAT_NLS_ITER);
+    }
+    flags().iters.fetch_add(n, Ordering::Relaxed);
+}
+
+/// C's `numberOfIterations`, `numberOfFEval` and `numberOfJEval` as this thread's
+/// totals; a solve's own share is the difference across it, less what a nested
+/// solve took.
 fn sys_counts() -> [u64; 3] {
     [
-        counters::stat(STAT_NLS_ITER),
-        counters::stat(STAT_NLS_RES),
-        JAC_EVALS.load(Ordering::Relaxed),
+        flags().iters.load(Ordering::Relaxed),
+        flags().res_evals.load(Ordering::Relaxed),
+        flags().jac_evals.load(Ordering::Relaxed),
     ]
 }
 
-fn counters_of(eq_index: u32) -> &'static mut [u64; 3] {
-    unsafe { &mut *COUNTERS.0.get() }.entry(eq_index).or_default()
+fn counters_of(eq_index: u32) -> &'static [AtomicU64; 3] {
+    locked(|| {
+        let m = unsafe { &mut *ROSTERS.counters.get() };
+        let new = || alloc::boxed::Box::new([const { AtomicU64::new(0) }; 3]);
+        let b = m.entry(eq_index).or_insert_with(new);
+        unsafe { &*(&**b as *const [AtomicU64; 3]) }
+    })
 }
 
-/// C's `modelInfoGetEquation(...).vars[i]`, keyed by `equationIndex`. Pushed in
-/// from the decoded `SimMeta`, and only when the stream is on.
-struct NamesCell(UnsafeCell<alloc::collections::BTreeMap<u32, alloc::vec::Vec<alloc::string::String>>>);
-unsafe impl Sync for NamesCell {}
-static NAMES: NamesCell = NamesCell(UnsafeCell::new(alloc::collections::BTreeMap::new()));
-
-/// `eq_index`'s iteration-variable names, or `[]` when they were not pushed in.
+/// `eq_index`'s iteration-variable names (C's `modelInfoGetEquation(...).vars[i]`),
+/// or `[]` when they were not pushed in.
 pub fn var_names(eq_index: u32) -> &'static [alloc::string::String] {
-    if let Some(v) = unsafe { &*NAMES.0.get() }.get(&eq_index) {
-        return v.as_slice();
+    let found = locked(|| {
+        unsafe { &*ROSTERS.names.get() }
+            .get(&eq_index)
+            .map(|b| unsafe { &*(&**b as *const [alloc::string::String]) })
+    });
+    if let Some(v) = found {
+        return v;
     }
     // Not shipped ahead of time: ask the host, which reads the model's equation
     // metadata the first time a name is actually wanted -- C's own laziness, and
@@ -2473,29 +2611,33 @@ fn var_label(names: &[alloc::string::String], i: usize) -> alloc::string::String
 
 /// Replace the name roster. `set` is `(eq_index, names)` in any order.
 pub fn set_var_names(set: alloc::vec::Vec<(u32, alloc::vec::Vec<alloc::string::String>)>) {
-    *unsafe { &mut *NAMES.0.get() } = set.into_iter().collect();
+    locked(|| {
+        *unsafe { &mut *ROSTERS.names.get() } =
+            set.into_iter().map(|(k, v)| (k, v.into_boxed_slice())).collect();
+    });
 }
 
-/// What `-lv=LOG_NLS_NEWTON_DIAGNOSTICS` needs per system beyond the names, keyed
-/// by equation index; pushed in from the model's metadata.
-struct DiagCell(UnsafeCell<alloc::collections::BTreeMap<u32, newton_diagnostics::DiagInfo>>);
-unsafe impl Sync for DiagCell {}
-static DIAG: DiagCell = DiagCell(UnsafeCell::new(alloc::collections::BTreeMap::new()));
-
-/// Replace the `LOG_NLS_NEWTON_DIAGNOSTICS` roster. `set` is `(eq_index, info)`
-/// in any order.
+/// Replace the `LOG_NLS_NEWTON_DIAGNOSTICS` roster (what that stream needs per
+/// system beyond the names). `set` is `(eq_index, info)` in any order.
 pub fn set_diag(set: alloc::vec::Vec<(u32, newton_diagnostics::DiagInfo)>) {
-    *unsafe { &mut *DIAG.0.get() } = set.into_iter().collect();
+    locked(|| {
+        *unsafe { &mut *ROSTERS.diag.get() } =
+            set.into_iter().map(|(k, v)| (k, alloc::boxed::Box::new(v))).collect();
+    });
 }
 
 /// Add one system to it, for a host that ships the roster a system at a time.
 pub fn push_diag(eq_index: u32, info: newton_diagnostics::DiagInfo) {
-    unsafe { &mut *DIAG.0.get() }.insert(eq_index, info);
+    locked(|| {
+        unsafe { &mut *ROSTERS.diag.get() }.insert(eq_index, alloc::boxed::Box::new(info));
+    });
 }
 
 /// [`set_var_names`] one system at a time.
 pub fn push_var_names(eq_index: u32, names: alloc::vec::Vec<alloc::string::String>) {
-    unsafe { &mut *NAMES.0.get() }.insert(eq_index, names);
+    locked(|| {
+        unsafe { &mut *ROSTERS.names.get() }.insert(eq_index, names.into_boxed_slice());
+    });
 }
 
 /// The SimCode equation index of each residual, as the Newton-diagnostics roster
@@ -2506,17 +2648,23 @@ pub fn diag_eqns(eq_index: u32) -> alloc::vec::Vec<u32> {
 
 /// Empty the name roster and the iteration counters.
 pub fn clear_names() {
-    unsafe { &mut *NAMES.0.get() }.clear();
-    unsafe { &mut *COUNTERS.0.get() }.clear();
+    locked(|| {
+        unsafe { &mut *ROSTERS.names.get() }.clear();
+        unsafe { &mut *ROSTERS.counters.get() }.clear();
+    });
 }
 
 /// Empty the diagnostics roster.
 pub fn clear_diag() {
-    unsafe { &mut *DIAG.0.get() }.clear();
+    locked(|| unsafe { &mut *ROSTERS.diag.get() }.clear());
 }
 
 fn diag_info(eq_index: u32) -> Option<&'static newton_diagnostics::DiagInfo> {
-    unsafe { &*DIAG.0.get() }.get(&eq_index)
+    locked(|| {
+        unsafe { &*ROSTERS.diag.get() }
+            .get(&eq_index)
+            .map(|b| unsafe { &*(&**b as *const newton_diagnostics::DiagInfo) })
+    })
 }
 
 /// C's `printNonLinearInitialInfo`, under the `solve_nonlinear_system` header.
@@ -2553,9 +2701,14 @@ fn log_nls_leave(eq_index: u32, solved: bool, x: &[f64]) {
         true,
         if solved { "Solution status: SOLVED" } else { "Solution status: FAILED" },
     );
-    omclog::info!(omclog::NLS, false, " number of iterations : {}", c[0]);
-    omclog::info!(omclog::NLS, false, " number of function evaluations : {}", c[1]);
-    omclog::info!(omclog::NLS, false, " number of jacobian evaluations : {}", c[2]);
+    omclog::info!(
+        omclog::NLS,
+        false,
+        " number of iterations           : {}",
+        c[0].load(Ordering::Relaxed)
+    );
+    omclog::info!(omclog::NLS, false, " number of function evaluations : {}", c[1].load(Ordering::Relaxed));
+    omclog::info!(omclog::NLS, false, " number of jacobian evaluations : {}", c[2].load(Ordering::Relaxed));
     omclog::info(omclog::NLS, false, "solution values:");
     let names = var_names(eq_index);
     for i in 0..x.len() {
@@ -2747,7 +2900,7 @@ fn newton_c(
                     jaceval: &mut dyn FnMut(&[f64], &mut [f64])| {
         arm_attempt();
         let t0 = sysstat::tick();
-        JAC_DEPTH.fetch_add(1, Ordering::Relaxed);
+        flags().jac_depth.fetch_add(1, Ordering::Relaxed);
         if !has_jac {
             note_jac_eval();
         }
@@ -2776,7 +2929,7 @@ fn newton_c(
                 x[col] = saved;
             }
         }
-        JAC_DEPTH.fetch_sub(1, Ordering::Relaxed);
+        flags().jac_depth.fetch_sub(1, Ordering::Relaxed);
         sysstat::add_jacobian_time(sysstat::tick() - t0);
         !attempt_aborted()
     };
@@ -2857,7 +3010,7 @@ fn newton_c(
     // total-pivot solve reports a vanishing determinant only to the log.
     let mut vanishing = false;
     loop {
-        stat_inc(STAT_NLS_ITER);
+        nls_stat_inc(STAT_NLS_ITER);
         if let Some(t) = trace {
             omclog::debug_int(omclog::NLS_V, "Iteration:", iter + 1);
             for i in 0..n {
@@ -3361,7 +3514,7 @@ fn omc_newton(
     let mut delta_x_scaled = 1.0 + eps;
 
     while error_f > eps && scaled_error_f > eps && delta_x > eps && delta_f > eps && delta_x_scaled > eps {
-        stat_inc(STAT_NLS_ITER);
+        nls_stat_inc(STAT_NLS_ITER);
         if calc_jac {
             newton_jacobian(n, x, fvec, &mut jac, &mut rwork, eval, jaceval, has_jac);
             factorized = false;
@@ -3524,8 +3677,8 @@ pub fn solve_nls(
     let saved_rel_fresh = state.borrow().relation_mode();
     // A nested solve (a medium inversion inside a flow residual) must not end the
     // enclosing attempt.
-    let saved_assert_seen = NLS_ASSERT_SEEN.swap(0, Ordering::Relaxed);
-    let saved_throw_seen = NLS_THROW_SEEN.swap(0, Ordering::Relaxed);
+    let saved_assert_seen = flags().assert_seen.swap(0, Ordering::Relaxed);
+    let saved_throw_seen = flags().throw_seen.swap(0, Ordering::Relaxed);
     // The buffers handed to [`NlsModel`] each call; the host marshals them into
     // whatever its model reads. `x` carries lambda too, as C's `residualFunc`
     // addresses `xloc[n]`.
@@ -3541,17 +3694,17 @@ pub fn solve_nls(
     let mut xbuf = vec![0.0f64; m];
     let mut rbuf = vec![0.0f64; n];
     let n_feval = core::cell::Cell::new(0u64);
-    let iter0 = counters::stat(STAT_NLS_ITER);
-    let jac0 = JAC_EVALS.load(Ordering::Relaxed);
+    let iter0 = flags().iters.load(Ordering::Relaxed);
+    let jac0 = flags().jac_evals.load(Ordering::Relaxed);
     let mut eval = |xs: &[f64], r: &mut [f64]| {
-        stat_inc(STAT_NLS_RES);
-        if JAC_DEPTH.load(Ordering::Relaxed) == 0 {
+        nls_stat_inc(STAT_NLS_RES);
+        if flags().jac_depth.load(Ordering::Relaxed) == 0 {
             n_feval.set(n_feval.get() + 1);
         }
         // C's generated `residualFunc`: an inf/nan iteration variable fails the
         // evaluation instead of reaching the model. Feed kinsol the nan residual
         // and its line search takes a nan step length, which no exit test catches.
-        // Not a model throw — see [`NLS_EVAL_THREW`].
+        // Not a model throw — see [`Flags::eval_threw`].
         if xs.iter().any(|v| !v.is_finite()) {
             if let Some(i) = xs[..n.min(xs.len())].iter().position(|v| !v.is_finite()) {
                 omclog::error!(
@@ -3725,7 +3878,7 @@ pub fn solve_nls(
                 omclog::error(omclog::ASSERT, false, "NEWTON_DIAGNOSTICS: numeric jacobian not yet supported.");
             } else {
                 let feval0 = n_feval.get();
-                let jac0 = JAC_EVALS.load(Ordering::Relaxed);
+                let jac0 = flags().jac_evals.load(Ordering::Relaxed);
                 let names = var_names(eq_index);
                 let mut residual = |xs: &[f64], r: &mut [f64]| {
                     eval(xs, r);
@@ -3741,7 +3894,7 @@ pub fn solve_nls(
                     &mut newton_diagnostics::Callbacks { residual: &mut residual, jacobian: &mut jacobian },
                 );
                 n_feval.set(feval0);
-                JAC_EVALS.store(jac0, Ordering::Relaxed);
+                flags().jac_evals.store(jac0, Ordering::Relaxed);
             }
         }
     }
@@ -4220,17 +4373,17 @@ pub fn solve_nls(
 
     if log_nls {
         let c = counters_of(eq_index);
-        c[0] += counters::stat(STAT_NLS_ITER) - iter0;
-        c[1] += n_feval.get();
-        c[2] += JAC_EVALS.load(Ordering::Relaxed) - jac0;
+        c[0].fetch_add(flags().iters.load(Ordering::Relaxed) - iter0, Ordering::Relaxed);
+        c[1].fetch_add(n_feval.get(), Ordering::Relaxed);
+        c[2].fetch_add(flags().jac_evals.load(Ordering::Relaxed) - jac0, Ordering::Relaxed);
         log_nls_leave(eq_index, converged || strict_used, &x);
     }
 
     if saved_rel_fresh != 2 {
         state.borrow_mut().set_relation_mode(saved_rel_fresh);
     }
-    NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
-    NLS_THROW_SEEN.store(saved_throw_seen, Ordering::Relaxed);
+    flags().assert_seen.store(saved_assert_seen, Ordering::Relaxed);
+    flags().throw_seen.store(saved_throw_seen, Ordering::Relaxed);
 
     // C lowers `noThrowDivZero` here and nowhere else during a run.
     set_no_throw_div_zero(false);

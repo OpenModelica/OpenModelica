@@ -38,11 +38,18 @@
  */
 
 #include "MainWindow.h"
-/* Keep PlotWindowContainer on top to include OSG first */
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "Cloud/CloudTypes.h"
+#include "Cloud/CloudAccount.h"
+#include "Cloud/CloudBrowserDialog.h"
+#include "Cloud/CloudCache.h"
+#include "Cloud/CloudConflictDialog.h"
+#include "Cloud/CloudMount.h"
+#include "Cloud/CloudProvider.h"
+#include "Cloud/CloudSyncEngine.h"
 #include "Search/FindUsageWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -89,8 +96,12 @@
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
 #endif
+#include "LSP/ModelicaLSPClient.h"
 #include <QtSvg/QSvgGenerator>
-#include <QOpenGLWidget>
+#include <QStandardPaths>
+#include <QUrl>
+#include <QDir>
+#include <QFileInfo>
 #include <QNetworkProxyFactory>
 #include <QRegularExpression>
 
@@ -153,12 +164,6 @@ namespace ToolBars {
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
 {
-  /* TRICK: Forces the top-level window surface to initialize
-   * as QSurface::OpenGLSurface immediately, preventing later recreation flicker.
-   * See issue #15830.
-   */
-  QOpenGLWidget *dummyGL = new QOpenGLWidget(this);
-  dummyGL->hide();
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
   // Default system font
@@ -207,6 +212,145 @@ MainWindow *MainWindow::instance()
     mpInstance = new MainWindow;
   }
   return mpInstance;
+}
+
+/*!
+ * \brief MainWindow::startLanguageServer
+ * Starts the language server process if it is not already running.
+ * Resolves the executable from the user setting, then the bundled server,
+ * then the system PATH. Skips silently when no usable server is available.
+ */
+void MainWindow::startLanguageServer()
+{
+  if (mpLSPClient) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  const QString configured = pSettings->value("languageServer/executable").toString().trimmed();
+  const QString executable = ModelicaLSPClient::resolveExecutable(configured);
+  if (executable.isEmpty()) {
+    return;
+  }
+  // Warn rather than refuse: a future server may well embed these, and a wrong
+  // guess must not stop it starting. Silence is the thing worth avoiding.
+  const QStringList missing = ModelicaLSPClient::missingRuntimeFiles(executable);
+  if (!missing.isEmpty()) {
+    onLanguageServerLogMessage(tr("Language server is missing %1 in %2. It will start but is "
+                                  "likely to report no hover or go to definition results.")
+                               .arg(missing.join(QStringLiteral(", ")),
+                                    QFileInfo(executable).absolutePath()));
+  }
+  LSPClient *pLSPClient = new ModelicaLSPClient(this);
+  connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
+  connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
+  // A library loaded while the initialize handshake is still in flight cannot be
+  // announced yet, and no further row change would announce it later. Re-sync
+  // once the server is ready; unchanged lists are dropped by updateLibraries().
+  connect(pLSPClient, &LSPClient::initialized, this, &MainWindow::syncLanguageServerLibraries);
+  QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
+  // Optional library roots the server loads so go-to-definition can resolve across files.
+  QStringList libraries = languageServerLibraries();
+  // Only keep the client once it actually launched, otherwise a single failed
+  // launch would block every later retry in this session.
+  if (!pLSPClient->start(executable, rootUri, libraries)) {
+    pLSPClient->deleteLater();
+    return;
+  }
+  mpLSPClient = pLSPClient;
+}
+
+/*!
+ * \brief MainWindow::languageServerLibraries
+ * Library roots the language server should know about: the source directories
+ * of the libraries currently loaded in OMC. Following OMC is the whole list;
+ * there is deliberately no separate setting to keep in step with it.
+ * \return de-duplicated list of library root directories
+ */
+QStringList MainWindow::languageServerLibraries() const
+{
+  QStringList libraries;
+  if (mpLibraryWidget && mpLibraryWidget->getLibraryTreeModel()) {
+    LibraryTreeItem *pRootLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
+    for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); ++i) {
+      LibraryTreeItem *pLibraryTreeItem = pRootLibraryTreeItem->child(i);
+      if (!pLibraryTreeItem || pLibraryTreeItem->getFileName().isEmpty()) {
+        continue;
+      }
+      // The server takes a library root directory, not the package file itself.
+      const QString libraryRoot = QFileInfo(pLibraryTreeItem->getFileName()).absolutePath();
+      if (libraryRoot.isEmpty() || libraries.contains(libraryRoot)) {
+        continue;
+      }
+      // Only a directory holding a package.mo is a library. A standalone class
+      // opened from a plain .mo file lives in an ordinary directory, and
+      // announcing that as a library makes the server warn the user about a
+      // "modelica.libraries" entry they never wrote. The server sees such a
+      // file through textDocument/didOpen anyway.
+      if (!QFileInfo::exists(libraryRoot + QStringLiteral("/package.mo"))) {
+        continue;
+      }
+      libraries.append(libraryRoot);
+    }
+  }
+  return libraries;
+}
+
+/*!
+ * \brief MainWindow::syncLanguageServerLibraries
+ * Tells a running language server about the libraries currently loaded, so a
+ * library loaded after startup can be resolved without restarting the server.
+ * Does nothing when the server is not running; startLanguageServer() already
+ * passes the initial set through the initialization options.
+ */
+void MainWindow::syncLanguageServerLibraries()
+{
+  if (!mpLSPClient || !mpLSPClient->isRunning()) {
+    return;
+  }
+  mpLSPClient->updateLibraries(languageServerLibraries());
+}
+
+/*!
+ * \brief MainWindow::onLanguageServerLogMessage
+ * Writes a language server message to the Messages Browser. All messages are
+ * prefixed with "LSP". The LSP message type (1=Error, 2=Warning, others=Info) is
+ * mapped to the OMEdit message level. Errors are always shown so that startup
+ * failures are visible; informational and warning messages require language
+ * server logging to be enabled.
+ */
+void MainWindow::onLanguageServerLogMessage(QString message, int type)
+{
+  if (message.isEmpty()) {
+    return;
+  }
+  if (type != 1) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    if (!pSettings->value("languageServer/logging", false).toBool()) {
+      return;
+    }
+  }
+  QString level = Helper::notificationLevel;
+  if (type == 1) {
+    level = Helper::errorLevel;
+  } else if (type == 2) {
+    level = Helper::warningLevel;
+  }
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QStringLiteral("LSP: %1").arg(message),
+                                                        Helper::scriptingKind, level));
+}
+
+/*!
+ * \brief MainWindow::stopLanguageServer
+ * Stops and destroys the language server process if it is running.
+ */
+void MainWindow::stopLanguageServer()
+{
+  if (!mpLSPClient) {
+    return;
+  }
+  mpLSPClient->stop();
+  mpLSPClient->deleteLater();
+  mpLSPClient = nullptr;
 }
 
 /*!
@@ -327,6 +471,22 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   setStatusBar(mpStatusBar);
   // Create an object of LibraryWidget
   mpLibraryWidget = new LibraryWidget(this);
+  // Keep the language server in step with the libraries loaded in OMC. Queued so
+  // the library tree item is fully populated (it has no file name yet when the
+  // row is inserted) before the roots are collected.
+  // Coalesced: loading a library inserts a row per class, so reacting to each
+  // one would rescan the whole tree thousands of times on the GUI thread.
+  // Restarting a zero-timer collapses a burst into a single scan once it ends.
+  mpLanguageServerSyncTimer = new QTimer(this);
+  mpLanguageServerSyncTimer->setSingleShot(true);
+  mpLanguageServerSyncTimer->setInterval(0);
+  connect(mpLanguageServerSyncTimer, &QTimer::timeout, this, &MainWindow::syncLanguageServerLibraries);
+  connect(mpLibraryWidget->getLibraryTreeModel(), &QAbstractItemModel::rowsInserted,
+          mpLanguageServerSyncTimer, QOverload<>::of(&QTimer::start));
+  // Unloading a library shrinks the list; since v0.3.2 the server drops the roots
+  // that disappear from the configuration instead of keeping them resolvable.
+  connect(mpLibraryWidget->getLibraryTreeModel(), &QAbstractItemModel::rowsRemoved,
+          mpLanguageServerSyncTimer, QOverload<>::of(&QTimer::start));
   // Create LibraryDockWidget
   mpLibraryDockWidget = new QDockWidget(Helper::libraries, this);
   mpLibraryDockWidget->setObjectName("Libraries");
@@ -458,7 +618,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
-  // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActionsAndList();
   updateRecentModelActionsAndList();
@@ -786,9 +945,13 @@ void MainWindow::addRecentModel(const QString &nameStructure)
   LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem) {
     LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
-    if (pTopLevelLibraryTreeItem) {
+    if (pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isFilePathValid()) {
       path = pTopLevelLibraryTreeItem->getFileName();
     }
+  }
+  // Skip models that do not have any file attached to them yet, e.g. newly created and not yet saved models.
+  if (path.isEmpty()) {
+    return;
   }
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
@@ -1293,7 +1456,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
   mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false, false);
 }
 
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
 void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!mpSimulationDialog) {
@@ -1662,7 +1825,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported <b>%1</b>.").arg(fmuFileName),
                                                             Helper::scriptingKind, Helper::notificationLevel));
 #if defined(__EMSCRIPTEN__)
-      if (!WasmLocalFiles::download(fmuFileName)) {
+      if (!isInsideCloudMount(fmuFileName) && !WasmLocalFiles::download(fmuFileName)) {
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Could not read the exported FMU <b>%1</b>.").arg(fmuFileName),
                                                               Helper::scriptingKind, Helper::errorLevel));
       }
@@ -2428,6 +2591,29 @@ void MainWindow::openModelicaFile()
   if (fileNames.isEmpty()) {
     return;
   }
+#if defined(__EMSCRIPTEN__)
+  // A file picker cannot hand over a directory, so a zipped library is unpacked
+  // and what it holds is loaded instead of the archive.
+  QStringList pickedFiles;
+  foreach (const QString &file, fileNames) {
+    if (QFileInfo(file).suffix().compare("zip", Qt::CaseInsensitive) == 0) {
+      const QString dir = WasmLocalFiles::expandArchive(file);
+      const QStringList files = dir.isEmpty() ? QStringList() : WasmLocalFiles::libraryFiles(dir);
+      if (files.isEmpty()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+      pickedFiles << files;
+    } else {
+      pickedFiles << file;
+    }
+  }
+  fileNames = pickedFiles;
+  if (fileNames.isEmpty()) {
+    return;
+  }
+#endif
   int progressValue = 0;
   mpProgressBar->setRange(0, fileNames.size());
   showProgressBar();
@@ -2604,11 +2790,32 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
  */
 void MainWindow::openDirectory()
 {
+#if defined(__EMSCRIPTEN__)
+  // The browser uploads the picked folder, structure and all, and the library in it
+  // is loaded. The directory is deliberately not added to the Library Browser: QDir
+  // enumerates nothing through the worker-VFS engine, so that node comes up childless,
+  // and painting it traps in Qt's raster engine.
+  const QString dir = WasmLocalFiles::openFolder();
+  if (dir.isEmpty()) {
+    return;
+  }
+  const QStringList files = WasmLocalFiles::libraryFiles(dir);
+  if (files.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(dir),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  foreach (const QString &file, files) {
+    mpLibraryWidget->openFile(file, Helper::utf8, false);
+  }
+#else
   QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (dir.isEmpty()) {
     return;
   }
   mpLibraryWidget->openFile(dir, Helper::utf8, true);
+#endif
 }
 
 /*!
@@ -2640,7 +2847,7 @@ void MainWindow::openRecentFile()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     QStringList dataList = pAction->data().toStringList();
-    mpLibraryWidget->openFile(dataList.at(0), dataList.at(1), true, true);
+    openFileFetchingFromCloud(dataList.at(0), dataList.at(1));
   }
 }
 
@@ -2682,6 +2889,39 @@ void MainWindow::showRecentModel(const QString &nameStructure, const QString &en
                                                           tr("Unable to find the class <b>%1</b>. It might not be loaded.").arg(nameStructure),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
+}
+
+/*!
+ * \brief MainWindow::openFileFetchingFromCloud
+ * Opens a file, bringing its cloud folder down first if it is not there yet.
+ *
+ * A path inside a mount can be perfectly good and still not exist: on the web
+ * target the working copy is in memory, so after a reload the recent files point
+ * at packages that have to be fetched before they can be opened.
+ */
+void MainWindow::openFileFetchingFromCloud(const QString &fileName, const QString &encoding)
+{
+  const CloudMount mount = CloudMountManager::instance()->mountForPath(fileName);
+  if (!mount.isValid() || QFile::exists(fileName)) {
+    mpLibraryWidget->openFile(fileName, encoding, true, true);
+    return;
+  }
+  CloudAccount *pAccount = CloudAccountManager::instance()->account(mount.accountKey);
+  if (!pAccount || !pAccount->isSignedIn()) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("%1 is in the cloud folder %2. Sign in to that account to open it.")
+                                 .arg(fileName, mount.remoteName));
+    return;
+  }
+  syncMount(mount, pAccount, tr("Fetching %1...").arg(mount.remoteName), [this, fileName, encoding]() {
+    if (QFile::exists(fileName)) {
+      mpLibraryWidget->openFile(fileName, encoding, true, true);
+      return;
+    }
+    MessagesWidget::instance()->addGUIMessage(
+        MessageItem(MessageItem::Modelica, tr("%1 is no longer in the cloud folder.").arg(fileName),
+                    Helper::scriptingKind, Helper::errorLevel));
+  });
 }
 
 /*!
@@ -3092,7 +3332,7 @@ void MainWindow::simulateModel()
  */
 void MainWindow::simulateModelWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     simulateWithAnimation(pModelWidget->getLibraryTreeItem());
@@ -3579,9 +3819,10 @@ void MainWindow::openTerminal()
 #else
   process.start(terminalCommand + " " + arguments);
 #endif
-  if (process.error() == QProcess::FailedToStart) {
+  if (process.error() == QProcess::FailedToStart || process.hasStartupError()) {
+    const QString processError = process.startupErrorString().isEmpty() ? process.errorString() : process.startupErrorString();
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")
-                          .arg(terminalCommand, arguments, process.errorString());
+                          .arg(terminalCommand, arguments, processError);
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
 #else
@@ -3614,7 +3855,7 @@ void MainWindow::runOMSensPlugin()
   }
 #else
 #ifdef Q_OS_WIN
-    QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
+    QPluginLoader loader(QString("%1/lib/%2/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #else
     QPluginLoader loader(QString("%1/lib/%2/omc/libomsensplugin.so").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #endif
@@ -4451,6 +4692,14 @@ void MainWindow::createActions()
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
   connect(mpOpenDirectoryAction, SIGNAL(triggered()), SLOT(openDirectory()));
+  // open from cloud storage action
+  mpOpenFromCloudAction = new QAction(tr("Open from Cloud Storage..."), this);
+  mpOpenFromCloudAction->setStatusTip(tr("Opens a package stored in Google Drive or OneDrive"));
+  connect(mpOpenFromCloudAction, SIGNAL(triggered()), SLOT(openFromCloud()));
+  // save to cloud storage action
+  mpSaveToCloudAction = new QAction(tr("Save to Cloud Storage..."), this);
+  mpSaveToCloudAction->setStatusTip(tr("Saves the active class to Google Drive or OneDrive"));
+  connect(mpSaveToCloudAction, SIGNAL(triggered()), SLOT(saveToCloud()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -4657,7 +4906,7 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // simulate with animation action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
@@ -4872,7 +5121,7 @@ void MainWindow::createActions()
   mpNewArrayParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-parametric-plot-window.svg"), tr("New Array Parametric Plot Window"), this);
   mpNewArrayParametricPlotWindowAction->setStatusTip(tr("Inserts new array parametric plot window"));
   connect(mpNewArrayParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayParametricPlotWindow()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // new mpAnimationWindowAction plot action
   mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
@@ -4929,9 +5178,11 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpUnloadAllAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
+  mpFileMenu->addAction(mpOpenFromCloudAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpSaveAction);
   mpFileMenu->addAction(mpSaveAsAction);
+  mpFileMenu->addAction(mpSaveToCloudAction);
   //menuFile->addAction(saveAllAction);
   mpFileMenu->addAction(mpSaveTotalAction);
   mpFileMenu->addSeparator();
@@ -5091,7 +5342,7 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
 //  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
@@ -5536,7 +5787,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
 //  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
@@ -5558,7 +5809,7 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpNewArrayPlotWindowAction);
   mpPlotToolBar->addAction(mpNewArrayParametricPlotWindowAction);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpPlotToolBar->addAction(mpNewAnimationWindowAction);
 #endif
   mpPlotToolBar->addAction(mpDiagramWindowAction);
@@ -5747,7 +5998,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
-#if defined(WITHOUT_OSG)
+#if defined(WITHOUT_ANIMATION)
      "<br /><em>Compiled without 3D animation support</em>."
 #endif
      "")
@@ -5978,4 +6229,375 @@ bool MessageTab::eventFilter(QObject *pObject, QEvent *pEvent)
     }
   }
   return QObject::eventFilter(pObject, pEvent);
+}
+
+/*!
+ * \brief MainWindow::openFromCloud
+ * Mounts a cloud folder as a local working copy, brings its contents down, and
+ * opens it like any other package - everything downstream sees an ordinary path.
+ *
+ * Nothing here uses QDialog::exec() or a nested QEventLoop, and it must stay that
+ * way: on the WebAssembly build a nested event loop parks the main thread inside
+ * Asyncify, and network replies are never delivered to it - the request completes
+ * in the browser and the finished handler simply never runs. Dialogs are opened
+ * with open() and the flow continues in signal handlers.
+ */
+void MainWindow::openFromCloud()
+{
+  CloudBrowserDialog *pBrowser = new CloudBrowserDialog(CloudBrowserDialog::OpenFolder, this);
+  pBrowser->setAttribute(Qt::WA_DeleteOnClose);
+  connect(pBrowser, &QDialog::accepted, this, [this, pBrowser]() {
+    CloudAccount *pAccount = pBrowser->selectedAccount();
+    if (!pAccount || pBrowser->selectedFolderId().isEmpty()) {
+      return;
+    }
+    const CloudMount mount = CloudMountManager::instance()->addMount(pAccount->key(), pBrowser->selectedFolderId(),
+                                                                    pBrowser->selectedFolderName());
+    QDir().mkpath(mount.localRoot);
+    // Remembered before the dialog goes away: a chosen file is opened on its own
+    // once its folder has come down.
+    const QString chosenFile = pBrowser->selectedFileName();
+    syncMount(mount, pAccount, tr("Fetching %1...").arg(mount.remoteName), [this, mount, chosenFile]() {
+      if (!chosenFile.isEmpty()) {
+        mpLibraryWidget->openFile(mount.localRoot + QLatin1Char('/') + chosenFile, Helper::utf8, true);
+        return;
+      }
+      openMountContents(mount);
+    });
+  });
+  pBrowser->open();
+}
+
+/*!
+ * \brief Forget where the children were last saved.
+ *
+ * saveModelicaLibraryTreeItemFolder() reuses a child's existing path whenever
+ * isFilePathValid(), so without this a package's subpackages are written back to
+ * wherever they came from rather than into the folder being saved to. Cleared,
+ * each child's path is derived from its parent's, which is what puts the whole
+ * package under the new root.
+ */
+static void forgetChildFileNames(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
+    LibraryTreeItem *pChild = pLibraryTreeItem->child(i);
+    pChild->setFileName(QString());
+    pChild->setIsSaved(false);
+    forgetChildFileNames(pChild);
+  }
+}
+
+/*!
+ * \brief MainWindow::saveToCloud
+ * Saves the selected class into a new cloud folder and leaves it mounted, so that
+ * later saves go to the same place.
+ *
+ * The class is written to the working copy with the ordinary save path first -
+ * so package.mo, package.order and any subpackages are laid out exactly as they
+ * would be on disk - and the sync engine then pushes that tree. Nothing here
+ * knows how to upload a Modelica package; it only knows how to put one on a
+ * filesystem and let the engine mirror it.
+ *
+ * Like openFromCloud(), no exec() and no nested event loop: see the comment there.
+ */
+void MainWindow::saveToCloud()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  LibraryTreeItem *pActiveItem = pModelWidget ? pModelWidget->getLibraryTreeItem() : 0;
+  if (!pActiveItem || pActiveItem->getLibraryType() != LibraryTreeItem::Modelica) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Open a Modelica class first; it is the active class that gets saved."));
+    return;
+  }
+  // Saving a class inside a package saves the whole package - that is what
+  // LibraryWidget::saveLibraryTreeItem() does with a non-top-level item - so the
+  // top-level class is what has to be redirected to the cloud folder. Redirecting
+  // the active child instead left the package saving to its old location while a
+  // stray file for the child appeared in the mount.
+  LibraryTreeItem *pLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pActiveItem);
+
+  CloudBrowserDialog *pBrowser = new CloudBrowserDialog(CloudBrowserDialog::SaveFolder, this);
+  pBrowser->setAttribute(Qt::WA_DeleteOnClose);
+  connect(pBrowser, &QDialog::accepted, this, [this, pBrowser, pLibraryTreeItem]() {
+    CloudAccount *pAccount = pBrowser->selectedAccount();
+    if (!pAccount || pBrowser->selectedFolderId().isEmpty()) {
+      return;
+    }
+    // Mount the folder the user picked. No folder is invented here: if they wanted
+    // a new one they made it in the dialog.
+    const CloudMount mount = CloudMountManager::instance()->addMount(pAccount->key(), pBrowser->selectedFolderId(),
+                                                                    pBrowser->selectedFolderName());
+    QDir().mkpath(mount.localRoot);
+
+    // The class keeps the layout it already has - a model stays one .mo file, a
+    // package saved as a directory stays a directory. Forcing a folder structure
+    // turned M.mo into M/package.mo, which is not what saving somewhere else means.
+    const QString className = pLibraryTreeItem->getName();
+    QString fileName;
+    if (pLibraryTreeItem->isSaveFolderStructure()) {
+      fileName = QStringLiteral("%1/%2/package.mo").arg(mount.localRoot, className);
+      QDir().mkpath(QStringLiteral("%1/%2").arg(mount.localRoot, className));
+    } else {
+      fileName = QStringLiteral("%1/%2.mo").arg(mount.localRoot, className);
+    }
+    // The file has to exist before the name will be honoured: isFilePathValid()
+    // tests QFileInfo::exists(), and a name pointing at nothing is treated as no
+    // name at all - whereupon the ordinary save path asks the user for a location
+    // and writes somewhere else entirely.
+    QDir().mkpath(QFileInfo(fileName).absolutePath());
+    // Truncate matters: the worker-VFS file engine only marks a file dirty - and
+    // so only creates it - when the open truncates. A plain WriteOnly open writes
+    // nothing, the file never appears, and isFilePathValid() stays false.
+    QFile placeholder(fileName);
+    if (placeholder.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      placeholder.close();
+    }
+    pLibraryTreeItem->setFileName(fileName);
+    pLibraryTreeItem->setIsSaved(false);
+    forgetChildFileNames(pLibraryTreeItem);
+    if (!mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Could not write %1 to the working copy.").arg(pLibraryTreeItem->getNameStructure()));
+      return;
+    }
+    // The empty file created above only exists to make the save path accept the
+    // name. If the save then wrote somewhere else it is still empty, and uploading
+    // it would put a file holding no class into the user's cloud storage - which
+    // is exactly what happened before the save path was redirected correctly.
+    if (QFileInfo(fileName).size() == 0) {
+      QFile::remove(fileName);
+      cloudLog(QStringLiteral("save left %1 empty; nothing uploaded").arg(fileName));
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("%1 was not written to the cloud folder; nothing was uploaded.")
+                                .arg(pLibraryTreeItem->getNameStructure()));
+      return;
+    }
+    syncMount(mount, pAccount, tr("Uploading %1...").arg(className));
+  });
+  pBrowser->open();
+}
+
+/*!
+ * \brief MainWindow::openMountContents
+ * Loads what a freshly synchronised mount holds.
+ *
+ * A mounted folder is not itself a package unless it has a package.mo. Handing the
+ * bare directory to openFile() only got the folder names into the Libraries
+ * Browser, not the classes inside them, so each entry is opened on its own terms:
+ * a subfolder with a package.mo is a package, a loose .mo file is a class.
+ */
+void MainWindow::openMountContents(const CloudMount &mount)
+{
+  const QString packageFile = mount.localRoot + QStringLiteral("/package.mo");
+  if (QFile::exists(packageFile)) {
+    mpLibraryWidget->openFile(packageFile, Helper::utf8, true);
+    return;
+  }
+  const QStringList names = cloudListDirectory(mount.localRoot);
+  bool openedAnything = false;
+  for (const QString &raw : names) {
+    const bool isFolder = raw.endsWith(QLatin1Char('/'));
+    const QString name = isFolder ? raw.left(raw.size() - 1) : raw;
+    if (name.isEmpty() || name.startsWith(QLatin1Char('.'))) {
+      continue;
+    }
+    const QString path = mount.localRoot + QLatin1Char('/') + name;
+    if (isFolder) {
+      const QString childPackage = path + QStringLiteral("/package.mo");
+      if (QFile::exists(childPackage)) {
+        mpLibraryWidget->openFile(childPackage, Helper::utf8, true);
+        openedAnything = true;
+      }
+    } else if (name.endsWith(QStringLiteral(".mo"), Qt::CaseInsensitive)) {
+      mpLibraryWidget->openFile(path, Helper::utf8, true);
+      openedAnything = true;
+    }
+  }
+  if (!openedAnything) {
+    MessagesWidget::instance()->addGUIMessage(
+        MessageItem(MessageItem::Modelica, tr("%1 holds no Modelica classes.").arg(mount.remoteName),
+                    Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::pushMountInBackground
+ * Sends what was just saved up to the cloud, a moment later.
+ *
+ * Deferred and coalesced: a run per written file would mean several full tree
+ * comparisons for one save.
+ */
+void MainWindow::pushMountInBackground(const QString &mountId)
+{
+  QTimer *pTimer = mAutoPushTimers.value(mountId, 0);
+  if (!pTimer) {
+    pTimer = new QTimer(this);
+    pTimer->setSingleShot(true);
+    pTimer->setInterval(3000);
+    connect(pTimer, &QTimer::timeout, this, [this, mountId, pTimer]() {
+      const CloudMount mount = CloudMountManager::instance()->mount(mountId);
+      if (!mount.isValid() || !mount.autoPush) {
+        return;
+      }
+      if (mSyncingMounts.contains(mountId)) {
+        // Wait for the run in progress rather than dropping this one: it may not
+        // have seen the edit that asked for this push.
+        pTimer->start();
+        return;
+      }
+      CloudAccount *pAccount = CloudAccountManager::instance()->account(mount.accountKey);
+      if (!pAccount || !pAccount->isSignedIn()) {
+        return;
+      }
+      // Cached before the push, so an edit that cannot be uploaded now - offline,
+      // or the token gone - still survives a reload.
+      CloudCache::save(mount);
+      syncMount(mount, pAccount, tr("Saving %1 to the cloud...").arg(mount.remoteName), std::function<void()>(), true);
+    });
+    mAutoPushTimers.insert(mountId, pTimer);
+  }
+  pTimer->start();
+}
+
+/*!
+ * \brief MainWindow::syncMount
+ * Runs one synchronisation of a mount, showing progress and reporting whatever
+ * the engine decides needs a person: conflicts, and deletions large enough to
+ * want confirming.
+ *
+ * A background run - an automatic push after an ordinary save - keeps out of the
+ * way: no progress dialog, and a failure is a message rather than a box. What
+ * needs an answer still asks for one, because a conflict left unanswered is work
+ * left unsaved.
+ */
+void MainWindow::syncMount(const CloudMount &mount, CloudAccount *pAccount, const QString &title,
+                           const std::function<void()> &onSuccess, bool background)
+{
+  if (mSyncingMounts.contains(mount.mountId)) {
+    return;
+  }
+  mSyncingMounts.insert(mount.mountId);
+
+  QPointer<QProgressDialog> pProgress;
+  if (!background) {
+    pProgress = new QProgressDialog(title, Helper::cancel, 0, 0, this);
+    pProgress->setAttribute(Qt::WA_DeleteOnClose);
+    pProgress->setWindowModality(Qt::WindowModal);
+    pProgress->setMinimumDuration(0);
+    pProgress->setValue(0);
+  } else {
+    getStatusBar()->showMessage(title);
+  }
+
+  CloudSyncEngine *pEngine = new CloudSyncEngine(mount, pAccount->provider(), this);
+  if (pProgress) {
+    connect(pProgress, &QProgressDialog::canceled, pEngine, &CloudSyncEngine::cancel);
+  }
+  connect(pEngine, &CloudSyncEngine::progress, this, [this, pProgress](int done, int total, const QString &what) {
+    if (!pProgress) {
+      if (!what.isEmpty()) {
+        getStatusBar()->showMessage(what);
+      }
+      return;
+    }
+    pProgress->setMaximum(total);
+    pProgress->setValue(done);
+    if (!what.isEmpty()) {
+      pProgress->setLabelText(what);
+    }
+  });
+  connect(pEngine, &CloudSyncEngine::skipped, this, [](const QStringList &descriptions) {
+    for (const QString &description : descriptions) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, description, Helper::scriptingKind,
+                                                            Helper::notificationLevel));
+    }
+  });
+  // Deletions are never carried out on the engine's own judgement; the user sees
+  // exactly what would go.
+  connect(pEngine, &CloudSyncEngine::deletionsNeedConfirmation, this,
+          [this, pEngine, pProgress](const QList<SyncAction> &deletions) {
+    if (pProgress) {
+      pProgress->hide();
+    }
+    QStringList names;
+    for (const SyncAction &action : deletions) {
+      names << action.relativePath;
+    }
+    // open(), not the blocking QMessageBox::question: a synchronisation is half
+    // done behind this, and stalling the main thread here is what wedges the
+    // WebAssembly build.
+    QMessageBox *pQuestion = new QMessageBox(QMessageBox::Question,
+                                             QString("%1 - %2").arg(Helper::applicationName, tr("Confirm Deletions")),
+                                             tr("This will move %n file(s) to the cloud service's trash:\n\n%1\n\n"
+                                                "Continue?", "", names.size())
+                                                 .arg(names.join(QLatin1Char('\n'))),
+                                             QMessageBox::Yes | QMessageBox::No, this);
+    pQuestion->setAttribute(Qt::WA_DeleteOnClose);
+    pQuestion->setDefaultButton(QMessageBox::No);
+    connect(pQuestion, &QMessageBox::finished, pEngine, [pEngine, pProgress, pQuestion](int) {
+      if (pProgress) {
+        pProgress->show();
+      }
+      pEngine->confirmDeletions(pQuestion->standardButton(pQuestion->clickedButton()) == QMessageBox::Yes);
+    });
+    pQuestion->open();
+  });
+  connect(pEngine, &CloudSyncEngine::conflictsDetected, this,
+          [this, pEngine, pProgress, mount](const QList<SyncAction> &conflicts) {
+    if (pProgress) {
+      pProgress->hide();
+    }
+    CloudConflictDialog *pDialog = new CloudConflictDialog(mount.remoteName, conflicts, this);
+    connect(pDialog, &QDialog::accepted, pEngine, [pEngine, pProgress, pDialog]() {
+      if (pProgress) {
+        pProgress->show();
+      }
+      pEngine->applyResolutions(pDialog->resolutions());
+    });
+    connect(pDialog, &QDialog::rejected, pEngine, &CloudSyncEngine::cancel);
+    pDialog->open();
+  });
+  connect(pEngine, &CloudSyncEngine::finished, this,
+          [this, pEngine, pProgress, mount, onSuccess, background](const CloudError &error) {
+    mSyncingMounts.remove(mount.mountId);
+    if (pProgress) {
+      pProgress->close();
+    }
+    pEngine->deleteLater();
+    // However the run ended, the manifest now describes the working copy, so the
+    // cache must come from the same state: a cache older than the manifest reads
+    // back as a local edit and uploads over the newer remote.
+    CloudCache::save(mount);
+    if (error.isError() && error.code != CloudError::Cancelled) {
+      const QString text = tr("Could not synchronise %1: %2").arg(mount.remoteName, error.message);
+      if (background) {
+        MessagesWidget::instance()->addGUIMessage(
+            MessageItem(MessageItem::Modelica, text, Helper::scriptingKind, Helper::errorLevel));
+      } else {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), text);
+      }
+      return;
+    }
+    if (error.code == CloudError::Cancelled) {
+      getStatusBar()->showMessage(tr("Synchronisation of %1 was cancelled").arg(mount.remoteName), 5000);
+      return;
+    }
+    getStatusBar()->showMessage(tr("%1 is up to date").arg(mount.remoteName), 5000);
+    if (onSuccess) {
+      onSuccess();
+    }
+  });
+
+  // On the web target the working copy is in memory and empty after a reload.
+  // Putting the cache back first turns a full re-download into a revalidation.
+  if (cloudListDirectory(mount.localRoot).isEmpty()) {
+    CloudCache::restore(mount, [pEngine](int restored) {
+      if (restored > 0) {
+        cloudLog(QStringLiteral("cache: restored %1 file(s)").arg(restored));
+      }
+      pEngine->start();
+    });
+    return;
+  }
+  pEngine->start();
 }

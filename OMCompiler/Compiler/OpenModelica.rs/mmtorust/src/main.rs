@@ -1,4 +1,5 @@
 use openmodelica_ast::parser::parse;
+mod overrides;
 use openmodelica_ast::parser::Grammar;
 use openmodelica_ast::Absyn;
 use metamodelica::nil;
@@ -37,7 +38,10 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool, mc_report_path: Op
     }
     println!("MM conversion: {} files, {} failures {:.2}s", results.len(), failures, t0.elapsed().as_secs_f64());
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -315,7 +319,10 @@ fn run_unused_functions(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -355,7 +362,10 @@ fn run_const_patterns(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -395,7 +405,10 @@ fn run_mutable_cycles(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -496,7 +509,31 @@ fn main() {
     }
 
     println!("OpenModelica: {} files, {} failures, {:.2}s", results.len(), failures, elapsed.as_secs_f64());
-    let parsed: Vec<Absyn::Program> = programs.iter().map(|p| p.lock().unwrap().clone()).collect();
+    let mut parsed: Vec<Absyn::Program> = programs.iter().map(|p| p.lock().unwrap().clone()).collect();
+
+    // Per-target declarations: `X.rust.mo` next to `X.mo` replaces the items
+    // the Rust port represents differently. Spliced here, before any analysis
+    // runs, so fallibility, recursion, traced types and the generated code all
+    // see the Rust view -- the C compiler only ever reads `X.mo`.
+    for ((path, ix), _) in files.iter().zip(0..) {
+        let ovr_path = match path.strip_suffix(".mo") {
+            Some(stem) => format!("{stem}.rust.mo"),
+            None => continue,
+        };
+        let code = match std::fs::read_to_string(&ovr_path) {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => panic!("could not read override {ovr_path:?}: {e}"),
+        };
+        let ovr = parse(&code, &ovr_path, &ovr_path, grammar, false, 0.0)
+            .unwrap_or_else(|e| panic!("could not parse override {ovr_path:?}: {e}"));
+        let applied = overrides::apply(&mut parsed[*ix], &ovr);
+        if applied.is_empty() {
+            panic!("{ovr_path} overrode nothing: every item must name one in {path}");
+        }
+        eprintln!("mmtorust: {ovr_path} overrides {}", applied.join(" "));
+    }
+    let parsed = parsed;
     match subcommand {
         Some("dep-analysis") => run_dep_analysis(parsed),
         Some("unused-functions") => run_unused_functions(parsed),

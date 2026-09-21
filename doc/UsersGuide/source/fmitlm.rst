@@ -400,10 +400,11 @@ If you already have an existing FMU unzip it into some directory
 Then cross compile the sources with a suitable toolchain file.
 
 .. code-block:: bash
+
   # Optional: Work inside interactive Docker container
   docker run --rm -it \
     -v $PWD:/fmu \
-    -v /home/andreas/workdir/OM/OpenModelica/build_cmake/install_cmake/include/omc/FMI2:/fmiInclude \
+    -v $OPENMODELICAHOME/include/omc/FMI2:/fmiInclude \
     -w/fmu \
     ghcr.io/openmodelica/crossbuild:v1.27.0 bash
 
@@ -419,6 +420,7 @@ Now the FMU should contain ``binaries/win64/BouncingBall.dll``.
 Compile additional binaries in the same way and when done zip the FMU by running
 
 .. code-block:: bash
+
   cmake --build build --parallel --target create_fmu
 
 Now there should be a FMU with ``win64`` binaries ``BouncingBall-fmu``.

@@ -1379,6 +1379,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
+    <%fmiAliasIndexTables(simCode, modelInfo, modelNamePrefixStr)%>
+
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
@@ -1465,7 +1467,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
-      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
+      <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>
     <%\n%>
     };
 
@@ -1735,6 +1738,59 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   }
   >>
 end functionInitializeDataStruc;
+
+template fmiAliasIndexTables(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
+ "The alias tables the FMI value references resolve through; see
+  OpenModelicaGeneratedFunctionCallbacks."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(__)) then
+  <<
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "Real", varInfo.numAlgAliasVars, vars.aliasVars)%>
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "Integer", varInfo.numIntAliasVars, vars.intAliasVars)%>
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "Boolean", varInfo.numBoolAliasVars, vars.boolAliasVars)%>
+  <%fmiAliasIndexTable(simCode, modelNamePrefixStr, "String", varInfo.numStringAliasVars, vars.stringAliasVars)%>
+  >>
+end fmiAliasIndexTables;
+
+/* `n` is the scalar element count and the list is of array variables, so a
+   non-scalarized alias array leaves the tail zero-initialized -- as the table
+   this replaces did. */
+template fmiAliasIndexTable(SimCode simCode, Text modelNamePrefixStr, String ty, Integer n, list<SimVar> aliasVars)
+::=
+  if boolAnd(SimCodeUtil.isFMUSimCode(simCode), intGt(n, 0)) then
+  <<
+  static const int <%symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes')%>[<%n%>] = {
+    <%aliasVars |> v as SIMVAR(__) => fmiAliasIndex(simCode, aliasvar) ; separator=", " %>
+  };<%\n%>
+  >>
+end fmiAliasIndexTable;
+
+template fmiAliasIndex(SimCode simCode, AliasVariable v)
+::=
+  match v
+  case NOALIAS(__) then error(sourceInfo(), "fmiAliasIndex expected an alias")
+  case ALIAS(__) then SimCodeUtil.lookupVR(varName,simCode)
+  /* -1 - vr, so that a negated alias of vr=0 is still negative */
+  case NEGATEDALIAS(__) then intSub(-1, SimCodeUtil.lookupVR(varName,simCode))
+end fmiAliasIndex;
+
+template fmiAliasIndexTableRefs(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+  <<
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "Real", varInfo.numAlgAliasVars)%>,
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "Integer", varInfo.numIntAliasVars)%>,
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "Boolean", varInfo.numBoolAliasVars)%>,
+  <%fmiAliasIndexTableRef(simCode, modelNamePrefixStr, "String", varInfo.numStringAliasVars)%>
+  >>
+end fmiAliasIndexTableRefs;
+
+template fmiAliasIndexTableRef(SimCode simCode, Text modelNamePrefixStr, String ty, Integer n)
+::=
+  if boolAnd(SimCodeUtil.isFMUSimCode(simCode), intGt(n, 0)) then symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes') else "NULL"
+end fmiAliasIndexTableRef;
 
 template functionSimProfDef(SimEqSystem eq, Integer value, Text &reverseProf)
   "Generates function in simulation file."
@@ -3195,14 +3251,15 @@ match system
                   >>
                 ;separator="\n")
             let endForPart = (iterators |> iterator => "}")
-            let indexShift = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
-                  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-                  let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                  '<%iter_%>-<%start_%>'
-                ;separator="+")
+            // A plain sum of each iterator's offset (old code) only gives a bijective
+            // res[] index for a single iterator; with 2+ nested iterators it collapses
+            // most (i1,i2,...) combinations onto the same slot and never writes the
+            // rest of res[], leaving that part of the residual vector uninitialized.
+            // Flatten properly, matching how array crefs are indexed elsewhere here.
+            let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
             let assignment = (if isArrayType(typeof(exp))
-              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
-              else '<%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;')
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+(<%indexShift%>));'
+              else '<%preExp%>res[<%res_index%>+(<%indexShift%>)] = <%expPart%>;')
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
@@ -3311,7 +3368,7 @@ template generateResizableEmptySparseData(String indexName, String systemType)
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
   <<
-  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
+  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
   {
     /* no sparsity pattern available */
     inSysData->sparsePattern = NULL;
@@ -3327,7 +3384,7 @@ match sparsity
   case EMPTY() then
     <<
 
-    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       inSysData->sparsePattern = NULL;
     }
@@ -3343,7 +3400,7 @@ match sparsity
     <<
 
     OMC_DISABLE_OPT
-    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
@@ -3531,7 +3588,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
 
   ;separator="\n")
   let sparsityInitCall = if useResizableSparsity
-    then 'initializeResizableSparsityPattern<%indexName%>(sysData, threadData);'
+    then 'initializeResizableSparsityPattern<%indexName%>(sysData, threadData, data);'
     else 'initializeSparsePattern<%indexName%>(sysData);'
   <<
 
@@ -5213,6 +5270,7 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text
 end zeroCrossingsTpl;
 
 
+
 template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
@@ -5232,7 +5290,18 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   let forTail = match iter
     case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
-  match relation
+  // A RELATION's optionExpisASUB (see NBEvents.mo's asubTuple) records the for-loop
+  // iterator a state-event condition was originally wrapped in, so CodegenCFunctions.tpl
+  // can offset storedRelations[] per iteration. That iterator is only a genuine, in-scope
+  // C variable here when THIS zero-crossing still has its own regenerated for-loop (iter
+  // = SOME, via forHead above, using the very same iterator). When SimCode has already
+  // fully unrolled this zero-crossing into an independent scalar occurrence (iter = NONE)
+  // -- its own rel.index is then already correct on its own -- the stored iterator cref
+  // has no corresponding loop variable to reference at all, and daeExp falls back to
+  // printing the cref's bare (often source-level, e.g. "i") name, which doesn't compile
+  // (see PNlib.Test2.mos and friends). Strip it in that case; rel.index alone matches the
+  // pre-existing (working) behavior for a scalar occurrence.
+  match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
@@ -5418,7 +5487,8 @@ template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> ite
   let forTail = match iter
     case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
-  match relation
+  // See zeroCrossingTpl above for why this strip is needed.
+  match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<
@@ -6107,24 +6177,49 @@ match row
         else
           match listReverse(crefSubs(sc))
           case WHOLEDIM() :: {WHOLEDIM()} then
-            // 2D array sc, both dims whole: must match the fill template which generates two nested loops.
+            // 2D array sc, both dims whole.
             match context
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
-                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                <<
-                {
-                  unsigned int _wo<%k%>;
-                  for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
-                    unsigned int _wr<%k%>;
-                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
-                      <%depsCodeReduced%>
+                if not listEmpty(equation_iterators) then
+                  // Both dims are ALREADY iterated by the outer equation_iterators
+                  // for-loop nest generated above (forIter/forTail) -- this is a
+                  // synthetic residual var (e.g. NBTearing's $RES_SIM_xxx) whose
+                  // WHOLEDIM dimensions mark "driven by the enclosing loop", not a
+                  // literal per-element subscript (that shape instead falls through to
+                  // the generic INDEX-subscript case below, via indexSubRecursive).
+                  // Do NOT unroll again internally with an extra loop keyed off only
+                  // sc's last dimension: that visits each row far more than once (and,
+                  // worse, computes a row index disconnected from the actual
+                  // per-iteration position), producing out-of-range rows and a
+                  // corrupted sparsity pattern (see the LSGreenH2Production.Plant
+                  // windTurbine NLS). flatIdx is sc's own flattened position from ALL
+                  // of its iterators, exactly like the single-WHOLEDIM case.
+                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                  <<
+                  {
+                    unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
+                    <%depsCodeReduced%>
+                  }
+                  >>
+                else
+                  // no enclosing for-equation iterators (e.g. a genuine dense array
+                  // equation): must match the fill template which generates two
+                  // nested loops.
+                  let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  <<
+                  {
+                    unsigned int _wo<%k%>;
+                    for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                      unsigned int _wr<%k%>;
+                      for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
+                        <%depsCodeReduced%>
+                      }
                     }
                   }
-                }
-                >>
+                  >>
               else depsCodeReduced
             else depsCodeReduced
           case WHOLEDIM() :: _ then
@@ -6132,15 +6227,26 @@ match row
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
-                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                <<
-                {
-                  unsigned int _wr<%k%>;
-                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                if not listEmpty(equation_iterators) then
+                  // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard
+                  // is needed and what flatIdx computes.
+                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                  <<
+                  {
+                    unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
                     <%depsCode%>
                   }
-                }
-                >>
+                  >>
+                else
+                  let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  <<
+                  {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                      <%depsCode%>
+                    }
+                  }
+                  >>
               else depsCode
             else depsCode
           else depsCodeReduced
@@ -6472,44 +6578,78 @@ match row
       else
         match listReverse(crefSubs(sc))
         case WHOLEDIM() :: {WHOLEDIM()} then
-          // 2D array sc, both dims whole (e.g. module[:].T[:])
+          // 2D array sc, both dims whole (e.g. module[:].T[:]).
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
-            case SIMVAR() then
-              let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-              let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-              <<
-              {
-                unsigned int _wo<%k%>;
-                for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
-                  unsigned int _wr<%k%>;
-                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
-                    unsigned int row_<%k%> = local_row_base + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
-                    <%depsWholeReduced%>
-                  }
+            case v as SIMVAR() then
+              if not listEmpty(iters) then
+                // Both dims are ALREADY iterated by the outer equation_iterators
+                // for-loop nest (see the matching guard in resizableSparsityRowCount
+                // for the full rationale: this is a synthetic residual var, e.g.
+                // NBTearing's $RES_SIM_xxx, whose WHOLEDIM dims mark "driven by the
+                // enclosing loop" -- a literal per-element subscript instead falls
+                // through to the generic INDEX-subscript case below, via
+                // indexSubRecursive). A `local_row_base` counter bumped by one
+                // dimension's size on every outer-loop iteration overruns the true
+                // row count and corrupts the sparsity pattern (see the
+                // LSGreenH2Production.Plant windTurbine NLS); compute sc's own
+                // flattened row directly from its iterators instead, exactly like
+                // the single-WHOLEDIM-with-iterators case.
+                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+                <<
+                {
+                  unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
+                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  <%depsWholeReduced%>
                 }
-                local_row_base += (unsigned int)(<%szOuter%>) * (unsigned int)(<%szInner%>);
-              }
-              >>
+                >>
+              else
+                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wo<%k%>;
+                  for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
+                      unsigned int row_<%k%> = local_row_base + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
+                      <%depsWholeReduced%>
+                    }
+                  }
+                  local_row_base += (unsigned int)(<%szOuter%>) * (unsigned int)(<%szInner%>);
+                }
+                >>
             else ''
           else ''
         case WHOLEDIM() :: outer_rev_subs then
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
-            case SIMVAR() then
-              let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-              <<
-              {
-                unsigned int _wr<%k%>;
-                for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
-                  unsigned int row_<%k%> = local_row_base + _wr<%k%>;
+            case v as SIMVAR() then
+              if not listEmpty(iters) then
+                // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard is
+                // needed and what flatIdx computes.
+                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+                <<
+                {
+                  unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
+                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
-                local_row_base += (unsigned int)(<%sz%>);
-              }
-              >>
+                >>
+              else
+                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wr<%k%>;
+                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                    unsigned int row_<%k%> = local_row_base + _wr<%k%>;
+                    <%depsWholeDep%>
+                  }
+                  local_row_base += (unsigned int)(<%sz%>);
+                }
+                >>
             else ''
           else ''
         case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
@@ -8182,64 +8322,53 @@ template simulationMakefile(String target, SimCode simCode, list<String> extraFi
 match getGeneralTarget(target)
 case "msvc" then
 match simCode
-case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DELAYED_EXPRESSIONS(maxDelayedIndex=maxDelayedIndex), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
-  let libsPos1 = if not dirExtra then libsStr //else ""
-  let libsPos2 = if dirExtra then libsStr // else ""
-  let ParModelicaExpLibs = if acceptParModelicaGrammar() then 'ParModelicaExpl.lib OpenCL.lib' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    match s.method case "dassljac" then "-D_OMC_JACOBIAN "
+    match s.method case "dassljac" then "/D_OMC_JACOBIAN "
   <<
   # Makefile generated by OpenModelica
+  # Platform: <%makefileParams.platform%>
+  #
+  # For nmake. share/omc/scripts/Compile.bat sets the toolchain up and can
+  # override CC/CXX (OMC_TOOLCHAIN=clang-cl).
 
-  MODELICAUSERCFLAGS=
   CC=cl
   CXX=cl
   EXEEXT=.exe
   DLLEXT=.dll
+  OMHOME=<%makefileParams.omhome%>
+  OMLIB=$(OMHOME)/lib/<%Config.targetTriple()%>/omc
 
-  # /Od - Optimization disabled
-  # /EHa enable C++ EH (w/ SEH exceptions)
-  # /fp:except - consider floating-point exceptions when generating code
-  # /arch:SSE2 - enable use of instructions available with SSE2 enabled CPUs
-  # /I - Include Directories
-  # /DNOMINMAX - Define NOMINMAX (does what it says)
-  # /TP - Use C++ Compiler
-  CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%>
-  # /ZI enable Edit and Continue debug info
-  CDFLAGS=/ZI
-
-  # /MD - link with MSVCRT.LIB
-  # /link - [linker options and libraries]
-  # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD /link /NODEFAULTLIB:libcmt /STACK:0x2000000 /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/release/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib  omcgc.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
-
-  # /MDd link with MSVCRTD.LIB debug lib
-  # lib names should not be appended with a d just switch to lib/omc/msvc/debug
-
+  # /MD the OpenModelica libraries link the DLL C runtime; /std:c17 the runtime
+  # headers use C99/C11; /wd4068 the sources carry #pragma GCC; IMPORT_INTO the
+  # runtime's global data arrives as dllimport.
+  OMC_CFLAGS_OPTIMIZATION=/O2
+  CFLAGS=/nologo /MD /std:c17 $(OMC_CFLAGS_OPTIMIZATION) /fp:except /wd4068 /DOM_HAVE_PTHREADS /DIMPORT_INTO <%extraCflags%><%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
+  CPPFLAGS=<%makefileParams.includes ; separator=" "%> /I"$(OMHOME)/include/omc/c" /I"$(OMHOME)/include/omc" /I. /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " /DOMC_GENERATE_RELOCATABLE_CODE"%> /DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> /DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> /DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> /DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> /DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> /DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%><% if Config.simCodeRustRuntime() then " /DOMC_RUST_SIMULATION_RUNTIME"%>
+  RUNTIME_LIBS=<%makefileParams.runtimelibs%>
+  LDFLAGS=/link /STACK:16777216 /LIBPATH:"$(OMLIB)" <%dirExtra%> <%libsStr%> $(RUNTIME_LIBS)
 
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=$(FILEPREFIX).c
-  MAINOBJ=$(FILEPREFIX).obj
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => extraFile ;separator=" "%>
+  GENERATEDFILES=$(MAINFILE) $(FILEPREFIX).makefile $(FILEPREFIX)_literals.h $(FILEPREFIX)_functions.h $(CFILES)
 
-  OFILES=$(CFILES:.c=.obj)
-  GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
+  omc_main_target:
+  <%\t%>$(CC) /MP $(CFLAGS) $(CPPFLAGS) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(CFILES) $(LDFLAGS)
 
-  .PHONY: $(FILEPREFIX)$(EXEEXT)
-
-  # This is to make sure that <%fileNamePrefix%>_*.c are always compiled.
-  .PHONY: $(CFILES)
-
-  $(FILEPREFIX)$(EXEEXT): $(MAINFILE) $(FILEPREFIX)_functions.h $(CFILES)
-  <%\t%>$(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(CFILES) $(CFLAGS) $(LDFLAGS)
+  omc_dll_target:
+  <%\t%>$(CC) /MP /LD /DOMC_DLL_MAIN_DEFINE $(CFLAGS) $(CPPFLAGS) /Fe$(FILEPREFIX)$(DLLEXT) $(MAINFILE) $(CFILES) $(LDFLAGS)
 
   clean:
-  <%\t%>rm -f *.obj *.lib *.exp *.c *.h *.xml *.libs *.log *.makefile *.pdb *.idb *.exe
+  <%\t%>@del /q *.obj $(FILEPREFIX).pdb $(FILEPREFIX).ilk 2>NUL
+
+  bundle:
+  <%\t%>@tar -cvf $(FILEPREFIX)_Files.tar $(GENERATEDFILES)
   >>
 end match
 case "gcc" then
@@ -8271,14 +8400,14 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   OMC_CFLAGS_OPTIMIZATION=-Os
   DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
-  <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc/pre.js<%\n%>'
+  <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%><% if Config.simCodeRustRuntime() then " -DOMC_RUST_SIMULATION_RUNTIME"%>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
   OMC_LDFLAGS_LINK_TYPE=dynamic
   RUNTIME_LIBS=<%makefileParams.runtimelibs%>
   LDFLAGS=<%
-  if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
-  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" <%linkBinDirWindows%> -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS) >>
+  if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
+  else <<-L"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" <%linkBinDirWindows%> -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS) >>
   %>
   DIREXTRA=<%stringReplace(dirExtra,"#","\\#") /* make strips everything after # */%>
   MAINFILE=<%fileNamePrefix%>.c

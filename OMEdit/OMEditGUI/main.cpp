@@ -43,6 +43,8 @@
  */
 
 #include "OMEditApplication.h"
+#include "Util/PersistentStorage.h"
+#include "Cloud/CloudTypes.h"
 #ifndef GC_THREADS
 #define GC_THREADS
 #endif
@@ -240,18 +242,25 @@ int main(int argc, char *argv[])
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
-#ifdef Q_OS_WIN
-  // Set this before creating QApplication. Avoids web engine switch to Direct3DSurface. See issue #15822.
-  qputenv("QSG_RHI_BACKEND", "opengl");
-#endif // #ifdef Q_OS_WIN
 #ifdef Q_OS_LINUX
   qputenv("EGL_LOG_LEVEL", "fatal");
 #endif // #ifdef Q_OS_LINUX
-  // Qt WebEngine (DocumentationWidget) needs shared OpenGL contexts; must be set
-  // before the QApplication. Without it WebEngine logs "Using Shared GL: no" and
-  // crashes during GL init on Windows.
-  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#if defined(__EMSCRIPTEN__)
+  // Before anything can queue a native event: works around a re-entrancy bug in
+  // Qt's event replay that hangs startup at random. See OMCProxy.cpp.
+  extern void omcInstallPendingEventsGuard();
+  omcInstallPendingEventsGuard();
+#endif
+  // Bring the persisted tree back before anything reads QSettings. On the web
+  // target that is the IndexedDB mirror; natively it only makes sure the settings
+  // directory exists. Failure just means this session starts with no history.
+  PersistentStorage::restore();
   OMEditApplication a(argc, argv, threadData);
+#if defined(__EMSCRIPTEN__)
+  // Needs the event dispatcher, so it cannot go with the guard above.
+  extern void omcInstallPendingEventsShiftGuard();
+  omcInstallPendingEventsShiftGuard();
+#endif
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
 // moved the setting of the handler *after* OMEditApplication application definition
@@ -277,6 +286,7 @@ int main(int argc, char *argv[])
   extern bool g_omcMainLoopRunning;
   g_omcMainLoopRunning = true;
 #endif
+  PersistentStorage::startAutoSnapshot();
   return a.exec();
 
   MMC_CATCH_TOP(return execution_failed());

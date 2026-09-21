@@ -41,11 +41,23 @@ endif()
 
 omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack." ON)
 
-omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
+# Off when cross-compiling: the runtime libraries build against Boost, so a cross
+# build has to fetch and build it (OM_FETCH_BOOST). Generated Cpp code needs no
+# Boost headers, so nothing has to ship them.
+if(CMAKE_CROSSCOMPILING)
+  set(_om_cpp_runtime_default OFF)
+else()
+  set(_om_cpp_runtime_default ON)
+endif()
+omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ${_om_cpp_runtime_default})
 
-# Its own switch because it is the last thing in the C runtime tree needing Boost
-# and oneTBB, which a cross build has no reason to acquire.
+# Its own switch because it is the last thing in the C runtime tree needing
+# oneTBB, which a cross build has no reason to acquire.
 omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica (--parmodauto) runtime." ON)
+
+# Boost for the two options above, so it is included here rather than at the top
+# level: it reads them.
+include(${CMAKE_SOURCE_DIR}/cmake/OMCBoost.cmake)
 
 # OFF builds only the simulation runtime: what cross-compiling the target side
 # wants, since the compiler runs on -- and is built for -- the build host. Also
@@ -103,6 +115,14 @@ endif()
 # may hold the autotools build's copy); source dir provides omc_config.h itself.
 target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
+# omc_config.h quote-includes revision.h on the MinGW/MSVC branch, so everything
+# linking omc::config needs it — including the simulation runtime, which is built
+# in Rust mode too. Generated here rather than in Compiler/runtime/CMakeLists.txt,
+# which Compiler/CMakeLists.txt's Rust early return() skips. SOURCE_REVISION comes
+# from cmake/omc_git_revision.cmake. Written in-source next to omc_config.h, where
+# the quoted include finds it ahead of any -I.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
+
 
 ## Subdirectories ##########################################################################################
 # We always link a Fortran-ABI BLAS, but SuiteSparse guesses *no* underscore
@@ -110,6 +130,35 @@ target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE
 # BLAS exports `dgemm_`. Pinned, not left to whichever platform configured last:
 # SuiteSparse writes SuiteSparse_config.h into its shared source tree.
 set(SUITESPARSE_C_TO_FORTRAN "(name,NAME) name##_" CACHE STRING "C to Fortran name mangling" FORCE)
+
+# The FMI platform tuples, which name the binaries/<platform> subdirectory omc
+# looks in when importing an FMU. FMIL's fmiplatform.cmake takes the OS from the
+# *host* and the architecture from the target, so a cross build gets a tuple that
+# describes neither (`x86_64-linux` in a darwin build). Seeded here from the
+# target alone; a -DFMILIB_FMI<n>_PLATFORM= on the command line still wins, since
+# these are not FORCEd and it reaches the cache first.
+if(WIN32)
+  set(_fmi12_os "win")
+else()
+  string(TOLOWER "${CMAKE_SYSTEM_NAME}" _fmi12_os)
+endif()
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" _fmi3_os)
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  set(_fmi12_bits "32")
+else()
+  set(_fmi12_bits "64")
+endif()
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _fmi3_arch)
+if(_fmi3_arch MATCHES "^(arm64|aarch64)$")
+  set(_fmi3_arch "aarch64")
+elseif(_fmi3_arch MATCHES "^(arm32|aarch32)$")
+  set(_fmi3_arch "aarch32")
+elseif(_fmi3_arch MATCHES "^(amd64|ia64|em64t|x86_64)$")
+  set(_fmi3_arch "x86_64")
+endif()
+set(FMILIB_FMI1_PLATFORM "${_fmi12_os}${_fmi12_bits}" CACHE STRING "FMI 1.0 platform tuple")
+set(FMILIB_FMI2_PLATFORM "${_fmi12_os}${_fmi12_bits}" CACHE STRING "FMI 2.0 platform tuple")
+set(FMILIB_FMI3_PLATFORM "${_fmi3_arch}-${_fmi3_os}" CACHE STRING "FMI 3.0 platform tuple")
 
 # The C/C++ 3rd-party libraries (fmilib, libzmq, lapack, …) are linked only by the
 # native omc artifacts and the simulation runtime. The wasm/web bundle uses none

@@ -220,7 +220,7 @@ pub(super) fn drop_redundant_initialize(lib: &[u8]) -> Vec<u8> {
 }
 
 /// The `external` functions (import module `ext`) the model calls.
-fn external_imports(model_wasm: &[u8]) -> Vec<String> {
+pub(super) fn external_imports(model_wasm: &[u8]) -> Vec<String> {
     use wasmparser::Imports;
     let mut out = Vec::new();
     for payload in wasmparser::Parser::new(0).parse_all(model_wasm).flatten() {
@@ -249,23 +249,20 @@ pub(super) fn first_external_import(model_wasm: &[u8]) -> Option<String> {
     external_imports(model_wasm).into_iter().next()
 }
 
-/// Whether the FMU has to carry [`LAPACK_DYLINK`]: the model calls a routine only
-/// it defines. A model whose own `Library` resolved to a `liblapack.wasm` brings
-/// its own, and then that one is linked instead of this 1.3 MB.
+/// Whether the FMU has to carry LAPACK: the model calls a routine only it defines.
+/// A model whose own `Library` resolved to a `liblapack.wasm` brings its own, and
+/// then that one is linked instead.
 pub(super) fn needs_lapack(model_wasm: &[u8], ext_libs: &[ExtLibrary]) -> bool {
-    if LAPACK_DYLINK.is_empty() {
-        return false;
-    }
     let mut wanted: HashSet<String> = external_imports(model_wasm).into_iter().collect();
     if wanted.is_empty() {
         return false;
     }
-    for bytes in ext_libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
+    for bytes in ext_libs.iter().map(|l| &l.bytes[..]) {
         for name in wasm_exports(bytes) {
             wanted.remove(name);
         }
     }
-    wasm_exports(LAPACK_DYLINK).any(|name| wanted.contains(name))
+    openmodelica_wasm_jit::dylink::libraries_for(wanted).contains(&"liblapack.wasm")
 }
 
 /// The names a wasm module exports.

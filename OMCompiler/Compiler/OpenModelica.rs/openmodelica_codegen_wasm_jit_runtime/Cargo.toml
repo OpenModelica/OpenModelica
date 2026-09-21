@@ -22,12 +22,13 @@ crate-type = ["cdylib", "rlib"]
 # for the no_std JIT and web interactive runtimes; off for the native host-driven
 # runtime, so daskr/sim_meta are not linked there. The FMI3 adapter disables it.
 default = ["session", "host_log"]
-session = ["dep:daskr"]
+session = ["dep:daskr", "openmodelica_sim_meta/result-files"]
 # Route `-lv` log lines out through `env.rt_host_log`. Every runtime a wasm host
 # instantiates has it; the FMI3 adapter has no `env` host, and installs its own sink.
 host_log = []
 # Standalone-export driver (src/standalone.rs, `_start` + model-importing), wasip1 only.
-standalone = ["dep:daskr", "dep:openmodelica_plt_writer", "inwasm_solve"]
+standalone = ["dep:daskr", "dep:openmodelica_plt_writer", "inwasm_solve",
+              "openmodelica_sim_meta/result-files"]
 # In-wasm sparse solve (rsparse). Off for the native interactive runtime, which
 # delegates to the host (`host_lin_solve`) instead of linking rsparse.
 inwasm_solve = ["dep:rsparse"]
@@ -50,7 +51,9 @@ primme = ["openmodelica_lapack/fortran-abi", "openmodelica_nls/primme"]
 [dependencies]
 # The shared `-lv` stream table + `omc_error.c` message layout the NLS solver logs
 # through. `no_std` here; the wasi build below adds `std` back.
-openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false }
+# `mat-writer`: src/model_ctx.rs projects `MetaKind` onto the `.mat` writer it
+# serialises a run's rows with.
+openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false, features = ["mat-writer"] }
 # The per-system statistics, the flag-derived solver selections and the
 # diagnostic counters.
 openmodelica_solvers = { path = "../../../SimulationRuntime/rust/openmodelica_solvers", default-features = false }
@@ -84,7 +87,7 @@ daskr = { path = "../../../SimulationRuntime/rust/daskr", default-features = fal
 # decodes the model metadata, runs DASSL (daskr) / Euler, and serialises the
 # `.mat`. wasip1 has std, so these keep their default (`std`) features.
 [target.'cfg(target_os = "wasi")'.dependencies]
-openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", features = ["std"] }
+openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", features = ["std", "mat-writer"] }
 openmodelica_plt_writer = { path = "../../../SimulationRuntime/rust/openmodelica_plt_writer", optional = true }
 daskr = { path = "../../../SimulationRuntime/rust/daskr", optional = true }
 # Sparse direct solver (CSparse port, AMD fill-reducing ordering) for torn linear

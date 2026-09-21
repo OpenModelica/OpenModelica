@@ -150,6 +150,13 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
         // entry on wasm).
         #[cfg(not(target_arch = "wasm32"))]
         {
+            // Zip files need not contain entries for the directories.
+            if let Some(parent) = std::path::Path::new(&out_path).parent() {
+                if std::fs::create_dir_all(parent).is_err() {
+                    add_error("Failed to open file for writing %s", &[&out_path]);
+                    return Err(());
+                }
+            }
             let mut fout = match std::fs::File::create(&out_path) {
                 Ok(f) => f,
                 Err(_) => {
@@ -252,6 +259,44 @@ mod tests {
         assert!(ok);
         assert!(dest_all.join("Modelica/package.mo").exists());
         assert!(dest_all.join("README.md").exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A zip with no directory entries at all, as the SDF-Modelica releases
+    /// are built: every directory has to come from the file names.
+    #[test]
+    fn extracts_zip_without_directory_entries() {
+        let dir = std::env::temp_dir().join(format!("unzip_rs_nodirs_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let zip_path = dir.join("a.zip");
+        {
+            let f = std::fs::File::create(&zip_path).unwrap();
+            let mut w = zip::ZipWriter::new(f);
+            let opts: zip::write::SimpleFileOptions = Default::default();
+            w.start_file("SDF/Examples/InterpolationMethods.mo", opts).unwrap();
+            w.write_all(b"model InterpolationMethods end InterpolationMethods;").unwrap();
+            w.start_file("SDF/package.mo", opts).unwrap();
+            w.write_all(b"package SDF end SDF;").unwrap();
+            w.start_file("LICENSE.txt", opts).unwrap();
+            w.write_all(b"license").unwrap();
+            w.finish().unwrap();
+        }
+        let dest = dir.join("SDF 0.4.5");
+        std::fs::create_dir_all(&dest).unwrap();
+        let ok = unzipPath(
+            ArcStr::from(zip_path.display().to_string()),
+            ArcStr::from("SDF"),
+            ArcStr::from(dest.display().to_string()),
+        );
+        assert!(ok);
+        assert!(dest.join("package.mo").exists());
+        assert_eq!(
+            std::fs::read_to_string(dest.join("Examples/InterpolationMethods.mo")).unwrap(),
+            "model InterpolationMethods end InterpolationMethods;"
+        );
+        assert!(!dest.join("LICENSE.txt").exists(), "filtered path must be skipped");
 
         let _ = std::fs::remove_dir_all(&dir);
     }

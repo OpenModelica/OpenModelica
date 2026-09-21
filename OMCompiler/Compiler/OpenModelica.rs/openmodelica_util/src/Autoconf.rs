@@ -63,6 +63,12 @@ pub const os: &str = if cfg!(windows) {
 
 pub const is64Bit: bool = cfg!(target_pointer_width = "64");
 
+/// Whether omc itself was built as a wasm module (the browser build). It has no
+/// dlopen and no native toolchain: a shared library is a wasm side module, and
+/// the only simulation target is `wasm-jit`. Mirrored in `Autoconf.mo.in` as
+/// `dllExt == ".wasm"`, which no configure run produces.
+pub const isWasm: bool = cfg!(target_arch = "wasm32");
+
 pub const isWindows: bool = cfg!(windows);
 
 pub const platform: &str = if isWindows && is64Bit {
@@ -82,7 +88,9 @@ pub const cmake: &str = "cmake";
 pub const exeExt: &str = if isWindows { ".exe" } else { "" };
 
 /// `@SHREXT@`.
-pub const dllExt: &str = if isWindows {
+pub const dllExt: &str = if isWasm {
+    ".wasm"
+} else if isWindows {
     ".dll"
 } else if cfg!(target_os = "macos") {
     ".dylib"
@@ -124,6 +132,12 @@ const win_ldflags_basic: &str = const_str::concat!(
 
 const win_ldflags_zip: &str = "-lz -lsz ";
 
+// x86_64-pc-windows-msvc: link.exe takes library file names. Mirrors the MSVC
+// branch of runtime/rt_ldflags_generated_code.cmake, which overrides these
+// through OMC_RT_LDFLAGS_* whenever the C runtime was built alongside.
+const msvc_is_target: bool = cfg!(all(windows, target_env = "msvc"));
+const msvc_ldflags_basic: &str = "omcgc.lib libopenblas.lib pthreadVC3.lib";
+
 const win_ldflags_runtime_fmu: &str = const_str::concat!(
     win_linkType,
     "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm ",
@@ -137,7 +151,9 @@ const win_ldflags_runtime_fmu: &str = const_str::concat!(
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        const_str::concat!("OpenModelicaRuntimeC.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
         const_str::concat!(" -lOpenModelicaRuntimeC", win_ldflags_basic)
     } else if cfg!(target_os = "macos") {
         " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
@@ -150,7 +166,9 @@ pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CO
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        const_str::concat!("SimulationRuntimeC.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
         // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
         // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
         // matching note in Autoconf.mo.omdev.mingw).
@@ -170,7 +188,9 @@ pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        const_str::concat!("SimulationRuntimeRust.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
         // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
         // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
         // matching note in Autoconf.mo.omdev.mingw).
@@ -190,7 +210,9 @@ pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GEN
 /// the fallback matches the C runtime build per platform).
 pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        "libopenblas.lib pthreadVC3.lib"
+    } else if cfg!(windows) {
         win_ldflags_runtime_fmu
     } else if cfg!(target_os = "macos") {
         " -llapack -lblas -lm"
@@ -203,7 +225,9 @@ pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
 /// OMC_RT_LDFLAGS_*; the fallback matches the C runtime build per platform).
 pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC") {
     Some(s) => s,
-    None => if cfg!(windows) {
+    None => if msvc_is_target {
+        "SimulationRuntimeFMI.lib libopenblas.lib pthreadVC3.lib"
+    } else if cfg!(windows) {
         const_str::concat!(" -lSimulationRuntimeFMI ", win_ldflags_runtime_fmu)
     } else if cfg!(target_os = "macos") {
         " -lSimulationRuntimeFMI -llapack -lblas -lm"
@@ -248,7 +272,9 @@ pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> =
 /// `$host_cpu` for the compilation target. Extend the chain when porting to
 /// a new architecture — an explicit "unknown" keeps path construction
 /// greppable rather than silently wrong.
-pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
+pub(crate) const target_arch_str: &str = if cfg!(target_arch = "wasm32") {
+    "wasm32"
+} else if cfg!(target_arch = "x86_64") {
     "x86_64"
 } else if cfg!(target_arch = "aarch64") {
     "aarch64"
@@ -262,21 +288,25 @@ pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
     "unknown"
 };
 
-/// `-$host_os` for the compilation target (Unix only; Windows uses "").
-const os_triple_suffix: &str = if cfg!(target_os = "macos") {
-    "-apple-darwin"
+/// `-$host_os` for the compilation target.
+const os_triple_suffix: &str = if isWasm {
+    "-wasip1"
+} else if cfg!(all(windows, target_env = "gnu")) {
+    "-windows-gnu"
+} else if cfg!(windows) {
+    "-windows-msvc"
 } else if cfg!(all(target_os = "linux", target_env = "musl")) {
     "-linux-musl"
 } else {
     "-linux-gnu"
 };
 
-/// `@host_short@` = `$host_cpu-$host_os`: the multiarch-style directory
-/// component under `lib/` where the omc runtime libraries are installed
-/// (e.g. `/usr/lib/x86_64-linux-gnu/omc`). The OMDev Windows file uses the
-/// empty string (no per-triple subdirectory on Windows installs).
-pub const triple: &str = if cfg!(windows) {
-    ""
+/// `@host_short@`: the directory under `lib/` holding what omc installs for one
+/// target, e.g. `/usr/lib/x86_64-linux-gnu/omc`. Must match `OM_LIBRARY_ARCH` in
+/// the top-level CMakeLists.txt. macOS is `universal` rather than the CPU: the
+/// shipped tree is lipo'd from both architectures into one shelf.
+pub const triple: &str = if cfg!(target_vendor = "apple") {
+    "universal-apple-darwin"
 } else {
     const_str::concat!(target_arch_str, os_triple_suffix)
 };

@@ -113,7 +113,7 @@ private:
   QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QCheckBox *mpLaunchAnimationCheckBox;
 #endif
   // Interactive Simulation Tab

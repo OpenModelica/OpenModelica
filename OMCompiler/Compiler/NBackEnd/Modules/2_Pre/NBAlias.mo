@@ -1121,13 +1121,22 @@ protected
     if count_fixed > 1 then
       fixed_start_lst := UnorderedMap.valueList(fixed_start_map);
       if not List.allEqual(fixed_start_lst, Expression.isEqual) then
-        if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values!\n" + AliasSet.toString(set)
-                           + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
-          fail();
+        // isEqual is syntactic: `true` vs. a parameter cref bound to `true` only looks different.
+        // Fail only for a provable conflict (all literals), otherwise warn and pick one.
+        if List.all(fixed_start_lst, Expression.isLiteral) then
+          if Flags.isSet(Flags.DUMP_REPL) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values!\n" + AliasSet.toString(set)
+                             + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
+            fail();
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values! Use -d=dumprepl for more information.\n"});
+            fail();
+          end if;
+        elseif Flags.isSet(Flags.DUMP_REPL) then
+          Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed with start values that could not be proven equal; picking one arbitrarily.\n"
+                                  + AliasSet.toString(set) + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values! Use -d=dumprepl for more information.\n"});
-          fail();
+          Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed with start values that could not be proven equal; picking one arbitrarily. Use -d=dumprepl for more information.\n");
         end if;
       elseif List.allEqual(fixed_start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then

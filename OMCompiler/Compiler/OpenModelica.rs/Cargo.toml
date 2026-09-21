@@ -25,25 +25,25 @@ codegen-backend = "llvm"
 
 [workspace]
 resolver = "3"
-members = ["mmtorust", "openmodelica", "openmodelica_util", "openmodelica_revision", "metamodelica", "metamodelica_derive", "openmodelica_frontend", "openmodelica_frontend_base", "openmodelica_backend", "openmodelica_backend_tools", "openmodelica_backend_types", "openmodelica_simcode_types", "openmodelica_backend_util", "openmodelica_nbackend", "openmodelica_susan", "openmodelica_tpl", "openmodelica_codegen_graphml", "openmodelica_omgraphics", "openmodelica_nf_frontend", "openmodelica_util_datatypes_basic", "openmodelica_ast", "openmodelica_error", "openmodelica_frontend_types", "openmodelica_frontend_dump", "openmodelica_ast_collections", "openmodelica_dump_extra", "openmodelica_frontend_inst", "openmodelica_script_util", "openmodelica_program_util", "openmodelica_simcode_util", "openmodelica_codegen_cfunctions", "openmodelica_codegen_c", "openmodelica_codegen_fmu", "openmodelica_codegen_fmu_c", "openmodelica_codegen_fmu_omsi", "openmodelica_codegen_xml", "openmodelica_codegen", "openmodelica_codegen_cpp_common", "openmodelica_codegen_cpp_omsi", "openmodelica_codegen_cpp_ext", "openmodelica_codegen_cpp_omsi_ext", "openmodelica_codegen_cpp", "openmodelica_codegen_wasm_jit", "openmodelica_wasm_jit", "openmodelica_backend_main", "openmodelica_scripting_qt", "openmodelica_modelica_utilities", "libopenmodelica_compiler", "openmodelica_wasi", "openmodelica_wasi_libc", "openmodelica_animation", "openmodelica_animation_wasm", "openmodelica_result_web", "openmodelica_scripting_api_gen", "omshell_core", "omshell_omc", "omshell_wgpu", "omshell_egui", "omshell_dioxus", "openmodelica_fmi", "openmodelica_fmi_driver", "openmodelica_ext_native_marshal", "openmodelica_ext_native", "../../SimulationRuntime/rust/daskr", "../../SimulationRuntime/rust/minpack", "../../SimulationRuntime/rust/openmodelica_mat_reader", "../../SimulationRuntime/rust/openmodelica_mat_writer", "../../SimulationRuntime/rust/openmodelica_arrow_writer", "../../SimulationRuntime/rust/openmodelica_hdf5_result", "../../SimulationRuntime/rust/openmodelica_nls", "../../SimulationRuntime/rust/openmodelica_plt_writer", "../../SimulationRuntime/rust/openmodelica_regex", "../../SimulationRuntime/rust/openmodelica_result_capi", "../../SimulationRuntime/rust/openmodelica_result_cli", "../../SimulationRuntime/rust/openmodelica_result_files", "../../SimulationRuntime/rust/openmodelica_sim_meta", "../../SimulationRuntime/rust/openmodelica_simulation_runtime", "../../SimulationRuntime/rust/openmodelica_solvers"]
+members = ["mmtorust", "openmodelica", "openmodelica_util", "openmodelica_revision", "metamodelica", "metamodelica_derive", "openmodelica_frontend", "openmodelica_frontend_base", "openmodelica_backend", "openmodelica_backend_tools", "openmodelica_backend_types", "openmodelica_simcode_types", "openmodelica_backend_util", "openmodelica_nbackend", "openmodelica_susan", "openmodelica_tpl", "openmodelica_codegen_graphml", "openmodelica_omgraphics", "openmodelica_loader", "openmodelica_gendoc", "openmodelica_nf_frontend", "openmodelica_nf_api", "openmodelica_util_datatypes_basic", "openmodelica_ast", "openmodelica_error", "openmodelica_frontend_types", "openmodelica_frontend_dump", "openmodelica_ast_collections", "openmodelica_dump_extra", "openmodelica_frontend_inst", "openmodelica_script_util", "openmodelica_program_util", "openmodelica_simcode_util", "openmodelica_codegen_cfunctions", "openmodelica_codegen_c", "openmodelica_codegen_fmu", "openmodelica_codegen_fmu_c", "openmodelica_codegen_fmu_omsi", "openmodelica_codegen_xml", "openmodelica_codegen", "openmodelica_codegen_cpp_common", "openmodelica_codegen_cpp_omsi", "openmodelica_codegen_cpp_ext", "openmodelica_codegen_cpp_omsi_ext", "openmodelica_codegen_cpp", "openmodelica_codegen_wasm_jit", "openmodelica_wasm_jit", "openmodelica_backend_main", "openmodelica_scripting_qt", "openmodelica_modelica_utilities", "libopenmodelica_compiler", "openmodelica_wasi", "openmodelica_wasi_libc", "openmodelica_animation", "openmodelica_animation_wasm", "openmodelica_scripting_api_gen", "omshell_core", "omshell_omc", "omshell_wgpu", "omshell_egui", "omshell_dioxus", "openmodelica_fmi", "openmodelica_fmi_driver", "openmodelica_ext_native_marshal", "openmodelica_ext_native", "../../SimulationRuntime/rust/daskr", "../../SimulationRuntime/rust/minpack", "../../SimulationRuntime/rust/openmodelica_mat_reader", "../../SimulationRuntime/rust/openmodelica_mat_writer", "../../SimulationRuntime/rust/openmodelica_arrow_writer", "../../SimulationRuntime/rust/openmodelica_hdf5_result", "../../SimulationRuntime/rust/openmodelica_nls", "../../SimulationRuntime/rust/openmodelica_plt_writer", "../../SimulationRuntime/rust/openmodelica_regex", "../../SimulationRuntime/rust/openmodelica_result_capi", "../../SimulationRuntime/rust/openmodelica_result_cli", "../../SimulationRuntime/rust/openmodelica_result_diff", "../../SimulationRuntime/rust/openmodelica_result_files", "../../SimulationRuntime/rust/openmodelica_result_web", "../../SimulationRuntime/rust/openmodelica_sim_meta", "../../SimulationRuntime/rust/openmodelica_simulation_runtime", "../../SimulationRuntime/rust/openmodelica_solvers"]
 # `openmodelica_lapack` keeps its own `[workspace]` so its `[profile.release]`
 # governs the nested `liblapack.wasm` build (profiles are ignored in a member).
 # A nested root that something path-depends on must be excluded explicitly.
-exclude = ["openmodelica_lapack", "openmodelica_hdf5"]
+exclude = ["openmodelica_lapack", "openmodelica_hdf5", "openmodelica_fmi3_wasm", "openmodelica_codegen_wasm_jit_runtime", "../../SimulationRuntime/rust/openmodelica_result_web_embed"]
 # The OMShell GUI crates pull modern UI frameworks (eframe/dioxus) that require a
 # recent wasm-bindgen. Since wasmer 7.2 the compiler's wasm build uses the same
 # recent wasm-bindgen, so they share one resolution and are ordinary members.
 [workspace.dependencies]
-anyhow = "1.0.102"
+anyhow = "1.0.104"
 arcstr = "1.2.0"
 list_comprehension_macro = "0.1.1"
 const-str = "1.1.0"
-encoding_rs = "0.8.35"
+encoding_rs = "0.8.41"
 rayon = "1"
-winnow = "0.7"
+winnow = "1.0"
 loop_unwrap = "0.2.0"
 match_deref = "0.1.2"
-ordered-float = "5.3.0"
+ordered-float = "5.5.0"
 num-traits = "0.2.19"
 libc = "0.2"
 # Dynamic foreign-function calls for FFI.callFunction (port of
@@ -59,7 +59,7 @@ curl = "0.4"
 # Read-only XML DOM for the `*_prof.xml` profiling files written by the
 # simulation runtime (HpcOmBenchmarkExt.rs, replacing the expat parser of
 # runtime/HpcOmBenchmarkExt.cpp).
-roxmltree = "0.21"
+roxmltree = "0.21.1"
 # JSON reader for the `*_prof.json` profiling files (HpcOmBenchmarkExt.rs,
 # replacing the cJSON parser of runtime/HpcOmBenchmarkExt.cpp).
 serde_json = "1"
@@ -76,14 +76,14 @@ zmq = "0.10"
 # the native `sys`/cranelift backend. wasmer errors are wrapped with
 # anyhow::anyhow! via the `wt` helper (their Debug formatting), since the
 # crate's many engine error types do not share one anyhow-convertible type.
-wasm-encoder = "0.252"
+wasm-encoder = "0.259"
 # Engine backends for the wasm-jit target, selected by feature/target in
 # openmodelica_codegen_wasm_jit: wasmtime (native default, fastest cranelift),
 # or wasmer — whose `js` backend is the only one that can JIT inside a
 # browser-wasm build of omc, and which can also be selected natively
 # (`--features engine-wasmer`) to benchmark against wasmtime.
-wasmtime = { version = "45", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation", "gc", "gc-null"] }
-wasmer = { version = "7.2.0-alpha.3", default-features = false, features = ["std", "wat"] }
+wasmtime = { version = "48", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation", "gc", "gc-null"] }
+wasmer = { version = "7.4", default-features = false, features = ["std", "wat"] }
 openmodelica_wasm_jit = {path = "openmodelica_wasm_jit"}
 openmodelica_codegen_wasm_jit = {path = "openmodelica_codegen_wasm_jit"}
 # Cycle-collecting garbage collector for reference cycles closed through
@@ -98,6 +98,7 @@ openmodelica_frontend_base = {path = "openmodelica_frontend_base"}
 openmodelica_frontend_types = {path = "openmodelica_frontend_types"}
 openmodelica_frontend_dump = {path = "openmodelica_frontend_dump"}
 openmodelica_nf_frontend = {path = "openmodelica_nf_frontend"}
+openmodelica_nf_api = {path = "openmodelica_nf_api"}
 openmodelica_util = {path = "openmodelica_util"}
 openmodelica_revision = {path = "openmodelica_revision"}
 openmodelica_modelica_utilities = {path = "openmodelica_modelica_utilities"}
@@ -111,11 +112,12 @@ openmodelica_animation = {path = "openmodelica_animation"}
 openmodelica_mat_writer = {path = "../../SimulationRuntime/rust/openmodelica_mat_writer"}
 openmodelica_arrow_writer = {path = "../../SimulationRuntime/rust/openmodelica_arrow_writer"}
 openmodelica_hdf5_result = {path = "../../SimulationRuntime/rust/openmodelica_hdf5_result"}
-arrow-array = { version = "59", default-features = false }
-arrow-schema = { version = "59", default-features = false }
-arrow-ipc = { version = "59", default-features = false }
-openmodelica_mat_reader = {path = "../../SimulationRuntime/rust/openmodelica_mat_reader"}
-openmodelica_result_files = {path = "../../SimulationRuntime/rust/openmodelica_result_files"}
+arrow-array = { version = "60", default-features = false }
+arrow-schema = { version = "60", default-features = false }
+arrow-ipc = { version = "60", default-features = false }
+openmodelica_mat_reader = {path = "../../SimulationRuntime/rust/openmodelica_mat_reader", features = ["vfs"]}
+openmodelica_result_diff = {path = "../../SimulationRuntime/rust/openmodelica_result_diff"}
+openmodelica_result_files = {path = "../../SimulationRuntime/rust/openmodelica_result_files", features = ["vfs"]}
 openmodelica_plt_writer = {path = "../../SimulationRuntime/rust/openmodelica_plt_writer"}
 openmodelica_sim_meta = {path = "../../SimulationRuntime/rust/openmodelica_sim_meta"}
 openmodelica_backend = {path = "openmodelica_backend"}
@@ -129,6 +131,8 @@ openmodelica_susan = {path = "openmodelica_susan"}
 openmodelica_tpl = {path = "openmodelica_tpl"}
 openmodelica_codegen_graphml = {path = "openmodelica_codegen_graphml"}
 openmodelica_omgraphics = {path = "openmodelica_omgraphics"}
+openmodelica_loader = {path = "openmodelica_loader"}
+openmodelica_gendoc = {path = "openmodelica_gendoc"}
 openmodelica_util_datatypes_basic = {path = "openmodelica_util_datatypes_basic"}
 openmodelica_ast_collections = {path = "openmodelica_ast_collections"}
 openmodelica_dump_extra = {path = "openmodelica_dump_extra"}
@@ -153,9 +157,12 @@ openmodelica_codegen_cpp_omsi_ext = {path = "openmodelica_codegen_cpp_omsi_ext"}
 openmodelica_backend_main = {path = "openmodelica_backend_main", default-features = false}
 openmodelica_scripting_qt = {path = "openmodelica_scripting_qt"}
 
-#[profile.release]
-#debug = true
-#strip = false
+# Thin, not fat: on the Windows cdylib fat bought 6.6 MB of 305 for a 35-minute
+# serial link. CI lanes that ship nothing override these (see .CI/common.groovy).
+[profile.release]
+lto = "thin"
+codegen-units = 1
+# Add `debug = true` and `strip = false` here for a release build with backtraces.
 
 # libffi-sys fork that assembles win64.S with clang-cl (not ml64) so the
 # windows-msvc cross build works. Pending upstream merge of the same change.

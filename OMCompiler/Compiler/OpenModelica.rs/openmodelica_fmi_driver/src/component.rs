@@ -46,8 +46,10 @@ fn status(s: WitStatus) -> Status {
 }
 
 /// A component call that traps, or a status the master cannot continue from.
+/// `{e:#}` so the trap code (`wasm trap: ...`) comes with the backtrace wasmtime
+/// puts in front of it.
 fn trap(call: &'static str, e: impl std::fmt::Display) -> Error {
-    Error::Load(format!("{call}: {e}"))
+    Error::Load(format!("{call}: {e:#}"))
 }
 
 fn check(call: &'static str, s: WitStatus) -> Result<()> {
@@ -241,7 +243,7 @@ impl WasmArtifact {
         let resources = self.resources.lock().unwrap_or_else(|e| e.into_inner()).clone();
         if let Some(dir) = resources.filter(|d| d.is_dir()) {
             builder
-                .preopened_dir(&dir, "/", wasmtime_wasi::DirPerms::READ, wasmtime_wasi::FilePerms::READ)
+                .preopened_dir(&dir, "/", wasmtime_wasi::FsPerms::ReadOnly)
                 .map_err(|e| trap("preopening the resources directory", e))?;
         }
         Ok(Store::new(
@@ -732,6 +734,7 @@ impl Fmi3CoSimulation for WasmInstance {
             terminate: r.terminate_simulation,
             early_return: r.early_return,
             last_successful_time: r.last_successful_time,
+            discarded: r.discarded,
         })
     }
 }

@@ -3,10 +3,12 @@ cmake_minimum_required(VERSION 3.21)
 # Qt-for-WebAssembly build of OMEdit. See HANDOFF.md.
 # Standalone configure (own scratch dir, NOT a build-* under the repo):
 #   source /opt/emsdk/emsdk_env.sh
-#   TC=/opt/Qt/6.10.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
+#   TC=/opt/Qt/6.11.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
 #   cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$TC \
-#     -DQT_HOST_PATH=/opt/Qt/6.10.2/gcc_64 -S . -B /tmp/omedit-test
+#     -DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64 -S . -B /tmp/omedit-test
 project(OMEditQtWasm LANGUAGES C CXX)
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/omc_job_server.cmake)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -60,17 +62,26 @@ if(NOT CARGO_EXECUTABLE)
                       "libomc_result. Install a nightly Rust toolchain with the rust-src "
                       "component and `rustup target add wasm32-unknown-emscripten`.")
 endif()
-file(GLOB_RECURSE RESULT_SOURCES CONFIGURE_DEPENDS
-     ${RESULT_CRATE}/src/*.rs ${RESULT_CRATE}/Cargo.toml
-     ${RESULT_CRATE}/include/omc_result.h
-     ${RESULT_WORKSPACE}/openmodelica_result_files/src/*.rs
-     ${RESULT_WORKSPACE}/openmodelica_mat_reader/src/*.rs
-     ${RESULT_WORKSPACE}/openmodelica_arrow_writer/src/*.rs
-     ${RESULT_WORKSPACE}/openmodelica_mat_writer/src/*.rs)
+# Every crate cargo compiles for this library; one left out is one cmake will not
+# rebuild for, and the stale archive looks fine from the outside.
+set(RESULT_CRATES
+    ${RESULT_CRATE}
+    ${RESULT_WORKSPACE}/openmodelica_result_files
+    ${RESULT_WORKSPACE}/openmodelica_result_diff
+    ${RESULT_WORKSPACE}/openmodelica_mat_reader
+    ${RESULT_WORKSPACE}/openmodelica_arrow_writer
+    ${RESULT_WORKSPACE}/openmodelica_mat_writer
+    ${RESULT_WORKSPACE}/openmodelica_plt_writer
+    ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs/openmodelica_wasi)
+set(RESULT_GLOBS ${RESULT_CRATE}/include/omc_result.h)
+foreach(crate ${RESULT_CRATES})
+  list(APPEND RESULT_GLOBS ${crate}/src/*.rs ${crate}/Cargo.toml)
+endforeach()
+file(GLOB_RECURSE RESULT_SOURCES CONFIGURE_DEPENDS ${RESULT_GLOBS})
 add_custom_command(
   OUTPUT ${RESULT_LIB}
   WORKING_DIRECTORY ${RESULT_WORKSPACE}
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   COMMAND ${CMAKE_COMMAND} -E env RUSTFLAGS=-Zemscripten-wasm-eh=no
           ${CARGO_EXECUTABLE} rustc -Zbuild-std=std,panic_abort
           --release --target wasm32-unknown-emscripten
@@ -127,6 +138,8 @@ endforeach()
 # IS compiled: the wasm-jit run drives it via runWasmJitSimulation() and its
 # QProcess/QTcpServer paths are guarded out under __EMSCRIPTEN__.
 set(WASM_EXCLUDE_FILES
+  # Desktop OAuth redirect (QTcpServer loopback); the browser uses a popup instead.
+  "Cloud/OAuth2RedirectLoopback.cpp"
   "Simulation/OpcUaClient.cpp"
   "OMS/OMSSimulationOutputWidget.cpp")
 foreach(f ${WASM_EXCLUDE_FILES})
@@ -161,25 +174,28 @@ list(APPEND OMEDITLIB_SOURCES
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
   ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
   # Browser file picker / download, for the user's own filesystem.
-  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
+  # localStorage persistence: settings, cloud mounts and their sync manifests.
+  ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
+  # IndexedDB cache of the cloud working copies, so a reload does not re-download.
+  ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
+  # OAuth popup + same-origin callback page (the desktop half is a loopback socket).
+  ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
-                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp PROPERTIES SKIP_AUTOMOC ON)
+                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp PROPERTIES SKIP_AUTOMOC ON)
 # The simulation metadata tables OMCProxy reads (SOLVER_METHOD_NAME, FLAG_NAME,
 # OMC_LOG_STREAM_NAME, ...); native OMEdit gets them from libOpenModelicaCompiler.
 list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/omc_error.c)
 # omc_error.c reaches <gc.h> for threadData_t; declarations only, no collector call.
 set_source_files_properties(${SIMRT}/util/omc_error.c PROPERTIES
   INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/gc/include)
-# TimeManager drives the result-replay time slider in VariablesWidget. It is the
-# one Animation/ source that has no OpenSceneGraph/GL dependency (just rtclock +
-# QTimer), so compile it (rtclock entry points are provided by wasm_stubs.cpp)
-# rather than guarding its ~40 use sites out.
+# TimeManager drives the result-replay time slider in VariablesWidget.
 list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
-# 3D animation via Qt Quick 3D (OSG does not build for wasm). The renderer-neutral
-# data classes + the Quick 3D backend; the OSG renderer sources (ViewerWidget,
-# ExtraShapes, GLWidget/OpenGLWidget, the OSGScene/UpdateVisitor parts of
-# Visualization.cpp) stay out via the OMEDIT_ANIMATION_QUICK3D guards. FMU animation
-# (VisualizationFMU/FMUWrapper/FMUSettingsDialog) is excluded (no fmilib on wasm).
+# 3D animation via Qt Quick 3D. FMU animation (VisualizationFMU/FMUWrapper/
+# FMUSettingsDialog) is excluded (no fmilib on wasm).
 list(APPEND OMEDITLIB_SOURCES
   ${LIB}/Animation/AbstractVisualizer.cpp
   ${LIB}/Animation/Shape.cpp
@@ -200,14 +216,9 @@ set_source_files_properties(
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
   ${LIB}/resource_omedit.qrc)
-# WITHOUT_OSG: no OpenSceneGraph animation. OMC_RUST_ABI: the MMC-free embedding
-# ABI (omc_rust_embedding.h). PUBLIC so main.cpp inherits both.
-# OMEDIT_ANIMATION_QUICK3D selects the Qt Quick 3D animation backend (over OSG).
-# WITHOUT_OSG is intentionally NOT defined: it gates off the animation *features*
-# (the New Animation action, addAnimationWindow, simulate-with-animation), which are
-# now available through the Quick 3D backend. OSG-renderer code stays out via the
-# OMEDIT_ANIMATION_QUICK3D guards in Animation/, not via WITHOUT_OSG.
-target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI OMEDIT_ANIMATION_QUICK3D)
+# OMC_RUST_ABI: the MMC-free embedding ABI (omc_rust_embedding.h). PUBLIC so
+# main.cpp inherits it.
+target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI)
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
 # Headers for subsystems whose libs aren't linked on wasm (antlr/OMParser,
 # open62541) compile fine for the static lib; the symbols are deferred.

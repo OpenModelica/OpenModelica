@@ -55,6 +55,7 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 #include "Search/FindUsageWidget.h"
+#include "Cloud/CloudMount.h"
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
 #endif
@@ -964,11 +965,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (hide) {
       return false;
     } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return pLibraryTreeItem->getNameStructure().contains(filterRegularExpression());
-#else
-      return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
-#endif
     }
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -2834,7 +2831,7 @@ void LibraryTreeView::createActions()
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // simulate with animation Action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
@@ -3115,7 +3112,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSimulateAction);
             menu.addAction(mpSimulateWithTransformationalDebuggerAction);
             menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  #if !defined(WITHOUT_OSG)
+  #if !defined(WITHOUT_ANIMATION)
             menu.addAction(mpSimulateWithAnimationAction);
   #endif
             menu.addAction(mpSimulationSetupAction);
@@ -3493,7 +3490,7 @@ void LibraryTreeView::simulateWithAlgorithmicDebugger()
  */
 void LibraryTreeView::simulateWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->simulateWithAnimation(pLibraryTreeItem);
@@ -4498,6 +4495,12 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool 
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
       MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
     }
+    // Saving into a mounted cloud folder has only written the working copy; what
+    // makes it saved is the push.
+    const CloudMount mount = CloudMountManager::instance()->mountForPath(pLibraryTreeItem->getFileName());
+    if (mount.isValid() && mount.autoPush) {
+      MainWindow::instance()->pushMountInBackground(mount.mountId);
+    }
   }
   MainWindow::instance()->getStatusBar()->clearMessage();
   MainWindow::instance()->hideProgressBar();
@@ -4771,7 +4774,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
 #if defined(__EMSCRIPTEN__)
-      WasmLocalFiles::download(fileName);
+      // A file inside a cloud mount is uploaded by the sync engine; handing the
+      // user a download of it as well would be wrong.
+      if (!isInsideCloudMount(fileName)) {
+        WasmLocalFiles::download(fileName);
+      }
 #endif
       /* Save the traceabiliy information and send to Daemon. */
 #if !defined(__EMSCRIPTEN__)
@@ -4874,7 +4881,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
 #if defined(__EMSCRIPTEN__)
       // One download per file; the folder structure itself stays in the omc
       // filesystem for the session.
-      WasmLocalFiles::download(fileName);
+      // A file inside a cloud mount is uploaded by the sync engine; handing the
+      // user a download of it as well would be wrong.
+      if (!isInsideCloudMount(fileName)) {
+        WasmLocalFiles::download(fileName);
+      }
 #endif
     } else {
       return false;
@@ -4979,7 +4990,11 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
 #if defined(__EMSCRIPTEN__)
-      WasmLocalFiles::download(fileName);
+      // A file inside a cloud mount is uploaded by the sync engine; handing the
+      // user a download of it as well would be wrong.
+      if (!isInsideCloudMount(fileName)) {
+        WasmLocalFiles::download(fileName);
+      }
 #endif
     } else {
       return false;

@@ -90,7 +90,7 @@ pub(crate) fn resolve_ext_libraries(
         let Some((path, bytes)) = find_ext_library(&lib, &dirs) else {
             notes.push(format!(
                 "`{lib}` was not found (looked in {}); a wasm target loads a prebuilt shared \
-                 library, built with `clang --target=wasm32-wasip1 -fPIC -shared`",
+                 library, built with `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`",
                 dirs.iter().map(|d| if d.is_empty() { "." } else { d.trim_end_matches('/') })
                     .collect::<Vec<_>>().join(", ")
             ));
@@ -141,13 +141,6 @@ pub(crate) fn compile_include_library(
     }
 }
 
-const INCLUDE_PREAMBLE: &str = "\
-/* No preamble: the Modelica specification gives an external \"C\" translation unit
-   nothing beyond what its own Include sources bring in, so omc must not add headers
-   or declarations here. A library that fails to compile is fixed upstream, or gets
-   `-std=`/`-include` flags in the library-testing configuration. */
-";
-
 #[cfg(not(target_arch = "wasm32"))]
 fn compile_include_tu(
     prefix: &str,
@@ -164,7 +157,8 @@ fn compile_include_tu(
     std::fs::create_dir_all(&dir).map_err(|_| "CodegenWasmJit: cannot create a temporary directory")?;
     let tu = dir.join(format!("{prefix}_includes.c"));
     let out = dir.join(format!("{prefix}_includes.wasm"));
-    std::fs::write(&tu, [INCLUDE_PREAMBLE, &includes.join("\n"), "\n", wrappers].concat())
+    let preamble = openmodelica_wasm_jit::model::INCLUDE_PREAMBLE;
+    std::fs::write(&tu, [preamble, &includes.join("\n"), "\n", wrappers].concat())
         .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
 
     let mut cmd = Command::new(&clang);
@@ -223,7 +217,7 @@ pub(crate) fn compile_include_library(
     notes.push(
         "the implementation comes from an `Include` annotation with C source, which has to be \
          compiled — the browser omc has no compiler. Provide it as a `Library` built with \
-         `clang --target=wasm32-wasip1 -fPIC -shared`"
+         `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string(),
     );
     Ok(None)
@@ -238,7 +232,7 @@ fn wasi_sysroot() -> std::path::PathBuf {
     let home = openmodelica_util::Settings::getInstallationDirectoryPath()
         .map(|p| p.to_string())
         .unwrap_or_default();
-    std::path::PathBuf::from(home).join("lib/wasm32-wasi/omc")
+    std::path::PathBuf::from(home).join("lib/wasm32-wasip1/omc/sysroot")
 }
 
 /// The shipped sysroot carries a copy; otherwise probe clang, whose 21 driver
@@ -275,10 +269,18 @@ pub(crate) fn include_overrides_builtin(sources: &[String]) -> bool {
 /// provide.
 pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<ExtCallSig> {
     let mut defined: HashSet<&str> = HashSet::new();
-    for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK, LAPACK_DYLINK]) {
+    for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC()]) {
         defined.extend(wasm_exports(bytes));
     }
-    ext_imports.iter().filter(|s| !defined.contains(s.name.as_str())).cloned().collect()
+    // The libraries omc ships as files answer for themselves, through the index.
+    ext_imports
+        .iter()
+        .filter(|s| {
+            !defined.contains(s.name.as_str())
+                && openmodelica_wasm_jit::dylink::libraries_for([s.name.as_str()]).is_empty()
+        })
+        .cloned()
+        .collect()
 }
 
 /// What a dylink library needs from outside: the functions it calls (`env`) and
@@ -321,7 +323,7 @@ pub(super) fn unresolved_dylink_needs(needs: &[String], lib: &ExtLibrary, others
     for bytes in others
         .iter()
         .map(|l| &l.bytes[..])
-        .chain([&lib.bytes[..], LIBC_PIC, EXTERNAL_C_DYLINK, LAPACK_DYLINK, openmodelica_wasm_jit::RUNTIME_WASM])
+        .chain([&lib.bytes[..], LIBC_PIC(), openmodelica_wasm_jit::RUNTIME_WASM()])
     {
         defined.extend(wasm_exports(bytes));
     }
@@ -450,22 +452,19 @@ fn find_wasm_library(spec: &str, dirs: &[String]) -> Option<(String, Vec<u8>)> {
     find_ext_library(name, dirs)
 }
 
-/// Whether the built-in ModelicaExternalC side module defines an `external "C"`
-/// the model's own libraries leave open ([`SimModel::ext_builtin`]). It carries
-/// the whole MSL C set, which no installed `.wasm` names, so it is matched by
-/// symbol rather than by `Library` name.
+/// Whether a library omc ships defines an `external "C"` the model's own libraries
+/// leave open ([`SimModel::ext_builtin`]). They carry the MSL C set, which no
+/// installed `.wasm` names, so they are matched by symbol (through the index)
+/// rather than by `Library` name.
 ///
-/// It does not join `ext_libs`: those are the model's *own*, and the FMU link adds
-/// this one itself.
+/// They do not join `ext_libs`: those are the model's *own*, and the FMU link and
+/// the simulation host add these themselves.
 pub(super) fn builtin_wasm_needed(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> bool {
-    if EXTERNAL_C_DYLINK.is_empty() {
-        return false;
-    }
     let mut open: HashSet<&str> = ext_imports.iter().map(|s| s.name.as_str()).collect();
     for l in libs {
         for n in wasm_exports(&l.bytes) {
             open.remove(n);
         }
     }
-    !open.is_empty() && wasm_exports(EXTERNAL_C_DYLINK).any(|n| open.contains(n))
+    !openmodelica_wasm_jit::dylink::libraries_for(open).is_empty()
 }

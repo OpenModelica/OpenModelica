@@ -43,10 +43,20 @@ pub struct Run {
     pub jacobians: u64,
     pub state_events: u64,
     pub time_events: u64,
-    /// When the events happened, in order — what a plot marks and a test checks.
-    pub event_times: Vec<f64>,
+    /// The events handled, in order — what a plot marks and a test checks.
+    pub event_times: Vec<Event>,
     /// Discarded steps taken again at half the size.
     pub retries: u64,
+}
+
+/// One event the master handled: a time event it was told of, or a state event it
+/// located (or the FMU asked for after a step).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Event {
+    pub time: f64,
+    pub time_event: bool,
+    /// The indicator a state event was found on, when the finder names one.
+    pub indicator: Option<u32>,
 }
 
 /// A run that ended before its first step.
@@ -591,7 +601,7 @@ impl Integrator {
         directional: bool,
         n_alg: Option<usize>,
     ) -> Result<Integrator> {
-        if let Some(n_alg) = n_alg {
+        if let Some(n_alg) = n_alg.filter(|n| nx + n > 0) {
             if solver != Solver::Ida {
                 return Err(Error::Unsupported(format!(
                     "integrating in DAE mode with `{}`: only IDA takes a residual form",
@@ -712,6 +722,14 @@ impl Integrator {
                 SunStep::Root(te) => Ok(Some(te)),
                 SunStep::Reached => Ok(None),
             },
+        }
+    }
+
+    /// Which indicator the last root was found on, where the integrator says.
+    fn root_index(&self) -> Option<u32> {
+        match self {
+            Integrator::Dassl(d) => Some(d.root_index() as u32),
+            _ => None,
         }
     }
 
@@ -883,6 +901,13 @@ pub fn simulate(
         rec.snapshot_parameters(common)?;
         rec.sample(common, t)?;
     }
+    // C's `checkForStateEvent`: the root finder misses a crossing on the point it
+    // restarted from, so every step's end is checked against the held signs too.
+    let mut zc_prev = vec![0.0; nz];
+    let mut zc_now = vec![0.0; nz];
+    if nz > 0 {
+        indicators(&mut ode, t, &x, &xp, &mut zc_prev)?;
+    }
     let mut next_event = info.next_event_time.unwrap_or(f64::INFINITY);
     let (mut state_events, mut time_events) = (0u64, 0u64);
     let mut event_times = Vec::new();
@@ -910,14 +935,25 @@ pub fn simulate(
             // DASKR refuses a `tout` it is standing on, so a time event already
             // due is handled where it stands.
             let due = next_event <= t + grid_epsilon(opts);
-            let stepped = (|| -> Result<(Option<f64>, bool, bool)> {
+            let stepped = (|| -> Result<(Option<f64>, Option<u32>, bool, bool)> {
                 if due {
-                    return Ok((None, false, false));
+                    return Ok((None, None, false, false));
                 }
                 let root = integrator
                     .step(&mut ode, end, limit, &mut t, &mut x, &mut xp)
                     .map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
                 let mut event_at = root;
+                let mut indicator = root.and(integrator.root_index());
+                if event_at.is_none() && nz > 0 {
+                    indicators(&mut ode, t, &x, &xp, &mut zc_now)?;
+                    if let Some(k) =
+                        zc_now.iter().zip(&zc_prev).position(|(now, prev)| zsign(*now) != zsign(*prev))
+                    {
+                        event_at = Some(t);
+                        indicator = Some(k as u32);
+                    }
+                    zc_prev.copy_from_slice(&zc_now);
+                }
                 let mut terminate = false;
                 // C's `completedIntegratorStep`: the FMU may want Event Mode for a
                 // reason the indicators do not show.
@@ -939,9 +975,9 @@ pub fn simulate(
                     let common: &mut dyn Fmi3 = ode.inst;
                     rec.sample(common, t)?;
                 }
-                Ok((event_at, terminate, reached))
+                Ok((event_at, indicator, terminate, reached))
             })();
-            let (mut event_at, terminate, reached) = match stepped {
+            let (mut event_at, indicator, terminate, reached) = match stepped {
                 Ok(v) => v,
                 Err(e) if halved.is_none() && (ode.discarded || is_discard(&e)) => {
                     // C's `retrySimulationStep`: back to the accepted point.
@@ -966,7 +1002,8 @@ pub fn simulate(
                 terminated_at = Some(t);
                 break 'grid;
             }
-            if event_at.is_none() && next_event <= t + grid_epsilon(opts) {
+            let time_event = event_at.is_none() && next_event <= t + grid_epsilon(opts);
+            if time_event {
                 event_at = Some(next_event);
                 time_events += 1;
             } else if event_at.is_some() {
@@ -983,7 +1020,7 @@ pub fn simulate(
             // C clears `retry` with every accepted step, an event step included.
             halved = None;
             t = te;
-            event_times.push(te);
+            event_times.push(Event { time: te, time_event, indicator });
             ode.commit_point(t, &x, &xp)?;
             ode.forget_point();
             {
@@ -1019,6 +1056,10 @@ pub fn simulate(
             } else if nx > 0 {
                 ode.inst.get_continuous_state_derivatives(&mut xp[..nx])?;
                 integrator.set_derivatives(&xp[..nx]);
+            }
+            // C's `saveZeroCrossingsAfterEvent`: the update's own jump is no crossing.
+            if nz > 0 {
+                indicators(&mut ode, t, &x, &xp, &mut zc_prev)?;
             }
             if info.terminate {
                 terminated_at = Some(t);
@@ -1060,6 +1101,23 @@ pub fn simulate(
         event_times,
         retries,
     })
+}
+
+/// C's `sign()` (`omc_math.h`): an indicator on zero is its own sign.
+fn zsign(v: f64) -> i32 {
+    if v > 0.0 {
+        1
+    } else if v < 0.0 {
+        -1
+    } else {
+        0
+    }
+}
+
+/// The event indicators at `(t, x)` — `(t, x, x')` in DAE mode.
+fn indicators(ode: &mut FmuOde, t: f64, x: &[f64], xp: &[f64], out: &mut [f64]) -> Result<()> {
+    let r = if ode.dae.is_some() { Dae::eval_zc(ode, t, x, xp, out) } else { Ode::eval_zc(ode, t, x, out) };
+    r.map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))
 }
 
 /// Times this close to an output point count as having reached it.

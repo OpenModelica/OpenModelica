@@ -27,28 +27,28 @@ fn init_flags() {
     });
 }
 
-fn iconst(i: i32) -> Arc<DAE::Exp> {
-    Arc::new(DAE::Exp::ICONST { integer: i })
+fn iconst(i: i32) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::ICONST { integer: i })
 }
 
-fn rconst(r: f64) -> Arc<DAE::Exp> {
-    Arc::new(DAE::Exp::RCONST { real: metamodelica::OrderedFloat(r) })
+fn rconst(r: f64) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::RCONST { real: metamodelica::OrderedFloat(r) })
 }
 
-fn bconst(b: bool) -> Arc<DAE::Exp> {
-    Arc::new(DAE::Exp::BCONST { bool: b })
+fn bconst(b: bool) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::BCONST { bool: b })
 }
 
-fn sconst(s: &str) -> Arc<DAE::Exp> {
-    Arc::new(DAE::Exp::SCONST { string: arcstr::format!("{}", s) })
+fn sconst(s: &str) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::SCONST { string: arcstr::format!("{}", s) })
 }
 
-fn index_sub(exp: Arc<DAE::Exp>) -> Arc<DAE::Subscript> {
-    Arc::new(DAE::Subscript::INDEX { exp })
+fn index_sub(exp: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Subscript> {
+    metamodelica::Ref::new(DAE::Subscript::INDEX { exp })
 }
 
-fn wholedim() -> Arc<DAE::Subscript> {
-    Arc::new(DAE::Subscript::WHOLEDIM)
+fn wholedim() -> metamodelica::Ref<DAE::Subscript> {
+    metamodelica::Ref::new(DAE::Subscript::WHOLEDIM)
 }
 
 fn add_op() -> DAE::Operator {
@@ -59,12 +59,12 @@ fn sub_op() -> DAE::Operator {
     DAE::Operator::SUB { ty: DAE::T_REAL_DEFAULT().clone() }
 }
 
-fn make_binary(e1: Arc<DAE::Exp>, op: DAE::Operator, e2: Arc<DAE::Exp>) -> Arc<DAE::Exp> {
-    Arc::new(DAE::Exp::BINARY { exp1: e1, operator: op, exp2: e2 })
+fn make_binary(e1: metamodelica::Ref<DAE::Exp>, op: DAE::Operator, e2: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::BINARY { exp1: e1, operator: op, exp2: e2 })
 }
 
-fn make_unary(op: DAE::Operator, e: Arc<DAE::Exp>) -> Arc<DAE::Exp> {
-    Arc::new(DAE::Exp::UNARY { operator: op, exp: e })
+fn make_unary(op: DAE::Operator, e: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::UNARY { operator: op, exp: e })
 }
 
 // ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ fn compare_iconst_greater_than() -> Result<()> {
 
 /// Bug: compare(ICONST, RCONST) should return a non-zero value indicating that
 /// the two expressions have different constructors.  Instead it errors with
-/// "pattern mismatch" because valueConstructor::<Arc<DAE::Exp>>() always
+/// "pattern mismatch" because valueConstructor::<metamodelica::Ref<DAE::Exp>>() always
 /// returns the same hash regardless of the runtime variant, so comp == 0
 /// and the code falls into the ICONST match arm while inExp2 is RCONST.
 #[test]
@@ -195,21 +195,21 @@ fn operator_compare_same_add_returns_zero() -> Result<()> {
 
 #[test]
 fn dimension_string_unknown_is_colon() -> Result<()> {
-    let dim = Arc::new(DAE::Dimension::DIM_UNKNOWN);
+    let dim = metamodelica::Ref::new(DAE::Dimension::DIM_UNKNOWN);
     assert_eq!(ExpressionBasics::dimensionString(dim)?, ":");
     Ok(())
 }
 
 #[test]
 fn dimension_string_integer() -> Result<()> {
-    let dim = Arc::new(DAE::Dimension::DIM_INTEGER { integer: 5 });
+    let dim = metamodelica::Ref::new(DAE::Dimension::DIM_INTEGER { integer: 5 });
     assert_eq!(ExpressionBasics::dimensionString(dim)?, "5");
     Ok(())
 }
 
 #[test]
 fn dimension_string_boolean() -> Result<()> {
-    let dim = Arc::new(DAE::Dimension::DIM_BOOLEAN);
+    let dim = metamodelica::Ref::new(DAE::Dimension::DIM_BOOLEAN);
     assert_eq!(ExpressionBasics::dimensionString(dim)?, "Boolean");
     Ok(())
 }
@@ -274,7 +274,7 @@ fn subscript_int_from_index() -> Result<()> {
 
 #[test]
 fn subscripts_int_list() -> Result<()> {
-    let subs: metamodelica::List<Arc<DAE::Subscript>> =
+    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> =
         list![index_sub(iconst(2)), index_sub(iconst(7))];
     let result = ExpressionBasics::subscriptsInt(subs)?;
     let v: Vec<i32> = result.into_iter().cloned().collect();
@@ -347,7 +347,7 @@ fn print_subscript_str_index_iconst() -> Result<()> {
 
 #[test]
 fn print_list_str_empty() -> Result<()> {
-    let result = ExpressionBasics::printListStr::<Arc<DAE::Subscript>>(
+    let result = ExpressionBasics::printListStr::<metamodelica::Ref<DAE::Subscript>>(
         metamodelica::nil(),
         Arc::new(|s| ExpressionBasics::printSubscriptStr(s)),
         literal!(","),
@@ -359,7 +359,7 @@ fn print_list_str_empty() -> Result<()> {
 #[test]
 fn print_list_str_multiple() -> Result<()> {
     init_flags();
-    let subs: metamodelica::List<Arc<DAE::Subscript>> =
+    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> =
         list![index_sub(iconst(3)), index_sub(iconst(5))];
     let result = ExpressionBasics::printListStr(
         subs,

@@ -26,7 +26,7 @@ fn eq_str(a: ArcStr, b: ArcStr) -> Result<bool> {
 
 // ── construction helpers ──────────────────────────────────────────────────────
 
-fn empty_set() -> Arc<US::UnorderedSet<ArcStr>> {
+fn empty_set() -> metamodelica::Ref<US::UnorderedSet<ArcStr>> {
     // Callbacks are now `Arc<dyn Fn(...) + 'static>` aliases (see
     // `fmt_param_ty` in mmtorust); wrap each fn-item in `Arc::new` so
     // the unsized coercion to the trait object happens at the call
@@ -34,7 +34,7 @@ fn empty_set() -> Arc<US::UnorderedSet<ArcStr>> {
     US::new(Arc::new(hash_str), Arc::new(eq_str), 13)
 }
 
-fn set_of(keys: &[&str]) -> Result<Arc<US::UnorderedSet<ArcStr>>> {
+fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<US::UnorderedSet<ArcStr>>> {
     let s = empty_set();
     for k in keys {
         US::add(arcstr::format!("{}", k), s.clone())?;
@@ -43,7 +43,7 @@ fn set_of(keys: &[&str]) -> Result<Arc<US::UnorderedSet<ArcStr>>> {
 }
 
 /// toList as a sorted Vec<String>.
-fn to_sorted_vec(s: Arc<US::UnorderedSet<ArcStr>>) -> Vec<String> {
+fn to_sorted_vec(s: metamodelica::Ref<US::UnorderedSet<ArcStr>>) -> Vec<String> {
     let lst = US::toList(s);
     let mut v: Vec<String> = vec![];
     for k in &*lst { v.push(k.to_string()); }

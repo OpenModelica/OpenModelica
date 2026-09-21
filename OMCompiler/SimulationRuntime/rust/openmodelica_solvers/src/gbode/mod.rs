@@ -33,6 +33,7 @@ use alloc::vec::Vec;
 pub use conf::GbConf;
 use conf::{Interpolation, NlsMethod};
 pub use crate::Ode;
+pub(crate) use linsol::color_columns;
 pub(crate) use nls::Solved;
 use nls::GbNls;
 use nls_generic::GbNlsGeneric;

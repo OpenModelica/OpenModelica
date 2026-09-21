@@ -105,7 +105,7 @@ fn run(
             Sim {
                 rec: run.recorder,
                 events: run.state_events + run.time_events,
-                event_times: run.event_times,
+                event_times: run.event_times.iter().map(|e| e.time).collect(),
             }
         }
     })

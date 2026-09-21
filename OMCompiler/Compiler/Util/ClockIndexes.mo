@@ -64,10 +64,17 @@ public constant Integer RT_CLOCK_EXECSTAT_HPCOM_MODULES = 24;
 public constant Integer RT_CLOCK_SHOW_STATEMENT = 25;
 public constant Integer RT_CLOCK_FINST = 26;
 
+/* Work only an FMU export does, accumulated inside the phase clock of the same
+   name. Read with System.realtimeAccumulated. */
+public constant Integer RT_CLOCK_FMU_BACKEND = 27;
+public constant Integer RT_CLOCK_FMU_SIMCODE = 28;
+public constant Integer RT_CLOCK_FMU_TEMPLATES = 31;
+
 public constant Integer RT_CLOCK_NEW_BACKEND_MODULE = 29;
 public constant Integer RT_CLOCK_NEW_BACKEND_INITIALIZATION = 30;
 
-public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
+public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND,
+                                                 RT_CLOCK_FMU_BACKEND,RT_CLOCK_FMU_SIMCODE,RT_CLOCK_FMU_TEMPLATES};
 
 function toString
   input Integer clockIndex;
@@ -93,6 +100,9 @@ algorithm
     case RT_CLOCK_EXECSTAT_HPCOM_MODULES      then "HPC";
     case RT_CLOCK_SHOW_STATEMENT              then "STM";
     case RT_CLOCK_FINST                       then "FIN";
+    case RT_CLOCK_FMU_BACKEND                 then "FMB";
+    case RT_CLOCK_FMU_SIMCODE                 then "FMS";
+    case RT_CLOCK_FMU_TEMPLATES               then "FMT";
     case RT_CLOCK_NEW_BACKEND_MODULE          then "SIM";
     case RT_CLOCK_NEW_BACKEND_INITIALIZATION  then "INI";
     else "ERR";

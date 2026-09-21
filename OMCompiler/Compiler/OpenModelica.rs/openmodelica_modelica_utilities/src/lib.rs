@@ -50,13 +50,18 @@ fn arena_alloc(len: usize) -> *mut c_char {
 /// back to this crate's interposing definition — an unbounded cycle.
 #[cfg(not(target_arch = "wasm32"))]
 fn non_sim_alloc(len: usize) -> *mut c_char {
-    let next =
-        unsafe { libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateStringWithErrorReturn".as_ptr()) };
-    if !next.is_null() {
-        let f: extern "C" fn(usize) -> *mut c_char = unsafe { std::mem::transmute(next) };
-        let res = f(len);
-        if !res.is_null() {
-            return res;
+    // PE has no RTLD_NEXT to hop along, so Windows always takes the malloc path.
+    #[cfg(unix)]
+    {
+        let next = unsafe {
+            libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateStringWithErrorReturn".as_ptr())
+        };
+        if !next.is_null() {
+            let f: extern "C" fn(usize) -> *mut c_char = unsafe { std::mem::transmute(next) };
+            let res = f(len);
+            if !res.is_null() {
+                return res;
+            }
         }
     }
     let res = unsafe { libc::malloc(len + 1) as *mut c_char };

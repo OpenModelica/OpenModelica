@@ -154,10 +154,17 @@ pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
     let model = sim_models().lock().unwrap_or_else(|e| e.into_inner()).get(&fileNamePrefix.to_string()).cloned();
     let Some(model) = model else { return Ok(()) };
     // Force the runtime module (so its compile/cache-load is in `timeCompile`).
+    // It has to be the copy on the engine this model's own module goes to.
+    sim_runtime::select_engine_for(&model.wasm);
     let _ = sim_runtime::runtime_module();
     // Join the background model-module compile and stash the result.
     match sim_runtime::take_compiled_model(&model) {
         Ok(m) => *model.prepared.lock().unwrap_or_else(|e| e.into_inner()) = Some(m),
+        // A cancelled wait is the build's answer: running would start it again.
+        Err(e) if e == openmodelica_wasm_jit::COMPILE_CANCELLED => {
+            record_error(e);
+            return Err(openmodelica_wasm_jit::COMPILE_CANCELLED);
+        }
         // Deferred: `runSimulation` recompiles and reports the error via the log.
         Err(_) => {}
     }

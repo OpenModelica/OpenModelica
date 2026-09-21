@@ -1646,6 +1646,21 @@ protected
   FCore.Cache cache;
   FCore.Graph graph;
 algorithm
+  // Dependency analysis only, nothing to differentiate, and one partition: take
+  // the pattern from the system as it stands rather than causalizing a collapsed
+  // copy of it. Several partitions are clocked ones, which sample each other's
+  // variables, so those still have to be collapsed to be seen across.
+  if Flags.isSet(Flags.DIS_SYMJAC_FMI20) and listLength(inBackendDAE.eqs) == 1 then
+    (sparsePattern, sparseColoring) := fmiDerSparsePattern(inBackendDAE);
+    outJacobianMatrices := {(
+      SOME((BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())},
+                           BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), inBackendDAE.shared.info,
+                                                            inBackendDAE.shared.cache, inBackendDAE.shared.graph)),
+            "FMIDER", {}, {}, {}, {})),
+      sparsePattern, sparseColoring, BackendDAE.emptyNonlinearPattern)};
+    outFunctionTree := inBackendDAE.shared.functionTree;
+    return;
+  end if;
 try
   // for now perform on collapsed system
   backendDAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
@@ -1711,6 +1726,29 @@ else
   outFunctionTree := inBackendDAE.shared.functionTree;
 end try;
 end createFMIModelDerivatives;
+
+protected function fmiDerSparsePattern
+  "The FMIDER dependency pattern of a DAE that is a single partition, taken as it
+   stands: collapsing it is a no-op merge that drops the matching only for
+   transformBackendDAE to compute it again."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outColoring;
+protected
+  // generateSparsePattern adds the seed variables to the system it is given.
+  BackendDAE.BackendDAE dae = BackendDAEUtil.copyBackendDAE(inDAE);
+  BackendDAE.EqSystem syst = listHead(dae.eqs);
+  list<BackendDAE.Var> states, inputvars, outputvars;
+algorithm
+  states := if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+    BackendVariable.getAllClockedStatesFromVariables(syst.orderedVars) else {};
+  states := listAppend(BackendVariable.getAllStateVarFromVariables(syst.orderedVars), states);
+  outputvars := List.select(BackendVariable.varList(syst.orderedVars), BackendVariable.isVarOnTopLevelAndOutput);
+  inputvars := List.select(BackendVariable.varList(dae.shared.globalKnownVars), BackendVariable.isVarOnTopLevelAndInput);
+
+  (outSparsePattern, outColoring) := generateSparsePattern(dae, listAppend(states, inputvars),
+                                                           listAppend(states, outputvars), withColoring = false);
+end fmiDerSparsePattern;
 
 public function createFMIModelDerivativesForInitialization
 "This function genererate the stucture output and the

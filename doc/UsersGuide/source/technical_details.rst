@@ -64,6 +64,7 @@ data_2
   is the value of some variable at time ``data_2(1,1)``.
   The simulation flag ``-single`` stores ``data_1`` and ``data_2`` in single
   precision (matrix type 10, 4-byte elements) instead of double.
+
 The Arrow Result File Format
 ----------------------------
 

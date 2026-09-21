@@ -156,7 +156,11 @@ namespace OptionsDefaults
   }
 
   namespace Simulation {
+#if defined(_WIN32) && !defined(__MINGW32__)
+    QString targetBuild = "msvc";
+#else
     QString targetBuild = "gcc";
+#endif
     QString cCompiler; // this value is set in SimulationPage constructor.
     QString cxxCompiler; // this value is set in SimulationPage constructor.
     bool useStaticLinking = false;

@@ -43,6 +43,10 @@ pub struct SimModel {
     /// The system libraries among `ext_native_libs`/`ext_native_fallback`: an
     /// export declares these rather than shipping them.
     pub ext_native_system: Vec<String>,
+    /// An `external "C"` of this model is defined by a file this process loaded,
+    /// not by wasm and not by the omc image. Decided by the compile phase; such a
+    /// run is isolated in a child process ([`crate::isolate`]).
+    pub ext_outside_process: std::sync::atomic::AtomicBool,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
     pub ext_includes: Option<ExtIncludes>,
@@ -177,7 +181,7 @@ impl ExtArchives {
     pub fn link(&self) -> std::result::Result<String, String> {
         Err("the implementation comes from a static library, which has to be linked — the browser \
              omc has no linker. Provide it as a `Library` built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`"
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string())
     }
 }
@@ -279,9 +283,7 @@ impl ExtIncludes {
         };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
-        // No prologue: external C source includes what it uses. A source that needs
-        // more gets it from `--cflags`, as `-include`.
-        std::fs::write(&tu, self.sources.join("\n") + "\n" + wrappers)
+        std::fs::write(&tu, [INCLUDE_PREAMBLE, &self.sources.join("\n"), "\n", wrappers].concat())
             .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
@@ -336,7 +338,7 @@ impl ExtIncludes {
     pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`"
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string())
     }
 }
@@ -349,6 +351,14 @@ pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
 /// scope the compiler converts each argument to what the callee really takes
 /// (`ExternalMedia`'s `setState_ph` declares a `double` for a Modelica `Integer`).
 pub const EXT_CALL_PREFIX: &str = "omc_ext_call_";
+
+/// Prologue of a translation unit built from `Include` C sources. `size_t` is the
+/// specification's array-dimension type (CodegenC's `SIMEXTARGSIZE`), so the
+/// sources cannot spell their own prototypes without it. Nothing else belongs
+/// here — a source needing more gets it from `--cflags` as `-include`. Not
+/// `openmodelica.h`: the C target adds it, but it reaches `setjmp.h`, which does
+/// not compile for wasm32-wasip1.
+pub const INCLUDE_PREAMBLE: &str = "#include <stddef.h> /* the spec's array-dimension type */\n";
 
 /// One wrapper per function still to be found. Taking the address of a function
 /// the sources never declare does not compile, so the caller falls back to the
@@ -617,6 +627,49 @@ pub fn set_sim_bench(on: bool) {
 pub fn sim_bench_enabled() -> bool {
     SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed)
         || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
+}
+
+/// The largest function body in a wasm module; see `sim_runtime::select_engine_for`.
+/// Walks the code section's length prefixes only. An unparsable module reports 0 and
+/// leaves the compiler to report the real problem.
+pub fn max_function_body(wasm: &[u8]) -> usize {
+    fn uleb(b: &[u8], i: &mut usize) -> Option<usize> {
+        let (mut v, mut shift) = (0usize, 0u32);
+        loop {
+            let byte = *b.get(*i)?;
+            *i += 1;
+            v |= ((byte & 0x7f) as usize) << shift;
+            if byte & 0x80 == 0 {
+                return Some(v);
+            }
+            shift += 7;
+            if shift > 63 {
+                return None;
+            }
+        }
+    }
+    fn scan(wasm: &[u8]) -> Option<usize> {
+        let mut i = 8; // magic + version
+        while i < wasm.len() {
+            let id = *wasm.get(i)?;
+            i += 1;
+            let size = uleb(wasm, &mut i)?;
+            if id != 10 {
+                i = i.checked_add(size)?;
+                continue;
+            }
+            let mut max = 0;
+            let n = uleb(wasm, &mut i)?;
+            for _ in 0..n {
+                let body = uleb(wasm, &mut i)?;
+                max = max.max(body);
+                i = i.checked_add(body)?;
+            }
+            return Some(max);
+        }
+        Some(0)
+    }
+    scan(wasm).unwrap_or(0)
 }
 
 /// Set from `-n`: one processor means no background precompile and no parallel

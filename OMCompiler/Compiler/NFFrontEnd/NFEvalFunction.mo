@@ -122,7 +122,7 @@ algorithm
   if call_count > limit then
     Pointer.update(call_counter, 0);
     Error.addSourceMessage(Error.EVAL_RECURSION_LIMIT_REACHED,
-      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(fn.node));
+      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(InstNode.fromHandle(fn.node)));
     fail();
   end if;
 
@@ -174,7 +174,7 @@ protected
   list<Expression> ext_args;
 algorithm
   Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
-    Class.getSections(InstNode.getClass(fn.node));
+    Class.getSections(InstNode.getClass(InstNode.fromHandle(fn.node)));
 
   result := matchcontinue lang
     case "builtin"
@@ -229,7 +229,7 @@ algorithm
 
   // Use the node of the return type to determine the order of the variables,
   // since they might be reordered in the record constructor.
-  Type.COMPLEX(cls = out_ty) := fn.returnType;
+  out_ty := Type.complexNode(fn.returnType);
 
   // Fetch the new binding expressions for all the variables, both inputs and locals.
   for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(out_ty))) loop
@@ -249,7 +249,7 @@ protected
 
 function createArgumentMap
   input list<InstNode> inputs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   input list<InstNode> locals;
   input list<Expression> args;
   input Boolean mutableParams;
@@ -271,7 +271,7 @@ algorithm
     // node to the map so we can replace calls to it with the correct function.
     if Expression.isFunctionPointer(arg) then
       for fn in Function.getCachedFuncs(i) loop
-        UnorderedMap.add(fn.node, arg, map);
+        UnorderedMap.add(InstNode.fromHandle(fn.node), arg, map);
       end for;
     end if;
   end for;
@@ -279,10 +279,14 @@ algorithm
   // Add outputs and local variables to the argument map.
   // They sometimes need to be mutable and sometimes not.
   if mutableParams then
-    List.fold(outputs, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addMutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
   else
-    List.fold(outputs, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addImmutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
   end if;
 
@@ -526,7 +530,7 @@ algorithm
   outExp := match call
     case Call.TYPED_CALL()
       algorithm
-        repl_oexp := UnorderedMap.get(call.fn.node, map);
+        repl_oexp := UnorderedMap.get(InstNode.fromHandle(call.fn.node), map);
 
         if isSome(repl_oexp) then
           SOME(repl_exp) := repl_oexp;
@@ -672,23 +676,26 @@ end optimizeStatement;
 
 function createResult
   input ArgumentMap map;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression exp;
 protected
   list<Expression> expl;
   list<Type> types;
   Expression e;
+  InstNode node;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(UnorderedMap.getOrFail(listHead(outputs), map));
-    assertAssignedOutput(listHead(outputs), exp);
+    node := InstNode.fromHandle(listHead(outputs));
+    exp := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
+    exp := assertAssignedOutput({InstNode.name(node)}, exp, InstNode.info(node));
   else
     expl := {};
     types := {};
 
-    for o in outputs loop
-      e := Ceval.evalExp(UnorderedMap.getOrFail(o, map));
-      assertAssignedOutput(o, e);
+    for h in outputs loop
+      node := InstNode.fromHandle(h);
+      e := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
+      e := assertAssignedOutput({InstNode.name(node)}, e, InstNode.info(node));
       expl := e :: expl;
     end for;
 
@@ -699,18 +706,46 @@ algorithm
 end createResult;
 
 function assertAssignedOutput
-  input InstNode outputNode;
-  input Expression value;
+  input list<String> name;
+  input output Expression value;
+  input SourceInfo info;
+  input Boolean error = true;
+protected
+  list<Record.Field> fields;
+  list<Expression> expl;
 algorithm
-  () := match value
+  value := match value
     case Expression.EMPTY()
       algorithm
-        Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
-          {InstNode.name(outputNode)}, InstNode.info(outputNode));
+        if error then
+          Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {stringDelimitList(listReverse(name), ".")}, info);
+          fail();
+        else
+          Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {stringDelimitList(listReverse(name), ".")}, info);
+        end if;
       then
-        fail();
+        // This will fail if the type is one that makeZero doesn't handle,
+        // but this should really be an error anyway so that's fine.
+        Expression.makeZero(value.ty);
 
-    else ();
+    case Expression.RECORD()
+      algorithm
+        fields := Type.recordFields(value.ty);
+        expl := {};
+
+        for e in value.elements loop
+          e := assertAssignedOutput(Record.Field.name(listHead(fields)) :: name, e, info, error = false);
+          expl := e :: expl;
+          fields := listRest(fields);
+        end for;
+
+        value.elements := listReverseInPlace(expl);
+      then
+        value;
+
+    else value;
   end match;
 end assertAssignedOutput;
 
@@ -1181,10 +1216,10 @@ protected
   list<Expression> output_vals;
   Integer fn_handle;
 algorithm
-  info := InstNode.info(fn.node);
+  info := InstNode.info(InstNode.fromHandle(fn.node));
   checkExtReturnValue(outputRef, info);
 
-  pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
+  pkg_name := InstNode.name(InstNode.libraryScope(InstNode.fromHandle(fn.node)));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
   try
@@ -1302,9 +1337,12 @@ algorithm
   // This is where we put the ModelicaExternal libs right now. So that their shared
   // versions are not in the lib/omc dir complicating normal linking.
   // ( remembering we append to the front of the list as we process things )
-  for lib in libs loop
-    paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
-  end for;
+  // A wasm build ships no such directory; its side modules serve that purpose.
+  if not Autoconf.isWasm then
+    for lib in libs loop
+      paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
+    end for;
+  end if;
 
   // Create paths for any combination of library and library directory.
   for lib in libs loop
@@ -1322,8 +1360,10 @@ algorithm
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
 
-      // Windows and macOS also install under the openModelicaPlatform name.
-      if Autoconf.os == "Windows_NT" or Autoconf.os == "darwin" then
+      // Windows and macOS also install under the openModelicaPlatform name; a
+      // wasm build searches wasm32-wasip1 and, for a module needing nothing of
+      // the system, wasm32.
+      if Autoconf.os == "Windows_NT" or Autoconf.os == "darwin" or Autoconf.isWasm then
         if not stringEmpty(System.openModelicaPlatformAlternative()) then
           paths := (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
         end if;
@@ -1336,8 +1376,9 @@ algorithm
   end for;
 
   // If no Library annotation was given, append an empty string to search for
-  // functions linked into the compiler itself.
-  if listEmpty(libs) then
+  // functions linked into the compiler itself. A wasm build always searches it:
+  // the shared libraries it carries are what it has in place of those.
+  if listEmpty(libs) or Autoconf.isWasm then
     paths := "" :: paths;
   end if;
 
@@ -1568,7 +1609,7 @@ function makeExternalResult
   input list<Expression> values;
   input ComponentRef outputRef;
   input list<Expression> extArgs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression outExp;
 protected
   ArgumentMap arg_map;
@@ -1597,7 +1638,7 @@ algorithm
     end match;
   end for;
 
-  ret_vals := list(getExternalOutputResult(o, arg_map) for o in outputs);
+  ret_vals := list(getExternalOutputResult(InstNode.fromHandle(o), arg_map) for o in outputs);
   outExp := Expression.makeTuple(ret_vals);
 end makeExternalResult;
 

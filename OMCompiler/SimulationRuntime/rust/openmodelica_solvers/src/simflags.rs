@@ -1055,13 +1055,13 @@ fn file_exists(_path: &str) -> bool {
     false
 }
 
-/// C's `initializeResultData` formats. `mat`, `csv`, `plt` and `empty` are the
-/// ones this runtime has a writer for; `ia` is C's and would need one of its own.
+/// C's `initializeResultData` formats. `ia` is C's and would need a writer of
+/// its own.
 fn output_format(v: &str) -> Result<String, String> {
     match v {
-        "mat" | "csv" | "plt" | "empty" => Ok(v.to_string()),
+        "mat" | "csv" | "plt" | "arrow" | "empty" => Ok(v.to_string()),
         "ia" => Err(format!(
-            "-outputFormat={v}: this runtime writes `mat`/`csv`/`plt` results, or `empty` for none"
+            "-outputFormat={v}: this runtime writes `mat`/`csv`/`plt`/`arrow` results, or `empty` for none"
         )),
         _ => Err(format!("Unknown output format: {v}")),
     }
@@ -1846,6 +1846,7 @@ mod tests {
                    Some("empty"));
         assert_eq!(parse(&argv(&["-outputFormat=csv"])).expect("csv writer").output_format.as_deref(), Some("csv"));
         assert_eq!(parse(&argv(&["-outputFormat=plt"])).expect("plt writer").output_format.as_deref(), Some("plt"));
+        assert_eq!(parse(&argv(&["-outputFormat=arrow"])).expect("arrow writer").output_format.as_deref(), Some("arrow"));
         assert!(parse(&argv(&["-outputFormat=ia"])).expect_err("no ia writer").contains("mat"));
         assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
         // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.

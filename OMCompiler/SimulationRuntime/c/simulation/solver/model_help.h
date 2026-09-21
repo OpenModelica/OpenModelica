@@ -26,6 +26,7 @@
  */
 #ifndef MODEL_HELP_H
 #define MODEL_HELP_H
+#include "../../omc_dll.h"
 
 #include <math.h>
 
@@ -35,35 +36,35 @@ extern "C" {
 
 #include "../../simulation_data.h"
 
-extern int maxEventIterations;
-extern double linearSparseSolverMaxDensity;
-extern int linearSparseSolverMinSize;
-extern double nonlinearSparseSolverMaxDensity;
-extern int nonlinearSparseSolverMinSize;
-extern double newtonXTol;
-extern double newtonFTol;
-extern int newtonMaxSteps;
-extern int maxJacUpdate[4];
-extern double maxStepFactor;
-extern double steadyStateTol;
-extern const size_t SIZERINGBUFFER;
-extern int compiledInDAEMode;
-extern int compiledWithSymSolver;
-extern double numericalDifferentiationDeltaXlinearize;
-extern double numericalDifferentiationDeltaXsolver;
-extern double homAdaptBend;
-extern double homHEps;
-extern int homMaxLambdaSteps;
-extern int homMaxNewtonSteps;
-extern int homMaxTries;
-extern double homTauDecreasingFactor;
-extern double homTauDecreasingFactorPredictor;
-extern double homTauIncreasingFactor;
-extern double homTauIncreasingThreshold;
-extern double homTauMax;
-extern double homTauMin;
-extern double homTauStart;
-extern int homBacktraceStrategy;
+DLLDataDirection extern int maxEventIterations;
+DLLDataDirection extern double linearSparseSolverMaxDensity;
+DLLDataDirection extern int linearSparseSolverMinSize;
+DLLDataDirection extern double nonlinearSparseSolverMaxDensity;
+DLLDataDirection extern int nonlinearSparseSolverMinSize;
+DLLDataDirection extern double newtonXTol;
+DLLDataDirection extern double newtonFTol;
+DLLDataDirection extern int newtonMaxSteps;
+DLLDataDirection extern int maxJacUpdate[4];
+DLLDataDirection extern double maxStepFactor;
+DLLDataDirection extern double steadyStateTol;
+DLLDataDirection extern const size_t SIZERINGBUFFER;
+DLLDataDirection extern int compiledInDAEMode;
+DLLDataDirection extern int compiledWithSymSolver;
+DLLDataDirection extern double numericalDifferentiationDeltaXlinearize;
+DLLDataDirection extern double numericalDifferentiationDeltaXsolver;
+DLLDataDirection extern double homAdaptBend;
+DLLDataDirection extern double homHEps;
+DLLDataDirection extern int homMaxLambdaSteps;
+DLLDataDirection extern int homMaxNewtonSteps;
+DLLDataDirection extern int homMaxTries;
+DLLDataDirection extern double homTauDecreasingFactor;
+DLLDataDirection extern double homTauDecreasingFactorPredictor;
+DLLDataDirection extern double homTauIncreasingFactor;
+DLLDataDirection extern double homTauIncreasingThreshold;
+DLLDataDirection extern double homTauMax;
+DLLDataDirection extern double homTauMin;
+DLLDataDirection extern double homTauStart;
+DLLDataDirection extern int homBacktraceStrategy;
 
 /**
  * @brief Unsigned finite-difference step for one column of a numerical Jacobian.
@@ -90,6 +91,7 @@ static inline double numericalJacobianStep(double y, double hyprime, double ewtI
 void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
 
 void freeModelDataVars(MODEL_DATA* modelData);
+void freeModelDataVarArrays(MODEL_DATA* modelData);
 
 void scalarAllocArrayAttributes(MODEL_DATA* modelData);
 
@@ -229,7 +231,7 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
   }
 }
 
-extern int measure_time_flag;
+DLLDataDirection extern int measure_time_flag;
 
 #ifdef __cplusplus
 }

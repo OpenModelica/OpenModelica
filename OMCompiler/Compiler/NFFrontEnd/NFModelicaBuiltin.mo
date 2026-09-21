@@ -1371,6 +1371,11 @@ constant Integer RT_CLOCK_LINEARIZE = 16;
 constant Integer RT_CLOCK_TEMPLATES = 17;
 constant Integer RT_CLOCK_UNCERTAINTIES = 18;
 constant Integer RT_CLOCK_USER_RESERVED = 19;
+/* Accumulated over a whole translation, not a single tick/tock: the work only
+   an FMU export does, inside the phase clock of the same name. */
+constant Integer RT_CLOCK_FMU_BACKEND = 27;
+constant Integer RT_CLOCK_FMU_SIMCODE = 28;
+constant Integer RT_CLOCK_FMU_TEMPLATES = 31;
 
 function readableTime
   "Returns the time in seconds formatted as a string with four significant digits."
@@ -1406,6 +1411,16 @@ external "builtin";
 annotation(preferredView="text");
 end timerTock;
 
+function timerAccumulated
+  "Reads the total time accumulated on the internal timer with the given index,
+   or -1 if that timer never ran. Timers that measure a stretch of work that
+   recurs during one command accumulate instead of ticking once."
+  input Integer index;
+  output Real total;
+external "builtin";
+annotation(preferredView="text");
+end timerAccumulated;
+
 function timerClear
   "Clears the internal timer with the given index."
   input Integer index;
@@ -1435,7 +1450,7 @@ annotation(preferredView="text");
 end checkSettings;
 
 function loadFile
-  "Loads a Modelica file (*.mo)."
+  "Loads a Modelica file (``*.mo``)."
   input String fileName;
   input String encoding = "UTF-8";
   input Boolean uses = true;
@@ -1455,7 +1470,7 @@ annotation(Documentation(info="<html>
 end loadFile;
 
 function loadFiles
-  "Loads Modelica files (*.mo)."
+  "Loads Modelica files (``*.mo``)."
   input String[:] fileNames;
   input String encoding = "UTF-8";
   input Integer numThreads = OpenModelica.Scripting.numProcessors();

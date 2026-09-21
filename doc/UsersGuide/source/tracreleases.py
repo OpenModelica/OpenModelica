@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 # encoding=utf8
 
-import sys
-
 from subprocess import call
+from xmlrpc.client import ServerProxy
 import natsort
 import re
-
-if sys.version_info >= (3,0):
-  from xmlrpc.client import ServerProxy
-else:
-  from xmlrpclib import ServerProxy
 server = ServerProxy("https://trac.openmodelica.org/OpenModelica/rpc")
 
 releases = [i for i in server.wiki.getAllPages() if i.startswith("ReleaseNotes/")]

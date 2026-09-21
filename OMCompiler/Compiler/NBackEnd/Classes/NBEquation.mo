@@ -59,6 +59,8 @@ public
   import Expression = NFExpression;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
+  import NFInstNode;
+  import MutableWeak;
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
   import SimplifyExp = NFSimplifyExp;
@@ -1525,7 +1527,7 @@ public
     protected
       Algorithm alg;
     algorithm
-      alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), NFInstNode.NO_SCOPE, DAE.emptyElementSource);
       alg := Algorithm.setInputsOutputs(alg);
       eqn := BackendDAE.lowerAlgorithm(alg, init);
     end makeAlgorithm;
@@ -2303,8 +2305,9 @@ public
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD_EW);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
-        case RECORD_EQUATION(ty = Type.COMPLEX(cls = cls_node)) algorithm
+        case RECORD_EQUATION(ty = Type.COMPLEX()) algorithm
           // check if additive inverses exist
+          cls_node := Type.complexNode(eqn.ty);
           cls := InstNode.getClass(cls_node);
           for op in {"'+'", "'0'", "'-'"} loop
             if not Class.hasOperator(op, cls) then
@@ -2321,7 +2324,7 @@ public
 
         // returns innermost residual!
         // Ambiguous for entwined for loops!
-        case FOR_EQUATION(body = {_}) then getResidualExp(listHead(eqn.body));
+        case FOR_EQUATION(body = {_}) then getResidualExp(listHead(eqn.body), throwOnFail);
 
         else algorithm
           if throwOnFail then
@@ -2331,6 +2334,24 @@ public
       end match;
       exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());
     end getResidualExp;
+
+    function tryGetResidualExp
+      "like getResidualExp, but returns NONE() instead of failing (and without an
+      error message) if no residual expression could be constructed, e.g. a
+      RECORD_EQUATION whose type has no '+'/'-'/'0' operators (a plain Medium
+      ThermodynamicState, for example)."
+      input Pointer<Equation> eqn_ptr;
+      output Option<Expression> residual;
+    algorithm
+      residual := matchcontinue eqn_ptr
+        local
+          Expression exp;
+        case _ algorithm
+          exp := getResidualExp(Pointer.access(eqn_ptr), throwOnFail = false);
+        then SOME(exp);
+        else NONE();
+      end matchcontinue;
+    end tryGetResidualExp;
 
     function getType
       input Equation eq;
@@ -3010,7 +3031,13 @@ public
               (lhs, rhs) := tpl;
               lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(lhs_subs, BVariable.getVarName(lhs), true));
               rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(rhs_subs, BVariable.getVarName(rhs), true));
-              stmts := Statement.ASSIGNMENT(lhs_exp, rhs_exp, Expression.typeOf(lhs_exp), eqn.source) :: stmts;
+              if BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
+                // nested record, assign its children
+                stmts := listAppend(toStatement(RECORD_EQUATION(Expression.typeOf(lhs_exp), lhs_exp, rhs_exp, eqn.source, eqn.attr,
+                  listLength(BVariable.getRecordChildren(lhs)))), stmts);
+              else
+                stmts := Statement.ASSIGNMENT(lhs_exp, rhs_exp, Expression.typeOf(lhs_exp), eqn.source) :: stmts;
+              end if;
             end for;
           else
             stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
@@ -3091,7 +3118,7 @@ public
       e := Equation.IF_EQUATION(IfEquationBody.size(body), body, source, attr);
       // convert to algorithm if the body is an algorithm. mainly used for asserts in if-equations
       if isAlgorithm then
-        alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), InstNode.EMPTY_NODE(), source);
+        alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), NFInstNode.NO_SCOPE, source);
         alg   := Algorithm.setInputsOutputs(alg);
         size  := sum(ComponentRef.size(out, false) for out in alg.outputs);
         eqn   := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));

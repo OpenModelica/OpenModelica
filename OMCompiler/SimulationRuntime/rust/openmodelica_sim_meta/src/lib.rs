@@ -43,6 +43,7 @@ pub mod datarecon;
 /// `+profiling`, whose files go out through [`files`] like every other side file,
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
+#[cfg(feature = "result-files")]
 pub mod result;
 pub mod strings;
 /// The writer every file a run leaves beside its result goes through.
@@ -587,6 +588,7 @@ pub enum MetaKind {
 
 impl MetaKind {
     /// Project onto the `.mat` writer's kind.
+    #[cfg(feature = "mat-writer")]
     pub fn mat(&self) -> openmodelica_mat_writer::MatKind {
         use openmodelica_mat_writer::{MatKind, Neg as MatNeg};
         let neg = |n: &Neg| match n {
@@ -619,6 +621,7 @@ impl MetaKind {
     }
 
     /// Project onto the `.plt` writer's kind.
+    #[cfg(feature = "plt-writer")]
     pub fn plt(&self) -> openmodelica_plt_writer::PltKind {
         use openmodelica_plt_writer::{Neg as PltNeg, PltKind};
         let neg = |n: &Neg| match n {

@@ -47,6 +47,7 @@ import Flags;
 import HashTableCrefSimVar;
 import List;
 import Pointer;
+import PointerWeak;
 import UnorderedMap;
 import Util;
 import ProgramUtil;
@@ -316,7 +317,7 @@ public
           SimCodeIndices simCodeIndices;
           UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
           list<SimPartition> clockedPartitions;
-          Pointer<Integer> literals_idx = Pointer.create(0);
+          Pointer<Integer> literals_idx;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimGenericCall> generic_loop_calls;
@@ -341,6 +342,11 @@ public
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
+            // Not a default on the declaration above: the bootstrap compiler
+            // does not record a package dependency for a call that only appears
+            // in a local's default, and this is NSimCode's sole use of Pointer,
+            // so the generated C would lose its #include.
+            literals_idx := Pointer.create(0);
             collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
             UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
@@ -357,8 +363,6 @@ public
             nominal := {};
             min := {};
             max := {};
-            // all non constant parameter equations will be added to the initial system.
-            // There is no actual need for parameter equations block
             param := {};
             algorithms := {};
 
@@ -459,6 +463,9 @@ public
             // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
 
             // generate the generic loop calls and replace literal expressions
+            // the bindings of the primary parameters are solved before the initialization, they get the last indices
+            (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
+
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             literals            := UnorderedMap.keyList(literals_map);
@@ -894,7 +901,7 @@ public
     protected
       ComponentRef seedCref, cref;
     algorithm
-      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE))), Type.UNKNOWN());
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");

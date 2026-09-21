@@ -28,10 +28,12 @@ build: $(NAME)
 parsergen:
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix
 
-Makefile: OMEdit.pro OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omedit_config.h
+Makefile: OMEdit.pro OMEdit.animation.unix.config.pri OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omedit_config.h
 	$(QMAKE) -r
 Makefile.unix: Makefile.unix.in
 	(cd @top_builddir@; ./config.status)
+OMEdit.animation.unix.config.pri: OMEdit.animation.unix.config.pri.in
+	(cd @top_builddir@ && ./config.status)
 OMEditLIB/OMEditLIB.unix.config.pri: OMEditLIB/OMEditLIB.unix.config.pri.in
 	(cd @top_builddir@ && ./config.status)
 OMEditGUI/OMEditGUI.unix.config.pri: OMEditGUI/OMEditGUI.unix.config.pri.in
@@ -50,7 +52,7 @@ clean:
 	rm -rf omedit_config.h Makefile OMEditLIB/debug OMEditLIB/release OMEditLIB/generatedfiles OMEditLIB/Makefile OMEditLIB/Makefile.Debug OMEditLIB/Makefile.Release OMEditLIB/object_script.* OMEditGUI/debug OMEditGUI/release OMEditGUI/Makefile OMEditGUI/Makefile.Debug OMEditGUI/Makefile.Release
 
 distclean: clean
-	rm -rf config.log config.sub config.status install-sh autom4te.cache config.guess configure Makefile.unix OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri
+	rm -rf config.log config.sub config.status install-sh autom4te.cache config.guess configure Makefile.unix OMEdit.animation.unix.config.pri OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri
 
 config.status: configure
 	./config.status -recheck

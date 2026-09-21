@@ -10,7 +10,6 @@
 #![allow(non_snake_case, non_upper_case_globals, clippy::type_complexity)]
 
 use std::cell::RefCell;
-use std::sync::Arc;
 use arcstr::ArcStr;
 
 // ── Thread-local roots (process-global by MetaModelica semantics) ─────────────
@@ -28,7 +27,7 @@ thread_local! {
     // `openmodelica_backend_main`.
     pub static interactiveCache: RefCell<Option<metamodelica::List<(
         openmodelica_ast::Absyn::Program,
-        Arc<openmodelica_ast::Absyn::Path>,
+        metamodelica::Ref<openmodelica_ast::Absyn::Path>,
         crate::Interactive::GraphicEnvCache,
     )>>> = const { RefCell::new(None) };
 
@@ -50,23 +49,15 @@ thread_local! {
     // type uses `NFInstNode.InstNode` from `openmodelica_nf_frontend`, on which
     // this crate already depends.
     pub static instNFInstCacheIndex: RefCell<metamodelica::List<(
-        (openmodelica_ast::Absyn::Program, Arc<openmodelica_ast::Absyn::Path>),
-        (metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>, ArcStr, Arc<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
-    )>> = RefCell::new(metamodelica::nil());
-
-    // Index 11 — instNFNodeCacheIndex
-    //
-    // NF node cache (program → SCode elements, InstNode).
-    pub static instNFNodeCacheIndex: RefCell<metamodelica::List<(
-        openmodelica_ast::Absyn::Program,
-        (metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>, Arc<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
+        (openmodelica_ast::Absyn::Program, metamodelica::Ref<openmodelica_ast::Absyn::Path>),
+        (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, ArcStr, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
     )>> = RefCell::new(metamodelica::nil());
 
     // Index 12 — instNFLookupCacheIndex
     //
     // NF lookup cache. Same type as instNFInstCacheIndex (index 10).
     pub static instNFLookupCacheIndex: RefCell<metamodelica::List<(
-        (openmodelica_ast::Absyn::Program, Arc<openmodelica_ast::Absyn::Path>),
-        (metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>, ArcStr, Arc<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
+        (openmodelica_ast::Absyn::Program, metamodelica::Ref<openmodelica_ast::Absyn::Path>),
+        (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, ArcStr, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
     )>> = RefCell::new(metamodelica::nil());
 }

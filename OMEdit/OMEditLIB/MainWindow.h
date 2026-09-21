@@ -53,8 +53,8 @@ extern "C" {
 #include "Util/StringHandler.h"
 
 #include <QtGlobal>
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-#error "OMEdit requires Qt 5.0.0 or newer"
+#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
+#error "OMEdit requires Qt 5.12.0 or newer"
 #endif
 
 #include <QMainWindow>
@@ -71,8 +71,13 @@ extern "C" {
 #include <QShortcut>
 #include <QRadioButton>
 #include <QTimer>
+#include <QSet>
+
+#include <functional>
 
 class OMCProxy;
+class CloudAccount;
+struct CloudMount;
 class TransformationsWidget;
 class LibraryWidget;
 class ElementWidget;
@@ -102,6 +107,7 @@ class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
 class NavigationManagerView;
+class LSPClient;
 
 class MainWindow : public QMainWindow
 {
@@ -127,11 +133,24 @@ public:
   bool isSkipExpressionEvaluation() const {return mSkipExpressionEvaluation;}
   void setSkipExpressionEvaluation(bool skipExpressionEvaluation) {mSkipExpressionEvaluation = skipExpressionEvaluation;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
+  LSPClient* getLSPClient() {return mpLSPClient;}
+  void setLSPClient(LSPClient *pLSPClient) {mpLSPClient = pLSPClient;}
+  void startLanguageServer();
+  void stopLanguageServer();
+  QStringList languageServerLibraries() const;
+  void syncLanguageServerLibraries();
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   int getNumberOfProcessors() {return mNumberOfProcessors;}
   QDockWidget* getMessagesDockWidget() {return mpMessagesDockWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
+  /*!
+   * \brief Whether the Libraries Browser exists yet.
+   * omc messages can be delivered as queued calls while MainWindow is still being
+   * constructed - during library loading at startup - and anything that reaches
+   * into the library tree from there works on a pointer that is not set up.
+   */
+  bool isLibraryWidgetReady() const {return mpLibraryWidget != 0;}
   ElementWidget* getElementWidget() {return mpElementWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
@@ -184,7 +203,7 @@ public:
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
 #endif
   QAction* getSimulateModelInteractiveAction() {return mpSimulateModelInteractiveAction;}
@@ -246,7 +265,7 @@ public:
   void simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
@@ -291,6 +310,8 @@ private:
   bool mTestsuiteRunning = false;
   bool mSkipExpressionEvaluation = false;
   OMCProxy *mpOMCProxy;
+  LSPClient *mpLSPClient = nullptr;
+  QTimer *mpLanguageServerSyncTimer = nullptr;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;
   SearchWidget *mpSearchWidget;
@@ -298,7 +319,7 @@ private:
   QDockWidget *mpMessagesDockWidget;
   NavigationManagerView *mpNavigationManagerView = nullptr;
   QDockWidget *mpNavigationManagerDockWidget = nullptr;
-  LibraryWidget *mpLibraryWidget;
+  LibraryWidget *mpLibraryWidget = 0;
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
   QDockWidget *mpElementDockWidget;
@@ -354,6 +375,8 @@ private:
   QAction *mpUnloadAllAction;
   // Directory actions
   QAction *mpOpenDirectoryAction;
+  QAction *mpOpenFromCloudAction;
+  QAction *mpSaveToCloudAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -403,7 +426,7 @@ private:
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction *mpSimulateWithAnimationAction;
 #endif
   QAction *mpSimulateModelInteractiveAction;
@@ -462,7 +485,7 @@ private:
   QAction *mpNewParametricPlotWindowAction;
   QAction *mpNewArrayPlotWindowAction;
   QAction *mpNewArrayParametricPlotWindowAction;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QAction *mpNewAnimationWindowAction;
 #endif
   QAction *mpDiagramWindowAction;
@@ -499,8 +522,20 @@ private:
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
   QMdiSubWindow *mpLastModelingSubWindow = nullptr;
+  //! Mounts with a synchronisation already running; a second one would race it.
+  QSet<QString> mSyncingMounts;
+  QHash<QString, QTimer *> mAutoPushTimers;
 signals:
   void resetMessagesTabWidgetNames();
+public:
+  void syncMount(const CloudMount &mount, CloudAccount *pAccount, const QString &title,
+                 const std::function<void()> &onSuccess = std::function<void()>(), bool background = false);
+  void openMountContents(const CloudMount &mount);
+  //! Opens a file, fetching its cloud folder first when the working copy is gone.
+  void openFileFetchingFromCloud(const QString &fileName, const QString &encoding);
+  //! Push a mount whose working copy was just written to, if it is set to auto-push.
+  void pushMountInBackground(const QString &mountId);
+
 public slots:
   void showMessageBrowser();
   void switchToWelcomePerspectiveSlot();
@@ -522,6 +557,8 @@ public slots:
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
   void openDirectory();
+  void openFromCloud();
+  void saveToCloud();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
   void openRecentFile();
@@ -602,6 +639,7 @@ public slots:
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
 private slots:
+  void onLanguageServerLogMessage(QString message, int type = 1);
   void cancelOmcOperation();
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);

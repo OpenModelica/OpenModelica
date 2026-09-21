@@ -35,6 +35,7 @@
 
 encapsulated package NFClassTree
   import NFInstNode.InstNode;
+  import NFInstNode;
   import SCode;
   import NFType.Type;
   import Mutable;
@@ -208,7 +209,7 @@ public
           // An import, save it as it is and deal with it in initImports later.
           case SCode.IMPORT()
             algorithm
-              imps := Import.UNRESOLVED_IMPORT(e.imp, parent, e.info) :: imps;
+              imps := Import.UNRESOLVED_IMPORT(e.imp, InstNode.scopeRef(parent), e.info) :: imps;
             then
               ();
 
@@ -465,6 +466,9 @@ public
       // Clone the class node by replacing the class in the node with itself.
       cls := InstNode.getClass(clsNode);
       clsNode := InstNode.replaceClass(cls, clsNode);
+      // The clone is a new node, not an update of the one it was made from, so
+      // it needs an identity of its own before any child points at it.
+      clsNode := InstNode.reidentify(clsNode);
 
       () := match cls
         case Class.EXPANDED_CLASS(elements = INSTANTIATED_TREE())
@@ -498,7 +502,8 @@ public
               // Update the parent of the extends to be the new instance.
               node := exts[i];
               InstNodeType.BASE_CLASS(definition = ext_def, ty = inst_ty) := InstNode.nodeType(node);
-              node := InstNode.setNodeType(InstNodeType.BASE_CLASS(instance, ext_def, inst_ty), node);
+              node := InstNode.setNodeType(
+                InstNodeType.BASE_CLASS(InstNode.identityCell(instance), ext_def, inst_ty), node);
               // Instantiate the class tree of the extends.
               (node, _, cls_count, comp_count) := instantiate(node, InstNode.EMPTY_NODE(), inst_scope);
               exts[i] := node;
@@ -617,7 +622,8 @@ public
         case Class.EXPANDED_DERIVED(baseClass = node)
           algorithm
             node := InstNode.setNodeType(
-              InstNodeType.BASE_CLASS(clsNode, InstNode.definition(node), InstNode.nodeType(node)), node);
+              InstNodeType.BASE_CLASS(InstNode.identityCell(clsNode),
+                InstNode.definition(node), InstNode.nodeType(node)), node);
             (node, instance, classCount, compCount) := instantiate(node, instance, scope);
             cls.baseClass := node;
           then

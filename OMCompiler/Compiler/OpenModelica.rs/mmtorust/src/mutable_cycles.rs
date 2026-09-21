@@ -61,16 +61,28 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use openmodelica_ast::Absyn;
 use rayon::prelude::*;
 
 use crate::codegen;
 use crate::hierarchy::{self, InstanceHierarchy, Ty};
 use crate::typedexp::{TypedCase, TypedExp, TypedStmt};
 
+/// Callback for [`visit_exp`]/[`visit_stmt`]: the callee name, its arguments,
+/// the call's result type, and the enclosing statement's source position when
+/// there is one (expressions carry no position of their own, and `if`/`for`
+/// conditions sit outside any statement that does).
+type CallVisit<'a> = dyn FnMut(&str, Vec<&TypedExp>, &Ty, Option<&Absyn::Info>) + 'a;
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum CellKind {
     Mutable,
     Pointer,
+    /// `array<T>`: `arrayUpdate` closes a cycle exactly like a cell update,
+    /// but an array is not a registered collection candidate, so these cycles
+    /// leak. `FCore.Ref` (`array<Node> "array of 1"`) is the motivating case —
+    /// MetaModelica used inconsistently, an array standing in for a cell.
+    Array,
 }
 
 impl std::fmt::Display for CellKind {
@@ -78,9 +90,19 @@ impl std::fmt::Display for CellKind {
         match self {
             CellKind::Mutable => write!(f, "Mutable"),
             CellKind::Pointer => write!(f, "Pointer"),
+            CellKind::Array => write!(f, "array"),
         }
     }
 }
+
+/// The builtins that write into an existing array, spelled as the typed-body
+/// walker sees them.
+const ARRAY_UPDATERS: &[&str] = &[
+    "arrayUpdate",
+    "arrayUpdateNoBoundsChecking",
+    "Dangerous.arrayUpdateNoBoundsChecking",
+    "MetaModelica.Dangerous.arrayUpdateNoBoundsChecking",
+];
 
 /// One concrete update call site: in `function`, a call to `callee` passed a
 /// cell of kind `kind` whose content type resolved to `content` (no type
@@ -104,9 +126,23 @@ pub struct Report {
     pub gc_types_mutable_only: BTreeSet<String>,
     /// Named types needing Arc→Gc, Mutable+Pointer scope.
     pub gc_types_full: BTreeSet<String>,
+    /// Named types on a cycle once `array` counts as a cell. Everything here
+    /// beyond `gc_types_full` is a cycle no cell-based collector can see.
+    pub gc_types_with_arrays: BTreeSet<String>,
     /// Subset of `gc_types_full` that transitively embeds an `Arc<dyn Fn>`
     /// field — untraceable edges, the hard part for any `Trace` derive.
     pub gc_types_with_dyn_fn: BTreeSet<String>,
+    /// Every named type in the containment graph.
+    pub all_types: BTreeSet<String>,
+    /// Types that can transitively reach a cell or a function value. Under a
+    /// tracing collector these must be the traced pointer kind; the rest can
+    /// stay plain `Arc`, because a barrier that provably cannot reach a
+    /// collected allocation hides nothing from the collector.
+    pub traced_types: BTreeSet<String>,
+    /// [`Report::traced_types`] counting only cell reachability — i.e. what the
+    /// set becomes if capture-free function values stay plain `fn` pointers
+    /// and so taint nothing.
+    pub traced_cells_only: BTreeSet<String>,
 }
 
 /// If `ty` is a cell type, return its kind and content type. The `Mutable`
@@ -114,13 +150,20 @@ pub struct Report {
 /// MM uniontype `Pointer.Pointer`, whose generic constructor name may appear
 /// in either dotted or `::` path form depending on the resolution path.
 fn cell_content(ty: &Ty) -> Option<(CellKind, &Ty)> {
+    if let Ty::Array(inner) = ty {
+        return Some((CellKind::Array, inner));
+    }
     if let Ty::Generic(name, args) = ty
         && args.len() == 1
     {
         let dotted = name.replace("::", ".");
         match dotted.as_str() {
-            "Mutable" | "Mutable.Mutable" => return Some((CellKind::Mutable, &args[0])),
-            "Pointer" | "Pointer.Pointer" => return Some((CellKind::Pointer, &args[0])),
+            "Mutable" | "Mutable.Mutable" => {
+                return Some((CellKind::Mutable, &args[0]));
+            }
+            "Pointer" | "Pointer.Pointer" => {
+                return Some((CellKind::Pointer, &args[0]));
+            }
             _ => {}
         }
     }
@@ -141,7 +184,7 @@ fn collect_named_types(ty: &Ty, out: &mut BTreeSet<String>) {
             // cell it is handled by the reach-back side, not as a Gc payload
             // by itself. Other generics (UnorderedMap, Vector, …) are user
             // types that themselves embed fields.
-            if !matches!(dotted.as_str(), "Mutable" | "Mutable.Mutable" | "Pointer" | "Pointer.Pointer") {
+            if cell_content(ty).is_none() {
                 out.insert(dotted);
             }
             args.iter().for_each(|t| collect_named_types(t, out));
@@ -175,114 +218,117 @@ fn ty_has_type_var(ty: &Ty) -> bool {
 /// handing the callee name and all argument expressions (positional then
 /// named) to `f`. Exhaustive over `TypedExp` so new variants fail to compile
 /// here rather than being silently skipped.
-fn visit_exp(e: &TypedExp, f: &mut impl FnMut(&str, Vec<&TypedExp>)) {
+fn visit_exp(e: &TypedExp, info: Option<&Absyn::Info>, f: &mut CallVisit<'_>) {
     match e {
         TypedExp::Lit(_) | TypedExp::Todo(_) => {}
         TypedExp::Var { segments, .. } => {
             for seg in segments {
                 for sub in &seg.subscripts {
-                    visit_exp(sub, f);
+                    visit_exp(sub, info, f);
                 }
             }
         }
         TypedExp::BinOp { lhs, rhs, .. } => {
-            visit_exp(lhs, f);
-            visit_exp(rhs, f);
+            visit_exp(lhs, info, f);
+            visit_exp(rhs, info, f);
         }
-        TypedExp::UnOp { operand, .. } => visit_exp(operand, f),
-        TypedExp::Call { func, args, named_args, .. }
-        | TypedExp::PartEval { func, args, named_args, .. } => {
+        TypedExp::UnOp { operand, .. } => visit_exp(operand, info, f),
+        TypedExp::Call { func, args, named_args, ty, .. }
+        | TypedExp::PartEval { func, args, named_args, ty, .. } => {
             let mut all: Vec<&TypedExp> = args.iter().collect();
             all.extend(named_args.iter().map(|(_, v)| v));
-            f(func, all);
+            f(func, all, ty, info);
             for a in args {
-                visit_exp(a, f);
+                visit_exp(a, info, f);
             }
             for (_, v) in named_args {
-                visit_exp(v, f);
+                visit_exp(v, info, f);
             }
         }
         TypedExp::Constructor { args, named_args, .. } => {
             for a in args {
-                visit_exp(a, f);
+                visit_exp(a, info, f);
             }
             for (_, v) in named_args {
-                visit_exp(v, f);
+                visit_exp(v, info, f);
             }
         }
         TypedExp::If { cond, then_, elseif, else_, .. } => {
-            visit_exp(cond, f);
-            visit_exp(then_, f);
+            visit_exp(cond, info, f);
+            visit_exp(then_, info, f);
             for (c, t) in elseif {
-                visit_exp(c, f);
-                visit_exp(t, f);
+                visit_exp(c, info, f);
+                visit_exp(t, info, f);
             }
-            visit_exp(else_, f);
+            visit_exp(else_, info, f);
         }
         TypedExp::Cons { head, tail, .. } => {
-            visit_exp(head, f);
-            visit_exp(tail, f);
+            visit_exp(head, info, f);
+            visit_exp(tail, info, f);
         }
-        TypedExp::Tuple(es) => es.iter().for_each(|e| visit_exp(e, f)),
-        TypedExp::Array { elems, .. } => elems.iter().for_each(|e| visit_exp(e, f)),
+        TypedExp::Tuple(es) => es.iter().for_each(|e| visit_exp(e, info, f)),
+        TypedExp::Array { elems, .. } => elems.iter().for_each(|e| visit_exp(e, info, f)),
         TypedExp::Match { input, cases, .. } => {
-            visit_exp(input, f);
+            visit_exp(input, info, f);
             for TypedCase { guard, locals, stmts, result, .. } in cases {
                 if let Some(g) = guard {
-                    visit_exp(g, f);
+                    visit_exp(g, info, f);
                 }
                 for (_, _, default, _) in locals {
                     if let Some(d) = default {
-                        visit_exp(d, f);
+                        visit_exp(d, info, f);
                     }
                 }
                 for s in stmts {
                     visit_stmt(s, f);
                 }
-                visit_exp(result, f);
+                visit_exp(result, info, f);
             }
         }
         TypedExp::Range { start, step, stop, .. } => {
-            visit_exp(start, f);
+            visit_exp(start, info, f);
             if let Some(s) = step {
-                visit_exp(s, f);
+                visit_exp(s, info, f);
             }
-            visit_exp(stop, f);
+            visit_exp(stop, info, f);
         }
         TypedExp::Reduction { body, iterators, .. } => {
-            visit_exp(body, f);
+            visit_exp(body, info, f);
             for it in iterators {
-                visit_exp(&it.range, f);
+                visit_exp(&it.range, info, f);
                 if let Some(g) = &it.guard {
-                    visit_exp(g, f);
+                    visit_exp(g, info, f);
                 }
             }
         }
     }
 }
 
-fn visit_stmt(s: &TypedStmt, f: &mut impl FnMut(&str, Vec<&TypedExp>)) {
+fn visit_stmt(s: &TypedStmt, f: &mut CallVisit<'_>) {
     match s {
-        TypedStmt::Assign { rhs, .. } => visit_exp(rhs, f),
-        TypedStmt::NoRetCall { call } => visit_exp(call, f),
+        TypedStmt::Assign { rhs, info, .. } => visit_exp(rhs, Some(info), f),
+        TypedStmt::NoRetCall { call, info, .. } => visit_exp(call, Some(info), f),
         TypedStmt::If { cond, then_, elseif, else_ } => {
-            visit_exp(cond, f);
+            let info: Option<&Absyn::Info> = None;
+            visit_exp(cond, info, f);
             then_.iter().for_each(|s| visit_stmt(s, f));
             for (c, body) in elseif {
-                visit_exp(c, f);
+                visit_exp(c, info, f);
                 body.iter().for_each(|s| visit_stmt(s, f));
             }
             else_.iter().for_each(|s| visit_stmt(s, f));
         }
         TypedStmt::For { range, body, .. } => {
-            visit_exp(range, f);
+            let info: Option<&Absyn::Info> = None;
+            visit_exp(range, info, f);
             body.iter().for_each(|s| visit_stmt(s, f));
         }
         TypedStmt::While { cond, body } => {
-            visit_exp(cond, f);
+            let info: Option<&Absyn::Info> = None;
+            visit_exp(cond, info, f);
             body.iter().for_each(|s| visit_stmt(s, f));
         }
-        TypedStmt::Try { body, else_body } => {
+        TypedStmt::Try { body, else_body, .. } => {
             body.iter().for_each(|s| visit_stmt(s, f));
             else_body.iter().for_each(|s| visit_stmt(s, f));
         }
@@ -569,6 +615,125 @@ fn cell_cyclic_types(
             }
         }
     }
+    // Greedy feedback arc set over the cell edges: the smallest set we can
+    // find whose removal leaves no cycle. Each one is a field that would have
+    // to become a weak reference for plain refcounting to reclaim everything.
+    if let Ok(path) = std::env::var("MMTORUST_WEAK_EDGES_OUT") {
+        let sccs_with_cell_edges = |dropped: &BTreeSet<(usize, usize)>| -> Vec<(usize, usize)> {
+            let mut idx = vec![usize::MAX; n];
+            let mut low = vec![0usize; n];
+            let mut comp = vec![usize::MAX; n];
+            let mut on = vec![false; n];
+            let (mut st, mut ctr, mut nc) = (Vec::new(), 0usize, 0usize);
+            for root in 0..n {
+                if idx[root] != usize::MAX {
+                    continue;
+                }
+                let mut call: Vec<(usize, usize)> = vec![(root, 0)];
+                while let Some(&mut (v, ref mut pi)) = call.last_mut() {
+                    if *pi == 0 {
+                        idx[v] = ctr;
+                        low[v] = ctr;
+                        ctr += 1;
+                        st.push(v);
+                        on[v] = true;
+                    }
+                    if *pi < adj[v].len() {
+                        let (w, _) = adj[v][*pi];
+                        *pi += 1;
+                        if dropped.contains(&(v, w)) {
+                            continue;
+                        }
+                        if idx[w] == usize::MAX {
+                            call.push((w, 0));
+                        } else if on[w] {
+                            low[v] = low[v].min(idx[w]);
+                        }
+                    } else {
+                        if low[v] == idx[v] {
+                            while let Some(w) = st.pop() {
+                                on[w] = false;
+                                comp[w] = nc;
+                                if w == v {
+                                    break;
+                                }
+                            }
+                            nc += 1;
+                        }
+                        call.pop();
+                        if let Some(&(parent, _)) = call.last() {
+                            low[parent] = low[parent].min(low[v]);
+                        }
+                    }
+                }
+            }
+            let mut out = Vec::new();
+            for v in 0..n {
+                for &(w, crosses) in &adj[v] {
+                    if crosses && comp[v] == comp[w] && !dropped.contains(&(v, w)) {
+                        out.push((v, w));
+                    }
+                }
+            }
+            out
+        };
+
+        let mut dropped: BTreeSet<(usize, usize)> = BTreeSet::new();
+        let mut order: Vec<(usize, usize)> = Vec::new();
+        loop {
+            let remaining = sccs_with_cell_edges(&dropped);
+            if remaining.is_empty() {
+                break;
+            }
+            // Drop whichever edge occurs most often; ties broken by name so the
+            // result is reproducible.
+            let mut count: BTreeMap<(usize, usize), usize> = BTreeMap::new();
+            for e in &remaining {
+                *count.entry(*e).or_default() += 1;
+            }
+            let best = *remaining
+                .iter()
+                .max_by_key(|e| (count[*e], std::cmp::Reverse(names[e.0].clone())))
+                .expect("non-empty");
+            dropped.insert(best);
+            order.push(best);
+        }
+        let mut out = format!(
+            "{} cell edges must become weak references for refcounting alone:\n",
+            order.len()
+        );
+        for (v, w) in &order {
+            out.push_str(&format!("    {} -> {}\n", names[*v], names[*w]));
+        }
+        std::fs::write(&path, out).expect("could not write weak edges");
+    }
+
+    if let Ok(path) = std::env::var("MMTORUST_CYCLE_EDGES_OUT") {
+        let mut out = String::new();
+        for scc in 0..scc_count {
+            if !scc_cyclic[scc] {
+                continue;
+            }
+            let members: Vec<&str> =
+                (0..n).filter(|&v| scc_of[v] == scc).map(|v| names[v].as_str()).collect();
+            out.push_str(&format!("SCC of {} types:\n", members.len()));
+            for m in &members {
+                out.push_str(&format!("    {m}\n"));
+            }
+            // The edges that close the cycle: an in-SCC edge crossing a cell.
+            // Making these weak would break the cycle without a collector.
+            for v in (0..n).filter(|&v| scc_of[v] == scc) {
+                for &(w, crosses) in &adj[v] {
+                    if crosses && scc_of[w] == scc {
+                        out.push_str(&format!("  cell edge: {} -> {}\n", names[v], names[w]));
+                    }
+                }
+            }
+            out.push('\n');
+        }
+        std::fs::write(&path, out).expect("could not write cycle edges");
+    }
+
     (0..n)
         .filter(|&v| scc_cyclic[scc_of[v]])
         .map(|v| names[v].clone())
@@ -598,9 +763,11 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
     hierarchy::collect_struct_field_tys(&hier.top_level, "", &mut graph);
     let back_mutable = types_containing_cell(&graph, &[CellKind::Mutable]);
     let back_pointer = types_containing_cell(&graph, &[CellKind::Pointer]);
+    let back_array = types_containing_cell(&graph, &[CellKind::Array]);
     let back_for = |k: CellKind| match k {
         CellKind::Mutable => &back_mutable,
         CellKind::Pointer => &back_pointer,
+        CellKind::Array => &back_array,
     };
 
     // Fixed point over the updater set: a function whose body passes a cell
@@ -610,11 +777,14 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
     let mut updaters: BTreeMap<String, BTreeSet<CellKind>> = BTreeMap::new();
     updaters.insert("Mutable.update".into(), BTreeSet::from([CellKind::Mutable]));
     updaters.insert("Pointer.update".into(), BTreeSet::from([CellKind::Pointer]));
+    for u in ARRAY_UPDATERS {
+        updaters.insert((*u).into(), BTreeSet::from([CellKind::Array]));
+    }
     loop {
         let mut changed = false;
         for (qname, stmts) in &bodies {
             let mut found: BTreeSet<CellKind> = BTreeSet::new();
-            let mut visit = |func: &str, args: Vec<&TypedExp>| {
+            let mut visit = |func: &str, args: Vec<&TypedExp>, _res: &Ty, _info: Option<&Absyn::Info>| {
                 let Some(kinds) = updaters.get(func) else { return };
                 for a in &args {
                     if let Some((k, content)) = cell_content(&a.ty())
@@ -649,11 +819,14 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
     //     transitively contains a cell (e.g. `UnorderedSet<T>` passed to
     //     `UnorderedSet.apply`, whose buckets cell is a record field) —
     //     content is the whole argument type.
-    let primitives = ["Mutable.update", "Pointer.update"];
+    let primitives: Vec<&str> = ["Mutable.update", "Pointer.update"]
+        .into_iter()
+        .chain(ARRAY_UPDATERS.iter().copied())
+        .collect();
     let mut sites: Vec<UpdateSite> = Vec::new();
     let mut unresolved: Vec<(String, String)> = Vec::new();
     for (qname, stmts) in &bodies {
-        let mut visit = |func: &str, args: Vec<&TypedExp>| {
+        let mut visit = |func: &str, args: Vec<&TypedExp>, _res: &Ty, _info: Option<&Absyn::Info>| {
             let Some(kinds) = updaters.get(func) else { return };
             for a in &args {
                 let a_ty = a.ty();
@@ -702,17 +875,24 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
     };
 
     let seeds_mutable = seeds(&|s| s.kind == CellKind::Mutable);
+    let seeds_cells = seeds(&|s| s.kind != CellKind::Array);
     let seeds_all = seeds(&|_| true);
 
     let reach_mutable = downward_reach(&graph, &seeds_mutable);
+    let reach_cells = downward_reach(&graph, &seeds_cells);
     let reach_all = downward_reach(&graph, &seeds_all);
 
     // Types on a cell-crossing containment cycle, restricted to those whose
     // cells actually get updated (the downward reach from update contents).
     let tv_under = tv_under_cells(&graph);
     let cyclic_mutable = cell_cyclic_types(&graph, &tv_under, &[CellKind::Mutable]);
-    let cyclic_all =
+    let cyclic_cells =
         cell_cyclic_types(&graph, &tv_under, &[CellKind::Mutable, CellKind::Pointer]);
+    let cyclic_all = cell_cyclic_types(
+        &graph,
+        &tv_under,
+        &[CellKind::Mutable, CellKind::Pointer, CellKind::Array],
+    );
 
     let known = |set: BTreeSet<String>| -> BTreeSet<String> {
         set.into_iter().filter(|q| graph.contains_key(q)).collect()
@@ -720,6 +900,8 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
     let gc_types_mutable_only: BTreeSet<String> =
         known(reach_mutable.intersection(&cyclic_mutable).cloned().collect());
     let gc_types_full: BTreeSet<String> =
+        known(reach_cells.intersection(&cyclic_cells).cloned().collect());
+    let gc_types_with_arrays: BTreeSet<String> =
         known(reach_all.intersection(&cyclic_all).cloned().collect());
     let gc_types_with_dyn_fn: BTreeSet<String> = gc_types_full
         .intersection(&hier.types_containing_dyn_fn)
@@ -728,8 +910,20 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
 
     let generic_updaters: BTreeMap<String, BTreeSet<CellKind>> = updaters
         .into_iter()
-        .filter(|(q, _)| q != "Mutable.update" && q != "Pointer.update")
+        .filter(|(q, _)| !primitives.contains(&q.as_str()))
         .collect();
+
+    let traced_cells_only: BTreeSet<String> =
+        types_containing_cell(&graph, &[CellKind::Mutable, CellKind::Pointer])
+            .into_iter()
+            .filter(|q| graph.contains_key(q))
+            .collect();
+    let traced_types: BTreeSet<String> = traced_cells_only
+        .union(&hier.types_containing_dyn_fn)
+        .filter(|q| graph.contains_key(*q))
+        .cloned()
+        .collect();
+    let all_types: BTreeSet<String> = graph.keys().cloned().collect();
 
     Report {
         sites,
@@ -737,7 +931,11 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         unresolved_generic_sites: unresolved,
         gc_types_mutable_only,
         gc_types_full,
+        gc_types_with_arrays,
         gc_types_with_dyn_fn,
+        all_types,
+        traced_types,
+        traced_cells_only,
     }
 }
 
@@ -748,7 +946,46 @@ fn top_package(qname: &str) -> &str {
 pub fn print_report(report: &Report) {
     let by_kind = |kind: CellKind| report.sites.iter().filter(move |s| s.kind == kind);
 
-    for kind in [CellKind::Mutable, CellKind::Pointer] {
+    {
+        let total = report.all_types.len();
+        let traced = report.traced_types.len();
+        println!(
+            "── traced set: {traced} of {total} named types can reach a cell or a function \
+             value; {} if only cells count ──",
+            report.traced_cells_only.len()
+        );
+        let mut per_pkg: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
+        for q in &report.all_types {
+            per_pkg.entry(top_package(q)).or_default().1 += 1;
+        }
+        for q in &report.traced_types {
+            per_pkg.entry(top_package(q)).or_default().0 += 1;
+        }
+        let mut rows: Vec<(&str, usize, usize)> =
+            per_pkg.iter().map(|(p, (t, n))| (*p, *t, *n)).collect();
+        rows.sort_by_key(|(p, t, n)| (std::cmp::Reverse(*t), std::cmp::Reverse(*n), *p));
+        println!(
+            "  packages holding traced types ({} of {} packages):",
+            rows.iter().filter(|(_, t, _)| *t > 0).count(),
+            rows.len()
+        );
+        for (pkg, t, n) in rows.iter().filter(|(_, t, _)| *t > 0) {
+            println!("    {:<28} {:4} of {:4} traced", pkg, t, n);
+        }
+        if let Ok(path) = std::env::var("MMTORUST_TRACED_SET_OUT") {
+            let dump = |set: &BTreeSet<String>, suffix: &str| {
+                let body: String = set.iter().map(|q| format!("{q}\n")).collect();
+                let p = format!("{path}{suffix}");
+                std::fs::write(&p, body).expect("could not write traced set");
+                println!("  traced set written to {p}");
+            };
+            dump(&report.traced_types, "");
+            dump(&report.traced_cells_only, ".cells-only");
+        }
+        println!();
+    }
+
+    for kind in [CellKind::Mutable, CellKind::Pointer, CellKind::Array] {
         let mut per_content: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
         for site in by_kind(kind) {
             let e = per_content.entry(site.content.to_string()).or_default();
@@ -809,5 +1046,15 @@ pub fn print_report(report: &Report) {
     print_set(
         "of those, types transitively embedding Arc<dyn Fn> (untraceable edges — Trace-derive problem cases)",
         &report.gc_types_with_dyn_fn,
+    );
+    let array_only: BTreeSet<String> = report
+        .gc_types_with_arrays
+        .difference(&report.gc_types_full)
+        .cloned()
+        .collect();
+    print_set(
+        "cycles closed through `arrayUpdate` rather than a cell — the types are \
+         lying about what is mutable; convert the array to a Mutable cell",
+        &array_only,
     );
 }

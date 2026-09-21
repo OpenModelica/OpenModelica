@@ -86,11 +86,7 @@ unsafe fn make_scon_box(s: *const c_char) -> *mut OmcRtBox {
         (*b).tag = OMCRT_SCON;
         (*b).head = ptr::null_mut();
         (*b).tail = ptr::null_mut();
-        (*b).s = if s.is_null() {
-            libc::strdup(c"".as_ptr())
-        } else {
-            libc::strdup(s)
-        };
+        (*b).s = crate::malloc_dup(if s.is_null() { c"".as_ptr() } else { s });
     }
     b
 }

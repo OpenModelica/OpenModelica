@@ -71,6 +71,7 @@ protected
   import DoubleEnded;
   import Rational;
   import NBBackendUtil;
+  import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
 
@@ -1287,9 +1288,9 @@ protected
         // extract potential record children
         children := match BVariable.getVar(exp.cref, sourceInfo())
           local
-            list<Pointer<Variable>> children_vars;
+            list<PointerWeak<Variable>> children_vars;
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
-          then list(BVariable.getVarName(var) for var in children_vars);
+          then list(BVariable.getVarName(PointerWeak.upgrade(var)) for var in children_vars);
           else {exp.cref};
         end match;
 

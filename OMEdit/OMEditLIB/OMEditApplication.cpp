@@ -184,6 +184,22 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QString localesPath = QDir::cleanPath(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales");
   qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 #endif // #ifdef Q_OS_WIN
+#ifdef Q_OS_LINUX
+  // WSL (/dev/dxg): Qt 6.11 reads the GPU vendor from a Vulkan probe, which here
+  // is dzn naming the NVIDIA adapter behind D3D12, so QtWebEngine drops GBM and
+  // renders through dzn, which cannot create a GrContext. GBM needs a render
+  // node; without one the D3D12 EGL has no dma_buf import either and the
+  // Documentation view stays blank, so only --disable-gpu paints.
+  if (QFile::exists("/dev/dxg")) {
+    if (!QDir("/dev/dri").entryList(QStringList("renderD*"), QDir::System).isEmpty()) {
+      if (!qEnvironmentVariableIsSet("QTWEBENGINE_FORCE_USE_GBM")) {
+        qputenv("QTWEBENGINE_FORCE_USE_GBM", "1");
+      }
+    } else if (!qEnvironmentVariableIsSet("QTWEBENGINE_CHROMIUM_FLAGS")) {
+      qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu --disable-gpu-compositing");
+    }
+  }
+#endif // #ifdef Q_OS_LINUX
 
 /* We need a better handling of ligth and dark themes.
  * For now just force light theme for Qt 6.8
@@ -387,6 +403,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
   }
 #endif
+
+  // On unless the user has turned it off; the same default the options page reads.
+  if (!testsuiteRunning && pSettings->value("languageServer/enabled", true).toBool()) {
+    pMainwindow->startLanguageServer();
+  }
 
   if (!testsuiteRunning) {
     // finally show the main window

@@ -46,7 +46,9 @@ SUBDIRS = Util \
   DynamicAnnotation \
   AutoCompletion \
   MergeExtendsModifiers \
-  RecentModels
+  LanguageServer \
+  RecentModels \
+  OuterParameterDialog
 
 BrowseMSL.depends = Util
 Diagram.depends = Util
@@ -61,4 +63,6 @@ StringHandler.depends = Util
 DynamicAnnotation.depends = Util
 AutoCompletion.depends = Util
 MergeExtendsModifiers.depends = Util
+LanguageServer.depends = Util
 RecentModels.depends = Util
+OuterParameterDialog.depends = Util

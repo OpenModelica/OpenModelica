@@ -35,6 +35,172 @@ struct Ctx<'a> {
     /// `f(t, y)`, which IDA's residual subtracts from `y'`.
     f: &'a mut [f64],
     failed: Option<&'static str>,
+    /// IDA with KLU only: the pattern and the scratch [`ode_jac`] assembles through.
+    jac: Option<&'a mut OdeJac>,
+    mem: *mut c_void,
+    tol: f64,
+    nominals: &'a [f64],
+}
+
+/// The residual Jacobian of `y' - f(t, y)` as KLU wants it: the ODE's pattern plus
+/// the diagonal, recoloured, in CSC form with the assembly's scratch.
+struct OdeJac {
+    colptr: Vec<sundials::SunIndex>,
+    rowidx: Vec<sundials::SunIndex>,
+    /// `slots[col][k]` is the value index of `rows_by_col[col][k]`.
+    slots: Vec<Vec<usize>>,
+    colors: Vec<Vec<u32>>,
+    rows_by_col: Vec<Vec<u32>>,
+    ysave: Vec<f64>,
+    del: Vec<f64>,
+    gp: Vec<f64>,
+    seed: Vec<f64>,
+}
+
+impl OdeJac {
+    /// `None` without a pattern for the `n` states: IDA's dense difference-quotient
+    /// Jacobian solves it then.
+    fn new(ode: &dyn Ode, n: usize) -> Option<OdeJac> {
+        let rows = ode.jac_rows_by_col();
+        if rows.len() != n || rows.iter().flatten().any(|&r| r as usize >= n) {
+            return None;
+        }
+        let rows_by_col: Vec<Vec<u32>> = rows
+            .iter()
+            .enumerate()
+            .map(|(col, r)| {
+                let mut v = r.clone();
+                v.push(col as u32);
+                v.sort_unstable();
+                v.dedup();
+                v
+            })
+            .collect();
+        let wide: Vec<Vec<usize>> = rows_by_col.iter().map(|r| r.iter().map(|&x| x as usize).collect()).collect();
+        let colors = crate::gbode::color_columns(&wide, n)
+            .into_iter()
+            .map(|g| g.into_iter().map(|c| c as u32).collect())
+            .collect();
+        let mut j = OdeJac {
+            colptr: Vec::with_capacity(n + 1),
+            rowidx: Vec::new(),
+            slots: Vec::with_capacity(n),
+            colors,
+            rows_by_col,
+            ysave: vec![0.0; n],
+            del: vec![0.0; n],
+            gp: vec![0.0; n],
+            seed: vec![0.0; n],
+        };
+        j.colptr.push(0);
+        for rows in &j.rows_by_col {
+            let base = j.rowidx.len();
+            j.slots.push((0..rows.len()).map(|k| base + k).collect());
+            j.rowidx.extend(rows.iter().map(|&r| r as sundials::SunIndex));
+            j.colptr.push(j.rowidx.len() as sundials::SunIndex);
+        }
+        Some(j)
+    }
+
+    fn nnz(&self) -> usize {
+        self.rowidx.len()
+    }
+}
+
+/// `cj·I - df/dy` into the sparse matrix, a colour at a time: the model's own
+/// Jacobian-vector product where it has one, else the difference quotient of `f`.
+/// `rr` is the residual at the point, so `f = y' - rr` costs no evaluation.
+unsafe extern "C" fn ode_jac(
+    t: f64,
+    cj: f64,
+    yy: NVector,
+    yp: NVector,
+    rr: NVector,
+    j: sundials::SunMatrix,
+    user: *mut c_void,
+    _t1: NVector,
+    _t2: NVector,
+    _t3: NVector,
+) -> c_int {
+    let Ctx { ode, n, failed, jac, mem, tol, nominals, .. } = unsafe { &mut *(user as *mut Ctx) };
+    let n = *n;
+    let Some(jac) = jac.as_deref_mut() else { return -1 };
+    let (ys, ypv, base) = unsafe {
+        (
+            core::slice::from_raw_parts_mut(nv_data(yy), n),
+            core::slice::from_raw_parts(nv_data(yp), n),
+            core::slice::from_raw_parts(nv_data(rr), n),
+        )
+    };
+    let nnz = jac.nnz();
+    let vals = unsafe {
+        let (data, colptr, rowidx) = sundials::sparse_arrays(j);
+        core::ptr::copy_nonoverlapping(jac.colptr.as_ptr(), colptr, n + 1);
+        core::ptr::copy_nonoverlapping(jac.rowidx.as_ptr(), rowidx, nnz);
+        core::slice::from_raw_parts_mut(data, nnz)
+    };
+    vals.fill(0.0);
+    let diag = |row: usize, col: usize| if row == col { cj } else { 0.0 };
+    if ode.has_jacobian_vector() {
+        let mut exact = true;
+        for group in &jac.colors {
+            jac.seed.fill(0.0);
+            for &c in group {
+                jac.seed[c as usize] = 1.0;
+            }
+            if !ode.jacobian_vector(t, ys, &jac.seed, &mut jac.gp) {
+                exact = false;
+                break;
+            }
+            for &col in group {
+                let ci = col as usize;
+                for (slot, &row) in jac.slots[ci].iter().zip(&jac.rows_by_col[ci]) {
+                    vals[*slot] = diag(row as usize, ci) - jac.gp[row as usize];
+                }
+            }
+        }
+        if exact {
+            return 0;
+        }
+        vals.fill(0.0);
+    }
+    let h = sundials::ida_current_step(*mem);
+    for group in &jac.colors {
+        for &col in group {
+            let ci = col as usize;
+            let yi = ys[ci];
+            let nom = nominals.get(ci).copied().unwrap_or(1.0);
+            let mut del = fd_step(yi, h * ypv[ci], *tol, nom);
+            del = yi + del - yi;
+            if del == 0.0 {
+                del = fd_step(0.0, 0.0, *tol, nom);
+            }
+            jac.ysave[ci] = yi;
+            jac.del[ci] = del;
+            ys[ci] = yi + del;
+        }
+        let r = ode.eval(t, ys, &mut jac.gp);
+        for &col in group {
+            ys[col as usize] = jac.ysave[col as usize];
+        }
+        if let Err(e) = r {
+            if ode.take_discard() {
+                return 1;
+            }
+            *failed = Some(e);
+            return -1;
+        }
+        for &col in group {
+            let ci = col as usize;
+            let del = jac.del[ci];
+            for (slot, &row) in jac.slots[ci].iter().zip(&jac.rows_by_col[ci]) {
+                let ri = row as usize;
+                let f0 = ypv[ri] - base[ri];
+                vals[*slot] = diag(ri, ci) - (jac.gp[ri] - f0) / del;
+            }
+        }
+    }
+    0
 }
 
 unsafe extern "C" fn rhs(t: f64, y: NVector, ydot: NVector, user: *mut c_void) -> c_int {
@@ -202,7 +368,17 @@ impl CvodeOde {
         self.prepare(*t, y)?;
         let (n, n_zc) = (self.n, self.n_zc);
         let cv = self.cv.as_mut().expect("prepare built it");
-        let mut ctx = Ctx { ode, n, n_zc, f: &mut [], failed: None };
+        let mut ctx = Ctx {
+            ode,
+            n,
+            n_zc,
+            f: &mut [],
+            failed: None,
+            jac: None,
+            mem: core::ptr::null_mut(),
+            tol: 0.0,
+            nominals: &[],
+        };
         if !cv.set_user_data(&mut ctx as *mut Ctx as *mut c_void) {
             return Err("cvode: the context could not be bound");
         }
@@ -263,6 +439,9 @@ pub struct IdaOde {
     f: Vec<f64>,
     pending: Pending,
     past: Counters,
+    /// KLU over the model's pattern, once it has been asked for; `None` is dense.
+    jac: Option<OdeJac>,
+    asked_sparsity: bool,
 }
 
 impl IdaOde {
@@ -276,6 +455,8 @@ impl IdaOde {
             f: vec![0.0; n],
             pending: Pending::Rebuild,
             past: Counters::default(),
+            jac: None,
+            asked_sparsity: false,
         }
     }
 
@@ -311,9 +492,11 @@ impl IdaOde {
             return Ok(SunStep::Reached);
         }
         self.prepare(ode, *t, y)?;
-        let (n, n_zc) = (self.n, self.n_zc);
-        let ida = self.ida.as_mut().expect("prepare built it");
-        let mut ctx = Ctx { ode, n, n_zc, f: &mut self.f, failed: None };
+        let (n, n_zc, tol) = (self.n, self.n_zc, self.tolerance);
+        let IdaOde { ida, jac, f, nominals, .. } = self;
+        let ida = ida.as_mut().expect("prepare built it");
+        let mem = ida.mem_ptr();
+        let mut ctx = Ctx { ode, n, n_zc, f, failed: None, jac: jac.as_mut(), mem, tol, nominals };
         if !ida.set_user_data(&mut ctx as *mut Ctx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }
@@ -357,18 +540,23 @@ impl IdaOde {
         }
         let atol = abs_tolerances(self.tolerance, self.n, &self.nominals);
         let root = (self.n_zc > 0).then_some(ida_roots as sundials::IdaRootFn);
-        // Always dense: `-idaLS=klu` wants a sparsity pattern, which an ODE handed
-        // over as a residual does not have.
         let opts = IdaOptions {
             max_order: crate::simflags::with_flags(|f| f.max_order),
             ..IdaOptions::default()
         };
+        // KLU where the model states its pattern (C's default `-idaLS=klu`); the
+        // colouring is kept across restarts.
+        if !self.asked_sparsity {
+            self.asked_sparsity = true;
+            self.jac = OdeJac::new(ode, self.n);
+        }
+        let (ls, nnz, jac_fn) = match self.jac.as_ref() {
+            Some(j) => (IdaLs::Klu, j.nnz(), Some(ode_jac as sundials::IdaJacFn)),
+            None => (IdaLs::Dense, 0, None),
+        };
         self.ida = Some(
-            Ida::new(
-                t, y, &yp, self.tolerance, &atol, self.n_zc, ida_res, root, IdaLs::Dense, 0, None,
-                &opts,
-            )
-            .ok_or("ida: the integrator could not be created")?,
+            Ida::new(t, y, &yp, self.tolerance, &atol, self.n_zc, ida_res, root, ls, nnz, jac_fn, &opts)
+                .ok_or("ida: the integrator could not be created")?,
         );
         Ok(())
     }

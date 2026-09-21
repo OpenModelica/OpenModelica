@@ -14,6 +14,7 @@ same `../plot.js` the simulator pages draw with.
 | `result=<url>` and `reference=<url>` | fetch both and compare, `result` against `reference` |
 | `var=<name>` | the variable to show first (defaults to the first differing one) |
 | `relTol`, `relTolDiffMinMax`, `rangeDelta` | the tolerances, with `diffSimulationResults`'s defaults |
+| `algorithm=rectangle\|ellipse\|ellipse2014` | which tube to build; `ellipse2014` (the default) is `diffSimulationResults`', the other two are csv-compare's, where `relTol` and `relTolDiffMinMax` do not apply |
 | `file=<url>` (repeatable) | just load files to plot |
 
 A page such as an OpenModelicaLibraryTesting report can link straight to
@@ -47,6 +48,7 @@ WASI without a browser (`omplot-cli.js` in this directory):
     node omplot-cli.js traj Model_res.arrow x y > xy.csv
     node omplot-cli.js val Model_res.arrow x 0.5
     node omplot-cli.js diff Model_res.arrow Model_ref.mat --relTol 1e-3
+    node omplot-cli.js diff Model_res.arrow Model_ref.mat --algorithm rectangle
     node omplot-cli.js tube Model_res.arrow Model_ref.mat x
     node omplot-cli.js convert Model_res.mat Model_res.arrow --intervals 500 --single
 

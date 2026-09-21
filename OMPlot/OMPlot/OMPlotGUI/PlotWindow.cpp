@@ -523,6 +523,11 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
   toolBar->addWidget(mpLogYCheckBox);
   toolBar->addSeparator();
+  mpAlignZeroCheckBox = new QCheckBox(tr("Align zero"), this);
+  mpAlignZeroCheckBox->setToolTip(tr("Align zero on left and right Y-axes"));
+  connect(mpAlignZeroCheckBox, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
+  toolBar->addWidget(mpAlignZeroCheckBox);
+  toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
   QString setup(tr("Setup"));
@@ -1784,6 +1789,8 @@ void PlotWindow::updatePlot()
     if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
       mpPlot->getPlotZoomer()->setZoomBase(false);
     }
+    alignYAxisZero();
+    mpPlot->replot();
   }
 }
 
@@ -2047,7 +2054,53 @@ void PlotWindow::fitInView()
   mpPlot->setAxisAutoScale(QwtPlot::yRight);
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpPlot->replot();
+  alignYAxisZero();
+  mpPlot->replot();
   mpPlot->getPlotZoomer()->setZoomBase(false);
+}
+
+/*!
+ * \brief PlotWindow::alignYAxisZero
+ * Aligns the visible left and right linear y-axes so that zero has the same
+ * position on both axes.
+ * The ranges are only expanded, preserving all plotted data, and logarithmic
+ * or single-axis plots are left unchanged.
+ */
+void PlotWindow::alignYAxisZero()
+{
+  // Zero cannot be aligned on logarithmic axes or when one of the axes is hidden.
+  if (!mAlignZero || mpLogYCheckBox->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
+      || !mpPlot->axisWidget(QwtPlot::yRight)->isVisible()) {
+    return;
+  }
+
+  const QwtScaleDiv leftScale = mpPlot->axisScaleDiv(QwtPlot::yLeft);
+  const QwtScaleDiv rightScale = mpPlot->axisScaleDiv(QwtPlot::yRight);
+  const double leftMin = leftScale.lowerBound();
+  const double leftMax = leftScale.upperBound();
+  const double rightMin = rightScale.lowerBound();
+  const double rightMax = rightScale.upperBound();
+  const double leftNegative = qMax(0.0, -leftMin);
+  const double leftPositive = qMax(0.0, leftMax);
+  const double rightNegative = qMax(0.0, -rightMin);
+  const double rightPositive = qMax(0.0, rightMax);
+
+  // A range that does not contain zero has no meaningful zero position.
+  if ((leftNegative == 0.0 && leftPositive == 0.0) || (rightNegative == 0.0 && rightPositive == 0.0)) {
+    return;
+  }
+
+  // Calculate the normalized zero position and use the farther position for both axes.
+  const double leftZeroPosition = leftNegative / (leftNegative + leftPositive);
+  const double rightZeroPosition = rightNegative / (rightNegative + rightPositive);
+  const double zeroPosition = qBound(1e-6, qMax(leftZeroPosition, rightZeroPosition), 1.0 - 1e-6);
+
+  // Expand each axis independently while keeping all existing values visible.
+  const double leftRange = qMax(leftNegative / zeroPosition, leftPositive / (1.0 - zeroPosition));
+  const double rightRange = qMax(rightNegative / zeroPosition, rightPositive / (1.0 - zeroPosition));
+
+  mpPlot->setAxisScale(QwtPlot::yLeft, -leftRange * zeroPosition, leftRange * (1.0 - zeroPosition));
+  mpPlot->setAxisScale(QwtPlot::yRight, -rightRange * zeroPosition, rightRange * (1.0 - zeroPosition));
 }
 
 void PlotWindow::updateCurves()
@@ -2235,6 +2288,23 @@ void PlotWindow::setLogY(bool on)
   bool state = mpLogYCheckBox->blockSignals(true);
   mpLogYCheckBox->setChecked(on);
   mpLogYCheckBox->blockSignals(state);
+  updatePlot();
+}
+
+/*!
+ * \brief PlotWindow::setAlignZero
+ * Sets whether the left and right y-axis zero positions should be aligned.
+ * Synchronizes the toolbar control and refreshes the plot.
+ * \param on
+ */
+void PlotWindow::setAlignZero(bool on)
+{
+  mAlignZero = on;
+  if (mpAlignZeroCheckBox) {
+    const bool state = mpAlignZeroCheckBox->blockSignals(true);
+    mpAlignZeroCheckBox->setChecked(on);
+    mpAlignZeroCheckBox->blockSignals(state);
+  }
   updatePlot();
 }
 
@@ -2628,6 +2698,8 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
   mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits() && mpPlotWindow->canHavePrefixUnits());
   mpPrefixUnitsCheckbox->setEnabled(mpPlotWindow->canHavePrefixUnits());
+  mpAlignZeroCheckbox = new QCheckBox(tr("Align zero on left and right Y-axes"));
+  mpAlignZeroCheckbox->setChecked(mpPlotWindow->getAlignZero());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
@@ -2636,6 +2708,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpYRightAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpPrefixUnitsCheckbox);
+  pRangeTabVerticalLayout->addWidget(mpAlignZeroCheckbox);
   mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
@@ -2769,6 +2842,7 @@ void SetupDialog::applySetup()
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
+  mpPlotWindow->setAlignZero(mpAlignZeroCheckbox->isChecked());
   // set the range
   if (mpAutoScaleCheckbox->isChecked()) {
     mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::xBottom);

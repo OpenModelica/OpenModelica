@@ -56,12 +56,12 @@ impl DylinkInstance {
         // model and the driver share one runtime copy. `OMC_WASM_FUSED_ARTIFACT=0`
         // falls back to the dylink adapter.
         let fused = std::env::var("OMC_WASM_FUSED_ARTIFACT").as_deref() != Ok("0")
-            && !openmodelica_wasm_jit::FMI3_FUSED_WASIP1.is_empty();
+            && !openmodelica_wasm_jit::FMI3_FUSED_WASIP1().is_empty();
         let fmu = if fused {
             DylinkFmu::load_fused(model, ext, external_c, lapack, resources).map_err(Error::Load)?
         } else {
             DylinkFmu::load(
-                openmodelica_wasm_jit::FMI3_MECS_CAPI_ADAPTER,
+                openmodelica_wasm_jit::FMI3_MECS_CAPI_ADAPTER(),
                 model,
                 ext,
                 external_c,
@@ -549,7 +549,8 @@ impl Fmi3CoSimulation for DylinkInstance {
         let event = f(self, 0)? != 0;
         let terminate = f(self, 1)? != 0;
         let early = f(self, 2)? != 0;
+        let discarded = f(self, 3)? != 0;
         let last = self.fmu.read_f64(p + 16).map_err(|e| err("fmi3DoStep", e))?;
-        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last })
+        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last, discarded })
     }
 }

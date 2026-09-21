@@ -291,6 +291,7 @@ void ia_free(simulation_result *self, DATA *data, threadData_t *threadData)
   rt_tick(SIM_TIMER_OUTPUT);
 
   delete (IA_DATA*)self->storage;
+  self->storage = NULL;
   communicateMsg(6, 0, 0);
 
   rt_accumulate(SIM_TIMER_OUTPUT);

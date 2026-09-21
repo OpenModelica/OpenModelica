@@ -12,6 +12,7 @@ use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{LazyLock, Mutex};
 
 use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, Resolve, VarTy};
@@ -71,7 +72,8 @@ fn cstr(p: *const c_char) -> String {
 }
 
 /// The String values the rows carry as ids (like `sim_meta::strings` in the
-/// Rust runtime): process-global, never emptied.
+/// Rust runtime): shared by every open writer, dropped once the last one
+/// closes, so a process that runs simulation after simulation does not grow.
 #[derive(Default)]
 struct Interned {
     by_id: Vec<String>,
@@ -79,6 +81,7 @@ struct Interned {
 }
 
 static STRINGS: LazyLock<Mutex<Interned>> = LazyLock::new(Mutex::default);
+static OPEN_WRITERS: AtomicUsize = AtomicUsize::new(0);
 
 fn intern(s: &str) -> u32 {
     let mut t = STRINGS.lock().unwrap_or_else(|e| e.into_inner());
@@ -582,7 +585,10 @@ pub extern "C" fn omc_result_writer_open(
         let params: &[f64] = if params.is_null() { &[] } else { unsafe { std::slice::from_raw_parts(params, n_params) } };
         let first: &[f64] = if first_row.is_null() { &[] } else { unsafe { std::slice::from_raw_parts(first_row, n_columns) } };
         match open(&cstr(path), &cstr(format), signals, &types, params, first, start_time, stop_time, single != 0, mat_sync.max(0) as usize) {
-            Ok(w) => Box::into_raw(Box::new(w)),
+            Ok(w) => {
+                OPEN_WRITERS.fetch_add(1, Ordering::AcqRel);
+                Box::into_raw(Box::new(w))
+            }
             Err(e) => {
                 set_error(error, &e);
                 ptr::null_mut()
@@ -612,7 +618,13 @@ pub extern "C" fn omc_result_writer_close(w: *mut omc_result_writer) -> c_int {
         return 0;
     }
     let mut w = unsafe { Box::from_raw(w) };
-    c_int::from(catch_unwind(AssertUnwindSafe(|| w.finish())).unwrap_or(false))
+    let ok = catch_unwind(AssertUnwindSafe(|| w.finish())).unwrap_or(false);
+    drop(w);
+    // finish() has joined the writer thread, so no id is resolved after this.
+    if OPEN_WRITERS.fetch_sub(1, Ordering::AcqRel) == 1 {
+        *STRINGS.lock().unwrap_or_else(|e| e.into_inner()) = Interned::default();
+    }
+    c_int::from(ok)
 }
 
 #[cfg(test)]

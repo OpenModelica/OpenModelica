@@ -1,18 +1,21 @@
 # Hand-written Rust omc sources copied into each build's working copy (see
 # rust_omc.cmake); mmtorust generates the rest. Paths relative to OpenModelica.rs.
 # Regenerate from a git checkout:
-#   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$'
+#   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$|^openmodelica_wasm_bindgen/'
+# openmodelica_wasm_bindgen is left out on purpose: it is a build tool, compiled
+# from the canonical tree, and nothing in the working copy refers to it.
 #
 .cargo/config.toml
+.cmake/darwin-toolchain.cmake
 .cmake/windows-deps.cmake
 .cmake/windows-qt-deploy.cmake
-.cmake/x64-windows-xwin.cmake
 .cmake/xwin-toolchain.cmake
 .config/nextest.toml
 .gitignore
 Cargo.lock
 Cargo.toml
 libopenmodelica_compiler/Cargo.toml
+libopenmodelica_compiler/build.rs
 libopenmodelica_compiler/gen/gen-sim-tables.c
 libopenmodelica_compiler/gen/gen-sim-tables.sh
 libopenmodelica_compiler/include/omc_rust_embedding.h
@@ -31,6 +34,7 @@ metamodelica/src/boolean.rs
 metamodelica/src/cancel.rs
 metamodelica/src/ext.rs
 metamodelica/src/gc.rs
+metamodelica/src/heap_limit.rs
 metamodelica/src/host_io.rs
 metamodelica/src/integer.rs
 metamodelica/src/lib.rs
@@ -58,6 +62,7 @@ mmtorust/src/fallibility.rs
 mmtorust/src/fix.rs
 mmtorust/src/hierarchy.rs
 mmtorust/src/main.rs
+mmtorust/src/overrides.rs
 mmtorust/src/mc_disjoint.rs
 mmtorust/src/mutable_cycles.rs
 mmtorust/src/scripting_api_qt.rs
@@ -332,6 +337,17 @@ openmodelica_fmi_web/Cargo.lock
 openmodelica_fmi_web/Cargo.toml
 openmodelica_fmi_web/build.rs
 openmodelica_fmi_web/src/lib.rs
+openmodelica_gendoc/Cargo.toml
+openmodelica_gendoc/src/assets/gendoc.js
+openmodelica_gendoc/src/doc.rs
+openmodelica_gendoc/src/heap.rs
+openmodelica_gendoc/src/html.rs
+openmodelica_gendoc/src/icons.rs
+openmodelica_gendoc/src/index.rs
+openmodelica_gendoc/src/links.rs
+openmodelica_gendoc/src/main.rs
+openmodelica_gendoc/src/packages.rs
+openmodelica_gendoc/src/style.css
 openmodelica_hdf5/Cargo.lock
 openmodelica_hdf5/Cargo.toml
 openmodelica_hdf5/build.rs
@@ -382,16 +398,19 @@ openmodelica_modelica_utilities/Cargo.toml
 openmodelica_modelica_utilities/src/lib.rs
 openmodelica_nbackend/Cargo.toml
 openmodelica_nbackend/src/NBASSCExt.rs
+openmodelica_nf_api/Cargo.toml
+openmodelica_nf_api/src/Globals.rs
 openmodelica_nf_frontend/Cargo.toml
 openmodelica_nf_frontend/build.rs
 openmodelica_nf_frontend/src/FFI.rs
 openmodelica_nf_frontend/src/FFI_wasm.rs
+openmodelica_nf_frontend/src/FFI_wasm_marshal.rs
+openmodelica_nf_frontend/src/Globals.rs
 openmodelica_nf_frontend/src/ffi_catch.cpp
+openmodelica_loader/Cargo.toml
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_program_util/Cargo.toml
-openmodelica_result_web/Cargo.toml
-openmodelica_result_web/src/lib.rs
 openmodelica_revision/Cargo.toml
 openmodelica_revision/build.rs
 openmodelica_revision/src/lib.rs
@@ -449,8 +468,11 @@ openmodelica_util/src/unittests/util_tests.rs
 openmodelica_util_datatypes_basic/Cargo.toml
 openmodelica_util_datatypes_basic/src/GCExt.rs
 openmodelica_util_datatypes_basic/src/Mutable.rs
+openmodelica_util_datatypes_basic/src/MutableWeak.rs
+openmodelica_util_datatypes_basic/src/PointerWeak.rs
 openmodelica_util_datatypes_basic/src/Pointer.rs
 openmodelica_util_datatypes_basic/src/unittests/array_tests.rs
+openmodelica_util_datatypes_basic/src/unittests/container_cycle_drop_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/double_ended_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/list_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mod.rs
@@ -468,10 +490,14 @@ openmodelica_wasi_libc/src/lib.rs
 openmodelica_wasm_jit/Cargo.toml
 openmodelica_wasm_jit/build.rs
 openmodelica_wasm_jit/external_c_stubs.c
+openmodelica_wasm_jit/src/blobs.rs
 openmodelica_wasm_jit/src/dylink.rs
+openmodelica_wasm_jit/src/dylink_wasmer.rs
 openmodelica_wasm_jit/src/dylink_wasmtime.rs
 openmodelica_wasm_jit/src/engine_config.rs
+openmodelica_wasm_jit/src/ext_eval.rs
 openmodelica_wasm_jit/src/host.rs
+openmodelica_wasm_jit/src/isolate.rs
 openmodelica_wasm_jit/src/lib.rs
 openmodelica_wasm_jit/src/model.rs
 openmodelica_wasm_jit/src/result_sink.rs
@@ -524,3 +550,4 @@ wasm/simulator/omc-worker.js
 wasm/theme.css
 wasm/units.js
 wasm/ui.js
+wasm/wasm-blobs.js

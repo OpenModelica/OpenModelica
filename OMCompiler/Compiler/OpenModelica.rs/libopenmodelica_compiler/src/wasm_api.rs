@@ -41,6 +41,8 @@ extern "C" {
     fn omc_fmu_platforms_js() -> Vec<String>;
     #[wasm_bindgen(js_namespace = globalThis, js_name = __omcFmuLoader)]
     fn omc_fmu_loader_js(platform: &str) -> Option<Vec<u8>>;
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcWasmBlob)]
+    fn omc_wasm_blob_js(file: &str) -> Option<Vec<u8>>;
 }
 
 fn wall_ms() -> f64 {
@@ -79,6 +81,13 @@ fn aot_preload() {
 fn aot_compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
     omc_aot_compile_js(component, triple)
         .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+}
+
+/// Let a model's externals reach a library this omc does not embed, through
+/// `globalThis.__omcWasmBlob(file)`. The host defines it — see `wasm/wasm-blobs.js`.
+#[wasm_bindgen]
+pub fn omc_enable_wasm_blobs() {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_wasm_blob_source(omc_wasm_blob_js);
 }
 
 /// Let `buildModelFMU(..., platforms={"wasm", "linux64"})` serve native platforms
@@ -162,6 +171,11 @@ pub fn omc_init() -> bool {
     // wasm has no `Instant`; give the sim driver a wall-clock for the chunk budget.
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_clock(wall_ms);
 
+    // `System.loadLibrary` has no dlopen to call here; route it to the wasm
+    // side-module loader, so `external "C"` functions can still be evaluated at
+    // compile time (NFEvalFunction).
+    openmodelica_wasm_jit::ext_eval::install();
+
     // `-d=-buildExternalLibs`: never try to *build* an external "C" library's
     // Resources/BuildProjects (autotools) — impossible in-browser, and it would
     // abort simcode elaboration of table functions. External functions are
@@ -241,6 +255,50 @@ pub fn wasi_readdir(path: &str) -> JsValue {
 #[wasm_bindgen]
 pub fn wasi_write_file(path: &str, bytes: &[u8]) {
     openmodelica_wasi::write(path, bytes.to_vec());
+}
+
+/// Write many files in one call, from an array of `{ path: string, bytes:
+/// Uint8Array }`. Restoring a cached package tree is one postMessage rather than
+/// one per file. Returns how many were written; a malformed entry is skipped.
+#[wasm_bindgen]
+pub fn wasi_write_files(entries: JsValue) -> usize {
+    let Ok(arr) = entries.dyn_into::<js_sys::Array>() else {
+        return 0;
+    };
+    let mut written = 0;
+    for entry in arr.iter() {
+        let path = js_sys::Reflect::get(&entry, &JsValue::from_str("path"))
+            .ok()
+            .and_then(|v| v.as_string());
+        let bytes = js_sys::Reflect::get(&entry, &JsValue::from_str("bytes"))
+            .ok()
+            .and_then(|v| v.dyn_into::<js_sys::Uint8Array>().ok());
+        if let (Some(path), Some(bytes)) = (path, bytes) {
+            openmodelica_wasi::write(&path, bytes.to_vec());
+            written += 1;
+        }
+    }
+    written
+}
+
+/// Remove `path`, whether it is a file or a directory (the store's directories
+/// are implicit, so a directory means every key beneath it). Returns true if
+/// anything was removed. Embedded builtins are immutable and unaffected.
+#[wasm_bindgen]
+pub fn wasi_remove(path: &str) -> bool {
+    if openmodelica_wasi::remove(path) {
+        return true;
+    }
+    if openmodelica_wasi::is_dir(path) {
+        return openmodelica_wasi::fs::remove_dir_all(path).is_ok();
+    }
+    false
+}
+
+/// Move `from` to `to`, either a single file or a whole subtree.
+#[wasm_bindgen]
+pub fn wasi_rename(from: &str, to: &str) -> bool {
+    openmodelica_wasi::fs::rename(from, to).is_ok()
 }
 
 /// Drain the files the last command tried to download but did not find in the

@@ -186,6 +186,8 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Lapack.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/List.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/MutableWeak.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/PointerWeak.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SemanticVersion.mo
@@ -371,6 +373,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInline.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstanceAPI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstNode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookup.mo
@@ -449,6 +452,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/AbsynJLDumpTpl.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenEmbeddedC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenESP32.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppCommon.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppOMSI.mo

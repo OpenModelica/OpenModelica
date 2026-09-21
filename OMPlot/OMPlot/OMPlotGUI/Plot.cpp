@@ -293,6 +293,7 @@ bool Plot::prefixableUnit(const QString &unit)
     "Pa",
     "Pa.s",
     "J",
+    "eV",
     "J/kg",
     "J/(kg.K)",
     "K",

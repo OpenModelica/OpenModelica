@@ -72,6 +72,7 @@ pub mod sun {
         fn KINSetLinearSolver(kinmem: *mut c_void, ls: SunLinSol, a: SunMatrix) -> c_int;
         fn KINSetJacFn(kinmem: *mut c_void, jac: JacFn) -> c_int;
         fn KINGetFuncNorm(kinmem: *mut c_void, fnorm: *mut f64) -> c_int;
+        fn KINGetNumNonlinSolvIters(kinmem: *mut c_void, iters: *mut c_long) -> c_int;
         fn N_VNew_Serial(len: SunIndex, ctx: SunContext) -> NVector;
         fn N_VDestroy(v: NVector);
         fn N_VGetArrayPointer(v: NVector) -> *mut f64;
@@ -227,6 +228,7 @@ pub mod sun {
 
     extern "C" fn jacobian(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
         let ud = unsafe { &mut *(user as *mut Ud) };
+        crate::note_jac_eval();
         let x = data(u, ud.n);
         let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(j), ud.nnz) };
         if ud.numeric {
@@ -297,6 +299,9 @@ pub mod sun {
         solved: bool,
         /// The Jacobian values the scaling was last taken from.
         vals: vec::Vec<f64>,
+        /// `KINGetNumNonlinSolvIters` counts from `KINInit`, so a solve's own share
+        /// is the difference across it.
+        iters_seen: c_long,
     }
 
     impl Solver {
@@ -321,6 +326,7 @@ pub mod sun {
                 numeric_jac: false,
                 solved: false,
                 vals: vec![0.0; nnz],
+                iters_seen: 0,
             };
             if s.kin.is_null()
                 || s.j.is_null()
@@ -332,6 +338,11 @@ pub mod sun {
             if s.ls.is_null() {
                 return None;
             }
+            openmodelica_solvers::omclog::info(
+                openmodelica_solvers::omclog::NLS,
+                false,
+                "KINSOL: Using linear solver method klu",
+            );
             unsafe {
                 if KINInit(s.kin, residual, s.u) != KIN_SUCCESS
                     || KINSetLinearSolver(s.kin, s.ls, s.j) != KIN_SUCCESS
@@ -363,6 +374,9 @@ pub mod sun {
         fn f_scaling(&mut self, ud: &mut Ud) {
             let vals = &mut self.vals;
             if !self.solved {
+                // C assembles this one through `nlsSparseSymJac`/`nlsSparseJac`, so
+                // it lands in `numberOfJEval` like any other.
+                crate::note_jac_eval();
                 let x = data(self.u, self.n);
                 if ud.numeric {
                     let mut fx = vec![0.0f64; ud.n];
@@ -496,6 +510,10 @@ pub mod sun {
                 self.f_scaling(&mut ud);
                 self.max_newton_step();
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
+                let mut iters: c_long = 0;
+                unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
+                crate::note_nls_iters((iters - self.iters_seen).max(0) as u64);
+                self.iters_seen = iters;
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
                 let retry = flag < 0 && self.handle_error(flag, &mut retries, &mut reset_tol);
                 ud.numeric = self.numeric_jac;
@@ -1176,16 +1194,38 @@ pub const AVAILABLE: bool = cfg!(sundials);
 /// setup. Keyed, not scanned: a model can have one system per discretization
 /// volume. Single-threaded, as the rest of this crate's rosters are.
 #[cfg(sundials)]
-struct Cache<T>(core::cell::UnsafeCell<alloc::collections::BTreeMap<u32, T>>);
+struct Cache<T> {
+    map: core::cell::UnsafeCell<alloc::collections::BTreeMap<u32, T>>,
+    /// The map is shared, where the solve itself runs detached from it: two
+    /// `--parmodauto` tasks can be inside two sparse systems at the same time.
+    lock: core::sync::atomic::AtomicU32,
+}
 #[cfg(sundials)]
 unsafe impl<T> Sync for Cache<T> {}
 
 #[cfg(sundials)]
 impl<T> Cache<T> {
+    const fn new() -> Cache<T> {
+        Cache {
+            map: core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()),
+            lock: core::sync::atomic::AtomicU32::new(0),
+        }
+    }
+
+    fn locked<R>(&self, f: impl FnOnce(&mut alloc::collections::BTreeMap<u32, T>) -> R) -> R {
+        use core::sync::atomic::Ordering;
+        while self.lock.compare_exchange_weak(0, 1, Ordering::Acquire, Ordering::Relaxed).is_err() {
+            core::hint::spin_loop();
+        }
+        let out = f(unsafe { &mut *self.map.get() });
+        self.lock.store(0, Ordering::Release);
+        out
+    }
+
     /// Detach the solver for `handle` so a model callback can re-enter for a nested
     /// system, run `f`, then put it back.
     fn with(&self, handle: u32, new: impl FnOnce() -> Option<T>, f: impl FnOnce(&mut T) -> bool) -> bool {
-        let mut solver = match unsafe { &mut *self.0.get() }.remove(&handle) {
+        let mut solver = match self.locked(|m| m.remove(&handle)) {
             Some(s) => s,
             None => match new() {
                 Some(s) => s,
@@ -1193,24 +1233,24 @@ impl<T> Cache<T> {
             },
         };
         let ok = f(&mut solver);
-        unsafe { &mut *self.0.get() }.insert(handle, solver);
+        self.locked(|m| m.insert(handle, solver));
         ok
     }
 }
 
 #[cfg(sundials)]
 static KIN_CACHE: Cache<sun::Solver> =
-    Cache(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
+    Cache::new();
 /// [`KIN_CACHE`] for `-nls=kinsol_b`.
 #[cfg(sundials)]
 static KIN_B_CACHE: Cache<sun::BSolver> =
-    Cache(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
+    Cache::new();
 
 /// Drop every per-system KINSOL/KLU memory; they belong to one run.
 #[cfg(sundials)]
 pub fn reset_caches() {
-    unsafe { &mut *KIN_CACHE.0.get() }.clear();
-    unsafe { &mut *KIN_B_CACHE.0.get() }.clear();
+    KIN_CACHE.locked(|m| m.clear());
+    KIN_B_CACHE.locked(|m| m.clear());
 }
 
 /// [`solve`] for `-nls=kinsol_b` (C's `B_nlsKinsolSolve`). `start` is C's

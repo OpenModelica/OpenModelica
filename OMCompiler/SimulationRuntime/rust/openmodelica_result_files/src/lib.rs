@@ -4,12 +4,15 @@
 pub mod arrow;
 #[cfg(feature = "json-layout")]
 pub mod arrow_json;
-pub mod cmp;
 pub mod file;
 #[cfg(feature = "hdf5")]
 pub mod hdf5;
 pub mod readers;
 pub mod threads;
+
+/// The tube comparison, moved to its own crate so the standalone
+/// result-compare tool can use it without the readers.
+pub use openmodelica_result_diff as cmp;
 
 pub use arrow::ArrowReader;
 #[cfg(feature = "json-layout")]

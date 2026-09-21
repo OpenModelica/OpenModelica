@@ -1,4 +1,4 @@
-# TODO after the SVN merge
+# TODO: large tests that were removed
 
 A few directories and tests were removed because they were very big.
 In particular ReferenceFiles, flattening tests, and tests using some
@@ -14,7 +14,5 @@ variable passing the path to each test case (started: msl32 files were moved).
 
 ## List of stupid directories
 
-- flattening/libraries/msl22
-- flattening/libraries/msl22/modelicaAdditions
 - flattening/libraries/msl31
 - flattening/libraries/3rdParty/HumMod

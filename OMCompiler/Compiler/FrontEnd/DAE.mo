@@ -1075,6 +1075,7 @@ end CodeType;
 uniontype EvaluateSingletonType "Is here because constants are not allowed to contain function pointers for some reason"
   record EVAL_SINGLETON_TYPE_FUNCTION
     EvaluateSingletonTypeFunction fun;
+    annotation(__OpenModelica_Retired = true);
   end EVAL_SINGLETON_TYPE_FUNCTION;
 
   record EVAL_SINGLETON_KNOWN_TYPE

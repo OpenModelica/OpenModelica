@@ -46,6 +46,7 @@ public
 import SCode;
 import DAE;
 import FCore;
+import MutableWeak;
 import FCore.RefTree;
 import FNode;
 import FGraph;
@@ -150,7 +151,7 @@ algorithm
       Children kids;
       String nds, color, labelText;
       GraphML.ShapeType shape;
-      Ref nr;
+      FCore.WeakRef nr;
       list<Ref> nrefs;
       GraphML.NodeLabel label;
 
@@ -186,7 +187,7 @@ algorithm
         (gi, _) := GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(node)),
-                   "n" + intString(FNode.id(FNode.fromRef(nr))),
+                   "n" + intString(FNode.id(FNode.fromRef(MutableWeak.upgrade(nr)))),
                    GraphML.COLOR_RED,
                    GraphML.LINE(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -200,7 +201,7 @@ algorithm
         (gi, _) = GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(FNode.fromRef(target))),
-                   "n" + intString(FNode.id(FNode.fromRef(nr))),
+                   "n" + intString(FNode.id(FNode.fromRef(MutableWeak.upgrade(nr)))),
                    GraphML.COLOR_RED,
                    GraphML.DASHED(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -231,7 +232,7 @@ algorithm
         (gi, _) := GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(node)),
-                   "n" + intString(FNode.id(FNode.fromRef(nr))),
+                   "n" + intString(FNode.id(FNode.fromRef(MutableWeak.upgrade(nr)))),
                    GraphML.COLOR_GREEN,
                    GraphML.LINE(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -245,7 +246,7 @@ algorithm
         (gi, _) = GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(FNode.fromRef(target))),
-                   "n" + intString(FNode.id(FNode.fromRef(nr))),
+                   "n" + intString(FNode.id(FNode.fromRef(MutableWeak.upgrade(nr)))),
                    GraphML.COLOR_RED,
                    GraphML.DASHED(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -280,7 +281,7 @@ algorithm
         (gi, _) := GraphML.addEdge(
                    "e" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(node)),
-                   "n" + intString(FNode.id(FNode.fromRef(nr))),
+                   "n" + intString(FNode.id(FNode.fromRef(MutableWeak.upgrade(nr)))),
                    GraphML.COLOR_BLACK,
                    GraphML.LINE(),
                    GraphML.LINEWIDTH_STANDARD,

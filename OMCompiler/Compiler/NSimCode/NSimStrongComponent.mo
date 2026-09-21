@@ -479,6 +479,24 @@ public
       blcks := List.flatten(tmp_lst);
     end createInitialBlocks;
 
+    function createParameterBlocks
+      "creates the blocks of the explicitly solved primary parameter bindings, in evaluation order"
+      input list<StrongComponent> comps;
+      output list<Block> blcks = {};
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input UnorderedMap<ComponentRef, Block> equation_map;
+    protected
+      Block tmp;
+      Integer index;
+    algorithm
+      for comp in comps loop
+        (tmp, simCodeIndices, index) := fromStrongComponent(comp, simCodeIndices, NBPartition.Kind.INI, simcode_map, equation_map);
+        blcks := tmp :: blcks;
+      end for;
+      blcks := listReverse(blcks);
+    end createParameterBlocks;
+
     function createDAEModeBlocks
       input list<Partition.Partition> partitions;
       output list<list<Block>> blcks = {};
@@ -896,8 +914,10 @@ public
           Block tmp;
           Integer i;
           list<Subscript> subs;
+          Equation body_eqn;
 
-        case (BEquation.SCALAR_EQUATION(), {}) algorithm
+        // a scalar equation has size 1, so a slice {1} is the same as no slice
+        case (BEquation.SCALAR_EQUATION(), _) algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + 1;
@@ -938,6 +958,12 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
+
+        // the generic residual writes one value per index, an array valued body would overflow the residual array
+        case (BEquation.FOR_EQUATION(body = {body_eqn}), _) guard(Equation.size(Pointer.create(body_eqn)) > 1) algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " does not support a part of a for equation with an array valued body:\n"
+            + Slice.toString(slice, function Equation.pointerToString(str = ""))});
+        then fail();
 
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm

@@ -1489,15 +1489,28 @@ public
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
-          Boolean eqnIsDiscrete, eqnIsIf;
+          Boolean eqnIsDiscrete, eqnIsIf, eqnHasNoResidual;
+          Option<Expression> residual_opt;
 
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
             eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
-            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
+            // ALGORITHM equations have no simple scalar residual for getResidualExp --
+            // treat them like discrete equations (solveSimple fallback below) instead of
+            // crashing, now that NBTearing.mo's initialize can pass them in here.
+            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or Equation.isAlgorithm(eqn_ptr);
             eqnIsIf := Equation.isIfEquation(eqn_ptr);
+            eqnHasNoResidual := false;
             if not (eqnIsDiscrete or eqnIsIf) then
-              residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
+              // e.g. a RECORD_EQUATION whose type has no '+'/'-'/'0' operators (a plain
+              // Medium ThermodynamicState, for example) can't have a residual built at
+              // all -- fall back to IMPLICIT below instead of crashing.
+              residual_opt := Equation.tryGetResidualExp(eqn_ptr);
+              if isSome(residual_opt) then
+                SOME(residual) := residual_opt;
+              else
+                eqnHasNoResidual := true;
+              end if;
             end if;
             for var in UnorderedSet.toArray(full.occurrences[eqn_idx]) loop
               // only do something if var is to be refined
@@ -1511,7 +1524,7 @@ public
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
                     sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
-                  elseif eqnIsIf then
+                  elseif eqnIsIf or eqnHasNoResidual then
                     // TODO more thorough analysis
                     sol := Solvability.IMPLICIT();
                   else
@@ -2734,31 +2747,68 @@ public
     Pointer<Variable> var;
     Integer sk = 1;
     list<Subscript> subs;
+    list<ComponentRef> scalar_matches;
+    Boolean hasSetSub = false;
   algorithm
-    if UnorderedMap.contains(cref, map) then
+    for s in ComponentRef.subscriptsAllFlat(cref) loop
+      // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
+      // that the exact-match check below already handles correctly -- only a
+      // literal/array-valued INDEX subscript (e.g. the "{1, 2}" in i_s[{1, 2}])
+      // is the set-subscript case this function needs to special-case.
+      if not Subscript.isScalar(s) and not Subscript.isSliced(s) then
+        hasSetSub := true;
+      end if;
+    end for;
+
+    // a cref with a set/array-valued subscript (e.g. i_s[{1, 2}], produced when a torn
+    // slice's residual equation keeps its original vector-valued RHS subexpression --
+    // see NBTearing.scalarSlices) must not go through the ordinary exact-match check
+    // below: "map" here can use stripped (subscript-ignoring) cref equality
+    // (VariablePointers' non-scalarized mode), under which i_s[{1, 2}] can spuriously
+    // "contain"-match some unrelated whole-array entry for the same base variable,
+    // recording that wrong, un-scalarized cref as the dependency and silently breaking
+    // the seed/column mapping in fullToSparsity downstream (whose seed set is matched by
+    // strict, non-stripped equality). Resolve those via their individual scalar elements
+    // instead, matched strictly against map.
+    if not hasSetSub and UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
       end if;
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
-    else
-      var := BVariable.getVarPointer(cref, sourceInfo());
-      if BVariable.isRecord(var) then
-        subs := ComponentRef.subscriptsAllFlat(cref);
-        // get all Record children that are relevant for current context
-        crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
-        crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
-        // add original subscripts
-        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
-        // collect dependencies
-        crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
-        for cref in crefs loop
-          Dependency.skip(cref, depth + 1, sk, dep_map);
-          sk := sk + 1;
+      return;
+    end if;
+
+    if hasSetSub then
+      scalar_matches := list(c for c guard(UnorderedMap.contains(c, map)) in ComponentRef.scalarize(cref, false));
+      if not listEmpty(scalar_matches) then
+        for c in scalar_matches loop
+          if not UnorderedMap.contains(c, dep_map) then
+            UnorderedMap.add(c, Dependency.create(ComponentRef.getSubscriptedType(c), depth), dep_map);
+          end if;
+          Solvability.update(c, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
         end for;
-      else
-        crefs := {};
+        crefs := scalar_matches;
+        return;
       end if;
+    end if;
+
+    var := BVariable.getVarPointer(cref, sourceInfo());
+    if BVariable.isRecord(var) then
+      subs := ComponentRef.subscriptsAllFlat(cref);
+      // get all Record children that are relevant for current context
+      crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
+      crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
+      // add original subscripts
+      crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
+      // collect dependencies
+      crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
+      for cref in crefs loop
+        Dependency.skip(cref, depth + 1, sk, dep_map);
+        sk := sk + 1;
+      end for;
+    else
+      crefs := {};
     end if;
   end collectDependenciesCref;
 

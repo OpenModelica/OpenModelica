@@ -23,13 +23,13 @@ use alloc::vec::Vec;
 // through; either resolves to the same code.
 use crate::exports::fmi::fmi3::co_simulation::GuestCoSimulationInstance;
 use crate::exports::fmi::fmi3::model_exchange::GuestModelExchangeInstance;
-use crate::{Instance, Status};
+use crate::{Instance, Status, WasmInstance};
 
 // ── The instance ────────────────────────────────────────────────────────────
 
-static mut INSTANCE: Option<Instance> = None;
+static mut INSTANCE: Option<WasmInstance> = None;
 
-fn instance() -> Option<&'static Instance> {
+fn instance() -> Option<&'static WasmInstance> {
     unsafe { (*core::ptr::addr_of!(INSTANCE)).as_ref() }
 }
 
@@ -47,7 +47,7 @@ fn status(s: Status) -> i32 {
 }
 
 /// The status of a call on an instance that was never created.
-fn with<R>(f: impl FnOnce(&Instance) -> R, absent: R) -> R {
+fn with<R>(f: impl FnOnce(&WasmInstance) -> R, absent: R) -> R {
     match instance() {
         Some(i) => f(i),
         None => absent,
@@ -359,8 +359,12 @@ pub extern "C" fn om_fmi3DoStep(point: f64, size: f64, no_set_state_prior: i32, 
     with(
         |i| match i.do_step(point, size, no_set_state_prior != 0) {
             Ok(r) => {
-                let flags =
-                    [r.event_handling_needed as i32, r.terminate_simulation as i32, r.early_return as i32];
+                let flags = [
+                    r.event_handling_needed as i32,
+                    r.terminate_simulation as i32,
+                    r.early_return as i32,
+                    r.discarded as i32,
+                ];
                 unsafe {
                     core::ptr::copy_nonoverlapping(flags.as_ptr(), out as *mut i32, flags.len());
                     core::ptr::write_unaligned((out + 16) as *mut f64, r.last_successful_time);

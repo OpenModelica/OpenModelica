@@ -35,6 +35,7 @@
 
 encapsulated uniontype NFImport
   import NFInstNode.InstNode;
+  import NFInstNode;
 
 protected
   import Absyn;
@@ -50,12 +51,13 @@ protected
 public
   record UNRESOLVED_IMPORT
     Absyn.Import imp;
-    InstNode scope;
+    NFInstNode.ScopeRef scope "Weakly: the class tree owns the scope this
+      import sits in.";
     SourceInfo info;
   end UNRESOLVED_IMPORT;
 
   record RESOLVED_IMPORT
-    InstNode node;
+    NFInstNode.ScopeRef node "Weakly: the class tree owns the imported node.";
     String shortName;
     SourceInfo info;
   end RESOLVED_IMPORT;
@@ -71,7 +73,7 @@ public
   algorithm
     name := match imp
       case UNRESOLVED_IMPORT() then AbsynUtil.importName(imp.imp);
-      case RESOLVED_IMPORT() then InstNode.name(imp.node);
+      case RESOLVED_IMPORT() then InstNode.name(InstNode.borrow(imp.node));
     end match;
   end name;
 
@@ -94,12 +96,12 @@ public
     (outImport, node, changed) := match imp
       case UNRESOLVED_IMPORT()
         algorithm
-          (outImport, node) := instQualified(imp.imp, imp.scope, imp.info);
+          (outImport, node) := instQualified(imp.imp, InstNode.fromCell(imp.scope), imp.info);
         then
           (outImport, node, true);
 
       case RESOLVED_IMPORT()
-        then (imp, imp.node, false);
+        then (imp, InstNode.fromCell(imp.node), false);
 
       case CONFLICTING_IMPORT()
         algorithm
@@ -149,7 +151,7 @@ public
       else "";
     end match;
 
-    outImport := RESOLVED_IMPORT(node, short_name, info);
+    outImport := RESOLVED_IMPORT(InstNode.scopeRef(node), short_name, info);
   end instQualified;
 
   function instUnqualified
@@ -157,13 +159,14 @@ public
     input output list<Import> imps = {};
   protected
     Absyn.Path path;
-    InstNode node, scope;
+    InstNode node;
+    NFInstNode.ScopeRef scope;
     ClassTree tree;
     SourceInfo info;
   algorithm
     UNRESOLVED_IMPORT(imp = Absyn.Import.UNQUAL_IMPORT(path = path), scope = scope, info = info) := imp;
 
-    node := Lookup.lookupImport(path, scope, info);
+    node := Lookup.lookupImport(path, InstNode.fromCell(scope), info);
     node := Inst.instPackage(node, NFInstContext.NO_CONTEXT);
     tree := Class.classTree(InstNode.getClass(node));
 
@@ -171,11 +174,11 @@ public
       case ClassTree.FLAT_TREE()
         algorithm
           for cls in tree.classes loop
-            imps := RESOLVED_IMPORT(cls, "", info) :: imps;
+            imps := RESOLVED_IMPORT(InstNode.scopeRef(cls), "", info) :: imps;
           end for;
 
           for comp in tree.components loop
-            imps := RESOLVED_IMPORT(comp, "", info) :: imps;
+            imps := RESOLVED_IMPORT(InstNode.scopeRef(comp), "", info) :: imps;
           end for;
         then
           ();

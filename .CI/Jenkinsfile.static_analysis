@@ -25,6 +25,7 @@ pipeline {
           additionalBuildArgs '--pull'
           dir '.CI/clang-tools'
           label 'linux'
+          customWorkspace 'ws/OpenModelica'
         }
       }
       options {

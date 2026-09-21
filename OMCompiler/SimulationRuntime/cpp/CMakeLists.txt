@@ -185,32 +185,32 @@ INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 # Check C++11
 IF(NOT(USE_CPP_03))
   IF(MSVC)
-    IF(MSVC_VERSION GREATER 1700)
+    IF(MSVC_VERSION GREATER_EQUAL 1914)
       SET(COMPILER_SUPPORTS_CXX11 True)
-    ELSE(MSVC_VERSION GREATER 1700)
+    ELSE(MSVC_VERSION GREATER_EQUAL 1914)
       SET(COMPILER_SUPPORTS_CXX11 False)
-    ENDIF(MSVC_VERSION GREATER 1700)
+    ENDIF(MSVC_VERSION GREATER_EQUAL 1914)
   ELSE(MSVC)
     INCLUDE(CheckCXXCompilerFlag)
     IF(APPLE)
-      CHECK_CXX_COMPILER_FLAG("-std=c++11 -stdlib=libc++" COMPILER_SUPPORTS_CXX11)
+      CHECK_CXX_COMPILER_FLAG("-std=c++17 -stdlib=libc++" COMPILER_SUPPORTS_CXX11)
     ELSE(APPLE)
       IF(FMU_TARGET)
         SET(COMPILER_SUPPORTS_CXX11 True)
       ELSE(FMU_TARGET)
-        CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+        CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX11)
       ENDIF(FMU_TARGET)
     ENDIF(APPLE)
     IF(COMPILER_SUPPORTS_CXX11)
       IF(APPLE)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
-        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++11 -stdlib=libc++")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -stdlib=libc++")
+        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++17 -stdlib=libc++")
         SET(CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
-        SET(CXX11_FLAGS " -std=c++11 -stdlib=libc++") #used for precompiled header
+        SET(CXX11_FLAGS " -std=c++17 -stdlib=libc++") #used for precompiled header
       ELSE(APPLE)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++11")
-        SET(CXX11_FLAGS " -std=c++11") #used for precompiled header
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+        SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++17")
+        SET(CXX11_FLAGS " -std=c++17") #used for precompiled header
       ENDIF(APPLE)
     ELSE()
       SET(COMPILER_SUPPORTS_CXX11 False)
@@ -231,9 +231,9 @@ ELSE()
 ENDIF(NOT(USE_CPP_03))
 
 IF(COMPILER_SUPPORTS_CXX11)
-  MESSAGE(STATUS "C++11 support enabled")
+  MESSAGE(STATUS "C++17 support enabled")
 ELSE(COMPILER_SUPPORTS_CXX11)
-  MESSAGE(STATUS "C++11 support disabled")
+  MESSAGE(STATUS "C++17 support disabled")
   ADD_DEFINITIONS(-DUSE_CPP_03)
 ENDIF(COMPILER_SUPPORTS_CXX11)
 
@@ -339,11 +339,11 @@ IF(WIN32)
   ELSEIF(IS_MINGW32)
     MESSAGE(FATAL_ERROR "32-bit version not supported")
   ELSEIF(MSVC)
-    IF(MSVC_VERSION GREATER 1700)
+    IF(MSVC_VERSION GREATER_EQUAL 1914)
       SET(BOOST_ROOT ${OMDEV_ESCAPED}/lib/3rdParty/boost-1_59/)
-    ELSE(MSVC_VERSION GREATER 1700)
+    ELSE(MSVC_VERSION GREATER_EQUAL 1914)
       SET(BOOST_ROOT ${OMDEV_ESCAPED}/lib/3rdParty/boost-1_55/)
-    ENDIF(MSVC_VERSION GREATER 1700)
+    ENDIF(MSVC_VERSION GREATER_EQUAL 1914)
   ELSE()
     MESSAGE(FATAL_ERROR "CPPRuntime does not know how to handle boost in this configuration")
   ENDIF()
@@ -879,30 +879,17 @@ install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/cpp/lic
 #copy Utils/extension
 SET(HS Core/Object/IObject.h
         Core/Object/Object.h
-        Core/Utils/extension/adaptable_factory.hpp
         Core/Utils/extension/common.hpp
         Core/Utils/extension/convenience.hpp
         Core/Utils/extension/extension.hpp
         Core/Utils/extension/factory.hpp
         Core/Utils/extension/factory_map.hpp
-        Core/Utils/extension/filesystem.hpp
-        Core/Utils/extension/parameter.hpp
-        Core/Utils/extension/parameter_map.hpp
-        Core/Utils/extension/registry.hpp
         Core/Utils/extension/shared_library.hpp
         Core/Utils/extension/type_map.hpp
         Core/Utils/extension/logger.hpp
-        Core/Utils/extension/impl/adaptable_factory.hpp
-        Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
-        Core/Utils/extension/impl/adaptable_factory_set.hpp
         Core/Utils/extension/impl/create.hpp
-        Core/Utils/extension/impl/create_func.hpp
         Core/Utils/extension/impl/decl.hpp
-        Core/Utils/extension/impl/factory.hpp
-        Core/Utils/extension/impl/factory_map.hpp
-        Core/Utils/extension/impl/function.hpp
         Core/Utils/extension/impl/library_impl.hpp
-        Core/Utils/extension/impl/shared_library.hpp
         Core/Utils/extension/impl/typeinfo.hpp
         FMU2/fmi2Functions.h
         FMU2/fmi2FunctionTypes.h

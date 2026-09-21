@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 bug2756.mos \
+ESP32Codegen.mos \
 FileNamePrefix.mos \
 NetworkLoop_total.mos
 

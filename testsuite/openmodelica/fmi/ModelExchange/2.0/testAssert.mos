@@ -42,9 +42,7 @@ getErrorString();
 // LOG_ASSERT        | info    | [<interactive>:7:3-7:60:writable]
 // |                 | |       | The following assertion has been violated at time 0.204000
 // |                 | |       | ((x < 1.5)) --> \"x is too big at time = 0.204\"
-// LOG_ASSERT        | error   | [<interactive>:7:3-7:60:writable]
-// |                 | |       | The following assertion has been violated at time 0.202731
-// |                 | |       | ((x < 1.5)) --> \"x is too big at time = 0.202731\"
+// LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] internalEventUpdate: terminated by an assertion.
 // LOG_ASSERT        | debug   | fmi2NewDiscreteStates failed with status : Error
 // "

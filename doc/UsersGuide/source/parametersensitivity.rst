@@ -112,11 +112,16 @@ Usage
 OMSens offers 3 flavors for parameter sensitivity analysis.
 
 -  Individual Sensitivity Analysis
-  -  Used to analyze how a parameter affects a variable when perturbed on its own
+
+   -  Used to analyze how a parameter affects a variable when perturbed on its own
+
 -  Multi-parameter Sweep
-  -  Exploratory experimentation that sweeps the space of a set of parameters
+
+   -  Exploratory experimentation that sweeps the space of a set of parameters
+
 -  Vectorial Sensitivity Analysis
-  -  Used to find the combination of parameters that maximizes/minimizes a state variable
+
+   -  Used to find the combination of parameters that maximizes/minimizes a state variable
 
 As an example, we choose the Lotka-Volterra model that consists of a second-order nonlinear set of ordinary
 differential equations. The system models the relationship between the populations of predators

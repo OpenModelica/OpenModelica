@@ -35,6 +35,10 @@ unsafe extern "C" {
     ) -> c_int;
 }
 
+/// `util/rtclock.c`, which `+profiling` reports from. An FMU has none: under
+/// `OMC_MINIMAL_RUNTIME` `rtclock.h` is no-op `static inline`s and the .c does not
+/// compile, so the FMU flavour answers with an unarmed clock's zeros.
+#[cfg(not(omc_fmi_runtime))]
 unsafe extern "C" {
     fn rt_init(numTimer: c_int);
     fn rt_clear(ix: c_int);
@@ -46,6 +50,22 @@ unsafe extern "C" {
     fn rt_max_accumulated(ix: c_int) -> f64;
     fn rt_total(ix: c_int) -> f64;
 }
+
+#[cfg(omc_fmi_runtime)]
+mod rtclock_stub {
+    use core::ffi::c_int;
+    pub unsafe fn rt_init(_: c_int) {}
+    pub unsafe fn rt_clear(_: c_int) {}
+    pub unsafe fn rt_ncall(_: c_int) -> u32 { 0 }
+    pub unsafe fn rt_ncall_total(_: c_int) -> u32 { 0 }
+    pub unsafe fn rt_ncall_min(_: c_int) -> u32 { 0 }
+    pub unsafe fn rt_ncall_max(_: c_int) -> u32 { 0 }
+    pub unsafe fn rt_accumulated(_: c_int) -> f64 { 0.0 }
+    pub unsafe fn rt_max_accumulated(_: c_int) -> f64 { 0.0 }
+    pub unsafe fn rt_total(_: c_int) -> f64 { 0.0 }
+}
+#[cfg(omc_fmi_runtime)]
+use rtclock_stub::*;
 
 /// `rtclock.h`: the first clock the generated code's `SIM_PROF_*` macros index from.
 const SIM_TIMER_FIRST_FUNCTION: c_int = 16;
@@ -494,8 +514,33 @@ impl SimEngine for CEngine {
                 });
                 self.absorb(if ok { 0 } else { -1 })
             }
+            // `--parmodauto`: one ODE task out of the model's `functionODE_systems`.
+            "parmodTask" => {
+                self.publish();
+                let (thread_data, stage) = (self.rt.thread_data, self.stage);
+                let ok = crate::support::protected(thread_data, stage, || crate::parmod::call_task(b, thread_data));
+                self.absorb(if ok { 0 } else { -1 })
+            }
             _ => Err("the C model has no such two-argument entry point"),
         }
+    }
+
+    fn parmod_can_parallel(&self) -> bool {
+        crate::parmod::can_parallel()
+    }
+
+    /// The plan's clusters across the worker pool, the calling thread included.
+    /// `publish` happens once: every task sees the state this evaluation was
+    /// entered with.
+    fn parmod_parallel(
+        &mut self,
+        plan: &openmodelica_sim_meta::parmod::Plan,
+        _sim_data: u32,
+        settled: bool,
+    ) -> Result<()> {
+        self.publish();
+        let jumped = crate::parmod::run_plan(plan, self.stage, self.rt.thread_data, settled);
+        self.absorb(if jumped { -1 } else { 0 })
     }
 
     fn call_simulate(&mut self, _sim_data: u32, _start: f64, _stop: f64, _n: u32) -> Result<u32> {

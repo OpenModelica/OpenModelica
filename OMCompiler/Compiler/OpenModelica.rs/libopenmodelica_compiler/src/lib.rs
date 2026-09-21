@@ -26,13 +26,69 @@ use openmodelica_backend_main::capi;
 use std::ffi::{CStr, CString, c_char, c_int};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+// Not the `mimalloc` crate's GlobalAlloc: that one calls `mi_malloc_aligned` for
+// every allocation, whose slow over-allocating path is taken whenever a size
+// class's page is full. `mi_malloc` already guarantees 16-byte alignment.
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+mod mi {
+    use libmimalloc_sys as mi;
+    use std::alloc::{GlobalAlloc, Layout};
+    use std::ffi::c_void;
+
+    const MI_MAX_ALIGN_SIZE: usize = 16;
+
+    pub struct MiMalloc;
+
+    unsafe impl GlobalAlloc for MiMalloc {
+        #[inline]
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_malloc(layout.size()) as *mut u8
+            } else {
+                mi::mi_malloc_aligned(layout.size(), layout.align()) as *mut u8
+            }
+        }
+
+        #[inline]
+        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_zalloc(layout.size()) as *mut u8
+            } else {
+                mi::mi_zalloc_aligned(layout.size(), layout.align()) as *mut u8
+            }
+        }
+
+        #[inline]
+        unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+            mi::mi_free(ptr as *mut c_void);
+        }
+
+        #[inline]
+        unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_realloc(ptr as *mut c_void, new_size) as *mut u8
+            } else {
+                mi::mi_realloc_aligned(ptr as *mut c_void, new_size, layout.align()) as *mut u8
+            }
+        }
+    }
+}
+
+// The wasm build keeps the plain allocator: its address space is the ceiling.
+#[cfg(not(target_arch = "wasm32"))]
+use metamodelica::heap_limit::Limited;
+
 #[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: Limited<mi::MiMalloc> = Limited(mi::MiMalloc);
 
 #[cfg(all(feature = "jemalloc", not(target_arch = "wasm32")))]
 #[global_allocator]
-static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+static GLOBAL: Limited<tikv_jemallocator::Jemalloc> = Limited(tikv_jemallocator::Jemalloc);
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "mimalloc"), not(feature = "jemalloc")))]
+#[global_allocator]
+static GLOBAL: Limited<std::alloc::System> = Limited(std::alloc::System);
 
 // MetaModelica-ABI compatibility shims (`omc_Main_init` / `omc_Main_handleCommand`
 // / GC + Windows no-ops) OMEdit links against. Implemented over the embedding ABI
@@ -65,6 +121,17 @@ mod sim_metadata;
 #[cfg(not(target_arch = "wasm32"))]
 mod omedit_runtime;
 
+// malloc + copy rather than `libc::strdup`, for the reason `omc_strdup` exists.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) unsafe fn malloc_dup(s: *const std::ffi::c_char) -> *mut std::ffi::c_char {
+    let n = unsafe { libc::strlen(s) } + 1;
+    let p = unsafe { libc::malloc(n) } as *mut std::ffi::c_char;
+    if !p.is_null() {
+        unsafe { std::ptr::copy_nonoverlapping(s, p, n) };
+    }
+    p
+}
+
 // Re-export the generated typed OMEdit interface ABI (the `extern "C"` wrappers
 // behind OpenModelicaScriptingAPIQt, in the `openmodelica_scripting_qt` crate).
 // The `pub use` makes the `#[no_mangle]` symbols reachable from this cdylib's
@@ -93,7 +160,36 @@ pub use openmodelica_sim_meta::lapack_dyn::*;
 
 /// Report this build's revision as the compiler version (`getVersion()`,
 /// `omc --version`); called by every entry point that starts a session.
+// `libmimalloc-sys` binds only the allocation entry points; `mi_collect` is part
+// of the same mimalloc C API it links.
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+unsafe extern "C" {
+    fn mi_collect(force: bool);
+}
+
+/// Hand the pages a caught unwind freed back to the OS. Under jemalloc nothing
+/// is released and recovery leans on the ceiling rising instead.
+#[cfg(not(target_arch = "wasm32"))]
+fn release_memory() {
+    #[cfg(all(feature = "mimalloc", not(feature = "jemalloc")))]
+    unsafe {
+        mi_collect(true)
+    };
+    // glibc only; elsewhere the allocator decides for itself when to unmap.
+    #[cfg(all(
+        not(all(feature = "mimalloc", not(feature = "jemalloc"))),
+        target_os = "linux",
+        target_env = "gnu"
+    ))]
+    unsafe {
+        libc::malloc_trim(0)
+    };
+}
+
 fn set_revision() {
+    metamodelica::heap_limit::init();
+    #[cfg(not(target_arch = "wasm32"))]
+    metamodelica::heap_limit::set_release_fn(release_memory);
     capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
 }
 
@@ -117,14 +213,22 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     use std::io::Write;
     set_revision();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
-    // and stop. For the build; not a user-facing flag.
+    // and stop; empty means the per-user cache, which an installer or a test run
+    // warms. For the build and for CI; not a user-facing flag.
     #[cfg(not(target_arch = "wasm32"))]
     if let Some(dir) = std::env::var_os("OMC_WASM_PRECOMPILE_CACHE") {
-        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(
-            std::path::Path::new(&dir),
-        ) {
+        // Bulk allocation with no translation to abandon: a genuine exhaustion
+        // should come back as wasmtime's error, not an unwind from a destructor.
+        metamodelica::heap_limit::set_max_heap_size(0);
+        let dir = std::path::PathBuf::from(&dir);
+        let dir = if dir.as_os_str().is_empty() {
+            openmodelica_wasm_jit::sim_runtime::aot_cache_dir()
+        } else {
+            dir
+        };
+        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir) {
             Ok(names) => {
-                println!("precompiled {} wasm artifacts into {}", names.len(), std::path::Path::new(&dir).display());
+                println!("precompiled {} wasm artifacts into {}", names.len(), dir.display());
                 0
             }
             Err(e) => {
@@ -160,9 +264,17 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
         // Mirror the launcher's old inline `run()`: flush stdout, report on
         // stderr and exit 1. The MetaModelica exception carries no payload worth
         // printing — diagnostics were already emitted via the Error buffer.
-        Ok(Err(_)) | Err(_) => {
+        Ok(Err(_)) => {
             let _ = std::io::stdout().flush();
             eprintln!("Execution failed!");
+            1
+        }
+        Err(p) => {
+            let _ = std::io::stdout().flush();
+            match metamodelica::heap_limit::oom_from_panic(&*p) {
+                Some(oom) => eprintln!("{oom}"),
+                None => eprintln!("Execution failed!"),
+            }
             1
         }
     }
@@ -249,7 +361,11 @@ pub extern "C" fn omc_compiler_eval_keep(
         // Evaluation failure: surface the error text rather than a bare null so
         // the embedder gets a diagnostic, matching omc's interactive behaviour.
         Ok(Err(e)) => (true, ArcStr::from(format!("Error: {e}"))),
-        Err(_) => return std::ptr::null_mut(),
+        // A ceiling trip unwound just this command; the session stays usable.
+        Err(p) => match metamodelica::heap_limit::oom_from_panic(&*p) {
+            Some(oom) => (true, ArcStr::from(format!("Error: {oom}"))),
+            None => return std::ptr::null_mut(),
+        },
     };
     if !keep_running.is_null() {
         unsafe { *keep_running = if keep { 1 } else { 0 } };

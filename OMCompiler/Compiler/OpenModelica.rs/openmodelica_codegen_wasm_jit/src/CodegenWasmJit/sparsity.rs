@@ -161,7 +161,7 @@ impl JacArraySlots {
         Some(JacArraySlots { base })
     }
 
-    fn base(&self, cr: &Arc<DAE::ComponentRef>) -> Option<usize> {
+    fn base(&self, cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<usize> {
         let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(cr.clone()).ok()?;
         self.base.get(&sim_cref_key(&stripped).ok()?).copied()
     }
@@ -185,13 +185,13 @@ impl JacArraySlots {
 /// A sparsity cref with its iterators bound: per dimension, size and selected
 /// 0-based positions.
 struct BoundCref {
-    cref: Arc<DAE::ComponentRef>,
+    cref: metamodelica::Ref<DAE::ComponentRef>,
     dims: Vec<(usize, Vec<usize>)>,
     whole: Vec<bool>,
 }
 
 impl BoundCref {
-    fn new(cr: &Arc<DAE::ComponentRef>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<BoundCref> {
+    fn new(cr: &metamodelica::Ref<DAE::ComponentRef>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<BoundCref> {
         let mut dims = Vec::new();
         let mut whole = Vec::new();
         let mut part = cr;
@@ -204,7 +204,7 @@ impl BoundCref {
                 _ => return None,
             };
             let part_dims = type_dims(ty)?;
-            let subs: Vec<&Arc<DAE::Subscript>> = lst(subs).collect();
+            let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = lst(subs).collect();
             if subs.len() > part_dims.len() {
                 return None;
             }
@@ -258,11 +258,11 @@ pub(super) fn type_dims(ty: &DAE::Type) -> Option<Vec<usize>> {
     Some(out)
 }
 
-fn bound_int(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<i32> {
+fn bound_int(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<i32> {
     const_int_exp(&*bound_exp(exp, bindings)?)
 }
 
-fn bound_ints(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<Vec<i32>> {
+fn bound_ints(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<Vec<i32>> {
     match &*bound_exp(exp, bindings)? {
         DAE::Exp::ARRAY { array, .. } => lst(array).map(|e| const_int_exp(e)).collect(),
         DAE::Exp::RANGE { start, step, stop, .. } => {
@@ -286,7 +286,7 @@ fn bound_ints(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Opti
     }
 }
 
-fn bound_exp(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<Arc<DAE::Exp>> {
+fn bound_exp(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<metamodelica::Ref<DAE::Exp>> {
     let mut e = exp.clone();
     for (name, value) in bindings {
         e = subst_iterator(&e, name, value).ok()?;
@@ -295,8 +295,8 @@ fn bound_exp(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Optio
 }
 
 /// Every iterator combination, first iterator least significant (C's `forIteratorBody`).
-fn iterator_expansion(iters: &[&BackendDAE::SimIterator]) -> Result<Vec<Vec<(String, Arc<DAE::Exp>)>>> {
-    let mut out: Vec<Vec<(String, Arc<DAE::Exp>)>> = vec![Vec::new()];
+fn iterator_expansion(iters: &[&BackendDAE::SimIterator]) -> Result<Vec<Vec<(String, metamodelica::Ref<DAE::Exp>)>>> {
+    let mut out: Vec<Vec<(String, metamodelica::Ref<DAE::Exp>)>> = vec![Vec::new()];
     for iter in iters {
         let (name, values, sub_iters) = iterator_bindings(iter)?;
         let mut next = Vec::with_capacity(out.len() * values.len());

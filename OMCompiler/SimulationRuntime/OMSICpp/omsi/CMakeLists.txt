@@ -26,7 +26,13 @@ include_directories ("${OMSICPP_SOURCE_DIR}/../../3rdParty/FMIL/ThirdParty/FMI/d
 if(BUILD_SHARED_LIBS)
 
   message(STATUS "Set rpath for omsu simulation executable " ${LIB_OMC})
-  set(CMAKE_INSTALL_RPATH "$ORIGIN/../${LIB_OMC}/omsicpp/:$ORIGIN")
+  # Appended: the top level's rpath is what describes the macOS bundle layout.
+  if(APPLE)
+    list(APPEND CMAKE_INSTALL_RPATH "@loader_path/../${LIB_OMC}/omsicpp"
+                                    "@loader_path/../Resources/${LIB_OMC}/omsicpp")
+  else()
+    list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../${LIB_OMC}/omsicpp")
+  endif()
   set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
   #SET (CMAKE_EXE_LINKER_FLAGS
   #"${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$$ORIGIN/../${LibFolderExtension}/'" )

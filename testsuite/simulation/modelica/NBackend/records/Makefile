@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 simple_record.mos \
+nestedRecordBinding.mos \
 record_inlining.mos \
 simple_tuple.mos \
 ComplexTest.mos \

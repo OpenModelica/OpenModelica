@@ -308,6 +308,27 @@ public
     end if;
   end getSliceCandidates;
 
+  function resolveSlicedCref
+    "finds the cref referencing base_cref's variable inside eqn whose subscripted size
+    matches target_size, e.g. picking i_s[{1, 2}] (size 2) out from a co-occurring whole
+    reference i_s (size 3) in the same equation. Falls back to base_cref if no unique
+    match is found."
+    input ComponentRef base_cref "variable name, stripped of subscripts";
+    input Equation eqn;
+    input Integer target_size;
+    output ComponentRef cref = base_cref;
+  protected
+    list<ComponentRef> candidates, filtered;
+  algorithm
+    if target_size > 0 then
+      candidates := Equation.collectCrefs(eqn, function getSliceCandidates(name = base_cref));
+      filtered := list(c for c guard(Type.sizeOf(ComponentRef.getSubscriptedType(c), true) == target_size) in candidates);
+      if List.hasOneElement(filtered) then
+        cref := listHead(filtered);
+      end if;
+    end if;
+  end resolveSlicedCref;
+
   function getDependentCref
     "checks if crefs are relevant in the given context and collects them."
   extends filterCref;

@@ -1,0 +1,144 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+#pragma once
+
+#include "LSP/LSPProtocol.h"
+
+#include <QObject>
+// Qt for WebAssembly has no QProcess (QT_CONFIG(process) is off). The header is
+// still available there, but QProcess is an empty shell without ProcessError or
+// ExitStatus, so every member and slot that names them is guarded below and the
+// client simply never starts a server on the web build.
+#include <QProcess>
+#include <QByteArray>
+#include <QHash>
+#include <QMap>
+#include <QJsonObject>
+#include <QStringList>
+
+class LSPFileWatcher;
+
+/*!
+ * \class LSPClient
+ * \brief Abstract language server client driving a server process over the LSP
+ * JSON-RPC protocol (stdin/stdout). Server-specific behaviour (which executable
+ * is bundled, initialization options) is provided by concrete subclasses such
+ * as ModelicaLSPClient.
+ */
+class LSPClient : public QObject
+{
+  Q_OBJECT
+public:
+  explicit LSPClient(QObject *pParent = nullptr);
+  ~LSPClient() override;
+
+  bool start(const QString &executable, const QString &rootUri, const QStringList &libraries = QStringList());
+  void stop();
+  bool isRunning() const;
+
+  void updateLibraries(const QStringList &libraries);
+  void openDocument(const QString &uri, const QString &languageId, const QString &text);
+  void changeDocument(const QString &uri, const QString &text);
+  void closeDocument(const QString &uri);
+  int requestHover(const QString &uri, int line, int character);
+  int requestDefinition(const QString &uri, int line, int character);
+
+signals:
+  void initialized();
+  void hoverResult(int requestId, QString content);
+  void definitionResult(int requestId, LSP::Location location);
+  void serverError(QString message);
+  void logMessage(QString message, int type);
+
+protected:
+  // Server-specific LSP "initializationOptions". Empty object means none are sent.
+  virtual QJsonObject initializationOptions(const QStringList &libraries) const = 0;
+
+private slots:
+  void onReadyRead();
+  void onWatchedFilesChanged(QList<LSP::FileEvent> events);
+  void onWatchLimitReached(int limit);
+#if QT_CONFIG(process)
+  void onProcessError(QProcess::ProcessError error);
+  void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
+
+private:
+  // Tracks documents opened on the server so a file shared by several editors
+  // is opened once and only closed when the last editor releases it.
+  struct DocumentState {
+    int version = 0;
+    int refCount = 0;
+  };
+
+#if QT_CONFIG(process)
+  QProcess *mpProcess;
+#endif
+  QByteArray mReadBuffer;
+  int mNextId;
+  bool mInitialized;
+  QMap<int, QString> mPendingRequests; // id -> method name, ordered so the oldest id is begin()
+  // Watches the library roots for files changed outside OMEdit. Only fed once
+  // the server has registered workspace/didChangeWatchedFiles.
+  LSPFileWatcher *mpFileWatcher;
+  QHash<QString, QStringList> mWatchedFileRegistrations; // registration id -> glob patterns
+  QHash<QString, DocumentState> mOpenDocuments; // uri -> open state
+
+  // Arguments of the most recent start(), reused to auto-restart after a crash.
+  QString mLastExecutable;
+  QString mLastRootUri;
+  QStringList mLastLibraries;
+  // Set while stop() is tearing the process down so onProcessFinished() does not
+  // mistake the intentional exit for a crash.
+  bool mIntentionalStop;
+  // Epoch-millisecond timestamps of recent crashes, used to cap the restart rate.
+  QList<qint64> mCrashTimestamps;
+
+  void sendMessage(const QJsonObject &message);
+  int sendRequest(const QString &method, const QJsonObject &params);
+  void processMessage(const QJsonObject &message);
+  void handleResponse(int id, const QString &method, const QJsonValue &result);
+  void handleNotification(const QString &method, const QJsonObject &params);
+  void handleRegisterCapability(const QJsonObject &params);
+  void handleUnregisterCapability(const QJsonObject &params);
+  void updateFileWatcher();
+  int nextId() { return mNextId++; }
+  void logCrashEvent(const QString &line);
+
+  static QJsonObject makePosition(int line, int character);
+  static QJsonObject makeTextDocumentIdentifier(const QString &uri);
+  static LSP::Range parseRange(const QJsonObject &rangeObj);
+};

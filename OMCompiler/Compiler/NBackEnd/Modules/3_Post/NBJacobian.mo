@@ -92,6 +92,7 @@ protected
 
   // Util imports
   import StringUtil;
+  import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
   import Util;
@@ -600,6 +601,11 @@ protected
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
+        guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
+      then (comp, false);
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
@@ -1808,12 +1814,11 @@ protected
     ty         := ComponentRef.getSubscriptedType(baseCref, false);
 
     // Build a fresh VAR_NODE with the SSA name; the variable pointer is
-    // initially a dummy and becomes cyclic via makeVarPtrCyclic below.
+    // initially a dummy and is linked to the real variable by makeVarPtr below.
     newNode := InstNode.VAR_NODE(
       ComponentRef.firstName(baseCref) + "_" + intString(idx),
-      Pointer.create(NBVariable.DUMMY_VARIABLE));
-    ssaCref := ComponentRef.CREF(newNode, {}, ty,
-      NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+      PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
+    ssaCref := ComponentRef.fromNode(newNode, ty);
 
     // Clear any inherited partner pointers (pDer, seed) so that a fresh pDer
     // variable is created for this SSA temporary rather than reusing the
@@ -1831,7 +1836,7 @@ protected
     );
 
     // Establish the cyclic Variable <-> InstNode pointer link
-    (ssaVarPtr, ssaCref) := BVariable.makeVarPtrCyclic(origVar, ssaCref);
+    (ssaVarPtr, ssaCref) := BVariable.makeVarPtr(origVar, ssaCref);
   end makeSSAVar;
 
   function algorithmToSSA

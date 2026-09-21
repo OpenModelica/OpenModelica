@@ -552,6 +552,7 @@ ForEquation4.mo \
 ForEquation5.mo \
 ForEquation6.mo \
 ForEquation7.mo \
+ForEquation8.mo \
 ForEquationEnum1.mo \
 ForEquationEnum2.mo \
 ForEquationNonParam.mo \
@@ -927,6 +928,7 @@ MultiInheritanceRedeclare2.mo \
 NoEvent1.mo \
 NoEvent2.mo \
 NonConnectorFlow1.mo \
+NonLiteralRange1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NonFixedConstant1.mo \
@@ -1041,6 +1043,7 @@ RecordBinding15.mo \
 RecordBinding16.mo \
 RecordBinding17.mo \
 RecordBinding18.mo \
+RecordBinding19.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \

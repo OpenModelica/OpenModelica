@@ -163,8 +163,9 @@ algorithm
     exp := range;
   else
     if not Type.isResizable(ty) then
-      ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), Absyn.dummyInfo);
+      ty := TypeCheck.keepRangeSize(
+        TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+          Type.arrayElementType(ty), Absyn.dummyInfo), ty);
     else
       ty := ty2;
     end if;
@@ -480,6 +481,7 @@ algorithm
         op := if isSum then Operator.makeAdd(ty) else
                             Operator.makeMul(ty);
         exp := Expression.MULTARY(args, {}, op);
+        exp := simplify(exp);
       end if;
 
       return;
@@ -1005,6 +1007,8 @@ algorithm
       case Op.MUL then simplifyBinaryMul(exp1, op, exp2);
       case Op.DIV then simplifyBinaryDiv(exp1, op, exp2);
       case Op.POW then simplifyBinaryPow(exp1, op, exp2);
+      case Op.POW_SCALAR_ARRAY then simplifyBinaryPow(exp1, op, exp2);
+      case Op.POW_ARRAY_SCALAR then simplifyBinaryPow(exp1, op, exp2);
       case Op.SCALAR_PRODUCT guard(Expression.isZero(exp1) or Expression.isZero(exp2)) then Expression.makeZero(op.ty);
       else Expression.BINARY(exp1, op, exp2);
     end match;
@@ -1130,7 +1134,11 @@ algorithm
   if Expression.isZero(exp2) then
     outExp := Expression.makeOne(Operator.typeOf(op));
   elseif Expression.isOne(exp2) then
-    outExp := exp1;
+    outExp := exp1; // FIXME cast to type of `op`
+  elseif Expression.isZero(exp1) and Expression.isPositive(exp2) then
+    outExp := Expression.makeZero(Operator.typeOf(op));
+  elseif Expression.isOne(exp1) then
+    outExp := Expression.makeOne(Operator.typeOf(op));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;

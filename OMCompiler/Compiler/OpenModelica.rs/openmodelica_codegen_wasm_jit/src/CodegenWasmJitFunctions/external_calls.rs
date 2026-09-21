@@ -21,8 +21,8 @@ use super::*;
 pub(super) fn emit_shared_external_call(
     ctx: &mut FnCtx,
     sig: &ExtCallSig,
-    extArgs: &List<Arc<SimCodeFunction::SimExtArg::SimExtArg>>,
-    extReturn: &Arc<SimCodeFunction::SimExtArg::SimExtArg>,
+    extArgs: &List<metamodelica::Ref<SimCodeFunction::SimExtArg::SimExtArg>>,
+    extReturn: &metamodelica::Ref<SimCodeFunction::SimExtArg::SimExtArg>,
     fn_path: &dyn Fn() -> ArcStr,
 ) -> Result<()> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
@@ -44,6 +44,8 @@ pub(super) fn emit_shared_external_call(
         /// A String argument: the callee got a `rt_str_data` pointer into it, so
         /// this side still owns the handle and releases it once the call is done.
         Owned { handle: u32 },
+        /// A `String[…]` output: the callee wrote `char*`s over its elements.
+        StrArray { handle: u32 },
     }
     let fortran = sig.lang == ExtLang::Fortran77;
     let native = is_native_external(&sig.name);
@@ -91,14 +93,14 @@ pub(super) fn emit_shared_external_call(
         };
         // The expression this argument passes; an `_Out_` scalar has no value to
         // read, only a cell to hand over.
-        let value: Option<Arc<DAE::Exp>> = match &**a {
+        let value: Option<metamodelica::Ref<DAE::Exp>> = match &**a {
             A::SIMEXTARG { cref, type_, .. } => {
-                Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
+                Some(metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
             }
             A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
             A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
-                let arr = Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
-                Some(Arc::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+                let arr = metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
+                Some(metamodelica::Ref::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
             }
             _ => None,
         };
@@ -134,10 +136,17 @@ pub(super) fn emit_shared_external_call(
                 ctx.emit(we::Instruction::LocalGet(ptr));
                 cleanups.push(Cleanup::F77Array { handle, ptr, is_out });
             }
-            SigTy::Array { .. } => {
+            SigTy::Array { elem, .. } => {
                 // C reads and writes the row-major elements in place.
                 push_value(ctx, "an array", WTy::I32)?;
                 if !native {
+                    if is_out && matches!(**elem, SigTy::Str) {
+                        let handle = ctx.alloc_temp(WTy::I32);
+                        ctx.emit(we::Instruction::LocalTee(handle));
+                        ctx.emit(we::Instruction::LocalGet(handle));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_str_array_clear")?));
+                        cleanups.push(Cleanup::StrArray { handle });
+                    }
                     ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
                 }
             }
@@ -240,6 +249,10 @@ pub(super) fn emit_shared_external_call(
                     ctx.emit(we::Instruction::LocalGet(*handle));
                     ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
                 }
+                Cleanup::StrArray { handle } => {
+                    ctx.emit(we::Instruction::LocalGet(*handle));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_str_array_from_cstr")?));
+                }
             }
         }
         release_heap_locals(ctx)?;
@@ -338,6 +351,10 @@ pub(super) fn emit_shared_external_call(
                 ctx.emit(we::Instruction::LocalGet(*handle));
                 ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
             }
+            Cleanup::StrArray { handle } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::Call(rt_index("rt_str_array_from_cstr")?));
+            }
         }
     }
     Ok(())
@@ -351,7 +368,7 @@ pub(super) fn emit_shared_external_call(
 pub(super) fn emit_known_external_call(
     ctx: &mut FnCtx,
     ext_name: &str,
-    args: &[Arc<DAE::Exp>],
+    args: &[metamodelica::Ref<DAE::Exp>],
     out: &SigTy,
 ) -> Result<SigTy> {
     // `external "builtin" o = abs(v)` and the `div`/`mod` pairs
@@ -359,7 +376,7 @@ pub(super) fn emit_known_external_call(
     // not C symbols. Their Integer and Real overloads share one `extName`, so a host
     // import would bind both to the same signature and hand libc's `abs(int)` a double.
     if matches!(ext_name, "abs" | "div" | "mod") {
-        let args = args.iter().cloned().collect::<List<Arc<DAE::Exp>>>();
+        let args = args.iter().cloned().collect::<List<metamodelica::Ref<DAE::Exp>>>();
         let attr = match out {
             SigTy::Int => DAE::callAttrBuiltinInteger(),
             _ => DAE::callAttrBuiltinReal(),
@@ -479,7 +496,7 @@ pub(super) fn emit_assert_unwind(ctx: &mut FnCtx) {
     }
 }
 
-pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>]) -> Result<Vec<SigTy>> {
+pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[metamodelica::Ref<DAE::Exp>]) -> Result<Vec<SigTy>> {
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
         Some(info) => (info.index, info.sig.params.clone(), info.sig.results.clone()),
@@ -570,7 +587,7 @@ pub(super) fn intern_local(
     idx: &mut u32,
     extra_locals: &mut Vec<we::ValType>,
     locals: &mut HashMap<String, (u32, SigTy)>,
-    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
+    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<metamodelica::Ref<DAE::Dimension>>)>,
 ) -> Result<(u32, SigTy)> {
     let (name, sty) = var_name_ty(v)?;
     let slot = locals

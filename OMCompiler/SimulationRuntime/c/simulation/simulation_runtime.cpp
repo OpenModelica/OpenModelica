@@ -717,6 +717,7 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
   mmc_sint_t maxSteps = 4 * simData->simulationInfo->numSteps;
+  free((void*) sim_result.filename);
   sim_result.filename = omc_strdup(simData->modelData->resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
@@ -864,7 +865,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   MMC_CATCH_INTERNAL(mmc_jumper)
   MMC_CATCH_INTERNAL(globalJumpBuffer)
 
-  sim_result.free(&sim_result, simData, threadData);
+  deinitializeResultData(simData, threadData);
 
   return retVal;
 }

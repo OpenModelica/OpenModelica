@@ -94,7 +94,7 @@ pub(super) fn build_sim_model(
     // `--daeMode`: `allEquations`/`odeEquations` are empty and the whole continuous
     // system is `daeModeData.daeEquations`, the residual `F(t, y, y') = 0`.
     let dae_mode = sim_code.daeModeData.as_ref();
-    let dae_eqs: Vec<(Arc<SimCode::SimEqSystem>, u32)> =
+    let dae_eqs: Vec<(metamodelica::Ref<SimCode::SimEqSystem>, u32)> =
         dae_mode.map(|d| dae_residual_equations(d)).unwrap_or_default();
     let dae_res_vars: Vec<&SimCodeVar::SimVar> =
         dae_mode.map(|d| lst(&d.residualVars).collect()).unwrap_or_default();
@@ -232,8 +232,8 @@ pub(super) fn build_sim_model(
     // initial equation), or at an equation nested inside a torn linear/nonlinear
     // (or mixed / if-) system, so index every list recursively. `eqFunction_<n>`
     // is emitted once in the C target and shared; here the target is inlined.
-    let mut eq_index: HashMap<i32, Arc<SimCode::SimEqSystem>> = HashMap::new();
-    let index_list = |eqs: &List<Arc<SimCode::SimEqSystem>>, idx: &mut HashMap<i32, Arc<SimCode::SimEqSystem>>| {
+    let mut eq_index: HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>> = HashMap::new();
+    let index_list = |eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>, idx: &mut HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in lst(eqs) {
             index_eq_recursive(e, idx);
         }
@@ -411,7 +411,7 @@ pub(super) fn build_sim_model(
     // C's `functionODE` and `functionDAE` both open with `functionLocalKnownVars`
     // (`--preOptModules+=removeLocalKnownVars` moves the equations that depend only
     // on states and inputs there); empty unless that module ran.
-    let with_local_known = |eqs: Vec<Arc<SimCode::SimEqSystem>>| -> Vec<Arc<SimCode::SimEqSystem>> {
+    let with_local_known = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| -> Vec<metamodelica::Ref<SimCode::SimEqSystem>> {
         if local_known_eqs.is_empty() {
             return eqs;
         }
@@ -449,10 +449,10 @@ pub(super) fn build_sim_model(
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
     let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
-    let dae_only_eqs: Vec<Arc<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
+    let dae_only_eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let removed_init_eqs = flatten_eqs(&sim_code.removedInitialEquations);
     let clocked = clocked_eqs(sim_code);
-    let nls_scan: Vec<Vec<Arc<SimCode::SimEqSystem>>> = [
+    let nls_scan: Vec<Vec<metamodelica::Ref<SimCode::SimEqSystem>>> = [
         &param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs, &zc_eqs,
         &assert_eqs, &removed_init_eqs, &clocked, &inline_eqs,
     ]
@@ -753,7 +753,7 @@ pub(super) fn build_sim_model(
     // which `SerializeModelInfo` writes from these same `crefs`.
     // C diagnoses (`newtonDiagnostics`) the systems of `initialEquations_lambda0`,
     // or of `initialEquations` when there is no lambda0 section.
-    let nls_in = |eqs: &[Arc<SimCode::SimEqSystem>]| -> HashSet<i32> {
+    let nls_in = |eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]| -> HashSet<i32> {
         eqs.iter()
             .filter_map(|e| match &**e {
                 SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } => Some(nlSystem.index),
@@ -1016,10 +1016,20 @@ pub(super) fn build_sim_model(
                 .copied();
             let (res_fn, load_fn, jac_fn, strict_fn) = build_nls_fns(
                 sys, &var_map, &eq_index, &by_name, &mut literals,
-                nls_jac_infos.get(&sys.index), strict,
+                nls_jac_infos.get(&sys.index), strict, &mut pool,
+                nls_types.map(|(residual, _, _)| residual).unwrap_or_default(),
             )?;
             let res_idx = import_base + bodies.len() as u32;
-            bodies.push(res_fn);
+            match res_fn {
+                NlsResidualFn::Whole(f) => bodies.push(f),
+                // A split residual keeps this index: its body is the thunk calling
+                // the chunks, filled in once the chunk base is known.
+                NlsResidualFn::Chunked(chunks) => {
+                    let slot = bodies.len();
+                    bodies.push(empty_eqfn());
+                    splits.push(SplitFn { slot, chunks, n_params: 3, pre_calls: Vec::new() });
+                }
+            }
             let load_idx = import_base + bodies.len() as u32;
             bodies.push(load_fn);
             callback_indices.push(res_idx);
@@ -1786,6 +1796,7 @@ pub(super) fn build_sim_model(
         ext_native_libs: ext_libs.native,
         ext_native_fallback: ext_libs.fallback,
         ext_native_system: ext_libs.native_system,
+        ext_outside_process: Default::default(),
         ext_archives,
         ext_includes,
         ext_lib_notes,
@@ -1814,7 +1825,7 @@ pub(super) fn format_log_stdout(msg: &str) -> String {
 /// C's `homotopySupport` loop over `nonlinearSystemData`: whether a nonlinear
 /// system carries the operator, not whether the model uses `homotopy()` at all.
 fn nls_homotopy_support(sim_code: &SimCode::SimCode) -> bool {
-    let has = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
+    let has = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         eqs.iter().any(|e| match &**e {
             SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } => nlSystem.homotopySupport,
             _ => false,

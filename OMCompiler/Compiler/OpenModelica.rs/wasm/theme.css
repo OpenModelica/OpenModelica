@@ -6,6 +6,18 @@
   color-scheme: dark;
   --bg:#1e1e1e; --panel:#252526; --border:#333; --fg:#d4d4d4; --muted:#8a8a8a;
   --accent:#23afe5; --accent-2:#0e639c; --teal:#4ec9b0; --err:#f48771;
+  --field:#1b1b1b; --hover:#2d2d30; --off:#3a3a3a; --off-fg:#777;
+  --scrim:#0008; --veil:#000c; --shadow:#000a;
+}
+
+/* A host that themes its own page -- the generated library documentation
+   embeds the simulator -- sets data-theme to say which way. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:#ffffff; --panel:#f3f4f6; --border:#d7dae0; --fg:#1d2126; --muted:#5f6672;
+  --accent:#0b6fa4; --accent-2:#0e639c; --teal:#0f7a63; --err:#b3261e;
+  --field:#ffffff; --hover:#e6e9ee; --off:#e2e4e9; --off-fg:#9aa0aa;
+  --scrim:#0f172a40; --veil:#ffffffd9; --shadow:#0f172a2e;
 }
 * { box-sizing: border-box; }
 html, body { margin:0; height:100%; }
@@ -39,11 +51,11 @@ button {
   padding:7px 16px; font:inherit; font-size:15px; cursor:pointer;
 }
 button:hover{ background:#1177bb; }
-button:disabled{ background:#3a3a3a; color:#777; cursor:default; }
+button:disabled{ background:var(--off); color:var(--off-fg); cursor:default; }
 button.cancel{ background:#a1260d; }
 button.cancel:hover:not(:disabled){ background:#c42b0e; }
 button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
-button.ghost:hover:not(:disabled){ background:#2d2d30; }
+button.ghost:hover:not(:disabled){ background:var(--hover); }
 button.ghost.icon-only { padding:6px 9px; display:inline-flex; align-items:center; }
 button.ghost.icon-only[hidden] { display:none; }
 button.ghost.icon-only svg { width:16px; height:16px; display:block; }
@@ -54,15 +66,15 @@ button.ghost.icon-only svg { width:16px; height:16px; display:block; }
 /* Modal dialog: a centred card over a dimmed page, used for the settings and
    export/native-build dialogs. A page adds its own width/body layout on top. */
 .modal-backdrop { position:fixed; inset:0; z-index:50; display:grid; place-items:center;
-  background:#0008; padding:16px; }
+  background:var(--scrim); padding:16px; }
 .modal-backdrop[hidden] { display:none; }
 .modal { background:var(--panel); border:1px solid var(--border); border-radius:10px;
-  width:min(460px,100%); box-shadow:0 14px 44px #000a; }
+  width:min(460px,100%); box-shadow:0 14px 44px var(--shadow); }
 .modal-head { display:flex; align-items:center; justify-content:space-between;
   padding:12px 14px; border-bottom:1px solid var(--border); font-weight:650; color:var(--fg); }
 .modal-body { padding:14px; display:grid; grid-template-columns:auto 1fr; gap:12px 14px; align-items:center; }
 .modal-body > label { color:var(--muted); }
-.modal-body select { background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
+.modal-body select { background:var(--field); color:var(--fg); border:1px solid var(--border);
   border-radius:4px; padding:3px 6px; font:inherit; }
 .modal-body select:disabled { opacity:.5; }
 .modal-foot { display:flex; justify-content:flex-end; gap:8px;
@@ -80,7 +92,7 @@ button.ghost.icon-only svg { width:16px; height:16px; display:block; }
 .grid2 { padding:10px 12px; display:grid; grid-template-columns:auto 1fr auto 1fr; gap:9px 10px; align-items:center; }
 .grid2 label { color:var(--muted); font-size:14px; white-space:nowrap; }
 input, select {
-  background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
+  background:var(--field); color:var(--fg); border:1px solid var(--border);
   border-radius:4px; padding:6px 8px; font:inherit; font-size:15px; width:100%; min-width:0;
 }
 
@@ -108,7 +120,7 @@ input, select {
 .plot-wrap svg.plot { width:100%; height:100%; display:block; }
 .plot-note { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:16px; }
 .tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
-  background:#000c; border:1px solid var(--border); border-radius:5px; padding:6px 8px;
+  background:var(--veil); border:1px solid var(--border); border-radius:5px; padding:6px 8px;
   font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; max-width:70%; }
 .tooltip .t { color:var(--muted); margin-bottom:2px; }
 .tooltip .row { display:flex; align-items:center; gap:6px; }
@@ -155,11 +167,11 @@ sup { font-size:.7em; line-height:0; }
 .anim { flex:0 0 46%; display:flex; flex-direction:column; min-height:200px;
   border-bottom:1px solid var(--border); }
 .anim[hidden] { display:none; }
-.anim-view { flex:1 1 auto; min-height:0; position:relative; background:#1e1e1e; overflow:hidden; }
+.anim-view { flex:1 1 auto; min-height:0; position:relative; background:var(--bg); overflow:hidden; }
 .anim-views { position:absolute; top:6px; right:8px; z-index:2; display:flex; gap:4px; }
-.anim-views button { background:#0009; border:1px solid var(--border); color:var(--fg);
+.anim-views button { background:var(--veil); border:1px solid var(--border); color:var(--fg);
   padding:3px 8px; font-size:12px; border-radius:4px; cursor:pointer; }
-.anim-views button:hover { background:#000c; border-color:var(--accent); }
+.anim-views button:hover { background:var(--veil); border-color:var(--accent); }
 .anim-bar { flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:8px 12px;
   border-top:1px solid var(--border); background:var(--panel); }
 .anim-bar input[type=range] { flex:1 1 auto; width:auto; padding:0; accent-color:var(--accent); }
@@ -171,7 +183,7 @@ sup { font-size:.7em; line-height:0; }
 .anim-play, .anim-loop { background:transparent; border:1px solid var(--border); color:var(--fg);
   border-radius:4px; height:30px; min-width:34px; padding:0 10px; font-size:14px; line-height:1;
   display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
-.anim-play:hover:not(:disabled), .anim-loop:hover { background:#2d2d30; border-color:var(--accent); color:var(--fg); }
+.anim-play:hover:not(:disabled), .anim-loop:hover { background:var(--hover); border-color:var(--accent); color:var(--fg); }
 .anim-loop svg { width:16px; height:16px; display:block; }
 .anim-loop.active { color:var(--accent); border-color:var(--accent); }
 

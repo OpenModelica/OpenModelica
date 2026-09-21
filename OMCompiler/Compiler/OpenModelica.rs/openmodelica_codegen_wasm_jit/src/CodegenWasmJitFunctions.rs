@@ -244,7 +244,8 @@ pub(crate) use sim_systems::{
     backup_known_outputs, residual_rows, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
-    emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
+    emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_nls_residual_prologue,
+    emit_nls_residual_epilogue, emit_nls_residual_store, emit_solve_nls_call, lin_jac_coloring,
     lin_use_sparse, nls_use_sparse,
     emit_dt_solving, emit_dt_local_constraint, emit_dynamic_tearing, emit_nls_strict_body,
 };

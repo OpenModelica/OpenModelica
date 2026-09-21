@@ -10,8 +10,7 @@ AC_SUBST(RPATH_QMAKE)
 AC_SUBST(host_short)
 AC_SUBST(SOURCE_REVISION)
 AC_SUBST(QT4BUILD)
-AC_SUBST(QMAKE_CONFIG_OSG)
-AC_SUBST(LIBOSG)
+AC_SUBST(QMAKE_CONFIG_ANIMATION)
 AC_SUBST(LSB_RELEASE)
 AC_SUBST(LIB_BOOST_REGEX)
 AC_SUBST(SHREXT)
@@ -40,91 +39,24 @@ FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
 FIND_LIBOMQWT()
 
-if test -z "$WITH_OSG"; then
-  WITH_OSG=1
+dnl The animation windows render with Qt Quick 3D, which is a qt6 module here.
+dnl Override with WITH_ANIMATION=1 for a qt5 that does have it.
+if test -z "$WITH_ANIMATION"; then
+  if test "$WITH_QT6" = "yes"; then
+    WITH_ANIMATION=1
+  else
+    WITH_ANIMATION=0
+  fi
 else
-  AC_MSG_RESULT([WITH_OSG=$WITH_OSG])
+  AC_MSG_RESULT([WITH_ANIMATION=$WITH_ANIMATION])
 fi
 
-if test "$WITH_OSG" = 1; then
-  AC_PREPROC_IFELSE(
-        [AC_LANG_PROGRAM([[]], [[]])],
-  [],
-  [AC_MSG_ERROR([C++ preprocessor broken?])]
-  )
-  AC_MSG_CHECKING([for osg/qt include order bugs (broken OSG version)])
-  AC_PREPROC_IFELSE(
-        [AC_LANG_PROGRAM([[
-#include <osg/Version>
-#if __arm__==1 && __clang_major__==3 && __clang_minor__==4 && OPENSCENEGRAPH_MAJOR_VERSION==3 && OPENSCENEGRAPH_MINOR_VERSION==2 && OPENSCENEGRAPH_PATCH_VERSION==0
-#error "ARM+clang 3.4+OSG3.2.0 does not work together"
-#endif
-]],
-  [[]])],
-  [AC_MSG_RESULT([OK])],
-  [AC_MSG_RESULT([no (giving up on OSG)]); WITH_OSG=0]
-  )
-  CPPFLAGS="$OLD_CPPFLAGS"
-fi
-
-if test "$WITH_OSG" = 1; then
-  AC_MSG_CHECKING([for osg/qt broken OpenGL])
-  OLD_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -Wl,--unresolved-symbols=ignore-all"
-  AC_LINK_IFELSE( [AC_LANG_PROGRAM([[]], [[]])],
-    [],
-    [CPPFLAGS="$OLD_CPPFLAGS"]
-  )
-  CPPFLAGS="$CPPFLAGS -fPIC -I$QT_INSTALL_HEADERS -I$QT_INSTALL_HEADERS/QtOpenGL"
-  AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([[
-#include <osgViewer/GraphicsWindow>
-#include <QtCore/QtGlobal>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QGLWidget>
-#else
-#include <QtOpenGLWidgets/QOpenGLWidget>
-#endif
-]],
-  [[]])],
-  [AC_MSG_RESULT([OK])],
-  [AC_MSG_RESULT([no (giving up on OSG)]); WITH_OSG=0]
-  )
-  CPPFLAGS="$OLD_CPPFLAGS"
-fi
-
-if test "$WITH_OSG" = 1; then
-  AC_MSG_CHECKING([for osg/qt broken OpenGL])
-  OLD_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -Wl,--unresolved-symbols=ignore-all"
-  AC_LINK_IFELSE( [AC_LANG_PROGRAM([[]], [[]])],
-    [],
-    [CPPFLAGS="$OLD_CPPFLAGS"]
-  )
-  CPPFLAGS="$CPPFLAGS -fPIC -I$QT_INSTALL_HEADERS -I$QT_INSTALL_HEADERS/QtOpenGL -I$QT_INSTALL_HEADERS/QtWidgets"
-  AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([[
-#include <osg/GL>
-#include <QtWidgets>
-]],
-  [[]])],
-  [AC_MSG_RESULT([OK])],
-  [AC_MSG_RESULT([no (giving up on OSG)]); WITH_OSG=0]
-  )
-  CPPFLAGS="$OLD_CPPFLAGS"
-fi
-
-if test "$WITH_OSG" = 1; then
-  AC_CHECK_HEADERS(osg/Uniform, [], [WITH_OSG=0])
-fi
-
-if test "$WITH_OSG" = 0; then
-  CPPFLAGS="$CPPFLAGS -DWITHOUT_OSG"
-  AC_MSG_RESULT("Disabled OSG")
+if test "$WITH_ANIMATION" = 0; then
+  CPPFLAGS="$CPPFLAGS -DWITHOUT_ANIMATION"
+  AC_MSG_RESULT("Disabled 3D animation (Qt Quick 3D needs qt6)")
 else
-  QMAKE_CONFIG_OSG="CONFIG += osg"
-  LIBOSG="-losg -losgViewer -losgUtil -losgDB -losgGA -lOpenThreads -lGL"
-  AC_MSG_RESULT("OSG is enabled")
+  QMAKE_CONFIG_ANIMATION="CONFIG += animation"
+  AC_MSG_RESULT("3D animation is enabled")
 fi
 
 AC_MSG_CHECKING([check if -lboost_regex is needed for OMSimulator])
@@ -181,5 +113,5 @@ fi
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
-AC_CONFIG_FILES([Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix])
+AC_CONFIG_FILES([Makefile.unix omedit_config.h OMEdit.animation.unix.config.pri OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix])
 AC_OUTPUT

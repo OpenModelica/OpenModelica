@@ -28,9 +28,13 @@ simulate(binding_array); getErrorString();
 // true
 // ""
 // true
-// Created Parameter Binding Equations (1):
-// ******************************************
+// Created Secondary Parameter Binding Equations (1):
+// ****************************************************
 // 	[ARRY] (5) Cu = ($FUN_1 + $FUN_2) .* 1e7; ($RES_BND_6)
+//
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
+//
 //
 // ##############################
 //

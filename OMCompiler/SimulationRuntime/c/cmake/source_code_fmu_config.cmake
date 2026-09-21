@@ -9,60 +9,74 @@
 ## This is where the CMake config expects sources related to source-code-fmus. This will normally be <install_dir>/share/omc/sources/c
 set(SOURCE_FMU_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/c)
 
+## Where SimulationRuntime/rust/CMakeLists.txt installs the crates a
+## --simCodeTarget=C+Rust source FMU carries.
+set(SOURCE_FMU_RUST_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
+
 
 
 ######################################################################################################################
-# Common source files for all source-code-FMUs
-set(SOURCE_FMU_COMMON_FILES_LIST "gc/memory_pool.c"
-                                 "gc/omc_gc.c"
-                                 "util/base_array.c"
-                                 "util/boolean_array.c"
-                                 "util/context.c"
-                                 "util/division.c"
-                                 "util/doubleEndedList.c"
-                                 "util/generic_array.c"
-                                 "util/index_spec.c"
-                                 "util/integer_array.c"
-                                 "util/list.c"
-                                 "util/modelica_string_lit.c"
-                                 "util/modelica_string.c"
-                                 "util/ModelicaUtilities.c"
-                                 "util/omc_error.c"
-                                 "util/omc_file.c"
-                                 "util/omc_init.c"
-                                 "util/omc_mmap.c"
-                                 "util/omc_msvc.c"
-                                 "util/omc_numbers.c"
-                                 "util/rational.c"
-                                 "util/real_array.c"
-                                 "util/ringbuffer.c"
-                                 "util/simulation_options.c"
-                                 "util/string_array.c"
-                                 "util/utility.c"
-                                 "util/varinfo.c"
-                                 "math-support/pivot.c"
-                                 "simulation/arrayIndex.c"
-                                 "simulation/eval_dep.c"
-                                 # jacobian_colpack.cpp is deliberately not here, the same
-                                 # as in Makefile.objs SIM_OBJS_C: all of it is behind
-                                 # OMC_HAVE_COLPACK, which an FMU does not define and could
-                                 # not satisfy anyway, shipping neither ColPack's headers nor
-                                 # the library. jacobian_colpack.h stays, jacobian_util.c
-                                 # includes it unconditionally.
-                                 "simulation/jacobian_util.c"
-                                 "simulation/omc_simulation_util.c"
-                                 "simulation/options.c"
-                                 "simulation/simulation_info_json.c"
-                                 "simulation/simulation_omc_assert.c"
-                                 "simulation/solver/delay.c"
-                                 "simulation/solver/discrete_changes.c"
-                                 "simulation/solver/model_help.c"
-                                 "simulation/solver/omc_math.c"
-                                 "simulation/solver/spatialDistribution.c"
-                                 "simulation/solver/stateset.c"
-                                 "simulation/solver/synchronous.c"
-                                 "simulation/solver/initialization/initialization.c"
-                                 "meta/meta_modelica_catch.c")
+# Common source files for all source-code-FMUs.
+#
+# Two lists, split along the same line the two runtime libraries are split along:
+# what libOpenModelicaRuntimeC covers (gc/, meta/, util/) and what
+# libSimulationRuntimeC covers (simulation/, math-support/). A source FMU built
+# with --simCodeTarget=C+Rust ships only the first, and links the Rust runtime for
+# the second. See Compiler/SimCode/SimCodeMain.mo.
+set(SOURCE_FMU_RUNTIME_C_FILES_LIST "gc/memory_pool.c"
+                                    "gc/omc_gc.c"
+                                    "util/base_array.c"
+                                    "util/boolean_array.c"
+                                    "util/context.c"
+                                    "util/division.c"
+                                    "util/doubleEndedList.c"
+                                    "util/generic_array.c"
+                                    "util/index_spec.c"
+                                    "util/integer_array.c"
+                                    "util/list.c"
+                                    "util/modelica_string_lit.c"
+                                    "util/modelica_string.c"
+                                    "util/ModelicaUtilities.c"
+                                    "util/omc_error.c"
+                                    "util/omc_file.c"
+                                    "util/omc_init.c"
+                                    "util/omc_mmap.c"
+                                    "util/omc_msvc.c"
+                                    "util/omc_numbers.c"
+                                    "util/rational.c"
+                                    "util/real_array.c"
+                                    "util/ringbuffer.c"
+                                    "util/simulation_options.c"
+                                    "util/string_array.c"
+                                    "util/utility.c"
+                                    "util/varinfo.c"
+                                    "meta/meta_modelica_catch.c")
+
+set(SOURCE_FMU_SIMRT_C_FILES_LIST "math-support/pivot.c"
+                                  "simulation/arrayIndex.c"
+                                  "simulation/eval_dep.c"
+                                  # jacobian_colpack.cpp is deliberately not here, the same
+                                  # as in Makefile.objs SIM_OBJS_C: all of it is behind
+                                  # OMC_HAVE_COLPACK, which an FMU does not define and could
+                                  # not satisfy anyway, shipping neither ColPack's headers nor
+                                  # the library. jacobian_colpack.h stays, jacobian_util.c
+                                  # includes it unconditionally.
+                                  "simulation/jacobian_util.c"
+                                  "simulation/omc_simulation_util.c"
+                                  "simulation/options.c"
+                                  "simulation/simulation_info_json.c"
+                                  "simulation/simulation_omc_assert.c"
+                                  "simulation/solver/delay.c"
+                                  "simulation/solver/discrete_changes.c"
+                                  "simulation/solver/model_help.c"
+                                  "simulation/solver/omc_math.c"
+                                  "simulation/solver/spatialDistribution.c"
+                                  "simulation/solver/stateset.c"
+                                  "simulation/solver/synchronous.c"
+                                  "simulation/solver/initialization/initialization.c")
+
+set(SOURCE_FMU_COMMON_FILES_LIST ${SOURCE_FMU_RUNTIME_C_FILES_LIST}
+                                 ${SOURCE_FMU_SIMRT_C_FILES_LIST})
 
 # Install the files keeping the folder structure. While also created a quoted string list for use by MM code.
 foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
@@ -82,8 +96,14 @@ foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
 endforeach()
 list(JOIN SOURCE_FMU_COMMON_FILES_LIST_QUOTED ",\n                                         " SOURCE_FMU_COMMON_FILES)
 
+foreach(source_file ${SOURCE_FMU_RUNTIME_C_FILES_LIST})
+  list(APPEND SOURCE_FMU_RUNTIME_C_FILES_LIST_QUOTED "\"${source_file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_RUNTIME_C_FILES_LIST_QUOTED ",\n                                              " SOURCE_FMU_RUNTIME_C_FILES)
 
-set(SOURCE_FMU_COMMON_HEADERS "omc_inline.h"
+
+set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
+                              "omc_inline.h"
                               "openmodelica_func.h"
                               "openmodelica.h"
                               "omc_simulation_settings.h"

@@ -26,11 +26,11 @@ fn eq_str(a: ArcStr, b: ArcStr) -> Result<bool> {
 
 // ── construction helpers ──────────────────────────────────────────────────────
 
-fn empty_map() -> Arc<UM::UnorderedMap<ArcStr, i32>> {
+fn empty_map() -> metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>> {
     UM::new(Arc::new(hash_str), Arc::new(eq_str), 13)
 }
 
-fn map_of(pairs: &[(&str, i32)]) -> Result<Arc<UM::UnorderedMap<ArcStr, i32>>> {
+fn map_of(pairs: &[(&str, i32)]) -> Result<metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>>> {
     let m = empty_map();
     for (k, v) in pairs {
         UM::add(arcstr::format!("{}", k), *v, m.clone())?;
@@ -39,7 +39,7 @@ fn map_of(pairs: &[(&str, i32)]) -> Result<Arc<UM::UnorderedMap<ArcStr, i32>>> {
 }
 
 /// Collect (keyList, valueList) as sorted-by-key pairs for comparison.
-fn to_sorted_pairs(m: Arc<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(String, i32)> {
+fn to_sorted_pairs(m: metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(String, i32)> {
     let keys = UM::keyList(m.clone());
     let vals = UM::valueList(m.clone());
     let mut pairs: Vec<(String, i32)> = vec![];

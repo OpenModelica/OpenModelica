@@ -244,7 +244,7 @@ pub(super) fn build_jac_fns(
     is_optimization: bool,
     layout: &SimLayout,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     adj_map: Option<&SimVarMap>,
@@ -342,18 +342,18 @@ fn build_linz_jac_fn(
     k: usize,
     out_off: u32,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let jm = plan.jacs[k].as_ref().ok_or("CodegenWasmJit: no linearization Jacobian")?;
     let col = lst(&jm.columns).next();
-    let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+    let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
-    let column_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+    let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.columnEqns).cloned().collect()).unwrap_or_default();
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let mut lower = |c: &mut FnCtx, eqs: &[Arc<SimCode::SimEqSystem>]| -> Result<()> {
+    let mut lower = |c: &mut FnCtx, eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]| -> Result<()> {
         for eq in eqs {
             lower_equation(c, eq, eq_index)?;
         }
@@ -383,11 +383,11 @@ fn lin_n_res(lsystem: &SimCode::LinearSystem) -> Option<usize> {
 
 /// Usable torn linear systems, deduped by index. `lin_jac_scratch_f64` (reserve)
 /// and `build_lin_jac_infos` (register) both call this so they agree on the set.
-fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::LinearSystem>> {
+fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<metamodelica::Ref<SimCode::LinearSystem>> {
     use SimCode::SimEqSystem as E;
     let mut seen: HashSet<i32> = HashSet::new();
-    let mut out: Vec<Arc<SimCode::LinearSystem>> = Vec::new();
-    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
+    let mut out: Vec<metamodelica::Ref<SimCode::LinearSystem>> = Vec::new();
+    let mut scan = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
             if let E::SES_LINEAR { lSystem, alternativeTearing, .. } = &**e {
                 // A dynamically torn component has two sets, each with its own Jacobian.
@@ -488,7 +488,7 @@ pub(super) fn build_lin_jac_infos(
 pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &HashMap<String, SimSlot>, n: usize) -> Result<(Vec<u32>, Vec<u32>)> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let jm = lsystem.jacobianMatrix.as_ref().ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
-    let lookup = |cr: &Arc<DAE::ComponentRef>| -> Result<u32> {
+    let lookup = |cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
         Ok(vars.get(&key).ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?.off)
     };
@@ -514,7 +514,7 @@ pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &HashMap<St
 /// other cref contributes its already-computed `dep` set (the column equations are
 /// in dependency order). Only `SES_SIMPLE_ASSIGN` is handled; anything else -> None.
 fn csc_accum_dep(
-    eq: &Arc<SimCode::SimEqSystem>,
+    eq: &metamodelica::Ref<SimCode::SimEqSystem>,
     seed_col: &HashMap<String, usize>,
     dep: &mut HashMap<String, Vec<usize>>,
 ) -> Option<()> {
@@ -597,12 +597,14 @@ pub(super) fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> 
 pub(super) fn build_nls_fns(
     nlsystem: &SimCode::NonlinearSystem,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
     strict: Option<NlsJob>,
-) -> Result<(we::Function, we::Function, Option<we::Function>, Option<we::Function>)> {
+    pool: &mut ChunkPool,
+    residual_ty: u32,
+) -> Result<(NlsResidualFn, we::Function, Option<we::Function>, Option<we::Function>)> {
     let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(&format!(
         "nonlinear system {}",
         nlsystem.index
@@ -629,20 +631,10 @@ pub(super) fn build_nls_fns(
     };
 
     // residual(sim_data, x, r): 3 params.
-    let residual = {
-        let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 3);
-        // C's `residualFuncConstraints` for a casual set: each inner equation's
-        // `localCon` constraints are checked before it runs.
-        ctx.set_dt_local_cons(strict.is_some());
-        let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
-            for eq in &inner {
-                lower_equation(c, eq, eq_index)?;
-            }
-            Ok(())
-        };
-        emit_nls_residual_body(&mut ctx, nlsystem.index, &slots, &residuals, &mut lower_inner)?;
-        finish(ctx)
-    };
+    let residual = build_residual_fn(
+        nlsystem.index, &slots, &residuals, &inner, strict.is_some(), var_map, eq_index, by_name,
+        literals, pool, residual_ty,
+    )?;
     // load(sim_data, x): 2 params.
     let load = {
         let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 2);
@@ -656,8 +648,8 @@ pub(super) fn build_nls_fns(
             let col = lst(&jm.columns)
                 .next()
                 .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian has no column")?;
-            let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
-            let column_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
+            let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
+            let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
             // Bind this matrix's own seed/column slots over the shared map, which
             // holds whichever system registered the shared names last.
             let mut sim = mk_sim();
@@ -713,4 +705,93 @@ pub(super) fn build_nls_fns(
         })
         .transpose()?;
     Ok((residual, load, jac, strict_fn))
+}
+
+/// A residual callback: one function, or [`ChunkPool`] positions a thunk calls in
+/// order from the callback's own function index.
+pub(super) enum NlsResidualFn {
+    Whole(we::Function),
+    Chunked(Vec<usize>),
+}
+
+/// Lower the `residual(sim_data, x, r)` callback, split past [`nls_chunk_instrs`]
+/// as the equation entry points are, and for the same reason. A cut carries nothing
+/// across: the pieces communicate through `SimData` and the `x`/`r` pointers.
+///
+/// Two shapes stay whole: an inverse-algorithm residual, whose saved outputs live in
+/// locals across the inner equations, and a dynamic-tearing casual set, whose
+/// local-constraint checks leave by `return` — which from a chunk would skip only the
+/// rest of that chunk.
+#[allow(clippy::too_many_arguments)]
+fn build_residual_fn(
+    index: i32,
+    slots: &[IterSlot],
+    residuals: &NlsResiduals,
+    inner: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    strict: bool,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+    residual_ty: u32,
+) -> Result<NlsResidualFn> {
+    let explicit = match residuals {
+        NlsResiduals::Explicit(r) if !strict => r,
+        _ => {
+            let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 3);
+            // C's `residualFuncConstraints` for a casual set: each inner equation's
+            // `localCon` constraints are checked before it runs.
+            ctx.set_dt_local_cons(strict);
+            let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
+                for eq in inner {
+                    lower_equation(c, eq, eq_index)?;
+                }
+                Ok(())
+            };
+            emit_nls_residual_body(&mut ctx, index, slots, residuals, &mut lower_inner)?;
+            return Ok(NlsResidualFn::Whole(finish_fn(ctx)));
+        }
+    };
+    let budget = nls_chunk_instrs();
+    let mut fns: Vec<we::Function> = Vec::new();
+    let (mut eq, mut store) = (0usize, 0usize);
+    loop {
+        let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, 3);
+        if fns.is_empty() {
+            emit_nls_residual_prologue(&mut ctx, index, slots)?;
+        }
+        while eq < inner.len() {
+            lower_equation(&mut ctx, &inner[eq], eq_index)?;
+            eq += 1;
+            if ctx.instr_len() >= budget {
+                break;
+            }
+        }
+        if eq == inner.len() {
+            while store < explicit.len() {
+                emit_nls_residual_store(&mut ctx, explicit, store)?;
+                store += 1;
+                if ctx.instr_len() >= budget {
+                    break;
+                }
+            }
+            if store == explicit.len() {
+                emit_nls_residual_epilogue(&mut ctx, index)?;
+            }
+        }
+        let done = eq == inner.len() && store == explicit.len();
+        fns.push(finish_fn(ctx));
+        if done {
+            break;
+        }
+    }
+    if fns.len() == 1 {
+        return Ok(NlsResidualFn::Whole(fns.remove(0)));
+    }
+    let first = pool.len();
+    for (n, f) in fns.into_iter().enumerate() {
+        pool.push(f, residual_ty, format!("nonlinearSystem{index}_residual${n}"));
+    }
+    Ok(NlsResidualFn::Chunked((first..pool.len()).collect()))
 }

@@ -55,6 +55,7 @@ public
   import NBPartition.Partition;
 
 protected
+  import PointerWeak;
   // Old Frontend imports
   import Absyn.Path;
 
@@ -73,6 +74,8 @@ protected
   import FlatModel = NFFlatModel;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
+  import NFInstNode;
+  import MutableWeak;
   import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
@@ -117,6 +120,7 @@ public
     Option<list<Partition>> init_0        "Partitions for initialization with lambda = 0 (homotopy)";
     // add init_1 for lambda = 1? (test for efficency)
     Option<list<Partition>> dae           "Partitions for dae mode";
+    list<StrongComponent> parameters      "explicitly solved bindings of the primary parameters in evaluation order, computed before the initialization";
 
     VarData varData                       "Variable data";
     EqData eqData                         "Equation data";
@@ -266,7 +270,7 @@ public
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
   function main
@@ -789,7 +793,7 @@ protected
       var.typeAttributes := {};
 
       // This creates a cyclic dependency, be aware of that!
-      (var_ptr, _) := BVariable.makeVarPtrCyclic(var, var.name);
+      (var_ptr, _) := BVariable.makeVarPtr(var, var.name);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
       fail();
@@ -840,9 +844,9 @@ protected
 
       // get external object class
       case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(ty)));
       case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
-      then VariableKind.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(Type.complexNode(elemTy)));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX()) algorithm
@@ -902,9 +906,12 @@ protected
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())) for child in var.children);
+        varKind.children := list(PointerWeak.downgrade(
+          VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())))
+          for child in var.children);
         // set parent for all children
-        varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
+        varKind.children := list(PointerWeak.downgrade(
+          BVariable.setParent(PointerWeak.upgrade(child), var_ptr)) for child in varKind.children);
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
@@ -1043,7 +1050,7 @@ protected
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
         stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
-        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), NFInstNode.NO_SCOPE, frontend_equation.source);
         alg  := Algorithm.setInputsOutputs(alg);
       then {lowerAlgorithm(alg, init)};
 
@@ -1115,7 +1122,7 @@ protected
 
             // if the body was an algorithm (asserts) merge it back to an algorithm
             if isAlgorithm then
-              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), NFInstNode.NO_SCOPE, frontend_equation.source);
               alg       := Algorithm.setInputsOutputs(alg);
               size      := sum(ComponentRef.size(out, false) for out in alg.outputs);
               body_elem := Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), Equation.getAttributes(body_elem));
@@ -1642,7 +1649,7 @@ protected
   algorithm
     try
       var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
-      node := InstNode.VAR_NODE(InstNode.name(node), var);
+      node := InstNode.VAR_NODE(InstNode.name(node), PointerWeak.downgrade(var));
     else
     end try;
   end lowerInstNode;
@@ -1661,7 +1668,8 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), var);
+          qual.node := ComponentRef.storeNode(InstNode.VAR_NODE(
+            InstNode.name(ComponentRef.node(qual)), PointerWeak.downgrade(var)));
       then qual;
 
       else cref;
@@ -1899,8 +1907,8 @@ public
     input UnorderedSet<ComponentRef> set;
   algorithm
     () := match cref
-      case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
-      case ComponentRef.CREF(node = InstNode.NAME_NODE()) then ();
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) then ();
+      case ComponentRef.CREF() guard InstNode.isName(ComponentRef.node(cref)) then ();
       case ComponentRef.CREF() algorithm
         UnorderedSet.add(cref, set);
       then ();

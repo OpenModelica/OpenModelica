@@ -82,6 +82,7 @@ protected
   import Config;
   import Error;
   import Pointer;
+  import PointerWeak;
   import StringUtil;
   import Util;
 
@@ -818,7 +819,7 @@ public
         case VariableKind.STATE()
           algorithm
             if isSome(varKind.derivative) then
-              var := Pointer.access(Util.getOption(varKind.derivative));
+              var := Pointer.access(PointerWeak.upgrade(Util.getOption(varKind.derivative)));
               oldCrefOpt := SOME(ComponentRef.toDAE(var.name));
             else
               oldCrefOpt := NONE();

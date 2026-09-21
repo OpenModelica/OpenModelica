@@ -20,6 +20,6 @@ path = "src/lib.rs"
 # to it via postMessage. Pins match the rest of the wasm build (wasm-bindgen the
 # wasmer `js` backend targets).
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "=0.2.125"
-js-sys = "0.3.102"
-web-sys = { version = "0.3.102", features = ["Worker", "WorkerOptions", "WorkerType", "MessageEvent"] }
+wasm-bindgen = "=0.2.128"
+js-sys = "0.3.105"
+web-sys = { version = "0.3.105", features = ["Worker", "WorkerOptions", "WorkerType", "MessageEvent"] }

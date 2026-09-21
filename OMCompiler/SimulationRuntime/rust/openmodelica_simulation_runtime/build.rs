@@ -15,17 +15,32 @@ use std::path::PathBuf;
 fn link_runtime_c() {
     println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DIR");
     println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_LINK");
+    println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DEF");
     // MSVC links the static archive *into* SimulationRuntimeC.dll, so absorb it
     // the same way. CMake names its dependencies, which an archive lacks.
     if let Ok(libs) = std::env::var("OMC_RUNTIME_C_LINK") {
         for lib in libs.split('|').filter(|s| !s.is_empty()) {
             println!("cargo:rustc-cdylib-link-arg={lib}");
         }
+        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C+Rust
+        // links this cdylib rather than SimulationRuntimeC.dll. reexport_def.cmake
+        // derives /EXPORT: switches from the archive; they have to be a response
+        // file because rustc writes the cdylib's own .def and ours would replace it.
+        if let Ok(rsp) = std::env::var("OMC_RUNTIME_C_DEF") {
+            println!("cargo:rustc-cdylib-link-arg=@{rsp}");
+        }
         return;
     }
     let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
     println!("cargo:rustc-link-search=native={dir}");
     println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
+    // libomcgc: `--parmodauto`'s worker threads register with the Boehm GC before
+    // they run model code that allocates (src/parmod.rs).
+    println!("cargo:rerun-if-env-changed=OMC_GC_DIR");
+    if let Ok(gc) = std::env::var("OMC_GC_DIR") {
+        println!("cargo:rustc-link-search=native={gc}");
+        println!("cargo:rustc-link-lib=dylib=omcgc");
+    }
     if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "ios")) {
         println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined");
     }
@@ -86,7 +101,25 @@ const RENAME: &[(&str, &str)] = &[("ty", "type")];
 /// Mirrors of a plain C `struct` with no typedef, which C must name with the tag.
 const C_TAG: &[&str] = &["OpenModelicaGeneratedFunctionCallbacks"];
 
+/// The FMU flavour of this runtime: an archive a source-code FMU links, where the
+/// C half is the FMU's own minimal one. What it cannot rely on there is behind
+/// `cfg(omc_fmi_runtime)`.
+fn fmi_runtime_cfg() -> bool {
+    println!("cargo:rustc-check-cfg=cfg(omc_fmi_runtime)");
+    println!("cargo:rerun-if-env-changed=OMC_SIMRT_FMI");
+    let fmi = std::env::var("OMC_SIMRT_FMI").is_ok_and(|v| v != "0" && !v.is_empty());
+    if fmi {
+        println!("cargo:rustc-cfg=omc_fmi_runtime");
+    }
+    fmi
+}
+
+/// The attribute that takes a mirror item out of the FMU flavour. `build.rs` reads
+/// `abi.rs` as text, so it has to honour the same gate the compiler will.
+const FMI_GATE: &str = "#[cfg(not(omc_fmi_runtime))]";
+
 fn main() {
+    let fmi = fmi_runtime_cfg();
     println!("cargo:rerun-if-changed=src/shim.c");
     cc::Build::new().file("src/shim.c").warnings(true).compile("omc_rust_runtime_shim");
     export_shim_entry_points();
@@ -100,8 +133,16 @@ fn main() {
          fn checks() -> Vec<(String, u64)> {\n  let mut v: Vec<(String, u64)> = Vec::new();\n",
     );
     let mut lines = src.lines().peekable();
+    let mut gated = false;
     while let Some(line) = lines.next() {
+        if line.trim() == FMI_GATE {
+            gated = true;
+            continue;
+        }
         if line.trim() != "#[repr(C)]" {
+            if !line.trim().starts_with("#[") {
+                gated = false;
+            }
             continue;
         }
         // Skip the derives between the attribute and the item.
@@ -109,11 +150,12 @@ fn main() {
         while head.trim_start().starts_with("#[") {
             head = lines.next().unwrap_or("");
         }
+        let struct_gated = core::mem::take(&mut gated);
         let Some(name) = head.trim().strip_prefix("pub struct ").and_then(|s| s.split_whitespace().next())
         else {
             continue;
         };
-        if !head.trim_end().ends_with('{') || SKIP.contains(&name) {
+        if !head.trim_end().ends_with('{') || SKIP.contains(&name) || (fmi && struct_gated) {
             continue;
         }
         let c_name = if C_TAG.contains(&name) { format!("struct {name}") } else { name.to_string() };
@@ -123,6 +165,7 @@ fn main() {
         );
         // Fields end at the closing brace; `pub <name>:` at one indent level.
         let mut depth = 1usize;
+        let mut field_gated = false;
         for body in lines.by_ref() {
             depth += body.matches('{').count();
             depth -= body.matches('}').count();
@@ -130,7 +173,15 @@ fn main() {
                 break;
             }
             let t = body.trim();
+            if t == FMI_GATE {
+                field_gated = true;
+                continue;
+            }
             let Some(field) = t.strip_prefix("pub ").and_then(|s| s.split(':').next()) else { continue };
+            if fmi && core::mem::take(&mut field_gated) {
+                continue;
+            }
+            field_gated = false;
             if !field.chars().all(|c| c.is_alphanumeric() || c == '_') || field.is_empty() {
                 continue;
             }

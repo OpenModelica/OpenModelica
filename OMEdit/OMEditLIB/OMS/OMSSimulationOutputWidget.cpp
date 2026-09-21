@@ -39,6 +39,7 @@
 
 #include "zmq.h"
 #include "OMSSimulationOutputWidget.h"
+#include "omedit_config.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Plotting/VariablesWidget.h"
@@ -316,8 +317,9 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     process = QString("python");
     QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
     QString OMHOME = QString(Helper::OpenModelicaHome);
-    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib/omc;" + processEnvironment.value("PYTHONPATH"));
-    processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
+    const QString omsLib = OMHOME + "/lib/" + HOST_SHORT + "/omc";
+    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + omsLib + ";" + processEnvironment.value("PYTHONPATH"));
+    processEnvironment.insert("PATH",  OMHOME + "/bin;" + omsLib + ";" + processEnvironment.value("PATH"));
     mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #else
     process = QString("%1/bin/OMSimulator").arg(Helper::OpenModelicaHome);

@@ -61,6 +61,7 @@ protected
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
+  import MutableWeak;
   import NFModifier.Modifier;
   import Operator = NFOperator;
   import Statement = NFStatement;
@@ -427,7 +428,7 @@ protected
     fn := UnorderedMap.getOrFail(fn.path, replacements);
     // only single-output functions have a well defined result variable
     if listLength(fn.outputs) == 1 then
-      mergeNodeOntoArg(listHead(fn.outputs), cref_exp, variables, alias_map);
+      mergeNodeOntoArg(InstNode.fromHandle(listHead(fn.outputs)), cref_exp, variables, alias_map);
     end if;
   end propagateOutput;
 
@@ -562,10 +563,11 @@ protected
     input InstNode node;
     output list<InstNode> children;
   protected
-    InstNode cls_node;
+    Type elem_ty;
   algorithm
     children := match Type.arrayElementType(InstNode.getType(node))
-      case Type.COMPLEX(cls = cls_node) then arrayList(Class.getComponents(InstNode.getClass(cls_node)));
+      case elem_ty as Type.COMPLEX()
+        then arrayList(Class.getComponents(InstNode.getClass(Type.complexNode(elem_ty))));
       else {};
     end match;
   end nodeRecordChildren;

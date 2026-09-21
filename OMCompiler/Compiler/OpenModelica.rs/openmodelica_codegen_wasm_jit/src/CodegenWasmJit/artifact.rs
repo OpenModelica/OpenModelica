@@ -24,6 +24,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 
 use openmodelica_fmi::{Fmu, InterfaceKind};
+use openmodelica_sim_meta::omclog;
 use openmodelica_fmi_driver::api::Fmi3;
 use openmodelica_fmi_driver::component::WasmArtifact;
 use openmodelica_fmi_driver::{cs, me, Options, Solver};
@@ -443,8 +444,19 @@ pub fn run(
     let res = match face {
         Face::Simulation => run_simulation(&loaded, &flags, &out, simflags, &mut log),
         Face::ModelExchange(solver) => {
+            // A bare `fmi3:me` integrates with the model's own `-s`, as the standalone would.
             let solver = match (solver, flags.dae_mode) {
-                (None, false) => Solver::Dassl,
+                (None, false) => match flags.solver.and_then(master_solver) {
+                    Some(s) => s,
+                    None => {
+                        if let Some(s) = flags.solver {
+                            log.push_str(&format!(
+                                "LOG_STDOUT        | info    | the Model Exchange master has no {s:?}; integrating with DASKR\n"
+                            ));
+                        }
+                        Solver::Dassl
+                    }
+                },
                 (None, true) | (Some(Solver::Ida), true) => Solver::Ida,
                 (Some(s), false) => s,
                 (Some(s), true) => {
@@ -462,6 +474,21 @@ pub fn run(
         Face::CoSimulation => run_fmi(&loaded, &flags, &out, None, &mut log),
     };
     (res, log)
+}
+
+/// The master's integrator for a `-s` the standalone runtime knows; `None` for one
+/// the master has no counterpart of.
+fn master_solver(s: openmodelica_sim_meta::simflags::Solver) -> Option<Solver> {
+    use openmodelica_sim_meta::simflags::Solver as S;
+    Some(match s {
+        S::Dassl => Solver::Dassl,
+        S::Ida => Solver::Ida,
+        S::Cvode => Solver::Cvode,
+        S::Gbode => Solver::Gbode,
+        S::Euler => Solver::Euler,
+        S::RungeKutta => Solver::RungeKutta,
+        S::SymSolver | S::SymSolverSsc | S::Qss | S::Optimization => return None,
+    })
 }
 
 /// The run's `-variableFilter`, compiled. `None` keeps everything: an absent,
@@ -659,16 +686,22 @@ fn run_fmi(
         if matches!(name.as_str(), "startTime" | "stopTime" | "stepSize" | "tolerance") {
             continue;
         }
-        let Some(v) = md.variables.iter().find(|v| v.name == *name) else {
+        let Some((v, vr, len)) = override_target(md, name) else {
             return Err(format!("wasm artifact: -override names no variable `{name}`"));
         };
         let Ok(value) = value.parse::<f64>() else {
             return Err(format!("wasm artifact: -override={name}={value} is not a number"));
         };
+        if len != 1 {
+            return Err(format!(
+                "wasm artifact: -override={name} names an array of {len} elements; \
+                 override them one at a time (`{name}[1]`)"
+            ));
+        }
         opts.parameters.push(openmodelica_fmi_driver::Parameter {
-            value_reference: v.value_reference,
+            value_reference: vr,
             ty: v.ty,
-            value,
+            values: vec![value],
         });
     }
 
@@ -703,7 +736,8 @@ fn run_fmi(
             for (_, category, message) in inst.take_log() {
                 log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
             }
-            let (r, s) = driven?;
+            let (r, s, events) = driven?;
+            log.push_str(&events);
             (r, s, elapsed)
         }
         Form::Dylink { .. } => {
@@ -717,11 +751,12 @@ fn run_fmi(
                 .map_err(|e| e.to_string())?;
                 linked_ms = ms(t);
                 let t = Instant::now();
-                let (r, s) = drive(inst, kind, md, &opts)?;
-                Ok((r, s, ms(t)))
+                let (r, s, events) = drive(inst, kind, md, &opts)?;
+                Ok((r, s, events, ms(t)))
             });
             log.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
-            let (r, s, e) = driven?;
+            let (r, s, events, e) = driven?;
+            log.push_str(&events);
             log.push_str(&format!(
                 "LOG_STDOUT        | info    | {} instantiated{}\n",
                 kind.as_str(),
@@ -745,10 +780,25 @@ fn drive<T>(
     kind: InterfaceKind,
     md: &openmodelica_fmi::ModelDescription,
     opts: &Options,
-) -> std::result::Result<(openmodelica_fmi_driver::record::Recorder, String), String>
+) -> std::result::Result<(openmodelica_fmi_driver::record::Recorder, String, String), String>
 where
     T: openmodelica_fmi_driver::api::Fmi3ModelExchange + openmodelica_fmi_driver::api::Fmi3CoSimulation,
 {
+    // The master's events under `-lv LOG_EVENTS`, as the standalone driver logs its own.
+    let events_log = |events: &[(f64, bool, Option<u32>)]| -> String {
+        if !omclog::active(omclog::EVENTS) {
+            return String::new();
+        }
+        events
+            .iter()
+            .map(|(t, time_event, indicator)| {
+                let kind = if *time_event { "time" } else { "state" };
+                // The standalone numbers its crossings from 1.
+                let on = indicator.map(|k| format!(" [{}]", k + 1)).unwrap_or_default();
+                format!("LOG_EVENTS        | info    | {kind} event at time={t:.12}{on}\n")
+            })
+            .collect()
+    };
     match kind {
         InterfaceKind::ModelExchange => {
             let run = me::simulate(inst, md, opts).map_err(|e| e.to_string())?;
@@ -760,7 +810,9 @@ where
                 "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events{retried}",
                 run.steps, run.calls, run.jacobians, run.state_events, run.time_events
             );
-            Ok((run.recorder, s))
+            let events: Vec<(f64, bool, Option<u32>)> =
+                run.event_times.iter().map(|e| (e.time, e.time_event, e.indicator)).collect();
+            Ok((run.recorder, s, events_log(&events)))
         }
         _ => {
             let run = cs::simulate(inst, md, opts).map_err(|e| e.to_string())?;
@@ -768,7 +820,7 @@ where
                 "{} communication steps, {} events, {} early returns",
                 run.steps, run.events, run.early_returns
             );
-            Ok((run.recorder, s))
+            Ok((run.recorder, s, String::new()))
         }
     }
 }
@@ -790,6 +842,41 @@ fn mb(bytes: u64) -> String {
         Ok(true) => String::new(),
         _ => format!(", {:.1} MB", bytes as f64 / 1.0e6),
     }
+}
+
+/// The variable `-override` names, its value reference and how many values it
+/// takes. C names an array element (`q[2]`); FMI lists the array under one value
+/// reference, with the element's own following it in the FMU's own order.
+fn override_target<'a>(
+    md: &'a openmodelica_fmi::ModelDescription,
+    name: &str,
+) -> Option<(&'a openmodelica_fmi::Variable, u32, usize)> {
+    if let Some(v) = md.variables.iter().find(|v| v.name == name) {
+        return Some((v, v.value_reference, v.fixed_len().unwrap_or(1) as usize));
+    }
+    let (base, subscripts) = name.strip_suffix(']')?.split_once('[')?;
+    let v = md.variables.iter().find(|v| v.name == base)?;
+    let subscripts: Vec<u64> =
+        subscripts.split(',').map(|s| s.trim().parse().ok()).collect::<Option<_>>()?;
+    let extents: Vec<u64> = v
+        .dimensions
+        .iter()
+        .map(|d| match d {
+            openmodelica_fmi::Dimension::Fixed(k) => Some(*k),
+            openmodelica_fmi::Dimension::ValueReference(_) => None,
+        })
+        .collect::<Option<_>>()?;
+    if subscripts.len() != extents.len() {
+        return None;
+    }
+    let mut index = 0u64;
+    for (s, extent) in subscripts.iter().zip(&extents) {
+        if *s < 1 || s > extent {
+            return None;
+        }
+        index = index * extent + (s - 1);
+    }
+    Some((v, v.value_reference + index as u32, 1))
 }
 
 fn instance_name(md: &openmodelica_fmi::ModelDescription) -> String {

@@ -162,6 +162,11 @@ public constant Integer FMI_INTERNAL = 2;
 public constant Integer FMI_PROTECTED = 3;
 public constant Integer FMI_BLACKBOX = 4;
 
+// How much source code an FMU carries, see FMI_SOURCES
+public constant Integer FMI_SOURCES_NONE = 1;
+public constant Integer FMI_SOURCES_SLIM = 2;
+public constant Integer FMI_SOURCES_FULL = 3;
+
 // FMI version enum flags
 public constant Integer FMI_VERSION_10 = 10;
 public constant Integer FMI_VERSION_20 = 20;
@@ -773,7 +778,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   "Sets the post optimization modules to use in the back end. See --help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "C+Rust", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
+  SOME(STRING_OPTION({"None", "C", "C+Rust", "Cpp","omsicpp", "ExperimentalEmbeddedC", "ESP32", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
   "Sets the target language for the code generation.");
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
@@ -1268,8 +1273,15 @@ constant ConfigFlag FMI_FILTER = CONFIG_FLAG(134, "fmiFilter", NONE(), EXTERNAL(
     })),
   "Specifies which model variables are exposed by the modelDescription.xml");
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(135, "fmiSources", NONE(), EXTERNAL(),
-  BOOL_FLAG(true), NONE(),
-  "Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code.");
+  ENUM_FLAG(FMI_SOURCES_NONE, {("false", FMI_SOURCES_NONE), ("true", FMI_SOURCES_SLIM),
+                               ("slim", FMI_SOURCES_SLIM), ("full", FMI_SOURCES_FULL)}),
+  SOME(STRING_DESC_OPTION({
+    ("false", "The FMU carries no sources at all [default]."),
+    ("true", "Same as slim."),
+    ("slim", "The FMU carries the sources it was built from. Under --simCodeTarget=C+Rust that is a mix of C and Rust, and rebuilding needs cargo to fetch the Rust dependencies from crates.io."),
+    ("full", "As slim, plus a vendored copy of the Rust dependencies, so the FMU rebuilds without network access. Only differs from slim under --simCodeTarget=C+Rust.")
+    })),
+  "Defines how much source code FMUs will be exported with. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code.");
 constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(136, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
   "Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json.");

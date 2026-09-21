@@ -112,23 +112,32 @@ endif()
 
 # ---------------------------------------------------------------------------
 # Cross-compile the omc *artifacts* (cdylib + launcher + GUI clients) for
-# RUST_OMC_TARGET via `cargo xwin`; the build tools stay on/for the host. Empty
-# = native build. Only *-windows-msvc is wired (cargo-xwin targets MSVC); the
-# artifacts then land in target/<triple>/<profile>/ with .exe/.dll names.
+# RUST_OMC_TARGET; the build tools stay on/for the host. Empty = native build.
+# Two families are wired, each with the cargo wrapper that can link for it:
+# *-windows-msvc through cargo-xwin (clang-cl + a cached MSVC CRT/SDK) and
+# *-apple-darwin through cargo-zigbuild + RUST_OMC_MACOS_SDK. The artifacts land
+# in target/<triple>/<profile>/ under that platform's file names.
 set(RUST_OMC_TARGET "" CACHE STRING
-    "Rust target triple to cross-compile the omc artifacts for via cargo-xwin (e.g. x86_64-pc-windows-msvc). Empty = native host build.")
+    "Rust target triple to cross-compile the omc artifacts for (e.g. x86_64-pc-windows-msvc, aarch64-apple-darwin). Empty = native host build.")
 if(RUST_OMC_TARGET)
-  if(NOT RUST_OMC_TARGET MATCHES "windows-msvc$")
-    message(FATAL_ERROR "RUST_OMC_TARGET=${RUST_OMC_TARGET} is unsupported; only *-windows-msvc triples are wired (cargo-xwin).")
+  if(RUST_OMC_TARGET MATCHES "windows-msvc$")
+    set(RUST_OMC_EXE_SUFFIX ".exe")
+    set(RUST_OMC_CDYLIB_NAME "OpenModelicaCompiler.dll")
+  elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
+    set(RUST_OMC_EXE_SUFFIX "")
+    set(RUST_OMC_CDYLIB_NAME "libOpenModelicaCompiler.dylib")
+  elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
+    set(RUST_OMC_EXE_SUFFIX "")
+    set(RUST_OMC_CDYLIB_NAME "libOpenModelicaCompiler.so")
+  else()
+    message(FATAL_ERROR "RUST_OMC_TARGET=${RUST_OMC_TARGET} is unsupported; only *-windows-msvc (cargo-xwin), *-apple-darwin (cargo-zigbuild) and *-linux-gnu (the distribution's GNU cross toolchain) triples are wired.")
   endif()
-  # The dev profile selects the cranelift rustc backend, which cannot target
-  # windows-msvc; a cross build must use release (LLVM backend).
+  # The dev profile selects the cranelift rustc backend, which has no backend for
+  # these targets; a cross build must use release (LLVM backend).
   if(NOT RUST_OMC_PROFILE STREQUAL "release")
     message(FATAL_ERROR "Cross-compiling (RUST_OMC_TARGET set) requires -DRUST_OMC_PROFILE=release (the dev profile's cranelift backend cannot target ${RUST_OMC_TARGET}).")
   endif()
   set(RUST_OMC_ARTIFACT_SUBDIR ${RUST_OMC_TARGET}/${RUST_OMC_TARGET_SUBDIR})
-  set(RUST_OMC_EXE_SUFFIX ".exe")
-  set(RUST_OMC_CDYLIB_NAME "OpenModelicaCompiler.dll")
 else()
   set(RUST_OMC_ARTIFACT_SUBDIR ${RUST_OMC_TARGET_SUBDIR})
   set(RUST_OMC_EXE_SUFFIX "")
@@ -241,6 +250,33 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/runtime/rt_ldflags_generated_code.cmake)
 
 # ---------------------------------------------------------------------------
+# The wasm half of the build, handed from one CI stage to the next.
+#
+# Everything omc embeds or ships as wasm is the same whatever platform omc
+# itself is built for, but producing it needs a wasm toolchain (clang +
+# wasi-libc + wasm-ld) and a good few minutes. So one stage builds it with
+# RUST_OMC_WASM_ARTIFACTS_OUT set and stashes that directory, and every later
+# stage points RUST_OMC_PREBUILT_WASM_DIR at it and builds no wasm at all --
+# which is what lets the Windows and macOS cross builds run without one.
+# Trusted, not checked, like RUST_OMC_WASM_RUNTIME. The layout is:
+#
+#   <dir>/wasi-pic-sysroot/    the PIC wasi-libc sysroot (also installed, and
+#                              what an external "C" library is compiled against)
+#   <dir>/sundials-wasm/       SUNDIALS/KLU/UMFPACK/Lis/PRIMME archives+headers
+#   <dir>/hdf5-wasm/           the HDF5 archive + headers (MAT v7.3)
+#   <dir>/wasi_snapshot_preview1.reactor.wasm
+#   <dir>/blobs/               every wasm blob the cargo build scripts produce,
+#                              the wasm-jit runtime.wasm among them
+# ---------------------------------------------------------------------------
+set(RUST_OMC_PREBUILT_WASM_DIR "" CACHE PATH
+    "Directory of prebuilt wasm artifacts to use instead of building them (empty = build them).")
+set(RUST_OMC_WASM_ARTIFACTS_OUT "" CACHE PATH
+    "Collect the wasm artifacts into this directory, for RUST_OMC_PREBUILT_WASM_DIR of a later build (empty = do not).")
+if(RUST_OMC_PREBUILT_WASM_DIR AND RUST_OMC_WASM_ARTIFACTS_OUT)
+  message(FATAL_ERROR "RUST_OMC_PREBUILT_WASM_DIR and RUST_OMC_WASM_ARTIFACTS_OUT are the two ends of the same hand-off; set one of them, not both.")
+endif()
+
+# ---------------------------------------------------------------------------
 # WASI toolchain discovery (shared by wasi-libc PIC sysroot and sundials wasm).
 # ---------------------------------------------------------------------------
 find_program(LLVM_AR_EXECUTABLE llvm-ar)
@@ -270,15 +306,24 @@ endif()
 # Built by CMake using wasi-libc's own CMakeLists.txt with BUILD_SHARED=ON
 # so it produces a -fPIC libc.so (Debian's is non-PIC).
 # ---------------------------------------------------------------------------
-if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
-  message(FATAL_ERROR "llvm-ar/llvm-ranlib not found; required to build the wasi-libc PIC sysroot.")
-endif()
-if(NOT _wasi_builtins OR NOT EXISTS ${_wasi_builtins})
-  message(FATAL_ERROR "libclang_rt.builtins-wasm32.a not found (install libclang-rt-*-dev-wasm32).")
+# Only when this build produces the sysroot: with a hand-over it is already
+# there, and a wasm toolchain is exactly what such a build does not need.
+if(NOT RUST_OMC_PREBUILT_WASM_DIR)
+  if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
+    message(FATAL_ERROR "llvm-ar/llvm-ranlib not found; required to build the wasi-libc PIC sysroot.")
+  endif()
+  if(NOT _wasi_builtins OR NOT EXISTS ${_wasi_builtins})
+    message(FATAL_ERROR "libclang_rt.builtins-wasm32.a not found (install libclang-rt-*-dev-wasm32).")
+  endif()
 endif()
 
-set(RUST_WASI_PIC_SYSROOT ${CMAKE_BINARY_DIR}/rust-wasi-pic-sysroot
-    CACHE PATH "Output directory for the PIC wasi-libc sysroot.")
+if(RUST_OMC_PREBUILT_WASM_DIR)
+  set(RUST_WASI_PIC_SYSROOT ${RUST_OMC_PREBUILT_WASM_DIR}/wasi-pic-sysroot
+      CACHE PATH "PIC wasi-libc sysroot (handed over, not built here).")
+else()
+  set(RUST_WASI_PIC_SYSROOT ${CMAKE_BINARY_DIR}/rust-wasi-pic-sysroot
+      CACHE PATH "Output directory for the PIC wasi-libc sysroot.")
+endif()
 
 # Write the wasm32-wasip1 toolchain file for CMake to use when cross-compiling.
 set(_wasi_toolchain ${CMAKE_CURRENT_BINARY_DIR}/wasi-toolchain.cmake)
@@ -293,9 +338,9 @@ file(WRITE ${_wasi_toolchain}
   "set(CMAKE_C_FLAGS_INIT \"-O2\")\n"
   "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
   "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
-set(_wasi_libc_src ${CMAKE_BINARY_DIR}/downloads/wasi-libc/wasi-libc-wasi-sdk-32)
-if(NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
-  set(_wasi_tgz ${CMAKE_BINARY_DIR}/downloads/wasi-libc-wasi-sdk-32.tar.gz)
+set(_wasi_libc_src ${OM_DOWNLOADS_DIR}/wasi-libc/wasi-libc-wasi-sdk-32)
+if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
+  set(_wasi_tgz ${OM_DOWNLOADS_DIR}/wasi-libc-wasi-sdk-32.tar.gz)
   message(STATUS "Downloading wasi-libc (wasi-sdk-32) source…")
   file(DOWNLOAD
        https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
@@ -307,9 +352,9 @@ if(NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
     file(REMOVE ${_wasi_tgz})
     message(FATAL_ERROR "Failed to download wasi-libc source (${_wasi_dl})")
   else()
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc)
+    file(MAKE_DIRECTORY ${OM_DOWNLOADS_DIR}/wasi-libc)
     execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
-                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc
+                    WORKING_DIRECTORY ${OM_DOWNLOADS_DIR}/wasi-libc
                     RESULT_VARIABLE _wasi_untar)
     if(NOT _wasi_untar EQUAL 0)
       message(FATAL_ERROR "Failed to unpack wasi-libc source")
@@ -320,6 +365,10 @@ endif()
 # Build wasi-libc PIC sysroot via ExternalProject (honours jobserver, proper progress).
 include(ExternalProject)
 set(_wasi_libc_ep_build ${CMAKE_BINARY_DIR}/rust-wasi-libc-wasm-ep-build)
+if(RUST_OMC_PREBUILT_WASM_DIR)
+  # A stand-in for the targets that order themselves after the sysroot.
+  add_custom_target(rust_wasi_pic_sysroot)
+else()
 ExternalProject_Add(rust_wasi_pic_sysroot
   SOURCE_DIR ${_wasi_libc_src}
   BINARY_DIR ${_wasi_libc_ep_build}
@@ -330,9 +379,14 @@ ExternalProject_Add(rust_wasi_pic_sysroot
     -DBUILTINS_LIB=${_wasi_builtins}
   BUILD_ALWAYS ON
   BUILD_COMMAND ${CMAKE_COMMAND} --build ${_wasi_libc_ep_build} --parallel
-  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+  # _if_different, not copy_directory: the latter rewrites every file's mtime
+  # on every build, and `libc.so` is a `cargo:rerun-if-changed` of
+  # openmodelica_wasi_libc's build script. That rebuilt it, wasm_jit,
+  # codegen_wasm_jit, backend_main, the cdylib and omc on every no-op build.
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${_wasi_libc_ep_build}/sysroot ${RUST_WASI_PIC_SYSROOT}
   EXCLUDE_FROM_ALL ON)
+endif()
 
 # ---------------------------------------------------------------------------
 # SUNDIALS/KLU/UMFPACK/Lis wasm cross-compile.
@@ -344,7 +398,11 @@ ExternalProject_Add(rust_wasi_pic_sysroot
 # ---------------------------------------------------------------------------
 option(RUST_OMC_ENABLE_SUNDIALS "Build the 3rd-party solver archives (SUNDIALS/KLU/UMFPACK/Lis) for wasm32-wasip1, as used by the wasm-jit runtime." ON)
 
-if(RUST_OMC_ENABLE_SUNDIALS)
+if(RUST_OMC_ENABLE_SUNDIALS AND RUST_OMC_PREBUILT_WASM_DIR)
+  set(RUST_SUNDIALS_WASM_DIR ${RUST_OMC_PREBUILT_WASM_DIR}/sundials-wasm
+      CACHE PATH "SUNDIALS/KLU wasm32-wasip1 archives (handed over, not built here).")
+  add_custom_target(rust_sundials_collect)
+elseif(RUST_OMC_ENABLE_SUNDIALS)
   set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials)
   set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
@@ -616,7 +674,11 @@ endif()
 # system HDF5 instead (ModelicaExternalC's hdf5_native.cmake).
 # ---------------------------------------------------------------------------
 option(RUST_OMC_ENABLE_HDF5 "Build HDF5 (openmodelica_hdf5 crate) for wasm32-wasip1, so the wasm ModelicaExternalC reads and writes MAT v7.3." ON)
-if(RUST_OMC_ENABLE_HDF5)
+if(RUST_OMC_ENABLE_HDF5 AND RUST_OMC_PREBUILT_WASM_DIR)
+  set(RUST_HDF5_WASM_DIR ${RUST_OMC_PREBUILT_WASM_DIR}/hdf5-wasm
+      CACHE PATH "HDF5 wasm32-wasip1 archive + headers (handed over, not built here).")
+  add_custom_target(rust_hdf5_wasm)
+elseif(RUST_OMC_ENABLE_HDF5)
   # clang wants lib/wasm32-unknown-wasip1/libclang_rt.builtins.a; Debian ships
   # lib/wasi/libclang_rt.builtins-wasm32.a. Symlinks bridge the two so HDF5's
   # configure probes can link -- they must: as compile-only tests (what
@@ -682,7 +744,7 @@ if(RUST_OMC_ENABLE_HDF5)
       CACHE PATH "Install tree for the HDF5 wasm32-wasip1 archive + headers.")
   add_custom_target(rust_hdf5_wasm
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CMAKE_COMMAND} -E env
             "CMAKE_TOOLCHAIN_FILE_wasm32-wasip1=${_hdf5_toolchain}"
             "CFLAGS_wasm32-wasip1=${_hdf5_cflags}"
@@ -706,8 +768,12 @@ get_property(RUST_IPOPT_NATIVE_DIR GLOBAL PROPERTY OMC_RUST_IPOPT_NATIVE_DIR)
 # ---------------------------------------------------------------------------
 # Preview1→preview2 reactor adapter (mandatory for FMI wasm FMU export).
 # ---------------------------------------------------------------------------
-set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
-if(NOT EXISTS ${_wasi_p1_adapter})
+if(RUST_OMC_PREBUILT_WASM_DIR)
+  set(_wasi_p1_adapter ${RUST_OMC_PREBUILT_WASM_DIR}/wasi_snapshot_preview1.reactor.wasm)
+else()
+  set(_wasi_p1_adapter ${OM_DOWNLOADS_DIR}/wasi_snapshot_preview1.reactor.wasm)
+endif()
+if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_p1_adapter})
   message(STATUS "Downloading wasi_snapshot_preview1 reactor adapter (wasmtime v27.0.0)…")
   file(DOWNLOAD
        https://github.com/bytecodealliance/wasmtime/releases/download/v27.0.0/wasi_snapshot_preview1.reactor.wasm
@@ -726,11 +792,12 @@ endif()
 # Prebuilt artifacts (PIC sysroot, sundials wasm) are passed as output paths
 # so the cargo build.rs uses them rather than rebuilding.
 # ---------------------------------------------------------------------------
-# The revision this omc reports, tagged "-rust" where the C build says "-cmake".
+# The revision this omc reports, tagged "rust" where the C build says "cmake"
+# (SOURCE_REVISION_RUST, see cmake/omc_git_revision.cmake).
 # file(GENERATE), not file(WRITE): it keeps the timestamp when the revision is
 # unchanged, so reconfiguring alone rebuilds nothing.
 set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
-file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_BASE}-rust\n")
+file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_RUST}\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
@@ -805,6 +872,22 @@ if(TARGET rust_ipopt_native_collect)
   list(APPEND CARGO_ENV "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
 endif()
 
+# The two ends of the wasm blob hand-off (see RUST_OMC_PREBUILT_WASM_DIR): the
+# build scripts take each blob from _IN when it is there, and copy every blob
+# they produce to _OUT.
+if(RUST_OMC_PREBUILT_WASM_DIR)
+  list(APPEND CARGO_ENV "OMC_WASM_PREBUILT_IN=${RUST_OMC_PREBUILT_WASM_DIR}/blobs")
+endif()
+if(RUST_OMC_WASM_ARTIFACTS_OUT)
+  list(APPEND CARGO_ENV "OMC_WASM_PREBUILT_OUT=${RUST_OMC_WASM_ARTIFACTS_OUT}/blobs")
+endif()
+
+# Where the build scripts leave the blobs omc loads at run time rather than links
+# in -- 30 MB, identical on every platform. Installed below; an omc run out of the
+# build tree finds this path compiled in (see openmodelica_wasm_jit::blobs).
+set(RUST_OMC_WASM_BLOB_DIR ${CMAKE_CURRENT_BINARY_DIR}/wasm-blobs)
+list(APPEND CARGO_ENV "OMC_WASM_BLOB_OUT=${RUST_OMC_WASM_BLOB_DIR}")
+
 # Source paths (fallback for raw cargo builds without CMake).
 if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
@@ -858,14 +941,47 @@ set(MMTORUST_BIN ${RUST_TARGET_DIR}/release/mmtorust)
 
 # ${CARGO_BUILD_ARTIFACT}: the cargo invocation for the omc *artifacts* (cdylib,
 # launcher, native GUI clients). Identical to ${CARGO_BUILD} for a native build;
-# for a cross build (RUST_OMC_TARGET set) it becomes `cargo xwin build --target
-# <triple>`, which wraps cargo with clang-cl + the cached MSVC CRT/SDK. cargo-xwin
-# is a separate cargo subcommand binary; require it up front when cross.
-if(RUST_OMC_TARGET)
+# for a cross build (RUST_OMC_TARGET set) it is the cargo wrapper that can link
+# for that platform, since neither target links with the host toolchain:
+#   * *-windows-msvc: `cargo xwin build`, clang-cl + a cached MSVC CRT/SDK.
+#   * *-apple-darwin: `cargo zigbuild`, zig's clang + the macOS SDK as sysroot
+#     (zig ships no Apple frameworks, so SDKROOT is mandatory off a macOS host).
+# Both are separate cargo subcommand binaries; require the one in use up front.
+if(RUST_OMC_TARGET MATCHES "windows-msvc$")
   find_program(CARGO_XWIN_EXECUTABLE cargo-xwin REQUIRED
                HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
   set(CARGO_BUILD_ARTIFACT ${CARGO_ENV} XWIN_ACCEPT_LICENSE=1
       ${CARGO_EXECUTABLE} xwin build --target ${RUST_OMC_TARGET} --target-dir ${RUST_TARGET_DIR})
+elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
+  find_program(CARGO_ZIGBUILD_EXECUTABLE cargo-zigbuild REQUIRED
+               HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
+  # CMAKE_OSX_SYSROOT is what darwin-toolchain.cmake sets for the C/C++ half of
+  # the same build, so the two agree on one SDK by default.
+  if(CMAKE_OSX_SYSROOT)
+    set(_rust_omc_sdkroot ${CMAKE_OSX_SYSROOT})
+  else()
+    set(_rust_omc_sdkroot ${RUST_OMC_MACOS_SDK})
+  endif()
+  if(NOT EXISTS ${_rust_omc_sdkroot}/System/Library/Frameworks)
+    message(FATAL_ERROR "RUST_OMC_TARGET=${RUST_OMC_TARGET} needs an unpacked macOS SDK: '${_rust_omc_sdkroot}' has no System/Library/Frameworks. Pass -DRUST_OMC_MACOS_SDK=<MacOSX*.sdk> (or configure with .cmake/darwin-toolchain.cmake, which sets CMAKE_OSX_SYSROOT).")
+  endif()
+  set(CARGO_BUILD_ARTIFACT ${CARGO_ENV} SDKROOT=${_rust_omc_sdkroot}
+      ${CARGO_EXECUTABLE} zigbuild --target ${RUST_OMC_TARGET} --target-dir ${RUST_TARGET_DIR})
+elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
+  # Another Linux architecture needs no cargo wrapper at all -- rustc links it
+  # with the distribution's GNU cross gcc, which is also what the C/C++ half of
+  # the build uses (linux-cross-toolchain.cmake). Only the linker has to be named:
+  # cargo would otherwise invoke the host `cc`.
+  string(TOUPPER ${RUST_OMC_TARGET} _rust_omc_target_env)
+  string(REPLACE "-" "_" _rust_omc_target_env ${_rust_omc_target_env})
+  # pkg-config has to be told this is a cross build and pointed at the target's
+  # multiarch .pc files, or a -sys crate (openssl-sys, via curl) either refuses to
+  # run at all or answers with the host's libraries.
+  set(CARGO_BUILD_ARTIFACT ${CARGO_ENV}
+      CARGO_TARGET_${_rust_omc_target_env}_LINKER=${CMAKE_C_COMPILER}
+      PKG_CONFIG_ALLOW_CROSS=1
+      PKG_CONFIG_LIBDIR=/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig:/usr/share/pkgconfig
+      ${CARGO_EXECUTABLE} build --target ${RUST_OMC_TARGET} --target-dir ${RUST_TARGET_DIR})
 else()
   set(CARGO_BUILD_ARTIFACT ${CARGO_BUILD})
 endif()
@@ -938,7 +1054,7 @@ endif()
 # own target-dir keeps it from contending with the main build's lock.
 add_custom_target(rust_wasm_runtime
   WORKING_DIRECTORY ${_wasm_jit_runtime_dir}
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
           --target wasm32-unknown-unknown --target-dir ${_wasm_jit_runtime_target_dir}
   COMMAND ${CMAKE_COMMAND} -E copy ${_wasm_jit_runtime_wasm} ${RUST_OMC_WASM_RUNTIME_OUT}
@@ -996,7 +1112,7 @@ add_custom_command(
   OUTPUT ${SUSAN_STAMP}
   WORKING_DIRECTORY ${RUST_OMC_DIR}
   # Hand make's -jN jobserver tokens to cargo (needs CMake >= 3.28).
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   # Build tools always in release.
   COMMAND ${CARGO_BUILD} --release -p mmtorust
   # `--sources <susan subset>` is exactly what the `susan` subcommand does (it
@@ -1047,6 +1163,17 @@ function(omc_rust_setup_codegen)
       list(APPEND RUST_MO_SOURCES ${_f})
     endif()
   endforeach()
+  # Per-target declarations: `X.rust.mo` beside `X.mo` replaces the items the
+  # Rust port declares differently (see mmtorust/src/overrides.rs). They are not
+  # in the source list -- the C compiler must never see them -- so list them as
+  # dependencies explicitly, or editing one would not re-run codegen.
+  set(RUST_MO_OVERRIDES "")
+  foreach(_mo ${RUST_MO_SOURCES})
+    string(REGEX REPLACE "\\.mo$" ".rust.mo" _ovr "${_mo}")
+    if(EXISTS ${_ovr})
+      list(APPEND RUST_MO_OVERRIDES ${_ovr})
+    endif()
+  endforeach()
   # copy_if_different so the mtime (which rust_codegen DEPENDS on) only moves on
   # a real change — a plain file(WRITE) would rewrite it every reconfigure.
   file(WRITE ${RUST_SOURCES_FILE}.tmp "${_rust_src_content}")
@@ -1072,7 +1199,7 @@ function(omc_rust_setup_codegen)
   add_custom_command(
     OUTPUT ${SCRIPTING_API_MO}
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD} --release -p openmodelica_scripting_api_gen
     COMMAND ${RUST_TARGET_DIR}/release/scripting_api_gen ${MODELICA_BUILTIN_MO} ${SCRIPTING_API_MO}
     DEPENDS ${MODELICA_BUILTIN_MO}
@@ -1095,19 +1222,18 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_PREBUILT_GENERATED_SRC)
     # Stamp completion with no dependency on the transpile chain, so mmtorust /
     # susan / the templates are never built; the .rs are already in the tree.
+    # Everything below still applies: a CI stage handed the generated sources
+    # builds the very same artifacts from them, it just does not transpile.
     add_custom_command(
       OUTPUT ${CODEGEN_STAMP}
       COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
       COMMENT "Rust: reusing prebuilt generated sources (RUST_OMC_PREBUILT_GENERATED_SRC)"
       VERBATIM)
-    add_custom_target(rust_codegen DEPENDS ${CODEGEN_STAMP})
-    add_dependencies(rust_codegen rust_src_sync)
-    return()
-  endif()
+  else()
   add_custom_command(
     OUTPUT ${CODEGEN_STAMP}
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD} --release -p mmtorust
     # Strip unused `import X;` from the Susan-generated *.mo before transpiling:
     # mmtorust lowers every import to a `use crate::X`, so an unused import
@@ -1121,11 +1247,61 @@ function(omc_rust_setup_codegen)
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
     DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-            ${RUST_MO_SOURCES} ${MMTORUST_SOURCES}
+            ${RUST_MO_SOURCES} ${RUST_MO_OVERRIDES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
+  endif()
   add_custom_target(rust_codegen DEPENDS ${CODEGEN_STAMP})
   add_dependencies(rust_codegen rust_src_sync)
+
+  # -------------------------------------------------------------------------
+  # rust_wasm_artifacts: produce everything a RUST_OMC_PREBUILT_WASM_DIR build
+  # expects, so one CI stage can build the wasm half once for all the others.
+  # Building openmodelica_wasm_jit alone runs the build script that produces the
+  # blobs and the FMU loaders, and it depends only on the hand-written crates --
+  # not on the transpiled compiler, which is what every target stage compiles
+  # for itself.
+  # -------------------------------------------------------------------------
+  if(RUST_OMC_WASM_ARTIFACTS_OUT)
+    set(_wasm_out ${RUST_OMC_WASM_ARTIFACTS_OUT})
+    set(_wasm_collect
+        # The wasm-opt'd runtime over the unoptimised one the build script wrote.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_wasm_out}/blobs
+        COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_WASM_RUNTIME_OUT} ${_wasm_out}/blobs/runtime.wasm
+        COMMAND ${CMAKE_COMMAND} -E copy ${_wasi_p1_adapter} ${_wasm_out}/wasi_snapshot_preview1.reactor.wasm
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_WASI_PIC_SYSROOT} ${_wasm_out}/wasi-pic-sysroot)
+    set(_wasm_collect_deps rust_codegen rust_wasm_runtime rust_wasi_pic_sysroot)
+    # openmodelica_wasm_jit is a host build: its solver crates link these.
+    foreach(_native_collect rust_sundials_native_collect rust_ipopt_native_collect)
+      if(TARGET ${_native_collect})
+        list(APPEND _wasm_collect_deps ${_native_collect})
+      endif()
+    endforeach()
+    if(_wasi_builtins)
+      # In the sysroot copy, so the hand-over carries the builtins the libc.so
+      # was linked against rather than relying on the consumer's clang.
+      list(APPEND _wasm_collect COMMAND ${CMAKE_COMMAND} -E copy
+           ${_wasi_builtins} ${_wasm_out}/wasi-pic-sysroot/lib/wasm32-wasip1/)
+    endif()
+    if(RUST_OMC_ENABLE_SUNDIALS)
+      list(APPEND _wasm_collect COMMAND ${CMAKE_COMMAND} -E copy_directory
+           ${RUST_SUNDIALS_WASM_DIR} ${_wasm_out}/sundials-wasm)
+      list(APPEND _wasm_collect_deps rust_sundials_collect)
+    endif()
+    if(RUST_OMC_ENABLE_HDF5)
+      list(APPEND _wasm_collect COMMAND ${CMAKE_COMMAND} -E copy_directory
+           ${RUST_HDF5_WASM_DIR} ${_wasm_out}/hdf5-wasm)
+      list(APPEND _wasm_collect_deps rust_hdf5_wasm)
+    endif()
+    add_custom_target(rust_wasm_artifacts
+      WORKING_DIRECTORY ${RUST_OMC_DIR}
+      ${OMC_JOB_SERVER_AWARE}
+      COMMAND ${CARGO_BUILD} --release -p openmodelica_wasm_jit
+      ${_wasm_collect}
+      COMMENT "Rust: building the wasm artifacts -> ${_wasm_out}/"
+      VERBATIM)
+    add_dependencies(rust_wasm_artifacts ${_wasm_collect_deps})
+  endif()
 
   # The native omc artifacts (and their install rules) are pointless for the
   # wasm/web target — it ships a single .wasm bundle, not the cdylib + launcher —
@@ -1195,7 +1371,7 @@ function(omc_rust_setup_codegen)
   # -------------------------------------------------------------------------
   add_custom_target(rust_libopenmodelica ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} ${RUST_OMC_CDYLIB_FEATURES} -p libopenmodelica_compiler
     # Declares THIS target as the producer of the cdylib (consumed via the
     # IMPORTED OpenModelicaCompiler target's IMPORTED_LOCATION). Enough for Ninja,
@@ -1220,7 +1396,7 @@ function(omc_rust_setup_codegen)
 
   add_custom_target(rust_omc ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica
     DEPENDS rust_codegen rust_libopenmodelica
     COMMENT "Rust: building omc (cargo build -p openmodelica, ${RUST_OMC_PROFILE})"
@@ -1251,8 +1427,11 @@ function(omc_rust_setup_codegen)
 
   # The FMI 3.0 loader libraries an exported wasm FMU is given for a native
   # platform. Read at export time, not linked into omc.
+  # Staged as `<libdir>/omc/fmu-loader<ext>`, so each lands on the shelf of the
+  # platform it serves. index.json is for the browser, which cannot list a directory.
   install(DIRECTORY ${RUST_FMU_LOADERS_DIR}/
-          DESTINATION lib/omc/fmu-loaders COMPONENT omc)
+          DESTINATION lib COMPONENT omc
+          PATTERN "index.json" EXCLUDE)
 
   # The wasm-jit runtime, the FMI adapter and the external "C" side libraries,
   # compiled here rather than by whoever runs omc first: the per-user cache is
@@ -1262,29 +1441,51 @@ function(omc_rust_setup_codegen)
   # one left behind by an earlier omc is never looked up again and the run it was
   # meant to spare compiles instead. omc skips a blob whose artifact is current,
   # so a build that changed none of them costs the process start.
+  #
+  # Filled in the build tree only; an installer fills the installed one by
+  # running omc with OMC_WASM_PRECOMPILE_CACHE.
   set(RUST_WASMJIT_CACHE_DIR ${CMAKE_CURRENT_BINARY_DIR}/wasmjit-cache)
+  if(RUST_OMC_TARGET STREQUAL "")
+    set(_rust_wasmjit_precompile COMMAND ${CMAKE_COMMAND} -E env
+        OMC_WASM_PRECOMPILE_CACHE=${RUST_WASMJIT_CACHE_DIR}
+        ${RUST_OMC_ARTIFACT_DIR}/openmodelica${RUST_OMC_EXE_SUFFIX})
+  else()
+    set(_rust_wasmjit_precompile "")
+  endif()
   add_custom_target(rust_wasmjit_cache ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_WASMJIT_CACHE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E env
-            OMC_WASM_PRECOMPILE_CACHE=${RUST_WASMJIT_CACHE_DIR}
-            ${RUST_OMC_ARTIFACT_DIR}/openmodelica${RUST_OMC_EXE_SUFFIX}
+    ${_rust_wasmjit_precompile}
     DEPENDS rust_libopenmodelica
     COMMENT "Precompiling the wasm-jit artifacts"
     VERBATIM)
   add_dependencies(rust_wasmjit_cache rust_omc)
-  install(DIRECTORY ${RUST_WASMJIT_CACHE_DIR}/
-          DESTINATION lib/omc/cache COMPONENT omc
-          FILES_MATCHING PATTERN "*.cwasm")
+  # The empty directory keeps the shipped layout.
+  option(RUST_OMC_INSTALL_WASMJIT_CACHE
+         "Ship the precompiled wasm-jit .cwasm artifacts in the install tree." OFF)
+  if(RUST_OMC_INSTALL_WASMJIT_CACHE)
+    install(DIRECTORY ${RUST_WASMJIT_CACHE_DIR}/
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cache COMPONENT omc
+            FILES_MATCHING PATTERN "*.cwasm")
+  else()
+    install(DIRECTORY DESTINATION ${CMAKE_INSTALL_LIBDIR}/cache COMPONENT omc)
+  endif()
 
   # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
-  # against. Under the wasm triple with an `omc` subdirectory so it cannot be
-  # confused with a distribution's /usr/lib/wasm32-wasi, and with the compiler-rt
-  # builtins so it matches the libc.so omc resolves imports against.
+  # against, with the compiler-rt builtins so it matches the libc.so omc resolves
+  # imports against.
+  install(DIRECTORY ${RUST_OMC_WASM_BLOB_DIR}/
+          DESTINATION lib/wasm32-wasip1/omc COMPONENT omc
+          FILES_MATCHING PATTERN "*.wasm" PATTERN "index.json")
+
   install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
-          DESTINATION lib/wasm32-wasi/omc COMPONENT omc)
-  if(_wasi_builtins)
+          DESTINATION lib/wasm32-wasip1/omc/sysroot COMPONENT omc)
+  # Only when this build made the sysroot. A hand-over already carries the
+  # builtins inside it (see the collect step above), and the clang on the image
+  # that consumes one need have no wasm32 set at all -- jammy's clang 14 has
+  # none, and installing a path that does not exist is a hard error.
+  if(NOT RUST_OMC_PREBUILT_WASM_DIR AND _wasi_builtins)
     install(FILES ${_wasi_builtins}
-            DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
+            DESTINATION lib/wasm32-wasip1/omc/sysroot/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
   # The toolchain omc hands a library's CMake build project when it has to build
@@ -1308,7 +1509,7 @@ function(omc_rust_setup_codegen)
     # Serialised after rust_omc: concurrent cargo-xwin runs race on the shared clang-cl wrapper.
     add_custom_target(rust_omshell_egui ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
-      JOB_SERVER_AWARE TRUE
+      ${OMC_JOB_SERVER_AWARE}
       COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p omshell_egui --bin OMShell-egui
       DEPENDS rust_codegen rust_omc
       COMMENT "Rust: building OMShell-egui (${RUST_OMC_PROFILE})"
@@ -1322,7 +1523,7 @@ function(omc_rust_setup_codegen)
     # DEPENDS on rust_codegen.
     add_custom_target(rust_omshell_dioxus ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
-      JOB_SERVER_AWARE TRUE
+      ${OMC_JOB_SERVER_AWARE}
       COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
               -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features native
       DEPENDS rust_codegen rust_omshell_egui
@@ -1331,15 +1532,37 @@ function(omc_rust_setup_codegen)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   endif()
-  install(FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo
-          DESTINATION lib/omc COMPONENT omc)
+  # The library-documentation generator. Frontend-only, so it does not link the
+  # cdylib and only DEPENDS on the transpile.
+  #
+  # MAKEFLAGS is cleared because tikv-jemalloc-sys prepends its own flags to it
+  # before running autotools make, which leaves make's dash-less leading option
+  # word where the nested make reads it as a goal.
+  add_custom_target(rust_omgendoc ALL
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    COMMAND ${CMAKE_COMMAND} -E env --unset=MAKEFLAGS
+            ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica_gendoc
+    DEPENDS rust_codegen
+    COMMENT "Rust: building omgendoc (${RUST_OMC_PROFILE})"
+    VERBATIM)
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+
+  set(_omc_builtin_mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo)
+  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omc)
+
+  # omgendoc deduces OPENMODELICAHOME from its own path, so its component
+  # carries the builtins too and needs no omc built beside it.
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omgendoc)
+  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omgendoc)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/ COMPONENT omc)
   endif() # NOT OM_OMC_WASM
@@ -1495,7 +1718,7 @@ function(omc_rust_fmu_aot_module)
   set(_aot_artifact ${_aot_target_dir}/wasm32-wasip1/release/openmodelica_fmi_ls_wasm_aot.wasm)
   add_custom_target(rust_fmu_aot ALL
     WORKING_DIRECTORY ${_aot_src}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
             --manifest-path ${_aot_src}/Cargo.toml
             --target wasm32-wasip1 --target-dir ${_aot_target_dir}
@@ -1513,7 +1736,7 @@ function(omc_rust_omplot_cli_module)
   set(_omplot_artifact ${RUST_TARGET_DIR}/wasm32-wasip1/release/omplot.wasm)
   add_custom_target(rust_omplot_cli ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --target-dir ${RUST_TARGET_DIR}
             --target wasm32-wasip1 -p openmodelica_result_cli
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omplot
@@ -1537,7 +1760,7 @@ function(omc_rust_fmi_driver_module)
   set(_fmi_artifact ${_fmi_target_dir}/wasm32-wasip1/release/openmodelica_fmi_web.wasm)
   add_custom_target(rust_fmi_driver ALL
     WORKING_DIRECTORY ${_fmi_src}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
             --manifest-path ${_fmi_src}/Cargo.toml
             --target wasm32-wasip1 --target-dir ${_fmi_target_dir}
@@ -1575,7 +1798,7 @@ else()
 endif()
 
 function(omc_rust_omshell_qt_web_page)
-  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.11.2/wasm_singlethread"
       CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
   set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
   if(NOT EXISTS ${_tc})
@@ -1624,7 +1847,7 @@ endfunction()
 # message when absent. Reads omc_rust_setup_wasm's _web_dir and file-scope
 # RUST_OMC_DIR.
 function(omc_rust_omnotebook_qt_web_page)
-  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.11.2/wasm_singlethread"
       CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
   set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
   if(NOT EXISTS ${_tc})
@@ -1676,13 +1899,23 @@ endfunction()
 # Qt OMEdit web page: same shape as the OMShell/OMNotebook pages, pointed at the
 # build-tree OpenModelicaScriptingAPIQt sources (OMC_SCRIPTING_API_QT_DIR).
 function(omc_rust_omedit_qt_web_page)
-  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.11.2/wasm_singlethread"
       CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
   set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
   if(NOT EXISTS ${_tc})
     message(STATUS "OMEdit Qt web page skipped: no Qt-for-WebAssembly toolchain at "
                    "${_tc} (set -DOMSHELL_QT_WASM_PREFIX=<prefix> to enable).")
     return()
+  endif()
+
+  # Without the typed C ABI every OMEdit call fails and it spins until it traps,
+  # with nothing in the log. The option is cached, so a build dir first configured
+  # without the GUI clients keeps OFF.
+  if(NOT RUST_OMC_SCRIPTING_API)
+    message(FATAL_ERROR
+            "The OMEdit web page needs the omc scripting API: configure with "
+            "-DRUST_OMC_SCRIPTING_API=ON (it defaults to OM_ENABLE_GUI_CLIENTS, "
+            "so a build dir first configured without the GUI clients keeps OFF).")
   endif()
 
   set(_qt_src ${CMAKE_SOURCE_DIR}/OMEdit/OMEditGUI/wasm)
@@ -1716,10 +1949,35 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    # The OAuth callback goes at the web ROOT, not in the versioned page directory:
+    # neither Google nor Microsoft allows a wildcard redirect URI, so one page at
+    # the origin root is a single registered URI that every deployed version
+    # shares. It works because the code comes back over a BroadcastChannel, which
+    # is scoped to the origin rather than the path.
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${_qt_src}/oauth-callback.html ${_web_dir}/oauth-callback.html
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
+  # Cloud storage OAuth client registrations. Kept out of the source tree so that one
+  # deployment's applications do not become every build's default - the consent
+  # screen shows the registering organisation's name. Point this at the deployment's
+  # own file; without it the web build simply reports that cloud storage has not
+  # been set up. See OMEdit/OMEditGUI/wasm/cloud_config.json.example.
+  set(OMEDIT_CLOUD_CONFIG "" CACHE FILEPATH
+      "cloud_config.json to stage at the web root (Google/OneDrive OAuth client IDs).")
+  if(OMEDIT_CLOUD_CONFIG)
+    if(EXISTS ${OMEDIT_CLOUD_CONFIG})
+      add_custom_command(TARGET rust_omedit_qt_web POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${OMEDIT_CLOUD_CONFIG} ${_qt_pkgdir}/cloud_config.json
+        COMMENT "Staging cloud_config.json -> ${_qt_pkgdir}")
+    else()
+      message(WARNING "OMEDIT_CLOUD_CONFIG is set but ${OMEDIT_CLOUD_CONFIG} does not exist; "
+                      "the web build will report cloud storage as not set up.")
+    endif()
+  endif()
+
   if(NOT RUST_OMC_WEB_QT_STANDALONE)
     add_dependencies(rust_omedit_qt_web rust_wasm)
   endif()
@@ -1754,12 +2012,29 @@ function(omc_rust_setup_wasm)
                         "'${RUST_OMC_WASM_MODE}'.")
   endif()
 
-  # wasm-bindgen-cli is mandatory for this target; the wasm32 rustup target must
-  # also be installed. REQUIRED → a clear configure error instead of a cryptic
-  # mid-build failure. (WASM_OPT_EXECUTABLE is found at file scope and reused
+  # wasm-bindgen, built from the pinned wasm-bindgen-cli-support rather than
+  # found on PATH: cargo then resolves the same schema version the bindgen'd
+  # crates depend on, so no `cargo install wasm-bindgen-cli --version ...` is
+  # needed and an out-of-date one cannot break the build. Built out of the
+  # canonical tree, not the per-build mirror — it is a standalone workspace with
+  # no generated sources, so sharing it costs nothing and sccache keys on the
+  # manifest directory. (WASM_OPT_EXECUTABLE is found at file scope and reused
   # here; it is optional, only shrinking the release bundle.)
-  find_program(WASM_BINDGEN_EXECUTABLE wasm-bindgen REQUIRED
-               HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
+  #
+  # The wasm32 rustup target must still be installed.
+  set(_wb_src ${RUST_OMC_SRC_DIR}/openmodelica_wasm_bindgen)
+  set(_wb_dir ${CMAKE_CURRENT_BINARY_DIR}/wasm-bindgen)
+  set(WASM_BINDGEN_EXECUTABLE ${_wb_dir}/release/omc-wasm-bindgen${CMAKE_EXECUTABLE_SUFFIX})
+  add_custom_command(
+    OUTPUT ${WASM_BINDGEN_EXECUTABLE}
+    WORKING_DIRECTORY ${_wb_src}
+    ${OMC_JOB_SERVER_AWARE}
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --locked
+            --manifest-path ${_wb_src}/Cargo.toml --target-dir ${_wb_dir}
+    DEPENDS ${_wb_src}/src/main.rs ${_wb_src}/Cargo.toml ${_wb_src}/Cargo.lock
+    COMMENT "Rust: building wasm-bindgen from wasm-bindgen-cli-support"
+    VERBATIM)
+  add_custom_target(rust_wasm_bindgen DEPENDS ${WASM_BINDGEN_EXECUTABLE})
 
   set(_wasm_target wasm32-unknown-unknown)
   set(_wasm_name OpenModelicaCompiler)
@@ -1837,7 +2112,7 @@ function(omc_rust_setup_wasm)
     # three.js is large minified vendor code, not kept in git. Download and cache
     # it at configure time, pinned to r169 (matching the vendored OrbitControls.js)
     # with an integrity hash. Cached in the build tree; re-download only if absent.
-    set(_three_js ${CMAKE_BINARY_DIR}/downloads/three.module.min.js)
+    set(_three_js ${OM_DOWNLOADS_DIR}/three.module.min.js)
     if(NOT EXISTS ${_three_js})
       message(STATUS "Downloading three.module.min.js (r169)…")
       file(DOWNLOAD
@@ -1855,8 +2130,8 @@ function(omc_rust_setup_wasm)
     # jco's js-component-bindgen, which runs on the WASI preview2 shim. Both are
     # vendor code, not kept in git: download the pinned npm tarballs at configure
     # time and unpack them into the build tree.
-    set(_jco_vendor ${CMAKE_BINARY_DIR}/downloads/jco-transpile/package/vendor)
-    set(_p2_shim ${CMAKE_BINARY_DIR}/downloads/preview2-shim/package/dist/browser)
+    set(_jco_vendor ${OM_DOWNLOADS_DIR}/jco-transpile/package/vendor)
+    set(_p2_shim ${OM_DOWNLOADS_DIR}/preview2-shim/package/dist/browser)
     foreach(_pkg IN ITEMS
             "jco-transpile|0.4.2|6f65610ecef99501084de896e299885fc6f645ee77413a820c20aa3d53f21bc7"
             "preview2-shim|0.19.0|625d787a571bb1dd4b4e1d0fe51e2ef2f0b24e689d7cfcaff6c47ee866dc3526")
@@ -1864,9 +2139,9 @@ function(omc_rust_setup_wasm)
       list(GET _p 0 _p_name)
       list(GET _p 1 _p_ver)
       list(GET _p 2 _p_hash)
-      set(_p_dir ${CMAKE_BINARY_DIR}/downloads/${_p_name})
+      set(_p_dir ${OM_DOWNLOADS_DIR}/${_p_name})
       if(NOT EXISTS ${_p_dir}/package/package.json)
-        set(_p_tgz ${CMAKE_BINARY_DIR}/downloads/${_p_name}-${_p_ver}.tgz)
+        set(_p_tgz ${OM_DOWNLOADS_DIR}/${_p_name}-${_p_ver}.tgz)
         message(STATUS "Downloading @bytecodealliance/${_p_name} ${_p_ver}…")
         file(DOWNLOAD
              https://registry.npmjs.org/@bytecodealliance/${_p_name}/-/${_p_name}-${_p_ver}.tgz
@@ -1904,6 +2179,7 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/ui.js
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+        ${RUST_OMC_DIR}/wasm/wasm-blobs.js
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -1912,8 +2188,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/src/lib.rs
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
         ${RUST_OMC_DIR}/wasm/omplot/index.html
-        ${RUST_OMC_DIR}/openmodelica_result_web/src/lib.rs
-        ${RUST_OMC_DIR}/openmodelica_result_web/Cargo.toml
+        ${RUST_SIMRT_DIR}/openmodelica_result_web/src/lib.rs
+        ${RUST_SIMRT_DIR}/openmodelica_result_web/Cargo.toml
         ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu-core.js
@@ -1923,6 +2199,22 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/fmi-simulator/wasi.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/selftest.html
         ${_three_js})
+    # The standalone page modules (anim, omplot) are wasm-bindgen'd like
+    # omc.wasm and want the same -Oz: openmodelica_result_web alone drops
+    # 3.9 MB to 2.4 MB, paid by every visitor to the OMPlot page and by every
+    # report that ships it. Set before _web_launcher_extra, whose COMMAND
+    # fragments are expanded where they are written.
+    set(_anim_opt_cmd "")
+    set(_omplot_opt_cmd "")
+    if(_profile STREQUAL "release" AND WASM_OPT_EXECUTABLE)
+      set(_anim_opt_cmd COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
+          ${_web_dir}/anim/openmodelica_animation_wasm_bg.wasm
+          -o ${_web_dir}/anim/openmodelica_animation_wasm_bg.wasm)
+      set(_omplot_opt_cmd COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
+          ${_web_dir}/omplot/openmodelica_result_web_bg.wasm
+          -o ${_web_dir}/omplot/openmodelica_result_web_bg.wasm)
+    endif()
+
     set(_web_launcher_extra
         # The chart engine and the shared look, imported by both simulator pages.
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}
@@ -1933,6 +2225,7 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/ui.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+                ${RUST_OMC_DIR}/wasm/wasm-blobs.js
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -1954,6 +2247,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${WASM_BINDGEN_EXECUTABLE}
                 ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_animation_wasm.wasm
                 --out-dir ${_web_dir}/anim --target web
+        ${_anim_opt_cmd}
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/anim/animation.js
                 ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -1965,6 +2259,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${WASM_BINDGEN_EXECUTABLE}
                 ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_result_web.wasm
                 --out-dir ${_web_dir}/omplot --target web
+        ${_omplot_opt_cmd}
         COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/omplot/index.html ${_web_dir}/omplot/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -2014,7 +2309,7 @@ function(omc_rust_setup_wasm)
   # ${_wasm_artifact}, which cargo leaves untouched on a no-op build.
   add_custom_target(rust_wasm_cargo ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${_wasm_cargo} ${_cargo_profile_flag} ${RUST_OMC_TIMINGS_FLAG} ${_wasm_common} ${_cargo_backend}
     BYPRODUCTS ${_wasm_artifact}
     DEPENDS rust_codegen rust_wasi_pic_sysroot
@@ -2035,8 +2330,22 @@ function(omc_rust_setup_wasm)
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
+    # The side modules the wasm omc does not embed, with the index naming what each
+    # exports; fetched from here on the first call that needs one (wasm-blobs.js).
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/wasm-blobs
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_WASM_BLOB_DIR}/liblapack.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/libc_pic.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaExternalC.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaStandardTables.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaIO.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaMatIO.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/zlib.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/hdf5.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/index.json
+            ${_web_dir}/wasm-blobs/
     ${_web_launcher_extra}
-    DEPENDS ${_wasm_artifact} rust_wasm_cargo ${_web_launcher} ${_web_launcher_deps}
+    DEPENDS ${_wasm_artifact} rust_wasm_cargo ${WASM_BINDGEN_EXECUTABLE}
+            ${_web_launcher} ${_web_launcher_deps}
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)
   add_custom_target(rust_wasm ALL DEPENDS ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)

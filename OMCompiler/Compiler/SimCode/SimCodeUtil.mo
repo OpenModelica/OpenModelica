@@ -90,6 +90,7 @@ import BaseHashTable;
 import Builtin;
 import CheckModel;
 import ClassInf;
+import ClockIndexes;
 import CommonSubExpression.isCSECref;
 import ComponentReference;
 import ComponentReferenceBasics;
@@ -612,18 +613,22 @@ algorithm
 
     // collect fmi partial derivative (FMI 2.0 and 3.0 both expose a ModelStructure)
     if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex, fmiDerInitFuncTree) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       // the FMIDERINIT jacobian is created here, i.e. after the functions have been
       // elaborated, so the functions it calls on its own have to be added now
       (modelInfo, literalsAcc, recordDeclsAcc) := addFmiDerInitFunctions(program, fmiDerInitFuncTree,
         BackendDAEUtil.getFunctions(inBackendDAE.shared), modelInfo, literalsAcc, recordDeclsAcc);
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
 
     // Collect FMI sim flags
     if isFMU then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       fmiSimulationFlags := createFMISimulationFlags();
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
     end if;
 
     // collect symbolic jacobians in linear loops of the overall jacobians
@@ -1523,6 +1528,35 @@ algorithm
     end if;
   end for;
 end jacobianColumnsAreEmpty;
+
+public function stripAsubIfNoIter
+  "Strips a RELATION's optionExpisASUB (see the comment on DAE.RELATION, and
+  NBEvents.mo's asubTuple) whenever the caller has no regenerated for-loop of its
+  own around this expression (hasIter = false). optionExpisASUB names the iterator
+  cref a state-event condition was originally wrapped in, so CodegenCFunctions.tpl's
+  zero-crossing template can offset storedRelations[] per iteration -- but that only
+  compiles when the SAME for-loop is regenerated at the call site, giving the
+  iterator an actual in-scope C variable. When the caller has already fully unrolled
+  this expression into an independent scalar occurrence (hasIter = false), the
+  RELATION's own index is already correct standalone, and the stored iterator cref
+  has no corresponding loop variable to reference: codegen falls back to emitting
+  its bare (often source-level, e.g. \"i\") name, which doesn't compile (see
+  PNlib.Test2.mos and the other tests this fixes in CodegenC.tpl's zeroCrossingTpl/
+  relationTpl, the only current callers)."
+  input DAE.Exp exp;
+  input Boolean hasIter;
+  output DAE.Exp outExp;
+algorithm
+  outExp := if hasIter then exp else match exp
+    case DAE.RELATION(optionExpisASUB = SOME(_))
+      then DAE.RELATION(exp.exp1, exp.operator, exp.exp2, exp.index, NONE());
+    case DAE.LBINARY()
+      then DAE.LBINARY(stripAsubIfNoIter(exp.exp1, hasIter), exp.operator, stripAsubIfNoIter(exp.exp2, hasIter));
+    case DAE.LUNARY()
+      then DAE.LUNARY(exp.operator, stripAsubIfNoIter(exp.exp, hasIter));
+    else exp;
+  end match;
+end stripAsubIfNoIter;
 
 // =============================================================================
 // section to create SimCode.Equations from BackendDAE.Equation
@@ -3049,7 +3083,8 @@ algorithm
 
     case DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest algorithm
       cr := ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-    then createTempVars(rest, cr, itempvars);
+      ttmpvars := createTempVars(ty.varLst, cr, itempvars);
+    then createTempVars(rest, inCrefPrefix, ttmpvars);
 
     case DAE.TYPES_VAR(name=name, ty=ty)::rest
       algorithm
@@ -3381,6 +3416,7 @@ algorithm
     local
       DAE.Exp left, right;
       list<DAE.Exp> elems;
+      list<DAE.Var> varLst;
 
     // parse arrays
     case(left as DAE.ARRAY(), right as DAE.CREF()) algorithm
@@ -3399,6 +3435,14 @@ algorithm
       end try;
     then (outSimEqn, ouniqueEqIndex);
 
+    // parse records: a record inside a record is a record expression on the
+    // left while the right hand side is still a cref
+    case(DAE.RECORD(exps = elems, ty = DAE.T_COMPLEX(varLst = varLst)), right as DAE.CREF())
+    then assignRecordElements(elems, varLst, right.componentRef, source, eqAttr, ouniqueEqIndex);
+
+    case(DAE.CALL(expLst = elems, attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = varLst))), right as DAE.CREF())
+    then assignRecordElements(elems, varLst, right.componentRef, source, eqAttr, ouniqueEqIndex);
+
     // kabdelhak: is this case needed? probably handled fine by simple assign
     // case(_, DAE.ARRAY()) algorithm
 
@@ -3407,6 +3451,31 @@ algorithm
     then ({eqn}, ouniqueEqIndex);
   end match;
 end makeSES_SIMPLE_ASSIGNwithArray;
+
+protected function assignRecordElements
+  "Assigns each element of a record expression from the matching element of the
+   record the given cref names. Neither side is a cref that could be assigned as
+   a whole, since the left hand side is an expression over scalarized variables."
+  input list<DAE.Exp> elems;
+  input list<DAE.Var> varLst;
+  input DAE.ComponentRef cref;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
+  input Integer iuniqueEqIndex;
+  output list<SimCode.SimEqSystem> outSimEqn = {};
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+protected
+  list<SimCode.SimEqSystem> eqns;
+  SimCode.SimEqSystem eqn;
+algorithm
+  for tpl in List.zip(elems, list(Expression.generateCrefsExpFromExpVar(v, cref) for v in varLst)) loop
+    (eqns, ouniqueEqIndex) := makeSES_SIMPLE_ASSIGNwithArray(tpl, source, eqAttr, ouniqueEqIndex);
+    for eqn in eqns loop
+      outSimEqn := eqn :: outSimEqn;
+    end for;
+  end for;
+  outSimEqn := listReverse(outSimEqn);
+end assignRecordElements;
 
 protected function makeSolved
   input BackendDAE.Equation eq;
@@ -14193,9 +14262,10 @@ protected
   BackendDAE.EqSystems eqs;
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
-  String strMatchingAlgorithm, strIndexReductionMethod;
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
-  array<Integer> match1,match2;
+  BackendDAE.StrongComponents comps;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> match1,match2,mapIncRowEqn;
   Boolean debug = false;
   UnorderedSet<DAE.ComponentRef> initialUnknowns, indepCrefSet;
 algorithm
@@ -14236,18 +14306,21 @@ algorithm
     end if;
   end for;
 
-  // Calculate adjacencyMatrix, with the newly added equations and vars
-  (outAdjacencyMatrix, _, _, _) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
+  // Calculate adjacencyMatrix, with the newly added equations and vars. The
+  // function tree is what the BLT sorting below passes, so one matrix serves both.
+  (currentSystem, outAdjacencyMatrix, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(
+    currentSystem, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   // Perform the match on the adjacencyMatrix
   (match1, match2) := Matching.PerfectMatching(outAdjacencyMatrix);
-  currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
-  // update the DAE with the new matching information
-  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
+  comps := BackendDAEUtil.getStrongComponents(currentSystem);
+  currentSystem.matching := BackendDAE.MATCHING(match1, match2, comps);
 
-  // run the matching algorithm on the newly created DAE
-  strMatchingAlgorithm := BackendDAEUtil.getMatchingAlgorithmString();
-  strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
-  tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
+  // All causalizeDAE would still do on a matched system is sort it into BLT form,
+  // rebuilding the adjacency matrix to get there.
+  if listEmpty(comps) then
+    (currentSystem, _) := BackendDAETransform.strongComponentsScalar(currentSystem, shared, mapEqnIncRow, mapIncRowEqn);
+  end if;
+  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
 
   if debug then
     BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");
@@ -15964,6 +16037,18 @@ algorithm
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
 end lookupVR;
 
+public function isFMUSimCode
+  "True when this SimCode was built for an FMU export, so `valueReferences` --
+   what lookupVR and the FMI alias tables index -- is filled."
+  input SimCode.SimCode simCode;
+  output Boolean isFMU;
+algorithm
+  isFMU := match simCode.valueReferences
+    case AvlTreeCRToInt.EMPTY() then false;
+    else true;
+  end match;
+end isFMUSimCode;
+
 public function lookupVRForRealOutputDerivative
   "function which maps output Real var ValueReference to an internal real variable ValueReference of
   pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives"
@@ -17396,7 +17481,8 @@ algorithm
 
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
         locations := stringDelimitList(locations_lst, ";");
-        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
+        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/"
+                               + ";" + Settings.getInstallationDirectoryPath() + "/lib/" + Config.targetTriple() + "/omc";
         str := "@echo off\n"
                 + "SET PATH=" + locations + ";%PATH%;\n"
                 + "SET ERRORLEVEL=\n"

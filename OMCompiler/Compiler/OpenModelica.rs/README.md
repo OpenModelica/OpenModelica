@@ -57,16 +57,17 @@ CMake mirrors both trees into one per-build working copy reproducing the
 `.cmake/rust_omc.cmake`.
 
 ## Setup
+
 ```bash
 apt install rustup binaryen
 # We use this toolchain in Jenkins
 rustup toolchain install nightly-2026-05-31 --profile minimal \
   --component rustc-codegen-cranelift-preview clippy rustfmt rust-analyzer \
   --target wasm32-unknown-unknown
-# For the web targets:
+# For the web targets. wasm-bindgen is not installed: the build compiles
+# `openmodelica_wasm_bindgen` from the pinned wasm-bindgen-cli-support, so cargo
+# keeps its schema version equal to the one the bindgen'd crates depend on.
 rustup target add wasm32-unknown-unknown
-export WASM_BINDGEN_VERSION=0.2.125
-cargo install wasm-bindgen-cli --version "${WASM_BINDGEN_VERSION}"
 # The web wasm-jit ModelicaExternalC side module (modelicaexternalc.wasm) is compiled
 # from C with clang targeting wasm32-wasi (real WASI file I/O via path_open, unlike
 # Emscripten). Needs wasi-libc, lld (wasm-ld), and the wasm32 compiler-rt builtins.
@@ -76,7 +77,8 @@ apt install clang lld wasi-libc libclang-rt-21-dev-wasm32 libclang-rt-dev-wasm32
 # Overridable: OMC_WASI_CLANG (default `clang`), OMC_WASI_SYSROOT (default `/usr`).
 ```
 
-## For development (debug builds compile faster but are much slower):
+## For development (debug builds compile faster but are much slower)
+
 ```bash
 cd ../../..
 cmake -S . -B build-cmake-rust -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_PROFILE=debug
@@ -85,7 +87,8 @@ cmake --build build-cmake-rust --target ctestsuite-depends -j16
 cd build && ctest --output-on-failure --output-junit junit.xml # Note that tests take a while to compile - they use a different profile than the builds
 ```
 
-## CI native build (release, no incremental for CI since it does not need the cache):
+## CI native build (release, no incremental for CI since it does not need the cache)
+
 ```bash
 cd ../../..
 cmake -S . -B build -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON
@@ -175,15 +178,24 @@ lld-link (validated on 3rdParty/zlib + the configure below).
 
 OpenModelica's CMake already supports MSVC, but expects the Windows dependency
 libraries to be supplied — the xwin sysroot provides only the CRT/SDK. The
-LAPACK/BLAS (OpenBLAS) and Boost deps are fetched automatically at configure
-time by `.cmake/windows-deps.cmake` (auto-included when cross-compiling to
-Windows; toggle with `OM_WINDOWS_FETCH_DEPS`): OpenBLAS as the prebuilt MSVC
-release, Boost cross-built through vcpkg with the checked-in overlay triplet
-`.cmake/x64-windows-xwin.cmake`. Only the downloaded artifacts are cached, under
-`OM_WINDOWS_DOWNLOADS_DIR` — repoint it at an in-source directory to bundle them
-into an offline source tarball. PThreads4W is the one dep still passed by hand
-(its vcpkg port is nmake-only and cannot cross from Linux): build it from its
-CMake fork with the toolchain and pass `-Dpthreads_DIR=<prefix>`.
+LAPACK/BLAS (OpenBLAS) dep is fetched automatically at configure time by
+`.cmake/windows-deps.cmake` (auto-included when cross-compiling to Windows;
+toggle with `OM_WINDOWS_FETCH_DEPS`), as the prebuilt MSVC release. PThreads4W is
+built from the same file (its vcpkg port is nmake-only and cannot cross from
+Linux, so it is cloned from its CMake fork, built with the toolchain, and wrapped
+in a generated `pthreadsConfig.cmake`).
+
+Boost, which the C++ simulation runtime needs, comes from `cmake/OMCBoost.cmake`
+instead, which is not Windows-specific: it builds Boost from source under
+whatever toolchain is configured, so the macOS cross builds below get it the same
+way. See `OM_FETCH_BOOST` there.
+
+Everything any of this downloads goes into one directory, `OM_DOWNLOADS_DIR`
+(default `<build>/downloads`, shared with the wasm toolchain pieces
+`rust_omc.cmake` fetches). Point it outside the build tree to survive a wiped
+build directory, or at an in-source directory to bundle it into an offline source
+tarball. Only the downloads live there; everything unpacked or built from them
+stays under the build directory.
 
 ```bash
 # Disable the Fortran components: flang can compile Fortran to windows-msvc
@@ -201,13 +213,73 @@ link/install of the full distribution is the remaining work); see
 `HANDOFF-windows-msvc.md`. The Rust-only cross build (earlier section) is
 self-contained and needs none of these deps.
 
-## Web bundle only (make all builds just the wasm):
+## Cross-compiling to macOS (`*-apple-darwin`)
+
+`RUST_OMC_TARGET` takes an Apple triple as well; there it drives
+[`cargo-zigbuild`](https://github.com/rust-cross/cargo-zigbuild) instead of
+cargo-xwin, with the macOS SDK as the sysroot (zig ships no Apple frameworks).
+`.cmake/darwin-toolchain.cmake` does the same for the C/C++ half with `zig cc`,
+so both halves agree on one SDK — see the `DARWIN_SDK` / `DARWIN_ARCH` options
+there.
+
+```bash
+# One-time setup, in addition to the SDK
+rustup target add --toolchain nightly-2026-05-31 aarch64-apple-darwin x86_64-apple-darwin
+cargo install cargo-zigbuild && pip install ziglang
+
+cd ../../..
+cmake -S . -B build-mac \
+  -DCMAKE_TOOLCHAIN_FILE=OMCompiler/Compiler/OpenModelica.rs/.cmake/darwin-toolchain.cmake \
+  -DDARWIN_SDK=/path/to/MacOSX26.5.sdk -DDARWIN_ARCH=arm64 \
+  -DCMAKE_BUILD_TYPE=Release -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+  -DRUST_OMC_TARGET=aarch64-apple-darwin -DOM_ENABLE_GUI_CLIENTS=OFF \
+  -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_MOO=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
+  -DOM_OMC_ENABLE_CPP_RUNTIME=OFF -DOM_OMC_ENABLE_PARMODELICA=OFF \
+  -DOM_ENABLE_OMSIMULATOR=OFF -DOM_OMC_ENABLE_COLPACK=OFF
+```
+
+ColPack is off because its SMPGC includes `omp.h` unconditionally and zig ships
+no OpenMP; the rest are the same reductions the Windows cross build starts from
+(no Fortran linker, no Boost). A universal distribution is the two architectures
+built separately and merged with `lipo` — `.CI/scripts/mac-universal.sh` does
+that over two install trees. Status and open items: see
+`HANDOFF-rust-nightly-cross.md`.
+
+## Building the wasm parts once for several targets
+
+Everything omc embeds or ships as wasm is the same whatever platform omc is
+built *for*, but producing it needs a wasm toolchain and several minutes. One
+build can therefore produce it for the others:
+
+```bash
+cmake -S . -B build-stage1 -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+      -DRUST_OMC_WASM_ARTIFACTS_OUT=/somewhere/wasm
+cmake --build build-stage1 --target rust_codegen rust_wasm_runtime rust_wasm_artifacts
+
+cmake -S . -B build-win -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+      -DRUST_OMC_TARGET=x86_64-pc-windows-msvc \
+      -DRUST_OMC_PREBUILT_WASM_DIR=/somewhere/wasm \
+      -DRUST_OMC_FMU_LOADERS=build-stage1/OMCompiler/Compiler/fmu-loaders \
+      -DRUST_OMC_PREBUILT_GENERATED_SRC=ON      # with the generated .rs in place
+```
+
+The second build runs no `clang --target=wasm32` at all: the PIC wasi-libc
+sysroot, the SUNDIALS/KLU/Lis/PRIMME and HDF5 archives and the preview1 adapter
+come from the directory, and the crates' build scripts take each blob from
+`<dir>/blobs` (`OMC_WASM_PREBUILT_IN`) rather than compiling it. Trusted, not
+checked, like `RUST_OMC_WASM_RUNTIME`. This is what
+`.CI/Jenkinsfile.rust-nightly` stage 1 hands to its per-platform stages.
+
+## Web bundle only (make all builds just the wasm)
+
 ```bash
 cd ../../..
 cmake -S . -B build-web -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_WASM=ON -DRUST_OMC_WASM_MODE=web-release -DRUST_OMC_CI=ON
 cmake --build build-web --target install
-# To test locally
-python3 -m http.server -d build-web/install_cmake/share/omc/web/ 8000
+# To test locally. Not `python3 -m http.server`: without the COOP/COEP headers
+# there is no SharedArrayBuffer, and the features below silently stop working.
+python3 OMCompiler/Compiler/OpenModelica.rs/wasm/coi_server.py 8000 \
+  build-web/install_cmake/share/omc/web
 # Then open a browser at http://localhost:8000
 ```
 
@@ -218,7 +290,7 @@ exported component for a native platform (the browser omc cannot do it in
 process — cranelift's pass timing calls `Instant::now()`, which panics on
 wasm32-unknown-unknown). It is fetched only when such an export runs, and it
 answers over a `SharedArrayBuffer`, so serve the bundle with the cross-origin
-isolation headers (`scripts/coi_server.py`) or the platform list stays empty.
+isolation headers (`wasm/coi_server.py`) or the platform list stays empty.
 The FMI simulator page uses the same compiler to add native binaries to an FMU
 someone else produced.
 
@@ -248,7 +320,7 @@ makes the whole set best-effort again. Each needs its Rust target (`rustup targe
 add`) and a C toolchain, since `wasmtime-wasi` compiles a C fiber:
 
 | target | needs |
-|---|---|
+| --- | --- |
 | `*-pc-windows-msvc` | `cargo install cargo-xwin`, plus `llvm-lib` on `PATH` (`ln -s $(command -v llvm-lib-21) ~/.local/bin/llvm-lib`). For the 32-bit target the xwin cache must hold the x86 CRT: `XWIN_ARCH=x86,x86_64`. |
 | non-host `*-linux-gnu` | `cargo install cargo-zigbuild` + `pip install ziglang` |
 | `*-apple-darwin` | the same zig setup **and** an unpacked `MacOSX<version>.sdk` in `RUST_OMC_MACOS_SDK` (or `SDKROOT`; a macOS host needs neither) — `cap-time-ext` links `CoreFoundation`, which zig does not ship. Nothing else: the SDK's `.tbd` stubs are all the link needs. |

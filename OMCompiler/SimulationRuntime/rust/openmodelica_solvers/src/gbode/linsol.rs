@@ -105,7 +105,7 @@ impl GbLu {
 /// Greedy distance-2 coloring of a column pattern, C's `colorSparsePattern`
 /// (`gbode_sparse.c`) for one stage block: columns whose row sets are disjoint
 /// share a color and can be differenced (or seeded) together.
-pub(super) fn color_columns(rows_by_col: &[Vec<usize>], n_rows: usize) -> Vec<Vec<usize>> {
+pub(crate) fn color_columns(rows_by_col: &[Vec<usize>], n_rows: usize) -> Vec<Vec<usize>> {
     let n_cols = rows_by_col.len();
     let mut colored = vec![false; n_cols];
     let mut row_mark = vec![0usize; n_rows];

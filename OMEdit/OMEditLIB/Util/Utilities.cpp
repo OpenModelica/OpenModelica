@@ -39,6 +39,9 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#if defined(__EMSCRIPTEN__)
+#include "PersistentStorage.h"
+#endif
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
 #include "Editors/BaseEditor.h"
@@ -53,6 +56,7 @@
 #include <QColorDialog>
 #include <QDir>
 #include <QRegularExpression>
+#include <QDesktopServices>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -240,15 +244,6 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpCollapseAllButton->setIcon(QIcon(":/Resources/icons/top.svg"));
   mpCollapseAllButton->setToolTip(Helper::collapseAll);
   mpCollapseAllButton->setAutoRaise(true);
-  // show hide button
-  mpShowHideButton = new QToolButton;
-  QString showHideButtonText = tr("Show/hide filters");
-  mpShowHideButton->setText(showHideButtonText);
-  mpShowHideButton->setIcon(QIcon(":/Resources/icons/down.svg"));
-  mpShowHideButton->setToolTip(showHideButtonText);
-  mpShowHideButton->setAutoRaise(true);
-  mpShowHideButton->setCheckable(true);
-  connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
   // filters widget
   mpFiltersWidget = new QWidget;
   // create the case sensitivity checkbox
@@ -263,14 +258,19 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
   mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
+  // filter help button, opens the users guide link for
+  mpFiltersHelpButton = new QToolButton;
+  mpFiltersHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpFiltersHelpButton->setToolTip(tr("Filters help"));
+  connect(mpFiltersHelpButton, SIGNAL(clicked()), SLOT(showFiltersHelp()));
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pFiltersWidgetLayout->setAlignment(Qt::AlignTop);
   pFiltersWidgetLayout->addWidget(mpCaseSensitiveCheckBox, 0, 0);
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
+  pFiltersWidgetLayout->addWidget(mpFiltersHelpButton, 0, 2);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
-  mpFiltersWidget->hide();
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -280,18 +280,18 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
   pMainLayout->addWidget(mpExpandAllButton, 0, 2);
   pMainLayout->addWidget(mpCollapseAllButton, 0, 3);
-  pMainLayout->addWidget(mpShowHideButton, 0, 4);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 4);
   setLayout(pMainLayout);
 }
 
-void TreeSearchFilters::showHideFilters(bool On)
+/*!
+ * \brief TreeSearchFilters::showFiltersHelp
+ * Opens the OpenModelica Users Guide link for filters help.
+ */
+void TreeSearchFilters::showFiltersHelp()
 {
-  if (On) {
-    mpFiltersWidget->show();
-  } else {
-    mpFiltersWidget->hide();
-  }
+  QUrl filtersHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#variables-browser").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(filtersHelpPath);
 }
 
 /*!
@@ -708,8 +708,7 @@ QDetachableProcess::QDetachableProcess(QObject *pParent)
 void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
 {
   QProcess::start(program, arguments, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
@@ -722,12 +721,27 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
 void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
 {
   QProcess::start(command, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 #endif
-#endif // QT_CONFIG(process)
 
+void QDetachableProcess::finishStart()
+{
+  mStartupError = false;
+  mStartupErrorString.clear();
+  if (!waitForStarted()) {
+    mStartupError = true;
+    mStartupErrorString = errorString();
+  } else if (waitForFinished(250) && (exitStatus() != QProcess::NormalExit || exitCode() != 0)) {
+    mStartupError = true;
+    mStartupErrorString = QString::fromLocal8Bit(readAllStandardError()).trimmed();
+    if (mStartupErrorString.isEmpty()) {
+      mStartupErrorString = tr("Process exited with code %1").arg(exitCode());
+    }
+  }
+  setProcessState(QProcess::NotRunning);
+}
+#endif // QT_CONFIG(process)
 
 JsonDocument::JsonDocument(QObject *pParent)
   : QObject(pParent)
@@ -878,7 +892,13 @@ QSettings* Utilities::getApplicationSettings()
   static QSettings *pSettings;
   if (!init) {
     init = 1;
+#if defined(__EMSCRIPTEN__)
+    // QSettings' own location is MEMFS, which the reload throws away. Put the ini
+    // in the tree PersistentStorage mirrors to IndexedDB instead.
+    pSettings = new QSettings(QString("%1/%2.ini").arg(PersistentStorage::root(), Helper::application), QSettings::IniFormat);
+#else
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+#endif
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
 #endif

@@ -799,9 +799,9 @@ protected
   list<String> in_units, out_units, in_args, out_args;
 algorithm
   in_units := list(Component.getUnitAttribute(InstNode.component(p), "NONE") for p in func.inputs);
-  out_units := list(Component.getUnitAttribute(InstNode.component(p), "NONE") for p in func.outputs);
+  out_units := list(Component.getUnitAttribute(InstNode.component(InstNode.fromHandle(p)), "NONE") for p in func.outputs);
   in_args := list(InstNode.name(p) for p in func.inputs);
-  out_args := list(InstNode.name(p) for p in func.outputs);
+  out_args := list(InstNode.name(InstNode.fromHandle(p)) for p in func.outputs);
   outArgs := FUNCTIONUNITS(funcName, in_args, out_args, in_units, out_units);
 end parseFunctionUnits;
 

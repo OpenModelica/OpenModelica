@@ -614,8 +614,8 @@ public function setWindowsPaths
 algorithm
   () := match inOMHome
     local
-      String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
-      Boolean hasBinDir, hasLibBinDir;
+      String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir, omLibDir;
+      Boolean hasBinDir, hasLibBinDir, isMSVC;
 
     // check if we have OMDEV set
     case omHome
@@ -630,8 +630,12 @@ algorithm
         mingwDir := System.openModelicaPlatform();
         msysBinDir := msysPath + "\\usr\\bin";
         binDir := msysPath + "\\" + mingwDir + "\\bin";
-        // if compiler is gcc
-        if System.getCCompiler() == "gcc" then
+        // An MSVC build ships no MSYS toolchain at all - Compile.bat locates
+        // Visual Studio itself - so there is nothing to search for or report.
+        isMSVC := 0 == System.stringFind(mingwDir, "msvc");
+        if isMSVC then
+          libBinDir := binDir;
+        elseif System.getCCompiler() == "gcc" then
           libBinDir := msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
         else // if is clang
           libBinDir := binDir;
@@ -639,10 +643,16 @@ algorithm
         // do we have bin and lib bin?
         hasBinDir := System.directoryExists(binDir);
         hasLibBinDir := System.directoryExists(libBinDir);
-        if hasBinDir and hasLibBinDir
+        omLibDir := omHome + "\\lib\\" + Autoconf.triple + "\\omc";
+        if isMSVC then
+          oldPath := System.readEnv("PATH");
+          newPath := stringAppendList({omHome, "\\bin;", omLibDir, ";"});
+          newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
+          System.setEnv("PATH",newPath,true);
+        elseif hasBinDir and hasLibBinDir
         then
           oldPath := System.readEnv("PATH");
-          newPath := stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
+          newPath := stringAppendList({omHome, "\\bin;", omLibDir, ";", binDir + ";", libBinDir + ";", msysBinDir + ";"});
           newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
           // print("Path set: " + newPath + "\n");
           System.setEnv("PATH",newPath,true);
@@ -690,10 +700,7 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
-  // OpenBLAS sizes its thread pool from the environment when it loads.
-  if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
-    System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
-  end if;
+  FlagsUtil.applyNumProcEnvironment();
   setDefaultCC();
   SymbolTable.reset();
   BackendInterfaceImplementation.initializeBackendInterface();

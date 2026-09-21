@@ -1758,6 +1758,11 @@ package SimCodeUtil
     output Integer vr;
   end lookupVR;
 
+  function isFMUSimCode
+    input SimCode.SimCode simCode;
+    output Boolean isFMU;
+  end isFMUSimCode;
+
   function lookupVRForRealOutputDerivative
     input DAE.ComponentRef cr;
     input SimCode.SimCode simCode;
@@ -1780,6 +1785,12 @@ package SimCodeUtil
     input list<SimCode.JacobianColumn> columns;
     output Boolean b ;
   end jacobianColumnsAreEmpty;
+
+  function stripAsubIfNoIter
+    input DAE.Exp exp;
+    input Boolean hasIter;
+    output DAE.Exp outExp;
+  end stripAsubIfNoIter;
 
   function getFmiInitialAttributeStr
     input SimCodeVar.SimVar simVar;
@@ -4176,6 +4187,11 @@ package Expression
     output Boolean outIsCref;
   end isCref;
 
+  function containsAnyCall
+    input DAE.Exp inExp;
+    output Boolean outContainsCall;
+  end containsAnyCall;
+
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
     input list<DAE.Subscript> inSubs;
@@ -4353,6 +4369,10 @@ package Config
   function simCodeTarget
     output String target;
   end simCodeTarget;
+
+  function targetTriple
+    output String triple;
+  end targetTriple;
 
   function simCodeRustRuntime
     output Boolean rust;

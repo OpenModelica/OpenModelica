@@ -65,7 +65,7 @@
 //! conservative no-op.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::{Arc, Weak};
 
@@ -462,6 +462,27 @@ impl MMVisitor for CountVisitor {
     }
 }
 
+thread_local! {
+    /// Set by [`log_cycles`]: counts, per type, the allocations a collection
+    /// proved unreachable. The oracle for "is anything still cyclic?".
+    static CYCLE_LOG: RefCell<Option<HashMap<&'static str, usize>>> =
+        const { RefCell::new(None) };
+}
+
+/// Start recording what the next [`collect`] reclaims.
+pub fn log_cycles() {
+    CYCLE_LOG.with(|c| *c.borrow_mut() = Some(HashMap::new()));
+}
+
+/// Stop recording and return what was reclaimed, most frequent first.
+pub fn take_cycle_log() -> Vec<(&'static str, usize)> {
+    CYCLE_LOG.with(|c| {
+        let mut v: Vec<_> = c.borrow_mut().take().unwrap_or_default().into_iter().collect();
+        v.sort_by(|a, b| b.1.cmp(&a.1));
+        v
+    })
+}
+
 /// Run one cycle collection over the cells created on the current thread.
 ///
 /// Call this only from quiescent points — no MetaModelica value borrows on
@@ -469,7 +490,7 @@ impl MMVisitor for CountVisitor {
 /// `GCExt.gcollect` sites satisfy this). Collections are never triggered
 /// implicitly; without explicit calls, cycles simply leak as before.
 pub fn collect() -> CollectStats {
-    collect_impl(false)
+    collect_impl(false, false)
 }
 
 /// [`collect`] with diagnostics on stderr: root/allocation counts and, for a
@@ -479,10 +500,17 @@ pub fn collect() -> CollectStats {
 /// exactly which untraced handles (globals, stack, closure captures) keep
 /// the subgraph alive.
 pub fn collect_with_diagnostics() -> CollectStats {
-    collect_impl(true)
+    collect_impl(true, false)
 }
 
-fn collect_impl(diagnose: bool) -> CollectStats {
+/// Tally what a collection would reclaim without reclaiming it. For verifying
+/// "is anything still cyclic?" on a heap that should have no cycles at all,
+/// where a collector bug would otherwise free live data unnoticed.
+pub fn report_only() -> CollectStats {
+    collect_impl(false, true)
+}
+
+fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
     let mut stats = CollectStats::default();
 
     // Snapshot the live cells, purging dead weak handles in the same pass.
@@ -541,7 +569,6 @@ fn collect_impl(diagnose: bool) -> CollectStats {
     // present in the snapshot must not be traversed again — handled by the
     // `contains_key` check above. Either way the snapshot handle we hold
     // contributes 1 to the strong count that no slot accounts for.
-    use std::collections::HashSet;
     let snapshot_addrs: HashSet<*const ()> = snapshot.iter().map(&addr).collect();
 
     // Root determination: any allocation with handles the traversal did not
@@ -579,6 +606,53 @@ fn collect_impl(diagnose: bool) -> CollectStats {
         }
     }
 
+    // `OPENMODELICA_GC_CYCLE_PATHS`: for a few unreachable allocations, walk the
+    // recorded edges back to the allocation itself and print the type chain.
+    // "Is this a real cycle, or is the collector wrong?" is otherwise a guess.
+    if std::env::var_os("OPENMODELICA_GC_CYCLE_PATHS").is_some() {
+        let mut shown = 0;
+        for (start, _) in count.nodes.iter() {
+            if shown >= 5 || reachable.contains(start) {
+                continue;
+            }
+            // depth-first search for a path *start -> ... -> start*
+            let mut stack = vec![(*start, vec![*start])];
+            let mut seen: HashSet<*const ()> = HashSet::new();
+            while let Some((p, path)) = stack.pop() {
+                if path.len() > 40 {
+                    continue;
+                }
+                let Some(node) = count.nodes.get(&p) else { continue };
+                for &e in &node.edges {
+                    if e == *start {
+                        shown += 1;
+                        eprintln!("[gc] cycle of {} allocations:", path.len());
+                        for q in &path {
+                            eprintln!("[gc]   {}", count.nodes[q].type_name);
+                        }
+                        stack.clear();
+                        break;
+                    }
+                    if !reachable.contains(&e) && seen.insert(e) {
+                        let mut next = path.clone();
+                        next.push(e);
+                        stack.push((e, next));
+                    }
+                }
+            }
+        }
+    }
+
+    CYCLE_LOG.with(|c| {
+        if let Some(log) = c.borrow_mut().as_mut() {
+            for (p, n) in &count.nodes {
+                if !reachable.contains(p) {
+                    *log.entry(n.type_name).or_insert(0) += 1;
+                }
+            }
+        }
+    });
+
     // Everything else is only referenced from within the traced graph.
     // Poisoning the unreachable cells drops their contents; ordinary
     // refcounted drops cascade and free the cycles.
@@ -586,7 +660,9 @@ fn collect_impl(diagnose: bool) -> CollectStats {
     for cell in &snapshot {
         let a = addr(cell);
         if !reachable.contains(&a) {
-            cell.poison();
+            if !report_only {
+                cell.poison();
+            }
             stats.collected_cells += 1;
         } else if diagnose && !root_set.contains(&a) && printed < 3 {
             // A kept, non-root cell: show what pins it. The path walks the

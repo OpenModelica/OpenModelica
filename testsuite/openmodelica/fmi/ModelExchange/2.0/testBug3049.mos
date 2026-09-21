@@ -3,7 +3,7 @@
 // suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug3049* output.log
-// cflags: -d=-newInst
+// cflags: -d=-newInst --fmiSources=true
 //
 
 loadModel(Modelica, {"3.2.3"});

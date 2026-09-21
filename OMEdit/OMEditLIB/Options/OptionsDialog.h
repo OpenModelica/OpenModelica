@@ -42,16 +42,19 @@
 
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
+#include "Cloud/CloudTypes.h"
 #include "Util/StringHandler.h"
 #include "Util/DirectoryOrFileSelector.h"
 
 #include <QFontComboBox>
+#include <QProgressDialog>
 #include <QStackedWidget>
 #include <QDialogButtonBox>
 #include <QRadioButton>
 #include <QTreeWidget>
 #include <QDialog>
 #include <QLineEdit>
+#include <QHash>
 
 class GeneralSettingsPage;
 class LibrariesPage;
@@ -74,9 +77,11 @@ class FigaroPage;
 class CRMLPage;
 class DebuggerPage;
 class FMIPage;
+class LanguageServerPage;
 class OMSimulatorPage;
 class SensitivityOptimizationPage;
 class TraceabilityPage;
+class CloudStoragePage;
 class TabSettings;
 class StackFramesWidget;
 class TranslationFlagsWidget;
@@ -125,6 +130,8 @@ public:
   void readOMSimulatorSettings();
   void readSensitivityOptimizationSettings();
   void readTraceabilitySettings();
+  void readLanguageServerSettings();
+  void readCloudStorageSettings();
   void saveGeneralSettings();
   void saveNFAPISettings();
   void saveLibrariesSettings();
@@ -139,6 +146,8 @@ public:
   void saveOMSimulatorSettings();
   void saveSensitivityOptimizationSettings();
   void saveTraceabilitySettings();
+  void saveLanguageServerSettings();
+  void saveCloudStorageSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveGlobalSimulationSettings();
@@ -179,6 +188,8 @@ public:
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
+  LanguageServerPage* getLanguageServerPage() {return mpLanguageServerPage;}
+  CloudStoragePage* getCloudStoragePage() {return mpCloudStoragePage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
   void show();
@@ -233,6 +244,8 @@ private:
   OMSimulatorPage *mpOMSimulatorPage;
   SensitivityOptimizationPage *mpSensitivityOptimizationPage;
   TraceabilityPage *mpTraceabilityPage;
+  LanguageServerPage *mpLanguageServerPage;
+  CloudStoragePage *mpCloudStoragePage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -1167,6 +1180,106 @@ private slots:
   void browseCompilerJar();
   void browseCompilerProcessFile();
   void resetCompilerProcessPath();
+};
+
+class LanguageServerPage : public QWidget
+{
+  Q_OBJECT
+public:
+  LanguageServerPage(OptionsDialog *pOptionsDialog);
+  QGroupBox* getLanguageServerGroupBox() {return mpLanguageServerGroupBox;}
+  QCheckBox* getEnableLoggingCheckBox() {return mpEnableLoggingCheckBox;}
+  QLineEdit* getServerExecutableTextBox() {return mpServerExecutableTextBox;}
+  /*!
+   * \brief setServerRestartEnabled
+   * Restarting acts on the saved configuration, so it follows the stored
+   * enabled flag rather than the group box's unsaved check state.
+   * \param enabled
+   */
+  void setServerRestartEnabled(bool enabled) {mpRestartServerButton->setEnabled(enabled);}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpLanguageServerGroupBox;
+  QCheckBox *mpEnableLoggingCheckBox;
+  Label *mpServerExecutableLabel;
+  QLineEdit *mpServerExecutableTextBox;
+  QPushButton *mpBrowseServerExecutableButton;
+  QPushButton *mpAutoDetectButton;
+  QPushButton *mpRestartServerButton;
+  QPushButton *mpDownloadServerButton;
+  QComboBox *mpDownloadVersionComboBox;
+
+  static QString platformServerAsset();
+  static QString installedServerVersion();
+  QString selectedReleaseTag() const;
+  bool fetchAssetDigests(const QString &tag, QHash<QString, QString> *pDigests, QProgressDialog *pProgressDialog);
+  bool downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination, const QString &expectedSha256,
+                            QProgressDialog *pProgressDialog);
+private slots:
+  void browseServerExecutable();
+  void autoDetectServerExecutable();
+  void restartServer();
+  void downloadServerExecutable();
+};
+
+/*!
+ * \brief Cloud storage accounts, and which OAuth applications this installation
+ * talks to.
+ *
+ * The client registrations are normally supplied by the deployment through
+ * cloud_config.json; the fields here override that for a developer or a site that
+ * registered its own applications, and are the only way to configure it when no
+ * such file is deployed.
+ */
+class CloudStoragePage : public QWidget
+{
+  Q_OBJECT
+public:
+  CloudStoragePage(OptionsDialog *pOptionsDialog);
+
+  void readRegistrations();
+  void saveRegistrations();
+
+protected:
+  //! Accounts and the deployment configuration are loaded here, not in the
+  //! constructor: the options dialog is built during startup, and reaching the
+  //! network from there stalls Qt's WebAssembly event dispatcher mid suspend and
+  //! resume. Nothing cloud-related happens until the page is actually looked at.
+  void showEvent(QShowEvent *pEvent) override;
+
+private:
+  void refreshAccounts();
+  void refreshMounts();
+
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpAccountsGroupBox;
+  QListWidget *mpAccountsListWidget;
+  QPushButton *mpAddGoogleDriveButton;
+  QPushButton *mpAddOneDriveButton;
+  QPushButton *mpSignOutButton;
+  Label *mpStatusLabel;
+  QGroupBox *mpRegistrationGroupBox;
+  //! The registration fields, hidden until the group box is ticked.
+  QWidget *mpRegistrationWidget;
+  QLineEdit *mpGoogleClientIdTextBox;
+  QLineEdit *mpGoogleClientSecretTextBox;
+  QCheckBox *mpGoogleFullDriveScopeCheckBox;
+  QLineEdit *mpOneDriveClientIdTextBox;
+  QGroupBox *mpMountsGroupBox;
+  QListWidget *mpMountsListWidget;
+  QPushButton *mpForgetMountButton;
+  //! Set while refreshMounts() fills the list, so its own changes are not
+  //! mistaken for the user ticking a box.
+  bool mFillingMounts = false;
+
+private slots:
+  void addGoogleDriveAccount();
+  void addOneDriveAccount();
+  void signOutAccount();
+  void onAccountAdded(const QString &key);
+  void onAddAccountFailed(const CloudError &error);
+  void mountAutoPushChanged(QListWidgetItem *pItem);
+  void forgetMount();
 };
 
 #endif // OPTIONSDIALOG_H

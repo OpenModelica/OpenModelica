@@ -113,8 +113,8 @@ fn intern_type(params: &[SigTy], results: &[SigTy]) -> u32 {
 
 /// The `SigTy` of a `FUNCTION_PTR` function argument — what its holder may call.
 pub(crate) fn function_ptr_sigty(
-    tys: &List<Arc<DAE::Type>>,
-    args: &List<Arc<SimCodeFunction::Variable::Variable>>,
+    tys: &List<metamodelica::Ref<DAE::Type>>,
+    args: &List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>,
 ) -> Result<SigTy> {
     let results: Result<Vec<SigTy>> = (&**tys).into_iter().map(|t| sig_ty(t)).collect();
     Ok(SigTy::Func { params: Arc::new(var_sigtys(args)?), results: Arc::new(results?) })
@@ -159,7 +159,7 @@ pub(crate) fn compile_parteval(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     let DAE::Exp::PARTEVALFUNCTION { path, expList, ty, origType } = exp else {
         return Err("CodegenWasmJit: not a PARTEVALFUNCTION");
     };
-    let exps: Vec<&Arc<DAE::Exp>> = (&**expList).into_iter().collect();
+    let exps: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expList).into_iter().collect();
     emit_reference(ctx, &mangle(path)?, &exps, ty, origType)
 }
 
@@ -170,14 +170,14 @@ pub(crate) fn compile_fnref_cref(
     cref: &DAE::ComponentRef,
     ty: &DAE::Type,
 ) -> Result<()> {
-    let path = ComponentReference::crefToPath(Arc::new(cref.clone()))?;
+    let path = ComponentReference::crefToPath(metamodelica::Ref::new(cref.clone()))?;
     emit_reference(ctx, &mangle(&path)?, &[], ty, ty)
 }
 
 fn emit_reference(
     ctx: &mut FnCtx,
     target: &str,
-    exps: &[&Arc<DAE::Exp>],
+    exps: &[&metamodelica::Ref<DAE::Exp>],
     ty: &DAE::Type,
     origType: &DAE::Type,
 ) -> Result<()> {
@@ -303,12 +303,12 @@ fn intern_thunk(
 pub(crate) fn compile_fnptr_call(
     ctx: &mut FnCtx,
     name: &str,
-    args: &List<Arc<DAE::Exp>>,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
 ) -> Result<Vec<SigTy>> {
     let Some((local, SigTy::Func { params, results })) = ctx.locals.get(name).cloned() else {
         return Err("CodegenWasmJit: function-pointer calls are only supported through a local variable");
     };
-    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != params.len() {
         return Err("CodegenWasmJit: function-pointer call argument count mismatch");
     }

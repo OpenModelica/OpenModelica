@@ -344,6 +344,9 @@ static inline void setThreadData(ModelInstance* comp)
 #endif
 }
 
+static void holdAsserts(ModelInstance *comp, int hold);
+static void releaseAsserts(ModelInstance *comp);
+
 fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
 {
   int i, done=0;
@@ -367,18 +370,25 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
-    /* Event Mode evaluates with asserts live. */
-    comp->fmuData->simulationInfo->noThrowAsserts = 0;
+    /* As simulationUpdate does, hold a violated assert() over the event: the event
+     * makes the point it was raised for obsolete. The window spans the whole
+     * iteration the master drives, not one pass of it, so `_event_found` and
+     * `needToReThrow` accumulate over the passes and are settled by the last. */
+    holdAsserts(comp, 1);
 
     /* simulationUpdate's order: the timers (a tick coincident with an event samples
      * the values before it), then the event, then the timers again below. */
     if (comp->_need_update) {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      /* the update below raises the same violation again */
+      comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
+      holdAsserts(comp, 1);
     }
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
     if (syncRet != 0) {
       eventInfo->valuesOfContinuousStatesChanged = fmi3True;
+      comp->_event_found = 1;
     }
 
 #if !defined(OMC_NO_STATESELECTION)
@@ -399,6 +409,7 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
       if (comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue) {
         comp->fmuData->simulationInfo->samples[i] = 1;
+        comp->_event_found = 1;
         infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
       }
     }
@@ -406,7 +417,15 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12350
      * we need to update discreteSystem during event update, before evaluating functionDAE
     */
+    comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
+    holdAsserts(comp, 1);
     updateDiscreteSystem(comp->fmuData, threadData);
+    /* The event iteration moved something, so this really is an event: the FMU has
+     * no checkEvents() of its own, and by the time updateDiscreteSystem returns the
+     * pre-values it settled make the checks below see nothing. */
+    if (comp->fmuData->simulationInfo->discreteStateChanged) {
+      comp->_event_found = 1;
+    }
 
     comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
 
@@ -427,8 +446,13 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     /* Handle clock timers */
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
 
+    if (syncRet != 0) {
+      comp->_event_found = 1;
+    }
+
     if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || syncRet==2 ) {
       FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: Need to iterate(discrete changes)!")
+      comp->_event_found = 1;
       eventInfo->newDiscreteStatesNeeded = fmi3True;
       eventInfo->valuesOfContinuousStatesChanged = fmi3True;
       eventInfo->terminateSimulation = fmi3False;
@@ -470,11 +494,25 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     }
     FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
 
+    /* Check if ignored assert throw was actually a valid throw */
+    releaseAsserts(comp);
+    if (comp->fmuData->simulationInfo->needToReThrow && !eventInfo->newDiscreteStatesNeeded) {
+      comp->fmuData->simulationInfo->needToReThrow = 0;
+      comp->_held_assert_logged = 0;
+      if (comp->_event_found) {
+        infoStreamPrint(OMC_LOG_ASSERT, 0, "Found event, previous asserts are ignored.");
+      } else {
+        errorStreamPrint(OMC_LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
+        omc_throw(threadData);
+      }
+    }
+
     done=1;
 
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->mmc_jumper = old_jmp;
+  releaseAsserts(comp);
   omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
@@ -499,6 +537,7 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
 fmi3Status internalEventIteration(ModelInstance* c, EventInfo *eventInfo)
 {
   fmi3Status status = fmi3OK;
+  c->_event_found = 0;
   eventInfo->newDiscreteStatesNeeded = fmi3True;
   eventInfo->terminateSimulation     = fmi3False;
   while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation && status != fmi3Error) {
@@ -1124,6 +1163,7 @@ fmi3Status omcTerminate(ModelInstance* c)
 fmi3Status omcReset(ModelInstance* c)
 {
   ModelInstance* comp = (ModelInstance *)c;
+  modelica_boolean modelDataVarsFreed = FALSE;
   if (invalidState(comp, "omcReset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi3Error;
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcReset")
@@ -1154,12 +1194,20 @@ fmi3Status omcReset(ModelInstance* c)
 #endif
     /* free data struct */
     deInitializeDataStruc(comp->fmuData);
+    modelDataVarsFreed = TRUE;
   }
 
   /* Initialize modelData */
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu3_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  if (modelDataVarsFreed) {
+    /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
+     * initialized and filled again, mirroring fmi3Instantiate. */
+    allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
+    scalarAllocArrayAttributes(comp->fmuData->modelData);
+    calculateAllScalarLength(comp->fmuData->modelData);
+  }
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
@@ -2027,7 +2075,7 @@ fmi3Status omcEnterEventMode(ModelInstance* c)
   FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "omcEnterEventMode")
   comp->state = model_state_me_event_mode;
   comp->fmuData->simulationInfo->needToReThrow = 0;
-  comp->_held_assert_logged = 0;
+  comp->_event_found = 0;
 
   // Reset eventInfo
   comp->eventInfo.newDiscreteStatesNeeded = fmi3False;

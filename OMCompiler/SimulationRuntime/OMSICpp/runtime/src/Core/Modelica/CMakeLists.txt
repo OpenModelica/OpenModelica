@@ -186,10 +186,16 @@ set(Boost_LIBRARIES_NEW)
 foreach(lib ${Boost_LIBRARIES_})
   # Convert "Boost:SomeCrazyLib" to "-lboost_SomeCrazyLib" for ModelicaConfig_gcc.inc
   if(${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support newer cmake >= 3.16
-    get_target_property(libNew "${lib}" LOCATION)
-    if("${libNew}" STREQUAL "libNew-NOTFOUND") # could not find it
+    # Reading LOCATION off a non-IMPORTED target (OM_FETCH_BOOST) is an error.
+    get_target_property(libImported "${lib}" IMPORTED)
+    if(libImported)
+      get_target_property(libNew "${lib}" LOCATION)
+    else()
+      get_target_property(libNew "${lib}" OUTPUT_NAME)
+    endif()
+    if(NOT libNew) # could not find it
       set(libNew ${lib})
-    endif("${libNew}" STREQUAL "libNew-NOTFOUND")
+    endif()
     get_filename_component(libNew "${libNew}" NAME_WE)
   else(${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support older cmake <= 3.16
     get_filename_component(libNew "${lib}" NAME_WE)

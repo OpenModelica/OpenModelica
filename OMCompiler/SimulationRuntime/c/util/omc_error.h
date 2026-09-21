@@ -51,18 +51,18 @@ typedef struct _FILE_INFO
 } FILE_INFO;
 
 #define omc_dummyFileInfo_val {"",0,0,0,0,0}
-extern const FILE_INFO omc_dummyFileInfo;
+DLLDataDirection extern const FILE_INFO omc_dummyFileInfo;
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
 // Defined in omc_error.c
-DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
-DLLExport extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
-DLLExport extern void (*omc_terminate)(FILE_INFO, const char*, ...);
-DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
+DLLDataDirection extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
+DLLDataDirection extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
+DLLDataDirection extern void (*omc_terminate)(FILE_INFO, const char*, ...);
+DLLDataDirection extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 
 // Defined in simulation_omc_assert.c
-DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
-DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
+DLLDataDirection extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
+DLLDataDirection extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
 
 void initDumpSystem(void);
 void deactivateLogging(void);
@@ -147,20 +147,20 @@ enum OMC_LOG_TYPE
   OMC_LOG_TYPE_MAX
 };
 
-extern const int firstOMCErrorStream;
-extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
+DLLDataDirection extern const int firstOMCErrorStream;
+DLLDataDirection extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 
-extern int omc_useStream[OMC_SIM_LOG_MAX];
-extern int omc_showAllWarnings;
+DLLDataDirection extern int omc_useStream[OMC_SIM_LOG_MAX];
+DLLDataDirection extern int omc_showAllWarnings;
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
 
 extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
-extern void (*messageClose)(int stream);
+DLLDataDirection extern void (*messageClose)(int stream);
 extern void (*messageCloseWarning)(int stream);
 
 #if !defined(OMC_MINIMAL_LOGGING)
