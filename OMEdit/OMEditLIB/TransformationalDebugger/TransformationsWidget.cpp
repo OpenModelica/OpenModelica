@@ -941,6 +941,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QStringList headerLabels;
   headerLabels << tr("Variable");
   mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpDefinesVariableTreeWidget, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableDataFromEquationVariable(QModelIndex)));
   QGridLayout *pDefinesGridLayout = new QGridLayout;
   pDefinesGridLayout->setSpacing(1);
   pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -959,6 +960,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpDependsVariableTreeWidget->setSortingEnabled(true);
   mpDependsVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpDependsVariableTreeWidget->setHeaderLabel(tr("Variable"));
+  connect(mpDependsVariableTreeWidget, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableDataFromEquationVariable(QModelIndex)));
   QGridLayout *pDependsGridLayout = new QGridLayout;
   pDependsGridLayout->setSpacing(1);
   pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1710,6 +1712,11 @@ void TransformationsWidget::findVariables()
   }
 }
 
+/*!
+ * \brief TransformationsWidget::fetchVariableData
+ * Fetches the variable data.\n
+ * \param index
+ */
 void TransformationsWidget::fetchVariableData(const QModelIndex &index)
 {
   if (!index.isValid()) {
@@ -1722,7 +1729,34 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     return;
   }
 
-  const OMVariable &variable = mVariables[pTVariableTreeItem->getVariableName()];
+  fetchVariableData(pTVariableTreeItem->getVariableName());
+}
+
+/*!
+ * \brief TransformationsWidget::fetchVariableData
+ * Fetches the variable data and selects the variable in the Variables. Fetches the Defined In and Used In.\n
+ * Show the variable in the source editor and scroll to the variable line.\n
+ * \param variableName
+ */
+void TransformationsWidget::fetchVariableData(const QString &variableName)
+{
+  QHash<QString, OMVariable>::const_iterator variableIterator = mVariables.constFind(variableName);
+  if (variableIterator == mVariables.constEnd()) {
+    return;
+  }
+
+  const OMVariable &variable = variableIterator.value();
+  TVariablesTreeItem *pTVariableTreeItem = mpTVariablesTreeModel->findTVariablesTreeItem(variableName, mpTVariablesTreeModel->getRootTVariablesTreeItem());
+  if (pTVariableTreeItem) {
+    QModelIndex sourceIndex = mpTVariablesTreeModel->tVariablesTreeItemIndex(pTVariableTreeItem);
+    QModelIndex proxyIndex = mpTVariableTreeProxyModel->mapFromSource(sourceIndex);
+    if (proxyIndex.isValid()) {
+      mpTVariablesTreeView->clearSelection();
+      mpTVariablesTreeView->setCurrentIndex(proxyIndex);
+      mpTVariablesTreeView->scrollTo(proxyIndex);
+    }
+  }
+
   /* fetch defined in equations */
   fetchDefinedInEquations(variable);
   /* fetch used in equations */
@@ -1753,6 +1787,24 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     file.close();
     mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(variable.info.lineStart);
     mpTransformationsEditor->getPlainTextEdit()->foldAll();
+  }
+}
+
+/*!
+ * \brief TransformationsWidget::fetchVariableDataFromEquationVariable
+ * Fetches the variable data from the equation defines and depends variable tree views.\n
+ * \param index
+ */
+void TransformationsWidget::fetchVariableDataFromEquationVariable(const QModelIndex &index)
+{
+  QTreeWidget *pSender = qobject_cast<QTreeWidget*>(sender());
+  if (!pSender || !index.isValid()) {
+    return;
+  }
+
+  QTreeWidgetItem *pVariableTreeItem = pSender->itemFromIndex(index);
+  if (pVariableTreeItem) {
+    fetchVariableData(pVariableTreeItem->text(0));
   }
 }
 

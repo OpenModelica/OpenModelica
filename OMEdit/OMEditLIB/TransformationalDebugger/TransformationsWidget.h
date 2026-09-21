@@ -278,9 +278,11 @@ private:
   void parseProfiling(QString fileName);
 private slots:
   void loadTransformations();
+  void fetchVariableDataFromEquationVariable(const QModelIndex &index);
 public slots:
   void findVariables();
   void fetchVariableData(const QModelIndex &index);
+  void fetchVariableData(const QString &variableName);
   void fetchEquationData(const QModelIndex &index);
   void filterEquationOperations(int index);
 };
