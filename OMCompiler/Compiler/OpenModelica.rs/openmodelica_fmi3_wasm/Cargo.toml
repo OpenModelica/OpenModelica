@@ -1,5 +1,3 @@
-cargo-features = ["panic-immediate-abort"]
-
 # Model-agnostic FMI 3.0 Model-Exchange adapter, compiled ONCE to
 # wasm32-unknown-unknown and merged (wasm-merge) with a per-model kernel module
 # emitted by CodegenWasmJit, then componentized (wit-component) into an
@@ -39,10 +37,10 @@ openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal",
 [profile.release]
 opt-level = "s"
 lto = true
-# Not just `abort`: a panic here can only become a wasm trap anyway (no stderr on
-# wasm32-unknown-unknown), so aborting at the site makes std's formatting/hook
-# machinery unreachable to LTO as well — ~61 KB per adapter.
-panic = "immediate-abort"
+# openmodelica_wasm_jit/build.rs sharpens this to `-Cpanic=immediate-abort`
+# (~190 KB). Not the profile value: its `cargo-features` key would force nightly
+# cargo on the native FMU that links this crate as an rlib.
+panic = "abort"
 strip = true
 
 [workspace]
