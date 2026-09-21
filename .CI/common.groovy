@@ -324,6 +324,28 @@ void runWindowsTestsuite(String installDir) {
   """)
 }
 
+/*
+ * Install the one Modelica Standard Library version the Windows smoke set
+ * needs (libraries/install-windows-smoke.mos), via the omc that
+ * runWindowsTestsuite() below is about to run against. Only issue10523.mos
+ * (an FMI 2.0 CoSimulation export test, tagged '// win: yes') needs this;
+ * every other test in the set runs against nothing but omc itself, same as
+ * before. There is no shared package cache wired up for Windows agents
+ * (installTestLibraries()'s env.LIBRARIES is a Unix path), so this reaches
+ * the default remote package index directly.
+ *
+ * @param installDir  Path to omc installation directory.
+ */
+void installWindowsSmokeLibrary(String installDir) {
+  bat (label: "Install Modelica for the Windows smoke set", script: """
+    If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+    set MSYSTEM=UCRT64
+    set MSYS2_PATH_TYPE=inherit
+    set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+    %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}/libraries'` && omc install-windows-smoke.mos"
+  """)
+}
+
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
@@ -1879,6 +1901,7 @@ void testWindowsSmoke() {
   withEnv (["OMDEV=C:\\OMDevUCRT",
             "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
     cloneOMDev()
+    installWindowsSmokeLibrary('build')
     runWindowsTestsuite('build')
   }
 }
