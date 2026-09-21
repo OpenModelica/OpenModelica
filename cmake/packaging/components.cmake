@@ -71,7 +71,7 @@ include(CPack)
 # generating C, and that C includes simrt's headers and links its libSimulationRuntimeC,
 # while libSimulationRuntimeC in turn links the libOpenModelicaRuntimeC, libomcgc and
 # libomc_result that are installed here. Saying so in only one direction is what let
-# `apt-get install openmodelica-omc` produce an omc that could not compile anything:
+# `apt-get install omc` produce an omc that could not compile anything:
 # "fatal error: 'omc_simulation_settings.h' file not found".
 #
 # The Autoconf packaging had the same inversion -- its libomcsimulation held

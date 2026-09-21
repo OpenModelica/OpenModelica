@@ -62,6 +62,42 @@ if(CPACK_GENERATOR MATCHES "^(DEB|RPM)$")
 endif()
 
 
+## Package names #################################################################################
+# omc, omedit, omplot, ... -- the names the Autoconf packaging used, not the
+# openmodelica-<component> that CPack derives from the project name.
+#
+# This is an upgrade path, not a preference. apt upgrades a package by name; it has no way to
+# guess that a differently named one supersedes it. A Debian or Ubuntu system carrying 1.27.1's
+# omc would keep it for ever if what we published were called openmodelica-omc, and the user
+# would be left on the last Autoconf release without ever being told. The same names are used for
+# the RPMs, so that a package is called the same thing whichever format it ships in.
+#
+# Set before either generator's block, because everything else that names a package reads these:
+# CPackDeb's get_component_package_name(), and so the .deb file names and the inter-package
+# Depends generated from the components' DEPENDS; and the Requires loop in the RPM block below.
+#
+# A component whose package is not simply its own name is set first, and the loop then leaves it
+# alone:
+#   * meta, whose package is openmodelica -- what the install instructions tell people to ask
+#     for, and not the "openmodelica-meta" its component name would give.
+#   * omshellterminal, whose package has always been omshell-terminal.
+#   * doc, which components.cmake does not currently pack. A bare "doc" is far too general a name
+#     to let a loop invent, and openmodelica-doc is what its source package was called.
+if(CPACK_GENERATOR MATCHES "^(DEB|RPM)$")
+  foreach(_om_format IN ITEMS DEBIAN RPM)
+    set(CPACK_${_om_format}_META_PACKAGE_NAME "openmodelica")
+    set(CPACK_${_om_format}_OMSHELLTERMINAL_PACKAGE_NAME "omshell-terminal")
+    set(CPACK_${_om_format}_DOC_PACKAGE_NAME "openmodelica-doc")
+    foreach(_om_component IN LISTS CPACK_COMPONENTS_ALL)
+      string(TOUPPER "${_om_component}" _om_component_upper)
+      if(NOT CPACK_${_om_format}_${_om_component_upper}_PACKAGE_NAME)
+        set(CPACK_${_om_format}_${_om_component_upper}_PACKAGE_NAME "${_om_component}")
+      endif()
+    endforeach()
+  endforeach()
+endif()
+
+
 ## Package Generator specific variables. ##########################################################################################
 
 if(CPACK_GENERATOR STREQUAL "DEB")
@@ -101,10 +137,6 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # Allow setting our own inter-component dependencies
   set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
 
-  # Without this the metapackage would be called openmodelica-meta, after its component. The
-  # name people (and the install instructions) actually use is the bare one.
-  set(CPACK_DEBIAN_META_PACKAGE_NAME "openmodelica")
-
   # Simulating a model means generating C and building it, so omc needs a compiler, a make
   # and a cmake at *run* time. dpkg-shlibdeps cannot find these -- omc executes them, it
   # does not link them -- so they are named here.
@@ -129,7 +161,7 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # in the sources refers to any more.
   set(_om_deb_version "${CPACK_PACKAGE_VERSION}-${CPACK_DEBIAN_PACKAGE_RELEASE}")
   set(CPACK_DEBIAN_OMC_PACKAGE_RECOMMENDS
-      "openmodelica-simrtcpp (= ${_om_deb_version}), openmodelica-omplot (= ${_om_deb_version}), \
+      "simrtcpp (= ${_om_deb_version}), omplot (= ${_om_deb_version}), \
 gnuplot-nox, xsltproc")
 
   # OMEdit runs without either, so neither is a Depends: omsens is the sensitivity-analysis plugin
@@ -139,7 +171,7 @@ gnuplot-nox, xsltproc")
   # on libomsensplugin; the dependency runs the other way here (a plugin needs its host, not the
   # other way round), so a Recommends is what keeps a default install the same.
   set(CPACK_DEBIAN_OMEDIT_PACKAGE_RECOMMENDS
-      "openmodelica-omsens (= ${_om_deb_version}), openmodelica-omlibrary (= ${_om_deb_version})")
+      "omsens (= ${_om_deb_version}), omlibrary (= ${_om_deb_version})")
 
   # Set the section control field
   # https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections
@@ -174,12 +206,9 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   # See the file common.cmake for a list of the components.
   set(CPACK_RPM_COMPONENT_INSTALL ON)
 
-  # As for DEB above: the metapackage is "openmodelica", not "openmodelica-meta".
-  set(CPACK_RPM_META_PACKAGE_NAME "openmodelica")
-
   # Every package's Requires, from the components' DEPENDS. CPackRPM has no counterpart to
   # CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS and never reads them, so without this each package
-  # ships depending on nothing -- openmodelica-omc not even on openmodelica-simrt. A dependency
+  # ships depending on nothing -- omc not even on the simrt it cannot run without. A dependency
   # is named by its own package, so the metapackage's rename is followed rather than assumed;
   # %{version}-%{release} pins one build's packages to each other, as (= version) does for .deb.
   foreach(_om_component IN LISTS CPACK_COMPONENTS_ALL)
@@ -190,7 +219,7 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
       if(CPACK_RPM_${_om_dependency_upper}_PACKAGE_NAME)
         set(_om_dependency_package "${CPACK_RPM_${_om_dependency_upper}_PACKAGE_NAME}")
       else()
-        set(_om_dependency_package "openmodelica-${_om_dependency}")
+        set(_om_dependency_package "${_om_dependency}")
       endif()
       list(APPEND _om_component_requires "${_om_dependency_package} = %{version}-%{release}")
     endforeach()
@@ -215,10 +244,10 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   # packages are pinned with the spec's own %{version}-%{release}, which rpmbuild expands.
   # CPack drops these tags by itself on an rpm too old to support weak dependencies.
   set(CPACK_RPM_OMC_PACKAGE_RECOMMENDS
-      "openmodelica-simrtcpp = %{version}-%{release}, openmodelica-omplot = %{version}-%{release}, \
+      "simrtcpp = %{version}-%{release}, omplot = %{version}-%{release}, \
 /usr/bin/gnuplot, /usr/bin/xsltproc")
   set(CPACK_RPM_OMEDIT_PACKAGE_RECOMMENDS
-      "openmodelica-omsens = %{version}-%{release}, openmodelica-omlibrary = %{version}-%{release}")
+      "omsens = %{version}-%{release}, omlibrary = %{version}-%{release}")
 
   # A short identifier, which is what the tag is for: CPACK_RESOURCE_FILE_LICENSE is the path of
   # the licence file, so rpm -qi printed a path off the build machine. OSMC-PL is what the
