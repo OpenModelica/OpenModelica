@@ -690,6 +690,41 @@ public
     end if;
   end singleElement;
 
+  function scalarElementEquation
+    "the scalar equation of the only element of an array equation that contains the cref, unchanged if there is none"
+    input Equation eqn;
+    input ComponentRef cref;
+    output Equation result = eqn;
+  protected
+    Expression lhs, rhs;
+    Boolean success_lhs, success_rhs;
+    Integer idx = 0;
+  algorithm
+    () := match eqn
+      case Equation.ARRAY_EQUATION() algorithm
+        (lhs, success_lhs) := ExpandExp.expand(eqn.lhs, true);
+        (rhs, success_rhs) := ExpandExp.expand(eqn.rhs, true);
+        if success_lhs and success_rhs then
+          () := match (lhs, rhs)
+            case (Expression.ARRAY(), Expression.ARRAY()) guard(arrayLength(lhs.elements) == arrayLength(rhs.elements)) algorithm
+              for i in 1:arrayLength(lhs.elements) loop
+                if Expression.containsCref(lhs.elements[i], cref) or Expression.containsCref(rhs.elements[i], cref) then
+                  // the cref has to be in exactly one element
+                  idx := if idx == 0 then i else -1;
+                end if;
+              end for;
+              if idx > 0 then
+                result := Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), lhs.elements[idx], rhs.elements[idx], eqn.source, eqn.attr);
+              end if;
+            then ();
+            else ();
+          end match;
+        end if;
+      then ();
+      else ();
+    end match;
+  end scalarElementEquation;
+
   function solveBody
     input output Equation eqn;
     input ComponentRef cref;
@@ -718,6 +753,9 @@ public
           lhs := singleElement(eqn.lhs);
           rhs := singleElement(eqn.rhs);
         then if isSome(lhs) and isSome(rhs) then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Util.getOption(lhs), Util.getOption(rhs), eqn.source, eqn.attr) else eqn;
+        // a scalar solved from a bigger array equation, e.g. {v, i} = if c then {a, b} else {d, e}
+        case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ty) and Type.sizeOf(eqn.ty) > 1)
+        then scalarElementEquation(eqn, cref);
         else eqn;
       end match;
     end if;
