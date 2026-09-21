@@ -47,7 +47,6 @@ encapsulated package NFBuiltinCall
   import Global;
 
 protected
-  import Config;
   import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -800,10 +799,6 @@ protected
     Integer n;
     InstContext.Type arg_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
   algorithm
-    if not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) then
-      Error.addSourceMessageAndFail(Error.EXPERIMENTAL_REQUIRED, {"promote"}, info);
-    end if;
-
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("promote", named_args, info);
 
