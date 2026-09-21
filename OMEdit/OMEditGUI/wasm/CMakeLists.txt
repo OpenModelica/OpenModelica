@@ -8,6 +8,8 @@ cmake_minimum_required(VERSION 3.21)
 #     -DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64 -S . -B /tmp/omedit-test
 project(OMEditQtWasm LANGUAGES C CXX)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/omc_job_server.cmake)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -79,7 +81,7 @@ file(GLOB_RECURSE RESULT_SOURCES CONFIGURE_DEPENDS ${RESULT_GLOBS})
 add_custom_command(
   OUTPUT ${RESULT_LIB}
   WORKING_DIRECTORY ${RESULT_WORKSPACE}
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   COMMAND ${CMAKE_COMMAND} -E env RUSTFLAGS=-Zemscripten-wasm-eh=no
           ${CARGO_EXECUTABLE} rustc -Zbuild-std=std,panic_abort
           --release --target wasm32-unknown-emscripten

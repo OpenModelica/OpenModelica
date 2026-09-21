@@ -183,7 +183,7 @@ endif()
 
 add_custom_target(SimulationRuntimeRust ALL
   WORKING_DIRECTORY ${_simrt_workspace}
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   ${_simrt_def_command}
   COMMAND ${_simrt_env} ${CARGO_EXECUTABLE} ${_simrt_cargo_cmd} --target-dir ${_simrt_target_dir}
           ${_simrt_target_flag} ${_simrt_profile_flag} -p openmodelica_simulation_runtime
@@ -206,7 +206,7 @@ endforeach()
 list(APPEND _simrt_fmu_env "OMC_SIMRT_FMI=1")
 add_custom_target(SimulationRuntimeRustFmu ALL
   WORKING_DIRECTORY ${_simrt_workspace}
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   # --no-default-features drops `standalone`: the `_main_*` entry points, the
   # result file, `-variableFilter` and `-iif`, none of which an FMU has. It takes
   # the Arrow, regex and mat/plt writer crates out of the archive with it. `fmi`

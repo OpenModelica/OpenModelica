@@ -29,6 +29,7 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.
 include(cmake/omc_utils.cmake)
+include(cmake/omc_job_server.cmake)
 include(cmake/omc_target_info.cmake)
 include(cmake/omc_check_exists.cmake)
 
