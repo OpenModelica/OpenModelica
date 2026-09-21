@@ -797,7 +797,12 @@ pub extern "C" fn _event_div_integer(
             *math_pre(data, index + 1) = x2 as f64;
         }
     }
-    let (v1, v2) = unsafe { (*math_pre(data, index) as i64, *math_pre(data, index + 1) as i64) };
+    let (v1, v2) = unsafe {
+        (
+            *math_pre(data, index) as modelica_integer,
+            *math_pre(data, index + 1) as modelica_integer,
+        )
+    };
     if v2 == 0 {
         let time = unsafe { (**(*data).localData).timeValue };
         // C's `%f`, so the message does not turn on the event time's last bits.
