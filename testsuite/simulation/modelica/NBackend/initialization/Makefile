@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 experimental_initialSimplified.mos \
 primaryParameterFor.mos \
+primaryParameterRecord.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
 init_if_eq.mos \

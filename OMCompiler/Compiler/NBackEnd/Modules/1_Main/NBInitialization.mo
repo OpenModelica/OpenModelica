@@ -499,7 +499,7 @@ public
 
     primary_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn_ptr, {})) for eqn_ptr in sorted);
     secondary_eqs := list(eqn_ptr for eqn_ptr guard(not isPrimaryBinding(eqn_ptr, primary)) in parameter_eqs);
-    secondary_vars := list(var for var guard(not UnorderedSet.contains(ComponentRef.stripSubscriptsAll(BVariable.getVarName(var)), primary)) in initial_param_vars);
+    secondary_vars := list(var for var guard(not isSolved(ComponentRef.stripSubscriptsAll(BVariable.getVarName(var)), primary)) in initial_param_vars);
     primary_aux_eqs := list(eqn_ptr for eqn_ptr guard(isPrimaryBinding(eqn_ptr, primary)) in aux_eqs);
   end selectPrimaryParameters;
 
@@ -540,6 +540,9 @@ public
       case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref)) guard(not hasSubscripts(cref))
         then SOME(cref);
       case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref), recordSize = NONE()) guard(not hasSubscripts(cref))
+        then SOME(cref);
+      // a record bound as a whole
+      case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = cref)) guard(not hasSubscripts(cref))
         then SOME(cref);
       // a for equation that binds every element of a variable once: x[i, j] = exp
       case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))})
@@ -608,6 +611,23 @@ public
     end match;
   end isPrimaryBinding;
 
+  function isSolved
+    "the cref or one of its parents (e.g. a record) is solved as a primary parameter"
+    input ComponentRef cref;
+    input UnorderedSet<ComponentRef> primary;
+    output Boolean b = false;
+  protected
+    ComponentRef parent = cref;
+  algorithm
+    while not ComponentRef.isEmpty(parent) loop
+      if UnorderedSet.contains(parent, primary) then
+        b := true;
+        break;
+      end if;
+      parent := ComponentRef.rest(parent);
+    end while;
+  end isSolved;
+
   function isPrimaryCref
     "true if the value of the cref is known before the initialization"
     input ComponentRef cref;
@@ -619,7 +639,7 @@ public
     ComponentRef parent = name;
     Pointer<Variable> var_ptr;
   algorithm
-    if ComponentRef.isIterator(cref) or UnorderedSet.contains(name, primary) then
+    if ComponentRef.isIterator(cref) or isSolved(name, primary) then
       b := true;
     else
       // a parameter (or one of its parents) that has a binding equation which is not solved explicitly
