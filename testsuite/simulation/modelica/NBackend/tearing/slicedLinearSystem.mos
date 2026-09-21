@@ -1,0 +1,39 @@
+// name: slicedLinearSystem
+// keywords: NewBackend tearing linear slice
+// status: correct
+// cflags: --newBackend
+//
+// A linear system in a slice of an array (i[1:2]) next to a nonlinear equation
+// of another element (v[3] * i[3]). The system has to be classified correctly
+// and its Jacobian and sparsity pattern need to include the slice.
+
+loadString("
+model slicedLinearSystem
+  Real v[3];
+  Real i[3];
+  Real p[3] = {1.0, 0.5, 0.0};
+equation
+  v[1:2] = {2.0 + cos(time), 1.0 + sin(time)};
+  v[3] = -3 * i[3];
+  p[1] = v[1:2] * i[1:2];
+  p[2] = -(cat(1, {-v[2], v[1]}, fill(0.0, 0)) * i[1:2]);
+  p[3] = v[3] * i[3];
+end slicedLinearSystem;
+"); getErrorString();
+
+simulate(slicedLinearSystem, stopTime = 1); getErrorString();
+abs(val(i[1], 0) - 0.35) < 1e-6; abs(val(i[2], 0) + 0.05) < 1e-6;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "slicedLinearSystem_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'slicedLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// endResult

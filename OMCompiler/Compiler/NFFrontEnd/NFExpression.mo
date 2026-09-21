@@ -1089,6 +1089,13 @@ public
     output Integer sz = Type.sizeOf(typeOf(exp));
   end sizeOf;
 
+  function callOf
+    input Expression exp;
+    output Call call;
+  algorithm
+    CALL(call = call) := exp;
+  end callOf;
+
   function sizeZero
     "returns true if its a constructor that is definitely of size zero;"
     input Expression exp;
@@ -1097,7 +1104,15 @@ public
     try
       b := 0 == sizeOf(exp);
     else
+      // fill(x, ..., 0, ...) is empty even if its dimension is not known as an integer
       b := false;
+      if isCallNamed(exp, "fill") then
+        for arg in listRest(Call.arguments(callOf(exp))) loop
+          if isZero(arg) then
+            b := true;
+          end if;
+        end for;
+      end if;
     end try;
   end sizeZero;
 
