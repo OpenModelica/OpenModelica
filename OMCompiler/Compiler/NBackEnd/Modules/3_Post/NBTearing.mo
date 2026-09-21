@@ -311,6 +311,7 @@ public
     Variable row_var_data;
     Expression row_residual;
     Equation row_eqn;
+    Boolean is_for;
   algorithm
     if listEmpty(indices) then
       indices := list(i for i in 0:(Equation.size(eqn_ptr) - 1));
@@ -321,14 +322,20 @@ public
       slices := {eqn};
     else
       base_cref := Equation.getEqnName(eqn_ptr);
-      residual  := Equation.getResidualExp(e);
+      is_for    := Equation.isArrayBodyFor(e);
+      residual  := if is_for then Expression.EMPTY(Type.UNKNOWN()) else Equation.getResidualExp(e);
       elem_ty   := Type.arrayElementType(Expression.typeOf(residual));
       attr      := Equation.getAttributes(e);
       attr.residual := true;
       slices := {};
       for i in indices loop
-        subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
-        row_residual := Expression.applySubscripts(subs, residual);
+        if is_for then
+          row_residual := Equation.forArrayBodyRowResidual(e, i);
+          elem_ty      := Type.arrayElementType(Expression.typeOf(row_residual));
+        else
+          subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
+          row_residual := Expression.applySubscripts(subs, residual);
+        end if;
         (row_var, row_cref) := BVariable.makeAuxVar(ComponentRef.toString(base_cref), i, elem_ty, false);
         // makeAuxVar tags the new var with a plain VariableKind derived from its type;
         // it must instead be marked RESIDUAL_VAR like any other residual variable, or
@@ -532,7 +539,7 @@ protected
 
   function isPartialArraySlice
     input Slice<EquationPointer> eqn;
-    output Boolean b = not listEmpty(eqn.indices) and Equation.isArrayEquation(Slice.getT(eqn))
+    output Boolean b = not listEmpty(eqn.indices) and (Equation.isArrayEquation(Slice.getT(eqn)) or Equation.isArrayBodyFor(Pointer.access(Slice.getT(eqn))))
                        and Equation.size(Slice.getT(eqn)) > listLength(eqn.indices);
   end isPartialArraySlice;
 

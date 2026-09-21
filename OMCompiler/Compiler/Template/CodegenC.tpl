@@ -6283,6 +6283,25 @@ template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, C
 end resizableColCountRegular;
 
 template resizableColCount(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+"Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
+::=
+  let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match crefSubs(seed)
+    case {} then resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+    else
+      match simVarExactFromHT(seed, jacHT)
+      case SOME(ev as SIMVAR()) then
+      <<
+      <%seedComment%>
+      if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { col_counts[<%ev.index%>]++; }
+      >>
+      else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+  else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+end resizableColCount;
+
+template resizableColCountBase(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 "Increment col_counts for one dependency cref."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6459,7 +6478,7 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
             >>
     else '/* resizableColCount: seed not found in jacHT */'
   else ''
-end resizableColCount;
+end resizableColCountBase;
 
 template resizableSparsityRowFill(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub, String spPattern)
 "Fill phase: for each (row,col) pair, write spPattern->index[col_fill[col]++] = row.
@@ -6739,6 +6758,25 @@ template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExp
 end resizableColFillRegular;
 
 template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+"Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
+::=
+  let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match crefSubs(seed)
+    case {} then resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+    else
+      match simVarExactFromHT(seed, jacHT)
+      case SOME(ev as SIMVAR()) then
+      <<
+      <%seedComment%>
+      if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%ev.index%>]++] = <%rowExpr%>; }
+      >>
+      else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+  else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+end resizableColFill;
+
+template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6913,7 +6951,7 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
             >>
     else '/* resizableColFill: seed not found in jacHT */'
   else ''
-end resizableColFill;
+end resizableColFillBase;
 
 template seedSizeAssignments(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=

@@ -15747,6 +15747,15 @@ algorithm
   end try;
 end cref2simvar;
 
+public function simVarExactFromHT
+"Used by templates to find the SIMVAR that is stored for exactly this cref (no array offset lookup)."
+  input DAE.ComponentRef inCref;
+  input HashTableCrefSimVar.HashTable crefToSimVarHT;
+  output Option<SimCodeVar.SimVar> outSimVar;
+algorithm
+  outSimVar := if BaseHashTable.hasKey(inCref, crefToSimVarHT) then SOME(BaseHashTable.get(inCref, crefToSimVarHT)) else NONE();
+end simVarExactFromHT;
+
 public function simVarFromHT
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
   input DAE.ComponentRef inCref;

@@ -2942,6 +2942,70 @@ public
       end if;
     end sliceFor;
 
+    function isArrayBodyFor
+      "a for equation whose body is an array equation"
+      input Equation eqn;
+      output Boolean b;
+    algorithm
+      b := match eqn
+        case FOR_EQUATION(body = {_}) then Equation.size(Pointer.create(listHead(eqn.body))) > 1;
+        else false;
+      end match;
+    end isArrayBodyFor;
+
+    function scalarizeElement
+      "picks one element of an array valued expression by pushing the subscripts to the operands"
+      input Expression exp;
+      input list<Subscript> subs;
+      output Expression elem;
+    algorithm
+      elem := match exp
+        local
+          Expression e1, e2;
+          Operator op;
+
+        case Expression.BINARY() algorithm
+          e1 := if Type.isArray(Expression.typeOf(exp.exp1)) then scalarizeElement(exp.exp1, subs) else exp.exp1;
+          e2 := if Type.isArray(Expression.typeOf(exp.exp2)) then scalarizeElement(exp.exp2, subs) else exp.exp2;
+        then Expression.repairOperator(Expression.BINARY(e1, exp.operator, e2));
+
+        case Expression.UNARY() algorithm
+          e1 := scalarizeElement(exp.exp, subs);
+        then Expression.repairOperator(Expression.UNARY(exp.operator, e1));
+
+        case Expression.MULTARY()
+        then Expression.repairOperator(Expression.MULTARY(
+          list(if Type.isArray(Expression.typeOf(e)) then scalarizeElement(e, subs) else e for e in exp.arguments),
+          list(if Type.isArray(Expression.typeOf(e)) then scalarizeElement(e, subs) else e for e in exp.inv_arguments),
+          exp.operator));
+
+        else Expression.applySubscripts(subs, exp);
+      end match;
+    end scalarizeElement;
+
+    function forArrayBodyRowResidual
+      "the scalar residual of a single row (zero based index) of a for equation with an array valued body"
+      input Equation eqn;
+      input Integer idx;
+      output Expression residual;
+    protected
+      Iterator iter;
+      Equation body;
+      list<Integer> sizes, location;
+      Integer n_body;
+      UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      FOR_EQUATION(iter = iter, body = {body}) := eqn;
+      sizes     := list(Dimension.size(dim) for dim in Type.arrayDims(Equation.getType(eqn)));
+      n_body    := listLength(Type.arrayDims(Equation.getType(body)));
+      // the location consists of the iterator frames followed by the body dimensions
+      location  := Slice.indexToLocation(idx, sizes);
+      Iterator.createLocationReplacements(iter, listArray(List.firstN(location, listLength(location) - n_body)), replacements);
+      residual  := Expression.map(Equation.getResidualExp(body), function Replacements.applySimpleExp(replacements = replacements));
+      residual  := scalarizeElement(residual, list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in List.lastN(location, n_body)));
+      residual  := SimplifyExp.simplifyDump(residual, true, getInstanceName());
+    end forArrayBodyRowResidual;
+
     function singleSlice
       input Pointer<Equation> eqn_ptr                             "equation to slice";
       input Integer scal_idx                                      "zero based scalar index";
