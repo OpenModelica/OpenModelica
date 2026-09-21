@@ -636,6 +636,7 @@ pipeline {
           }
         }
 
+/*
         stage('16 build-gui-clang-qt5') {
           agent {
             docker {
@@ -653,7 +654,7 @@ pipeline {
             script { common.buildGUIAndStash('omc-clang', 'qt5', 'omedit-testsuite-clang-qt5') }
           }
         }
-
+*/
         stage('17 build-gui-clang-qt6') {
           agent {
             docker {
