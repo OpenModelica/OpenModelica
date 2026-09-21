@@ -13,7 +13,6 @@ model FuncBuiltinPromote
   Real r3[:, :] = promote(x, 2);
   Real r5[:, :] = promote(y, 2);
   Real r6[:, :, :] = promote(y, 3);
-  annotation(__OpenModelica_commandLineOptions="--std=experimental");
 end FuncBuiltinPromote;
 
 // Result:

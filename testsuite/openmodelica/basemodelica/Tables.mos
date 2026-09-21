@@ -8,7 +8,6 @@ setCommandLineOptions("-d=newInst -f -m");
 writeFile("Tables.mof", OpenModelica.Scripting.instantiateModel(ModelicaTest.Tables.CombiTable1D.Test33));getErrorString();
 clear();
 loadFile("Tables.mof");getErrorString();
-setCommandLineOptions("--std=experimental");
 echo(false);
 res := simulate('Test33'.'Test33', fileNamePrefix="Tables");
 echo(true);
@@ -27,8 +26,6 @@ res.resultFile;
 // true
 // ""
 // true
-// true
-// "[openmodelica/basemodelica/Tables.mof:33:3-47:43:writable] Warning: Pure function ''Test33'.'Modelica.Utilities.Strings.isEmpty'' contains a call to impure function ''Test33'.'Modelica.Utilities.Strings.Advanced.skipWhiteSpace''.
-// "
+// ""
 // "Tables_res.mat"
 // endResult
