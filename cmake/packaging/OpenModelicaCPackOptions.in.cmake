@@ -154,6 +154,16 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   # https://cmake.org/cmake/help/latest/cpack_gen/rpm.html
   # usage: cpack -G RPM
 
+  # CPack's default for RPM, spelled out: the /usr/local the .deb side uses is in the loader's
+  # search path on Debian and Ubuntu but on no Fedora or EL system, where our libraries under
+  # /usr/local/lib would then not be found.
+  set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+
+  # <name>-<version>-<release>.<arch>.rpm, as createrepo and the rpm tools expect. CPack's own
+  # name, OpenModelica-<version>-Linux-<component>.rpm, carries neither the package name nor
+  # the architecture, and spells the version with the .deb's hyphens rather than ~.
+  set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
+
   # An RPM Version: field may not contain a hyphen -- rpm uses it to separate the version
   # from the release -- so the pre-release and the `git describe` suffix are joined with
   # "~" instead. rpm reads "~" the same way dpkg does, as sorting before the release, so
@@ -210,7 +220,10 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   set(CPACK_RPM_OMEDIT_PACKAGE_RECOMMENDS
       "openmodelica-omsens = %{version}-%{release}, openmodelica-omlibrary = %{version}-%{release}")
 
-  set(CPACK_RPM_PACKAGE_LICENSE ${CPACK_RESOURCE_FILE_LICENSE})
+  # A short identifier, which is what the tag is for: CPACK_RESOURCE_FILE_LICENSE is the path of
+  # the licence file, so rpm -qi printed a path off the build machine. OSMC-PL is what the
+  # Autoconf spec declared; the text offers AGPL version 3 as an alternative.
+  set(CPACK_RPM_PACKAGE_LICENSE "OSMC-PL")
 
   # The documentation is the same on every architecture.
   set(CPACK_RPM_DOC_PACKAGE_ARCHITECTURE "noarch")
