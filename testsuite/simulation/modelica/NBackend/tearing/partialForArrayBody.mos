@@ -3,9 +3,8 @@
 // status: correct
 //
 // A part of a for equation with an array valued body ends up in an algebraic
-// loop. The generated residual function wrote the whole body into the residual
-// array and corrupted the heap ("free(): invalid pointer"). It is now reported
-// as an error when building the model.
+// loop. It has to be split into scalar residuals, the whole body used to be
+// written into the residual array (heap corruption, "free(): invalid pointer").
 
 setCommandLineOptions("--newBackend"); getErrorString();
 
@@ -23,19 +22,23 @@ loadString("
   end partialForArrayBody;
 "); getErrorString();
 
-buildModel(partialForArrayBody); getErrorString();
+simulate(partialForArrayBody, stopTime = 1); getErrorString();
+val(b[1], 1); val(b[2], 1); val(b[3], 1);
 
 // Result:
 // true
 // ""
 // true
 // ""
-// {"", ""}
-// "Error: Internal error NSimStrongComponent.Block.createResidual does not support a part of a for equation with an array valued body:
-// [FOR-] (6) ($RES_SIM_3)
-// [----] for $i1 in 1:2 loop
-// [----]   [ARRY] (3) $RES_SIM_3[:, $i1] = b .* $i1 .- a[$i1, :]; ($RES_SIM_4)
-// [----] end for;
-// 	slice: {4, 5}
+// record SimulationResult
+//     resultFile = "partialForArrayBody_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'partialForArrayBody', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
+// end SimulationResult;
+// ""
+// 2.0
+// -1.0
+// -1.0
 // endResult

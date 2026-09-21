@@ -1701,6 +1701,12 @@ package SimCodeUtil
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
+  function simVarExactFromHT
+    input DAE.ComponentRef inCref;
+    input HashTableCrefSimVar.HashTable crefToSimVarHT;
+    output Option<SimCodeVar.SimVar> outSimVar;
+  end simVarExactFromHT;
+
   function simVarFromHT
     input DAE.ComponentRef inCref;
     input HashTableCrefSimVar.HashTable crefToSimVarHT;
