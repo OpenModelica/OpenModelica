@@ -541,9 +541,41 @@ public
         then SOME(cref);
       case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref), recordSize = NONE()) guard(not hasSubscripts(cref))
         then SOME(cref);
+      // a for equation that binds every element of a variable once: x[i, j] = exp
+      case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))})
+        guard(coversVariable(cref, Pointer.access(eqn_ptr)))
+        then SOME(ComponentRef.stripSubscriptsAll(cref));
       else NONE();
     end match;
   end explicitBindingName;
+
+  function coversVariable
+    "the subscripts of the cref are distinct iterators and the equation has as many elements as the variable"
+    input ComponentRef cref;
+    input Equation eqn;
+    output Boolean b;
+  protected
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    UnorderedSet<ComponentRef> iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef iter;
+  algorithm
+    b := not listEmpty(subs);
+    for sub in subs loop
+      if not Subscript.isIterator(sub) then
+        b := false;
+        break;
+      end if;
+      iter := Expression.toCref(Subscript.toExp(sub));
+      if UnorderedSet.contains(iter, iters) then
+        b := false;
+        break;
+      end if;
+      UnorderedSet.add(iter, iters);
+    end for;
+    if b then
+      b := Equation.size(Pointer.create(eqn)) == BVariable.size(BVariable.getVarPointer(ComponentRef.stripSubscriptsAll(cref), sourceInfo()));
+    end if;
+  end coversVariable;
 
   function hasSubscripts
     input ComponentRef cref;
