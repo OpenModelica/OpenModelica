@@ -188,15 +188,14 @@ fn build_wasip1_fused_adapter(
     // profile, which the crate's `opt-level = "s"` outranks: `rt_solve_nls` and
     // minpack link in here, and the runtime's manifest sets 3 for them.
     let rustflags = "-Clink-arg=--export-table -Clink-arg=--growable-table \
-                     -Clink-arg=--allow-undefined -Ctarget-feature=+simd128 -Copt-level=3";
+                     -Clink-arg=--allow-undefined -Ctarget-feature=+simd128 -Copt-level=3 \
+                     -Zunstable-options -Cpanic=immediate-abort";
     let target = "wasm32-wasip1";
     let target_dir = out_dir.join("adapter-fused-target");
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let mut cmd = Command::new(cargo);
     cmd.current_dir(&adapter_dir)
-        // `-Zbuild-std`: the crate's `panic = "immediate-abort"`, which the
-        // precompiled `core` does not satisfy. The dylink adapter builds the same
-        // way.
+        // `-Zbuild-std`: `-Cpanic=immediate-abort` needs a std built with it.
         .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
         .args(["--no-default-features", "--features", features])
         .arg("--target-dir")
@@ -1495,13 +1494,14 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let rustflags = "-Zcodegen-backend=llvm -Crelocation-model=pic \
         -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
-        -Clink-arg=--allow-undefined -Ctarget-feature=+simd128";
+        -Clink-arg=--allow-undefined -Ctarget-feature=+simd128 \
+        -Zunstable-options -Cpanic=immediate-abort";
     let mut cmd = Command::new(cargo);
     // `rustc --crate-type cdylib`, not `build`: the crate also builds as an `rlib`
     // for the native FMU, and `lto = true` does not apply to a build that produces
     // both. Without it nothing is internalized, so a dylink module -- which exports
     // every symbol that is not hidden -- keeps the std and faer machinery
-    // `panic = "immediate-abort"` exists to make unreachable. That is 82 KB of
+    // `-Cpanic=immediate-abort` exists to make unreachable. That is 82 KB of
     // static data against 210 KB, and the larger one moves `__heap_base` into a
     // layout the FMU's allocator faults on.
     cmd.current_dir(adapter_dir)
