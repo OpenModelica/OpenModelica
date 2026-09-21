@@ -26,6 +26,12 @@ libc.workspace=true
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libffi = { workspace = true, optional = true }
 
+# `external "C"` evaluation on wasm: the side module is loaded and called by the
+# same engine the wasm-jit simulations use (FFI_wasm.rs, openmodelica_wasm_jit::
+# ext_eval). wasmtime has no wasm backend, so it must be the wasmer one.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+openmodelica_wasm_jit = { workspace = true, features = ["engine-wasmer"] }
+
 [build-dependencies]
 cc.workspace=true
 

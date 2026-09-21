@@ -379,9 +379,11 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         ("lib-fmi3adapter".to_string(), crate::FMI3_MECS_CAPI_ADAPTER()),
         ("lib-lapack".to_string(), crate::LAPACK_DYLINK()),
         ("lib-libc.so".to_string(), crate::LIBC_PIC()),
-        ("lib-modelicaexternalc".to_string(), crate::EXTERNAL_C_DYLINK()),
         ("lib-usertab".to_string(), crate::USERTAB_DYLINK()),
     ];
+    for (file, bytes) in crate::EXT_FAMILY {
+        blobs.push((format!("lib-{}", file.trim_end_matches(".wasm")), bytes()));
+    }
     blobs.retain(|(_, b)| !b.is_empty());
     // Every engine a run can land on: the inliner is off for a model with one
     // enormous function, and `-alarm` picks the epoch-interrupting engine, which
@@ -575,7 +577,7 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
         format!(
             "  `{name}` is in none of the model's libraries — the model declares no `Library` \
              annotation that resolves to one. Name a wasm module built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`, or, for a native run, the platform \
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`, or, for a native run, the platform \
              shared library the C target would link."
         )
     } else {
@@ -2523,7 +2525,15 @@ impl DylinkFmu {
             ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
         }
         if external_c {
-            ext_libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+            // A compiled artifact, so which of the family it calls into is no
+            // longer known by name: give it all of them. They are files on disk
+            // here, not a download.
+            for (file, bytes) in crate::EXT_FAMILY.iter().filter(|(f, _)| *f != "liblapack.wasm") {
+                let bytes = bytes();
+                if !bytes.is_empty() {
+                    ext_libs.push(Library::builtin(file, bytes));
+                }
+            }
             if !crate::USERTAB_DYLINK().is_empty() {
                 ext_libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
             }
@@ -2736,7 +2746,13 @@ impl DylinkFmu {
                 ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
             }
             if external_c {
-                ext_libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+                // As above: a compiled artifact gets the whole family.
+                for (file, bytes) in crate::EXT_FAMILY.iter().filter(|(f, _)| *f != "liblapack.wasm") {
+                    let bytes = bytes();
+                    if !bytes.is_empty() {
+                        ext_libs.push(Library::builtin(file, bytes));
+                    }
+                }
                 if !crate::USERTAB_DYLINK().is_empty() {
                     ext_libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
                 }

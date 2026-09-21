@@ -1337,9 +1337,12 @@ algorithm
   // This is where we put the ModelicaExternal libs right now. So that their shared
   // versions are not in the lib/omc dir complicating normal linking.
   // ( remembering we append to the front of the list as we process things )
-  for lib in libs loop
-    paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
-  end for;
+  // A wasm build ships no such directory; its side modules serve that purpose.
+  if not Autoconf.isWasm then
+    for lib in libs loop
+      paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
+    end for;
+  end if;
 
   // Create paths for any combination of library and library directory.
   for lib in libs loop
@@ -1357,8 +1360,10 @@ algorithm
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
 
-      // Windows and macOS also install under the openModelicaPlatform name.
-      if Autoconf.os == "Windows_NT" or Autoconf.os == "darwin" then
+      // Windows and macOS also install under the openModelicaPlatform name; a
+      // wasm build searches wasm32-wasip1 and, for a module needing nothing of
+      // the system, wasm32.
+      if Autoconf.os == "Windows_NT" or Autoconf.os == "darwin" or Autoconf.isWasm then
         if not stringEmpty(System.openModelicaPlatformAlternative()) then
           paths := (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
         end if;
@@ -1371,8 +1376,9 @@ algorithm
   end for;
 
   // If no Library annotation was given, append an empty string to search for
-  // functions linked into the compiler itself.
-  if listEmpty(libs) then
+  // functions linked into the compiler itself. A wasm build always searches it:
+  // the shared libraries it carries are what it has in place of those.
+  if listEmpty(libs) or Autoconf.isWasm then
     paths := "" :: paths;
   end if;
 

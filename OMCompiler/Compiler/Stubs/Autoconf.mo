@@ -44,6 +44,7 @@ encapsulated package Autoconf
   constant String make = "";
   constant String exeExt = "";
   constant String dllExt = "";
+  constant Boolean isWasm = false;
   constant String ldflags_basic = "";
 
   constant String ldflags_runtime = "";
