@@ -1,0 +1,48 @@
+// name:     Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start";
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start);
+compareVars :=
+{
+   "aims.idq_rr[1]",
+   "aims.idq_rr[2]",
+   "aims.lssigma.i_[1]",
+   "aims.lssigma.i_[2]",
+   "aims.lszero.i",
+   "aims.lrzero.i",
+   "loadInertia.phi",
+   "loadInertia.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start
+// {"aims.idq_rr[1]", "aims.idq_rr[2]", "aims.lssigma.i_[1]", "aims.lssigma.i_[2]", "aims.lszero.i", "aims.lrzero.i", "loadInertia.phi", "loadInertia.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start', options = '', outputFormat = 'mat', variableFilter = 'time|aims.idq_rr.1.|aims.idq_rr.2.|aims.lssigma.i_.1.|aims.lssigma.i_.2.|aims.lszero.i|aims.lrzero.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,56 @@
+// name:     Modelica.Blocks.Examples.ShowLogicalSources
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+simflags := "-ignoreHideResult";
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Blocks.Examples.ShowLogicalSources);
+compareVars :=
+{
+   "booleanExpression.y",
+   "pulse.pulsStart",
+   "pulse.y",
+   "step.y",
+   "sample.y",
+   "table.index",
+   "table.nextTime",
+   "table.y",
+   "const.y"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "-ignoreHideResult"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Blocks.Examples.ShowLogicalSources
+// {"booleanExpression.y", "pulse.pulsStart", "pulse.y", "step.y", "sample.y", "table.index", "table.nextTime", "table.y", "const.y"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.ShowLogicalSources', options = '', outputFormat = 'mat', variableFilter = 'time|booleanExpression.y|pulse.pulsStart|pulse.y|step.y|sample.y|table.index|table.nextTime|table.y|const.y', cflags = '', simflags = '-ignoreHideResult -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Blocks.Examples.ShowLogicalSources_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Error: Could not read variable pulse.pulsStart in file Modelica.Blocks.Examples.ShowLogicalSources_res.mat.
+// Warning: Get data of variable pulse.pulsStart from file Modelica.Blocks.Examples.ShowLogicalSources_res.mat failed!
+// Error: Could not read variable table.index in file Modelica.Blocks.Examples.ShowLogicalSources_res.mat.
+// Warning: Get data of variable table.index from file Modelica.Blocks.Examples.ShowLogicalSources_res.mat failed!
+// Error: Could not read variable table.nextTime in file Modelica.Blocks.Examples.ShowLogicalSources_res.mat.
+// Warning: Get data of variable table.nextTime from file Modelica.Blocks.Examples.ShowLogicalSources_res.mat failed!
+//
+// "true
+// "
+// ""
+// endResult

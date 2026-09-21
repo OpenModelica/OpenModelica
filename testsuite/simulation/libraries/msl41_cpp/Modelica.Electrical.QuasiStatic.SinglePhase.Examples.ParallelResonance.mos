@@ -1,0 +1,51 @@
+// name:     Modelica.Electrical.QuasiStatic.SinglePhase.Examples.ParallelResonance
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4.1.0 with the Cpp runtime: the generated code does not declare the
+// ComplexOutput record type of the sensor and fails to compile, so only test
+// that the model translates.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance";
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Electrical.QuasiStatic.SinglePhase.Examples.ParallelResonance);
+compareVars :=
+{
+   "capacitor.i.im",
+   "capacitor.pin_n.reference.gamma",
+   "inductor.pin_p.reference.gamma",
+   "resistor.pin_p.reference.gamma",
+   "voltageSensor.pin_n.reference.gamma",
+   "capacitor.pin_n.reference.gamma",
+   "ground.pin.reference.gamma"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance"
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Electrical.QuasiStatic.SinglePhase.Examples.ParallelResonance
+// {"capacitor.i.im", "capacitor.pin_n.reference.gamma", "inductor.pin_p.reference.gamma", "resistor.pin_p.reference.gamma", "voltageSensor.pin_n.reference.gamma", "capacitor.pin_n.reference.gamma", "ground.pin.reference.gamma"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Translation succeeded
+// "true
+// "
+// ""
+// endResult

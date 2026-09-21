@@ -2,7 +2,6 @@ SLOWLOGS = \
 bootstrapping.log \
 msl40simulation.log \
 msl41simulation.log \
-msl32simulation.log \
 msl32simulation_cpp_mini.log \
 siemens_nosim.log \
 siemens_simulation.log \
@@ -560,11 +559,8 @@ msl40simulation.log: omc-diff
 msl41simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl41 -f Makefile test > $@
 	@echo $@ done
-msl32simulation.log: omc-diff
-	$(MAKE) -C simulation/libraries/msl32 -f Makefile test > $@
-	@echo $@ done
-msl32simulation_cpp.log: omc-diff
-	$(MAKE) -C simulation/libraries/msl32_cpp -f Makefile test > $@
+msl41simulation_cpp.log: omc-diff
+	$(MAKE) -C simulation/libraries/msl41_cpp -f Makefile test > $@
 	@echo $@ done
 msl32simulation_cpp_mini.log: omc-diff
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile test > $@
@@ -739,7 +735,6 @@ failingtest: omc-diff
 	cd ../flattening/modelica/msl; $(MAKE) -f Makefile failingtest; \
 	cd ../../biochem; $(MAKE) -f Makefile failingtest; \
 	cd ../multibody; $(MAKE) -f Makefile failingtest;
-	cd ../msl32; $(MAKE) -f Makefile failingtest;
 
 clean:
 	test -e .git || $(MAKE) clean_g_1 clean_g_2 clean_g_3 clean_g_4
@@ -825,6 +820,7 @@ clean_g_3 :
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
 	$(MAKE) -C simulation/libraries/msl40 -f Makefile clean
 	$(MAKE) -C simulation/libraries/msl41 -f Makefile clean
+	$(MAKE) -C simulation/libraries/msl41_cpp -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
 	$(MAKE) -C openmodelica/linearization -f Makefile clean
 	$(MAKE) -C openmodelica/modelicaML -f Makefile clean
@@ -833,12 +829,6 @@ clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile clean
-	if [ -d "flattening/libraries/msl32/" ]; then \
-	  $(MAKE) -C flattening/libraries/msl32 -f Makefile clean; \
-	fi
-	if [ -d "flattening/libraries/msl32_cpp/" ]; then \
-	  $(MAKE) -C flattening/libraries/msl32_cpp -f Makefile clean; \
-	fi
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/3.0 -f Makefile clean
@@ -849,7 +839,6 @@ clean_g_4:
 	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile clean
-	$(MAKE) -C simulation/libraries/msl32 -f Makefile clean
 
 git-sanity-check: git-clean
 	find -name "*.cpp" > invalid-files.log

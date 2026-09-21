@@ -1,0 +1,54 @@
+// name:     Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Steinmetz
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+stopTime := 1.5; // MSL 4.1.0 shortened the experiment annotation to 1.0 s;
+                 // simulate the MSL 3.2.1 interval that the reference file covers
+
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Steinmetz";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Steinmetz);
+compareVars :=
+{
+   "aimc.i_0_s",
+   "aimc.idq_rr[1]",
+   "aimc.idq_rr[2]",
+   "aimc.idq_sr[1]",
+   "aimc.idq_sr[2]",
+   "cRun.v",
+   "cStart.v",
+   "loadInertia.phi",
+   "loadInertia.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// 1.5
+// "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Steinmetz"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Steinmetz
+// {"aimc.i_0_s", "aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.idq_sr[1]", "aimc.idq_sr[2]", "cRun.v", "cStart.v", "loadInertia.phi", "loadInertia.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Steinmetz', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.i_0_s|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|cRun.v|cStart.v|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Steinmetz_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

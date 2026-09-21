@@ -1,0 +1,49 @@
+// name:     Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta);
+compareVars :=
+{
+   "voltageSource.plug_p.reference.gamma",
+   "voltageSource.voltageSource[2].pin_p.reference.gamma",
+   "voltageSource.voltageSource[3].pin_p.reference.gamma"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta
+// {"voltageSource.plug_p.reference.gamma", "voltageSource.voltageSource[2].pin_p.reference.gamma", "voltageSource.voltageSource[3].pin_p.reference.gamma"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta', options = '', outputFormat = 'mat', variableFilter = 'time|voltageSource.plug_p.reference.gamma|voltageSource.voltageSource.2..pin_p.reference.gamma|voltageSource.voltageSource.3..pin_p.reference.gamma', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Error: Could not read variable voltageSource.voltageSource[2].pin_p.reference.gamma in file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta_res.mat.
+// Warning: Get data of variable voltageSource.voltageSource[2].pin_p.reference.gamma from file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta_res.mat failed!
+// Error: Could not read variable voltageSource.voltageSource[3].pin_p.reference.gamma in file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta_res.mat.
+// Warning: Get data of variable voltageSource.voltageSource[3].pin_p.reference.gamma from file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta_res.mat failed!
+//
+// "true
+// "
+// ""
+// endResult
