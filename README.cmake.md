@@ -383,6 +383,14 @@ ones. On Debian and Ubuntu this is an upgrade path rather than a preference: apt
 package by name, so a system holding 1.27.1's `omc` has to be offered an `omc` or it stays on
 1.27.1 for ever.
 
+The old layout also had a package per library — `libomc`, `libomc-dev`, `omc-common`,
+`libomcsimulation`, `libomccpp`, `libomplot`, `libomplot-dev`, `libomsimulator`,
+`libomsensplugin` — which this packaging does not split out: what they held is inside `omc`,
+`simrt`, `omplot` and the rest. The package that absorbed each one `Provides`, `Replaces` and
+`Conflicts` with it, so upgrading removes them instead of leaving them behind. Those are Debian
+names and the fields are on the `.deb` packages only; the RPM side never had them, its spec
+having built one `openmodelica-<branch>` package under `/opt`.
+
 Only the components this build actually configured are packed, so a build with
 `-DOM_ENABLE_GUI_CLIENTS=OFF` produces no `omedit` package. Components belonging to the
 third-party projects built in-tree (SuiteSparse, libzmq, oneTBB, zlib, …) are deliberately
@@ -393,12 +401,10 @@ hand-written list for what `omc` needs at _run_ time — a compiler, `make` and 
 it shells out to when it compiles a model.
 
 > **Note**
-> The `.deb` packages are not yet a drop-in replacement for the ones on
-> [build.openmodelica.org](https://build.openmodelica.org/apt/). The names now match and the
-> `openmodelica` metapackage is back, but they install under `/usr/local` rather than `/usr`,
-> and the library packages of the old layout — `omc-common`, `libomc`, `libomc-dev`,
-> `libomcsimulation`, `libomplot`, `libomsimulator`, `libomsensplugin` — have no counterpart,
-> so upgrading leaves those installed with nothing to replace them. See
+> The `.deb` packages are not quite a drop-in replacement for the ones on
+> [build.openmodelica.org](https://build.openmodelica.org/apt/). The names match, the
+> `openmodelica` metapackage is back and the old library packages are superseded, but these
+> still install under `/usr/local` rather than `/usr`. See
 > [#16377](https://github.com/OpenModelica/OpenModelica/issues/16377).
 
 ### Building the packages

@@ -173,6 +173,48 @@ gnuplot-nox, xsltproc")
   set(CPACK_DEBIAN_OMEDIT_PACKAGE_RECOMMENDS
       "omsens (= ${_om_deb_version}), omlibrary (= ${_om_deb_version})")
 
+  ## The packages of the old layout ###############################################################
+  # The Autoconf packaging split the libraries and the architecture-independent files into
+  # packages of their own -- libomc, omc-common, libomcsimulation and the rest. This packaging
+  # has no such split: what they held is inside omc, simrt, omplot and so on. Renaming the
+  # packages was enough for the ones whose name survived; without what follows, nothing would
+  # supersede these nine and an upgraded system would keep them installed for ever.
+  #
+  # Three fields, and all three are needed:
+  #   Replaces  lets this package own files the old one owns. There is in fact no overlap (the
+  #             old packages install under /usr and these under /usr/local), but Replaces is
+  #             also half of the idiom below, and dpkg wants it alongside Conflicts.
+  #   Conflicts is what actually gets the old package removed. Replaces on its own only permits
+  #             overwriting; it never uninstalls anything, so without this the nine would stay.
+  #   Provides  keeps anything that still depends on the old name satisfiable while that happens.
+  #
+  # Unversioned Provides on purpose. The old packages' own dependencies are pinned exactly
+  # (omc 1.27.1-1 wants libomc (= 1.27.1-1)), which no Provides at a new version could satisfy
+  # either, and those packages are removed in the same transaction anyway.
+  #
+  # Debian names, so this is the DEB block only: the RPM side never had them. Its spec built one
+  # openmodelica-<branch> package under /opt, not a set of component packages.
+  #
+  # A component this build did not produce supersedes nothing, the loop walking only
+  # CPACK_COMPONENTS_ALL. That is the right way round: on armhf there is no simrtcpp, and there
+  # was no libomccpp to replace either, and apt acts on a claim to replace a package whether or
+  # not anything here supplies what it held.
+  set(_om_superseded_omc         "omc-common" "libomc" "libomc-dev")
+  set(_om_superseded_simrt       "libomcsimulation")
+  set(_om_superseded_simrtcpp    "libomccpp")
+  set(_om_superseded_omplot      "libomplot" "libomplot-dev")
+  set(_om_superseded_omsimulator "libomsimulator")
+  set(_om_superseded_omsens      "libomsensplugin")
+  foreach(_om_component IN LISTS CPACK_COMPONENTS_ALL)
+    if(DEFINED _om_superseded_${_om_component})
+      string(TOUPPER "${_om_component}" _om_component_upper)
+      list(JOIN _om_superseded_${_om_component} ", " _om_superseded_list)
+      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_PROVIDES  "${_om_superseded_list}")
+      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_REPLACES  "${_om_superseded_list}")
+      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_CONFLICTS "${_om_superseded_list}")
+    endif()
+  endforeach()
+
   # Set the section control field
   # https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections
   set(CPACK_DEBIAN_PACKAGE_SECTION "math")
