@@ -1,0 +1,66 @@
+// name: resizableConnectFor
+// keywords: NewBackend resizable connect
+// status: correct
+// cflags: --newBackend --resizableArrays
+//
+// Connects in for equations over a resizable parameter are resolved with the
+// array connection handler, the equations stay for equations.
+
+loadString("
+connector Pin
+  Real v;
+  flow Real i;
+end Pin;
+
+model Splitter
+  parameter Integer N = 2;
+  Pin p;
+  Pin n[N];
+equation
+  for ii in 1:N loop
+    connect(p, n[ii]);
+  end for;
+end Splitter;
+
+model Src
+  Pin p;
+equation
+  p.v = time;
+end Src;
+
+model Snk
+  Pin n;
+  Real w(start = 0, fixed = true);
+equation
+  der(w) = n.v;
+  n.i = -1;
+end Snk;
+
+model resizableConnectFor
+  parameter Integer N = 3;
+  Splitter s(N = N);
+  Src src;
+  Snk snk[N];
+equation
+  connect(s.p, src.p);
+  for k in 1:N loop
+    connect(s.n[k], snk[k].n);
+  end for;
+end resizableConnectFor;
+"); getErrorString();
+
+simulate(resizableConnectFor, stopTime = 1); getErrorString();
+abs(val(snk[2].w, 1) - 0.5) < 1e-6;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableConnectFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableConnectFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult

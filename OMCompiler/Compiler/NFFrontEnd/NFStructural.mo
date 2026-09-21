@@ -181,7 +181,8 @@ public
             c := InstNode.component(node);
             var := Component.variability(c);
 
-            if var <= Variability.STRUCTURAL_PARAMETER then
+            if var <= Variability.STRUCTURAL_PARAMETER or ComponentRef.isResizable(exp.cref) then
+              // resizable parameters are evaluated when needed for structural decisions
               isNotFixed := false;
             elseif var == Variability.PARAMETER and
                    (not requireFinal or Component.isFinal(c)) and

@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+resizableConnectFor.mos \
 array_start_vector.mos\
 integerComprehensionParameter.mos\
 arrayResultFile.mos\
