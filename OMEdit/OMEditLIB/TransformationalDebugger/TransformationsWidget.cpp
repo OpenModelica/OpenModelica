@@ -364,6 +364,13 @@ TVariableTreeProxyModel::TVariableTreeProxyModel(QObject *parent)
 {
 }
 
+/*!
+ * \brief TVariableTreeProxyModel::filterAcceptsRow
+ * Reimplementation of QSortFilterProxyModel::filterAcceptsRow to filter the variables in natural order.
+ * \param sourceRow
+ * \param sourceParent
+ * \return
+ */
 bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
   if (!filterRegularExpression().pattern().isEmpty()) {
@@ -392,6 +399,13 @@ bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex 
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
+/*!
+ * \brief TVariableTreeProxyModel::lessThan
+ * Reimplementation of QSortFilterProxyModel::lessThan to sort the variables in natural order.
+ * \param left
+ * \param right
+ * \return
+ */
 bool TVariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
   QVariant l = (left.model() ? left.model()->data(left) : QVariant());
@@ -407,6 +421,44 @@ bool TVariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelInde
 EquationTreeProxyModel::EquationTreeProxyModel(QObject *parent)
   : QSortFilterProxyModel(parent)
 {
+}
+
+/*!
+ * \brief EquationTreeProxyModel::filterAcceptsRow
+ * Reimplementation of QSortFilterProxyModel::filterAcceptsRow to filter the equations in natural order.
+ * \param sourceRow
+ * \param sourceParent
+ * \return
+ */
+bool EquationTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+  const QRegularExpression filter = filterRegularExpression();
+  if (!filter.isValid() || filter.pattern().isEmpty()) {
+    return true;
+  }
+
+  QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+  if (!index.isValid()) {
+    return false;
+  }
+
+  /* Keep parent equations visible when one of their nested equations matches. */
+  const int rows = sourceModel()->rowCount(index);
+  for (int i = 0; i < rows; ++i) {
+    if (filterAcceptsRow(i, index)) {
+      return true;
+    }
+  }
+
+  const EquationTreeItem *pEquationTreeItem =
+      static_cast<const EquationTreeItem*>(index.internalPointer());
+  const OMEquation *pOMEquation = pEquationTreeItem ? pEquationTreeItem->getOMEquation() : nullptr;
+  if (!pOMEquation) {
+    return false;
+  }
+
+  return filter.match(QString::number(pOMEquation->index)).hasMatch()
+      || filter.match(pOMEquation->tag).hasMatch();
 }
 
 /*!
@@ -963,6 +1015,12 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   /* Equations Heading */
   Label *pEquationBrowserLabel = new Label(tr("Equations"));
   pEquationBrowserLabel->setObjectName("LabelWithBorder");
+  mpEquationSearchFilters = new TreeSearchFilters(this);
+  mpEquationSearchFilters->getFilterTextBox()->setPlaceholderText(tr("Filter Equations"));
+  connect(mpEquationSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findEquations()));
   /* Equations tree view */
   mpEquationTreeModel = new EquationTreeModel(mEquations, this);
   mpEquationProxyModel = new EquationTreeProxyModel(this);
@@ -971,11 +1029,14 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpEquationTreeView = new EquationTreeView(this);
   mpEquationTreeView->setModel(mpEquationProxyModel);
   connect(mpEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
+  connect(mpEquationSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpEquationTreeView, SLOT(expandAll()));
+  connect(mpEquationSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpEquationTreeView, SLOT(collapseAll()));
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
   pEquationsGridLayout->addWidget(pEquationBrowserLabel, 0, 0);
-  pEquationsGridLayout->addWidget(mpEquationTreeView, 1, 0);
+  pEquationsGridLayout->addWidget(mpEquationSearchFilters, 1, 0);
+  pEquationsGridLayout->addWidget(mpEquationTreeView, 2, 0);
   QFrame *pEquationsFrame = new QFrame;
   pEquationsFrame->setLayout(pEquationsGridLayout);
   /* defines tree widget */
@@ -1378,7 +1439,17 @@ void TransformationsWidget::loadTransformations()
   signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
-mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
+  mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
+  signalsState = mpEquationSearchFilters->getFilterTextBox()->blockSignals(true);
+  mpEquationSearchFilters->getFilterTextBox()->clear();
+  mpEquationSearchFilters->getFilterTextBox()->blockSignals(signalsState);
+  signalsState = mpEquationSearchFilters->getSyntaxComboBox()->blockSignals(true);
+  mpEquationSearchFilters->getSyntaxComboBox()->setCurrentIndex(0);
+  mpEquationSearchFilters->getSyntaxComboBox()->blockSignals(signalsState);
+  signalsState = mpEquationSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
+  mpEquationSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
+  mpEquationSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
+  mpEquationProxyModel->setFilterRegularExpression(QRegularExpression());
   /* clear equation operations tree */
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* clear TSourceEditor */
@@ -1761,6 +1832,23 @@ void TransformationsWidget::findVariables()
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpTVariablesTreeView->expandAll();
+  }
+}
+
+/*!
+ * \brief TransformationsWidget::findEquations
+ * Finds the equations in the TransformationsWidget Equation Browser.
+ */
+void TransformationsWidget::findEquations()
+{
+  const QString findText = mpEquationSearchFilters->getFilterTextBox()->text();
+  const Qt::CaseSensitivity caseSensitivity = mpEquationSearchFilters->getCaseSensitiveCheckBox()->isChecked()
+                                              ? Qt::CaseSensitive : Qt::CaseInsensitive;
+  const TreeSearchFilters::FilterSyntax syntax = mpEquationSearchFilters->getFilterSyntax();
+  const QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
+  mpEquationProxyModel->setFilterRegularExpression(regExp);
+  if (!findText.isEmpty()) {
+    mpEquationTreeView->expandAll();
   }
 }
 
