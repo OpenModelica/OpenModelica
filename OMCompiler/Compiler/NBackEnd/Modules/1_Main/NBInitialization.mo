@@ -126,6 +126,7 @@ public
             (variables, initialVars, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete State");
             (variables, initialVars, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Clocked State");
             (parameter_eqs, parameter_vars) := createParameterEquations(varData.parameters, new_iters, eqData.uniqueIndex, {}, {});
+            (parameter_eqs, parameter_vars) := createParameterEquations(varData.resizables, new_iters, eqData.uniqueIndex, parameter_eqs, parameter_vars);
             (parameter_eqs, parameter_vars) := createParameterEquations(varData.records, new_iters, eqData.uniqueIndex, parameter_eqs, parameter_vars);
             (parameter_eqs, parameter_vars) := createParameterEquations(varData.external_objects, new_iters, eqData.uniqueIndex, parameter_eqs, parameter_vars);
 
