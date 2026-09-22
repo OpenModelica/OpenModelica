@@ -1,0 +1,58 @@
+// name: parameterAssignedOutsideInitial
+// keywords: NewBackend indexReduction
+// status: correct
+// cflags: --newBackend
+//
+// A parameter may only be assigned by an equation in the initial equation
+// section. Assigning it in the regular equation section makes the DAE
+// structurally singular; this used to be reported as a confusing internal
+// error instead of naming the actual problem.
+
+loadString("
+record Per
+  Real pressure;
+  Real power;
+  Real dp(fixed = false);
+end Per;
+
+function getPeakDp
+  input Real pressure;
+  input Real power;
+  output Real dp;
+algorithm
+  dp := pressure * 2 + power;
+end getPeakDp;
+
+model parameterAssignedOutsideInitial
+  parameter Per per[2](pressure = {1.0, 2.0}, power = {3.0, 4.0});
+equation
+  for i in 1:2 loop
+    per[i].dp = getPeakDp(per[i].pressure, per[i].power);
+  end for;
+end parameterAssignedOutsideInitial;
+"); getErrorString();
+
+buildModel(parameterAssignedOutsideInitial); getErrorString();
+// Result:
+// true
+// ""
+// {"", ""}
+// "Error: NBResolveSingularities.indexReduction failed because there was not enough state candidates to balance out the constraint equations.
+// The parameter per[$i1].dp is assigned by a non-initial equation, such an assignment is only valid in the initial equation section.
+// Constraint Equations (2/4)
+// ****************************
+// (1)       [FOR-] (2) ($RES_AUX_2)
+// (1)       [----] for $i1 in 1:2 loop
+// (1)       [----]   [SCAL] (1) $FUN_1[$i1] = 2.0 * per[$i1].pressure + per[$i1].power; ($RES_AUX_3)
+// (1)       [----] end for;
+// (2)       [FOR-] (2) ($RES_SIM_0)
+// (2)       [----] for $i1 in 1:2 loop
+// (2)       [----]   [SCAL] (1) per[$i1].dp = $FUN_1[$i1]; ($RES_SIM_1)
+// (2)       [----] end for;
+//
+//
+// State Candidate Variables (1/2)
+// *********************************
+// (1)       [ALGB] (2) Real[2] $FUN_1
+// "
+// endResult

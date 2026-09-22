@@ -42,6 +42,8 @@ public
   import Module = NBModule;
 
 protected
+  import Partition = NBPartition;
+
   // NF imports
   import NFBackendExtension.{BackendInfo, VariableAttributes, StateSelect};
   import ComponentRef = NFComponentRef;
@@ -143,6 +145,7 @@ public
     list<Pointer<Equation>> alias_eqns;
 
     Boolean debug = false;
+    String hint;
   algorithm
     // get the mapping and fail if there is none
     mapping := match mapping_opt
@@ -176,15 +179,18 @@ public
       // state candidates and constraint equations are lists of slices
       // adjacency matrix and arrays are only full based
       // slice them before matching
-      (constraint_ptrs, candidate_ptrs, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
+      (constraint_ptrs, candidate_ptrs, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping, kind);
 
       for eq in constraint_eqns loop
         UnorderedMap.add(Equation.getEqnName(Slice.getT(eq)), UnorderedSet.fromList(eq.indices, Util.id, intEq), slice_map);
       end for;
 
       if VariablePointers.scalarSize(candidate_ptrs) < sum(Slice.size(eq, function Equation.size(resize = true)) for eq in constraint_eqns) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
-          + EquationPointers.toString(constraint_ptrs, "Constraint") + "\n" + VariablePointers.toString(candidate_ptrs, "State Candidate")});
+        // a common cause: a non-initial equation assigns a parameter, which is only a valid unknown in an initial equation
+        hint := nonInitialParameterHint(EquationPointers.toList(constraint_ptrs));
+        Error.addCompilerError(getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations."
+          + (if stringEmpty(hint) then "\nThe model is structurally singular and could not be resolved." else "\n" + hint) + "\n"
+          + EquationPointers.toString(constraint_ptrs, "Constraint") + "\n" + VariablePointers.toString(candidate_ptrs, "State Candidate"));
        fail();
       end if;
 
@@ -503,6 +509,28 @@ public
   end balanceInitialization;
 
 protected
+  function nonInitialParameterHint
+    "checks if a non-initial equation assigns a parameter, which is only allowed in an initial equation"
+    input list<Pointer<Equation>> eqns;
+    output String hint = "";
+  protected
+    ComponentRef cref;
+  algorithm
+    for eqn_ptr in eqns loop
+      if not Equation.isInitial(eqn_ptr) then
+        () := match Equation.getLHS(Pointer.access(eqn_ptr))
+          case SOME(Expression.CREF(cref = cref)) guard(BVariable.checkCref(cref, BVariable.isParamOrConst, sourceInfo()))
+            algorithm
+              hint := "The parameter " + ComponentRef.toString(cref) + " is assigned by a non-initial equation, "
+                + "such an assignment is only valid in the initial equation section.";
+            then ();
+          else ();
+        end match;
+      end if;
+      if not stringEmpty(hint) then return; end if;
+    end for;
+  end nonInitialParameterHint;
+
   function getMSSS
     "finds the minimal structurally singular subsets"
     input Adjacency.IntMatrix m               "eqn -> vars";
@@ -627,6 +655,7 @@ protected
     input EquationPointers equations;
     input list<Integer> marked_eqns;
     input Adjacency.Mapping mapping;
+    input Partition.Kind kind;
     output EquationPointers constr = EquationPointers.empty();
     output VariablePointers states = VariablePointers.empty();
     output list<Slice<EquationPointer>> sliced_constr = {};
@@ -636,6 +665,7 @@ protected
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
     Pointer<Variable> var_ptr;
+    Boolean initial_ = Partition.kindIsInitial(kind);
   algorithm
     // collect all relevant constraint equations
     for eqn in marked_eqns loop
@@ -649,7 +679,7 @@ protected
       eqn_ptr := EquationPointers.getEqnAt(equations, eqn);
       constr  := EquationPointers.add(eqn_ptr, constr);
       sliced_constr := Slice.SLICE(eqn_ptr, eqn_slices[eqn]) :: sliced_constr;
-      for candidate in Equation.collectCrefs(Pointer.access(eqn_ptr), getStateCandidate) loop
+      for candidate in Equation.collectCrefs(Pointer.access(eqn_ptr), function getStateCandidate(initial_ = initial_)) loop
         UnorderedSet.add(candidate, state_candidates);
       end for;
     end for;
@@ -664,13 +694,15 @@ protected
   function getStateCandidate
     input output ComponentRef cref          "the cref to check";
     input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
+    input Boolean initial_                  "true in the initialization, fixed=false parameters are valid candidates there";
   protected
     Pointer<Variable> var;
     function getStateCandidateVar
       input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
+      input Boolean initial_;
     algorithm
-      if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var) or BVariable.isDummyState(var) or (BVariable.isForcedState(var) and not BVariable.isStateSelect(var, StateSelect.PREFER)) )) then
+      if (BVariable.isContinuous(var, initial_) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var) or BVariable.isDummyState(var) or (BVariable.isForcedState(var) and not BVariable.isStateSelect(var, StateSelect.PREFER)) )) then
         UnorderedSet.add(BVariable.getVarName(var), acc);
       end if;
     end getStateCandidateVar;
@@ -678,10 +710,10 @@ protected
     var := BVariable.getVarPointer(cref, sourceInfo());
     if BVariable.isRecord(var) then
       for child in BVariable.getRecordChildrenCells(var) loop
-        getStateCandidateVar(PointerWeak.upgrade(child), acc);
+        getStateCandidateVar(PointerWeak.upgrade(child), acc, initial_);
       end for;
     else
-      getStateCandidateVar(var, acc);
+      getStateCandidateVar(var, acc, initial_);
     end if;
   end getStateCandidate;
 
