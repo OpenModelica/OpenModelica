@@ -1,0 +1,93 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// The MSL 4.1.0 results no longer match the MSL 3.2.1 reference file. Simulate the
+// model without verifying it.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+setCommandLineOptions("-d=backenddaeinfo,stateselection --maxSizeLinearTearing=4000"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic);
+compareVars :=
+{
+   "load.phi",
+   "load.w",
+   "filter.x[1]",
+   "filter.x[2]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// true
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
+// {"load.phi", "load.w", "filter.x[1]", "filter.x[2]"}
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic', options = '', outputFormat = 'mat', variableFilter = 'time|load.phi|load.w|filter.x.1.|filter.x.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 9001
+//  * Number of variables: 9001
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1500
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 336 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (3051):
+//  * Single equations (assignments): 3020
+//  * Array equations: 30
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (not torn): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {(1,328,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 399
+//  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (1551):
+//  * Single equations (assignments): 1550
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (not torn): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {(1,231,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
+//
+// "true
+// "
+// ""
+// endResult

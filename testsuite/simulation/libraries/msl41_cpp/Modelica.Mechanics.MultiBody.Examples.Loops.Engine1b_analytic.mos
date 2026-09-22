@@ -1,0 +1,47 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4 lowercased every component of this model (Inertia -> inertia, B1 -> b1,
+// Crank1 -> crank1, ...), so not one variable of the MSL 3.2.1 reference file is
+// left to compare against. Simulate the model without verifying it.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+referenceFile := "no-msl41-reference-file.mat";
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic);
+compareVars :=
+{
+   "inertia.phi",
+   "inertia.w"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "no-msl41-reference-file.mat"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic
+// {"inertia.phi", "inertia.w"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 0.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic', options = '', outputFormat = 'mat', variableFilter = 'time|inertia.phi|inertia.w', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic_res.mat
+// Note: Reference file no-msl41-reference-file.mat does not exist. Cannot determine if the result improved!
+// "true
+// "
+// ""
+// endResult

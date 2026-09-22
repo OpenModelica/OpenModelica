@@ -20,7 +20,7 @@ openmodelica/bootstrapping/theirs
 # Link left behind by BouncingBall_OMEdit_flags.mos: runtest.pl links loadFile("../BouncingBall.mo") one directory above its sandbox
 openmodelica/cppruntime/omedit/BouncingBall.mo
 /runtest.db.*
-simulation/libraries/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.csv
+simulation/libraries/msl41/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.csv
 simulation/modelica/solver/externalInput.csv
 # Reference files are stored as .mat.xz
 ReferenceFiles/**/*.mat

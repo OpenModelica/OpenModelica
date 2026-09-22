@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.Polyphase.Examples.TransformerYD
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.MultiPhase.Examples.TransformerYD";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Polyphase.Examples.TransformerYD);
+compareVars :=
+{
+   "transformerL.inductor[1].i",
+   "transformerL.inductor[2].i",
+   "transformerL.inductor[3].i"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.MultiPhase.Examples.TransformerYD"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Polyphase.Examples.TransformerYD
+// {"transformerL.inductor[1].i", "transformerL.inductor[2].i", "transformerL.inductor[3].i"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Polyphase.Examples.TransformerYD', options = '', outputFormat = 'mat', variableFilter = 'time|transformerL.inductor.1..i|transformerL.inductor.2..i|transformerL.inductor.3..i', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Polyphase.Examples.TransformerYD_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,52 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMR_Inverter
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMR_Inverter);
+compareVars :=
+{
+   "loadInertiaE.phi",
+   "loadInertiaE.w",
+   "loadInertiaM.phi",
+   "loadInertiaM.w",
+   "smrE.idq_rr[1]",
+   "smrE.idq_rr[2]",
+   "smrE.idq_sr[1]",
+   "smrE.idq_sr[2]",
+   "smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "vfController.x"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMR_Inverter
+// {"loadInertiaE.phi", "loadInertiaE.w", "loadInertiaM.phi", "loadInertiaM.w", "smrE.idq_rr[1]", "smrE.idq_rr[2]", "smrE.idq_sr[1]", "smrE.idq_sr[2]", "smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "vfController.x"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMR_Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|loadInertiaE.phi|loadInertiaE.w|loadInertiaM.phi|loadInertiaM.w|smrE.idq_rr.1.|smrE.idq_rr.2.|smrE.idq_sr.1.|smrE.idq_sr.2.|smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|vfController.x', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMR_Inverter_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

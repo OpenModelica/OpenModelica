@@ -1,0 +1,47 @@
+// name:     Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4.1.0 with the Cpp runtime: the pre-optimization module clockPartitioning
+// fails on the Complex connector equations of this model, so only test that it
+// instantiates.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar";
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar);
+compareVars :=
+{
+   "voltageSource.plug_p.reference.gamma",
+   "voltageSource.voltageSource[2].pin_p.reference.gamma",
+   "voltageSource.voltageSource[3].pin_p.reference.gamma"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar"
+// OpenModelicaModelTesting.Kind.Instantiation
+// Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar
+// {"voltageSource.plug_p.reference.gamma", "voltageSource.voltageSource[2].pin_p.reference.gamma", "voltageSource.voltageSource[3].pin_p.reference.gamma"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

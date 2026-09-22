@@ -1,0 +1,47 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Magnetic.FundamentalWave.Examples.Components.MultiPhaseInductance";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance);
+compareVars :=
+{
+   "converter_m.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "converter_m.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "inductor_e.inductor[1].i",
+   "inductor_e.inductor[2].i",
+   "inductor_e.inductor[3].i"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Magnetic.FundamentalWave.Examples.Components.MultiPhaseInductance"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance
+// {"converter_m.singlePhaseElectroMagneticConverter[1].Phi.re", "converter_m.singlePhaseElectroMagneticConverter[2].Phi.im", "inductor_e.inductor[1].i", "inductor_e.inductor[2].i", "inductor_e.inductor[3].i"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance', options = '', outputFormat = 'mat', variableFilter = 'time|converter_m.singlePhaseElectroMagneticConverter.1..Phi.re|converter_m.singlePhaseElectroMagneticConverter.2..Phi.im|inductor_e.inductor.1..i|inductor_e.inductor.2..i|inductor_e.inductor.3..i', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

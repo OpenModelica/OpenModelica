@@ -1,0 +1,48 @@
+// name:     Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Initialize";
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize);
+compareVars :=
+{
+   "aimc.idq_rr[1]",
+   "aimc.idq_rr[2]",
+   "aimc.lssigma.i_[1]",
+   "aimc.lssigma.i_[2]",
+   "aimc.lszero.i",
+   "loadInertia.phi",
+   "loadInertia.w"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Initialize"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize
+// {"aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.lssigma.i_[1]", "aimc.lssigma.i_[2]", "aimc.lszero.i", "loadInertia.phi", "loadInertia.w"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.lssigma.i_.1.|aimc.lssigma.i_.2.|aimc.lszero.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize_res.mat
+// "true
+// "
+// ""
+// endResult

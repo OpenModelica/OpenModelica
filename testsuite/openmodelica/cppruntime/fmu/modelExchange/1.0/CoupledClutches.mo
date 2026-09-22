@@ -1,19 +1,19 @@
 model CoupledClutches "Drive train with 3 dynamically coupled clutches"
   extends Modelica.Icons.Example;
-  parameter Modelica.SIunits.Frequency freqHz = 0.2 "Frequency of sine function to invoke clutch1";
-  parameter Modelica.SIunits.Time T2 = 0.4 "Time when clutch2 is invoked";
-  parameter Modelica.SIunits.Time T3 = 0.9 "Time when clutch3 is invoked";
+  parameter Modelica.Units.SI.Frequency freqHz = 0.2 "Frequency of sine function to invoke clutch1";
+  parameter Modelica.Units.SI.Time T2 = 0.4 "Time when clutch2 is invoked";
+  parameter Modelica.Units.SI.Time T3 = 0.9 "Time when clutch3 is invoked";
   Modelica.Mechanics.Rotational.Components.Inertia J1(J = 1, phi(fixed = true, start = 0), w(start = 10, fixed = true)) annotation(Placement(transformation(extent = {{-70, -10}, {-50, 10}}, rotation = 0)));
   Modelica.Mechanics.Rotational.Sources.Torque torque(useSupport = true) annotation(Placement(transformation(extent = {{-100, -10}, {-80, 10}}, rotation = 0)));
   Modelica.Mechanics.Rotational.Components.Clutch clutch1(peak = 1.1, fn_max = 20) annotation(Placement(transformation(extent = {{-40, -10}, {-20, 10}}, rotation = 0)));
-  Modelica.Blocks.Sources.Sine sin1(amplitude = 10, freqHz = 5) annotation(Placement(transformation(extent = {{-130, -10}, {-110, 10}}, rotation = 0)));
+  Modelica.Blocks.Sources.Sine sin1(amplitude = 10, f = 5) annotation(Placement(transformation(extent = {{-130, -10}, {-110, 10}}, rotation = 0)));
   Modelica.Blocks.Sources.Step step1(startTime = T2) annotation(Placement(transformation(origin = {25, 35}, extent = {{-5, -5}, {15, 15}}, rotation = 270)));
   Modelica.Mechanics.Rotational.Components.Inertia J2(J = 1, phi(fixed = true, start = 0), w(fixed = true, start = 0)) annotation(Placement(transformation(extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   Modelica.Mechanics.Rotational.Components.Clutch clutch2(peak = 1.1, fn_max = 20) annotation(Placement(transformation(extent = {{20, -10}, {40, 10}}, rotation = 0)));
   Modelica.Mechanics.Rotational.Components.Inertia J3(J = 1, phi(fixed = true, start = 0), w(fixed = true, start = 0)) annotation(Placement(transformation(extent = {{50, -10}, {70, 10}}, rotation = 0)));
   Modelica.Mechanics.Rotational.Components.Clutch clutch3(peak = 1.1, fn_max = 20) annotation(Placement(transformation(extent = {{80, -10}, {100, 10}}, rotation = 0)));
   Modelica.Mechanics.Rotational.Components.Inertia J4(J = 1, phi(fixed = true, start = 0), w(fixed = true, start = 0)) annotation(Placement(transformation(extent = {{110, -10}, {130, 10}}, rotation = 0)));
-  Modelica.Blocks.Sources.Sine sin2(amplitude = 1, freqHz = freqHz, phase = 1.57) annotation(Placement(transformation(origin = {-35, 35}, extent = {{-5, -5}, {15, 15}}, rotation = 270)));
+  Modelica.Blocks.Sources.Sine sin2(amplitude = 1, f = freqHz, phase = 1.57) annotation(Placement(transformation(origin = {-35, 35}, extent = {{-5, -5}, {15, 15}}, rotation = 270)));
   input Real step2;
   output Real J1_w1, J2_w1, J3_w1, J4_w1;
   Modelica.Mechanics.Rotational.Components.Fixed fixed annotation(Placement(transformation(extent = {{-100, -30}, {-80, -10}}, rotation = 0)));
