@@ -1087,7 +1087,7 @@ fn run() -> Result<(), String> {
                 version: version.to_string(),
                 source: sources.url(name, version),
                 support: sources.support(name, version).unwrap_or_default().to_string(),
-                tested: tested.url(name, version),
+                tested: tested.report(name, version),
             }
         })
         .collect();

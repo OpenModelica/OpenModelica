@@ -643,8 +643,8 @@ pub struct LibraryEntry<'a> {
     pub source: Option<String>,
     /// The package index' support level, or empty when it records none.
     pub support: String,
-    /// The OpenModelicaLibraryTesting report for this version.
-    pub tested: Option<String>,
+    /// The test report for this version, if one is published.
+    pub tested: Option<crate::packages::Report>,
 }
 
 /// The package index' support levels, best first, with the label to show.
@@ -762,10 +762,11 @@ pub fn render_index(
         };
         let tested = match (tested_column, &entry.tested) {
             (false, _) => String::new(),
-            (true, Some(url)) => format!(
+            (true, Some(report)) => format!(
                 "<td class=\"om-wide om-source\"><a href=\"{}\" rel=\"noreferrer\" \
-                 title=\"OpenModelicaLibraryTesting report\">{REPORT_MARK}</a></td>",
-                escape(url)
+                 title=\"{}\">{REPORT_MARK}</a></td>",
+                escape(&report.url),
+                report.title
             ),
             (true, None) => String::from("<td class=\"om-wide\"></td>"),
         };
