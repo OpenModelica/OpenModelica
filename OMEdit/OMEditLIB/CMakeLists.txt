@@ -607,7 +607,7 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
     set(_ls_assets
         "${_ls_asset}|${_ls_sha256}"
         "tree-sitter-modelica.wasm|fb9e1f0c33288fc301f50bff88bad28ebf2f79365b23482855a1a9e756c78e56"
-        "web-tree-sitter.wasm|e8cddb21e0d899ff8613925742f6475838068a0d1b2405faa7087c08151ee3a2")
+        "web-tree-sitter.wasm|c03bccdc3b448a32848f5ae327e209c982bbb0840d43eec8bc2d5759544a1ed3")
 
     # Keyed by version so bumping MODELICA_LS_VERSION re-downloads rather than
     # reusing stale files.
