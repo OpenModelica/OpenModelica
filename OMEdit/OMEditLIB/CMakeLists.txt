@@ -467,7 +467,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
 #
 # The build downloads the standalone server for the target platform from the
 # modelica-language-server release named by MODELICA_LS_VERSION and installs it
-# beside OMEdit's translations, in <datarootdir>/omedit/ls/modelica. It brings
+# in <prefix>/lib/omedit/ls/modelica (see MODELICA_LS_INSTALL_DIR below). It brings
 # its own runtime, so nothing else has to be installed to use it -- but it does
 # not embed the tree-sitter grammar, so the two .wasm files are installed with
 # it and must stay in the same directory.
@@ -494,15 +494,14 @@ set(MODELICA_LS_DIR ""
 # OMEdit is tested with rather than always taking the newest one.
 target_compile_definitions(OMEditLib PRIVATE MODELICA_LS_VERSION="${MODELICA_LS_VERSION}")
 
-# Beside Resources/nls above. findBundledServer() looks here through
-# <prefix>/share/omedit, which holds on Windows too: OMEdit.exe lives in bin/,
-# so bin/../share/omedit resolves to the same place. OMEditGUI stages the same
-# files next to the built executable, for running without installing.
-#
-# One directory per language under ls/, so a server for another language can be
-# installed beside this one rather than sharing a directory with it -- the
-# servers load runtime files from their own directory by name.
-set(MODELICA_LS_INSTALL_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omedit/ls/modelica)
+# lib, not share: the server is a compiled executable, which share/ may not hold
+# (lintian's arch-dependent-file-in-usr-share). Kept in step with
+# findBundledServer() in OMEditLIB/LSP/ModelicaLSPClient.cpp.
+if(WIN32)
+  set(MODELICA_LS_INSTALL_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omedit/ls/modelica)
+else()
+  set(MODELICA_LS_INSTALL_DIR lib/omedit/ls/modelica)
+endif()
 
 if(WIN32)
   set(MODELICA_LS_EXE_NAME "modelica-language-server.exe")

@@ -86,27 +86,35 @@ QJsonObject ModelicaLSPClient::initializationOptions(const QStringList &librarie
  *
  * Checked in order: next to the executable, which covers a Windows install and
  * a run straight out of the build tree, where the build stages a copy; then
- * ../share/omedit, the Linux and macOS install layout; and finally the share
- * directory of the OpenModelica installation OMEdit is talking to.
+ * ../lib/omedit, the Linux and macOS install layout; then ../share/omedit,
+ * which is where installations made before the move still have it; and finally
+ * the same two directories of the OpenModelica installation OMEdit is talking
+ * to.
  */
 QString ModelicaLSPClient::findBundledServer()
 {
   QDir appDir(QCoreApplication::applicationDirPath());
 
-  // Installed by the build into <prefix>/share/omedit/ls/modelica, beside the
-  // translations. One directory per language, so another server can be
-  // installed beside this one.
+  // Installed by the build into <prefix>/lib/omedit/ls/modelica -- lib, not
+  // share, because it is a compiled executable (see MODELICA_LS_INSTALL_DIR in
+  // OMEditLIB/CMakeLists.txt). One directory per language, so another server
+  // can be installed beside this one.
 #ifdef Q_OS_WIN
   const QString binaryName = QStringLiteral("ls/modelica/modelica-language-server.exe");
 #else
   const QString binaryName = QStringLiteral("ls/modelica/modelica-language-server");
 #endif
 
+  // share/omedit is still searched, and has to be: it is where the server sat
+  // before it moved to lib/omedit, so an OMEdit upgraded over an older
+  // installation would otherwise stop finding a server that is still there.
   QStringList directories;
   directories << appDir.absolutePath()
+              << QDir::cleanPath(appDir.filePath(QStringLiteral("../lib/omedit")))
               << QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit")));
   if (!Helper::OpenModelicaHome.isEmpty()) {
-    directories << QDir::cleanPath(Helper::OpenModelicaHome + QStringLiteral("/share/omedit"));
+    directories << QDir::cleanPath(Helper::OpenModelicaHome + QStringLiteral("/lib/omedit"))
+                << QDir::cleanPath(Helper::OpenModelicaHome + QStringLiteral("/share/omedit"));
   }
 
   for (const QString &directory : directories) {
