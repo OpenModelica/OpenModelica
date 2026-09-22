@@ -180,17 +180,25 @@ gnuplot-nox, xsltproc")
   # packages was enough for the ones whose name survived; without what follows, nothing would
   # supersede these nine and an upgraded system would keep them installed for ever.
   #
-  # Three fields, and all three are needed:
+  # Three fields:
   #   Replaces  lets this package own files the old one owns. There is in fact no overlap (the
   #             old packages install under /usr and these under /usr/local), but Replaces is
   #             also half of the idiom below, and dpkg wants it alongside Conflicts.
   #   Conflicts is what actually gets the old package removed. Replaces on its own only permits
-  #             overwriting; it never uninstalls anything, so without this the nine would stay.
+  #             overwriting; it never uninstalls anything.
   #   Provides  keeps anything that still depends on the old name satisfiable while that happens.
   #
-  # Unversioned Provides on purpose. The old packages' own dependencies are pinned exactly
-  # (omc 1.27.1-1 wants libomc (= 1.27.1-1)), which no Provides at a new version could satisfy
-  # either, and those packages are removed in the same transaction anyway.
+  # The Provides carry a version, and they have to. The old packages depend on each other with
+  # version constraints -- libomc-dev wants `libomc (<< 20000)`, omedit wants
+  # `libomc (>= <the nightly it was built from>)` -- and an *unversioned* Provides satisfies no
+  # versioned dependency at all. With one, removing libomc leaves libomc-dev unsatisfiable, so
+  # apt has to remove libomc-dev too; when it cannot (see the -dev note below) it gives up and
+  # holds omc back, and with omc everything that depends on it. A versioned Provides satisfies
+  # those constraints instead, and the removals stop cascading.
+  #
+  # It does not satisfy everything: 1.27.1's omc wants `libomc (= 1.27.1-1)` exactly, which no
+  # Provides at a newer version can meet. That is harmless -- that omc is itself upgraded in the
+  # same transaction -- but it is the reason this cannot be relied on alone.
   #
   # Debian names, so this is the DEB block only: the RPM side never had them. Its spec built one
   # openmodelica-<branch> package under /opt, not a set of component packages.
@@ -199,19 +207,61 @@ gnuplot-nox, xsltproc")
   # CPACK_COMPONENTS_ALL. That is the right way round: on armhf there is no simrtcpp, and there
   # was no libomccpp to replace either, and apt acts on a claim to replace a package whether or
   # not anything here supplies what it held.
-  set(_om_superseded_omc         "omc-common" "libomc" "libomc-dev")
+  #
+  # The old library packages, which nothing installs on purpose: apt pulled them in as
+  # dependencies, so they are marked automatic and apt is willing to remove them to satisfy a
+  # Conflicts. All three fields, and they are gone after the upgrade.
+  set(_om_superseded_omc         "omc-common" "libomc")
   set(_om_superseded_simrt       "libomcsimulation")
   set(_om_superseded_simrtcpp    "libomccpp")
-  set(_om_superseded_omplot      "libomplot" "libomplot-dev")
+  set(_om_superseded_omplot      "libomplot")
   set(_om_superseded_omsimulator "libomsimulator")
   set(_om_superseded_omsens      "libomsensplugin")
+
+  ## The -dev packages of the old layout: superseded, but deliberately not conflicted ############
+  # libomc-dev and libomplot-dev are the two packages of the old layout that nothing else pulls
+  # in -- no package depends on or recommends them, so a machine that has them has them because
+  # somebody asked for the headers, and apt has them marked manual.
+  #
+  # That mark is the whole problem. apt will remove an automatically installed package to
+  # satisfy Conflicts; it will not remove a manually installed one. It keeps the conflicting
+  # package back instead, silently. With libomc-dev installed, a Conflicts on it does not
+  # retire it -- it strands omc at the old version, and with omc every package that depends on
+  # it, which is omedit, omnotebook, omshell, drmodelica, drcontrol and the metapackage. Ten
+  # packages held back and no error, on exactly the developer machines most likely to have the
+  # headers installed.
+  #
+  # So these two get Provides and Replaces but no Conflicts. Nothing is lost by that:
+  #   * There is no file overlap to protect against. They installed headers and .so symlinks
+  #     under /usr/include and /usr/lib; everything here goes under /usr/local. Conflicts was
+  #     never resolving a real collision for them, only forcing a removal.
+  #   * They do not survive the upgrade regardless. Each depends on its library package
+  #     (libomc-dev on libomc, libomplot-dev on libomplot), which *is* conflicted and is removed
+  #     in the same transaction. apt takes the -dev package with it rather than leave the
+  #     dependency unsatisfied.
+  # The upgrade then resolves, which is the point: it is better to leave a stale -dev package
+  # behind for `apt autoremove` than to hold the entire tool chain back over it.
+  set(_om_superseded_nodelete_omc    "libomc-dev")
+  set(_om_superseded_nodelete_omplot "libomplot-dev")
+
   foreach(_om_component IN LISTS CPACK_COMPONENTS_ALL)
-    if(DEFINED _om_superseded_${_om_component})
-      string(TOUPPER "${_om_component}" _om_component_upper)
-      list(JOIN _om_superseded_${_om_component} ", " _om_superseded_list)
-      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_PROVIDES  "${_om_superseded_list}")
-      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_REPLACES  "${_om_superseded_list}")
-      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_CONFLICTS "${_om_superseded_list}")
+    string(TOUPPER "${_om_component}" _om_component_upper)
+    set(_om_superseded_all ${_om_superseded_${_om_component}}
+                           ${_om_superseded_nodelete_${_om_component}})
+    if(_om_superseded_all)
+      # Replaces names the packages bare; Provides pins each to this build's version.
+      list(JOIN _om_superseded_all ", " _om_superseded_list)
+      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_REPLACES "${_om_superseded_list}")
+      set(_om_provides_list "")
+      foreach(_om_superseded IN LISTS _om_superseded_all)
+        list(APPEND _om_provides_list "${_om_superseded} (= ${_om_deb_version})")
+      endforeach()
+      list(JOIN _om_provides_list ", " _om_provides_joined)
+      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_PROVIDES "${_om_provides_joined}")
+    endif()
+    if(_om_superseded_${_om_component})
+      list(JOIN _om_superseded_${_om_component} ", " _om_conflicts_list)
+      set(CPACK_DEBIAN_${_om_component_upper}_PACKAGE_CONFLICTS "${_om_conflicts_list}")
     endif()
   endforeach()
 
