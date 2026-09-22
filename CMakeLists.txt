@@ -190,7 +190,11 @@ omc_add_to_report(OM_RUST_RESULT_WRITERS)
 ## for some reason. However, it is even more important with OMC because we generate C sources
 ## from MetaModelica files whenever they change. This causes CMake to issue compilations of
 ## dependent source files because headers are changed. ccache will essentially eliminate that cost.
-omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
+omc_option(OM_USE_CCACHE "Use a compiler cache to speedup compilations." ON)
+set(OM_COMPILER_CACHE "" CACHE STRING
+    "Compiler cache to use: ccache, sccache or none. Empty follows OM_USE_CCACHE; an explicit value overrides it.")
+set_property(CACHE OM_COMPILER_CACHE PROPERTY STRINGS "" ccache sccache none)
+omc_add_to_report(OM_COMPILER_CACHE)
 
 
 ### Standards ###############################################################################################
@@ -219,15 +223,28 @@ omc_add_to_report(CMAKE_BUILD_TYPE)
 ## Set position independent code for everything built in OpenModelica.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(OM_USE_CCACHE)
-  find_program(CCACHE_PROGRAM ccache)
-  if(CCACHE_PROGRAM)
-    message(STATUS "Found ccache. It will be used for compilation C/C++ sources")
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-    set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
-    omc_add_to_report(CCACHE_PROGRAM)
+if(OM_COMPILER_CACHE STREQUAL "")
+  if(OM_USE_CCACHE)
+    set(_om_compiler_cache ccache)
   else()
-    message(FATAL_ERROR "ccache program not found. It is highly recommended to use ccache for compilation of OpenModelica. Please install ccache and rerun configuration.
+    set(_om_compiler_cache none)
+  endif()
+else()
+  set(_om_compiler_cache ${OM_COMPILER_CACHE})
+endif()
+
+if(NOT _om_compiler_cache STREQUAL "none")
+  if(NOT _om_compiler_cache MATCHES "^(ccache|sccache)$")
+    message(FATAL_ERROR "OM_COMPILER_CACHE must be ccache, sccache or none, not '${_om_compiler_cache}'.")
+  endif()
+  find_program(COMPILER_CACHE_PROGRAM ${_om_compiler_cache})
+  if(COMPILER_CACHE_PROGRAM)
+    message(STATUS "Found ${_om_compiler_cache}. It will be used for compilation C/C++ sources")
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${COMPILER_CACHE_PROGRAM})
+    set(CMAKE_C_COMPILER_LAUNCHER   ${COMPILER_CACHE_PROGRAM})
+    omc_add_to_report(COMPILER_CACHE_PROGRAM)
+  else()
+    message(FATAL_ERROR "${_om_compiler_cache} program not found. It is highly recommended to use a compiler cache for compilation of OpenModelica. Please install ${_om_compiler_cache} and rerun configuration.
             You can disable this check by specifying -DOM_USE_CCACHE=OFF to CMake configuration command.")
   endif()
 endif()

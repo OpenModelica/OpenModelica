@@ -58,6 +58,11 @@ these types of recompilations to a no-op.
 It is available for Linux, for macOS (MacPorts and Homebrew) and for MSYS/UCRT64
 (mingw-w64-ucrt-x86_64-ccache).
 
+[sccache](https://github.com/mozilla/sccache) does the same job and can keep the cache on
+an S3 server instead of on disk, so that several machines share it. Select it with
+`-DOM_COMPILER_CACHE=sccache` and point it at a cache through its own environment
+(`SCCACHE_BUCKET`, `SCCACHE_ENDPOINT`, ...).
+
 ## 3. Usage
 
 ### 3.1. General Notes
@@ -99,6 +104,7 @@ The main ones (with their default values) are
 
 ```cmake
 OM_USE_CCACHE=ON
+OM_COMPILER_CACHE=                 # empty: ccache, unless OM_USE_CCACHE=OFF
 OM_ENABLE_GUI_CLIENTS=ON
 OM_ENABLE_OMSIMULATOR=ON
 OM_ENABLE_ENCRYPTION=OFF
@@ -123,8 +129,11 @@ OM_OMSHELL_ENABLE_TERMINAL=ON
 
 #### 4.1.1. OpenModelica Options
 
-`OM_USE_CCACHE` option is for enabling/disabling ccache support as explained in
+`OM_USE_CCACHE` option is for enabling/disabling compiler cache support as explained in
 [2. ccache](#2-ccache). It is recommended that you install ccache and set this to ON.
+
+`OM_COMPILER_CACHE` picks which cache to use: `ccache`, `sccache` or `none`. Left empty it
+follows `OM_USE_CCACHE`; set explicitly it overrides it.
 
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt
 based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser,
