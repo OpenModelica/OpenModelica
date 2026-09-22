@@ -105,8 +105,6 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # https://cmake.org/cmake/help/latest/cpack_gen/deb.html
   # usage: cpack -G DEB
 
-  set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
-
   set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 
   # The Debian revision. It stays at 1 because we never re-release a given upstream
@@ -277,11 +275,6 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   # Options and settings that are specific to RPM packages.
   # https://cmake.org/cmake/help/latest/cpack_gen/rpm.html
   # usage: cpack -G RPM
-
-  # CPack's default for RPM, spelled out: the /usr/local the .deb side uses is in the loader's
-  # search path on Debian and Ubuntu but on no Fedora or EL system, where our libraries under
-  # /usr/local/lib would then not be found.
-  set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 
   # <name>-<version>-<release>.<arch>.rpm, as createrepo and the rpm tools expect. CPack's own
   # name, OpenModelica-<version>-Linux-<component>.rpm, carries neither the package name nor
