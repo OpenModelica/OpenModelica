@@ -195,6 +195,7 @@ pub struct JACOBIAN {
     pub isRowEval: modelica_boolean,
     pub isBidirectional: modelica_boolean,
     pub availability: c_int,
+    pub adjointJacobian: *mut JACOBIAN,
 }
 
 #[repr(C)]
