@@ -261,9 +261,14 @@ void makeLibsAndCacheCMake() {
  * Perform sanity check.
  *
  * Run script testsuite/sanity-check/runSanity.sh for C and C++ runtime.
- * On Windows a install directory with spaces and three tests with rtest are run as well.
- * Only bin/ goes on the PATH; the generated <model>.bat adds the runtime's
- * lib/<triple>/omc, which only omc knows the triple of.
+ * On Windows an install directory with spaces is checked as well. Only bin/
+ * goes on the PATH; the generated <model>.bat adds the runtime's
+ * lib/<triple>/omc, which only omc knows the triple of. The Windows
+ * testsuite smoke set runs separately, see runWindowsTestsuite() and the
+ * 'testsuite-windows' stage: it is its own stage rather than part of the
+ * build/sanity-check step so a test failure is reported distinctly from a
+ * build failure, and so the stage can grow (more tests, more Windows
+ * compute) without touching the build step at all.
  *
  * @param installDir  Path to omc installation directory.
  * @param buildCpp    True if omc was build with Cpp runtime.
@@ -290,42 +295,55 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
       move "${installDir} but with spaces" "${installDir}"
     """)
-    bat (label: "Sanity check - testsuite", script: """
-      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-      echo on
-      (
-      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-      echo cd \${MSYS_WORKSPACE}
-      echo echo Unset OPENMODELICALIBRARY to make sure the default is used
-      echo unset OPENMODELICALIBRARY
-      echo echo Testing some models from testsuite, ffi, meta, fmi
-      echo cd testsuite/flattening/libraries/biochem
-      echo ../../../rtest --return-with-error-code EnzMM.mos
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/flattening/modelica/ffi
-      echo ../../../rtest --return-with-error-code ModelicaInternal_countLines.mos
-      echo ../../../rtest --return-with-error-code Integer1.mos
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/metamodelica/meta
-      echo ../../rtest --return-with-error-code AlgPatternm.mos
-      echo echo FMI export+import roundtrip, guards Windows -lfmilib linking against libfmilib.dll
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/openmodelica/fmi/ModelExchange/2.0
-      echo ../../../../rtest --return-with-error-code HelloFMIWorld.mos
-      ) > miniTestsuite.sh
-
-      set MSYSTEM=UCRT64
-      set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
-    """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     if (buildCpp) {
       sh label: 'Sanity check - Cpp', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     }
   }
+}
+
+/*
+ * Run the Windows testsuite smoke set (testsuite/runWindowsTests.sh) against
+ * an installed omc. Split out of sanityCheck() so it can run as its own
+ * 'tests + extras' stage: see testWindowsSmoke().
+ *
+ * A test opts into this set by tagging its own header '// win: yes' (see
+ * testsuite/rtest's -platform/RTEST_PLATFORM); there is no separate list of
+ * Windows tests to maintain here or on disk.
+ *
+ * @param installDir  Path to omc installation directory.
+ */
+void runWindowsTestsuite(String installDir) {
+  bat (label: "Windows testsuite", script: """
+    If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+    set MSYSTEM=UCRT64
+    set MSYS2_PATH_TYPE=inherit
+    set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+    %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/runWindowsTests.sh"
+  """)
+}
+
+/*
+ * Install the one Modelica Standard Library version the Windows smoke set
+ * needs (libraries/install-windows-smoke.mos), via the omc that
+ * runWindowsTestsuite() below is about to run against. Only issue10523.mos
+ * (an FMI 2.0 CoSimulation export test, tagged '// win: yes') needs this;
+ * every other test in the set runs against nothing but omc itself, same as
+ * before. There is no shared package cache wired up for Windows agents
+ * (installTestLibraries()'s env.LIBRARIES is a Unix path), so this reaches
+ * the default remote package index directly.
+ *
+ * @param installDir  Path to omc installation directory.
+ */
+void installWindowsSmokeLibrary(String installDir) {
+  bat (label: "Install Modelica for the Windows smoke set", script: """
+    If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+    set MSYSTEM=UCRT64
+    set MSYS2_PATH_TYPE=inherit
+    set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+    %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}/libraries'` && omc install-windows-smoke.mos"
+  """)
 }
 
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
@@ -383,6 +401,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         echo cd \${MSYS_WORKSPACE}
         echo which cmake
         echo set -ex
+        echo trap 'echo "buildOMCWindows.sh: command failed, exit code \$?"' ERR
         echo mkdir build_cmake
         echo ${cmake_exe} --version
         echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}
@@ -394,6 +413,10 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
       """)
       sanityCheck('build', true)
+      // For the 'testsuite-windows' stage (testWindowsSmoke()): same 'build/**'
+      // shape the other CMake stashes use, so the tests it runs need nothing
+      // beyond the install tree.
+      stash name: 'omc-cmake-windows', includes: 'build/**'
     }
   }
   else if (isMac()) {
@@ -1865,6 +1888,22 @@ void coverageReportStage(int shardCount) {
                  id: 'omc-coverage',
                  name: 'C/C++ runtime and compiler',
                  sourceCodeRetention: 'LAST_BUILD')
+}
+
+// The 'testsuite-windows' stage (see buildOMC_CMake()'s Windows branch for
+// where 'omc-cmake-windows' is stashed). Split out of sanityCheck() so a
+// failure here is reported as a distinct testsuite failure rather than a
+// build failure, and so this stage can grow -- more tests, more Windows
+// compute -- without ever touching the build step.
+void testWindowsSmoke() {
+  standardSetup()
+  unstash 'omc-cmake-windows'
+  withEnv (["OMDEV=C:\\OMDevUCRT",
+            "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+    cloneOMDev()
+    installWindowsSmokeLibrary('build')
+    runWindowsTestsuite('build')
+  }
 }
 
 void crossBuildFMU() {

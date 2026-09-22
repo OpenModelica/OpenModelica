@@ -745,6 +745,31 @@ pipeline {
             }
           }
         }
+
+        // The Windows smoke set (every test tagged '// win: yes', see
+        // testsuite/runWindowsTests.sh), against the install tree
+        // 'cmake-OMDev-gcc' stashed as 'omc-cmake-windows'. Its own stage, not
+        // part of that build, so a test failure here reads as a testsuite
+        // failure rather than a build failure.
+        stage('20 testsuite-windows') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildWindows }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.testWindowsSmoke()
+            }
+          }
+        }
       }
     }
     stage('FMPy + OMEdit testsuite') {
