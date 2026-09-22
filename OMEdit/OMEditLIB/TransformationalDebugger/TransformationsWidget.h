@@ -203,6 +203,7 @@ class EquationTreeProxyModel : public QSortFilterProxyModel
 public:
   explicit EquationTreeProxyModel(QObject *parent = nullptr);
 protected:
+  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
   virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 };
 
@@ -252,6 +253,7 @@ private:
   TVariablesTreeView *mpTVariablesTreeView;
   TVariablesTreeModel *mpTVariablesTreeModel;
   TVariableTreeProxyModel *mpTVariableTreeProxyModel;
+  TreeSearchFilters *mpEquationSearchFilters;
   EquationTreeView *mpDefinedInEquationTreeView;
   EquationTreeModel *mpDefinedInEquationTreeModel;
   EquationTreeProxyModel *mpDefinedInEquationProxyModel;
@@ -286,6 +288,7 @@ private slots:
   void fetchVariableDataFromEquationVariable(const QModelIndex &index);
 public slots:
   void findVariables();
+  void findEquations();
   void fetchVariableData(const QModelIndex &index);
   void fetchVariableData(const QString &variableName);
   void fetchEquationData(const QModelIndex &index);
