@@ -56,7 +56,7 @@ $(builddir_man)/man1/
 # Silence unnecessary verbose install messages from CMAKE
 CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
-OMC_MOO_ROOT = 3rdParty/moo-0.1.0
+OMC_MOO_ROOT = 3rdParty/moo
 OMC_PRIMME_ROOT = 3rdParty/primme-3.2.3
 OMC_COLPACK_ROOT = 3rdParty/ColPack
 OMC_TBB_ROOT = 3rdParty/oneTBB
@@ -214,9 +214,11 @@ colpack:
 		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
 		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
-		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)"
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCOLPACK_BUILD_SHARED=OFF \
+		-DCOLPACK_ENABLE_TESTS=OFF
 
-	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target colpack
+	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target ColPack_static
 	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target install
 
 colpack-clean:
