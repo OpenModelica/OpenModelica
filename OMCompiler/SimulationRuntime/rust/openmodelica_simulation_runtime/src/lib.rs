@@ -35,6 +35,8 @@ mod nls;
 mod spatial;
 mod stateset;
 mod sync;
+#[cfg(shim_trampolines)]
+mod shim_export;
 mod support;
 mod systems;
 

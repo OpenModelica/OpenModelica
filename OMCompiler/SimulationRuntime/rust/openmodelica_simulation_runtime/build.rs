@@ -62,6 +62,19 @@ fn link_blas() {
     println!("cargo:rustc-cdylib-link-arg=Accelerate");
 }
 
+/// The architectures src/shim_export.rs has a tail jump for. There Rust owns
+/// the public names of shim.c's variadic entry points and rustc exports them
+/// like any other, which is what the version script below is for elsewhere.
+fn shim_trampolines() -> bool {
+    println!("cargo:rustc-check-cfg=cfg(shim_trampolines)");
+    let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    let ok = matches!(arch.as_str(), "x86_64" | "x86" | "aarch64" | "arm" | "riscv64");
+    if ok {
+        println!("cargo:rustc-cfg=shim_trampolines");
+    }
+    ok
+}
+
 /// The variadic entry points src/shim.c defines.
 const SHIM_ENTRY_POINTS: &[&str] = &[
     "omc_assert_simulation",
@@ -72,7 +85,9 @@ const SHIM_ENTRY_POINTS: &[&str] = &[
 ];
 
 /// A cdylib exports only the symbols Rust itself defines, so without this the
-/// generated model does not link.
+/// generated model does not link. Only for the architectures `shim_trampolines`
+/// does not cover: ld before 2.41 rejects this version script beside the one
+/// rustc writes for its own exports.
 fn export_shim_entry_points() {
     let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
     match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
@@ -121,8 +136,16 @@ const FMI_GATE: &str = "#[cfg(not(omc_fmi_runtime))]";
 fn main() {
     let fmi = fmi_runtime_cfg();
     println!("cargo:rerun-if-changed=src/shim.c");
-    cc::Build::new().file("src/shim.c").warnings(true).compile("omc_rust_runtime_shim");
-    export_shim_entry_points();
+    let trampolines = shim_trampolines();
+    let mut shim = cc::Build::new();
+    shim.file("src/shim.c").warnings(true);
+    if trampolines {
+        shim.define("OMR_SHIM_TRAMPOLINES", None);
+    }
+    shim.compile("omc_rust_runtime_shim");
+    if !trampolines {
+        export_shim_entry_points();
+    }
     link_runtime_c();
     link_blas();
     println!("cargo:rerun-if-changed=src/abi.rs");

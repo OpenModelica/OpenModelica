@@ -170,6 +170,10 @@ unsafe extern "C" {
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.
+    #[cfg_attr(
+        shim_trampolines,
+        link_name = "omr_shim_assert_simulation_withEquationIndexes"
+    )]
     fn omc_assert_simulation_withEquationIndexes(
         threadData: *mut threadData_t,
         info: FILE_INFO,
@@ -177,6 +181,10 @@ unsafe extern "C" {
         msg: *const c_char,
         ...
     ) -> !;
+    #[cfg_attr(
+        shim_trampolines,
+        link_name = "omr_shim_assert_warning_simulation_withEquationIndexes"
+    )]
     fn omc_assert_warning_simulation_withEquationIndexes(
         info: FILE_INFO,
         indexes: *const c_int,

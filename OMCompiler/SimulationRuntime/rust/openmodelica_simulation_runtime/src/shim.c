@@ -296,10 +296,18 @@ extern int omr_assert_report(void *threadData, const omr_file_info *info, const 
 extern void omr_assert_warning_report(const omr_file_info *info, const char *text);
 extern void omr_terminate_report(const omr_file_info *info, const char *text);
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(OMR_SHIM_TRAMPOLINES)
 #define OMR_EXPORT __declspec(dllexport)
 #else
 #define OMR_EXPORT
+#endif
+
+/* Under OMR_SHIM_TRAMPOLINES the public names belong to the naked functions in
+   shim_export.rs, which tail-jump to these. */
+#ifdef OMR_SHIM_TRAMPOLINES
+#define OMR_ENTRY(name) omr_shim_##name
+#else
+#define OMR_ENTRY(name) omc_##name
 #endif
 
 static void omr_va_assert(void *threadData, const omr_file_info *info, const char *msg, va_list ap) {
@@ -315,7 +323,7 @@ static void omr_va_assert_warning(const omr_file_info *info, const char *msg, va
   free(text);
 }
 
-OMR_EXPORT void omc_assert_simulation(void *threadData, omr_file_info info, const char *msg, ...) {
+OMR_EXPORT void OMR_ENTRY(assert_simulation)(void *threadData, omr_file_info info, const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
   omr_va_assert(threadData, &info, msg, ap);
@@ -323,7 +331,7 @@ OMR_EXPORT void omc_assert_simulation(void *threadData, omr_file_info info, cons
   abort(); /* omr_jump does not return; silences the noreturn warning */
 }
 
-OMR_EXPORT void omc_assert_simulation_withEquationIndexes(void *threadData, omr_file_info info,
+OMR_EXPORT void OMR_ENTRY(assert_simulation_withEquationIndexes)(void *threadData, omr_file_info info,
                                                           const int *indexes, const char *msg, ...) {
   va_list ap;
   (void)indexes;
@@ -333,14 +341,14 @@ OMR_EXPORT void omc_assert_simulation_withEquationIndexes(void *threadData, omr_
   abort();
 }
 
-OMR_EXPORT void omc_assert_warning_simulation(omr_file_info info, const char *msg, ...) {
+OMR_EXPORT void OMR_ENTRY(assert_warning_simulation)(omr_file_info info, const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
   omr_va_assert_warning(&info, msg, ap);
   va_end(ap);
 }
 
-OMR_EXPORT void omc_assert_warning_simulation_withEquationIndexes(omr_file_info info,
+OMR_EXPORT void OMR_ENTRY(assert_warning_simulation_withEquationIndexes)(omr_file_info info,
                                                                   const int *indexes,
                                                                   const char *msg, ...) {
   va_list ap;
@@ -350,7 +358,7 @@ OMR_EXPORT void omc_assert_warning_simulation_withEquationIndexes(omr_file_info 
   va_end(ap);
 }
 
-OMR_EXPORT void omc_terminate_simulation(omr_file_info info, const char *msg, ...) {
+OMR_EXPORT void OMR_ENTRY(terminate_simulation)(omr_file_info info, const char *msg, ...) {
   va_list ap;
   char *text;
   va_start(ap, msg);
