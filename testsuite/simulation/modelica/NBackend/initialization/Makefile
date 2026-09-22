@@ -5,6 +5,7 @@ experimental_initialSimplified.mos \
 primaryParameterFor.mos \
 primaryParameterRecord.mos \
 resizableParameterBinding.mos \
+primaryParameterRecordArray.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
 init_if_eq.mos \

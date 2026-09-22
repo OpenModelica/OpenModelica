@@ -537,10 +537,13 @@ public
     name := match Pointer.access(eqn_ptr)
       local
         ComponentRef cref;
+        Type ty;
       // only a binding for a whole variable, not for a part of it or of an element of an array of components
       case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref)) guard(not hasSubscripts(cref))
         then SOME(cref);
-      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref), recordSize = NONE()) guard(not hasSubscripts(cref))
+      // an array of records is inlined in the initialization, it can not be assigned as a whole
+      case Equation.ARRAY_EQUATION(ty = ty, lhs = Expression.CREF(cref = cref), recordSize = NONE())
+        guard(not hasSubscripts(cref) and not Type.isComplex(Type.arrayElementType(ty)))
         then SOME(cref);
       // a record bound as a whole
       case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = cref)) guard(not hasSubscripts(cref))
