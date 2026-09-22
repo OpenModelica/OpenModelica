@@ -2,7 +2,7 @@ SLOWLOGS = \
 bootstrapping.log \
 msl40simulation.log \
 msl41simulation.log \
-msl32simulation_cpp_mini.log \
+msl41simulation_cpp_mini.log \
 siemens_nosim.log \
 siemens_simulation.log \
 SiemensPower.log \
@@ -562,8 +562,8 @@ msl41simulation.log: omc-diff
 msl41simulation_cpp.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl41_cpp -f Makefile test > $@
 	@echo $@ done
-msl32simulation_cpp_mini.log: omc-diff
-	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile test > $@
+msl41simulation_cpp_mini.log: omc-diff
+	$(MAKE) -C openmodelica/cppruntime/libraries/msl41 -f Makefile test > $@
 	@echo $@ done
 siemens_nosim.log: omc-diff
 	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile test > $@
@@ -829,7 +829,7 @@ clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile clean
-	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/libraries/msl41 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/3.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean

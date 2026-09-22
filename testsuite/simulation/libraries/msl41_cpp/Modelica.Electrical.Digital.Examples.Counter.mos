@@ -16,7 +16,6 @@ modelName := $TypeName(Modelica.Electrical.Digital.Examples.Counter);
 compareVars :=
 {
    "Enable.y",
-   "Clock.y",
    "Counter.q[1]",
    "Counter.q[2]",
    "Counter.q[3]",
@@ -38,14 +37,11 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Digital.Examples.Counter
-// {"Enable.y", "Clock.y", "Counter.q[1]", "Counter.q[2]", "Counter.q[3]", "Counter.q[4]", "Q0.y[1]", "Q1.y[1]", "Q2.y[1]", "Q3.y[1]"}
+// {"Enable.y", "Counter.q[1]", "Counter.q[2]", "Counter.q[3]", "Counter.q[4]", "Q0.y[1]", "Q1.y[1]", "Q2.y[1]", "Q3.y[1]"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.Counter', options = '', outputFormat = 'mat', variableFilter = 'time|Enable.y|Clock.y|Counter.q.1.|Counter.q.2.|Counter.q.3.|Counter.q.4.|Q0.y.1.|Q1.y.1.|Q2.y.1.|Q3.y.1.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.Counter', options = '', outputFormat = 'mat', variableFilter = 'time|Enable.y|Counter.q.1.|Counter.q.2.|Counter.q.3.|Counter.q.4.|Q0.y.1.|Q1.y.1.|Q2.y.1.|Q3.y.1.', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Digital.Examples.Counter_res.mat
 // Files Equal!
-// Error: Could not read variable Clock.y in file Modelica.Electrical.Digital.Examples.Counter_res.mat.
-// Warning: Get data of variable Clock.y from file Modelica.Electrical.Digital.Examples.Counter_res.mat failed!
-//
 // "true
 // "
 // ""

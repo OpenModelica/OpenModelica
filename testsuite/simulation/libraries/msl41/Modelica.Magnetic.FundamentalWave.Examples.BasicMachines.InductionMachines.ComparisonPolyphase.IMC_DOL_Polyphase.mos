@@ -18,14 +18,8 @@ compareVars :=
 {
    "aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
    "aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
-   "aimc3.stator.strayReluctance.port_p.Phi.im",
-   "aimc3.stator.strayReluctance.port_p.Phi.re",
-   "aimcM.rotorCage.strayInductor.inductor[4].i",
-   "aimcM.rotorCage.strayInductor.inductor[5].i",
    "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
    "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
-   "aimcM.stator.strayReluctance.port_p.Phi.im",
-   "aimcM.stator.strayReluctance.port_p.Phi.re",
    "loadInertia3.phi",
    "loadInertia3.w",
    "loadInertiaM.phi",
@@ -42,26 +36,13 @@ runScript(modelTesting);getErrorString();
 // "Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL_MultiPhase"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase
-// {"aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "aimc3.stator.strayReluctance.port_p.Phi.im", "aimc3.stator.strayReluctance.port_p.Phi.re", "aimcM.rotorCage.strayInductor.inductor[4].i", "aimcM.rotorCage.strayInductor.inductor[5].i", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "aimcM.stator.strayReluctance.port_p.Phi.im", "aimcM.stator.strayReluctance.port_p.Phi.re", "loadInertia3.phi", "loadInertia3.w", "loadInertiaM.phi", "loadInertiaM.w"}
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase', options = '', outputFormat = 'mat', variableFilter = 'time|aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimc3.stator.strayReluctance.port_p.Phi.im|aimc3.stator.strayReluctance.port_p.Phi.re|aimcM.rotorCage.strayInductor.inductor.4..i|aimcM.rotorCage.strayInductor.inductor.5..i|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimcM.stator.strayReluctance.port_p.Phi.im|aimcM.stator.strayReluctance.port_p.Phi.re|loadInertia3.phi|loadInertia3.w|loadInertiaM.phi|loadInertiaM.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "loadInertia3.phi", "loadInertia3.w", "loadInertiaM.phi", "loadInertiaM.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase', options = '', outputFormat = 'mat', variableFilter = 'time|aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimc3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|loadInertia3.phi|loadInertia3.w|loadInertiaM.phi|loadInertiaM.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Error: Could not read variable aimc3.stator.strayReluctance.port_p.Phi.im in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat.
-// Warning: Get data of variable aimc3.stator.strayReluctance.port_p.Phi.im from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat failed!
-// Error: Could not read variable aimc3.stator.strayReluctance.port_p.Phi.re in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat.
-// Warning: Get data of variable aimc3.stator.strayReluctance.port_p.Phi.re from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat failed!
-// Error: Could not read variable aimcM.rotorCage.strayInductor.inductor[4].i in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat.
-// Warning: Get data of variable aimcM.rotorCage.strayInductor.inductor[4].i from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat failed!
-// Error: Could not read variable aimcM.rotorCage.strayInductor.inductor[5].i in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat.
-// Warning: Get data of variable aimcM.rotorCage.strayInductor.inductor[5].i from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat failed!
-// Error: Could not read variable aimcM.stator.strayReluctance.port_p.Phi.im in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat.
-// Warning: Get data of variable aimcM.stator.strayReluctance.port_p.Phi.im from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat failed!
-// Error: Could not read variable aimcM.stator.strayReluctance.port_p.Phi.re in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat.
-// Warning: Get data of variable aimcM.stator.strayReluctance.port_p.Phi.re from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase_res.mat failed!
-//
 // "true
 // "
 // ""

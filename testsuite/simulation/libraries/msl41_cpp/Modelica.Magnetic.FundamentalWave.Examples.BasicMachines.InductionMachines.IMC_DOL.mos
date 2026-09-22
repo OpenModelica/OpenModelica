@@ -24,8 +24,6 @@ compareVars :=
    "aimcE.idq_sr[2]",
    "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
    "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
-   "aimcM.stator.strayReluctance.port_p.Phi.im",
-   "aimcM.stator.strayReluctance.port_p.Phi.re",
    "aimcM.stator.zeroInductor.i0",
    "loadInertiaE.phi",
    "loadInertiaE.w",
@@ -45,16 +43,11 @@ runScript(modelTesting);getErrorString();
 // "Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL
-// {"aimcE.i_0_s", "aimcE.idq_rr[1]", "aimcE.idq_rr[2]", "aimcE.idq_sr[1]", "aimcE.idq_sr[2]", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "aimcM.stator.strayReluctance.port_p.Phi.im", "aimcM.stator.strayReluctance.port_p.Phi.re", "aimcM.stator.zeroInductor.i0", "loadInertiaE.phi", "loadInertiaE.w", "loadInertiaM.phi", "loadInertiaM.w"}
+// {"aimcE.i_0_s", "aimcE.idq_rr[1]", "aimcE.idq_rr[2]", "aimcE.idq_sr[1]", "aimcE.idq_sr[2]", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", "aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "aimcM.stator.zeroInductor.i0", "loadInertiaE.phi", "loadInertiaE.w", "loadInertiaM.phi", "loadInertiaM.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL', options = '', outputFormat = 'mat', variableFilter = 'time|aimcE.i_0_s|aimcE.idq_rr.1.|aimcE.idq_rr.2.|aimcE.idq_sr.1.|aimcE.idq_sr.2.|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimcM.stator.strayReluctance.port_p.Phi.im|aimcM.stator.strayReluctance.port_p.Phi.re|aimcM.stator.zeroInductor.i0|loadInertiaE.phi|loadInertiaE.w|loadInertiaM.phi|loadInertiaM.w', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL', options = '', outputFormat = 'mat', variableFilter = 'time|aimcE.i_0_s|aimcE.idq_rr.1.|aimcE.idq_rr.2.|aimcE.idq_sr.1.|aimcE.idq_sr.2.|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimcM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimcM.stator.zeroInductor.i0|loadInertiaE.phi|loadInertiaE.w|loadInertiaM.phi|loadInertiaM.w', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL_res.mat
 // Files Equal!
-// Error: Could not read variable aimcM.stator.strayReluctance.port_p.Phi.im in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL_res.mat.
-// Warning: Get data of variable aimcM.stator.strayReluctance.port_p.Phi.im from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL_res.mat failed!
-// Error: Could not read variable aimcM.stator.strayReluctance.port_p.Phi.re in file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL_res.mat.
-// Warning: Get data of variable aimcM.stator.strayReluctance.port_p.Phi.re from file Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL_res.mat failed!
-//
 // "true
 // "
 // ""

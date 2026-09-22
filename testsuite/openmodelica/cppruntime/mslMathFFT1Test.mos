@@ -5,7 +5,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 
 // simulate without echo to avoid a message with absolute path name
 echo(false);
@@ -27,10 +27,11 @@ getErrorString();
 // ""
 // true
 // 4.999999999999999
-// 2.97029702970297
-// 1.485148514851486
+// 2.9702970297029694
+// 1.4851485148514851
 // 0.0
 // 2.0
 // 3.0
-// ""
+// "[Modelica 4.1.0+maint.om/Math/FastFourierTransform.mo:538:3-629:25:writable] Warning: Pure function 'Modelica.Math.FastFourierTransform.realFFTwriteToFile' contains a call to impure function 'Modelica.Utilities.Files.removeFile'.
+// "
 // endResult

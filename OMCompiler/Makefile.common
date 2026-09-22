@@ -412,9 +412,9 @@ runtimeCPPclean:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
 
-testlibrariemsl32cpp:
-	(cd testsuite/openmodelica/cppruntime/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-cpp-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt"
+testlibrariemsl41cpp:
+	(cd testsuite/openmodelica/cppruntime/libraries/msl41 && time $(MAKE) -f Makefile > testsuite-msl41-cpp-trace.txt 2>&1)
+	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl41/testsuite-msl41-cpp-trace.txt"
 
 
 # Build and install FMILibrary

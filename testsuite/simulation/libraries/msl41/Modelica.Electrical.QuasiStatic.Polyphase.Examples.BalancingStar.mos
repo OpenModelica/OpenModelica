@@ -16,9 +16,7 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar);
 compareVars :=
 {
-   "voltageSource.plug_p.reference.gamma",
-   "voltageSource.voltageSource[2].pin_p.reference.gamma",
-   "voltageSource.voltageSource[3].pin_p.reference.gamma"
+   "voltageSource.plug_p.reference.gamma"
 };
 
 runScript(modelTesting);getErrorString();
@@ -31,18 +29,13 @@ runScript(modelTesting);getErrorString();
 // "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar
-// {"voltageSource.plug_p.reference.gamma", "voltageSource.voltageSource[2].pin_p.reference.gamma", "voltageSource.voltageSource[3].pin_p.reference.gamma"}
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar', options = '', outputFormat = 'mat', variableFilter = 'time|voltageSource.plug_p.reference.gamma|voltageSource.voltageSource.2..pin_p.reference.gamma|voltageSource.voltageSource.3..pin_p.reference.gamma', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"voltageSource.plug_p.reference.gamma"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar', options = '', outputFormat = 'mat', variableFilter = 'time|voltageSource.plug_p.reference.gamma', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Error: Could not read variable voltageSource.voltageSource[2].pin_p.reference.gamma in file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar_res.mat.
-// Warning: Get data of variable voltageSource.voltageSource[2].pin_p.reference.gamma from file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar_res.mat failed!
-// Error: Could not read variable voltageSource.voltageSource[3].pin_p.reference.gamma in file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar_res.mat.
-// Warning: Get data of variable voltageSource.voltageSource[3].pin_p.reference.gamma from file Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar_res.mat failed!
-//
 // "true
 // "
 // ""
