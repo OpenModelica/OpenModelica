@@ -12,7 +12,7 @@ simulate(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, stopTi
 // Compare results
 diffSimulationResults(
   "Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks_res.csv",
-  "../../../ReferenceFiles/msl40/Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.csv",
+  "../../../ReferenceFiles/msl40/Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.mat",
   "Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks_diff.csv",
   1e-8, 1e-4, 0.002,
   {"PI.y", "PI.x", "load.w", "load.phi"}); getErrorString();
