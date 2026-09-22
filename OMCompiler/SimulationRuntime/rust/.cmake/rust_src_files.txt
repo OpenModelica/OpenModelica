@@ -139,6 +139,7 @@ openmodelica_simulation_runtime/src/optimization.rs
 openmodelica_simulation_runtime/src/parmod.rs
 openmodelica_simulation_runtime/src/run.rs
 openmodelica_simulation_runtime/src/shim.c
+openmodelica_simulation_runtime/src/shim_export.rs
 openmodelica_simulation_runtime/src/spatial.rs
 openmodelica_simulation_runtime/src/stateset.rs
 openmodelica_simulation_runtime/src/support.rs
