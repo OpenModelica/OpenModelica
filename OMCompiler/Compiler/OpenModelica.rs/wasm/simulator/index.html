@@ -1106,6 +1106,7 @@ function renderCharts() {
   if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); showEmpty('No variables to plot.'); }
 }
 
+const MANY_SIGNALS = 5;
 function renderAllVariables() {
   const series = (snap && snap.series) || [];
   const time = colMap.get('time');
@@ -1121,6 +1122,12 @@ function renderAllVariables() {
   const spec = { title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true };
   const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
   if (bases.length === 1) applyUnit(spec, 'all', bases[0], chartUnit('all', bases[0], curves.find((c) => c.unit === bases[0])));
+  // Too many to read at once: draw a state, the legend adds the rest.
+  if (curves.length > MANY_SIGNALS) {
+    const ders = new Set(series.filter((m) => m.name.startsWith('der(')).map((m) => m.name));
+    const state = curves.find((c) => ders.has('der(' + c.label + ')')) || curves[0];
+    spec.defaultVisible = [state.label];
+  }
   charts.add(spec, 'all');
 }
 
