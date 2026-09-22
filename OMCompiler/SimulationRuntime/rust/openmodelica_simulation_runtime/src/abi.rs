@@ -34,6 +34,11 @@ pub const ERROR_NONLINEARSOLVER: i32 = 3;
 pub const ERROR_EVENTSEARCH: i32 = 4;
 pub const ERROR_EVENTHANDLING: i32 = 5;
 pub const ERROR_OPTIMIZE: i32 = 6;
+/// `simulation_data.h`'s `JACOBIAN_AVAILABILITY` enum.
+pub const JACOBIAN_UNKNOWN: c_int = 0;
+pub const JACOBIAN_NOT_AVAILABLE: c_int = 1;
+pub const JACOBIAN_ONLY_SPARSITY: c_int = 2;
+pub const JACOBIAN_AVAILABLE: c_int = 3;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
