@@ -92,6 +92,42 @@ Item {
   }
 }
 )QML";
+
+// The QML modules the animation needs, each with a type to instantiate.
+const struct { const char* module; const char* type; } kRequiredQmlModules[] = {
+  {"QtQml", "QtObject"},
+  {"QtQuick", "Item"},
+  {"QtQuick3D", "Node"}
+};
+
+// Import each required module on its own so every missing one is named, not
+// just the first import the shell failed on.
+QStringList missingQmlModules(QQmlEngine* engine)
+{
+  QStringList missing;
+  for (const auto& required : kRequiredQmlModules) {
+    QQmlComponent probe(engine);
+    probe.setData(QStringLiteral("import %1\n%2 {}\n").arg(QLatin1String(required.module),
+                                                           QLatin1String(required.type)).toUtf8(),
+                  QUrl(QStringLiteral("qrc:/om/Quick3DModuleProbe.qml")));
+    if (probe.isError()) {
+      missing << QLatin1String(required.module);
+    }
+  }
+  return missing;
+}
+
+// QML errors plus the module/path information an incomplete installation needs.
+QString qmlDiagnostics(const QString& errorString, QQmlEngine* engine)
+{
+  QString text = errorString.trimmed();
+  const QStringList missing = missingQmlModules(engine);
+  if (!missing.isEmpty()) {
+    text += QStringLiteral("\nMissing QML modules: %1").arg(missing.join(QStringLiteral(", ")));
+  }
+  text += QStringLiteral("\nQML import paths: %1").arg(engine->importPathList().join(QStringLiteral(", ")));
+  return text;
+}
 } // namespace
 
 Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
@@ -120,13 +156,21 @@ Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
             if (status == QQmlComponent::Ready) {
               createSceneFromShell();
             } else if (status == QQmlComponent::Error) {
-              qWarning("Quick3DViewerWidget: shell error: %s", qPrintable(mpShellComponent->errorString()));
+              recordShellError();
             }
           });
   mpShellComponent->setData(kShellQml, QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")));
   if (mpShellComponent->isReady()) {
     createSceneFromShell(); // load completed synchronously
+  } else if (mpShellComponent->isError()) {
+    recordShellError();
   }
+}
+
+void Quick3DViewerWidget::recordShellError()
+{
+  mSceneError = qmlDiagnostics(mpShellComponent->errorString(), engine());
+  qWarning("Quick3DViewerWidget: shell error: %s", qPrintable(mSceneError));
 }
 
 void Quick3DViewerWidget::createSceneFromShell()
@@ -136,18 +180,26 @@ void Quick3DViewerWidget::createSceneFromShell()
   }
   QObject* root = mpShellComponent->create(engine()->rootContext());
   if (!root) {
-    qWarning("Quick3DViewerWidget: failed to create scene from shell: %s", qPrintable(mpShellComponent->errorString()));
+    recordShellError();
     return;
   }
   setContent(QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")), mpShellComponent, root);
 
   mpSceneRoot = qobject_cast<QQuick3DObject*>(root->findChild<QObject*>(QStringLiteral("sceneRoot")));
   mpCamera = root->findChild<QObject*>(QStringLiteral("camera"));
-  if (mpSceneRoot) {
-    mpScene = new Quick3DScene(engine(), mpSceneRoot);
-  } else {
+  if (!mpSceneRoot) {
+    mSceneError = qmlDiagnostics(QStringLiteral("The scene root Node is missing from the loaded QML shell."), engine());
     qWarning("Quick3DViewerWidget: scene root not found");
+    return;
   }
+  Quick3DScene* scene = new Quick3DScene(engine(), mpSceneRoot);
+  if (!scene->initError().isEmpty()) {
+    mSceneError = qmlDiagnostics(scene->initError(), engine());
+    qWarning("Quick3DViewerWidget: item component error: %s", qPrintable(mSceneError));
+    delete scene;
+    return;
+  }
+  mpScene = scene;
 }
 
 bool Quick3DViewerWidget::ensureScene() const
@@ -164,6 +216,14 @@ bool Quick3DViewerWidget::ensureScene() const
     QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
   }
   return mpScene != nullptr;
+}
+
+QString Quick3DViewerWidget::sceneError() const
+{
+  if (!mSceneError.isEmpty()) {
+    return mSceneError;
+  }
+  return qmlDiagnostics(QStringLiteral("The Qt Quick 3D scene shell did not finish loading."), engine());
 }
 
 Quick3DViewerWidget::~Quick3DViewerWidget()

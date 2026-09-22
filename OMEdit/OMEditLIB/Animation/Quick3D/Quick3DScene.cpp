@@ -114,7 +114,8 @@ Quick3DScene::Quick3DScene(QQmlEngine* engine, QQuick3DObject* sceneRoot)
 {
   mItemComponent->setData(kItemQml, QUrl(QStringLiteral("qrc:/om/Quick3DSceneItem.qml")));
   if (mItemComponent->isError()) {
-    qWarning("Quick3DScene: item component error: %s", qPrintable(mItemComponent->errorString()));
+    mError = mItemComponent->errorString();
+    qWarning("Quick3DScene: item component error: %s", qPrintable(mError));
   }
 }
 

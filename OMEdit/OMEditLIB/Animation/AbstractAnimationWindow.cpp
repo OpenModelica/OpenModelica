@@ -397,7 +397,8 @@ bool AbstractAnimationWindow::loadVisualization()
     // classes can be wired to a real scene (and fail cleanly instead of
     // dereferencing a null scene).
     if (!mpViewerWidget->ensureScene()) {
-      QString msg = tr("Could not initialize the 3D scene for %1.").arg(QString(mFileName.c_str()));
+      QString msg = tr("Could not initialize the 3D scene for %1:\n%2").arg(QString(mFileName.c_str()),
+                                                                            mpViewerWidget->sceneError());
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::errorLevel));
       return false;

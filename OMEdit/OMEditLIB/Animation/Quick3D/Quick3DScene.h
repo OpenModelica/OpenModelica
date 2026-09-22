@@ -64,6 +64,9 @@ public:
   Quick3DScene(QQmlEngine* engine, QQuick3DObject* sceneRoot);
   ~Quick3DScene() override;
 
+  // Non-empty when the per-shape QML component failed to compile.
+  QString initError() const { return mError; }
+
   std::string getPath() const override;
   void setPath(const std::string& path) override;
   void setUpShapes(std::vector<ShapeObject>& shapes) override;
@@ -100,6 +103,7 @@ private:
   QQmlEngine* mEngine;
   QQuick3DObject* mSceneRoot;
   QQmlComponent* mItemComponent;
+  QString mError;
   QHash<AbstractVisualizerObject*, Item> mItems;
   std::string mPath;
 };
