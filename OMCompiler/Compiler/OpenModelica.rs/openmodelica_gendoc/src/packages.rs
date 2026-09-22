@@ -128,6 +128,16 @@ fn is_branch(version: &str) -> bool {
     !version.starts_with(|c: char| c.is_ascii_digit())
 }
 
+/// A published test report: where it is, and what to call it in the index.
+pub struct Report {
+    pub url: String,
+    pub title: &'static str,
+}
+
+/// The compliance suite is not tested by OpenModelicaLibraryTesting; its own
+/// job publishes a report per omc version, so link the listing newest first.
+const COMPLIANCE_REPORTS: &str = "https://test.openmodelica.org/compliance/?C=M;O=D";
+
 impl Tested {
     pub fn read(path: &Path) -> Tested {
         let Ok(root) = json::parseFile(ArcStr::from(path.to_string_lossy().as_ref())) else {
@@ -160,7 +170,13 @@ impl Tested {
     /// The report for the version this page documents. The installed version
     /// is not spelled the way the test configuration spells it:
     /// `4.1.0+maint.om` against `4.1.0`, `master` against `trunk`.
-    pub fn url(&self, library: &str, version: &str) -> Option<String> {
+    pub fn report(&self, library: &str, version: &str) -> Option<Report> {
+        if library == "ModelicaCompliance" {
+            return Some(Report {
+                url: String::from(COMPLIANCE_REPORTS),
+                title: "Modelica compliance reports",
+            });
+        }
         let tested = self.entries.get(library)?;
         let release = version.split_once('+').map_or(version, |(v, _)| v);
         let name = tested
@@ -175,8 +191,9 @@ impl Tested {
             // still this library's.
             .or_else(|| tested.first())
             .map(|(_, name)| name)?;
-        Some(format!(
-            "https://libraries.openmodelica.org/branches/master/{name}/{name}.html"
-        ))
+        Some(Report {
+            url: format!("https://libraries.openmodelica.org/branches/master/{name}/{name}.html"),
+            title: "OpenModelicaLibraryTesting report",
+        })
     }
 }

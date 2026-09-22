@@ -185,13 +185,15 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"
-              ])
+              common.withSccache {
+                common.buildOMC_CMake([
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DOM_COMPILER_CACHE=sccache",
+                  "-DCMAKE_INSTALL_PREFIX=build",
+                  "-DCMAKE_C_COMPILER=gcc",
+                  "-DCMAKE_CXX_COMPILER=g++"
+                ])
+              }
             }
           }
         }
@@ -217,12 +219,14 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"])
+              common.withSccache {
+                common.buildOMC_CMake([
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DOM_COMPILER_CACHE=sccache",
+                  "-DCMAKE_INSTALL_PREFIX=build",
+                  "-DCMAKE_C_COMPILER=gcc",
+                  "-DCMAKE_CXX_COMPILER=g++"])
+              }
             }
           }
         }
