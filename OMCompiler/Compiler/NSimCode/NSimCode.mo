@@ -428,6 +428,10 @@ public
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
 
+            // the bindings of the primary parameters are solved before the initialization, they come after the
+            // equations and before the Jacobians in the info file, so they need indices in that order
+            (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
+
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then
@@ -463,9 +467,6 @@ public
             // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
 
             // generate the generic loop calls and replace literal expressions
-            // the bindings of the primary parameters are solved before the initialization, they get the last indices
-            (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
-
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             literals            := UnorderedMap.keyList(literals_map);

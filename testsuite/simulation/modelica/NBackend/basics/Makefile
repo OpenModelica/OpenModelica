@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 arrayCascade.mos \
+enumWithIntegerConstants.mos \
 arrayReadElements.mos \
 detectStates.mos \
 emptyModel.mos \
