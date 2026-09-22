@@ -24,6 +24,10 @@ simulation/libraries/msl41/Modelica.Mechanics.MultiBody.Examples.Elementary.Doub
 simulation/modelica/solver/externalInput.csv
 # Reference files are stored as .mat.xz
 ReferenceFiles/**/*.mat
+# Reference files should never be stored as csv; convert them to mat and xz
+# compress them (filterSimulationResults can do the conversion). Arrow with
+# internal compression would be nicer, but not all readers handle it yet.
+ReferenceFiles/**/*.csv
 /invalid-files.log
 /invalid-files.sorted
 /.gitvalidfiles.sorted
