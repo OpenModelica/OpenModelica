@@ -64,13 +64,8 @@
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::path
 #define QT_LIBRRY_INFO_QMLIP QLibraryInfo::QmlImportsPath
-#else
-#define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::location
-#define QT_LIBRRY_INFO_QMLIP QLibraryInfo::ImportsPath
-#endif
 
 void dumpQtPaths()
 {

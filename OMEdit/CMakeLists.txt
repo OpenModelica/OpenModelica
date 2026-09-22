@@ -7,22 +7,20 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
-omc_option(OM_OMEDIT_ENABLE_ANIMATION "Enable the 3D animation windows. Needs Qt Quick 3D, which Qt5 does not ship." ON)
+omc_option(OM_OMEDIT_ENABLE_ANIMATION "Enable the 3D animation windows. Needs Qt Quick 3D." ON)
 
-find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml OpenGL Network Svg REQUIRED)
+find_package(Qt6 COMPONENTS Widgets PrintSupport Xml OpenGL Network Svg REQUIRED)
 
-find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
+find_package(Qt6 COMPONENTS WebEngineWidgets REQUIRED)
 
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  find_package(Qt6 COMPONENTS OpenGLWidgets Core5Compat REQUIRED)
-endif ()
+find_package(Qt6 COMPONENTS OpenGLWidgets Core5Compat REQUIRED)
 
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6 AND Qt6_VERSION_MINOR GREATER_EQUAL 4)
+if (Qt6_VERSION_MINOR GREATER_EQUAL 4)
   find_package(Qt6 OPTIONAL_COMPONENTS HttpServer)
 endif ()
 
 if(OM_OMEDIT_ENABLE_ANIMATION)
-  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Quick Quick3D Qml QuickWidgets REQUIRED)
+  find_package(Qt6 COMPONENTS Quick Quick3D Qml QuickWidgets REQUIRED)
 endif()
 find_package(OpenGL REQUIRED)
 

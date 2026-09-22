@@ -504,11 +504,7 @@ void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
     if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
     {
       QTextStream out(&file);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       out.setEncoding(QStringConverter::Utf8);
-#else
-      out.setCodec(Helper::utf8.toUtf8().constData());
-#endif
       out.setGenerateByteOrderMark(false);
       out << fileData;
       file.close();
@@ -860,11 +856,7 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     connect(&signalMapper, &QSignalMapper::mappedInt, pSelectFileTypeDialog, &QDialog::done);
-#else
-    connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
-#endif
     // layout the buttons
     QDialogButtonBox *pButtonBox = new QDialogButtonBox;
     pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);

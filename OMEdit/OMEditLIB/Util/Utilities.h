@@ -489,9 +489,6 @@ public:
   void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
   bool hasStartupError() const { return mStartupError; }
   QString startupErrorString() const { return mStartupErrorString; }
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-  void start(const QString &command, OpenMode mode = ReadWrite);
-#endif
 
 private:
   void finishStart();

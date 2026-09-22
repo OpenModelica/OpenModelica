@@ -9,7 +9,6 @@ AC_SUBST(IDLCMD)
 AC_SUBST(RPATH_QMAKE)
 AC_SUBST(host_short)
 AC_SUBST(SOURCE_REVISION)
-AC_SUBST(QT4BUILD)
 AC_SUBST(QMAKE_CONFIG_ANIMATION)
 AC_SUBST(LSB_RELEASE)
 AC_SUBST(LIB_BOOST_REGEX)
@@ -39,21 +38,17 @@ FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
 FIND_LIBOMQWT()
 
-dnl The animation windows render with Qt Quick 3D, which is a qt6 module here.
-dnl Override with WITH_ANIMATION=1 for a qt5 that does have it.
+dnl The animation windows render with Qt Quick 3D.
+dnl Override with WITH_ANIMATION=0 where that module is missing.
 if test -z "$WITH_ANIMATION"; then
-  if test "$WITH_QT6" = "yes"; then
-    WITH_ANIMATION=1
-  else
-    WITH_ANIMATION=0
-  fi
+  WITH_ANIMATION=1
 else
   AC_MSG_RESULT([WITH_ANIMATION=$WITH_ANIMATION])
 fi
 
 if test "$WITH_ANIMATION" = 0; then
   CPPFLAGS="$CPPFLAGS -DWITHOUT_ANIMATION"
-  AC_MSG_RESULT("Disabled 3D animation (Qt Quick 3D needs qt6)")
+  AC_MSG_RESULT("Disabled 3D animation")
 else
   QMAKE_CONFIG_ANIMATION="CONFIG += animation"
   AC_MSG_RESULT("3D animation is enabled")

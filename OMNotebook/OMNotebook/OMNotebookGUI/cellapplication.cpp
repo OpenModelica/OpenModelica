@@ -186,11 +186,7 @@ namespace IAEX
       //  Load translations (Qt and application specific)
       QString locale = QLocale::system().name();
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       QString qtTranslationDirectory = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
-#else
-      QString qtTranslationDirectory = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
-#endif
 
       if (qtTranslator.load("qt_" + locale, qtTranslationDirectory))
           app_->installTranslator(&qtTranslator);

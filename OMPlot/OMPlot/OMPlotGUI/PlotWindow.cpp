@@ -234,11 +234,7 @@ void PlotWindow::initializePlot(QStringList arguments)
   }
   QList<bool> plotRightYAxis;
 
-  #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList logStreams = QString(arguments[18]).split(QChar(','), Qt::SkipEmptyParts);
-  #else // QT_VERSION_CHECK
-    QStringList logStreams = QString(arguments[18]).split(QChar(','), QString::SkipEmptyParts);
-  #endif // QT_VERSION_CHECK
 
   foreach(QString yAxis, logStreams) {
     if (yAxis == "R") {

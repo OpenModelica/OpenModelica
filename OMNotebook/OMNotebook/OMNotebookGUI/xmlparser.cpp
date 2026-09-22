@@ -387,12 +387,7 @@ namespace IAEX
 
           // replace all href="...\..." with href=".../..."
           QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
           QRegularExpression rx(pattern, QRegularExpression::CaseInsensitiveOption);
-#else
-          QRegularExpression rx(pattern);
-          rx.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
-#endif
           if (!rx.isValid())
           {
             fprintf(stderr, "Invalid QRegularExpression(%s)\n", rx.pattern().toStdString().c_str());

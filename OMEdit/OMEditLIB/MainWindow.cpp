@@ -176,15 +176,9 @@ MainWindow::MainWindow(QWidget *parent)
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
    * DebuggerConfiguration section respectively from the settings file.
    */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   qRegisterMetaType<RecentFile>("RecentFile");
   qRegisterMetaType<FindTextOM>("FindTextOM");
   qRegisterMetaType<DebuggerConfiguration>("DebuggerConfiguration");
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
-  qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
-  qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
 #if QT_CONFIG(process)
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
@@ -2019,11 +2013,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   QFile omnotebookFile(omnotebookFileName);
   if (omnotebookFile.open(QIODevice::WriteOnly)) {
     QTextStream textStream(&omnotebookFile);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     textStream.setEncoding(QStringConverter::Utf8);
-#else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
-#endif
     textStream.setGenerateByteOrderMark(false);
     textStream << xmlDocument.toString();
     omnotebookFile.close();
@@ -2271,11 +2261,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       throw OMPlot::InvalidInputException(pPlotWindow->windowTitle(), QString(autoScale));
     }
     // plot variables
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList variablesList = QString(variables).split(" ", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-    QStringList variablesList = QString(variables).split(" ", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
     VariablesTreeItem *pVariableTreeItem;
     VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
     bool state = pVariablesTreeModel->blockSignals(true);
@@ -3813,12 +3799,8 @@ void MainWindow::openTerminal()
 #if QT_CONFIG(process)
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   const QStringList args(QProcess::splitCommand(arguments));
   process.start(terminalCommand, args);
-#else
-  process.start(terminalCommand + " " + arguments);
-#endif
   if (process.error() == QProcess::FailedToStart || process.hasStartupError()) {
     const QString processError = process.startupErrorString().isEmpty() ? process.errorString() : process.startupErrorString();
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")

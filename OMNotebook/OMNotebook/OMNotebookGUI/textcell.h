@@ -142,22 +142,15 @@ namespace IAEX
     void wheelMove( QWheelEvent* );
     void forwardAction( int );
 
-  public slots:
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    void setSource(const QUrl &name) override;
-#endif
-
   protected:
     void mousePressEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent * event) override;
     void insertFromMimeData(const QMimeData *source) override;
     void keyPressEvent(QKeyEvent *event ) override;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     // QTextBrowser interface
   protected:
     virtual void doSetSource(const QUrl &name, QTextDocument::ResourceType type) override;
-#endif
   };
 
 }

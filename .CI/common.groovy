@@ -1335,15 +1335,7 @@ void ctestRust() {
   }
 }
 
-def getQtMajorVersion(qtVersion) {
-  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
-  if (qtVersion.equals('qt5')) {
-    OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
-  }
-  return OM_QT_MAJOR_VERSION
-}
-
-void buildGUI(stash, qtVersion) {
+void buildGUI(stash) {
   if (stash) {
     standardSetup()
     unstash stash
@@ -1352,24 +1344,15 @@ void buildGUI(stash, qtVersion) {
   if (stash) {
     patchConfigStatus()
   }
-  if (qtVersion.equals('qt6')) {
-    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
-  } else {
-    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  }
-  // compile OMSens_Qt for Qt5 and Qt6
-  if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  }
+  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 
   // test make install after qt builds
   sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
 }
 
-void buildAndRunOMEditTestsuite(stashName, qtVersion) {
+void buildAndRunOMEditTestsuite(stashName) {
   if (stashName) {
     standardSetup()
     sh 'rm -rf OMEdit/common'
@@ -1379,11 +1362,7 @@ void buildAndRunOMEditTestsuite(stashName, qtVersion) {
   if (stashName) {
     patchConfigStatus()
   }
-  if (qtVersion.equals('qt6')) {
-    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
-  } else {
-    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  }
+  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   if (stashName) {
     makeLibsAndCache()
   }
@@ -1955,8 +1934,8 @@ void buildUsersGuide() {
   stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${tagName()}*.*"
 }
 
-void buildGUIAndStash(stashInput, qtVersion, outStash) {
-  buildGUI(stashInput, qtVersion)
+void buildGUIAndStash(stashInput, outStash) {
+  buildGUI(stashInput)
   stash name: outStash, includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
 }
 

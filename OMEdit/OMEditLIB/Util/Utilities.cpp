@@ -308,23 +308,7 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   QRegularExpression regExp;
   switch (syntax) {
     case TreeSearchFilters::Wildcard: {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
-#else
-      QString pattern = QRegularExpression::wildcardToRegularExpression(filterText);
-      /* Qt 5 has no UnanchoredWildcardConversion option, and wildcardToRegularExpression()
-       * always returns a fully anchored pattern wrapped as "\A(?:...)\z" (i.e. exact-match
-       * behavior). Strip the \A and \z anchors so the pattern can match anywhere in the
-       * string, matching the behavior of UnanchoredWildcardConversion on Qt 6.
-       */
-      if (pattern.startsWith("\\A")) {
-        pattern.remove(0, 2);
-      }
-      if (pattern.endsWith("\\z")) {
-        pattern.chop(2);
-      }
-      regExp = QRegularExpression(pattern, caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption);
-#endif
       break;
     }
     case TreeSearchFilters::FixedString:
@@ -416,37 +400,21 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
-#else // QT_VERSION_CHECK
-  if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
-#endif // QT_VERSION_CHECK
     return QLabel::minimumSizeHint();
   }
   const QFontMetrics &fm = fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance("..."), fm.height()+5);
-#else // QT_VERSION_CHECK
-  QSize size(fm.width("..."), fm.height()+5);
-#endif // QT_VERSION_CHECK
   return size;
 }
 
 QSize Label::sizeHint() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
-#else // QT_VERSION_CHECK
-  if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
-#endif // QT_VERSION_CHECK
     return QLabel::sizeHint();
   }
   const QFontMetrics& fm = fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance(mText), fm.height()+5);
-#else // QT_VERSION_CHECK
-  QSize size(fm.width(mText), fm.height()+5);
-#endif // QT_VERSION_CHECK
   return size;
 }
 
@@ -711,19 +679,6 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   finishStart();
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-/*!
- * \brief QDetachableProcess::start
- * Starts a process and detaches from it.
- * \param command
- * \param mode
- */
-void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
-{
-  QProcess::start(command, mode);
-  finishStart();
-}
-#endif
 
 void QDetachableProcess::finishStart()
 {
@@ -898,9 +853,6 @@ QSettings* Utilities::getApplicationSettings()
     pSettings = new QSettings(QString("%1/%2.ini").arg(PersistentStorage::root(), Helper::application), QSettings::IniFormat);
 #else
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-#endif
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
 #endif
   }
   return pSettings;
@@ -1169,18 +1121,9 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
   qint64 processId = 0;
 #if !QT_CONFIG(process)
   Q_UNUSED(pProcess); /* no QProcess on wasm */
-#elif QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
-  processId = pProcess->processId();
-#else /* Qt4 */
-#if defined(_WIN32)
-  _PROCESS_INFORMATION *procInfo = pProcess->pid();
-  if (procInfo) {
-    processId = procInfo->dwProcessId;
-  }
 #else
-  processId = pProcess->pid();
-#endif /* WIN32 */
-#endif /* QT_VERSION */
+  processId = pProcess->processId();
+#endif
   return processId;
 }
 
