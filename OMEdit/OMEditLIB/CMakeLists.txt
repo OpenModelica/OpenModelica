@@ -547,8 +547,11 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
   #     --jq '.assets[] | select(.name | test("^modelica-language-server-(linux|macos|windows)"))
   #           | "\(.name)\t\(.digest)"'
   #
+  # No 32-bit Linux server is published, and uname -m reads aarch64 for an armhf
+  # build on an aarch64 kernel - only the pointer size tells them apart.
   set(_ls_asset "")
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
+     AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
       set(_ls_asset "modelica-language-server-linux-arm64")
       set(_ls_sha256 "494c90dc8e64d47953b9432bcdfe2bbfb50acf70adf4f4875e4bccebdd1ac131")
@@ -582,7 +585,8 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
 
   if(NOT _ls_asset)
     message(STATUS "Modelica language server: no standalone build published for "
-                   "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} - OMEdit will be "
+                   "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} "
+                   "(${CMAKE_SIZEOF_VOID_P}-byte pointers) - OMEdit will be "
                    "installed without one, and can download or be pointed at a server at runtime")
   else()
     # The standalone build does not embed the tree-sitter grammar or its
