@@ -1132,7 +1132,7 @@ which replaces third-party libraries (such as `Modelica3D
 Running a Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The 3d visualization is based on OpenSceneGraph. In order to run the
+The 3d visualization is based on Qt Quick 3D. In order to run the
 visualization simply right click the class in Libraries Browser an
 choose “\ **Simulate with Animation**\ ” as shown in :numref:`omedit-simulate-animation`.
 
@@ -1178,13 +1178,13 @@ The 3D camera view can be manipulated as follows:
 Move Closer/Further        none                           Wheel
 Move Closer/Further        Right Mouse Hold               Up/Down
 Move Up/Down/Left/Right    Middle Mouse Hold              Move Mouse
-Move Up/Down/Left/Right    Left and Right Mouse Hold      Move Mouse
+Move Up/Down/Left/Right    Ctrl + Left Mouse Hold         Move Mouse
 Rotate                     Left Mouse Hold                Move Mouse
 Shape context menu         Right Mouse + Shift
 ========================  ============================== ========================
 
-Predefined views (Isometric, Side, Front, Top) can be selected and the scene can be tilted
-by 90° either clock or anticlockwise with the rotation buttons.
+Predefined views (Isometric, Side, Front, Top) can be selected and the camera can be
+orbited left or right in steps with the rotation buttons.
 
 Additional Visualization Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

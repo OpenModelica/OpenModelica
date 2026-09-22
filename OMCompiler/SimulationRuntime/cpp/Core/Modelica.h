@@ -40,18 +40,15 @@
 #include <cfloat>
 #include <numeric>
 #include <functional>
+#include <cassert>
+#include <exception>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <stdexcept>
 
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/matrix_sparse.hpp>
-#include <boost/numeric/ublas/storage.hpp>
+#include <Core/Math/Matrix.h>
 
-#include <boost/container/vector.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
 /*Namespaces*/
 using std::abs;
 using std::ios;
@@ -75,7 +72,7 @@ using std::exception;
 using std::runtime_error;
 
 // uBLAS library
-namespace ublas = boost::numeric::ublas;
+namespace ublas = omcpp::linalg;
 
 #if !defined(USE_CPP_03) && !defined(__vxworks)
   #include <array>
@@ -216,9 +213,6 @@ namespace ublas = boost::numeric::ublas;
 #endif //USE_THREAD
 
 
-typedef ublas::shallow_array_adaptor<double> adaptor_t;
-typedef ublas::vector<double, adaptor_t> shared_vector_t;
-typedef ublas::matrix<double,  ublas::column_major,adaptor_t> shared_matrix_t;
 
 //typedef boost::function<bool (unsigned int)> getCondition_type;
 //typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;

@@ -12,9 +12,9 @@
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
       <!-- Force PerMonitorV2 DPI awareness, the default behavior in Qt.
-           This prevents "Access is denied" errors when OSG has already
-           set the DPI awareness globally, causing Qt's subsequent
-           SetProcessDpiAwarenessContext() call to fail.
+           Declaring it here prevents "Access is denied" errors when a
+           dependency has already set the DPI awareness globally, causing Qt's
+           subsequent SetProcessDpiAwarenessContext() call to fail.
            See issue #15787.
       -->
       <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>

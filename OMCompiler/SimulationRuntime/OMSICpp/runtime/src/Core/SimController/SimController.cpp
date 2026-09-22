@@ -320,8 +320,9 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 
                 FOREACH(string & name, output_names)
                 {
-                    ublas::vector<double> o_j;
-                    o_j = ublas::row(Ro, j);
+                    ublas::vector<double> o_j(Ro.size2());
+                    for (size_t k = 0; k < Ro.size2(); k++)
+                      o_j(k) = Ro(j, k);
                     simData->addOutputResults(name, o_j);
                     j++;
                 }

@@ -83,7 +83,8 @@ endforeach()
 list(JOIN SOURCE_FMU_COMMON_FILES_LIST_QUOTED ",\n                                         " SOURCE_FMU_COMMON_FILES)
 
 
-set(SOURCE_FMU_COMMON_HEADERS "omc_inline.h"
+set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
+                              "omc_inline.h"
                               "openmodelica_func.h"
                               "openmodelica.h"
                               "omc_simulation_settings.h"

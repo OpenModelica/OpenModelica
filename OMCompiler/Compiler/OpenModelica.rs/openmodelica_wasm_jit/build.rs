@@ -457,18 +457,25 @@ fn loader_artifact_name(target: &str) -> Option<(String, String, String)> {
     Some((format!("{arch}-{os}"), artifact, libdir))
 }
 
+/// The glibc the `*-linux-gnu` loaders are built against: EL8's, the oldest
+/// distribution omc ships to. zig links its own stubs, so the floor follows the
+/// triple and not the build host — which is why the host's own loader is built
+/// this way too rather than a second time by whoever needs an older one.
+const LINUX_LOADER_GLIBC: &str = "2.28";
+
 /// The cargo subcommand that can *link* for `target`: the loader is an ordinary
 /// native library (`wasmtime-wasi` compiles a C fiber), so a cross target needs a
 /// cross C toolchain — cargo-xwin for the MSVC CRT/SDK, cargo-zigbuild for the
-/// rest. `OMC_FMU_NATIVE_CARGO_<triple with _ for ->` overrides one target, e.g.
-/// to use a real cross gcc.
+/// rest. The host's own `*-linux-gnu` goes through zigbuild as well, for the
+/// glibc floor above. `OMC_FMU_NATIVE_CARGO_<triple with _ for ->` overrides one
+/// target, e.g. to use a real cross gcc.
 fn cargo_subcommand(target: &str) -> Vec<String> {
     let key = format!("OMC_FMU_NATIVE_CARGO_{}", target.replace('-', "_"));
     println!("cargo:rerun-if-env-changed={key}");
     if let Ok(v) = std::env::var(&key) {
         return v.split_whitespace().map(str::to_owned).collect();
     }
-    let sub = if target == env("HOST") {
+    let sub = if target == env("HOST") && !target.ends_with("-linux-gnu") {
         vec!["build"]
     } else if target.ends_with("-msvc") {
         vec!["xwin", "build"]
@@ -535,41 +542,56 @@ fn build_native_loader(
 ) -> Result<PathBuf, String> {
     let target_dir = out_dir.join(format!("fmu-loader-target-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    let mut cmd = Command::new(cargo);
-    cross_toolchain_cache(&mut cmd);
-    if !xwin_arch.is_empty() {
-        cmd.env("XWIN_ARCH", xwin_arch);
-    }
-    if target.contains("apple") {
-        match macos_sdk {
-            // zig reports a nonexistent sysroot as the same "framework not found".
-            Some(sdk) if !Path::new(sdk).join("System/Library/Frameworks").is_dir() => {
-                return Err(format!("{sdk} is not a macOS SDK (no System/Library/Frameworks)"));
-            }
-            Some(sdk) => {
-                cmd.env("SDKROOT", sdk);
-            }
-            // A macOS host has its own SDK, found through xcrun.
-            None if env("HOST").contains("apple") => {}
-            None => {
-                return Err("no macOS SDK: point OMC_FMU_MACOS_SDK (CMake RUST_OMC_MACOS_SDK) \
-                            or SDKROOT at an unpacked MacOSX<version>.sdk"
-                    .to_owned())
-            }
+    let command = |sub: &[String], tgt: &str| -> Result<Command, String> {
+        let mut cmd = Command::new(&cargo);
+        cross_toolchain_cache(&mut cmd);
+        if !xwin_arch.is_empty() {
+            cmd.env("XWIN_ARCH", xwin_arch);
         }
-        // ld64 defaults the install name to the output path, which would put this
-        // build directory in every exported FMU.
-        cmd.env("RUSTFLAGS", format!("-Clink-arg=-Wl,-install_name,@rpath/{artifact}"));
-    } else {
-        cmd.env_remove("RUSTFLAGS");
+        if target.contains("apple") {
+            match macos_sdk {
+                // zig reports a nonexistent sysroot as the same "framework not found".
+                Some(sdk) if !Path::new(sdk).join("System/Library/Frameworks").is_dir() => {
+                    return Err(format!("{sdk} is not a macOS SDK (no System/Library/Frameworks)"));
+                }
+                Some(sdk) => {
+                    cmd.env("SDKROOT", sdk);
+                }
+                // A macOS host has its own SDK, found through xcrun.
+                None if env("HOST").contains("apple") => {}
+                None => {
+                    return Err("no macOS SDK: point OMC_FMU_MACOS_SDK (CMake RUST_OMC_MACOS_SDK) \
+                                or SDKROOT at an unpacked MacOSX<version>.sdk"
+                        .to_owned());
+                }
+            }
+            // ld64 defaults the install name to the output path, which would put this
+            // build directory in every exported FMU.
+            cmd.env("RUSTFLAGS", format!("-Clink-arg=-Wl,-install_name,@rpath/{artifact}"));
+        } else {
+            cmd.env_remove("RUSTFLAGS");
+        }
+        cmd.current_dir(loader_dir)
+            .args(sub)
+            .args(["--release", "--target", tgt])
+            .arg("--target-dir")
+            .arg(&target_dir);
+        detach_cargo_env(&mut cmd);
+        Ok(cmd)
+    };
+    let sub = cargo_subcommand(target);
+    // cargo-zigbuild strips the version before cargo sees the triple, so the
+    // artifact still lands under the plain one.
+    let pinned = sub.first().is_some_and(|s| s == "zigbuild") && target.ends_with("-linux-gnu");
+    let tgt = if pinned { format!("{target}.{LINUX_LOADER_GLIBC}") } else { target.to_owned() };
+    let mut outcome = run(&mut command(&sub, &tgt)?, &format!("cargo build for {tgt}"));
+    if outcome.is_err() && pinned && target == env("HOST") {
+        // Without zig a native build still gets its own platform, at this host's
+        // glibc instead of the pinned one.
+        let native = [String::from("build")];
+        outcome = run(&mut command(&native, target)?, &format!("cargo build for {target}"));
     }
-    cmd.current_dir(loader_dir)
-        .args(cargo_subcommand(target))
-        .args(["--release", "--target", target])
-        .arg("--target-dir")
-        .arg(&target_dir);
-    detach_cargo_env(&mut cmd);
-    run(&mut cmd, &format!("cargo build for {target}"))?;
+    outcome?;
     let produced = target_dir.join(target).join("release").join(artifact);
     if !produced.exists() {
         return Err(format!("expected library not found at {}", produced.display()));

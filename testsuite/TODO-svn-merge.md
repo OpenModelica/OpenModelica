@@ -1,4 +1,4 @@
-# TODO after the SVN merge
+# TODO: large tests that were removed
 
 A few directories and tests were removed because they were very big.
 In particular ReferenceFiles, flattening tests, and tests using some

@@ -3,9 +3,10 @@
 // The Windows and macOS stages cross-compile in the same ubuntu-26.04-rust image
 // the Rust stages of the main pipeline use: it carries cargo-xwin (clang-cl + a
 // cached MSVC CRT/SDK) and cargo-zigbuild + zig, and the agents bind-mount the
-// macOS SDK. No Windows and no macOS agent takes part. Linux is the one native
-// target, and builds on ubuntu-22.04 instead, because a native distribution's
-// glibc floor is its build host's and Qt's own binaries need 2.34.
+// macOS SDK. No Windows and no macOS agent takes part. Both Linux targets build
+// on ubuntu-22.04 instead -- x86-64 natively, aarch64 with a GNU cross toolchain
+// -- because a Linux distribution's glibc floor is its build host's and Qt's own
+// binaries need 2.34. aarch64 ships CLI-only; see nightlyTarget().
 //
 //   1. 'shared artifacts'  everything that does not depend on the target
 //                          platform, built once: the mmtorust/susan-generated
@@ -51,6 +52,7 @@ pipeline {
     booleanParam(name: 'BUILD_WINDOWS', defaultValue: true, description: 'Build the Windows x86-64 distribution')
     booleanParam(name: 'BUILD_MACOS', defaultValue: true, description: 'Build the macOS universal (x86-64 + arm64) distribution')
     booleanParam(name: 'BUILD_LINUX', defaultValue: true, description: 'Build the Linux x86-64 distribution')
+    booleanParam(name: 'BUILD_LINUX_AARCH64', defaultValue: true, description: 'Build the Linux AArch64 distribution (command-line tools only)')
     booleanParam(name: 'BUILD_GUI_CLIENTS', defaultValue: true, description: 'Build the Qt GUI clients (OMEdit, OMShell, OMNotebook, OMPlot)')
     // Read at queue time by the jobGroup option above. A nightly yields to
     // everything a person is waiting for.
@@ -189,6 +191,29 @@ pipeline {
           }
           steps {
             script { common.buildRustNightlyOMC('linux64') }
+          }
+        }
+        stage('linux-aarch64') {
+          agent {
+            docker {
+              alwaysPull true
+              // The 22.04 add-on with the aarch64 cross toolchain and the arm64
+              // multiarch libraries, so both Linux targets share one floor.
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-qt-aarch64-linux'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/usr/local/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX_AARCH64 }
+          }
+          steps {
+            script { common.buildRustNightlyOMC('linux-aarch64') }
           }
         }
       }
@@ -356,8 +381,31 @@ pipeline {
           }
           steps {
             script {
-              common.packageRustNightlyLinux(['nightly-omc-linux64'],
+              common.packageRustNightlyLinux('linux64', ['nightly-omc-linux64'],
                 params.BUILD_GUI_CLIENTS ? ['nightly-gui-linux64'] : [])
+            }
+          }
+        }
+        stage('linux aarch64 tarball') {
+          agent {
+            docker {
+              alwaysPull true
+              // The cross image again: the deploy resolves the tree's ELF closure
+              // out of the agent's arm64 multiarch directories.
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-qt-aarch64-linux'
+              label 'linux'
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX_AARCH64 }
+          }
+          steps {
+            script {
+              // No GUI stashes: no Qt kit, so only the CLI distribution.
+              common.packageRustNightlyLinux('linux-aarch64', ['nightly-omc-linux-aarch64'], [])
             }
           }
         }

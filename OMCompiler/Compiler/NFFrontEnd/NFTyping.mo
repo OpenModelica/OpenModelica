@@ -1040,7 +1040,7 @@ algorithm
             binding := TypeCheck.matchBinding(binding, c.ty, name, node, context);
           end if;
 
-          comp_var := checkComponentBindingVariability(name, c, binding, context);
+          comp_var := checkComponentBindingVariability(node, c, binding, context);
 
           if comp_var <> attrs.variability then
             attrs.variability := comp_var;
@@ -1075,7 +1075,7 @@ algorithm
         if c.state == ComponentState.Typed then
           if Binding.isTyped(c.binding) then
             c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node, context);
-            checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
+            checkComponentBindingVariability(component, c, c.binding, context);
           end if;
 
           c.state := ComponentState.TypeChecked;
@@ -1094,9 +1094,8 @@ algorithm
     case Component.COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
       guard c.state < ComponentState.Typed
       algorithm
-        name := InstNode.name(component);
         binding := typeBinding(c.binding, InstContext.set(context, NFInstContext.BINDING));
-        comp_var := checkComponentBindingVariability(name, c, binding, context);
+        comp_var := checkComponentBindingVariability(component, c, binding, context);
 
         if comp_var <> attrs.variability then
           attrs.variability := comp_var;
@@ -1133,22 +1132,22 @@ algorithm
 end typeComponentBinding;
 
 function checkComponentBindingVariability
-  input String name;
+  input InstNode node;
   input Component component;
   input Binding binding;
   input InstContext.Type context;
   output Variability var;
 protected
-  Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
+  Variability comp_eff_var, bind_var, bind_eff_var;
 algorithm
-  comp_var := Component.variability(component);
-  comp_eff_var := Prefixes.effectiveVariability(comp_var);
+  var := Component.variability(component);
+  comp_eff_var := Prefixes.effectiveVariability(var);
   bind_var := Binding.variability(binding);
   bind_eff_var := Prefixes.effectiveVariability(bind_var);
 
   if bind_eff_var > comp_eff_var and not InstContext.inFunction(context) then
     Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-        name,
+        InstNode.name(node),
         Prefixes.variabilityString(comp_eff_var),
         "'" + Binding.toString(Component.getBinding(component)) + "'",
         Prefixes.variabilityString(bind_eff_var)
@@ -1160,15 +1159,15 @@ algorithm
     end if;
   end if;
 
-  // Mark parameters that have a structural cref as binding as also
-  // structural. This is perhaps not optimal, but is required right now
-  // to avoid structural singularity and other issues.
-  if comp_var == Variability.PARAMETER and
-     ((bind_var == Variability.STRUCTURAL_PARAMETER and Binding.isCrefExp(binding)) or
-      bind_var == Variability.NON_STRUCTURAL_PARAMETER) then
-    var := bind_var;
-  else
-    var := comp_var;
+  if var == Variability.PARAMETER then
+    if bind_var <= Variability.STRUCTURAL_PARAMETER and
+       (InstNode.isInheritedProtected(node) or Component.isFinal(component)) then
+      // A protected or final parameter with a structural parameter binding should also be evaluated.
+      var := Variability.STRUCTURAL_PARAMETER;
+    elseif bind_var == Variability.NON_STRUCTURAL_PARAMETER then
+      // A parameter with a non-structural parameter binding should not be evaluated.
+      var := Variability.NON_STRUCTURAL_PARAMETER;
+    end if;
   end if;
 end checkComponentBindingVariability;
 

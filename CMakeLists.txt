@@ -96,6 +96,8 @@ else()
   endif()
 endif()
 omc_add_to_report(OM_LIBRARY_ARCH)
+# The name Autoconf gives it, and what every *.in in the tree interpolates.
+set(host_short ${OM_LIBRARY_ARCH})
 
 ## OPTIONS #################################################################################################
 
@@ -253,6 +255,11 @@ else()
 endif()
 message(STATUS "CMAKE_INSTALL_INCLUDEDIR: ${CMAKE_INSTALL_INCLUDEDIR}")
 
+# windows-deps.cmake deferred these until the install dirs were final.
+if(COMMAND om_windows_deps_install)
+  om_windows_deps_install()
+endif()
+
 # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
 if(APPLE)
   set(OM_MACOS_INSTALL_BUNDLEDIR "Applications/")
@@ -346,6 +353,11 @@ endif()
 set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
 include(CTest)
 enable_testing()
+
+# Code coverage for the compiler and the C/C++ simulation runtimes
+# (-DOM_ENABLE_COVERAGE=ON). Included ahead of the subdirectories it
+# instruments, which read OM_ENABLE_COVERAGE and OM_COVERAGE_COMPILE_OPTIONS.
+include(cmake/modules/OpenModelicaCoverage.cmake)
 
 # libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
 if(OM_RUST_RESULT_READERS OR OM_RUST_RESULT_WRITERS)

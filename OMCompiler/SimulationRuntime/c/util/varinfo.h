@@ -27,6 +27,7 @@
 
 #ifndef _SIMULATION_VARINFO_H
 #define _SIMULATION_VARINFO_H
+#include "../omc_dll.h"
 
 #include <stdio.h>
 
@@ -48,7 +49,7 @@ enum var_type {
   VAR_TYPE_MAX          /* Number of variable types */
 };
 
-extern const char *var_type_names[VAR_TYPE_MAX];
+DLLDataDirection extern const char *var_type_names[VAR_TYPE_MAX];
 
 /**
  * @brief Variable kind.
@@ -63,7 +64,7 @@ enum var_kind {
   VAR_KIND_MAX          /* Number of variable kinds */
 };
 
-extern const char *var_kind_names[VAR_KIND_MAX];
+DLLDataDirection extern const char *var_kind_names[VAR_KIND_MAX];
 
 extern void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time);
 

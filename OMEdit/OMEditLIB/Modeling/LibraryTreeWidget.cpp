@@ -2831,7 +2831,7 @@ void LibraryTreeView::createActions()
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // simulate with animation Action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
@@ -3112,7 +3112,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSimulateAction);
             menu.addAction(mpSimulateWithTransformationalDebuggerAction);
             menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  #if !defined(WITHOUT_OSG)
+  #if !defined(WITHOUT_ANIMATION)
             menu.addAction(mpSimulateWithAnimationAction);
   #endif
             menu.addAction(mpSimulationSetupAction);
@@ -3490,7 +3490,7 @@ void LibraryTreeView::simulateWithAlgorithmicDebugger()
  */
 void LibraryTreeView::simulateWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->simulateWithAnimation(pLibraryTreeItem);

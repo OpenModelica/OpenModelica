@@ -15,11 +15,19 @@ use std::path::PathBuf;
 fn link_runtime_c() {
     println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DIR");
     println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_LINK");
+    println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DEF");
     // MSVC links the static archive *into* SimulationRuntimeC.dll, so absorb it
     // the same way. CMake names its dependencies, which an archive lacks.
     if let Ok(libs) = std::env::var("OMC_RUNTIME_C_LINK") {
         for lib in libs.split('|').filter(|s| !s.is_empty()) {
             println!("cargo:rustc-cdylib-link-arg={lib}");
+        }
+        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C+Rust
+        // links this cdylib rather than SimulationRuntimeC.dll. reexport_def.cmake
+        // derives /EXPORT: switches from the archive; they have to be a response
+        // file because rustc writes the cdylib's own .def and ours would replace it.
+        if let Ok(rsp) = std::env::var("OMC_RUNTIME_C_DEF") {
+            println!("cargo:rustc-cdylib-link-arg=@{rsp}");
         }
         return;
     }
