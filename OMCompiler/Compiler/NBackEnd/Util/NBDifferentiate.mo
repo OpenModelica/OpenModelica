@@ -1281,6 +1281,15 @@ public
               hasSetSub := true;
             end if;
           end for;
+          // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
+          if not hasSetSub and Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+            for c in ComponentRef.scalarize(exp.cref, false) loop
+              if UnorderedMap.contains(c, diff_map) then
+                hasSetSub := true;
+                break;
+              end if;
+            end for;
+          end if;
           if not hasSetSub then
             // no set-valued subscript to expand (e.g. a fully bare/unsubscripted
             // matrix cref like Rot_dq): keep the original whole-type zero, since

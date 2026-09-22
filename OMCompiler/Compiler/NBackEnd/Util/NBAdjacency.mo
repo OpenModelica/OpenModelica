@@ -881,6 +881,26 @@ public
         output Boolean b = UnorderedSet.contains(cref, set) or
                            UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set);
       end filterSet;
+
+      function expandSlice
+        "a slice (e.g. i[1:2]) whose elements are seeds depends on each of the elements"
+        input ComponentRef cref;
+        input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+        output list<ComponentRef> crefs;
+      protected
+        Type ty;
+      algorithm
+        crefs := {cref};
+        if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
+          ty := ComponentRef.getSubscriptedType(cref);
+          if Type.isArray(ty) and Type.sizeOf(ty) <= 256 then
+            crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarize(cref, false));
+            if listEmpty(crefs) then
+              crefs := {cref};
+            end if;
+          end if;
+        end if;
+      end expandSlice;
     algorithm
       sparsity := match full
         local
@@ -963,7 +983,7 @@ public
                   // as dependency information might not be combinable. optimize afterwards!
                   // ToDo: combine dependencies
                   (inner_deps, dep, repeated) := tpl;
-                  for dep_cref in inner_deps loop
+                  for dep_cref in List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)) loop
                     if filterSet(dep_cref, seed_set) then
                       // Try subscripted key first (NLS with per-element scalar seeds), then
                       // base key with subscript copy (ODE/DAE with full-array base seeds).
@@ -1469,6 +1489,25 @@ public
       end if;
     end expandFull;
 
+    function containsLoopCref
+      "true if the expression contains a cref of the set, also as an element of an array in the set"
+      input Expression exp;
+      input UnorderedSet<ComponentRef> set;
+      output Boolean b = Expression.fold(exp, function isLoopCref(set = set), false);
+    end containsLoopCref;
+
+    function isLoopCref
+      input Expression exp;
+      input output Boolean b;
+      input UnorderedSet<ComponentRef> set;
+    algorithm
+      b := match (b, exp)
+        case (false, Expression.CREF())
+          then UnorderedSet.contains(exp.cref, set) or UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), set);
+        else b;
+      end match;
+    end isLoopCref;
+
     function refine
       "refines the solvability kind using differentiation
       Note: only updates the solvabilites of the variables and equations from the maps v and e"
@@ -1534,7 +1573,7 @@ public
                     exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
                     if Expression.isZero(exp) then
                       sol := Solvability.UNSOLVABLE();
-                    elseif Expression.containsCrefSet(exp, vars_set) then
+                    elseif containsLoopCref(exp, vars_set) then
                       // nonlinear -> unique solution if does not contain the variable itself
                       // TODO: might still be unique in some cases, even if contains the variable, e.g. `exp(x)`
                       sol := Solvability.EXPLICIT_NONLINEAR(Expression.containsCref(exp, var));
@@ -2777,6 +2816,11 @@ public
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
       return;
+    end if;
+
+    // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+      hasSetSub := true;
     end if;
 
     if hasSetSub then
