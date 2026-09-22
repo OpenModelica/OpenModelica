@@ -349,16 +349,20 @@ void installWindowsSmokeLibrary(String installDir) {
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
-  sh 'autoreconf --install'
-  // Note: Do not use -march=native since we might use an incompatible machine in later stages
-  def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
-  // OMSimulator requires HOME to be set and writeable
-  if (clean) {
-    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+  withSccache {
+    withEnv(["PATH+SCCACHE_SHIMS=${sccacheShims()}"]) {
+      sh 'autoreconf --install'
+      // Note: Do not use -march=native since we might use an incompatible machine in later stages
+      def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
+      sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
+      // OMSimulator requires HOME to be set and writeable
+      if (clean) {
+        sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+      }
+      sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
+      sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+    }
   }
-  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
-  sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
 
   // Find unused imports
   sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
@@ -480,16 +484,14 @@ def sccacheEnv() {
 def withSccache(List extraEnv = [], Closure body) {
   withCredentials([string(credentialsId: 'sccache-ci-secret-key',
                           variable: 'AWS_SECRET_ACCESS_KEY')]) {
-    // Normalise the per-job workspace prefix out of the cache keys so the cache is
-    // shared across jobs/branches, not just rebuilds at the same checkout path.
-    // Without this, sccache hashes the absolute paths embedded in compile commands
-    // (-I.../source) and in the C/C++ preprocessor line markers, so every job's
-    // workspace path is a distinct key — each job re-populates the bucket with its
-    // own copies instead of hitting. SCCACHE_BASEDIRS (sccache's CCACHE_BASEDIR)
-    // strips this prefix before hashing; it must be absolute and must be in the
-    // environment of *every* sccache call, since a client auto-restarts a
-    // timed-out server and the restarted server inherits the env. env.WORKSPACE is
-    // unreliable in the docker agent (see makeLibsAndCache), so read it from pwd.
+    // Normalise the per-job workspace prefix out of the cache keys. SCCACHE_BASEDIRS
+    // (sccache's CCACHE_BASEDIR) strips it from the C/C++ preprocessor output before
+    // hashing, but not from the command line, so a compile that spells the workspace
+    // out in its arguments (CMake emits absolute -I and source paths) still only hits
+    // at the identical path. It must be absolute and must be in the environment of
+    // *every* sccache call, since a client auto-restarts a timed-out server and the
+    // restarted server inherits the env. env.WORKSPACE is unreliable in the docker
+    // agent (see makeLibsAndCache), so read it from pwd.
     def basedir = sh(script: 'pwd', returnStdout: true).trim()
     withEnv(extraEnv + sccacheEnv() + ["SCCACHE_BASEDIRS=${basedir}"]) {
       // Preflight: fail fast if the S3 cache backend is not usable. sccache
@@ -521,6 +523,28 @@ def withSccache(List extraEnv = [], Closure body) {
       }
     }
   }
+}
+
+// A directory of compiler shims running sccache, to put first on PATH: this is how the
+// autotools lanes get the cache. CC='sccache gcc' would break the OMSimulator sub-build,
+// which Makefile.in hands @CC@ as -DCMAKE_C_COMPILER, where CMake needs a single program.
+// Each shim execs the path its name resolved to here, before the directory goes on PATH,
+// so it cannot recurse into itself.
+String sccacheShims() {
+  String dir = '/tmp/omc-sccache-shims'
+  sh label: 'Generate the sccache compiler shims', script: """
+    set -eu
+    rm -rf ${dir}
+    mkdir -p ${dir}
+    for name in cc c++ gcc g++ clang clang++; do
+      real=\$(command -v \$name || true)
+      [ -n "\$real" ] || continue
+      printf '#!/bin/sh\\nexec sccache "%s" "\$@"\\n' "\$real" > ${dir}/\$name
+      chmod +x ${dir}/\$name
+    done
+    ls -l ${dir}
+  """
+  return dir
 }
 
 // The release profile ships LTO at -O3. A lane that builds an omc to test rather
@@ -1340,16 +1364,20 @@ void buildGUI(stash) {
     standardSetup()
     unstash stash
   }
-  sh 'autoreconf --install'
-  if (stash) {
-    patchConfigStatus()
-  }
-  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
+  withSccache {
+    withEnv(["PATH+SCCACHE_SHIMS=${sccacheShims()}"]) {
+      sh 'autoreconf --install'
+      if (stash) {
+        patchConfigStatus()
+      }
+      sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+      sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
+      sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 
-  // test make install after qt builds
-  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
+      // test make install after qt builds
+      sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
+    }
+  }
 }
 
 void buildAndRunOMEditTestsuite(stashName) {
@@ -1358,16 +1386,20 @@ void buildAndRunOMEditTestsuite(stashName) {
     sh 'rm -rf OMEdit/common'
     unstash stashName
   }
-  sh 'autoreconf --install'
-  if (stashName) {
-    patchConfigStatus()
+  withSccache {
+    withEnv(["PATH+SCCACHE_SHIMS=${sccacheShims()}"]) {
+      sh 'autoreconf --install'
+      if (stashName) {
+        patchConfigStatus()
+      }
+      sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+      if (stashName) {
+        makeLibsAndCache()
+      }
+      sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
+      sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
+    }
   }
-  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  if (stashName) {
-    makeLibsAndCache()
-  }
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
   HOME="\$PWD/libraries"
   cd build/bin
@@ -1620,11 +1652,16 @@ void buildGccOMC() {
 // coverage numbers (see coverageReportStage()) come from the same run that
 // tests the PR, rather than a separate instrumented build.
 void buildCMakeGccOMC() {
-  buildOMC_CMake([
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DOM_USE_CCACHE=OFF",
-    "-DCMAKE_INSTALL_PREFIX=build",
-    "-DOM_ENABLE_COVERAGE=ON"])
+  // The instrumented objects carry the absolute path gcov writes their .gcda to, so
+  // caching them is only safe because a hit needs the identical workspace path (see
+  // withSccache); coverageReportStage would not find counters written anywhere else.
+  withSccache {
+    buildOMC_CMake([
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DOM_COMPILER_CACHE=sccache",
+      "-DCMAKE_INSTALL_PREFIX=build",
+      "-DOM_ENABLE_COVERAGE=ON"])
+  }
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see ctestCMakeStashed).
@@ -1940,10 +1977,12 @@ void buildGUIAndStash(stashInput, outStash) {
 }
 
 void testUnitC() {
-  sh label: 'cmake version', script: "cmake --version"
-  sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF"
-  sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
-  sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
+  withSccache {
+    sh label: 'cmake version', script: "cmake --version"
+    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache"
+    sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
+    sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
+  }
   sh label: 'Check that the C unit tests wrote junit.xml', script: "test -f ./build_cmake/junit.xml"
 }
 
