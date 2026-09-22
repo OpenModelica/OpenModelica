@@ -4067,10 +4067,31 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      let prebody = (nls.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      ;separator="\n")
-     let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-       let &preExp = buffer "" /*BUFD*/
-       let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-       '<%preExp%>_res[<%i0%>] = <%expPart%>;'
+     let body = (nls.eqs |> eq2 => match eq2
+       case SES_RESIDUAL(__) then
+         let &preExp = buffer "" /*BUFD*/
+         let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+         '<%preExp%>_res[<%res_index%>] = <%expPart%>;'
+       case SES_FOR_RESIDUAL(__) then
+         // Mirrors CodegenC.tpl's SES_FOR_RESIDUAL case in generateNonLinearResidualFunction:
+         // emit a real for-loop per iterator and flatten them into one residual-slot offset
+         // added to res_index (a for-loop-wrapped array-tearing residual has no single
+         // compile-time position, so hasindex can't be used here).
+         let &preExp = buffer "" /*BUFD*/
+         let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+         let forPart = (iterators |> iterator =>
+             forIteratorCpp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+           ;separator="\n")
+         let endForPart = (iterators |> iterator => "}" ;separator="\n")
+         let indexShift = <<<%(iterators |> iterator => forIteratorBodyCpp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
+         let assignment = if isArrayType(typeof(exp))
+           then error(sourceInfo(), 'Template error: array-valued SES_FOR_RESIDUAL is not implemented for the Cpp target.')
+           else '<%preExp%>_res[<%res_index%>+(<%indexShift%>)] = <%expPart%>;'
+         <<
+         <%forPart%>
+         <%assignment%>
+         <%endForPart%>
+         >>
        ;separator="\n")
    <<
    <% match eq
@@ -4097,10 +4118,77 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Context c
   match eq
   case e as SES_RESIDUAL(__)
   then ""
+  case e as SES_FOR_RESIDUAL(__)
+  then ""
   else
   equation_(eq, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   end match
 end functionExtraResidualsPreBody;
+
+template forIteratorCpp(SimIterator iter, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates a for-loop header (plus any dependent sub_iter bindings) for one SES_FOR_RESIDUAL
+  iterator. Mirrors CodegenC.tpl's forIterator, but declares the loop variable inline (scoped to
+  its own for-loop) instead of hoisting it into varDecls, since the same iterator cref (e.g. $i1)
+  can be reused by other residual equations in the same function."
+::= match iter
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let start_ = daeExp(start, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let step_ = daeExp(step, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let stop_ = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let subIterDecls = (sub_iter |> si => subIteratorCpp(si, iter_, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n")
+    <<
+    for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
+    <%if subIterDecls then subIterDecls%>
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arr = (lst |> elem => '<%elem%>'; separator=", ")
+    let subIterDecls = (sub_iter |> si => subIteratorCpp(si, '<%iter_%>_+1', context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n")
+    <<
+    static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
+    for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
+      int <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+    <%if subIterDecls then subIterDecls%>
+    >>
+end forIteratorCpp;
+
+template forIteratorBodyCpp(SimIterator iter, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                            Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Computes one iterator's contribution to a flattened residual-slot offset. Mirrors
+  CodegenC.tpl's forIteratorBody, used to build a bijective index into res[] across nested
+  iterators (a plain sum would collapse most index combinations onto the same slot)."
+::= match iter
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let start_ = daeExp(start, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let step_ = daeExp(step, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let size_ = daeExp(size, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    (<%iter_%>-<%start_%>)/<%step_%>+<%size_%>*(
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%iter_%>_+<%size%>*(
+    >>
+end forIteratorBodyCpp;
+
+template subIteratorCpp(tuple<ComponentRef, array<Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, SimCode simCode,
+                        Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Binds a dependent (sub_iter) iterator selected by the enclosing range/list iterator's current
+  value. Mirrors CodegenCFunctions.tpl's subIterator."
+::= match iter
+  case (name, range) then
+    let name_ = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator=", ")
+    let size_ = arrayLength(range)
+    <<
+    static const int <%name_%>_arr[<%size_%>] = {<%range_%>};
+    int <%name_%> = <%name_%>_arr[<%parent_iter%>-1];
+    >>
+end subIteratorCpp;
 
 template functionBodies(list<Function> functions, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates the body for a set of functions."
