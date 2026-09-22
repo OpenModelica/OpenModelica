@@ -562,7 +562,15 @@ public
     list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
     UnorderedSet<ComponentRef> iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef iter;
+    Pointer<Variable> var_ptr;
   algorithm
+    // a for equation binding a field of a record (e.g. an array of records) is inlined
+    // in the initialization like a whole record, it can not be assigned as a whole
+    var_ptr := BVariable.getVarPointer(ComponentRef.stripSubscriptsAll(cref), sourceInfo());
+    if isSome(BVariable.getParent(var_ptr)) then
+      b := false;
+      return;
+    end if;
     b := not listEmpty(subs);
     for sub in subs loop
       if not Subscript.isIterator(sub) then
