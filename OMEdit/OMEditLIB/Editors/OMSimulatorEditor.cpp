@@ -204,11 +204,7 @@ OMSimulatorHighlighter::OMSimulatorHighlighter(OMSimulatorEditorPage *pOMSimulat
 void OMSimulatorHighlighter::initializeSettings()
 {
   const QFont font = mpPlainTextEdit->font();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
-#else // QT_VERSION_CHECK
-  mpPlainTextEdit->setTabStopWidth(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
-#endif // QT_VERSION_CHECK
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;

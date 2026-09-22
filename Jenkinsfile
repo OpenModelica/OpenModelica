@@ -252,8 +252,6 @@ pipeline {
                 "-DCMAKE_C_COMPILER=gcc",           // Always specify the compilers explicitly for macOS
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DCMAKE_Fortran_COMPILER=gfortran",
-                "-DOM_QT_MAJOR_VERSION=5",          // Use Qt5 on old macOS machines
-                "-DOM_OMEDIT_ENABLE_ANIMATION=OFF", // Qt5 has no Qt Quick 3D
                 "-DOM_OMC_ENABLE_COLPACK=OFF"])     // Disable ColPack (missing OpenMP)
             }
           }
@@ -636,25 +634,6 @@ pipeline {
           }
         }
 
-/*
-        stage('16 build-gui-clang-qt5') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt5', 'omedit-testsuite-clang-qt5') }
-          }
-        }
-*/
         stage('17 build-gui-clang-qt6') {
           agent {
             docker {
@@ -669,7 +648,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt6', 'omedit-testsuite-clang-qt6') }
+            script { common.buildGUIAndStash('omc-clang', 'omedit-testsuite-clang-qt6') }
           }
         }
 
@@ -805,7 +784,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6', 'qt6')
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6')
             }
           }
         }

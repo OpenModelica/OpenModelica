@@ -339,11 +339,7 @@ namespace IAEX
       }
       else if( rule.attribute() == "FontFamily" )
       {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
         style_.textCharFormat()->setFontFamilies({rule.value()});
-#else
-        style_.textCharFormat()->setFontFamily( rule.value() );
-#endif
       }
       else if( rule.attribute() == "InitializationCell" )
       {}

@@ -80,20 +80,6 @@ namespace IAEX
   {
   }
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  /*!
-   * \author Ingemar Axelsson and Anders Fernström
-   * date 2005-11-03
-   *
-   * 2005-11-03 AF, Updated the function to reflect the changes made
-   * in qt (from v3 to v4). The function now takes a QUrl as parameter
-   * instead of a QString (in qt3).
-   */
-  void MyTextBrowser::setSource(const QUrl &name)
-  {
-    emit openLink( &name );
-  }
-#endif
 
   /*!
    * \author Anders Fernström
@@ -205,7 +191,6 @@ namespace IAEX
 
   }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   /*!
    * \brief MyTextBrowser::doSetSource
    * Attempts to load the document at the given url with the specified type.
@@ -217,7 +202,6 @@ namespace IAEX
   {
     emit openLink( &name );
   }
-#endif
 
 
 

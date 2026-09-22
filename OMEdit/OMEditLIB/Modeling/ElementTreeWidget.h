@@ -98,9 +98,7 @@ class ElementTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
 public:
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
   Q_DISABLE_COPY_MOVE(ElementTreeModel)
-#endif
   ElementTreeModel(ElementWidget *pElementWidget);
   ~ElementTreeModel();
   ElementTreeItem* getRootElementTreeItem() {return mpRootElementTreeItem;}

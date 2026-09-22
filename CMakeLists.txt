@@ -147,8 +147,9 @@ endif()
 
 # GUI options
 omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
-# Qt version (5/6) used by the GUI clients.
-set(OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
+# The OMOptim and OMSens_Qt submodules still spell their Qt targets
+# Qt${OM_QT_MAJOR_VERSION}::; everything else asks for Qt6 directly.
+set(OM_QT_MAJOR_VERSION 6)
 # The Qt clients are unused in the wasm build, so force them off when OM_OMC_WASM is set.
 cmake_dependent_option(OM_ENABLE_OMSHELL    "Enable OMShell gui client"    ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
 cmake_dependent_option(OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)

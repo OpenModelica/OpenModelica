@@ -54,7 +54,6 @@ INCLUDEPATH += $$OMEDIT_ROOT \
   $$OPENMODELICAHOME/../OMSimulator/include/
 
 # Don't show the warnings from included headers.
-# Don't add a space between for and open parenthesis below. Qt4 complains about it.
 for(path, INCLUDEPATH) {
   QMAKE_CXXFLAGS += -isystem $${path}
 }

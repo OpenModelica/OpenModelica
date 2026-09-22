@@ -37,9 +37,7 @@
 #-------------------------------------------------
 
 QT += core gui svg printsupport widgets
-equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat
-}
+QT += core5compat
 
 # Set the C++ standard.
 CONFIG += c++17

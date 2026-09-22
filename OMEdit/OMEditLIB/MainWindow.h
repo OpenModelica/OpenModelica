@@ -53,8 +53,8 @@ extern "C" {
 #include "Util/StringHandler.h"
 
 #include <QtGlobal>
-#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
-#error "OMEdit requires Qt 5.12.0 or newer"
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#error "OMEdit requires Qt 6.0.0 or newer"
 #endif
 
 #include <QMainWindow>

@@ -28,7 +28,7 @@ jobs:
       with:
         usesh: true
         prepare: |
-          pkg install -y cmake git lang/gcc devel/llvm devel/qt5 openjdk21 devel/boost-all
+          pkg install -y cmake git lang/gcc devel/llvm devel/qt6 openjdk21 devel/boost-all
 
         run: |
           pwd
