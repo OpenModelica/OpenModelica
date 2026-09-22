@@ -962,6 +962,8 @@ public
           Expression.makeEnumLiteral(dimension.enumType, Type.enumSize(dimension.enumType))));
       case Dimension.EXP()
         then Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), dimension.exp));
+      case Dimension.RESIZABLE()
+        then Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), dimension.exp));
     end match;
   end fromDimension;
 

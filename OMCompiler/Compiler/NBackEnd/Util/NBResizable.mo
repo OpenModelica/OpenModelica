@@ -806,7 +806,8 @@ protected
     for tpl in UnorderedMap.toList(c2p) loop
       (const, params) := tpl;
       for param in params loop
-        UnorderedMap.add(param, const :: UnorderedMap.getSafe(param, p2c, sourceInfo()), p2c);
+        // constraints of single elements (e.g. from expanded connections) may contain parameters that were not collected
+        UnorderedMap.add(param, const :: UnorderedMap.getOrDefault(param, p2c, {}), p2c);
       end for;
     end for;
   end invertConstraintParameterMap;

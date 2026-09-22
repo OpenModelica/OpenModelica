@@ -3187,10 +3187,11 @@ algorithm
             {ComponentRef.toString(cr)}, info);
         end if;
 
-        if ComponentRef.subscriptsVariability(cr) > Variability.PARAMETER then
+        // subscripts that depend on resizable parameters are allowed
+        if ComponentRef.subscriptsVariability(cr) > Variability.NON_STRUCTURAL_PARAMETER then
           subs := ComponentRef.subscriptsAllFlat(cr);
           for sub in subs loop
-            if Subscript.variability(sub) > Variability.PARAMETER then
+            if Subscript.variability(sub) > Variability.NON_STRUCTURAL_PARAMETER then
               Error.addSourceMessage(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
                 {Expression.toString(connExp), Subscript.toString(sub)}, info);
               fail();
@@ -3584,7 +3585,8 @@ algorithm
   (range_exp, _, range_var) := typeIterator(iterator, range_exp, context, structural = true);
   next_context := InstContext.set(context, NFInstContext.FOR);
 
-  if range_var > Variability.PARAMETER or Structural.isExpressionNotFixed(range_exp, maxDepth = 100) then
+  // A range with resizable parameters is still expandable, its bounds are evaluated to resolve connections.
+  if range_var > Variability.NON_STRUCTURAL_PARAMETER or Structural.isExpressionNotFixed(range_exp, maxDepth = 100) then
     next_context := InstContext.set(context, NFInstContext.NONEXPANDABLE);
   end if;
 

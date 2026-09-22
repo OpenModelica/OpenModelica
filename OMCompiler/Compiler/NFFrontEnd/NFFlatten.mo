@@ -338,7 +338,8 @@ protected
 algorithm
   settings := FlattenSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE),
-    Flags.isSet(Flags.ARRAY_CONNECT),
+    // connections in for equations over resizable parameters can only be resolved with the array handler
+    Flags.isSet(Flags.ARRAY_CONNECT) or Flags.getConfigBool(Flags.RESIZABLE_ARRAYS),
     Flags.isSet(Flags.NF_API),
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
