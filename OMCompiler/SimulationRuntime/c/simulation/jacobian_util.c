@@ -40,14 +40,15 @@
  * Jacobian has to be allocatd already.
  *
  * @param jacobian                  Jacobian to initialized.
- * @param sizeCols                  Number of columns of Jacobian
- * @param sizeRows                  Number of rows of Jacobian
+ * @param sizeCols                  Number of columns of Jacobian.
+ * @param sizeRows                  Number of rows of Jacobian.
  * @param sizeTmpVars               Size of tmp vars array.
+ * @param isAdjoint                 Non-zero if Jacobian is adjoint.
  * @param constantEqns              Function pointer for constant equations of Jacobian.
  *                                  NULL if not available.
  * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
  */
-void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, modelica_boolean isAdjoint)
+void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, unsigned int isAdjoint)
 {
   /* isRowEval is only known after this call, so make both vectors large enough for
    * either orientation. For square Jacobians (the common case) this is exact. */
@@ -56,7 +57,7 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
 
-  if (isAdjoint) {
+  if (isAdjoint == 1) {
     jacobian->seedVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
     jacobian->seedVars = NULL;
 

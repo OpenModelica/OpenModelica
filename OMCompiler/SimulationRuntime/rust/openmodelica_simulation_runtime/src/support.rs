@@ -377,13 +377,13 @@ pub extern "C" fn initJacobian(
     evalColumn: jacobianColumn_func_ptr,
     constantEqns: jacobianColumn_func_ptr,
     sparsePattern: *mut SPARSE_PATTERN,
-    isAdjoint: modelica_boolean,
+    isAdjoint: c_uint,
 ) {
     let j = unsafe { &mut *jacobian };
     let size_direction = (sizeCols.max(sizeRows)) as usize;
     j.sizeCols = sizeCols as usize;
     j.sizeRows = sizeRows as usize;
-    if isAdjoint != 0 {
+    if isAdjoint == 1 {
         j.seedVarsAdj = calloc_bytes(size_direction * 8) as *mut f64;
         j.seedVars = ptr::null_mut();
 
