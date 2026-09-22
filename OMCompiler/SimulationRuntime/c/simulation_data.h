@@ -182,6 +182,14 @@ typedef struct NONLINEAR_PATTERN
   unsigned int* rows;                  // size: numberOfNonlinear - all rows appended in one vector
 } NONLINEAR_PATTERN;
 
+typedef enum
+{
+  JACOBIAN_UNKNOWN = 0,       /* availability of jacobian unknown (not initialized) */
+  JACOBIAN_NOT_AVAILABLE,     /* no symbolic jacobian and no sparsity pattern available */
+  JACOBIAN_ONLY_SPARSITY,     /* only sparsity pattern available */
+  JACOBIAN_AVAILABLE          /* symbolic jacobian and sparsity pattern available */
+} JACOBIAN_AVAILABILITY;
+
 /**
  * @brief Analytic jacobian struct
  *
@@ -220,6 +228,13 @@ typedef struct JACOBIAN
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
   unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
                                            corresponding CSC (column oriented) nz positions of J. Size nnz. */
+
+
+  // Stuff that needs to be kept for rust compile compatibility, but is not used in C code
+  jacobianColumn_func_ptr constantEqns;
+  modelica_boolean isRowEval;
+  modelica_boolean isBidirectional;
+  JACOBIAN_AVAILABILITY availability;
 } JACOBIAN;
 
 /* EXTERNAL_INPUT

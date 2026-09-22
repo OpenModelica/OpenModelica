@@ -163,9 +163,6 @@ void freeJacobian(JACOBIAN *jac)
     freeEvalDAG(jac->dagT); jac->dagT = NULL;
     freeEvalSelection(jac->evalSelectionCol); jac->evalSelectionCol = NULL;
     freeEvalSelection(jac->evalSelectionRow); jac->evalSelectionRow = NULL;
-    jac->evalRow = NULL;
-    jac->constRowEqns = NULL;
-    jac->sizeTmpVarsAdj = 0;
     free(jac->recoverMask); jac->recoverMask = NULL;
     free(jac->csrToCscMap); jac->csrToCscMap = NULL;
   }
