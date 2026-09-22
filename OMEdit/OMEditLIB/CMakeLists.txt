@@ -498,7 +498,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
 #   OM_OMEDIT_BUNDLE_LANGUAGE_SERVER=OFF   ship no server at all.
 option(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER
        "Install the Modelica language server with OMEdit" ON)
-set(MODELICA_LS_VERSION "0.3.3"
+set(MODELICA_LS_VERSION "0.3.5"
     CACHE STRING "modelica-language-server release to install, and the one the options page offers to download")
 set(MODELICA_LS_DIR ""
     CACHE PATH "Directory holding an already-built modelica-language-server. Installed instead of downloading a release.")
@@ -564,18 +564,18 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
       set(_ls_asset "modelica-language-server-linux-arm64")
-      set(_ls_sha256 "933936fec0c69ede57352e968fa04e4d20c77b056acc26efc67975698ca8623d")
+      set(_ls_sha256 "494c90dc8e64d47953b9432bcdfe2bbfb50acf70adf4f4875e4bccebdd1ac131")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
       set(_ls_asset "modelica-language-server-linux-x64")
-      set(_ls_sha256 "5fa18d4444c68518a6ca3e91b31c65340c0cbe01751e940061f05072c3706eca")
+      set(_ls_sha256 "3c0563c464f144af110c7625fb04b022ac208ecd739f70c4ede3dc0502cd8610")
     endif()
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
       set(_ls_asset "modelica-language-server-macos-arm64")
-      set(_ls_sha256 "349c37f8da4a61706f799bd14d561db19aaca00c7394f61099cd79a5ba5441ca")
+      set(_ls_sha256 "235e1848be90240e2648ce0d15b23b2a304d2356cb9bbf84d1f4ba19d7c3b7c2")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
       set(_ls_asset "modelica-language-server-macos-x64")
-      set(_ls_sha256 "9b7abb1375c764cf86013ee7c8f20661e8add3d80ff8575c61c1a9be3ca87532")
+      set(_ls_sha256 "8197f20f04d6dc7493a628f8ada4e816d7a532a557cbcda26af2e3fe93be09b6")
     endif()
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # Only a 64-bit Windows build is published. CMAKE_SIZEOF_VOID_P is empty
@@ -583,13 +583,13 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
        AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
       set(_ls_asset "modelica-language-server-windows-x64.exe")
-      set(_ls_sha256 "3622e8d68aa791dd45c17032f307df58991e33a2e9eac09a0fa483f3425fa5dc")
+      set(_ls_sha256 "862a01e697b0a5fb4605caa18a1b57b8b690e76a5b40f06a67dd15caa36e129c")
     endif()
   endif()
 
   # The hashes above belong to one release. Asking for another version still
   # works, unverified, rather than failing on a hash that cannot match.
-  if(NOT MODELICA_LS_VERSION STREQUAL "0.3.3")
+  if(NOT MODELICA_LS_VERSION STREQUAL "0.3.5")
     set(_ls_sha256 "")
   endif()
 
@@ -607,7 +607,7 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
     set(_ls_assets
         "${_ls_asset}|${_ls_sha256}"
         "tree-sitter-modelica.wasm|fb9e1f0c33288fc301f50bff88bad28ebf2f79365b23482855a1a9e756c78e56"
-        "web-tree-sitter.wasm|e8cddb21e0d899ff8613925742f6475838068a0d1b2405faa7087c08151ee3a2")
+        "web-tree-sitter.wasm|c03bccdc3b448a32848f5ae327e209c982bbb0840d43eec8bc2d5759544a1ed3")
 
     # Keyed by version so bumping MODELICA_LS_VERSION re-downloads rather than
     # reusing stale files.
