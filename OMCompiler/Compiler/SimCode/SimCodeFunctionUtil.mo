@@ -1664,7 +1664,7 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
-      Boolean is_default, usedExternally, bool1;
+      Boolean is_default, usedExternally, bool1, changed;
 
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, usedExternally = usedExternally)
       algorithm
@@ -1677,9 +1677,10 @@ algorithm
           // If it already exists check if we need to update it.
           if isSome(optRecDecl) then
             SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
+            (vars, changed) := addMissingDefaults(vars, varlst);
 
-            if usedExternally and not bool1 then
-              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, true);
+            if changed or (usedExternally and not bool1) then
+              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally or bool1);
               UnorderedMap.add(sname, recDecl, recDeclsMap);
             end if;
           // Add it if it does not exist.
@@ -1719,6 +1720,40 @@ algorithm
 
   end match;
 end collectRecDeclsFromType;
+
+protected function addMissingDefaults
+  "Not every type of a record carries the defaults of its fields, so the
+   declaration takes each missing default from the next type that has it."
+  input list<SimCodeFunction.Variable> inVars;
+  input list<DAE.Var> typeVars;
+  output list<SimCodeFunction.Variable> vars = {};
+  output Boolean changed = false;
+protected
+  Option<DAE.Exp> value;
+  SimCodeFunction.Variable var;
+algorithm
+  for v in inVars loop
+    var := v;
+    () := match var
+      case SimCodeFunction.VARIABLE(value = NONE())
+        algorithm
+          for tv in typeVars loop
+            if stringEq(tv.name, ComponentReferenceBasics.crefFirstIdent(var.name)) then
+              value := checkSourceAndGetBindingExp(tv.binding);
+              if isSome(value) then
+                var.value := value;
+                changed := true;
+              end if;
+              break;
+            end if;
+          end for;
+        then ();
+      else ();
+    end match;
+    vars := var :: vars;
+  end for;
+  vars := listReverse(vars);
+end addMissingDefaults;
 
 protected function typesVarNoBinding
   input DAE.Var inTypesVar;
