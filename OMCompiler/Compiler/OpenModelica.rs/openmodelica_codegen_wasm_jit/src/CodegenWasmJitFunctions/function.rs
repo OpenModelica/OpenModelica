@@ -324,16 +324,17 @@ fn init_var(
     done.push(slot);
     let _g = PartGuard::new(format!("the declaration of `{vname}`"));
     // A `constant` is never assigned, so it aliases its shared literal instead of
-    // copying it on every call (C's `arrayVarConstLiteralAlias`).
+    // copying it on every call (C's `arrayVarConstLiteralAlias`). The pool keeps
+    // the literal alive, so the local borrows it and every read retains as usual.
     if matches!(kind, DAE::VarKind::CONST)
         && !*bind_from_outside
         && let Some(val) = value
         && shared_lits::is_shared(val)
     {
         array_allocs.retain(|(i, ..)| *i != slot);
-        let w = compile_exp(ctx, val)?;
-        coerce(ctx, w, sty.wty());
+        shared_lits::compile_borrowed(ctx, val);
         ctx.emit(we::Instruction::LocalSet(slot));
+        ctx.borrowed_locals.push(slot);
         return Ok(());
     }
     if let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot) {
