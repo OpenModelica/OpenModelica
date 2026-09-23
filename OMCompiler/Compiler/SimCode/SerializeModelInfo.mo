@@ -150,6 +150,7 @@ algorithm
   b := serializeVarsHelp(file, vars.stateVars, withOperations, true);
   b := serializeVarsHelp(file, vars.derivativeVars, withOperations, b);
   b := serializeVarsHelp(file, vars.algVars, withOperations, b);
+  b := serializeVarsHelp(file, vars.aliasVars, withOperations, b);
   b := serializeVarsHelp(file, vars.intAlgVars, withOperations, b);
   b := serializeVarsHelp(file, vars.boolAlgVars, withOperations, b);
   b := serializeVarsHelp(file, vars.inputVars, withOperations, b);
@@ -200,6 +201,23 @@ algorithm
   serializeSource(file,var.source,withOperations);
   File.write(file, ",\"index\":");
   File.writeInt(file, var.index);
+  () := match var.aliasvar
+    local
+      DAE.ComponentRef cr;
+    case SimCodeVar.ALIAS(varName = cr)
+      algorithm
+        File.write(file, ",\"alias\":\"");
+        writeCref(file, cr, escape=JSON);
+        File.write(file, "\"");
+      then ();
+    case SimCodeVar.NEGATEDALIAS(varName = cr)
+      algorithm
+        File.write(file, ",\"alias\":\"-");
+        writeCref(file, cr, escape=JSON);
+        File.write(file, "\"");
+      then ();
+    else ();
+  end match;
   File.write(file,"}");
 end serializeVar;
 

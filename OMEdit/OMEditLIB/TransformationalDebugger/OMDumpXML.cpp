@@ -204,6 +204,7 @@ OMVariable& OMVariable::operator=(const OMVariable &var)
 void OMVariable::copyData(const OMVariable &var)
 {
   name = var.name;
+  alias = var.alias;
   comment = var.comment;
   info = var.info;
   types = var.types;
