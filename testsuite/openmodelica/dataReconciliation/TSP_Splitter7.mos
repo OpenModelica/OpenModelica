@@ -13,6 +13,9 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.TSP_Splitter7, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
+readFile("NewDataReconciliationSimpleTests.TSP_Splitter7_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
@@ -1930,4 +1933,10 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// lumpedStraightPipe1.Q,2.1,2.07241,1.96,1.58637,TRUE,0.0239712,
+// lumpedStraightPipe3.Q,0.97,0.996203,1.91,1.56627,TRUE,0.0239712,
+// lumpedStraightPipe2.Q,1.05,1.0762,1.91,1.56627,TRUE,0.0239712,
+// "
+// ""
 // endResult

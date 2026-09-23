@@ -12,6 +12,9 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.assert, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
+readFile("NewDataReconciliationSimpleTests.assert_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
@@ -230,4 +233,9 @@ getErrorString();
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/assert.mo:10:3-10:38:writable] Warning: In relation table_real[1] == 1.0, == on Real operands is deprecated in non-function contexts.
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// b,11,11.5,2,1.41421,TRUE,0.353553,
+// a,12,11.5,2,1.41421,TRUE,0.353553,
+// "
+// ""
 // endResult
