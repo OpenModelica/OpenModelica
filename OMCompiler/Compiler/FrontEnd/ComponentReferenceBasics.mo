@@ -301,7 +301,7 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
       end if;
       s2::ss := ss;
       if compareSubscript == CompareWithSubsType.WithGenericSubscript then
-        res := stringCompare(ExpressionBasics.printSubscriptStr(s1), ExpressionBasics.printSubscriptStr(s2));
+        res := compareSubscriptStr(s1, s2);
       elseif compareSubscript == CompareWithSubsType.WithGenericSubscriptNotAlphabetic then
         res := ExpressionBasics.compareSubscripts(s1, s2);
       else
@@ -317,6 +317,22 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
       res := 1;
     end if;
   end compareSubs;
+
+  function compareSubscriptStr
+    "stringCompare of the printed subscripts, without printing an integer index."
+    input DAE.Subscript s1, s2;
+    output Integer res;
+  algorithm
+    res := match (s1, s2)
+      local
+        Integer i1, i2;
+      case (DAE.INDEX(exp = DAE.ICONST(integer = i1)), DAE.INDEX(exp = DAE.ICONST(integer = i2)))
+        then if i1 == i2 then 0 else stringCompare(intString(i1), intString(i2));
+      else
+        if referenceEq(s1, s2) then 0
+        else stringCompare(ExpressionBasics.printSubscriptStr(s1), ExpressionBasics.printSubscriptStr(s2));
+    end match;
+  end compareSubscriptStr;
 end CompareWithGenericSubscript;
 
 package CompareWithGenericSubscriptNotAlphabetic
