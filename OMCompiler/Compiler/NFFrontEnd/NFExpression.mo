@@ -5933,27 +5933,22 @@ public
 
   function tupleElement
     input Expression exp;
-    input Type ty;
     input Integer index;
     output Expression tupleElem;
   algorithm
     tupleElem := match exp
-      local
-        Type ety;
-
       case TUPLE() then listGet(exp.elements, index);
 
       case ARRAY()
         algorithm
-          ety := Type.unliftArray(ty);
-          exp.elements := Array.map(exp.elements, function tupleElement(ty = ety, index = index));
+          exp.elements := Array.map(exp.elements, function tupleElement(index = index));
         then
           exp;
 
       case SUBSCRIPTED_EXP(split = true)
-        then mapSplitExpressions(exp, function tupleElement(ty = ty, index = index));
+        then mapSplitExpressions(exp, function tupleElement(index = index));
 
-      else TUPLE_ELEMENT(exp, index, ty);
+      else TUPLE_ELEMENT(exp, index, Type.nthTupleType(typeOf(exp), index));
     end match;
   end tupleElement;
 
