@@ -4175,6 +4175,26 @@ template forIteratorBodyCpp(SimIterator iter, Context context, Text &preExp, Tex
     >>
 end forIteratorBodyCpp;
 
+template lhsCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                 Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates an assignable reference for the left hand side of an equation.
+  cref1 names the whole variable and, without NF_SCALARIZE, silently drops the subscripts of a
+  non-scalarized (array-typed) variable. For a cref that is fully subscripted down to a single
+  element that would name the whole array object, so index it instead, the same way daeExpCref
+  reads such a cref on the right hand side."
+::=
+  if boolAnd(boolNot(crefIsScalar(cr, context)),
+             boolAnd(intEq(listLength(crefSubs(cr)), listLength(crefDims(cr))), crefSubIsScalar(cr)))
+  then
+    let arrName = contextCref(crefStripLastSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let subsStr = (crefSubs(cr) |> INDEX(__) =>
+        daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      ;separator=",")
+    '<%arrName%>(<%subsStr%>)'
+  else
+    cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+end lhsCref;
+
 template subIteratorCpp(tuple<ComponentRef, array<Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, SimCode simCode,
                         Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Binds a dependent (sub_iter) iterator selected by the enclosing range/list iterator's current
@@ -11408,7 +11428,7 @@ case SES_SIMPLE_ASSIGN(__) then
     >>
   else
     let startValueType = crefStartValueType(cref)
-    let lvalue = cref1(cref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+    let lvalue = lhsCref(cref, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let assignExp = if boolAnd(assignToStartValues, boolNot(stringEq(startValueType, "ExternalObject"))) then
       'SystemDefaultImplementation::set<%startValueType%>StartValue(<%lvalue%>, <%expPart%>, <%overwriteOldStartValue%>);' else
       '<%lvalue%> = <%expPart%>;'
