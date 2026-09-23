@@ -15704,22 +15704,39 @@ end isSimulationCodegen;
 
 public function isContiguousArrayCref
   "Whether the scalarized elements of an array cref occupy consecutive slots of
-   one variable array, so the C target may address them through the first one."
+   one variable array, so the C target may address them through the first one.
+   A Jacobian's own variables only if its table has the array itself, as the
+   new backend's does."
   input DAE.ComponentRef inCref;
+  input SimCodeFunction.Context context;
   output Boolean outContiguous = true;
 protected
   SimCode.SimCode simCode = getSimCode();
   SimCodeVar.SimVar v;
   Integer next = -1;
-  Boolean param, firstParam = false;
+  Boolean param, firstParam = false, jacVar;
+  list<DAE.ComponentRef> crefs;
 algorithm
   if not simCode.scalarized then
     return;
   end if;
-  for cr in ComponentReference.expandCref(inCref, true) loop
+  crefs := ComponentReference.expandCref(inCref, true);
+  (jacVar, outContiguous) := match (context, crefs)
+    local
+      HashTableCrefSimVar.HashTable jacHT;
+      DAE.ComponentRef cr;
+    case (SimCodeFunction.JACOBIAN_CONTEXT(jacHT = SOME(jacHT)), cr :: _)
+      guard isJacobianColumnCref(cr) or List.any(crefs, function BaseHashTable.hasKey(hashTable = jacHT))
+      then (true, BaseHashTable.hasKey(ComponentReference.crefStripSubs(inCref), jacHT));
+    else (false, true);
+  end match;
+  if jacVar then
+    return;
+  end if;
+  for cr in crefs loop
     v := cref2simvar(cr, simCode);
-    // A cref the SimCode does not know is addressed through some other value
-    // array (a Jacobian's own), where the elements are consecutive again.
+    // A cref the SimCode does not know is a whole-array Jacobian seed,
+    // addressed through the seed's own value array.
     if v.index < 0 then
       return;
     end if;
@@ -15738,6 +15755,22 @@ algorithm
     next := v.index + 1;
   end for;
 end isContiguousArrayCref;
+
+public function isJacobianColumnCref
+  "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
+   Jacobian only has the elements that depend on the seeds; the others are zero."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    local
+      String id, last;
+    case DAE.CREF_QUAL(ident = id, componentRef = DAE.CREF_IDENT(ident = last))
+      then StringUtil.startsWith(id, DAE.partialDerivativeNamePrefix) and StringUtil.startsWith(last, "dummyVar");
+    case DAE.CREF_QUAL() then isJacobianColumnCref(cr.componentRef);
+    else false;
+  end match;
+end isJacobianColumnCref;
 
 public function cref2simvar
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."

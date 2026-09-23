@@ -1702,8 +1702,14 @@ package SimCodeUtil
     output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
 
+  function isJacobianColumnCref
+    input DAE.ComponentRef cr;
+    output Boolean b;
+  end isJacobianColumnCref;
+
   function isContiguousArrayCref
     input DAE.ComponentRef inCref;
+    input SimCodeFunction.Context context;
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
