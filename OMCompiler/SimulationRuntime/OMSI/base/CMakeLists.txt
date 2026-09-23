@@ -48,8 +48,11 @@ install(TARGETS ${OSUBaseName}
   ARCHIVE DESTINATION ${LIBINSTALLEXT})
 
 # The generated OMSU makefile copies and links libexpat from $OMHOME/lib/<triple>/omc.
+# A system expat is not ours to install; the makefile then links that one instead.
 if(TARGET omc::3rd::FMIL::expat)
-  install(FILES $<TARGET_FILE:omc::3rd::FMIL::expat> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  if(NOT OM_USE_SYSTEM_EXPAT)
+    install(FILES $<TARGET_FILE:omc::3rd::FMIL::expat> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  endif()
 else()
   # Fallback for "standalone" makefile build
   # TODO: Remove when switching to CMake build
