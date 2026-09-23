@@ -234,6 +234,10 @@ fn build_engine_cfg(inlining: bool, extra: impl FnOnce(&mut wasmtime::Config)) -
     if inlining {
         cfg.compiler_inlining(wasmtime::Inlining::Yes);
     }
+    // `/tmp/perf-<pid>.map`, so `perf report` names the model's functions.
+    if std::env::var_os("OMC_WASM_PERFMAP").is_some() {
+        cfg.profiler(wasmtime::ProfilingStrategy::PerfMap);
+    }
     extra(&mut cfg);
     wasmtime::Engine::new(&cfg).expect("wasm-jit: failed to build wasmtime engine")
 }
