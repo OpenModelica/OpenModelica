@@ -1584,6 +1584,13 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
 
     let libFolder = simulationLibDirs(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
     let libPaths = makefileParams.libPaths |> path => path; separator=";"
+    let omPlatform = System.openModelicaPlatform()
+    let msysPath = if intEq(-1, stringFind(omPlatform, "msvc")) then
+      'if defined OMDEV set OMC_MSYS=%OMDEV%\\tools\\msys\\<%omPlatform%><%\n%>if not defined OMDEV set OMC_MSYS=<%home%>\\tools\\msys\\<%omPlatform%>'
+    else ""
+    let msysPathEntries = if intEq(-1, stringFind(omPlatform, "msvc")) then
+      ';%OMC_MSYS%\\bin;%OMC_MSYS%\\lib\\gcc\\<%System.gccDumpMachine()%>\\<%System.gccVersion()%>;%OMC_MSYS%\\..\\usr\\bin'
+    else ""
 
     let zermMQParams = if getConfigBool(USE_ZEROMQ_IN_SIM) then '-u true -p <%getConfigInt(ZEROMQ_PUB_PORT)%> -s <%getConfigInt(ZEROMQ_SUB_PORT)%> -v <%getConfigString(ZEROMQ_SERVER_ID)%> -c <%getConfigString(ZEROMQ_CLIENT_ID)%> -g <%getConfigString(ZEROMQ_JOB_ID)%>' else ''
     let binFolder = simulationBinDir(simulationCodeTarget(),simCode )
@@ -1600,12 +1607,14 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
       case  "win64" then
         <<
         @echo off
-        SET PATH=<%binFolder%>;<%libFolder%>;<%libPaths%>;%PATH%
+        setlocal
+        <%msysPath%>
+        SET PATH=<%binFolder%>;<%libFolder%>;<%libPaths%><%msysPathEntries%>;%PATH%
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         <%preRunCommandWindows%>
 
         <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%> <%zermMQParams%>  <%outputParameter%>
-
+        endlocal
         >>
     end match
   end match
