@@ -1228,15 +1228,12 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     warningStreamPrint(OMC_LOG_NLS_V, 0,
                        "KINSOL: The kinls setup routine (lsetup) encountered an error. "
                        "Retry with numerical Jacobian.\n");
-    if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-      if (nlsData->sparsePattern && nlsData->analyticalJacobianColumn != NULL) {
-        flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
-        checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-        if (flag < 0) {
-          return FALSE;
-        }
-      } else {
-        errorStreamPrint(OMC_LOG_STDOUT, 0, "KINSOL: Trying to switch to numeric Jacobian for sparse solver KLU, but no sparsity pattern is available.");
+    /* KLU always has a sparsity pattern (initKinsolMemory), and without an
+     * analytic Jacobian it is numeric already */
+    if (kinsolData->linearSolverMethod == NLS_LS_KLU && nlsData->analyticalJacobianColumn != NULL) {
+      flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
+      if (flag < 0) {
         return FALSE;
       }
     }
