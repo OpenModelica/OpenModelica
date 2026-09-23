@@ -127,7 +127,7 @@ pub(crate) struct SimCtx {
     /// wasm local index holding the `SimData` base pointer.
     pub(crate) data_local: u32,
     /// Canonical cref key (`super::sim_cref_key`) -> slot in `SimData`.
-    pub(crate) vars: Arc<HashMap<String, SimSlot>>,
+    pub(crate) vars: SlotMap,
     /// Canonical cref key -> its `start` value expression (for `$START.<cref>`),
     /// `None` when the variable has no explicit start (defaults to the type's
     /// zero). Stored separately from `vars` because `$START` reads the start
@@ -389,6 +389,32 @@ pub(crate) struct ConstGroup {
     pub(crate) wty: WTy,
     pub(crate) dims: Vec<u32>,
     pub(crate) values: Vec<metamodelica::Ref<DAE::Exp>>,
+}
+
+/// The model's cref key -> slot map, shadowed by the keys one Jacobian body binds
+/// to its own seed and column slots.
+#[derive(Clone)]
+pub(crate) struct SlotMap {
+    model: Arc<HashMap<String, SimSlot>>,
+    overlay: Option<Arc<HashMap<String, SimSlot>>>,
+}
+
+impl SlotMap {
+    pub(crate) fn new(model: Arc<HashMap<String, SimSlot>>) -> Self {
+        SlotMap { model, overlay: None }
+    }
+
+    pub(crate) fn with_overlay(&self, overlay: Arc<HashMap<String, SimSlot>>) -> Self {
+        SlotMap { model: self.model.clone(), overlay: Some(overlay) }
+    }
+
+    pub(crate) fn get(&self, key: &str) -> Option<&SimSlot> {
+        self.overlay.as_ref().and_then(|o| o.get(key)).or_else(|| self.model.get(key))
+    }
+
+    pub(crate) fn contains_key(&self, key: &str) -> bool {
+        self.get(key).is_some()
+    }
 }
 
 /// A scalar model variable's location within the `SimData` block.

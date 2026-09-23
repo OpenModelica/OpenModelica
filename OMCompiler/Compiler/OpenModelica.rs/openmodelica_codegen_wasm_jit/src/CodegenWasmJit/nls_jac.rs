@@ -246,7 +246,7 @@ pub(super) fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
 /// keeps its own type: C truncates the solver's `x` on write and widens on
 /// read. `Ok(None)` leaves naming the system to the caller.
 pub(crate) fn iteration_var_slot(
-    vars: &HashMap<String, SimSlot>,
+    vars: &SlotMap,
     start_slots: &HashMap<String, u32>,
     cr: &metamodelica::Ref<DAE::ComponentRef>,
 ) -> Result<Option<IterSlot>> {
@@ -421,7 +421,7 @@ pub(super) fn build_nls_jac_infos(
             .map(|o| o.ok_or("CodegenWasmJit: nonlinear-system Jacobian is missing a residual row"))
             .collect::<Result<_>>()?;
         let seed_offs = info.seed_offs;
-        infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs, slots });
+        infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs, slots: Arc::new(slots.into_iter().collect()) });
     }
     finalize_array_groups(var_map)?;
     Ok(infos)
