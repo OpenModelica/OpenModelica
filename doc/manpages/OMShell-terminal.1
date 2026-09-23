@@ -1,143 +1,77 @@
 .\" --------------------------------------------------------------------
-.\" Title 
+.\" Title
 .\" --------------------------------------------------------------------
 .
-.TH OMShell-terminal 1 "The Open Source Modelica Consortium" "1.5.0" "The OpenModelica Project" -*- nroff -*-
-.
+.TH OMShell-terminal 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
 .
 .\" --------------------------------------------------------------------
 .SH NAME
 .\" --------------------------------------------------------------------
 .
-OMShell\-terminal \- Start script, set environment variables and invoke the
-console based client application OMShell-terminal
-.
+OMShell\-terminal \- interactive OpenModelica shell in the terminal
 .
 .\" --------------------------------------------------------------------
 .SH SYNOPSIS
 .\" --------------------------------------------------------------------
 .
-.BR "OMShell-terminal" " [" "-f " "\fIscript.mos\fP" "]"
-.
+.B OMShell\-terminal
+.RB [ \-f
+.IR script.mos ]
 .
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 .\" --------------------------------------------------------------------
 .
 .B OMShell\-terminal
-is the console based client application \fBOMShell\-terminal\fP of the
-\%OpenModelica Project. It is a front end between the user and the OpenModelica
-Compiler/Interpreter \fBomc\fP.
-.
-.P
-\fBOMShell\-terminal\fP does not start or connect to a separate \fBomc\fP
-server process. It links the compiler in directly through
-\fBlibOpenModelicaCompiler\fP and evaluates every command in that in\-process
-compiler, so there is no communication interface to select and no server to
-start beforehand.
-.
-.P
-The compiler \fBomc\fP produces C source code and some auxiliary files during
-its run, and stores them in the current working directory. Start
-\fBOMShell\-terminal\fP from a scratch directory rather than from the user's
-home directory to avoid cluttering it.
-.
-.P
-The console based client application \fBOMShell\-terminal\fP is an interactive
-session handler or in other words a command shell for Modelica. In the shell
-the user can run OpenModelica control commands. These commands supports the
-import of Modelica classes, the loading of Modelica source code, the flatten of
-\%Modelica source code, the simulation of models, the plotting of simulation
-results and many more. In separate graphical viewers the user can further
-investigate and manipulate the results of the simulation. These viewers can be
-called from the running client application \fBOMShell\-terminal\fP.
-.
+reads OpenModelica scripting commands from the terminal and evaluates them
+one at a time, with line editing and a history kept in
+.IR ~/.mosh_history .
+Type
+.B help()
+for an overview of the commands and
+.B quit()
+or end\-of\-file to leave.
+.PP
+It links the OpenModelica compiler in rather than starting
+.BR omc .
+Generated code and result files are written to the current working
+directory, so start it from a scratch directory.
 .
 .\" --------------------------------------------------------------------
 .SH OPTIONS
 .\" --------------------------------------------------------------------
 .
 .TP
-.BI -f " script.mos"
-run the commands in \fIscript.mos\fP instead of starting an interactive
-session. Without this option \fBOMShell\-terminal\fP prints its banner and
-reads commands from the terminal.
-
-.\" --------------------------------------------------------------------
-.SH ENVIRONMENT
-.\" --------------------------------------------------------------------
-.
-.TP
-.B OPENMODELICAHOME
-This variable contains the absolute path towards the \%OpenModelica
-Compiler/Interpreter executable \fBomc\fP.
-.RS
-.IP "Default directory:" 19
-.I /usr/
-.RE
-.TP
-.B OPENMODELICALIBRARY
-Absolute path towards the \%OpenModelica library \fBModelica\fP.
-.RS
-.IP "Default directory:" 19
-.I /usr/share/omlibrary/modelicalib/
-.RE
-.TP
-.B QTHOME
-Absolute path towards the directory with Qt libraries. The Compiler/Interpreter
-\fBomc\fP use these libraries to build the simulation executable. Setting the
-environment variable is only necessary, if \fBomc\fP is compiled with Qt
-support. The Compiler/Interpreter \fBomc\fP of the Debian package is compiled
-with Ot support by default.
-.RS
-.IP "Default directory:" 19
-${\fBOPENMODELICAHOME\fP}\fI/lib/\fP
-.RE
-.
+.BI \-f " script.mos"
+Run
+.I script.mos
+and print its result instead of starting an interactive session.
 .
 .\" --------------------------------------------------------------------
 .SH FILES
 .\" --------------------------------------------------------------------
 .
-Some supplementary informations about the console based client application
-\%\fBOMShell-terminal\fP will be found in the following sub section.
-.
-.
-.\" --------------------------------------------------------------------
-.SS Executables:
-.\" --------------------------------------------------------------------
-.
-.IP \(bu 3
-\fBOMShell\-terminal\fP \- OpenModelica Shell a console based command shell
-for Modelica
-.
-.RS
-.IP "File:" 7
-.I OMShell-terminal
-.PD 0
-.IP "Path:" 7
-.I /usr/bin/
-.PD
-.RE
-.
+.TP
+.I ~/.mosh_history
+The command history, limited to 3000 entries.
 .
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
 .\" --------------------------------------------------------------------
 .
 .BR omc (1),
-.BR OMNotebook (1),
 .BR OMShell (1),
+.BR OMNotebook (1)
 .
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+Report bugs at <https://github.com/OpenModelica/OpenModelica/issues>.
 .
 .\" --------------------------------------------------------------------
 .SH AUTHOR
 .\" --------------------------------------------------------------------
 .
-The original author was William Spinelli. Changes and improvements were made
-by Robert Wotzlaw \%<Robert.Wotzlaw at web.de>.
-.P
-The current author isn't a member of the Open Source Modelica Consortium (OSMC)
-nor a collaborator at the Programming Environment Laboratory (PELAB),
-Department of Computer and Information Science (IDA) of the Linkoeping
-University (LiU). He supports the OpenModelica Project as volunteer.
+The original author was William Spinelli. Maintained by the Open Source
+Modelica Consortium (OSMC), <https://www.openmodelica.org>.

@@ -1,0 +1,268 @@
+.\" --------------------------------------------------------------------
+.\" Title
+.\" --------------------------------------------------------------------
+.
+.TH OMSimulator 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
+.
+.\" --------------------------------------------------------------------
+.SH NAME
+.\" --------------------------------------------------------------------
+.
+OMSimulator \- simulate an FMU or an SSP system
+.
+.\" --------------------------------------------------------------------
+.SH SYNOPSIS
+.\" --------------------------------------------------------------------
+.
+.B OMSimulator
+.RI [ options ]
+.I model
+.br
+.B OMSimulator
+.B \-\-validate
+.I model
+.br
+.B OMSimulator
+.I script.py
+.RI [ arguments ]
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B OMSimulator
+simulates a
+.I model
+given as an FMU
+.RI ( .fmu )
+or an SSP system structure
+.RI ( .ssp ),
+without a Modelica compiler and without writing a driver script.
+.PP
+The simulation settings \(em start and stop time, result file, tolerance and
+the rest \(em are taken from the model itself. The options below override
+them.
+.PP
+The file is validated against its schema, FMI for
+.IR .fmu ,
+SSP for
+.IR .ssp ,
+before it is simulated. With
+.B \-\-validate
+it is only validated and not simulated.
+.PP
+Given a
+.I script.py
+instead, it runs the Python driver script with the OMSimulator Python module
+on its path, passing on the
+.IR arguments .
+.PP
+.B OMSimulator
+is also available as a library with C and Python bindings; this page describes
+only the command line program.
+.
+.\" --------------------------------------------------------------------
+.SH OPTIONS
+.\" --------------------------------------------------------------------
+.
+Every
+.BI \-\- flag
+that switches something on has a
+.BI \-\-no\- flag
+counterpart that switches it off.
+.
+.SS "General"
+.TP
+.BR \-h ", " \-\-help
+Print a usage summary and exit.
+.TP
+.B \-\-version
+Print the version and exit.
+.TP
+.B \-\-validate
+Only validate the file against its schema; do not simulate.
+.TP
+.B \-\-clearAllOptions
+Reset every flag to its default.
+.TP
+.BI \-\-logFile " file"
+Write the log to
+.IR file .
+The default is standard output.
+.TP
+.BI \-\-logLevel " n"
+0 for the default, 1 to add debug messages, 2 to add traces.
+.TP
+.B \-\-progressBar
+Show the simulation progress in the terminal. Off by default.
+.TP
+.BI \-\-timeout " seconds"
+Give up after
+.I seconds
+of simulation. 0, the default, disables the limit.
+.TP
+.BI \-\-numProcs " n"
+Use at most
+.I n
+processors; 0 chooses automatically. The default is 1.
+.TP
+.BI \-\-tempDir " directory"
+Where temporary files are written. The default is the working directory.
+.TP
+.BI \-\-workingDir " directory"
+The working directory. The default is the current one.
+.TP
+.B \-\-deleteTempFiles
+Delete temporary files as soon as they are no longer needed. On by default.
+.TP
+.B \-\-suppressPath
+Leave path information out of info messages, which makes output comparable
+between machines. On by default.
+.
+.SS "Time and steps"
+.TP
+.BI \-\-startTime " time"
+.TQ
+.BI \-\-stopTime " time"
+Override the interval the model asks for.
+.TP
+.BI \-\-stepSize " size"
+The (maximum) step size. FMUs only; the default comes from the model.
+.TP
+.BI \-\-initialStepSize " size"
+The first step size. The default is 1e\-06.
+.TP
+.BI \-\-minimumStepSize " size"
+The smallest step size. The default is 1e\-12.
+.TP
+.BI \-\-intervals " n"
+The number of communication points, greater than 1. The default is 500.
+.TP
+.BI \-\-tolerance " tol"
+The relative tolerance. The default comes from the model.
+.TP
+.B \-\-realTime
+Experimental soft real-time co-simulation. Off by default.
+.
+.SS "Solvers"
+.TP
+.BI \-\-mode " cs" \fR|\fP \fIme\fP
+Force co-simulation or model exchange for an FMU that exports both. The
+default is co-simulation.
+.TP
+.BI \-\-solver " euler" \fR|\fP \fIcvode\fP
+The ODE solver for model-exchange FMUs. The default is cvode.
+.TP
+.BI \-\-master " algorithm"
+The master algorithm. The default is
+.BR ma .
+.TP
+.BI \-\-algLoopSolver " fixedpoint" \fR|\fP \fIkinsol\fP
+How algebraic loops spanning several components are solved. The default is
+kinsol.
+.TP
+.BI \-\-maxLoopIteration " n"
+The iteration limit for those loops; loops inside a component are unaffected.
+The default is 10.
+.TP
+.BI \-\-maxEventIteration " n"
+The iteration limit for handling one event. The default is 100.
+.TP
+.B \-\-directionalDerivatives
+Use directional derivatives for the algebraic loop Jacobian. On by default.
+.TP
+.B \-\-emitEvents
+Emit events during the simulation. On by default.
+.TP
+.B \-\-inputExtrapolation
+Extrapolate inputs using derivative information. Off by default.
+.TP
+.B \-\-dumpAlgLoops
+Dump information about algebraic loops. Off by default.
+.TP
+.BI \-\-CVODEMaxSteps " n"
+.TQ
+.BI \-\-CVODEMaxErrTestFails " n"
+.TQ
+.BI \-\-CVODEMaxNLSIterations " n"
+.TQ
+.BI \-\-CVODEMaxNLSFailures " n"
+CVODE limits: steps (1000), error test failures (100), nonlinear solver
+iterations (5) and nonlinear convergence failures (100).
+.
+.SS "Results"
+.TP
+.BI \-\-resultFile " file"
+Where results are written. The default is the model name with
+.B _res.mat
+appended.
+.TP
+.B \-\-stripRoot
+Drop the
+.B model.root
+prefix from exported signal names. Off by default.
+.TP
+.B \-\-addParametersToCSV
+Also write the parameters to a
+.B .csv
+file. Off by default.
+.TP
+.B \-\-skipCSVHeader
+Leave the delimiter row out of the header of
+.B .csv
+results. On by default.
+.TP
+.B \-\-solverStats
+Add solver statistics, such as the step size, to the result file. Not every
+solver supports it. Off by default.
+.TP
+.B \-\-wallTime
+Add wall clock time to the result file. Off by default.
+.
+.SS "Tolerating broken FMUs"
+.TP
+.B \-\-ignoreInitialUnknowns
+Ignore the initial unknowns declared in
+.BR modelDescription.xml .
+Off by default.
+.TP
+.B \-\-zeroNominal
+Accept invalid nominal values, replacing them with 1.0. Off by default.
+.
+.\" --------------------------------------------------------------------
+.SH EXAMPLES
+.\" --------------------------------------------------------------------
+.
+Simulate an SSP system with the settings it carries:
+.PP
+.RS
+.B OMSimulator test.ssp
+.RE
+.PP
+Check that an FMU is valid without simulating it:
+.PP
+.RS
+.B OMSimulator \-\-validate model.fmu
+.RE
+.PP
+Simulate an FMU as model exchange, to 10 seconds, into a named result file:
+.PP
+.RS
+.B OMSimulator \-\-mode me \-\-stopTime 10 \-\-resultFile out.mat model.fmu
+.RE
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR OMEdit (1)
+.PP
+The OMSimulator User's Guide at
+<https://openmodelica.org/doc/OMSimulator/master/OMSimulator/UsersGuide/html/>.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+Open Source Modelica Consortium (OSMC), <https://www.openmodelica.org>

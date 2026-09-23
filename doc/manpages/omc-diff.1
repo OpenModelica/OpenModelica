@@ -1,0 +1,105 @@
+.\" --------------------------------------------------------------------
+.\" Title
+.\" --------------------------------------------------------------------
+.
+.TH omc-diff 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
+.
+.\" --------------------------------------------------------------------
+.SH NAME
+.\" --------------------------------------------------------------------
+.
+omc\-diff \- compare two files, tolerating small differences in the numbers
+.
+.\" --------------------------------------------------------------------
+.SH SYNOPSIS
+.\" --------------------------------------------------------------------
+.
+.B omc\-diff
+.I epsilon
+.I file_expected
+.I file_actual
+.br
+.B omc\-diff
+.B \-v1.4
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B omc\-diff
+compares
+.I file_actual
+against
+.I file_expected
+and reports the first difference.
+.PP
+Unlike
+.BR diff (1),
+it parses the numbers in the files: integers must be equal, while a real
+number
+.I a
+matches the expected
+.I e
+if
+.RI | a " \- " e "| <= " epsilon " * |" a "| + " epsilon .
+Runs of spaces and tabs are treated as one. Both files must be text.
+.PP
+The OpenModelica testsuite compares its results with it.
+.
+.\" --------------------------------------------------------------------
+.SH ARGUMENTS
+.\" --------------------------------------------------------------------
+.
+.TP
+.I epsilon
+The tolerance for real numbers, between 0.0 and 1.0.
+.TP
+.I file_expected
+The reference file, holding the results that are expected.
+.TP
+.I file_actual
+The file to check against the reference.
+.TP
+.B \-v1.4
+Print nothing and exit 0, so that a script can check that this version of
+.B omc\-diff
+is installed.
+.
+.\" --------------------------------------------------------------------
+.SH "EXIT STATUS"
+.\" --------------------------------------------------------------------
+.
+.TP
+.B 0
+The files are equal within
+.IR epsilon .
+.TP
+.B 1
+The files differ.
+.TP
+.B 2
+The arguments were wrong or a file could not be opened.
+.
+.\" --------------------------------------------------------------------
+.SH EXAMPLES
+.\" --------------------------------------------------------------------
+.
+Compare the output of a script against its reference, allowing a relative
+difference of one part in a thousand:
+.PP
+.RS
+.B omc\-diff 0.001 expected.txt actual.txt
+.RE
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR diff (1)
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+Open Source Modelica Consortium (OSMC), <https://www.openmodelica.org>
