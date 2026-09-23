@@ -871,7 +871,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<Integer> changed;
       array<Boolean> isChanged;
-      array<Integer> degree;
+      array<Integer> degree, varMark;
       UnorderedMap<Integer, IntArray> ranks;
       Boolean isInitial;
       BackendDAE.EqSystem syst;
@@ -887,10 +887,11 @@ algorithm
           arrayUpdate(degree, v, listLength(mT[v]));
         end for;
         ranks := UnorderedMap.new<IntArray>(Util.id, intEq);
+        varMark := arrayCreate(arrayLength(mT), 0);
         isChanged := arrayCreate(arrayLength(m), false);
         changed := {};
         for pos in 1:arrayLength(m) loop
-          (eqns, changed) := removeEqualFunctionCallFinder(pos, m, mT, degree, ranks, vars, eqns, changed, isChanged, isInitial);
+          (eqns, changed) := removeEqualFunctionCallFinder(pos, m, mT, degree, ranks, varMark, vars, eqns, changed, isChanged, isInitial);
         end for;
         // update arrayeqns and algorithms, collect info for wrappers
         syst.m := SOME(m); syst.mT := SOME(mT); syst.matching := BackendDAE.NO_MATCHING();
@@ -905,6 +906,7 @@ protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
   input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> degree "of the variables";
   input UnorderedMap<Integer, IntArray> ranks;
+  input array<Integer> varMark;
   input BackendDAE.Variables vars;
   input output BackendDAE.EquationArray eqns;
   input output list<Integer> changed;
@@ -921,7 +923,7 @@ algorithm
     // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
     expvars := BackendDAEUtil.uniqueRow(BackendDAEUtil.adjacencyRowExp(exp,vars,{},NONE(),BackendDAE.NORMAL(),isInitial));
     _::_ := expvars;
-    controleqns := controlEqns(expvars, pos, m, mT, degree, ranks);
+    controleqns := controlEqns(expvars, pos, m, mT, degree, ranks, varMark);
     (eqns,changed) := removeEqualFunctionCall(controleqns,ecr,exp,eqns,changed,isChanged);
   else
   end try;
@@ -936,9 +938,10 @@ protected function controlEqns
   input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> degree;
   input UnorderedMap<Integer, IntArray> ranks;
+  input array<Integer> varMark "pos for the variables of the expression";
   output list<Integer> eqns = {};
 protected
-  Integer first, least, eq;
+  Integer first, least, eq, nvars = 0;
   array<Integer> rank;
 algorithm
   first := intAbs(listHead(expvars));
@@ -947,10 +950,14 @@ algorithm
     if degree[intAbs(v)] < degree[least] then
       least := intAbs(v);
     end if;
+    if varMark[intAbs(v)] <> pos then
+      arrayUpdate(varMark, intAbs(v), pos);
+      nvars := nvars + 1;
+    end if;
   end for;
   for i in mT[least] loop
     eq := intAbs(i);
-    if eq <> pos and rowContainsAll(m[eq], expvars) then
+    if eq <> pos and rowContainsAll(m[eq], nvars, pos, varMark) then
       eqns := eq :: eqns;
     end if;
   end for;
@@ -966,22 +973,29 @@ algorithm
 end controlEqns;
 
 protected function rowContainsAll
+  "Whether row holds all nvars variables marked pos; a hit is marked -pos until
+   the row has been counted, so a variable in it twice counts once."
   input list<Integer> row;
-  input list<Integer> vars;
-  output Boolean all = true;
+  input Integer nvars;
+  input Integer pos;
+  input array<Integer> varMark;
+  output Boolean all;
+protected
+  Integer hits = 0;
 algorithm
-  for v in vars loop
-    if not List.isMemberOnTrue(intAbs(v), row, absIntEq) then
-      all := false;
-      return;
+  for v in row loop
+    if varMark[intAbs(v)] == pos then
+      arrayUpdate(varMark, intAbs(v), -pos);
+      hits := hits + 1;
     end if;
   end for;
+  for v in row loop
+    if varMark[intAbs(v)] == -pos then
+      arrayUpdate(varMark, intAbs(v), pos);
+    end if;
+  end for;
+  all := hits == nvars;
 end rowContainsAll;
-
-protected function absIntEq
-  input Integer a, b;
-  output Boolean eq = intAbs(a) == intAbs(b);
-end absIntEq;
 
 protected function rowRanks "the position of each equation in the row of var, built once per variable"
   input Integer var;
