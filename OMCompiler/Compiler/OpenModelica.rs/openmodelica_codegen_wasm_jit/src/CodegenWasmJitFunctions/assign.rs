@@ -34,7 +34,7 @@ pub(super) fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) ->
     if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
         return compile_cref_assign_qual(ctx, componentRef, rhs);
     }
-    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
+    let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = &**componentRef else {
         return Err("CodegenWasmJit: assignment to qualified/record lhs not supported");
     };
     let name = ident.to_string();
@@ -61,7 +61,7 @@ pub(super) fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) ->
             return compile_slice_assign(ctx, idx, subscriptLst, RhsSource::Exp(rhs));
         }
         let idx_exps = index_subscripts(subscriptLst, rank)?;
-        return compile_elem_assign(ctx, idx, &elem, &idx_exps, rhs);
+        return compile_elem_assign(ctx, idx, &elem, &idx_exps, static_dims(identType).as_deref(), rhs);
     }
 
     let src_wty = compile_exp(ctx, rhs)?;
@@ -133,8 +133,15 @@ pub(super) fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(A
 /// Store a freshly-owned value held in temp `vt` into array element
 /// `arr[idx_exps...]` (the array local privately owns its buffer), releasing the
 /// previous element first. The value is already owned, so no copy is made.
-fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>], vt: u32) -> Result<()> {
-    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
+fn store_fresh_into_elem(
+    ctx: &mut FnCtx,
+    arr_idx: u32,
+    elem: &SigTy,
+    idx_exps: &[metamodelica::Ref<DAE::Exp>],
+    dims: Option<&[i32]>,
+    vt: u32,
+) -> Result<()> {
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps, dims)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
     if let Some(release_fn) = elem.release_fn() {
@@ -174,11 +181,11 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
                 return compile_slice_assign(ctx, arr_t, lsubs, RhsSource::Temp { local: vt, wty });
             }
             let idx_exps = index_subscripts(lsubs, rank)?;
-            store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, vt)?;
+            store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, None, vt)?;
         }
         return Ok(());
     }
-    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref else {
+    let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = cref else {
         return Err("CodegenWasmJit: unsupported tuple-assignment target");
     };
     let name = ident.to_string();
@@ -197,7 +204,7 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
         return compile_slice_assign(ctx, idx, subscriptLst, RhsSource::Temp { local: vt, wty });
     }
     let idx_exps = index_subscripts(subscriptLst, rank)?;
-    store_fresh_into_elem(ctx, idx, &elem, &idx_exps, vt)
+    store_fresh_into_elem(ctx, idx, &elem, &idx_exps, static_dims(identType).as_deref(), vt)
 }
 
 /// Lower `(l1, l2, …) := f(args)` (`STMT_TUPLE_ASSIGN`): call the multi-output
