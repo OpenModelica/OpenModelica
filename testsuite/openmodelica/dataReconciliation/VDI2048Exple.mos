@@ -14,6 +14,9 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.VDI2048Example_Corrected, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -cx=./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
+readFile("NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Outputs.csv");
+getErrorString();
+
 // Result:
 // true
 // ""
@@ -34,7 +37,7 @@ getErrorString();
 // 2: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
 // 3: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
 // 4: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
-// 5: mHK:VARIABLE(start = 69.97799999999999 uncertain=Uncertainty.refine)  type: Real
+// 5: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
 // 6: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
 // 7: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
 // 8: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
@@ -51,7 +54,7 @@ getErrorString();
 // 5/5 (1): mFDKELL = 45.668   [binding |0|0|0|0|]
 // 6/6 (1): mSPL = 44.575   [binding |0|0|0|0|]
 // 7/7 (1): mSPLL = 44.319   [binding |0|0|0|0|]
-// 8/8 (1): mHK = 69.97799999999999   [binding |0|0|0|0|]
+// 8/8 (1): mHK = 69.978   [binding |0|0|0|0|]
 // 9/9 (1): mA7 = 10.364   [binding |0|0|0|0|]
 // 10/10 (1): mA6 = 3.744   [binding |0|0|0|0|]
 //
@@ -77,7 +80,7 @@ getErrorString();
 // 8: mSPL: (6/6): (1): mSPL = 44.575
 // 7: mSPLL: (7/7): (1): mSPLL = 44.319
 // 6: mV: (1/1): (1): mFDKEL + mFDKELL + 0.4 * mV - mSPLL - mSPL = 0.0
-// 5: mHK: (8/8): (1): mHK = 69.97799999999999
+// 5: mHK: (8/8): (1): mHK = 69.978
 // 4: mA7: (9/9): (1): mA7 = 10.364
 // 3: mA6: (10/10): (1): mA6 = 3.744
 // 2: mA5: (2/2): (1): mSPL + mSPLL + (-mA6) - mA5 - mA7 - mHK - mV = 0.0
@@ -90,7 +93,7 @@ getErrorString();
 // 2: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
 // 3: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
 // 4: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
-// 5: mHK:VARIABLE(start = 69.97799999999999 uncertain=Uncertainty.refine)  type: Real
+// 5: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
 // 6: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
 // 7: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
 // 8: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
@@ -107,7 +110,7 @@ getErrorString();
 //
 // 3: mA6: (10/10): (1): mA6 = 3.744
 // 4: mA7: (9/9): (1): mA7 = 10.364
-// 5: mHK: (8/8): (1): mHK = 69.97799999999999
+// 5: mHK: (8/8): (1): mHK = 69.978
 // 7: mSPLL: (7/7): (1): mSPLL = 44.319
 // 8: mSPL: (6/6): (1): mSPL = 44.575
 // 9: mFDKELL: (5/5): (1): mFDKELL = 45.668
@@ -165,7 +168,7 @@ getErrorString();
 // 2: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
 // 3: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
 // 4: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
-// 5: mHK:VARIABLE(start = 69.97799999999999 uncertain=Uncertainty.refine)  type: Real
+// 5: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
 // 6: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
 // 7: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
 // 8: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
@@ -193,7 +196,7 @@ getErrorString();
 // 6: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
 // 7: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
 // 8: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
-// 9: mHK:VARIABLE(start = 69.97799999999999 uncertain=Uncertainty.refine)  type: Real
+// 9: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
 // 10: mHDNK:VARIABLE(start = 18.498 uncertain=Uncertainty.refine)  type: Real
 //
 // Condition-3 "SET_C equations must be strictly less than Variable of Interest"
@@ -208,7 +211,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.VDI2048Example_Corrected', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -cx=./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.VDI2048Example_Corrected', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -cx=./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -216,5 +219,18 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
+// ""
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// mHDNK,18.498,18.4986,0.205,0.137119,TRUE,0.00367134,
+// mA5,4.391,4.39096,0.058,0.0566956,TRUE,0.00231162,
+// mA6,3.744,3.74396,0.058,0.0566956,TRUE,0.00231162,
+// mA7,10.364,10.3636,0.168,0.133014,TRUE,0.00346631,
+// mHK,69.978,69.9811,0.854,0.578284,TRUE,0.00485943,
+// mV,0.525,0.524179,0.105,0.10456,TRUE,0.0247355,
+// mSPLL,44.319,44.3736,0.532,0.465838,TRUE,0.212465,
+// mSPL,44.575,44.6302,0.535,0.473859,TRUE,0.22226,
+// mFDKELL,45.668,44.1106,2.5,1.47998,TRUE,0.772978,
+// mFDKEL,46.241,44.6836,2.5,1.47998,TRUE,0.772978,
+// "
 // ""
 // endResult
