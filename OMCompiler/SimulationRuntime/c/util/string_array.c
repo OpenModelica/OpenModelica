@@ -290,19 +290,17 @@ void indexed_assign_string_array(const string_array source,
                                  const index_spec_t* dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         string_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  string_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
     omc_rc_release_inline(idx_vec1);
     omc_rc_release_inline(idx_size);
 }
@@ -340,6 +338,9 @@ void index_string_array(const string_array * source,
         }
     }
     assert(j == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0) {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
@@ -349,7 +350,7 @@ void index_string_array(const string_array * source,
         idx_vec1[i] = 0;
     }
     for(i = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->index[i] != NULL) {
+        if(source_spec->index_type[i] != 'W') {
             idx_size[i] = imax(source_spec->dim_size[i],1);
         } else {
             idx_size[i] = source->dim_size[i];

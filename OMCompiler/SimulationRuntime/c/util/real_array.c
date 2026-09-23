@@ -698,20 +698,17 @@ void indexed_assign_real_array(const real_array source, real_array *dest,
                                const index_spec_t *dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do
-    {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         real_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  real_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while (0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
     omc_rc_release_inline(idx_vec1);
     omc_rc_release_inline(idx_size);
 }
@@ -743,17 +740,18 @@ void index_real_array(const real_array *source,
     omc_assert_macro(index_spec_ok(source_spec));
     omc_assert_macro(index_spec_fit_base_array(source_spec, source));
 
-    if (dest->ndims == 1 && dest->dim_size[0] == 0)
-        return;
-
     for (i = 0, j = 0; i < source_spec->ndims; ++i)
     {
-        if (source_spec->dim_size[i] != 0)
+        if (source_spec->index_type[i] != 'S')
         {
             ++j;
         }
     }
     omc_assert_macro(imax(j, 1) == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0)
+    {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims);
     idx_size = size_alloc(source_spec->ndims);
@@ -764,7 +762,7 @@ void index_real_array(const real_array *source,
     }
     for (i = 0; i < source_spec->ndims; ++i)
     {
-        if (source_spec->index[i] != NULL)
+        if (source_spec->index_type[i] != 'W')
         {                                                    /* is 'S' or 'A' */
             idx_size[i] = imax(source_spec->dim_size[i], 1); /* the imax() is not needed, because there is (idx[d] >= size[d]) in the next_index(), but ... */
         }

@@ -83,6 +83,7 @@ size_t omc_array_bounds_error(int dim, _index_t dim_size, _index_t sub);
 size_t calc_base_index_dims_subs(int ndims,...);
 
 int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a);
+_index_t index_spec_nr_of_elements(const index_spec_t *s, const base_array_t *a);
 
 /* Helper function for index_alloc_TYPE_array; allocates the ndims and dim_size */
 void index_alloc_base_array_size(const base_array_t * source, const index_spec_t* source_spec, base_array_t* dest);

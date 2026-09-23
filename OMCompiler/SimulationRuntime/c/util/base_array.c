@@ -389,7 +389,7 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
         return 0;
     }
     for(i = 0; i < s->ndims; ++i) {
-        if(s->dim_size[i] == 0) {
+        if(s->index_type[i] == 'S') {
             if (s->index[i] != NULL)
             {
               if((s->index[i][0] < 0) || (s->index[i][0] > a->dim_size[i])) {
@@ -415,6 +415,28 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
     }
 
     return 1;
+}
+
+/**
+ * @brief Number of elements an index specification selects.
+ *
+ * @param s  Index specification, fitting a.
+ * @param a  Array that s indexes.
+ * @return   The product of the sizes of the dimensions s keeps.
+ */
+_index_t index_spec_nr_of_elements(const index_spec_t *s, const base_array_t *a)
+{
+    int i;
+    _index_t n = 1;
+
+    for(i = 0; i < s->ndims; ++i) {
+        switch(s->index_type[i]) {
+        case 'W': n *= a->dim_size[i]; break;
+        case 'A': n *= s->dim_size[i]; break;
+        default: break;
+        }
+    }
+    return n;
 }
 
 /**
@@ -564,7 +586,7 @@ size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
     index = 0;
     for(i = 0; i < ndims; ++i) {
         int d = idx_vec[i];
-        if(spec->index[i] != NULL) {
+        if(spec->index_type[i] != 'W') {
             d2 = spec->index[i][d] - 1;
         } else {
             d2 = d;
@@ -764,7 +786,7 @@ void index_alloc_base_array_size(const real_array * source,
     omc_assert_macro(index_spec_fit_base_array(source_spec, source));
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
-         if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
+         if(source_spec->index_type[i] != 'S') {
            ++j;
          }
     }
@@ -777,8 +799,8 @@ void index_alloc_base_array_size(const real_array * source,
     }
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
-            if(source_spec->index[i] != NULL) { /* is 'A' */
+        if(source_spec->index_type[i] != 'S') {
+            if(source_spec->index_type[i] == 'A') {
                 dest->dim_size[j] = source_spec->dim_size[i];
             } else { /* is 'W' */
                 dest->dim_size[j] = source->dim_size[i];
@@ -821,11 +843,12 @@ void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array
     omc_assert_macro(index_spec_ok(dest_spec));
     omc_assert_macro(index_spec_fit_base_array(dest_spec, dest));
     for(i = 0,j = 0; i < dest_spec->ndims; ++i) {
-        if(dest_spec->dim_size[i] != 0) {
+        if(dest_spec->index_type[i] != 'S') {
             ++j;
         }
     }
     omc_assert_macro(j == source->ndims);
+    omc_assert_macro(index_spec_nr_of_elements(dest_spec, dest) == base_array_nr_of_elements(*source));
 
     idx_vec1 = size_alloc(dest->ndims);
     idx_size = size_alloc(dest_spec->ndims);
@@ -833,7 +856,7 @@ void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array
     for(i = 0; i < dest_spec->ndims; ++i) {
         idx_vec1[i] = 0;
 
-        if(dest_spec->index[i] != NULL) { /* is 'S' or 'A' */
+        if(dest_spec->index_type[i] != 'W') {
             idx_size[i] = imax(dest_spec->dim_size[i],1);
         } else { /* is 'W' */
             idx_size[i] = dest->dim_size[i];
