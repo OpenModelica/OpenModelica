@@ -34,7 +34,10 @@ install(TARGETS ${OSUBaseName}
   ARCHIVE DESTINATION ${LIBINSTALLEXT})
 
 # The generated OMSU makefile copies and links libexpat from $OMHOME/lib/<triple>/omc.
-install(FILES $<TARGET_FILE:omc::3rd::FMIL::expat> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# A system expat is not ours to install; the makefile then links that one instead.
+if(NOT OM_USE_SYSTEM_EXPAT)
+  install(FILES $<TARGET_FILE:omc::3rd::FMIL::expat> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 install(FILES
   include/omsi_event_helper.h
