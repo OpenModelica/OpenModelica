@@ -269,7 +269,7 @@ pub(super) struct NlsJacInfo {
     /// Jacobian variables after the *same* matrix (`$SEED_ALG_LS_JAC_1.u`,
     /// `$pDER_ALG_LS_JAC_1.$RES_SIM_0`, ...), so the shared cref map only keeps the
     /// last system that registered them; lowering a Jacobian body binds these back.
-    pub(super) slots: Vec<(String, SimSlot)>,
+    pub(super) slots: Arc<HashMap<String, SimSlot>>,
 }
 
 /// The nonlinear-solver part of the module `start`: grow the shared

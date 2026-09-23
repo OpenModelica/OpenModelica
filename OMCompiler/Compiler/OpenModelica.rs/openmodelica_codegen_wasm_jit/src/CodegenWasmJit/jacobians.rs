@@ -485,7 +485,7 @@ pub(super) fn build_lin_jac_infos(
 /// Seed slots (in `seedVars`/column order) and result slots (at residual row via
 /// `jac_result_row`) for a torn-linear Jacobian, read from the slots
 /// `build_lin_jac_infos` registered. Feeds `compile_linear_system_analytic`.
-pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &HashMap<String, SimSlot>, n: usize) -> Result<(Vec<u32>, Vec<u32>)> {
+pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &SlotMap, n: usize) -> Result<(Vec<u32>, Vec<u32>)> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let jm = lsystem.jacobianMatrix.as_ref().ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
     let lookup = |cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
@@ -611,12 +611,13 @@ pub(super) fn build_nls_fns(
     ));
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
     let mut slots: Vec<IterSlot> = Vec::with_capacity(iter_vars.len());
+    let vars = SlotMap::new(var_map.vars.clone());
     for cr in &iter_vars {
         if is_homotopy_lambda(Some(cr)) {
             slots.push(IterSlot { off: var_map.lambda_off, wty: WTy::F64 });
             continue;
         }
-        let slot = iteration_var_slot(&var_map.vars, &var_map.start_slots, cr)?
+        let slot = iteration_var_slot(&vars, &var_map.start_slots, cr)?
             .ok_or("CodegenWasmJit: nonlinear-system unknown has no slot")?;
         slots.push(slot);
     }
@@ -653,11 +654,7 @@ pub(super) fn build_nls_fns(
             // Bind this matrix's own seed/column slots over the shared map, which
             // holds whichever system registered the shared names last.
             let mut sim = mk_sim();
-            let mut vars = (*sim.vars).clone();
-            for (key, slot) in &info.slots {
-                vars.insert(key.clone(), *slot);
-            }
-            sim.vars = Arc::new(vars);
+            sim.vars = sim.vars.with_overlay(info.slots.clone());
             let mut ctx = FnCtx::new_sim_params(sim, by_name, literals, 3);
             let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
                 for eq in &inner {
