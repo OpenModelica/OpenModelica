@@ -3613,13 +3613,18 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
       %>
       >> /*varCopy end*/
     '&<%rhsStr%>'
-  case CREF(__) then
-    let res = daeExpCrefLhs(inExp, context, &preExp, &varDecls, &varFrees, &auxFunction, false)
-    if isArrayWithUnknownDimension(ty)
-    then
-      let &preExp += '<%res%>.dim_size = NULL;<%\n%>'
-      '&<%res%>'
-    else '&<%res%>'
+  case CREF(componentRef=cr) then
+    if not crefSubIsScalar(cr) then
+      let tmp = tempDecl(expTypeArray(ty), &varDecls, &varFrees)
+      let &varCopy += '<%indexedAssign(inExp, tmp, context, &preExp, &varDecls, &varFrees, &auxFunction)%><%\n%>'
+      '&<%tmp%>'
+    else
+      let res = daeExpCrefLhs(inExp, context, &preExp, &varDecls, &varFrees, &auxFunction, false)
+      if isArrayWithUnknownDimension(ty)
+      then
+        let &preExp += '<%res%>.dim_size = NULL;<%\n%>'
+        '&<%res%>'
+      else '&<%res%>'
   else
     error(sourceInfo(), 'tupleReturnVariableUpdates: Unhandled expression. <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 end tupleReturnVariableUpdates;
