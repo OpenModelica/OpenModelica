@@ -2,92 +2,101 @@
 .\" Title
 .\" --------------------------------------------------------------------
 .
-.TH OMNotebook 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
+.TH omc-diff 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
 .
 .\" --------------------------------------------------------------------
 .SH NAME
 .\" --------------------------------------------------------------------
 .
-OMNotebook \- interactive electronic notebook for Modelica
+omc\-diff \- compare two files, tolerating small differences in the numbers
 .
 .\" --------------------------------------------------------------------
 .SH SYNOPSIS
 .\" --------------------------------------------------------------------
 .
-.B OMNotebook
-.RI [ file ]
+.B omc\-diff
+.I epsilon
+.I file_expected
+.I file_actual
+.br
+.B omc\-diff
+.B \-v1.4
 .
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 .\" --------------------------------------------------------------------
 .
-.B OMNotebook
-edits and evaluates notebooks: documents that mix text, Modelica code and
-OpenModelica scripting commands with their results, including plots. It is
-used for teaching and experimentation, and ships with two tutoring systems
-built from notebooks:
-.TP
-.B DrModelica
-for teaching Modelica.
-.TP
-.B DrControl
-for teaching control theory with Modelica.
+.B omc\-diff
+compares
+.I file_actual
+against
+.I file_expected
+and reports the first difference.
 .PP
-.I file
-is the notebook to open, an
-.BR .onb ,
-.B .onbz
-or Mathematica
-.B .nb
-file. Without one,
-.B OMNotebook
-opens DrModelica.
+Unlike
+.BR diff (1),
+it parses the numbers in the files: integers must be equal, while a real
+number
+.I a
+matches the expected
+.I e
+if
+.RI | a " \- " e "| <= " epsilon " * |" a "| + " epsilon .
+Runs of spaces and tabs are treated as one. Both files must be text.
 .PP
-It links the OpenModelica compiler in rather than starting
-.BR omc .
-The working directory is
-.I OpenModelica
-in the temporary directory, usually
-.IR /tmp/OpenModelica ,
-so that generated code and result files do not clutter the directory it was
-started from.
+The OpenModelica testsuite compares its results with it.
 .
 .\" --------------------------------------------------------------------
-.SH ENVIRONMENT
+.SH ARGUMENTS
 .\" --------------------------------------------------------------------
 .
 .TP
-.B TMPDIR
-The temporary directory the working directory is created in. The default is
-.IR /tmp .
+.I epsilon
+The tolerance for real numbers, between 0.0 and 1.0.
+.TP
+.I file_expected
+The reference file, holding the results that are expected.
+.TP
+.I file_actual
+The file to check against the reference.
+.TP
+.B \-v1.4
+Print nothing and exit 0, so that a script can check that this version of
+.B omc\-diff
+is installed.
 .
 .\" --------------------------------------------------------------------
-.SH FILES
+.SH "EXIT STATUS"
 .\" --------------------------------------------------------------------
 .
 .TP
-.I /usr/share/omnotebook/drmodelica/DrModelica.onb
-.TQ
-.I /usr/share/omnotebook/drcontrol/
-The DrModelica and DrControl notebooks, relative to the installation
-directory.
+.B 0
+The files are equal within
+.IR epsilon .
+.TP
+.B 1
+The files differ.
+.TP
+.B 2
+The arguments were wrong or a file could not be opened.
+.
+.\" --------------------------------------------------------------------
+.SH EXAMPLES
+.\" --------------------------------------------------------------------
+.
+Compare the output of a script against its reference, allowing a relative
+difference of one part in a thousand:
+.PP
+.RS
+.B omc\-diff 0.001 expected.txt actual.txt
+.RE
 .
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
 .\" --------------------------------------------------------------------
 .
 .BR omc (1),
-.BR OMShell (1),
-.BR OMShell\-terminal (1)
-.PP
-The OpenModelica User's Guide at
-<https://openmodelica.org/doc/OpenModelicaUsersGuide/@OM_MANPAGE_DOC_VERSION@/omnotebook.html>.
-.
-.\" --------------------------------------------------------------------
-.SH BUGS
-.\" --------------------------------------------------------------------
-.
-Report bugs at <https://github.com/OpenModelica/OpenModelica/issues>.
+.BR diff (1)
 .
 .\" --------------------------------------------------------------------
 .SH AUTHOR
