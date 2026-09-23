@@ -650,6 +650,10 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     let memory = wts(rt_inst.exports.get_memory("memory"))?.clone();
     rt_wasi_env.as_mut(&mut store).set_memory(memory.clone());
     host_mem.set(&mut store, &memory);
+    // A WASI reactor's `_initialize`, which the runtime exports on wasip1 only.
+    if let Ok(init) = rt_inst.exports.get_typed_function::<(), ()>(&store, "_initialize") {
+        wts(init.call(&mut store))?;
+    }
 
     // External "C" functions (`ext.*`): resolved by the ModelicaExternalC WASI side
     // module (table blocks / external objects / string scanning). Must be wired

@@ -409,6 +409,24 @@ mod ext_report_hosted {
 #[cfg(all(target_os = "wasi", feature = "standalone"))]
 mod standalone;
 
+/// The WASI reactor entry point, which a host calls once after instantiation.
+/// Without a use of `__wasm_call_ctors`, wasm-ld ends every export in
+/// `__wasm_call_dtors`, a full stdio flush; C `stdout` is line-buffered instead.
+#[cfg(all(target_os = "wasi", not(feature = "standalone")))]
+#[unsafe(no_mangle)]
+pub extern "C" fn _initialize() {
+    unsafe extern "C" {
+        fn __wasm_call_ctors();
+        static stdout: *mut core::ffi::c_void;
+        fn setvbuf(f: *mut core::ffi::c_void, buf: *mut u8, mode: i32, size: usize) -> i32;
+    }
+    const IOLBF: i32 = 1;
+    unsafe {
+        __wasm_call_ctors();
+        setvbuf(stdout, core::ptr::null_mut(), IOLBF, 0);
+    }
+}
+
 #[cfg(all(target_os = "wasi", any(feature = "standalone", feature = "session")))]
 
 // The in-wasm session driver (`rt_sim_*`): the shared driver + daskr compiled
