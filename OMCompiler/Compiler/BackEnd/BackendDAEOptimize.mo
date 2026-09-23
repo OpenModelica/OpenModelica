@@ -1596,6 +1596,19 @@ algorithm
   outDAE := BackendDAE.DAE({syst}, shared);
 end collapseIndependentBlocks;
 
+public function collapseIndependentContinuousBlocks
+  "Like collapseIndependentBlocks, but leaves out the clocked partitions.
+  The Jacobian of the ODE is taken with respect to the continuous states only,
+  a clocked partition does not change between clock ticks and contributes
+  nothing to it. Merged with the continuous partitions, a loop that is closed
+  over a sample/hold pair looks like an algebraic loop and cannot be sorted."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := collapseIndependentBlocks(BackendDAE.DAE(
+    List.filterOnFalse(inDAE.eqs, BackendDAEUtil.isClockedSyst), inDAE.shared));
+end collapseIndependentContinuousBlocks;
+
 protected function mergeIndependentBlocks
   input BackendDAE.EqSystem syst1;
   input BackendDAE.EqSystem syst2;
