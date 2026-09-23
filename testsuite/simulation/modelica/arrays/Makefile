@@ -35,6 +35,7 @@ crefIndex.mos \
 DimConvert.mos \
 ConstantSubscriptOutOfRange.mos \
 DynamicSubscriptAliasArray.mos \
+FunctionArraySlices.mos \
 gc.mos \
 gc2980.mos \
 Issue14470.mos \

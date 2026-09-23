@@ -8115,9 +8115,12 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
       let expIndexes = (indexes |> index => daeSubscript(index, context, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=", ")
       '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
-    case T_ARRAY() then
-      let expIndexes = daeExpCrefIndexSpec(indexes, context, &preExp, &varDecls, &varFrees, &auxFunction)
-      '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
+    case ty as T_ARRAY() then
+      let arrayType = expTypeArray(ty)
+      let tmp = tempDecl(arrayType, &varDecls, &varFrees)
+      let spec = daeExpCrefIndexSpec(padAsubSubscripts(e, indexes), context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let &preExp += '<%rcReleaseBefore(arrayType, tmp)%>index_alloc_<%arrayType%>(&<%exp%>, &<%spec%>, &<%tmp%>);<%\n%>'
+      tmp
 
     else
       let expIndexes = (indexes |> index => daeSubscriptASubIndex(index, context, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=", ")

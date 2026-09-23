@@ -205,6 +205,18 @@ algorithm
   end match;
 end buildCrefExpFromSubs;
 
+public function padAsubSubscripts
+"Used by templates: the subscripts of an ASUB of exp, with a whole-dimension
+ subscript for each trailing dimension they leave out."
+  input DAE.Exp exp;
+  input list<DAE.Subscript> subs;
+  output list<DAE.Subscript> outSubs;
+protected
+  Integer n = listLength(Expression.arrayDimension(Expression.typeof(exp))) - listLength(subs);
+algorithm
+  outSubs := if n > 0 then listAppend(subs, List.fill(DAE.WHOLEDIM(), n)) else subs;
+end padAsubSubscripts;
+
 public function incrementInt
 "Used by templates to create new integers that are increments of another."
   input Integer inInt;
