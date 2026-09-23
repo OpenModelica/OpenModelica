@@ -295,9 +295,56 @@ public
     if expanded then
       outExp := Ceval.evalExp(exp);
     else
-      outExp := exp;
+      (outExp, expanded) := expandNonLiteralRange(exp, ty);
     end if;
   end expandRange;
+
+  function expandNonLiteralRange
+    "Expands a numeric range whose bounds are not literals but whose size is
+     known, since the i:th element is start + (i - 1) * step."
+    input Expression exp;
+    input Type ty;
+    output Expression outExp;
+    output Boolean expanded;
+  protected
+    Type ety;
+    Expression start_exp, step_exp, e;
+    Option<Expression> ostep_exp;
+    Integer sz;
+    list<Expression> expl = {};
+  algorithm
+    ety := Type.arrayElementType(ty);
+
+    if not (Type.hasKnownSize(ty) and (Type.isInteger(ety) or Type.isReal(ety))) then
+      outExp := exp;
+      expanded := false;
+      return;
+    end if;
+
+    Expression.RANGE(start = start_exp, step = ostep_exp) := exp;
+    step_exp := Util.getOptionOrDefault(ostep_exp, Expression.makeOne(ety));
+    sz := Dimension.size(Type.nthDimension(ty, 1));
+
+    for i in sz:-1:1 loop
+      if i == 1 then
+        e := start_exp;
+      else
+        e := Expression.BINARY(makeIndexOffset(i - 1, ety), Operator.makeMul(ety), step_exp);
+        e := SimplifyExp.simplify(Expression.BINARY(start_exp, Operator.makeAdd(ety), e));
+      end if;
+
+      expl := e :: expl;
+    end for;
+
+    outExp := Expression.makeArray(ty, listArray(expl));
+    expanded := true;
+  end expandNonLiteralRange;
+
+  function makeIndexOffset
+    input Integer offset;
+    input Type ty;
+    output Expression exp = if Type.isReal(ty) then Expression.REAL(intReal(offset)) else Expression.INTEGER(offset);
+  end makeIndexOffset;
 
   function expandCall
     input Call call;
@@ -461,8 +508,8 @@ public
     Expression e = exp, range;
     InstNode node;
     list<Expression> ranges = {};
-    MutableCyclic<Expression> iter;
-    list<MutableCyclic<Expression>> iters = {};
+    Mutable<Expression> iter;
+    list<Mutable<Expression>> iters = {};
   algorithm
     if Type.hasKnownSize(ty) and not List.any(iterators, function usesIterator(exp = exp)) then
       result := fillArrayConstructor(expand(SimplifyExp.simplify(exp)), ty, listLength(iterators));
@@ -471,7 +518,7 @@ public
 
     for i in iterators loop
       (node, range) := i;
-      iter := MutableCyclic.create(Expression.EMPTY(InstNode.getType(node)));
+      iter := Mutable.create(Expression.EMPTY(InstNode.getType(node)));
       e := Expression.replaceIterator(e, node, Expression.MUTABLE(iter));
       iters := iter :: iters;
       (range, true) := expand(range);
@@ -503,13 +550,13 @@ public
     input Expression exp;
     input Type ty;
     input list<Expression> ranges;
-    input list<MutableCyclic<Expression>> iterators;
+    input list<Mutable<Expression>> iterators;
     output Expression result;
   protected
     Expression range;
     list<Expression> ranges_rest, expl = {};
-    MutableCyclic<Expression> iter;
-    list<MutableCyclic<Expression>> iters_rest;
+    Mutable<Expression> iter;
+    list<Mutable<Expression>> iters_rest;
     ExpressionIterator range_iter;
     Expression value;
     Type el_ty;
@@ -529,7 +576,7 @@ public
 
       while ExpressionIterator.hasNext(range_iter) loop
         (range_iter, value) := ExpressionIterator.next(range_iter);
-        MutableCyclic.update(iter, value);
+        Mutable.update(iter, value);
         expl := expandArrayConstructor2(exp, el_ty, ranges_rest, iters_rest) :: expl;
       end while;
 

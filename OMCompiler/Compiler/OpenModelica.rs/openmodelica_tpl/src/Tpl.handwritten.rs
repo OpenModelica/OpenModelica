@@ -26,13 +26,13 @@ enum Tok {
     NewLine,
     Str(ArcStr),
     Line(ArcStr),
-    Block(Toks, Arc<BlockType>),
+    Block(Toks, metamodelica::Ref<BlockType>),
     /// ST_STRING_LIST or ST_BLOCK built by generated code.
-    Mm(Arc<StringToken>),
+    Mm(metamodelica::Ref<StringToken>),
 }
 
 impl Tok {
-    fn from_mm(tok: &Arc<StringToken>) -> Tok {
+    fn from_mm(tok: &metamodelica::Ref<StringToken>) -> Tok {
         match &**tok {
             StringToken::ST_NEW_LINE => Tok::NewLine,
             StringToken::ST_STRING { value } => Tok::Str(value.clone()),
@@ -41,12 +41,12 @@ impl Tok {
         }
     }
 
-    fn to_mm(&self) -> Arc<StringToken> {
+    fn to_mm(&self) -> metamodelica::Ref<StringToken> {
         match self {
             Tok::NewLine => interned_ST_NEW_LINE(),
-            Tok::Str(s) => Arc::new(StringToken::ST_STRING { value: s.clone() }),
-            Tok::Line(s) => Arc::new(StringToken::ST_LINE { line: s.clone() }),
-            Tok::Block(toks, bt) => Arc::new(StringToken::ST_BLOCK { tokens: toks.to_mm_list(), blockType: bt.clone() }),
+            Tok::Str(s) => metamodelica::Ref::new(StringToken::ST_STRING { value: s.clone() }),
+            Tok::Line(s) => metamodelica::Ref::new(StringToken::ST_LINE { line: s.clone() }),
+            Tok::Block(toks, bt) => metamodelica::Ref::new(StringToken::ST_BLOCK { tokens: toks.to_mm_list(), blockType: bt.clone() }),
             Tok::Mm(t) => t.clone(),
         }
     }
@@ -61,7 +61,7 @@ impl Tok {
     }
 }
 
-fn mm_at_start_of_line(tok: &Arc<StringToken>) -> bool {
+fn mm_at_start_of_line(tok: &metamodelica::Ref<StringToken>) -> bool {
     match &**tok {
         StringToken::ST_NEW_LINE | StringToken::ST_LINE { .. } => true,
         StringToken::ST_STRING_LIST { lastHasNewLine, .. } => *lastHasNewLine,
@@ -286,18 +286,18 @@ pub struct MemText {
     toks: Toks,
     /// Open blocks, innermost first: the tokens written before the block was
     /// pushed, and the block type.
-    stack: List<(Toks, Arc<BlockType>)>,
+    stack: List<(Toks, metamodelica::Ref<BlockType>)>,
 }
 
 struct FileBlock {
-    bt: Arc<BlockType>,
+    bt: metamodelica::Ref<BlockType>,
     nchars: i32,
     aind: i32,
     isstart: bool,
     /// Bytes written when the block was pushed; tells whether it is still empty.
     tell: i64,
     /// Separator to write before the next token of an iteration.
-    septok: Option<Arc<StringToken>>,
+    septok: Option<metamodelica::Ref<StringToken>>,
 }
 
 struct FileState {
@@ -437,7 +437,7 @@ fn writeLineOrStr(txt: &mut Text, s: ArcStr, is_line: bool) -> Result<()> {
     Ok(())
 }
 
-pub fn writeTok(mut inText: Text, inToken: Arc<StringToken>) -> Result<Text> {
+pub fn writeTok(mut inText: Text, inToken: metamodelica::Ref<StringToken>) -> Result<Text> {
     match &*inToken {
         StringToken::ST_BLOCK { tokens, .. } if tokens.is_empty() => return Ok(inText),
         StringToken::ST_STRING { value } if value.is_empty() => return Ok(inText),
@@ -509,7 +509,7 @@ fn newLine_inplace(txt: &mut Text) -> Result<()> {
     Ok(())
 }
 
-pub fn pushBlock(mut txt: Text, inBlockType: Arc<BlockType>) -> Result<Text> {
+pub fn pushBlock(mut txt: Text, inBlockType: metamodelica::Ref<BlockType>) -> Result<Text> {
     match &mut txt {
         Text::Mem(m) => {
             let toks = std::mem::take(&mut m.toks);
@@ -520,7 +520,7 @@ pub fn pushBlock(mut txt: Text, inBlockType: Arc<BlockType>) -> Result<Text> {
     Ok(txt)
 }
 
-fn pushBlockFile(st: &mut FileState, bt: Arc<BlockType>) {
+fn pushBlockFile(st: &mut FileState, bt: metamodelica::Ref<BlockType>) {
     let (nchars, aind, isstart) = (st.nchars, st.aind, st.isstart);
     st.blocks.push(FileBlock { bt: bt.clone(), nchars, aind, isstart, tell: st.written, septok: None });
     match &*bt {
@@ -581,12 +581,12 @@ pub fn popBlock(mut txt: Text) -> Result<Text> {
     Ok(txt)
 }
 
-pub fn pushIter(mut txt: Text, inIterOptions: Arc<IterOptions>) -> Result<Text> {
+pub fn pushIter(mut txt: Text, inIterOptions: metamodelica::Ref<IterOptions>) -> Result<Text> {
     let i0 = inIterOptions.startIndex0;
     match &mut txt {
         Text::Mem(m) => {
             let toks = std::mem::take(&mut m.toks);
-            let iter = Arc::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
+            let iter = metamodelica::Ref::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
             let stack = std::mem::take(&mut m.stack);
             m.stack = cons((Toks::default(), iter), cons((toks, interned_BT_TEXT()), stack));
         }
@@ -595,7 +595,7 @@ pub fn pushIter(mut txt: Text, inIterOptions: Arc<IterOptions>) -> Result<Text> 
                 Error::addInternalError(literal!("Tpl.mo FILE_TEXT does not support aligning or wrapping elements"), metamodelica::sourceInfo!("Template/Tpl.mo"))?;
                 return Err("fail");
             }
-            let iter = Arc::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
+            let iter = metamodelica::Ref::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
             pushBlockFile(&mut f.state.lock().unwrap(), iter);
         }
     }
@@ -951,16 +951,16 @@ pub fn textStringBuf(inText: Text) -> Result<()> {
     Ok(())
 }
 
-pub fn strTokText(inStringToken: Arc<StringToken>) -> Text {
+pub fn strTokText(inStringToken: metamodelica::Ref<StringToken>) -> Text {
     let mut toks = Toks::default();
     toks.push(Tok::from_mm(&inStringToken));
     mem(toks)
 }
 
-pub fn textStrTok(inText: Text) -> Result<Arc<StringToken>> {
+pub fn textStrTok(inText: Text) -> Result<metamodelica::Ref<StringToken>> {
     match &inText {
-        Text::Mem(m) if m.toks.is_empty() => Ok(Arc::new(StringToken::ST_STRING { value: literal!("") })),
-        Text::Mem(m) if m.stack.is_empty() => Ok(Arc::new(StringToken::ST_BLOCK { tokens: m.toks.to_mm_list(), blockType: interned_BT_TEXT() })),
+        Text::Mem(m) if m.toks.is_empty() => Ok(metamodelica::Ref::new(StringToken::ST_STRING { value: literal!("") })),
+        Text::Mem(m) if m.stack.is_empty() => Ok(metamodelica::Ref::new(StringToken::ST_BLOCK { tokens: m.toks.to_mm_list(), blockType: interned_BT_TEXT() })),
         _ => Err(trace_fail("-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n")),
     }
 }
@@ -971,7 +971,7 @@ pub fn stringText(inString: ArcStr) -> Text {
     mem(toks)
 }
 
-pub fn strTokString(inStringToken: Arc<StringToken>) -> Result<ArcStr> {
+pub fn strTokString(inStringToken: metamodelica::Ref<StringToken>) -> Result<ArcStr> {
     textString(strTokText(inStringToken))
 }
 

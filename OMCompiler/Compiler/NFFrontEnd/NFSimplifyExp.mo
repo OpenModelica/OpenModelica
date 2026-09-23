@@ -128,7 +128,7 @@ algorithm
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
     case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
-    case Expression.MUTABLE()           then simplify(MutableCyclic.access(exp.exp));
+    case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
   end match;
@@ -163,8 +163,9 @@ algorithm
     exp := range;
   else
     if not Type.isResizable(ty) then
-      ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), Absyn.dummyInfo);
+      ty := TypeCheck.keepRangeSize(
+        TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+          Type.arrayElementType(ty), Absyn.dummyInfo), ty);
     else
       ty := ty2;
     end if;
@@ -480,6 +481,7 @@ algorithm
         op := if isSum then Operator.makeAdd(ty) else
                             Operator.makeMul(ty);
         exp := Expression.MULTARY(args, {}, op);
+        exp := simplify(exp);
       end if;
 
       return;
@@ -1861,7 +1863,7 @@ algorithm
     then addArgument(result, exp, inverse);
 
     case (_, Expression.MUTABLE()) algorithm
-      MutableCyclic.update(exp.exp, combineBinariesExp(MutableCyclic.access(exp.exp)));
+      Mutable.update(exp.exp, combineBinariesExp(Mutable.access(exp.exp)));
     then addArgument(result, exp, inverse);
 
     case (_, Expression.PARTIAL_FUNCTION_APPLICATION()) algorithm

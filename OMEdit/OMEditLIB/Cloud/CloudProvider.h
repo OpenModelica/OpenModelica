@@ -45,6 +45,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QString>
+#include <QUrl>
 
 class OAuth2Client;
 class QNetworkAccessManager;
@@ -69,6 +70,8 @@ public:
   QList<RemoteItem> items() const { return mItems; }
   RemoteItem item() const { return mItem; }
   QByteArray data() const { return mData; }
+  //! Where a manually handled redirect points, empty if there was none.
+  QUrl redirectUrl() const { return mRedirectUrl; }
   //! Where the next changes() call should resume from.
   QString deltaToken() const { return mDeltaToken; }
   //! Ids the service reported as removed since the delta token.
@@ -81,6 +84,7 @@ public:
   void setItems(const QList<RemoteItem> &items) { mItems = items; }
   void setItem(const RemoteItem &item) { mItem = item; }
   void setData(const QByteArray &data) { mData = data; }
+  void setRedirectUrl(const QUrl &url) { mRedirectUrl = url; }
   void setDeltaToken(const QString &token) { mDeltaToken = token; }
   void setRemovedIds(const QStringList &ids) { mRemovedIds = ids; }
   void trackNetworkReply(QNetworkReply *pNetworkReply);
@@ -98,6 +102,7 @@ private:
   QList<RemoteItem> mItems;
   RemoteItem mItem;
   QByteArray mData;
+  QUrl mRedirectUrl;
   QString mDeltaToken;
   QStringList mRemovedIds;
   QPointer<QNetworkReply> mpNetworkReply;

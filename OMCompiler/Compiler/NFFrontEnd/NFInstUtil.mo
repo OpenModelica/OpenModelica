@@ -1154,7 +1154,7 @@ public
       Expression.CALL(Call.makeTypedCall(indexed_fn, args, Variability.CONTINUOUS, Purity.PURE)),
       Type.REAL(),
       src,
-      fn.node
+      InstNode.fromHandle(fn.node)
     );
 
     funcs := FunctionTree.add(funcs, fn_name, indexed_fn);

@@ -6,14 +6,14 @@
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadString("
 model TableTest
-  extends Modelica.Blocks.Tables.CombiTable2D(
+  extends Modelica.Blocks.Tables.CombiTable2Ds(
       table = [0.0,   1.0,   2.0,   3.0;
                1.0,   1.0,   3.0,   5.0;
                2.0,   2.0,   4.0,   6.0]);
-  annotation(uses(Modelica(version=\"3.2.3\")));
+  annotation(uses(Modelica(version=\"4.1.0\")));
 end TableTest;
 ");
 getErrorString();
@@ -54,7 +54,7 @@ val(y, 0);
 // ""
 // record SimulationResult
 //     resultFile = "TableTest_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TableTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=u1=0,u2=0'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TableTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=u1=0,u2=0'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

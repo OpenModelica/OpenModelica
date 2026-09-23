@@ -51,7 +51,9 @@ primme = ["openmodelica_lapack/fortran-abi", "openmodelica_nls/primme"]
 [dependencies]
 # The shared `-lv` stream table + `omc_error.c` message layout the NLS solver logs
 # through. `no_std` here; the wasi build below adds `std` back.
-openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false }
+# `mat-writer`: src/model_ctx.rs projects `MetaKind` onto the `.mat` writer it
+# serialises a run's rows with.
+openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false, features = ["mat-writer"] }
 # The per-system statistics, the flag-derived solver selections and the
 # diagnostic counters.
 openmodelica_solvers = { path = "../../../SimulationRuntime/rust/openmodelica_solvers", default-features = false }
@@ -85,7 +87,7 @@ daskr = { path = "../../../SimulationRuntime/rust/daskr", default-features = fal
 # decodes the model metadata, runs DASSL (daskr) / Euler, and serialises the
 # `.mat`. wasip1 has std, so these keep their default (`std`) features.
 [target.'cfg(target_os = "wasi")'.dependencies]
-openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", features = ["std"] }
+openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", features = ["std", "mat-writer"] }
 openmodelica_plt_writer = { path = "../../../SimulationRuntime/rust/openmodelica_plt_writer", optional = true }
 daskr = { path = "../../../SimulationRuntime/rust/daskr", optional = true }
 # Sparse direct solver (CSparse port, AMD fill-reducing ordering) for torn linear

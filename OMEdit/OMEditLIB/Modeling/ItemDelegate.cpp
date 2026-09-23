@@ -56,11 +56,7 @@ ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
 QString ItemDelegate::formatDisplayText(QVariant variant) const
 {
   QString text;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (variant.typeId() == QMetaType::Double) {
-#else
-  if (variant.type() == QVariant::Double) {
-#endif
     text = QLocale().toString(variant.toDouble());
   } else {
     text = variant.toString();
@@ -115,11 +111,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QRect decorationRect;
   value = index.data(Qt::DecorationRole);
   if (value.isValid()) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     if (value.typeId() == QMetaType::QIcon) {
-#else
-    if (value.type() == QVariant::Icon) {
-#endif
       icon = qvariant_cast<QIcon>(value);
       decorationRect = QRect(QPoint(0, 0), icon.actualSize(opt.decorationSize, iconMode, iconState));
     } else {

@@ -90,7 +90,7 @@ my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow 
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
-  cppmsl       => 0,  # simulation/libraries/msl32_cpp; slow, so opt-in.
+  cppmsl       => 0,  # simulation/libraries/msl41_cpp; slow, so opt-in.
   tearing      => 1,  # */tearing/*
   hpcom        => 1,  # */hpcom/*
   metamodelica => 1,  # Needs MetaModelica code generation, i.e. the C runtime.
@@ -156,7 +156,7 @@ sub suites_selected {
 sub dir_suite {
   my $dir = shift;
 
-  return "cppmsl"  if $dir =~ m"/simulation/libraries/msl32_cpp\b";
+  return "cppmsl"  if $dir =~ m"/simulation/libraries/msl41_cpp\b";
   return "cpp"     if $dir =~ m"/cppruntime\b";
   return "hpcom"   if $dir =~ m"/hpcom\b";
   return "tearing" if $dir =~ m"/tearing\b";

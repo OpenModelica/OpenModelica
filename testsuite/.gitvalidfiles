@@ -214,7 +214,6 @@
 ./simulation/libraries/3rdParty/TestMediaFrancesco/ReferenceFiles/WaterIF97/WaterIF97_Test6_ref.mat
 ./simulation/libraries/3rdParty/TestMediaFrancesco/ReferenceFiles/WaterIF97/WaterIF97_Test7_ref.mat
 ./simulation/libraries/3rdParty/TestMediaFrancesco/ReferenceFiles/WaterIF97/WaterIF97_Test8_ref.mat
-./simulation/libraries/msl32/simulateAll.sh
 ./simulation/modelica/arrays/ReferenceFiles/NPendulum_10.mat
 ./simulation/modelica/external_functions/ExternalFunc1.c
 ./simulation/modelica/external_functions/ExternalFunc1_ext.h

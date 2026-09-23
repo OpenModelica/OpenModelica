@@ -109,6 +109,30 @@ static QString extentToModelica(double x1, double y1, double x2, double y2) {
   return QString("extent={{%1,%2},{%3,%4}}").arg(x1).arg(y1).arg(x2).arg(y2);
 }
 
+/*!
+ * \brief annotation
+ * Builds a Modelica annotation string for \c annotate(viewName(...)) from the given
+ * coordinate system and graphics lists.  If either list is empty, the corresponding
+ * annotation argument is omitted.
+ * \param viewName
+ * \param coordinateSystemList
+ * \param graphicsList
+ * \return
+ */
+static QString annotation(const QString &viewName, const QStringList &coordinateSystemList, const QStringList &graphicsList) {
+  if (!coordinateSystemList.isEmpty() && !graphicsList.isEmpty()) {
+    return QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})")
+      .arg(viewName, coordinateSystemList.join(","), graphicsList.join(","));
+  } else if (!coordinateSystemList.isEmpty()) {
+    return QString("annotate=%1(coordinateSystem=CoordinateSystem(%2))")
+      .arg(viewName, coordinateSystemList.join(","));
+  } else if (!graphicsList.isEmpty()) {
+    return QString("annotate=%1(graphics={%2})")
+      .arg(viewName, graphicsList.join(","));
+  }
+  return QString("annotate=%1()").arg(viewName);
+}
+
 // ──────────────────────────────────────────────────────────────
 // MCPServer member implementations
 // ──────────────────────────────────────────────────────────────
@@ -150,11 +174,7 @@ QHttpServerResponse MCPServer::applyShapeAnnotation(QJsonValue id, const QString
   pGraphicsView->getCoordinateSystemAndGraphics(coordinateSystemList, graphicsList);
   graphicsList.append(shapeStr);
   QString viewName = (view == "icon") ? "Icon" : "Diagram";
-  QString annotationString;
-  if (!coordinateSystemList.isEmpty())
-  annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewName, coordinateSystemList.join(","), graphicsList.join(","));
-  else
-  annotationString = QString("annotate=%1(graphics={%2})").arg(viewName, graphicsList.join(","));
+  QString annotationString = annotation(viewName, coordinateSystemList, graphicsList);
   if (!m_proxy->addClassAnnotation(className, annotationString))
   return makeMCPError(id, QString("Failed to add shape to %1 of class %2").arg(view, className));
   pModelWidget->reDrawModelWidget();
@@ -918,11 +938,7 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
         return makeMCPError(id, QString("Shape not found in %1 view of class %2").arg(view, className));
         graphicsList.removeAt(idx);
         QString viewName = (view == "icon") ? "Icon" : "Diagram";
-        QString annotationString;
-        if (!coordinateSystemList.isEmpty())
-        annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewName, coordinateSystemList.join(","), graphicsList.join(","));
-        else
-        annotationString = QString("annotate=%1(graphics={%2})").arg(viewName, graphicsList.join(","));
+        QString annotationString = annotation(viewName, coordinateSystemList, graphicsList);
         if (!m_proxy->addClassAnnotation(className, annotationString))
         return makeMCPError(id, QString("Failed to update shapes in %1 of class %2").arg(view, className));
         pModelWidget->reDrawModelWidget();
@@ -1020,11 +1036,7 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
         QStringList dummyCoSysList, graphicsList;
         pGraphicsView->getCoordinateSystemAndGraphics(dummyCoSysList, graphicsList);
         QString viewName = (view == "icon") ? "Icon" : "Diagram";
-        QString annotationString;
-        if (!coSysList.isEmpty())
-        annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewName, coSysList.join(","), graphicsList.join(","));
-        else
-        annotationString = QString("annotate=%1(graphics={%2})").arg(viewName, graphicsList.join(","));
+        QString annotationString = annotation(viewName, coSysList, graphicsList);
         if (!m_proxy->addClassAnnotation(className, annotationString))
         return makeMCPError(id, QString("Failed to set coordinate system for %1 of class %2").arg(view, className));
         pModelWidget->reDrawModelWidget();

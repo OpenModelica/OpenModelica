@@ -181,7 +181,8 @@ public
             c := InstNode.component(node);
             var := Component.variability(c);
 
-            if var <= Variability.STRUCTURAL_PARAMETER then
+            if var <= Variability.STRUCTURAL_PARAMETER or ComponentRef.isResizable(exp.cref) then
+              // resizable parameters are evaluated when needed for structural decisions
               isNotFixed := false;
             elseif var == Variability.PARAMETER and
                    (not requireFinal or Component.isFinal(c)) and
@@ -255,8 +256,10 @@ public
         Component comp;
         Expression e;
 
-      case Expression.CREF(cref = ComponentRef.CREF(node = node, origin = Origin.CREF))
+      case Expression.CREF(cref = ComponentRef.CREF(origin = Origin.CREF))
         algorithm
+          node := ComponentRef.node(exp.cref);
+
           if InstNode.isComponent(node) then
             comp := InstNode.component(node);
 

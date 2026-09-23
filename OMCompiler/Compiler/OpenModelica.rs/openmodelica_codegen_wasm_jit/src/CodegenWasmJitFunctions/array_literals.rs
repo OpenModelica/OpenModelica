@@ -189,11 +189,11 @@ fn emit_const_run(
 }
 
 /// [`const_dims`] keeping the non-constant dimensions.
-pub(super) fn type_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
+pub(super) fn type_dims(ty: &DAE::Type) -> Vec<metamodelica::Ref<DAE::Dimension>> {
     let DAE::Type::T_ARRAY { ty: elem, dims } = ty else {
         return Vec::new();
     };
-    let mut out: Vec<Arc<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
+    let mut out: Vec<metamodelica::Ref<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
     out.extend(type_dims(elem));
     out
 }
@@ -468,7 +468,7 @@ fn leaf_array_count(exp: &DAE::Exp) -> Result<Option<u32>> {
 /// The DAE type an expression carries, for the cases that can appear as an
 /// array-constructor leaf. `None` when no type annotation is readily available
 /// (treated as a scalar leaf by [`leaf_array_count`]).
-fn exp_dae_type(exp: &DAE::Exp) -> Option<Arc<DAE::Type>> {
+fn exp_dae_type(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Type>> {
     use DAE::Exp as E;
     match exp {
         E::CREF { ty, .. } | E::CAST { ty, .. } | E::ARRAY { ty, .. } | E::MATRIX { ty, .. } | E::RANGE { ty, .. } => {
@@ -487,7 +487,7 @@ fn exp_dae_type(exp: &DAE::Exp) -> Option<Arc<DAE::Type>> {
 /// The result DAE type carried by an arithmetic operator (for the array-valued
 /// operators that can appear as a constructor leaf). `None` for operators that
 /// do not carry a usable type here.
-fn operator_dae_type(op: &DAE::Operator) -> Option<Arc<DAE::Type>> {
+fn operator_dae_type(op: &DAE::Operator) -> Option<metamodelica::Ref<DAE::Type>> {
     use DAE::Operator as O;
     match op {
         O::ADD { ty } | O::SUB { ty } | O::MUL { ty } | O::DIV { ty } | O::POW { ty } | O::UMINUS { ty }

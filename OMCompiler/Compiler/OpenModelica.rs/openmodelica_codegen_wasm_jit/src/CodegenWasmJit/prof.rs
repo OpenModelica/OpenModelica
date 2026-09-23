@@ -5,11 +5,11 @@ use super::*;
 /// Visit `e` and every equation nested inside it, along the paths
 /// [`lower_equation`] descends — the casual tearing set of a dynamically torn
 /// system included.
-pub(super) fn visit_nested_eqs(e: &Arc<SimCode::SimEqSystem>, f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>)) {
+pub(super) fn visit_nested_eqs(e: &metamodelica::Ref<SimCode::SimEqSystem>, f: &mut dyn FnMut(&metamodelica::Ref<SimCode::SimEqSystem>)) {
     use SimCode::SimEqSystem as E;
     fn visit_list(
-        eqs: &List<Arc<SimCode::SimEqSystem>>,
-        f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>),
+        eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>,
+        f: &mut dyn FnMut(&metamodelica::Ref<SimCode::SimEqSystem>),
     ) {
         for e in lst(eqs) {
             visit_nested_eqs(e, f);

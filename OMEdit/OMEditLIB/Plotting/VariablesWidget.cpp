@@ -1929,11 +1929,7 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
     initFile.close();
     if (initFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
       QTextStream textStream(&initFile);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       textStream.setEncoding(QStringConverter::Utf8);
-#else
-      textStream.setCodec(Helper::utf8.toUtf8().constData());
-#endif
       textStream.setGenerateByteOrderMark(false);
       textStream << initXmlDocument.toString();
       initFile.close();

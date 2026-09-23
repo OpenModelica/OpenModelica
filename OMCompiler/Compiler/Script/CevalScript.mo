@@ -105,6 +105,7 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
+import NFApi;
 import PackageManagement;
 import Parser;
 import Print;
@@ -853,12 +854,14 @@ algorithm
     case ("clear",{})
       algorithm
         SymbolTable.reset();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
     case ("clearProgram",{})
       algorithm
         SymbolTable.clearProgram();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
@@ -989,6 +992,7 @@ algorithm
         b := Flags.isSet(Flags.SCODE_INST);
         strs := System.strtok(str, " ");
         {} := FlagsUtil.readArgs(strs);
+        FlagsUtil.applyNumProcEnvironment();
         outCache := FCore.emptyCache();
 
         if b <> Flags.isSet(Flags.SCODE_INST) then

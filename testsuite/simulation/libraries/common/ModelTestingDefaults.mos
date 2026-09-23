@@ -13,6 +13,8 @@ absTol := 0.0001; // Tolerance for the simulation comparison
 compareVars := fill("",0); // Default compares all variables. Not recommended, but is the only reasonable default'
 referenceFileDir := "msl32"; // Default directory of reference files
 referenceFile := ""; // Default reference file is $REFERENCEFILES/referenceFileDir/modelName.mat
+referenceFileName := ""; // Default reference file name is the model name; set this when the
+                         // model was renamed but the reference file kept its old name
 modelTesting := getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTesting.mos";
 outputFormat :="mat";
 simflags := ""; // Options sent to the simulation runtime

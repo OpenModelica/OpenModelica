@@ -126,6 +126,7 @@ pub extern "C" fn solve_mixed_system(
     thread_data: *mut threadData_t,
     sys_number: c_int,
 ) -> c_int {
+    let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let sys = unsafe { &mut *si.mixedSystemData.add(sys_number as usize) };
     if si.mixedMethod != MIXED_SEARCH {

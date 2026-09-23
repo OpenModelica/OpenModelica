@@ -1,0 +1,46 @@
+[package]
+name = "openmodelica_gendoc"
+version = "0.1.0"
+edition = "2024"
+
+# Generates the Modelica library documentation at
+# https://build.openmodelica.org/Documentation/, replacing
+# OMCompiler/Examples/GenerateDoc.mos and its Python helpers. It reads the
+# Absyn AST directly, so it links the parser and the dump packages but none of
+# the backend.
+[[bin]]
+name = "omgendoc"
+path = "src/main.rs"
+
+[dependencies]
+metamodelica.workspace = true
+openmodelica_ast.workspace = true
+openmodelica_frontend_dump.workspace = true
+# SCode::Element, the type of the translated program a scope is built from.
+openmodelica_frontend_types.workspace = true
+# ClassLoader: resolves a library name + version against the Modelica path and
+# parses the whole package. No `curl`: generating documentation downloads
+# nothing, and the feature drags in libcurl with its TLS/LDAP/SSH/krb5 tail.
+openmodelica_loader = { path = "../openmodelica_loader", default-features = false }
+openmodelica_util.workspace = true
+# The model instance the icons are rendered from, and the renderer itself.
+# No `ffi`: rendering an icon evaluates no `external "C"` function.
+openmodelica_nf_api = { path = "../openmodelica_nf_api", default-features = false }
+openmodelica_nf_frontend = { path = "../openmodelica_nf_frontend", default-features = false }
+openmodelica_omgraphics.workspace = true
+openmodelica_error.workspace = true
+openmodelica_revision.workspace = true
+arcstr.workspace = true
+rayon.workspace = true
+# The allocator, not glibc's. A profile of the corpus spends a fifth of its
+# samples in malloc and free, and glibc's arenas do not divide well between a
+# dozen threads instantiating at once. Optional so a build that cannot have it,
+# or wants to measure without it, can turn it off.
+# Without `stats` jemalloc is configured --disable-stats and the `stats.*`
+# mallctls the memory budget reads do not exist at all.
+tikv-jemallocator = { version = "0.7", features = ["stats"], optional = true }
+tikv-jemalloc-sys = { version = "0.7", optional = true }
+
+[features]
+default = ["jemalloc"]
+jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-sys"]

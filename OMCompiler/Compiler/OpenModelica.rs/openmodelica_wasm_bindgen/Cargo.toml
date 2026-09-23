@@ -23,7 +23,7 @@ path = "src/main.rs"
 # Keep equal to the `wasm-bindgen` pinned by the crates that are bindgen'd
 # (libopenmodelica_compiler, openmodelica_animation_wasm, omshell_*,
 # openmodelica_result_web).
-wasm-bindgen-cli-support = "=0.2.125"
+wasm-bindgen-cli-support = "=0.2.128"
 
 [profile.release]
 opt-level = 2

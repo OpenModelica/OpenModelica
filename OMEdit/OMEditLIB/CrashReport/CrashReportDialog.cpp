@@ -78,13 +78,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   mpBugDescriptionLabel = new Label(tr("Describe the issue in few words:"));
   mpBugDescriptionTextBox = new QPlainTextEdit(
     QString("Connected to %1%4.\nThe running OS is %2 on %3.\n").arg(Helper::OpenModelicaVersion,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
   QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture(),
-#elif defined(__APPLE__)
-  "OSX", "unknown (probably amd64)",
-#else
-  "unknown", "unknown",
-#endif
 #if defined(LSB_RELEASE)
   " built for " LSB_RELEASE
 #else
@@ -220,11 +214,7 @@ void CrashReportDialog::createGDBBacktrace()
     stackTraceFile.setFileName(OMStackTraceFilePath);
     if (stackTraceFile.open(QIODevice::WriteOnly)) {
       QTextStream out(&stackTraceFile);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       out.setEncoding(QStringConverter::Utf8);
-#else
-      out.setCodec(Helper::utf8.toUtf8().constData());
-#endif
       out.setGenerateByteOrderMark(false);
       out << mStackTrace;
       out.flush();

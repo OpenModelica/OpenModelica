@@ -6,7 +6,7 @@
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-loadModel(Modelica, {"3.2.2"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadString("
 model DrumBoilerModel
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs = true);
@@ -89,10 +89,6 @@ val(evaporator_qm_S, 100);
 //     <Unit name=\"kg/(s.Pa)\">
 //       <BaseUnit m=\"1\" s=\"1\" />
 //     </Unit>
-//     <Unit name=\"1\">
-//       <BaseUnit />
-//       <DisplayUnit name=\"kg/kg\" factor=\"1.0\" offset=\"0.0\"/>
-//     </Unit>
 //     <Unit name=\"N/mm2\">
 //       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e6\" />
 //       <DisplayUnit name=\"bar\" factor=\"10.0\" offset=\"0.0\"/>
@@ -104,7 +100,6 @@ val(evaporator_qm_S, 100);
 //     </Unit>
 //     <Unit name=\"kg/kg\">
 //       <BaseUnit />
-//       <DisplayUnit name=\"1\" factor=\"1.0\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"J/(kg.K)\">
 //       <BaseUnit m=\"2\" s=\"-2\" K=\"-1\" />
@@ -186,6 +181,14 @@ val(evaporator_qm_S, 100);
 //         <Item name=\"SteadyState\" value=\"4\"/>
 //       </Enumeration>
 //     </SimpleType>
+//     <SimpleType name=\"Modelica.Blocks.Types.LimiterHomotopy\">
+//       <Enumeration>
+//         <Item name=\"NoHomotopy\" value=\"1\"/>
+//         <Item name=\"Linear\" value=\"2\"/>
+//         <Item name=\"UpperLimit\" value=\"3\"/>
+//         <Item name=\"LowerLimit\" value=\"4\"/>
+//       </Enumeration>
+//     </SimpleType>
 //     <SimpleType name=\"Modelica.Fluid.Types.PortFlowDirection\">
 //       <Enumeration>
 //         <Item name=\"Entering\" value=\"1\"/>
@@ -221,7 +224,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.V_l\"
 //     valueReference=\"1\"
-//     description=\"volumes of liquid phase\"
+//     description=\"Volumes of liquid phase\"
 //     >
 //     <Real unit=\"m3\"/>
 //   </ScalarVariable>
@@ -229,7 +232,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.p\"
 //     valueReference=\"2\"
-//     description=\"pressure inside drum boiler\"
+//     description=\"Pressure inside drum boiler\"
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
@@ -245,7 +248,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.V_l)\"
 //     valueReference=\"4\"
-//     description=\"der(volumes of liquid phase)\"
+//     description=\"der(Volumes of liquid phase)\"
 //     initial=\"approx\">
 //     <Real start=\"0.0\" derivative=\"2\" nominal=\"500.0\" unit=\"m3.s-1\"/>
 //   </ScalarVariable>
@@ -253,7 +256,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.p)\"
 //     valueReference=\"5\"
-//     description=\"der(pressure inside drum boiler)\"
+//     description=\"der(Pressure inside drum boiler)\"
 //     initial=\"approx\">
 //     <Real start=\"0.0\" derivative=\"3\" nominal=\"5e8\" unit=\"km-1.s-3.g\"/>
 //   </ScalarVariable>
@@ -261,7 +264,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.T_D)\"
 //     valueReference=\"6\"
-//     description=\"temperature of drum\"
+//     description=\"Temperature of drum\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -269,7 +272,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.U)\"
 //     valueReference=\"7\"
-//     description=\"internal energy\"
+//     description=\"Internal energy\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -277,7 +280,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.V_v)\"
 //     valueReference=\"8\"
-//     description=\"volume of vapour phase\"
+//     description=\"Volume of vapour phase\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -285,7 +288,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.h_l)\"
 //     valueReference=\"9\"
-//     description=\"specific enthalpy of liquid\"
+//     description=\"Specific enthalpy of liquid\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -293,7 +296,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.h_v)\"
 //     valueReference=\"10\"
-//     description=\"specific enthalpy of vapour\"
+//     description=\"Specific enthalpy of vapour\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -301,7 +304,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.m)\"
 //     valueReference=\"11\"
-//     description=\"total mass of drum boiler\"
+//     description=\"Total mass of drum boiler\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -309,7 +312,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.rho_l)\"
 //     valueReference=\"12\"
-//     description=\"density in liquid phase\"
+//     description=\"Density in liquid phase\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -317,7 +320,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.rho_v)\"
 //     valueReference=\"13\"
-//     description=\"density in vapour phase\"
+//     description=\"Density in vapour phase\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -372,25 +375,25 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"T_S\"
 //     valueReference=\"135\"
-//     description=\"steam temperature\"
+//     description=\"Steam temperature\"
 //     causality=\"output\"
 //     >
-//     <Real/>
+//     <Real unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"22\" -->
 //   <ScalarVariable
 //     name=\"V_l\"
 //     valueReference=\"136\"
-//     description=\"liquid volume inside drum\"
+//     description=\"Liquid volume inside drum\"
 //     causality=\"output\"
 //     >
-//     <Real/>
+//     <Real unit=\"m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"23\" -->
 //   <ScalarVariable
 //     name=\"Y_Valve\"
 //     valueReference=\"137\"
-//     description=\"valve opening\"
+//     description=\"Valve opening\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"0.0\"/>
@@ -415,7 +418,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.T_D\"
 //     valueReference=\"140\"
-//     description=\"temperature of drum\"
+//     description=\"Temperature of drum\"
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
@@ -423,7 +426,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.U\"
 //     valueReference=\"141\"
-//     description=\"internal energy\"
+//     description=\"Internal energy\"
 //     >
 //     <Real unit=\"J\"/>
 //   </ScalarVariable>
@@ -431,7 +434,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.V_v\"
 //     valueReference=\"142\"
-//     description=\"volume of vapour phase\"
+//     description=\"Volume of vapour phase\"
 //     >
 //     <Real unit=\"m3\"/>
 //   </ScalarVariable>
@@ -439,7 +442,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.h_S\"
 //     valueReference=\"143\"
-//     description=\"steam enthalpy (specific enthalpy close to steam port when mass flows in to the boiler)\"
+//     description=\"Steam enthalpy (specific enthalpy close to steam port when mass flows in to the boiler)\"
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
@@ -447,7 +450,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.h_l\"
 //     valueReference=\"144\"
-//     description=\"specific enthalpy of liquid\"
+//     description=\"Specific enthalpy of liquid\"
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
@@ -455,7 +458,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.h_v\"
 //     valueReference=\"145\"
-//     description=\"specific enthalpy of vapour\"
+//     description=\"Specific enthalpy of vapour\"
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
@@ -463,7 +466,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.m\"
 //     valueReference=\"146\"
-//     description=\"total mass of drum boiler\"
+//     description=\"Total mass of drum boiler\"
 //     >
 //     <Real min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
@@ -471,7 +474,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.q_F\"
 //     valueReference=\"147\"
-//     description=\"heat flow rate from furnace\"
+//     description=\"Heat flow rate from furnace\"
 //     >
 //     <Real unit=\"W\"/>
 //   </ScalarVariable>
@@ -479,7 +482,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.rho_l\"
 //     valueReference=\"148\"
-//     description=\"density in liquid phase\"
+//     description=\"Density in liquid phase\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
@@ -487,7 +490,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"evaporator.rho_v\"
 //     valueReference=\"149\"
-//     description=\"density in vapour phase\"
+//     description=\"Density in vapour phase\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
@@ -503,10 +506,10 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"p_S\"
 //     valueReference=\"151\"
-//     description=\"steam pressure\"
+//     description=\"Steam pressure\"
 //     causality=\"output\"
 //     >
-//     <Real/>
+//     <Real unit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"38\" -->
 //   <ScalarVariable
@@ -527,15 +530,15 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"40\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.MM\"
-//     valueReference=\"156\"
+//     valueReference=\"154\"
 //     description=\"Molar mass (of mixture or single fluid)\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\" min=\"0.001\" max=\"0.25\" nominal=\"0.032\" unit=\"kg/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"41\" -->
 //   <ScalarVariable
-//     name=\"pump.medium.R\"
-//     valueReference=\"157\"
+//     name=\"pump.medium.R_s\"
+//     valueReference=\"155\"
 //     description=\"Gas constant (of mixture if applicable)\"
 //     initial=\"exact\">
 //     <Real start=\"1000.0\" min=\"0.0\" max=\"1e7\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
@@ -543,7 +546,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"42\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.T\"
-//     valueReference=\"158\"
+//     valueReference=\"156\"
 //     description=\"Temperature of medium\"
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
@@ -551,7 +554,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"43\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.T_degC\"
-//     valueReference=\"159\"
+//     valueReference=\"157\"
 //     description=\"Temperature of medium in [degC]\"
 //     >
 //     <Real unit=\"degC\"/>
@@ -559,7 +562,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"44\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.X[1]\"
-//     valueReference=\"160\"
+//     valueReference=\"158\"
 //     description=\"Mass fractions (= (component mass)/total mass  m_i/m)\"
 //     initial=\"exact\">
 //     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
@@ -567,7 +570,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"45\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.d\"
-//     valueReference=\"161\"
+//     valueReference=\"159\"
 //     description=\"Density of medium\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
@@ -575,7 +578,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"46\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.p_bar\"
-//     valueReference=\"162\"
+//     valueReference=\"160\"
 //     description=\"Absolute pressure of medium in [bar]\"
 //     >
 //     <Real unit=\"bar\"/>
@@ -583,7 +586,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"47\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.sat.Tsat\"
-//     valueReference=\"163\"
+//     valueReference=\"161\"
 //     description=\"Saturation temperature\"
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
@@ -591,7 +594,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"48\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.u\"
-//     valueReference=\"164\"
+//     valueReference=\"162\"
 //     description=\"Specific internal energy of medium\"
 //     >
 //     <Real min=\"-1e8\" max=\"1e8\" nominal=\"1e6\" unit=\"J/kg\"/>
@@ -599,8 +602,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"49\" -->
 //   <ScalarVariable
 //     name=\"q_F\"
-//     valueReference=\"165\"
-//     description=\"fuel flow rate\"
+//     valueReference=\"163\"
+//     description=\"Fuel flow rate\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"0.0\" unit=\"MW\"/>
@@ -608,16 +611,16 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"50\" -->
 //   <ScalarVariable
 //     name=\"qm_S\"
-//     valueReference=\"166\"
-//     description=\"steam flow rate\"
+//     valueReference=\"164\"
+//     description=\"Steam flow rate\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"-1e60\" max=\"1e5\"/>
+//     <Real min=\"-1e60\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"51\" -->
 //   <ScalarVariable
 //     name=\"sigma_D\"
-//     valueReference=\"167\"
+//     valueReference=\"165\"
 //     causality=\"output\"
 //     >
 //     <Real unit=\"N/mm2\"/>
@@ -625,15 +628,15 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"52\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.MM\"
-//     valueReference=\"168\"
+//     valueReference=\"166\"
 //     description=\"Molar mass (of mixture or single fluid)\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\" min=\"0.001\" max=\"0.25\" nominal=\"0.032\" unit=\"kg/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"53\" -->
 //   <ScalarVariable
-//     name=\"sink.medium.R\"
-//     valueReference=\"169\"
+//     name=\"sink.medium.R_s\"
+//     valueReference=\"167\"
 //     description=\"Gas constant (of mixture if applicable)\"
 //     initial=\"exact\">
 //     <Real start=\"1000.0\" min=\"0.0\" max=\"1e7\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
@@ -641,7 +644,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"54\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.T_degC\"
-//     valueReference=\"170\"
+//     valueReference=\"168\"
 //     description=\"Temperature of medium in [degC]\"
 //     >
 //     <Real unit=\"degC\"/>
@@ -649,7 +652,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"55\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.X[1]\"
-//     valueReference=\"171\"
+//     valueReference=\"169\"
 //     description=\"Mass fractions (= (component mass)/total mass  m_i/m)\"
 //     initial=\"exact\">
 //     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
@@ -657,7 +660,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"56\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.d\"
-//     valueReference=\"172\"
+//     valueReference=\"170\"
 //     description=\"Density of medium\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
@@ -665,7 +668,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"57\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.p_bar\"
-//     valueReference=\"173\"
+//     valueReference=\"171\"
 //     description=\"Absolute pressure of medium in [bar]\"
 //     >
 //     <Real unit=\"bar\"/>
@@ -673,7 +676,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"58\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.sat.Tsat\"
-//     valueReference=\"174\"
+//     valueReference=\"172\"
 //     description=\"Saturation temperature\"
 //     initial=\"exact\">
 //     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
@@ -681,7 +684,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"59\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.u\"
-//     valueReference=\"175\"
+//     valueReference=\"173\"
 //     description=\"Specific internal energy of medium\"
 //     >
 //     <Real min=\"-1e8\" max=\"1e8\" nominal=\"1e6\" unit=\"J/kg\"/>
@@ -689,7 +692,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"60\" -->
 //   <ScalarVariable
 //     name=\"temperature.port.h_outflow\"
-//     valueReference=\"178\"
+//     valueReference=\"176\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     initial=\"exact\">
 //     <Real start=\"1e5\" min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
@@ -697,7 +700,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"61\" -->
 //   <ScalarVariable
 //     name=\"temperature.port.m_flow\"
-//     valueReference=\"179\"
+//     valueReference=\"177\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\" min=\"0.0\" max=\"1e5\" unit=\"kg/s\"/>
@@ -705,27 +708,27 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"62\" -->
 //   <ScalarVariable
 //     name=\"MW2W.k\"
-//     valueReference=\"222\"
+//     valueReference=\"220\"
 //     description=\"Gain value multiplied with input signal\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"1e6\" unit=\"1\"/>
+//     <Real start=\"1e6\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"63\" -->
 //   <ScalarVariable
 //     name=\"Pa2bar.k\"
-//     valueReference=\"223\"
+//     valueReference=\"221\"
 //     description=\"Gain value multiplied with input signal\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"1e-5\" unit=\"1\"/>
+//     <Real start=\"1e-5\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"64\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.dp_nominal\"
-//     valueReference=\"224\"
+//     valueReference=\"222\"
 //     description=\"Nominal pressure drop at full opening\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
@@ -735,7 +738,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"65\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.dp_start\"
-//     valueReference=\"225\"
+//     valueReference=\"223\"
 //     description=\"Guess value of dp = port_a.p - port_b.p\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -745,7 +748,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"66\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.k\"
-//     valueReference=\"226\"
+//     valueReference=\"224\"
 //     description=\"Hydraulic conductance at full opening\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -755,7 +758,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"67\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.m_flow_nominal\"
-//     valueReference=\"227\"
+//     valueReference=\"225\"
 //     description=\"Nominal mass flowrate at full opening\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
@@ -765,7 +768,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"68\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.m_flow_small\"
-//     valueReference=\"228\"
+//     valueReference=\"226\"
 //     description=\"Small mass flow rate for regularization of zero flow\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -775,7 +778,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"69\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.m_flow_start\"
-//     valueReference=\"229\"
+//     valueReference=\"227\"
 //     description=\"Guess value of m_flow = port_a.m_flow\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -785,7 +788,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"70\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_b.p\"
-//     valueReference=\"230\"
+//     valueReference=\"228\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -795,27 +798,27 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"71\" -->
 //   <ScalarVariable
 //     name=\"controller.T\"
-//     valueReference=\"232\"
+//     valueReference=\"230\"
 //     description=\"Time Constant (T&gt;0 required)\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"120.0\" min=\"1e-60\" unit=\"s\"/>
+//     <Real start=\"120.0\" min=\"2.2250738585072014e-308\" unit=\"s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"72\" -->
 //   <ScalarVariable
 //     name=\"controller.k\"
-//     valueReference=\"233\"
+//     valueReference=\"231\"
 //     description=\"Gain\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"10.0\" unit=\"1\"/>
+//     <Real start=\"10.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"73\" -->
 //   <ScalarVariable
 //     name=\"controller.x_start\"
-//     valueReference=\"234\"
+//     valueReference=\"232\"
 //     description=\"Initial or guess value of state\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
@@ -825,7 +828,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"74\" -->
 //   <ScalarVariable
 //     name=\"controller.y_start\"
-//     valueReference=\"235\"
+//     valueReference=\"233\"
 //     description=\"Initial value of output\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
@@ -835,7 +838,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"75\" -->
 //   <ScalarVariable
 //     name=\"evaporator.V_l_start\"
-//     valueReference=\"236\"
+//     valueReference=\"234\"
 //     description=\"Start value of liquid volumeStart value of volume\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
@@ -845,8 +848,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"76\" -->
 //   <ScalarVariable
 //     name=\"evaporator.V_t\"
-//     valueReference=\"237\"
-//     description=\"total volume inside drum\"
+//     valueReference=\"235\"
+//     description=\"Total volume inside drum\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
@@ -855,8 +858,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"77\" -->
 //   <ScalarVariable
 //     name=\"evaporator.cp_D\"
-//     valueReference=\"238\"
-//     description=\"specific heat capacity of drum metal\"
+//     valueReference=\"236\"
+//     description=\"Specific heat capacity of drum metal\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
@@ -864,248 +867,249 @@ val(evaporator_qm_S, 100);
 //   </ScalarVariable>
 //   <!-- Index of variable = \"78\" -->
 //   <ScalarVariable
+//     name=\"evaporator.h_W\"
+//     valueReference=\"237\"
+//     description=\"Feed water enthalpy (specific enthalpy close to feedwater port when mass flows in to the boiler)\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"79\" -->
+//   <ScalarVariable
 //     name=\"evaporator.m_D\"
-//     valueReference=\"239\"
-//     description=\"mass of surrounding drum metal\"
+//     valueReference=\"238\"
+//     description=\"Mass of surrounding drum metal\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"3e5\" min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"79\" -->
+//   <!-- Index of variable = \"80\" -->
 //   <ScalarVariable
 //     name=\"evaporator.p_start\"
-//     valueReference=\"240\"
+//     valueReference=\"239\"
 //     description=\"Start value of pressure\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1e5\" min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"80\" -->
+//   <!-- Index of variable = \"81\" -->
 //   <ScalarVariable
 //     name=\"feedback.u1\"
-//     valueReference=\"241\"
+//     valueReference=\"240\"
+//     description=\"Commanded input\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"81\" -->
+//   <!-- Index of variable = \"82\" -->
 //   <ScalarVariable
 //     name=\"furnace.T_ref\"
-//     valueReference=\"242\"
+//     valueReference=\"241\"
 //     description=\"Reference temperature\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"293.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"82\" -->
+//   <!-- Index of variable = \"83\" -->
 //   <ScalarVariable
 //     name=\"furnace.alpha\"
-//     valueReference=\"243\"
+//     valueReference=\"242\"
 //     description=\"Temperature coefficient of heat flow rate\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\" unit=\"1/K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"83\" -->
+//   <!-- Index of variable = \"84\" -->
 //   <ScalarVariable
 //     name=\"levelSetPoint.k\"
-//     valueReference=\"244\"
+//     valueReference=\"243\"
 //     description=\"Constant output value\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"67.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"84\" -->
+//   <!-- Index of variable = \"85\" -->
 //   <ScalarVariable
 //     name=\"levelSetPoint.y\"
-//     valueReference=\"245\"
+//     valueReference=\"244\"
 //     description=\"Connector of Real output signal\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"85\" -->
+//   <!-- Index of variable = \"86\" -->
 //   <ScalarVariable
 //     name=\"limiter.uMax\"
-//     valueReference=\"246\"
+//     valueReference=\"245\"
 //     description=\"Upper limits of input signals\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"500.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"86\" -->
+//   <!-- Index of variable = \"87\" -->
 //   <ScalarVariable
 //     name=\"limiter.uMin\"
-//     valueReference=\"247\"
+//     valueReference=\"246\"
 //     description=\"Lower limits of input signals\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"87\" -->
+//   <!-- Index of variable = \"88\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.m_flow_nominal\"
-//     valueReference=\"248\"
+//     valueReference=\"247\"
 //     description=\"Nominal value of m_flow = port_a.m_flow\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"88\" -->
+//   <!-- Index of variable = \"89\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.m_flow_small\"
-//     valueReference=\"249\"
+//     valueReference=\"248\"
 //     description=\"Regularization for bi-directional flow in the region |m_flow| &lt; m_flow_small (m_flow_small &gt; 0 required)\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"89\" -->
+//   <!-- Index of variable = \"90\" -->
 //   <ScalarVariable
 //     name=\"pump.X[1]\"
-//     valueReference=\"250\"
+//     valueReference=\"249\"
 //     description=\"Fixed value of composition\"
 //     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
+//     causality=\"parameter\"
 //     >
-//     <Real min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
+//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"90\" -->
+//   <!-- Index of variable = \"91\" -->
 //   <ScalarVariable
 //     name=\"pump.h\"
 //     valueReference=\"251\"
 //     description=\"Fixed value of specific enthalpy\"
 //     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"5e5\" min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"92\" -->
+//   <ScalarVariable
+//     name=\"pump.m_flow\"
+//     valueReference=\"253\"
+//     description=\"Fixed mass flow rate going out of the fluid port\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"0.0\" min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"93\" -->
+//   <ScalarVariable
+//     name=\"pump.medium.h\"
+//     valueReference=\"254\"
+//     description=\"Specific enthalpy of medium\"
+//     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"91\" -->
+//   <!-- Index of variable = \"94\" -->
 //   <ScalarVariable
-//     name=\"pump.m_flow\"
-//     valueReference=\"252\"
-//     description=\"Fixed mass flow rate going out of the fluid port\"
+//     name=\"pump.medium.state.h\"
+//     valueReference=\"255\"
+//     description=\"Specific enthalpy\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"92\" -->
+//   <!-- Index of variable = \"95\" -->
+//   <ScalarVariable
+//     name=\"pump.ports[1].h_outflow\"
+//     valueReference=\"256\"
+//     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"96\" -->
 //   <ScalarVariable
 //     name=\"sink.T\"
-//     valueReference=\"253\"
+//     valueReference=\"257\"
 //     description=\"Boundary temperature\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"93\" -->
+//   <!-- Index of variable = \"97\" -->
 //   <ScalarVariable
 //     name=\"sink.X[1]\"
-//     valueReference=\"254\"
+//     valueReference=\"258\"
 //     description=\"Boundary mass fractions m_i/m\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"94\" -->
+//   <!-- Index of variable = \"98\" -->
 //   <ScalarVariable
 //     name=\"sink.d\"
-//     valueReference=\"255\"
+//     valueReference=\"259\"
 //     description=\"Boundary density\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"95\" -->
+//   <!-- Index of variable = \"99\" -->
 //   <ScalarVariable
 //     name=\"sink.h\"
-//     valueReference=\"256\"
+//     valueReference=\"260\"
 //     description=\"Boundary specific enthalpy\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"84013.05815259689\" min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"96\" -->
+//   <!-- Index of variable = \"100\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.T\"
-//     valueReference=\"257\"
+//     valueReference=\"261\"
 //     description=\"Temperature of medium\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"97\" -->
+//   <!-- Index of variable = \"101\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.p\"
-//     valueReference=\"258\"
+//     valueReference=\"262\"
 //     description=\"Absolute pressure of medium\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"98\" -->
-//   <ScalarVariable
-//     name=\"sink.medium.sat.psat\"
-//     valueReference=\"259\"
-//     description=\"Saturation pressure\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"99\" -->
-//   <ScalarVariable
-//     name=\"sink.medium.state.T\"
-//     valueReference=\"260\"
-//     description=\"Temperature\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"100\" -->
-//   <ScalarVariable
-//     name=\"sink.medium.state.p\"
-//     valueReference=\"261\"
-//     description=\"Pressure\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"101\" -->
-//   <ScalarVariable
-//     name=\"sink.p\"
-//     valueReference=\"262\"
-//     description=\"Boundary pressure\"
-//     variability=\"fixed\"
-//     causality=\"parameter\"
-//     >
-//     <Real start=\"5e4\" min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"102\" -->
 //   <ScalarVariable
-//     name=\"sink.ports[1].p\"
+//     name=\"sink.medium.sat.psat\"
 //     valueReference=\"263\"
-//     description=\"Thermodynamic pressure in the connection point\"
+//     description=\"Saturation pressure\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1113,120 +1117,160 @@ val(evaporator_qm_S, 100);
 //   </ScalarVariable>
 //   <!-- Index of variable = \"103\" -->
 //   <ScalarVariable
-//     name=\"system.T_ambient\"
+//     name=\"sink.medium.state.T\"
+//     valueReference=\"264\"
+//     description=\"Temperature\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"104\" -->
+//   <ScalarVariable
+//     name=\"sink.medium.state.p\"
+//     valueReference=\"265\"
+//     description=\"Pressure\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"105\" -->
+//   <ScalarVariable
+//     name=\"sink.p\"
 //     valueReference=\"266\"
+//     description=\"Boundary pressure\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"5e4\" min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"106\" -->
+//   <ScalarVariable
+//     name=\"sink.ports[1].p\"
+//     valueReference=\"267\"
+//     description=\"Thermodynamic pressure in the connection point\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"107\" -->
+//   <ScalarVariable
+//     name=\"system.T_ambient\"
+//     valueReference=\"270\"
 //     description=\"Default ambient temperature\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"293.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"104\" -->
+//   <!-- Index of variable = \"108\" -->
 //   <ScalarVariable
 //     name=\"system.T_start\"
-//     valueReference=\"267\"
+//     valueReference=\"271\"
 //     description=\"Default start value for temperatures\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"105\" -->
+//   <!-- Index of variable = \"109\" -->
 //   <ScalarVariable
 //     name=\"system.dp_small\"
-//     valueReference=\"268\"
+//     valueReference=\"272\"
 //     description=\"Default small pressure drop for regularization of laminar and zero flow\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"106\" -->
+//   <!-- Index of variable = \"110\" -->
 //   <ScalarVariable
 //     name=\"system.eps_m_flow\"
-//     valueReference=\"269\"
+//     valueReference=\"273\"
 //     description=\"Regularization of zero flow for |m_flow| &lt; eps_m_flow*m_flow_nominal\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1e-4\" min=\"0.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"107\" -->
+//   <!-- Index of variable = \"111\" -->
 //   <ScalarVariable
 //     name=\"system.g\"
-//     valueReference=\"270\"
+//     valueReference=\"274\"
 //     description=\"Constant gravity acceleration\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"9.80665\" unit=\"m/s2\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"108\" -->
+//   <!-- Index of variable = \"112\" -->
 //   <ScalarVariable
 //     name=\"system.m_flow_nominal\"
-//     valueReference=\"271\"
+//     valueReference=\"275\"
 //     description=\"Default nominal mass flow rate\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"109\" -->
+//   <!-- Index of variable = \"113\" -->
 //   <ScalarVariable
 //     name=\"system.m_flow_small\"
-//     valueReference=\"272\"
+//     valueReference=\"276\"
 //     description=\"Default small mass flow rate for regularization of laminar and zero flow\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.01\" min=\"0.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"110\" -->
+//   <!-- Index of variable = \"114\" -->
 //   <ScalarVariable
 //     name=\"system.m_flow_start\"
-//     valueReference=\"273\"
+//     valueReference=\"277\"
 //     description=\"Default start value for mass flow rates\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"111\" -->
+//   <!-- Index of variable = \"115\" -->
 //   <ScalarVariable
 //     name=\"system.p_ambient\"
-//     valueReference=\"274\"
+//     valueReference=\"278\"
 //     description=\"Default ambient pressure\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"101325.0\" min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"112\" -->
+//   <!-- Index of variable = \"116\" -->
 //   <ScalarVariable
 //     name=\"system.p_start\"
-//     valueReference=\"275\"
+//     valueReference=\"279\"
 //     description=\"Default start value for pressures\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"113\" -->
+//   <!-- Index of variable = \"117\" -->
 //   <ScalarVariable
 //     name=\"K2degC.Celsius\"
 //     valueReference=\"135\"
 //     >
 //     <Real unit=\"degC\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"114\" -->
+//   <!-- Index of variable = \"118\" -->
 //   <ScalarVariable
 //     name=\"MW2W.u\"
-//     valueReference=\"165\"
+//     valueReference=\"163\"
 //     description=\"Input signal connector\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"115\" -->
+//   <!-- Index of variable = \"119\" -->
 //   <ScalarVariable
 //     name=\"Pa2bar.u\"
 //     valueReference=\"2\"
@@ -1234,7 +1278,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"116\" -->
+//   <!-- Index of variable = \"120\" -->
 //   <ScalarVariable
 //     name=\"Pa2bar.y\"
 //     valueReference=\"151\"
@@ -1242,15 +1286,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"117\" -->
+//   <!-- Index of variable = \"121\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.m_flow\"
-//     valueReference=\"166\"
+//     valueReference=\"164\"
 //     description=\"Mass flow rate in design flow direction\"
 //     >
 //     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"118\" -->
+//   <!-- Index of variable = \"122\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.opening\"
 //     valueReference=\"137\"
@@ -1258,7 +1302,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"0.0\" max=\"1.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"119\" -->
+//   <!-- Index of variable = \"123\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_a.h_outflow\"
 //     valueReference=\"143\"
@@ -1266,15 +1310,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"120\" -->
+//   <!-- Index of variable = \"124\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_a.m_flow\"
-//     valueReference=\"166\"
+//     valueReference=\"164\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"121\" -->
+//   <!-- Index of variable = \"125\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_a.p\"
 //     valueReference=\"2\"
@@ -1282,7 +1326,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"122\" -->
+//   <!-- Index of variable = \"126\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_b.h_outflow\"
 //     valueReference=\"145\"
@@ -1290,39 +1334,31 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"123\" -->
+//   <!-- Index of variable = \"127\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_b.m_flow\"
-//     valueReference=\"291\"
+//     valueReference=\"295\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real min=\"-1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"124\" -->
+//   <!-- Index of variable = \"128\" -->
 //   <ScalarVariable
 //     name=\"evaporator.T\"
 //     valueReference=\"140\"
-//     description=\"temperature inside drum boiler\"
+//     description=\"Temperature inside drum boiler\"
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"125\" -->
+//   <!-- Index of variable = \"129\" -->
 //   <ScalarVariable
 //     name=\"evaporator.V\"
 //     valueReference=\"1\"
-//     description=\"liquid volume\"
+//     description=\"Liquid volume\"
 //     >
-//     <Real/>
+//     <Real unit=\"m3\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"126\" -->
-//   <ScalarVariable
-//     name=\"evaporator.h_W\"
-//     valueReference=\"155\"
-//     description=\"Feed water enthalpy (specific enthalpy close to feedwater port when mass flows in to the boiler)\"
-//     >
-//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"127\" -->
+//   <!-- Index of variable = \"130\" -->
 //   <ScalarVariable
 //     name=\"evaporator.heatPort.Q_flow\"
 //     valueReference=\"147\"
@@ -1330,7 +1366,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real unit=\"W\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"128\" -->
+//   <!-- Index of variable = \"131\" -->
 //   <ScalarVariable
 //     name=\"evaporator.heatPort.T\"
 //     valueReference=\"140\"
@@ -1338,7 +1374,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"129\" -->
+//   <!-- Index of variable = \"132\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_a.h_outflow\"
 //     valueReference=\"144\"
@@ -1346,7 +1382,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"130\" -->
+//   <!-- Index of variable = \"133\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_a.m_flow\"
 //     valueReference=\"150\"
@@ -1354,7 +1390,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"131\" -->
+//   <!-- Index of variable = \"134\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_a.p\"
 //     valueReference=\"2\"
@@ -1362,7 +1398,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"132\" -->
+//   <!-- Index of variable = \"135\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_b.h_outflow\"
 //     valueReference=\"145\"
@@ -1370,15 +1406,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"133\" -->
+//   <!-- Index of variable = \"136\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_b.m_flow\"
-//     valueReference=\"304\"
+//     valueReference=\"307\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real min=\"-1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"134\" -->
+//   <!-- Index of variable = \"137\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_b.p\"
 //     valueReference=\"2\"
@@ -1386,23 +1422,23 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"135\" -->
+//   <!-- Index of variable = \"138\" -->
 //   <ScalarVariable
 //     name=\"evaporator.qm_S\"
-//     valueReference=\"306\"
-//     description=\"steam mass flow rate\"
+//     valueReference=\"309\"
+//     description=\"Steam mass flow rate\"
 //     >
 //     <Real min=\"-1e5\" max=\"1e60\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"136\" -->
+//   <!-- Index of variable = \"139\" -->
 //   <ScalarVariable
 //     name=\"evaporator.qm_W\"
 //     valueReference=\"150\"
-//     description=\"feed water mass flow rate\"
+//     description=\"Feed water mass flow rate\"
 //     >
 //     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"137\" -->
+//   <!-- Index of variable = \"140\" -->
 //   <ScalarVariable
 //     name=\"evaporator.sat.Tsat\"
 //     valueReference=\"140\"
@@ -1410,7 +1446,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"138\" -->
+//   <!-- Index of variable = \"141\" -->
 //   <ScalarVariable
 //     name=\"evaporator.sat.psat\"
 //     valueReference=\"2\"
@@ -1418,36 +1454,37 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"139\" -->
+//   <!-- Index of variable = \"142\" -->
 //   <ScalarVariable
 //     name=\"feedback.u2\"
 //     valueReference=\"1\"
+//     description=\"Feedback input\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"140\" -->
+//   <!-- Index of variable = \"143\" -->
 //   <ScalarVariable
 //     name=\"feedback.y\"
 //     valueReference=\"138\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"141\" -->
+//   <!-- Index of variable = \"144\" -->
 //   <ScalarVariable
 //     name=\"furnace.Q_flow\"
 //     valueReference=\"126\"
 //     >
 //     <Real unit=\"W\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"142\" -->
+//   <!-- Index of variable = \"145\" -->
 //   <ScalarVariable
 //     name=\"furnace.port.Q_flow\"
-//     valueReference=\"313\"
+//     valueReference=\"316\"
 //     description=\"Heat flow rate (positive if flowing from outside into the component)\"
 //     >
 //     <Real unit=\"W\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"143\" -->
+//   <!-- Index of variable = \"146\" -->
 //   <ScalarVariable
 //     name=\"furnace.port.T\"
 //     valueReference=\"140\"
@@ -1455,7 +1492,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"144\" -->
+//   <!-- Index of variable = \"147\" -->
 //   <ScalarVariable
 //     name=\"limiter.u\"
 //     valueReference=\"139\"
@@ -1463,15 +1500,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"145\" -->
+//   <!-- Index of variable = \"148\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.m_flow\"
-//     valueReference=\"166\"
+//     valueReference=\"164\"
 //     description=\"Mass flow rate from port_a to port_b\"
 //     >
 //     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"146\" -->
+//   <!-- Index of variable = \"149\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_a.h_outflow\"
 //     valueReference=\"143\"
@@ -1479,15 +1516,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"147\" -->
+//   <!-- Index of variable = \"150\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_a.m_flow\"
-//     valueReference=\"166\"
+//     valueReference=\"164\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"148\" -->
+//   <!-- Index of variable = \"151\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_a.p\"
 //     valueReference=\"2\"
@@ -1495,7 +1532,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"149\" -->
+//   <!-- Index of variable = \"152\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_b.h_outflow\"
 //     valueReference=\"145\"
@@ -1503,15 +1540,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"150\" -->
+//   <!-- Index of variable = \"153\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_b.m_flow\"
-//     valueReference=\"321\"
+//     valueReference=\"325\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real min=\"-1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"151\" -->
+//   <!-- Index of variable = \"154\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_b.p\"
 //     valueReference=\"2\"
@@ -1519,7 +1556,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"152\" -->
+//   <!-- Index of variable = \"155\" -->
 //   <ScalarVariable
 //     name=\"pressure.p\"
 //     valueReference=\"2\"
@@ -1527,7 +1564,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"0.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"153\" -->
+//   <!-- Index of variable = \"156\" -->
 //   <ScalarVariable
 //     name=\"pressure.port.p\"
 //     valueReference=\"2\"
@@ -1535,23 +1572,15 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"154\" -->
+//   <!-- Index of variable = \"157\" -->
 //   <ScalarVariable
 //     name=\"pump.m_flow_in\"
 //     valueReference=\"150\"
 //     description=\"Prescribed mass flow rate\"
 //     >
-//     <Real/>
+//     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"155\" -->
-//   <ScalarVariable
-//     name=\"pump.medium.h\"
-//     valueReference=\"155\"
-//     description=\"Specific enthalpy of medium\"
-//     >
-//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"156\" -->
+//   <!-- Index of variable = \"158\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.p\"
 //     valueReference=\"2\"
@@ -1559,7 +1588,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"157\" -->
+//   <!-- Index of variable = \"159\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.sat.psat\"
 //     valueReference=\"2\"
@@ -1567,31 +1596,23 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"158\" -->
+//   <!-- Index of variable = \"160\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.state.T\"
-//     valueReference=\"158\"
+//     valueReference=\"156\"
 //     description=\"Temperature\"
 //     >
 //     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"159\" -->
+//   <!-- Index of variable = \"161\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.state.d\"
-//     valueReference=\"161\"
+//     valueReference=\"159\"
 //     description=\"Density\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"160\" -->
-//   <ScalarVariable
-//     name=\"pump.medium.state.h\"
-//     valueReference=\"155\"
-//     description=\"Specific enthalpy\"
-//     >
-//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"161\" -->
+//   <!-- Index of variable = \"162\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.state.p\"
 //     valueReference=\"2\"
@@ -1599,18 +1620,10 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"162\" -->
-//   <ScalarVariable
-//     name=\"pump.ports[1].h_outflow\"
-//     valueReference=\"155\"
-//     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
-//     >
-//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"163\" -->
 //   <ScalarVariable
 //     name=\"pump.ports[1].m_flow\"
-//     valueReference=\"335\"
+//     valueReference=\"336\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real unit=\"kg/s\"/>
@@ -1634,7 +1647,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"166\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.state.d\"
-//     valueReference=\"172\"
+//     valueReference=\"170\"
 //     description=\"Density\"
 //     >
 //     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
@@ -1658,7 +1671,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"169\" -->
 //   <ScalarVariable
 //     name=\"sink.ports[1].m_flow\"
-//     valueReference=\"166\"
+//     valueReference=\"164\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
 //     <Real unit=\"kg/s\"/>
@@ -1729,39 +1742,39 @@ val(evaporator_qm_S, 100);
 //   </ScalarVariable>
 //   <!-- Index of variable = \"177\" -->
 //   <ScalarVariable
-//     name=\"pump.nPorts\"
-//     valueReference=\"27\"
-//     description=\"Number of ports\"
+//     name=\"limiter.homotopyType\"
+//     valueReference=\"26\"
+//     description=\"Simplified model for homotopy-based initialization\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Integer/>
+//     <Enumeration declaredType=\"Modelica.Blocks.Types.LimiterHomotopy\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"178\" -->
 //   <ScalarVariable
+//     name=\"pump.nPorts\"
+//     valueReference=\"28\"
+//     description=\"Number of ports\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Integer min=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"179\" -->
+//   <ScalarVariable
 //     name=\"sink.nPorts\"
-//     valueReference=\"29\"
+//     valueReference=\"30\"
 //     description=\"Number of ports\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Integer/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"179\" -->
-//   <ScalarVariable
-//     name=\"system.energyDynamics\"
-//     valueReference=\"30\"
-//     description=\"Default formulation of energy balances\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"180\" -->
 //   <ScalarVariable
-//     name=\"system.massDynamics\"
+//     name=\"system.energyDynamics\"
 //     valueReference=\"31\"
-//     description=\"Default formulation of mass balances\"
+//     description=\"Default formulation of energy balances\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1769,9 +1782,9 @@ val(evaporator_qm_S, 100);
 //   </ScalarVariable>
 //   <!-- Index of variable = \"181\" -->
 //   <ScalarVariable
-//     name=\"system.momentumDynamics\"
+//     name=\"system.massDynamics\"
 //     valueReference=\"32\"
-//     description=\"Default formulation of momentum balances, if options available\"
+//     description=\"Default formulation of mass balances\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1779,9 +1792,9 @@ val(evaporator_qm_S, 100);
 //   </ScalarVariable>
 //   <!-- Index of variable = \"182\" -->
 //   <ScalarVariable
-//     name=\"system.substanceDynamics\"
+//     name=\"system.momentumDynamics\"
 //     valueReference=\"33\"
-//     description=\"Default formulation of substance balances\"
+//     description=\"Default formulation of momentum balances, if options available\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1789,15 +1802,25 @@ val(evaporator_qm_S, 100);
 //   </ScalarVariable>
 //   <!-- Index of variable = \"183\" -->
 //   <ScalarVariable
-//     name=\"system.traceDynamics\"
+//     name=\"system.substanceDynamics\"
 //     valueReference=\"34\"
-//     description=\"Default formulation of trace substance balances\"
+//     description=\"Default formulation of substance balances\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"184\" -->
+//   <ScalarVariable
+//     name=\"system.traceDynamics\"
+//     valueReference=\"35\"
+//     description=\"Default formulation of trace substance balances\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"185\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.state.phase\"
 //     valueReference=\"14\"
@@ -1806,7 +1829,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Integer min=\"0\" max=\"2\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"185\" -->
+//   <!-- Index of variable = \"186\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.state.phase\"
 //     valueReference=\"15\"
@@ -1815,7 +1838,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Integer min=\"0\" max=\"2\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"186\" -->
+//   <!-- Index of variable = \"187\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.allowFlowReversal\"
 //     valueReference=\"2\"
@@ -1825,7 +1848,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Boolean/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"187\" -->
+//   <!-- Index of variable = \"188\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.show_T\"
 //     valueReference=\"6\"
@@ -1835,7 +1858,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Boolean start=\"true\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"188\" -->
+//   <!-- Index of variable = \"189\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.show_V_flow\"
 //     valueReference=\"7\"
@@ -1845,7 +1868,7 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Boolean start=\"true\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"189\" -->
+//   <!-- Index of variable = \"190\" -->
 //   <ScalarVariable
 //     name=\"evaporator.allowFlowReversal\"
 //     valueReference=\"8\"
@@ -1855,20 +1878,10 @@ val(evaporator_qm_S, 100);
 //     >
 //     <Boolean/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"190\" -->
-//   <ScalarVariable
-//     name=\"limiter.limitsAtInit\"
-//     valueReference=\"12\"
-//     description=\"Has no longer an effect and is only kept for backwards compatibility (the implementation uses now the homotopy operator)\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Boolean/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"191\" -->
 //   <ScalarVariable
 //     name=\"limiter.strict\"
-//     valueReference=\"13\"
+//     valueReference=\"12\"
 //     description=\"= true, if strict limits with noEvent(..)\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1878,7 +1891,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"192\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.allowFlowReversal\"
-//     valueReference=\"14\"
+//     valueReference=\"13\"
 //     description=\"= true to allow flow reversal, false restricts to design direction (port_a -&gt; port_b)\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1888,8 +1901,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"193\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.preferredMediumStates\"
-//     valueReference=\"18\"
-//     description=\"= true if StateSelect.prefer shall be used for the independent property variables of the medium\"
+//     valueReference=\"17\"
+//     description=\"= true, if StateSelect.prefer shall be used for the independent property variables of the medium\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1898,7 +1911,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"194\" -->
 //   <ScalarVariable
 //     name=\"pump.medium.standardOrderComponents\"
-//     valueReference=\"19\"
+//     valueReference=\"18\"
 //     description=\"If true, and reducedX = true, the last element of X will be computed from the other ones\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1908,7 +1921,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"195\" -->
 //   <ScalarVariable
 //     name=\"pump.use_C_in\"
-//     valueReference=\"20\"
+//     valueReference=\"19\"
 //     description=\"Get the trace substances from the input connector\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1918,7 +1931,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"196\" -->
 //   <ScalarVariable
 //     name=\"pump.use_X_in\"
-//     valueReference=\"21\"
+//     valueReference=\"20\"
 //     description=\"Get the composition from the input connector\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1928,7 +1941,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"197\" -->
 //   <ScalarVariable
 //     name=\"pump.use_h_in\"
-//     valueReference=\"22\"
+//     valueReference=\"21\"
 //     description=\"Get the specific enthalpy from the input connector\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1938,7 +1951,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"198\" -->
 //   <ScalarVariable
 //     name=\"pump.use_m_flow_in\"
-//     valueReference=\"23\"
+//     valueReference=\"22\"
 //     description=\"Get the mass flow rate from the input connector\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1948,8 +1961,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"199\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.preferredMediumStates\"
-//     valueReference=\"24\"
-//     description=\"= true if StateSelect.prefer shall be used for the independent property variables of the medium\"
+//     valueReference=\"23\"
+//     description=\"= true, if StateSelect.prefer shall be used for the independent property variables of the medium\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1958,7 +1971,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"200\" -->
 //   <ScalarVariable
 //     name=\"sink.medium.standardOrderComponents\"
-//     valueReference=\"25\"
+//     valueReference=\"24\"
 //     description=\"If true, and reducedX = true, the last element of X will be computed from the other ones\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1968,8 +1981,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"201\" -->
 //   <ScalarVariable
 //     name=\"sink.use_T\"
-//     valueReference=\"26\"
-//     description=\"select T or h\"
+//     valueReference=\"25\"
+//     description=\"Select T or h\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1978,8 +1991,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"202\" -->
 //   <ScalarVariable
 //     name=\"sink.use_p\"
-//     valueReference=\"27\"
-//     description=\"select p or d\"
+//     valueReference=\"26\"
+//     description=\"Select p or d\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -1988,7 +2001,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"203\" -->
 //   <ScalarVariable
 //     name=\"system.allowFlowReversal\"
-//     valueReference=\"28\"
+//     valueReference=\"27\"
 //     description=\"= false to restrict to design flow direction (port_a -&gt; port_b)\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -1998,7 +2011,7 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"204\" -->
 //   <ScalarVariable
 //     name=\"system.use_eps_Re\"
-//     valueReference=\"29\"
+//     valueReference=\"28\"
 //     description=\"= true to determine turbulent region automatically using Reynolds number\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
@@ -2008,8 +2021,8 @@ val(evaporator_qm_S, 100);
 //   <!-- Index of variable = \"205\" -->
 //   <ScalarVariable
 //     name=\"use_inputs\"
-//     valueReference=\"30\"
-//     description=\"use external inputs instead of test data contained internally\"
+//     valueReference=\"29\"
+//     description=\"= true, if external inputs are used, otherwise use test data contained internally\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -2032,37 +2045,38 @@ val(evaporator_qm_S, 100);
 //     <InitialUnknowns>
 //       <Unknown index=\"1\" dependencies=\"73\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"2\" dependencies=\"75\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"3\" dependencies=\"79\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"4\" dependencies=\"71 75 83\" dependenciesKind=\"dependent dependent dependent\" />
-//       <Unknown index=\"5\" dependencies=\"23 49 62 72 73 75 76 77 78 79 81 82 83 85 86 92 101\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"6\" dependencies=\"23 49 62 72 73 75 76 77 78 79 81 82 83 85 86 92 101\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"21\" dependencies=\"23 79 92 101\" dependenciesKind=\"dependent dependent dependent dependent\" />
+//       <Unknown index=\"3\" dependencies=\"80\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"4\" dependencies=\"71 75 84\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"5\" dependencies=\"23 49 62 72 73 75 76 77 79 80 82 83 84 86 87 91 96 105\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"6\" dependencies=\"23 49 62 72 73 75 76 77 79 80 82 83 84 86 87 91 96 105\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"21\" dependencies=\"23 80 96 105\" dependenciesKind=\"dependent dependent dependent dependent\" />
 //       <Unknown index=\"22\" dependencies=\"75\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"37\" dependencies=\"63 79\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"50\" dependencies=\"23 79 101\" dependenciesKind=\"dependent dependent dependent\" />
-//       <Unknown index=\"51\" dependencies=\"23 49 62 72 73 75 76 77 78 79 81 82 83 85 86 92 101\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"37\" dependencies=\"63 80\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"50\" dependencies=\"23 80 105\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"51\" dependencies=\"23 49 62 72 73 75 76 77 79 80 82 83 84 86 87 91 96 105\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent\" />
 //       <Unknown index=\"65\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"66\" dependencies=\"64 67\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"68\" dependencies=\"109\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"69\" dependencies=\"110\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"70\" dependencies=\"101\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"80\" dependencies=\"83\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"84\" dependencies=\"83\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"87\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"88\" dependencies=\"109\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"89\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"90\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"91\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"94\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"96\" dependencies=\"92\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"97\" dependencies=\"101\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"98\" dependencies=\"101\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"99\" dependencies=\"92\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"100\" dependencies=\"101\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"102\" dependencies=\"101\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"104\" dependencies=\"103\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"108\" dependencies=\"109\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"112\" dependencies=\"111\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"68\" dependencies=\"113\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"69\" dependencies=\"114\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"70\" dependencies=\"105\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"78\" dependencies=\"91\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"81\" dependencies=\"84\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"85\" dependencies=\"84\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"88\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"89\" dependencies=\"113\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"93\" dependencies=\"91\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"94\" dependencies=\"91\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"95\" dependencies=\"91\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"98\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"100\" dependencies=\"96\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"101\" dependencies=\"105\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"102\" dependencies=\"105\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"103\" dependencies=\"96\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"104\" dependencies=\"105\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"106\" dependencies=\"105\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"108\" dependencies=\"107\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"112\" dependencies=\"113\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"116\" dependencies=\"115\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"174\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"175\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"176\" dependencies=\"\" dependenciesKind=\"\" />
@@ -2073,8 +2087,8 @@ val(evaporator_qm_S, 100);
 //       <Unknown index=\"181\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"182\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"183\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"186\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"189\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"184\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"187\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"190\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"191\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"192\" dependencies=\"\" dependenciesKind=\"\" />
@@ -2115,10 +2129,10 @@ val(evaporator_qm_S, 100);
 // ""
 // 10.0
 // 1.0
-// 1.0661869300676776
-// 1.1323738601353552
-// -16.62186190266387
-// 101.41021203463197
-// 66.98717532203514
-// -1.1323738601353552
+// 1.066186930067677
+// 1.132373860135354
+// -16.62186190266229
+// 101.41021203463185
+// 66.98717532203605
+// -1.132373860135354
 // endResult

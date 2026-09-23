@@ -121,42 +121,6 @@
     },
     "Modelica": {
       "versions": {
-        "2.2.2+maint.om": {
-          "convertFromVersion": [
-            "1.6.0",
-            "2.1.0-Beta1"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1"
-          ],
-          "sha": "8b7bcac13161a52955ac5a5a92b77b705f8e19f2",
-          "support": "obsolete",
-          "version": "2.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/8b7bcac13161a52955ac5a5a92b77b705f8e19f2.zip"
-        },
-        "3.1.0+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1"
-          ],
-          "sha": "c1feaafc23b4a122d20966109d76efd4f8853c58",
-          "support": "obsolete",
-          "uses": {
-            "ModelicaServices": "1.0.0"
-          },
-          "version": "3.1.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/c1feaafc23b4a122d20966109d76efd4f8853c58.zip"
-        },
         "3.2.1+maint.om": {
           "convertFromVersion": [
             "2.1.0",
@@ -305,16 +269,6 @@
     },
     "ModelicaServices": {
       "versions": {
-        "1.0.0": {
-          "path": "ModelicaServices",
-          "sha": "c1feaafc23b4a122d20966109d76efd4f8853c58",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.1.0"
-          },
-          "version": "1.0.0",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/c1feaafc23b4a122d20966109d76efd4f8853c58.zip"
-        },
         "3.2.1+maint.om": {
           "convertFromVersion": [
             "1.0.0",
@@ -523,15 +477,6 @@
           },
           "version": "2.2.0",
           "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-2.2.zip"
-        },
-        "OMCtest": {
-          "path": "SiemensPower OMCtest",
-          "support": "noSupport",
-          "uses": {
-            "Modelica": "3.1.0"
-          },
-          "version": "OMCtest",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-OMCtest.20150519.zip"
         }
       }
     },

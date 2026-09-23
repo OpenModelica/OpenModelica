@@ -147,10 +147,10 @@ fn native_fallbacks(
 /// call the exported `main`, marshalling `args` in and the result out. Returns
 /// `Values.META_FAIL` on any failure (missing/invalid module, a wasm trap from
 /// a failed assertion or division by zero, …), mirroring `DynLoad.executeFunction`.
-pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: List<Arc<Values::Value>>) -> Arc<Values::Value> {
+pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: List<metamodelica::Ref<Values::Value>>) -> metamodelica::Ref<Values::Value> {
     match runtime::load_and_execute(&fileName, &name, &args) {
         Ok(v) => v,
         // Failure is a normal MetaModelica value the caller handles; no stderr.
-        Err(_) => Arc::new(Values::Value::META_FAIL),
+        Err(_) => metamodelica::Ref::new(Values::Value::META_FAIL),
     }
 }

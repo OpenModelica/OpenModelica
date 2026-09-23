@@ -1,6 +1,7 @@
 // name: issue10523.mos
 // keywords: FMI 2.0 export
 // status: correct
+// win: yes
 // teardown_command: rm -rf Modelica.Blocks.Sources.IntegerConstant.fmu Modelica_Blocks_Sources_IntegerConstant.log Modelica_Blocks_Sources_IntegerConstant_info.json
 
 loadModel(Modelica);

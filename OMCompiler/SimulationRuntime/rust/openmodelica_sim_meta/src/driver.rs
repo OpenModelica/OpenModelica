@@ -443,14 +443,41 @@ pub trait SimEngine {
         out
     }
     /// C's `functionODE` under `--parmodauto`: the scheduler decides between the
-    /// sequential entry point and the per-task `parmodTask(sim_data, task)`.
+    /// sequential entry point, the per-task `parmodTask(sim_data, task)` and the
+    /// engine's worker threads.
     fn call_parmod_ode(&mut self, sim_data: u32) -> Result<()> {
-        use crate::parmod::Op;
-        crate::parmod::evaluate_ode(&mut |op| match op {
-            Op::All => self.call1_raw("functionODE", sim_data),
-            Op::LocalKnown => self.call1_if_present_raw("functionLocalKnownVars", sim_data),
-            Op::Task(k) => self.call2_raw("parmodTask", sim_data, k),
-        })
+        use crate::parmod::{Exec, Op, Plan};
+        struct E<'a, S: SimEngine + ?Sized>(&'a mut S, u32);
+        impl<S: SimEngine + ?Sized> Exec for E<'_, S> {
+            fn op(&mut self, op: Op) -> Result<()> {
+                match op {
+                    Op::All => self.0.call1_raw("functionODE", self.1),
+                    Op::LocalKnown => self.0.call1_if_present_raw("functionLocalKnownVars", self.1),
+                    Op::Task(k) => self.0.call2_raw("parmodTask", self.1, k),
+                }
+            }
+            fn can_parallel(&self) -> bool {
+                self.0.parmod_can_parallel()
+            }
+            fn parallel(&mut self, plan: &Plan, settled: bool) -> Result<()> {
+                self.0.parmod_parallel(plan, self.1, settled)
+            }
+        }
+        crate::parmod::evaluate_ode(&mut E(self, sim_data))
+    }
+    /// Whether [`SimEngine::parmod_parallel`] has worker threads to run a plan on.
+    fn parmod_can_parallel(&self) -> bool {
+        false
+    }
+    /// Evaluate a `--parmodauto` plan's clusters on the worker threads (the calling
+    /// thread among them), each task via `parmodTask(sim_data, task)`.
+    fn parmod_parallel(
+        &mut self,
+        _plan: &crate::parmod::Plan,
+        _sim_data: u32,
+        _settled: bool,
+    ) -> Result<()> {
+        Err("parmodauto: this engine has no worker threads")
     }
     fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()> {
         let Some(ix) = model_fn_clock(name) else { return self.call1_if_present_raw(name, arg) };
@@ -1849,6 +1876,48 @@ mod solver_fail_store {
         }
     }
     pub use imp::{set, take};
+}
+
+/// The counters of a run that ended in an error: C prints `### STATISTICS ###`
+/// whatever `performSimulation` returned, and [`drive`] can only return a
+/// `&'static str`.
+mod failed_stats {
+    use crate::SolveStats;
+    use alloc::boxed::Box;
+    #[cfg(feature = "std")]
+    mod imp {
+        use super::*;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static STATS: RefCell<Option<Box<SolveStats>>> = const { RefCell::new(None) };
+        }
+        pub fn set(s: SolveStats) {
+            STATS.with(|c| *c.borrow_mut() = Some(Box::new(s)));
+        }
+        pub fn take() -> Option<Box<SolveStats>> {
+            STATS.with(|c| c.borrow_mut().take())
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use super::*;
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<Option<Box<SolveStats>>>);
+        unsafe impl Sync for Store {}
+        static STATS: Store = Store(UnsafeCell::new(None));
+        pub fn set(s: SolveStats) {
+            unsafe { *STATS.0.get() = Some(Box::new(s)) };
+        }
+        pub fn take() -> Option<Box<SolveStats>> {
+            unsafe { (*STATS.0.get()).take() }
+        }
+    }
+    pub use imp::{set, take};
+}
+
+/// The counters of the run that just failed, once.
+pub fn take_failed_stats() -> Option<alloc::boxed::Box<SolveStats>> {
+    failed_stats::take()
 }
 
 /// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
@@ -4881,6 +4950,8 @@ pub fn drive(
                 Err(err) => match is_model_throw(err) && driver.retry_step(e, model)? {
                     true => continue,
                     false => {
+                        // C reports the counters of a failed run too.
+                        driver.fill_stats(model, &mut stats);
                         // C reaches `simulationUpdate` even on a failed step: one
                         // more evaluation where the integrator stopped, then the line.
                         if let Some(t) = solver_fail_store::take() {
@@ -4932,9 +5003,14 @@ pub fn drive(
         Ok(rows) => rows,
         // C's `dataReconciliation(data, threadData, status)` with a non-zero status:
         // the run failed, so the procedure writes its error report and exits.
-        Err(e) => {
+        Err(err) => {
             report_run_failure(model);
-            return Err(e);
+            stats.method = label;
+            rtclock::accumulate(rtclock::TOTAL);
+            (stats.timers, stats.tcalls) = rtclock::snapshot();
+            stats.systems = e.sys_stats();
+            failed_stats::set(stats);
+            return Err(err);
         }
     };
     stats.method = label;

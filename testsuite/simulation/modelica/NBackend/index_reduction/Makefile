@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 basic_IR.mos\
+overdeterminedIndexReduction.mos\
 static_IR.mos\
 static_index_3.mos\
 aux_states.mos\

@@ -74,7 +74,11 @@ void LanguageServerTest::createServerFile(const QString &filePath)
 
 QString LanguageServerTest::installedServerDirectory() const
 {
-  return mTemporaryHome % QStringLiteral("/share/omedit/ls/modelica");
+  // Where MODELICA_LS_INSTALL_DIR puts it (OMEditLIB/CMakeLists.txt): lib, not
+  // share, because the server is a compiled executable. findBundledServer()
+  // still searches share/omedit as well, for installations made before the
+  // move, but this is the layout the build produces now.
+  return mTemporaryHome % QStringLiteral("/lib/omedit/ls/modelica");
 }
 
 void LanguageServerTest::initTestCase()

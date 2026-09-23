@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -rf ExternalFunc1_ext.o ExternalFunc2.a libExternalFunc1_ext.o libExternalFunc2.a ExternalLibraries1* output.log
 // cflags: -d=-newInst
+// win: yes
 //
 // External functions, Library and Include annotation.
 //

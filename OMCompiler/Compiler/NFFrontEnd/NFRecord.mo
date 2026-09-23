@@ -175,13 +175,15 @@ algorithm
 
   // Make a record constructor class and create a node for the constructor.
   ctor_cls := Class.makeRecordConstructor(all_params, out_rec);
-  ctor_node := InstNode.replaceClass(ctor_cls, ctor_node);
-  InstNode.classApply(ctor_node, Class.setType, Type.COMPLEX(ctor_node, ComplexType.CLASS()));
+  // A new entity, not an update of the record: it must not publish itself
+  // into the record's identity cell, or the record's own type resolves here.
+  ctor_node := InstNode.reidentify(InstNode.replaceClass(ctor_cls, ctor_node));
+  InstNode.classApply(ctor_node, Class.setType, Type.COMPLEX(InstNode.identityCell(ctor_node), ComplexType.CLASS()));
 
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   status := Pointer.create(FunctionStatus.INITIAL);
-  InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs, {out_rec}, locals,
+  InstNode.cacheAddFunc(node, Function.FUNCTION(path, InstNode.handle(ctor_node), inputs, {InstNode.handle(out_rec)}, locals,
   NONE(), {}, Type.UNKNOWN(), attr, {}, {}, listArray({}), status, Pointer.create(0)), false);
 end instDefaultConstructor;
 
@@ -224,7 +226,7 @@ function collectRecordParams
 protected
   InstNode comp;
   array<InstNode> comps;
-  array<MutableCyclic<InstNode>> pcomps;
+  array<Mutable<InstNode>> pcomps;
   ClassTree tree;
 algorithm
   tree := Class.classTree(InstNode.getClass(recNode));
@@ -243,7 +245,7 @@ algorithm
     case ClassTree.INSTANTIATED_TREE(components = pcomps)
       algorithm
         for i in arrayLength(pcomps):-1:1 loop
-          comp := MutableCyclic.access(pcomps[i]);
+          comp := Mutable.access(pcomps[i]);
           (inputs, locals) := collectRecordParam(comp, inputs, locals);
           allParams := comp :: allParams;
         end for;

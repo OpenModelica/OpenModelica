@@ -82,7 +82,7 @@ protected
   import Config;
   import Error;
   import Pointer;
-import PointerCyclic;
+  import PointerWeak;
   import StringUtil;
   import Util;
 
@@ -270,7 +270,7 @@ public
 
     function createList
       "SimVars for scalar variables in list order, with running indices."
-      input list<PointerCyclic<Variable>> vars;
+      input list<Pointer<Variable>> vars;
       input VarType varType;
       output list<SimVar> simVars = {};
       input output SimCode.SimCodeIndices indices;
@@ -280,7 +280,7 @@ public
       Variable var;
     algorithm
       for var_ptr in vars loop
-        var := PointerCyclic.access(var_ptr);
+        var := Pointer.access(var_ptr);
         simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
         uniq := uniq + 1;
         idx := idx + 1;
@@ -293,7 +293,7 @@ public
     function createListsByType
       "One SimVar list per basic type (real, integer, boolean, string, enumeration),
       each with its own running index."
-      input list<PointerCyclic<Variable>> vars;
+      input list<Pointer<Variable>> vars;
       input VarType varType;
       output list<list<SimVar>> simVars;
       input output SimCode.SimCodeIndices indices;
@@ -306,7 +306,7 @@ public
     algorithm
       (real_idx, int_idx, bool_idx, string_idx, enum_idx) := getTypeIndices(indices, varType);
       for var_ptr in vars loop
-        var := PointerCyclic.access(var_ptr);
+        var := Pointer.access(var_ptr);
         alias := if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS();
         () := match Type.arrayElementType(var.ty)
           case Type.REAL() algorithm
@@ -442,7 +442,7 @@ public
     algorithm
       () := match comp
         case StrongComponent.SINGLE_COMPONENT() guard(Equation.isResidual(comp.eqn)) algorithm
-          traverseCreate(PointerCyclic.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
+          traverseCreate(Pointer.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
         then ();
         else ();
       end match;
@@ -819,7 +819,7 @@ public
         case VariableKind.STATE()
           algorithm
             if isSome(varKind.derivative) then
-              var := PointerCyclic.access(Util.getOption(varKind.derivative));
+              var := Pointer.access(PointerWeak.upgrade(Util.getOption(varKind.derivative)));
               oldCrefOpt := SOME(ComponentRef.toDAE(var.name));
             else
               oldCrefOpt := NONE();
@@ -1113,6 +1113,7 @@ public
       list<SimVar> seedVars = {};
       list<SimVar> realOptimizeConstraintsVars = {};
       list<SimVar> realOptimizeFinalConstraintsVars = {};
+      Integer enum_shift = 0;
       list<SimVar> sensitivityVars = {};
       list<SimVar> dataReconSetcVars = {};
       list<SimVar> dataReconinputVars = {};
@@ -1129,6 +1130,8 @@ public
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars, enumAliasVars}, simCodeIndices)      := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+          // enums are appended to the integer variables, constants do not take part in the shift
+          enum_shift := simCodeIndices.integerVarIndex;
           ({paramVars, intParamVars, boolParamVars, stringParamVars, enumParamVars}, simCodeIndices)      := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
           ({paramVarsR, intParamVarsR, boolParamVarsR, stringParamVarsR, enumParamVarsR}, simCodeIndices) := createSimVarLists(varData.resizables, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
           ({constVars, intConstVars, boolConstVars, stringConstVars, enumConstVars}, simCodeIndices)      := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -1195,7 +1198,7 @@ public
 
       // FIXME we currently handle enumerations as integers.
       // We append enums to ints so we have to shift the index accordingly.
-      simVars.intAlgVars    := listAppend(simVars.intAlgVars, list(SimVar.shiftIndex(v, simCodeIndices.integerVarIndex) for v in simVars.enumAlgVars));
+      simVars.intAlgVars    := listAppend(simVars.intAlgVars, list(SimVar.shiftIndex(v, enum_shift) for v in simVars.enumAlgVars));
       simVars.intAliasVars  := listAppend(simVars.intAliasVars, list(SimVar.shiftIndex(v, simCodeIndices.integerAliasIndex) for v in simVars.enumAliasVars));
       simVars.intParamVars  := listAppend(simVars.intParamVars, list(SimVar.shiftIndex(v, simCodeIndices.integerParamIndex) for v in simVars.enumParamVars));
       simVars.intConstVars  := listAppend(simVars.intConstVars, list(SimVar.shiftIndex(v, simCodeIndices.integerVarIndex) for v in simVars.enumConstVars));
@@ -1305,7 +1308,7 @@ public
       input VarType varType;
     protected
       // scalarize goes through fromList, whose cref dedupe a record and its elements rely on
-      list<PointerCyclic<Variable>> sim_vars = VariablePointers.toList(if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars);
+      list<Pointer<Variable>> sim_vars = VariablePointers.toList(if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars);
       list<SimVar> lst;
     algorithm
 
@@ -1376,7 +1379,7 @@ public
 
   protected
     function getVars
-      input PointerCyclic<Variable> var;
+      input Pointer<Variable> var;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       output list<SimVar> vars = {};
     algorithm

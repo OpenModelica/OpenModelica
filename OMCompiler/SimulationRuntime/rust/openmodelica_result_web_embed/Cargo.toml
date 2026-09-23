@@ -29,4 +29,4 @@ path = "src/install.rs"
 # module's: cargo resolves it instead of asking for `cargo install
 # wasm-bindgen-cli --version ...` on PATH. Keep it equal to the `wasm-bindgen`
 # that `openmodelica_result_web` pins.
-wasm-bindgen-cli-support = "=0.2.125"
+wasm-bindgen-cli-support = "=0.2.128"

@@ -4428,11 +4428,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     // set to UTF-8
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     textStream.setEncoding(QStringConverter::Utf8);
-#else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
-#endif
     textStream.setGenerateByteOrderMark(bom);
     textStream << newContents;
     file.close();

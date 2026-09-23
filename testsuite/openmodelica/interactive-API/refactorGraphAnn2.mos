@@ -6,7 +6,7 @@
 //  Tests refactoring of graphical component annotations and connect annotations
 //
 //echo(false);
-loadModel(Modelica,{"2.2.2"});
+loadModel(Modelica);
 loadFile("refactorGraphAnn2.mo");
 echo(true);
 refactorClass(connecttest);

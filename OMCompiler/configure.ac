@@ -627,7 +627,7 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 LIBS=""
 
 PRIMME_LDFLAGS="-lprimme"
-COLPACK_LDFLAGS="-lcolpack"
+COLPACK_LDFLAGS="-lColPack $OMPCFLAGS"
 MOO_LDFLAGS="-lipopt -ldmumps -lmumps_common -lseq"
 
 # check for SuiteSparse

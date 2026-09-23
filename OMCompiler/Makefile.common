@@ -56,9 +56,9 @@ $(builddir_man)/man1/
 # Silence unnecessary verbose install messages from CMAKE
 CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
-OMC_MOO_ROOT = 3rdParty/moo-0.1.0
+OMC_MOO_ROOT = 3rdParty/moo
 OMC_PRIMME_ROOT = 3rdParty/primme-3.2.3
-OMC_COLPACK_ROOT = 3rdParty/ColPack
+OMC_COLPACK_ROOT = 3rdParty/ColPack-src
 OMC_TBB_ROOT = 3rdParty/oneTBB
 
 
@@ -214,9 +214,11 @@ colpack:
 		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
 		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
-		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)"
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCOLPACK_BUILD_SHARED=OFF \
+		-DCOLPACK_ENABLE_TESTS=OFF
 
-	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target colpack
+	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target ColPack_static
 	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target install
 
 colpack-clean:
@@ -301,11 +303,6 @@ parmodauto: tbb
 
 parmodauto_clean: tbb_clean
 	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
-
-breakprocess:
-	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
-	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
-
 
 runtimeCPPinstall: all-runtimeCPPinstall
 
@@ -417,13 +414,9 @@ runtimeCPPclean:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
 
-testlibrariemsl31cpp:
-	(cd testsuite/openmodelica/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl31/testsuite-msl31-cpp-trace.txt"
-
-testlibrariemsl32cpp:
-	(cd testsuite/openmodelica/cppruntime/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-cpp-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt"
+testlibrariemsl41cpp:
+	(cd testsuite/openmodelica/cppruntime/libraries/msl41 && time $(MAKE) -f Makefile > testsuite-msl41-cpp-trace.txt 2>&1)
+	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl41/testsuite-msl41-cpp-trace.txt"
 
 
 # Build and install FMILibrary

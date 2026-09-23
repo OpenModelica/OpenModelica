@@ -71,6 +71,8 @@ SpatialDistribution4.mo \
 SpatialDistribution5.mo \
 SpatialDistribution6.mo \
 SpatialDistribution7.mo \
+SpatialDistribution8.mo \
+SpatialDistribution9.mo \
 Sqrt.mo \
 Sum.mo \
 SumArray.mo \

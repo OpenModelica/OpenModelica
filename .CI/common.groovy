@@ -261,9 +261,14 @@ void makeLibsAndCacheCMake() {
  * Perform sanity check.
  *
  * Run script testsuite/sanity-check/runSanity.sh for C and C++ runtime.
- * On Windows a install directory with spaces and three tests with rtest are run as well.
- * Only bin/ goes on the PATH; the generated <model>.bat adds the runtime's
- * lib/<triple>/omc, which only omc knows the triple of.
+ * On Windows an install directory with spaces is checked as well. Only bin/
+ * goes on the PATH; the generated <model>.bat adds the runtime's
+ * lib/<triple>/omc, which only omc knows the triple of. The Windows
+ * testsuite smoke set runs separately, see runWindowsTestsuite() and the
+ * 'testsuite-windows' stage: it is its own stage rather than part of the
+ * build/sanity-check step so a test failure is reported distinctly from a
+ * build failure, and so the stage can grow (more tests, more Windows
+ * compute) without touching the build step at all.
  *
  * @param installDir  Path to omc installation directory.
  * @param buildCpp    True if omc was build with Cpp runtime.
@@ -290,36 +295,6 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
       move "${installDir} but with spaces" "${installDir}"
     """)
-    bat (label: "Sanity check - testsuite", script: """
-      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-      echo on
-      (
-      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-      echo cd \${MSYS_WORKSPACE}
-      echo echo Unset OPENMODELICALIBRARY to make sure the default is used
-      echo unset OPENMODELICALIBRARY
-      echo echo Testing some models from testsuite, ffi, meta, fmi
-      echo cd testsuite/flattening/libraries/biochem
-      echo ../../../rtest --return-with-error-code EnzMM.mos
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/flattening/modelica/ffi
-      echo ../../../rtest --return-with-error-code ModelicaInternal_countLines.mos
-      echo ../../../rtest --return-with-error-code Integer1.mos
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/metamodelica/meta
-      echo ../../rtest --return-with-error-code AlgPatternm.mos
-      echo echo FMI export+import roundtrip, guards Windows -lfmilib linking against libfmilib.dll
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/openmodelica/fmi/ModelExchange/2.0
-      echo ../../../../rtest --return-with-error-code HelloFMIWorld.mos
-      ) > miniTestsuite.sh
-
-      set MSYSTEM=UCRT64
-      set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
-    """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     if (buildCpp) {
@@ -328,19 +303,66 @@ void sanityCheck(String installDir, Boolean buildCpp) {
   }
 }
 
+/*
+ * Run the Windows testsuite smoke set (testsuite/runWindowsTests.sh) against
+ * an installed omc. Split out of sanityCheck() so it can run as its own
+ * 'tests + extras' stage: see testWindowsSmoke().
+ *
+ * A test opts into this set by tagging its own header '// win: yes' (see
+ * testsuite/rtest's -platform/RTEST_PLATFORM); there is no separate list of
+ * Windows tests to maintain here or on disk.
+ *
+ * @param installDir  Path to omc installation directory.
+ */
+void runWindowsTestsuite(String installDir) {
+  bat (label: "Windows testsuite", script: """
+    If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+    set MSYSTEM=UCRT64
+    set MSYS2_PATH_TYPE=inherit
+    set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+    %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/runWindowsTests.sh"
+  """)
+}
+
+/*
+ * Install the one Modelica Standard Library version the Windows smoke set
+ * needs (libraries/install-windows-smoke.mos), via the omc that
+ * runWindowsTestsuite() below is about to run against. Only issue10523.mos
+ * (an FMI 2.0 CoSimulation export test, tagged '// win: yes') needs this;
+ * every other test in the set runs against nothing but omc itself, same as
+ * before. There is no shared package cache wired up for Windows agents
+ * (installTestLibraries()'s env.LIBRARIES is a Unix path), so this reaches
+ * the default remote package index directly.
+ *
+ * @param installDir  Path to omc installation directory.
+ */
+void installWindowsSmokeLibrary(String installDir) {
+  bat (label: "Install Modelica for the Windows smoke set", script: """
+    If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+    set MSYSTEM=UCRT64
+    set MSYS2_PATH_TYPE=inherit
+    set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+    %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}/libraries'` && omc install-windows-smoke.mos"
+  """)
+}
+
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
-  sh 'autoreconf --install'
-  // Note: Do not use -march=native since we might use an incompatible machine in later stages
-  def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
-  // OMSimulator requires HOME to be set and writeable
-  if (clean) {
-    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+  withSccache {
+    withEnv(["PATH+SCCACHE_SHIMS=${sccacheShims()}"]) {
+      sh 'autoreconf --install'
+      // Note: Do not use -march=native since we might use an incompatible machine in later stages
+      def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
+      sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
+      // OMSimulator requires HOME to be set and writeable
+      if (clean) {
+        sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+      }
+      sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
+      sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+    }
   }
-  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
-  sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
 
   // Find unused imports
   sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
@@ -383,6 +405,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         echo cd \${MSYS_WORKSPACE}
         echo which cmake
         echo set -ex
+        echo trap 'echo "buildOMCWindows.sh: command failed, exit code \$?"' ERR
         echo mkdir build_cmake
         echo ${cmake_exe} --version
         echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}
@@ -394,6 +417,10 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
       """)
       sanityCheck('build', true)
+      // For the 'testsuite-windows' stage (testWindowsSmoke()): same 'build/**'
+      // shape the other CMake stashes use, so the tests it runs need nothing
+      // beyond the install tree.
+      stash name: 'omc-cmake-windows', includes: 'build/**'
     }
   }
   else if (isMac()) {
@@ -457,16 +484,14 @@ def sccacheEnv() {
 def withSccache(List extraEnv = [], Closure body) {
   withCredentials([string(credentialsId: 'sccache-ci-secret-key',
                           variable: 'AWS_SECRET_ACCESS_KEY')]) {
-    // Normalise the per-job workspace prefix out of the cache keys so the cache is
-    // shared across jobs/branches, not just rebuilds at the same checkout path.
-    // Without this, sccache hashes the absolute paths embedded in compile commands
-    // (-I.../source) and in the C/C++ preprocessor line markers, so every job's
-    // workspace path is a distinct key — each job re-populates the bucket with its
-    // own copies instead of hitting. SCCACHE_BASEDIRS (sccache's CCACHE_BASEDIR)
-    // strips this prefix before hashing; it must be absolute and must be in the
-    // environment of *every* sccache call, since a client auto-restarts a
-    // timed-out server and the restarted server inherits the env. env.WORKSPACE is
-    // unreliable in the docker agent (see makeLibsAndCache), so read it from pwd.
+    // Normalise the per-job workspace prefix out of the cache keys. SCCACHE_BASEDIRS
+    // (sccache's CCACHE_BASEDIR) strips it from the C/C++ preprocessor output before
+    // hashing, but not from the command line, so a compile that spells the workspace
+    // out in its arguments (CMake emits absolute -I and source paths) still only hits
+    // at the identical path. It must be absolute and must be in the environment of
+    // *every* sccache call, since a client auto-restarts a timed-out server and the
+    // restarted server inherits the env. env.WORKSPACE is unreliable in the docker
+    // agent (see makeLibsAndCache), so read it from pwd.
     def basedir = sh(script: 'pwd', returnStdout: true).trim()
     withEnv(extraEnv + sccacheEnv() + ["SCCACHE_BASEDIRS=${basedir}"]) {
       // Preflight: fail fast if the S3 cache backend is not usable. sccache
@@ -498,6 +523,28 @@ def withSccache(List extraEnv = [], Closure body) {
       }
     }
   }
+}
+
+// A directory of compiler shims running sccache, to put first on PATH: this is how the
+// autotools lanes get the cache. CC='sccache gcc' would break the OMSimulator sub-build,
+// which Makefile.in hands @CC@ as -DCMAKE_C_COMPILER, where CMake needs a single program.
+// Each shim execs the path its name resolved to here, before the directory goes on PATH,
+// so it cannot recurse into itself.
+String sccacheShims() {
+  String dir = '/tmp/omc-sccache-shims'
+  sh label: 'Generate the sccache compiler shims', script: """
+    set -eu
+    rm -rf ${dir}
+    mkdir -p ${dir}
+    for name in cc c++ gcc g++ clang clang++; do
+      real=\$(command -v \$name || true)
+      [ -n "\$real" ] || continue
+      printf '#!/bin/sh\\nexec sccache "%s" "\$@"\\n' "\$real" > ${dir}/\$name
+      chmod +x ${dir}/\$name
+    done
+    ls -l ${dir}
+  """
+  return dir
 }
 
 // The release profile ships LTO at -O3. A lane that builds an omc to test rather
@@ -1312,69 +1359,52 @@ void ctestRust() {
   }
 }
 
-def getQtMajorVersion(qtVersion) {
-  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
-  if (qtVersion.equals('qt5')) {
-    OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
-  }
-  return OM_QT_MAJOR_VERSION
-}
-
-void buildGUI(stash, qtVersion) {
+void buildGUI(stash) {
   if (stash) {
     standardSetup()
     unstash stash
   }
-  sh 'autoreconf --install'
-  if (stash) {
-    patchConfigStatus()
-  }
-  if (qtVersion.equals('qt6')) {
-    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
-  } else {
-    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  }
-  // compile OMSens_Qt for Qt5 and Qt6
-  if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  }
-  sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
+  withSccache {
+    withEnv(["PATH+SCCACHE_SHIMS=${sccacheShims()}"]) {
+      sh 'autoreconf --install'
+      if (stash) {
+        patchConfigStatus()
+      }
+      sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+      sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
+      sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 
-  // test make install after qt builds
-  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
+      // test make install after qt builds
+      sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
+    }
+  }
 }
 
-void buildAndRunOMEditTestsuite(stashName, qtVersion) {
+void buildAndRunOMEditTestsuite(stashName) {
   if (stashName) {
     standardSetup()
     sh 'rm -rf OMEdit/common'
     unstash stashName
   }
-  sh 'autoreconf --install'
-  if (stashName) {
-    patchConfigStatus()
-  }
-  if (qtVersion.equals('qt6')) {
-    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
-  } else {
-    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  }
-  if (stashName) {
-    makeLibsAndCache()
-  }
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
-  if (qtVersion.equals('qt6')) {
-    // OMEdit compiled with Qt6 crashes in webengine libs on ubuntu
-  } else {
-    sh label: 'RunOMEditTestsuite', script: '''
-    HOME="\$PWD/libraries"
-    cd build/bin
-    xvfb-run ./RunOMEditTestsuite.sh
-    '''
+  withSccache {
+    withEnv(["PATH+SCCACHE_SHIMS=${sccacheShims()}"]) {
+      sh 'autoreconf --install'
+      if (stashName) {
+        patchConfigStatus()
+      }
+      sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+      if (stashName) {
+        makeLibsAndCache()
+      }
+      sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
+      sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
     }
+  }
+  sh label: 'RunOMEditTestsuite', script: '''
+  HOME="\$PWD/libraries"
+  cd build/bin
+  xvfb-run ./RunOMEditTestsuite.sh
+  '''
 }
 
 void generateTemplates() {
@@ -1622,11 +1652,16 @@ void buildGccOMC() {
 // coverage numbers (see coverageReportStage()) come from the same run that
 // tests the PR, rather than a separate instrumented build.
 void buildCMakeGccOMC() {
-  buildOMC_CMake([
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DOM_USE_CCACHE=OFF",
-    "-DCMAKE_INSTALL_PREFIX=build",
-    "-DOM_ENABLE_COVERAGE=ON"])
+  // The instrumented objects carry the absolute path gcov writes their .gcda to, so
+  // caching them is only safe because a hit needs the identical workspace path (see
+  // withSccache); coverageReportStage would not find counters written anywhere else.
+  withSccache {
+    buildOMC_CMake([
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DOM_COMPILER_CACHE=sccache",
+      "-DCMAKE_INSTALL_PREFIX=build",
+      "-DOM_ENABLE_COVERAGE=ON"])
+  }
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see ctestCMakeStashed).
@@ -1849,15 +1884,42 @@ void coverageReportStage(int shardCount) {
   // The browsable HTML, kept per build.
   archiveArtifacts artifacts: 'build_cmake/coverage/**', allowEmptyArchive: false
 
+  // Pick the build recordCoverage below compares against (Git Forensics
+  // plugin). For a PR that is the build of the target branch (master) at the
+  // commit the PR is based on, so the deltas show what the PR changes and not
+  // what master did since. On master itself it is the previous build. Without
+  // this, the Coverage plugin falls back to the previous build of the same job,
+  // i.e. the PR's own previous run. Commits older than maxCommits have no build
+  // left anyway (buildDiscarder keeps 14 days); rather than comparing against
+  // an unrelated master build, the delta is then left out.
+  discoverGitReferenceBuild(maxCommits: 500)
+
   // Publish to Jenkins itself (Coverage plugin), which keeps the numbers per
-  // build and draws the trend. In a multibranch job it also picks the primary
-  // branch's last good build as the reference, so a PR shows its delta
-  // against master rather than just an absolute number.
+  // build and draws the trend. With the reference build above it also shows
+  // the delta of the whole project, the coverage of the modified lines and the
+  // indirect coverage changes: lines the PR did not touch whose coverage
+  // changed, e.g. because tests were added or removed.
   recordCoverage(tools: [[parser: 'COBERTURA',
                           pattern: 'build_cmake/coverage/coverage.xml']],
                  id: 'omc-coverage',
                  name: 'C/C++ runtime and compiler',
                  sourceCodeRetention: 'LAST_BUILD')
+}
+
+// The 'testsuite-windows' stage (see buildOMC_CMake()'s Windows branch for
+// where 'omc-cmake-windows' is stashed). Split out of sanityCheck() so a
+// failure here is reported as a distinct testsuite failure rather than a
+// build failure, and so this stage can grow -- more tests, more Windows
+// compute -- without ever touching the build step.
+void testWindowsSmoke() {
+  standardSetup()
+  unstash 'omc-cmake-windows'
+  withEnv (["OMDEV=C:\\OMDevUCRT",
+            "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+    cloneOMDev()
+    installWindowsSmokeLibrary('build')
+    runWindowsTestsuite('build')
+  }
 }
 
 void crossBuildFMU() {
@@ -1909,16 +1971,18 @@ void buildUsersGuide() {
   stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${tagName()}*.*"
 }
 
-void buildGUIAndStash(stashInput, qtVersion, outStash) {
-  buildGUI(stashInput, qtVersion)
+void buildGUIAndStash(stashInput, outStash) {
+  buildGUI(stashInput)
   stash name: outStash, includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
 }
 
 void testUnitC() {
-  sh label: 'cmake version', script: "cmake --version"
-  sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF"
-  sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
-  sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
+  withSccache {
+    sh label: 'cmake version', script: "cmake --version"
+    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache"
+    sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
+    sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
+  }
   sh label: 'Check that the C unit tests wrote junit.xml', script: "test -f ./build_cmake/junit.xml"
 }
 

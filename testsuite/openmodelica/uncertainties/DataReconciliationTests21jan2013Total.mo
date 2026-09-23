@@ -253,7 +253,7 @@ This function returns y = sin(u), with -&infin; &lt; u &lt; &infin;:
 <p>
 <img src=\"modelica://Modelica/Resources/Images/Math/sin.png\">
 </p>
-</html>"),   Library="ModelicaExternalC");
+</html>"));
   end sin;
 
   function asin "Inverse sine (-1 <= u <= 1)"
@@ -332,7 +332,7 @@ This function returns y = asin(u), with -1 &le; u &le; +1:
 <p>
 <img src=\"modelica://Modelica/Resources/Images/Math/asin.png\">
 </p>
-</html>"),   Library="ModelicaExternalC");
+</html>"));
   end asin;
 
   function acos "Inverse cosine (-1 <= u <= 1)"
@@ -407,7 +407,7 @@ This function returns y = acos(u), with -1 &le; u &le; +1:
 <p>
 <img src=\"modelica://Modelica/Resources/Images/Math/acos.png\">
 </p>
-</html>"),   Library="ModelicaExternalC");
+</html>"));
   end acos;
 
   function log "Natural (base e) logarithm (u shall be > 0)"
@@ -488,7 +488,7 @@ with u &gt; 0:
 <p>
 <img src=\"modelica://Modelica/Resources/Images/Math/log.png\">
 </p>
-</html>"),   Library="ModelicaExternalC");
+</html>"));
   end log;
 
   partial function baseIcon1

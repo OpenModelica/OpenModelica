@@ -47,7 +47,7 @@ pub(super) fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::
 /// `when`-body `ASSERT`.
 pub(super) fn emit_assert(
     ctx: &mut FnCtx,
-    cond: &Arc<DAE::Exp>,
+    cond: &metamodelica::Ref<DAE::Exp>,
     msg: &DAE::Exp,
     level: &DAE::Exp,
     source: &DAE::ElementSource,
@@ -237,7 +237,7 @@ pub(super) fn emit_initial_flag(ctx: &mut FnCtx) {
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.
-pub(crate) fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
+pub(crate) fn dumped_exp(e: &metamodelica::Ref<DAE::Exp>) -> Result<String> {
     Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
 }
 
@@ -280,7 +280,7 @@ pub(super) fn math_domain(name: &str) -> Option<Domain> {
 
 /// C's `daeExpCall` guard (`CodegenCFunctions.tpl`): evaluate `arg` into a temp,
 /// assert its domain, leave it on the stack for the caller's call.
-pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &Domain) -> Result<()> {
+pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &metamodelica::Ref<DAE::Exp>, d: &Domain) -> Result<()> {
     use we::Instruction as I;
     let w = compile_exp(ctx, arg)?;
     coerce(ctx, w, WTy::F64);
@@ -316,7 +316,7 @@ pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE:
 /// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
 /// sign-preserving for odd n — guarded by two model-error assertions: n must be
 /// > 0, and even n requires v >= 0.
-pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], name: &str) -> Result<SigTy> {
+pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp>], name: &str) -> Result<SigTy> {
     need_args(argv, 2, name)?;
     let vw = compile_exp(ctx, argv[0])?;
     coerce(ctx, vw, WTy::F64);
@@ -378,7 +378,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], name: &str
 }
 
 /// `DAEUtil.getStatementSource`.
-pub(super) fn stmt_source(stmt: &DAE::Statement) -> &Arc<DAE::ElementSource> {
+pub(super) fn stmt_source(stmt: &DAE::Statement) -> &metamodelica::Ref<DAE::ElementSource> {
     use DAE::Statement as S;
     match stmt {
         S::STMT_ASSIGN { source, .. }

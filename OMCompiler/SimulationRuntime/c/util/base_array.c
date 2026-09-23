@@ -673,6 +673,12 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
     return index;
 }
 
+size_t omc_array_bounds_error(int dim, _index_t dim_size, _index_t sub)
+{
+    omc_assert(NULL, omc_dummyFileInfo, "Dimension %d has bounds 1..%d, got array subscript %d", dim, (int)dim_size, (int)sub);
+    return 0;
+}
+
 /**
  * @brief Get the number of dimensions in an array.
  *

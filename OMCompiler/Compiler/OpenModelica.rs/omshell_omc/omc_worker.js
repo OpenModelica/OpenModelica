@@ -42,6 +42,7 @@ import init, {
 // OMEdit web client). A named import of a missing export would break the worker
 // for OMShell/OMNotebook, so reach it through the namespace and feature-detect it.
 import * as OmcModule from "./omc/OpenModelicaCompiler.js";
+import { installWasmBlobs } from "./wasm-blobs.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
@@ -192,6 +193,11 @@ async function doInit(installMsl) {
   if (typeof OmcModule.omc_enable_progress_sink === "function") {
     OmcModule.omc_enable_progress_sink();
   }
+  // The bundle's side modules (feature-detected).
+  if (typeof OmcModule.omc_enable_wasm_blobs === "function") {
+    installWasmBlobs();
+    OmcModule.omc_enable_wasm_blobs();
+  }
   // The browser omc has no pre-installed library, so install the MSL to make the
   // shell immediately usable. Best-effort: a failure (e.g. no network) only
   // surfaces its diagnostics, it does not stop the shell from starting. A client
@@ -290,6 +296,17 @@ self.onmessage = async (e) => {
       let written = 0;
       try { written = wasi_write_files(msg.entries); } catch (e) { written = -1; }
       self.postMessage({ kind: "vfsPutManyResult", id: msg.id, written });
+    } else if (msg.cmd === "vfsLoadZip") {
+      // A zipped library the GUI picked: unzipped straight into this store, so
+      // loadFile finds the Resources/ next to the .mo.
+      let written = -1;
+      let error = "";
+      try {
+        written = OmcModule.omc_vfs_load_zip(msg.mount, msg.bytes);
+      } catch (e) {
+        error = String(e);
+      }
+      self.postMessage({ kind: "vfsLoadZipResult", id: msg.id, written, error });
     } else if (msg.cmd === "vfsRemove") {
       // File or whole subtree; the store's directories are implicit.
       let ok = false;

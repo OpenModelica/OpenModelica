@@ -379,7 +379,11 @@ ExternalProject_Add(rust_wasi_pic_sysroot
     -DBUILTINS_LIB=${_wasi_builtins}
   BUILD_ALWAYS ON
   BUILD_COMMAND ${CMAKE_COMMAND} --build ${_wasi_libc_ep_build} --parallel
-  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+  # _if_different, not copy_directory: the latter rewrites every file's mtime
+  # on every build, and `libc.so` is a `cargo:rerun-if-changed` of
+  # openmodelica_wasi_libc's build script. That rebuilt it, wasm_jit,
+  # codegen_wasm_jit, backend_main, the cdylib and omc on every no-op build.
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${_wasi_libc_ep_build}/sysroot ${RUST_WASI_PIC_SYSROOT}
   EXCLUDE_FROM_ALL ON)
 endif()
@@ -740,7 +744,7 @@ elseif(RUST_OMC_ENABLE_HDF5)
       CACHE PATH "Install tree for the HDF5 wasm32-wasip1 archive + headers.")
   add_custom_target(rust_hdf5_wasm
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CMAKE_COMMAND} -E env
             "CMAKE_TOOLCHAIN_FILE_wasm32-wasip1=${_hdf5_toolchain}"
             "CFLAGS_wasm32-wasip1=${_hdf5_cflags}"
@@ -1050,7 +1054,7 @@ endif()
 # own target-dir keeps it from contending with the main build's lock.
 add_custom_target(rust_wasm_runtime
   WORKING_DIRECTORY ${_wasm_jit_runtime_dir}
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
           --target wasm32-unknown-unknown --target-dir ${_wasm_jit_runtime_target_dir}
   COMMAND ${CMAKE_COMMAND} -E copy ${_wasm_jit_runtime_wasm} ${RUST_OMC_WASM_RUNTIME_OUT}
@@ -1108,7 +1112,7 @@ add_custom_command(
   OUTPUT ${SUSAN_STAMP}
   WORKING_DIRECTORY ${RUST_OMC_DIR}
   # Hand make's -jN jobserver tokens to cargo (needs CMake >= 3.28).
-  JOB_SERVER_AWARE TRUE
+  ${OMC_JOB_SERVER_AWARE}
   # Build tools always in release.
   COMMAND ${CARGO_BUILD} --release -p mmtorust
   # `--sources <susan subset>` is exactly what the `susan` subcommand does (it
@@ -1159,6 +1163,17 @@ function(omc_rust_setup_codegen)
       list(APPEND RUST_MO_SOURCES ${_f})
     endif()
   endforeach()
+  # Per-target declarations: `X.rust.mo` beside `X.mo` replaces the items the
+  # Rust port declares differently (see mmtorust/src/overrides.rs). They are not
+  # in the source list -- the C compiler must never see them -- so list them as
+  # dependencies explicitly, or editing one would not re-run codegen.
+  set(RUST_MO_OVERRIDES "")
+  foreach(_mo ${RUST_MO_SOURCES})
+    string(REGEX REPLACE "\\.mo$" ".rust.mo" _ovr "${_mo}")
+    if(EXISTS ${_ovr})
+      list(APPEND RUST_MO_OVERRIDES ${_ovr})
+    endif()
+  endforeach()
   # copy_if_different so the mtime (which rust_codegen DEPENDS on) only moves on
   # a real change — a plain file(WRITE) would rewrite it every reconfigure.
   file(WRITE ${RUST_SOURCES_FILE}.tmp "${_rust_src_content}")
@@ -1184,7 +1199,7 @@ function(omc_rust_setup_codegen)
   add_custom_command(
     OUTPUT ${SCRIPTING_API_MO}
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD} --release -p openmodelica_scripting_api_gen
     COMMAND ${RUST_TARGET_DIR}/release/scripting_api_gen ${MODELICA_BUILTIN_MO} ${SCRIPTING_API_MO}
     DEPENDS ${MODELICA_BUILTIN_MO}
@@ -1218,7 +1233,7 @@ function(omc_rust_setup_codegen)
   add_custom_command(
     OUTPUT ${CODEGEN_STAMP}
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD} --release -p mmtorust
     # Strip unused `import X;` from the Susan-generated *.mo before transpiling:
     # mmtorust lowers every import to a `use crate::X`, so an unused import
@@ -1232,7 +1247,7 @@ function(omc_rust_setup_codegen)
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
     DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-            ${RUST_MO_SOURCES} ${MMTORUST_SOURCES}
+            ${RUST_MO_SOURCES} ${RUST_MO_OVERRIDES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
   endif()
@@ -1280,7 +1295,7 @@ function(omc_rust_setup_codegen)
     endif()
     add_custom_target(rust_wasm_artifacts
       WORKING_DIRECTORY ${RUST_OMC_DIR}
-      JOB_SERVER_AWARE TRUE
+      ${OMC_JOB_SERVER_AWARE}
       COMMAND ${CARGO_BUILD} --release -p openmodelica_wasm_jit
       ${_wasm_collect}
       COMMENT "Rust: building the wasm artifacts -> ${_wasm_out}/"
@@ -1356,7 +1371,7 @@ function(omc_rust_setup_codegen)
   # -------------------------------------------------------------------------
   add_custom_target(rust_libopenmodelica ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} ${RUST_OMC_CDYLIB_FEATURES} -p libopenmodelica_compiler
     # Declares THIS target as the producer of the cdylib (consumed via the
     # IMPORTED OpenModelicaCompiler target's IMPORTED_LOCATION). Enough for Ninja,
@@ -1381,7 +1396,7 @@ function(omc_rust_setup_codegen)
 
   add_custom_target(rust_omc ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica
     DEPENDS rust_codegen rust_libopenmodelica
     COMMENT "Rust: building omc (cargo build -p openmodelica, ${RUST_OMC_PROFILE})"
@@ -1460,7 +1475,7 @@ function(omc_rust_setup_codegen)
   # imports against.
   install(DIRECTORY ${RUST_OMC_WASM_BLOB_DIR}/
           DESTINATION lib/wasm32-wasip1/omc COMPONENT omc
-          FILES_MATCHING PATTERN "*.wasm")
+          FILES_MATCHING PATTERN "*.wasm" PATTERN "index.json")
 
   install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
           DESTINATION lib/wasm32-wasip1/omc/sysroot COMPONENT omc)
@@ -1494,7 +1509,7 @@ function(omc_rust_setup_codegen)
     # Serialised after rust_omc: concurrent cargo-xwin runs race on the shared clang-cl wrapper.
     add_custom_target(rust_omshell_egui ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
-      JOB_SERVER_AWARE TRUE
+      ${OMC_JOB_SERVER_AWARE}
       COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p omshell_egui --bin OMShell-egui
       DEPENDS rust_codegen rust_omc
       COMMENT "Rust: building OMShell-egui (${RUST_OMC_PROFILE})"
@@ -1508,7 +1523,7 @@ function(omc_rust_setup_codegen)
     # DEPENDS on rust_codegen.
     add_custom_target(rust_omshell_dioxus ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
-      JOB_SERVER_AWARE TRUE
+      ${OMC_JOB_SERVER_AWARE}
       COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
               -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features native
       DEPENDS rust_codegen rust_omshell_egui
@@ -1517,15 +1532,37 @@ function(omc_rust_setup_codegen)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   endif()
-  install(FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo
-            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo
-          DESTINATION lib/omc COMPONENT omc)
+  # The library-documentation generator. Frontend-only, so it does not link the
+  # cdylib and only DEPENDS on the transpile.
+  #
+  # MAKEFLAGS is cleared because tikv-jemalloc-sys prepends its own flags to it
+  # before running autotools make, which leaves make's dash-less leading option
+  # word where the nested make reads it as a goal.
+  add_custom_target(rust_omgendoc ALL
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    COMMAND ${CMAKE_COMMAND} -E env --unset=MAKEFLAGS
+            ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica_gendoc
+    DEPENDS rust_codegen
+    COMMENT "Rust: building omgendoc (${RUST_OMC_PROFILE})"
+    VERBATIM)
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+
+  set(_omc_builtin_mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo)
+  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omc)
+
+  # omgendoc deduces OPENMODELICAHOME from its own path, so its component
+  # carries the builtins too and needs no omc built beside it.
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omgendoc)
+  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omgendoc)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/ COMPONENT omc)
   endif() # NOT OM_OMC_WASM
@@ -1681,7 +1718,7 @@ function(omc_rust_fmu_aot_module)
   set(_aot_artifact ${_aot_target_dir}/wasm32-wasip1/release/openmodelica_fmi_ls_wasm_aot.wasm)
   add_custom_target(rust_fmu_aot ALL
     WORKING_DIRECTORY ${_aot_src}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
             --manifest-path ${_aot_src}/Cargo.toml
             --target wasm32-wasip1 --target-dir ${_aot_target_dir}
@@ -1699,7 +1736,7 @@ function(omc_rust_omplot_cli_module)
   set(_omplot_artifact ${RUST_TARGET_DIR}/wasm32-wasip1/release/omplot.wasm)
   add_custom_target(rust_omplot_cli ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --target-dir ${RUST_TARGET_DIR}
             --target wasm32-wasip1 -p openmodelica_result_cli
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omplot
@@ -1723,7 +1760,7 @@ function(omc_rust_fmi_driver_module)
   set(_fmi_artifact ${_fmi_target_dir}/wasm32-wasip1/release/openmodelica_fmi_web.wasm)
   add_custom_target(rust_fmi_driver ALL
     WORKING_DIRECTORY ${_fmi_src}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
             --manifest-path ${_fmi_src}/Cargo.toml
             --target wasm32-wasip1 --target-dir ${_fmi_target_dir}
@@ -1991,7 +2028,7 @@ function(omc_rust_setup_wasm)
   add_custom_command(
     OUTPUT ${WASM_BINDGEN_EXECUTABLE}
     WORKING_DIRECTORY ${_wb_src}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --locked
             --manifest-path ${_wb_src}/Cargo.toml --target-dir ${_wb_dir}
     DEPENDS ${_wb_src}/src/main.rs ${_wb_src}/Cargo.toml ${_wb_src}/Cargo.lock
@@ -2142,6 +2179,7 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/ui.js
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+        ${RUST_OMC_DIR}/wasm/wasm-blobs.js
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -2187,6 +2225,7 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/ui.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+                ${RUST_OMC_DIR}/wasm/wasm-blobs.js
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -2270,7 +2309,7 @@ function(omc_rust_setup_wasm)
   # ${_wasm_artifact}, which cargo leaves untouched on a no-op build.
   add_custom_target(rust_wasm_cargo ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
-    JOB_SERVER_AWARE TRUE
+    ${OMC_JOB_SERVER_AWARE}
     COMMAND ${_wasm_cargo} ${_cargo_profile_flag} ${RUST_OMC_TIMINGS_FLAG} ${_wasm_common} ${_cargo_backend}
     BYPRODUCTS ${_wasm_artifact}
     DEPENDS rust_codegen rust_wasi_pic_sysroot
@@ -2291,6 +2330,19 @@ function(omc_rust_setup_wasm)
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
+    # The side modules the wasm omc does not embed, with the index naming what each
+    # exports; fetched from here on the first call that needs one (wasm-blobs.js).
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/wasm-blobs
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_WASM_BLOB_DIR}/liblapack.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/libc_pic.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaExternalC.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaStandardTables.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaIO.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/ModelicaMatIO.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/zlib.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/hdf5.wasm
+            ${RUST_OMC_WASM_BLOB_DIR}/index.json
+            ${_web_dir}/wasm-blobs/
     ${_web_launcher_extra}
     DEPENDS ${_wasm_artifact} rust_wasm_cargo ${WASM_BINDGEN_EXECUTABLE}
             ${_web_launcher} ${_web_launcher_deps}

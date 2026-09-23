@@ -35,7 +35,7 @@ fn array_op_elem(ty: &DAE::Type, operands: [&DAE::Exp; 2]) -> Result<Arc<SigTy>>
         }
     }
     let show = |x: &DAE::Exp| {
-        openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(x.clone()))
+        openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(x.clone()))
             .map(|s| s.to_string())
             .unwrap_or_default()
     };
@@ -149,7 +149,7 @@ pub(super) fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp
 /// Lower `a[i, j, ...]`: one `INDEX` per dimension reads a scalar element,
 /// anything else slices to a lower-rank sub-array. `base` produces the owned
 /// array handle. Returns the result's wasm type.
-pub(super) fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &List<Arc<DAE::Subscript>>) -> Result<WTy> {
+pub(super) fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &List<metamodelica::Ref<DAE::Subscript>>) -> Result<WTy> {
     let SigTy::Array { elem, rank } = exp_sigty(base)? else {
         return Err("CodegenWasmJit: subscripting a non-array expression");
     };
@@ -166,7 +166,7 @@ pub(super) fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &List<Arc<DA
 /// dimension — and so yields a scalar element. Anything else (a `WHOLEDIM` /
 /// `SLICE`, or fewer subscripts than the rank, i.e. trailing whole dimensions)
 /// slices the array to a lower-rank sub-array and goes through [`slice_loaded`].
-pub(super) fn is_scalar_index(subs: &List<Arc<DAE::Subscript>>, rank: u32) -> bool {
+pub(super) fn is_scalar_index(subs: &List<metamodelica::Ref<DAE::Subscript>>, rank: u32) -> bool {
     let mut n = 0u32;
     let mut all_index = true;
     for s in &**subs {
@@ -180,8 +180,8 @@ pub(super) fn is_scalar_index(subs: &List<Arc<DAE::Subscript>>, rank: u32) -> bo
 
 /// Extract one `INDEX` expression per dimension from a subscript list. Callers
 /// gate on [`is_scalar_index`] first, so anything else is a codegen bug.
-pub(super) fn index_subscripts(subs: &List<Arc<DAE::Subscript>>, rank: u32) -> Result<Vec<Arc<DAE::Exp>>> {
-    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+pub(super) fn index_subscripts(subs: &List<metamodelica::Ref<DAE::Subscript>>, rank: u32) -> Result<Vec<metamodelica::Ref<DAE::Exp>>> {
+    let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = (&**subs).into_iter().collect();
     if subs.len() as u32 != rank {
         return Err("CodegenWasmJit: partial indexing on the scalar-index path");
     }
@@ -211,7 +211,7 @@ pub(super) fn emit_subscript_index(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()
 /// (one per dimension), compute the row-major linear index, load the scalar
 /// element, release the array, and leave the (owned, if heap) element. Returns
 /// the element's wasm type.
-pub(super) fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<WTy> {
+pub(super) fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>]) -> Result<WTy> {
     let arr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(arr_t));
 
@@ -268,7 +268,7 @@ fn spec_elem_addr(ctx: &mut FnCtx, spec_t: u32, slot: i32) -> Result<()> {
 /// `Integer[2*nspec]` of (kind, value) pairs, one pair per subscript. Returns the
 /// temps holding the spec and the owned SLICE index arrays; the caller releases
 /// both.
-fn emit_slice_spec(ctx: &mut FnCtx, subs: &[&Arc<DAE::Subscript>]) -> Result<(u32, Vec<u32>)> {
+fn emit_slice_spec(ctx: &mut FnCtx, subs: &[&metamodelica::Ref<DAE::Subscript>]) -> Result<(u32, Vec<u32>)> {
     let spec_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::I32Const(0)); // EK_INT
     ctx.emit(we::Instruction::I32Const(1)); // ndims
@@ -320,8 +320,8 @@ fn emit_slice_spec(ctx: &mut FnCtx, subs: &[&Arc<DAE::Subscript>]) -> Result<(u3
 /// subscripts than the rank), build the per-axis spec and call `rt_array_slice`,
 /// leaving a fresh (owned) lower-rank sub-array handle. The source array and any
 /// `SLICE` index arrays are released. Returns `WTy::I32` (an array handle).
-pub(super) fn slice_loaded(ctx: &mut FnCtx, subs: &List<Arc<DAE::Subscript>>) -> Result<WTy> {
-    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+pub(super) fn slice_loaded(ctx: &mut FnCtx, subs: &List<metamodelica::Ref<DAE::Subscript>>) -> Result<WTy> {
+    let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = (&**subs).into_iter().collect();
     let nspec = subs.len() as u32;
 
     let arr_t = ctx.alloc_temp(WTy::I32);
@@ -354,10 +354,10 @@ pub(super) fn slice_loaded(ctx: &mut FnCtx, subs: &List<Arc<DAE::Subscript>>) ->
 pub(super) fn compile_slice_assign(
     ctx: &mut FnCtx,
     arr_idx: u32,
-    subs: &List<Arc<DAE::Subscript>>,
+    subs: &List<metamodelica::Ref<DAE::Subscript>>,
     rhs: RhsSource,
 ) -> Result<()> {
-    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+    let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = (&**subs).into_iter().collect();
     let nspec = subs.len() as u32;
     let (spec_t, slice_idx_temps) = emit_slice_spec(ctx, &subs)?;
 
@@ -494,7 +494,7 @@ fn array_elem(e: &DAE::Exp) -> Result<Option<Arc<SigTy>>> {
 pub(super) fn compile_array_builtin(
     ctx: &mut FnCtx,
     name: &str,
-    argv: &[&Arc<DAE::Exp>],
+    argv: &[&metamodelica::Ref<DAE::Exp>],
     attr: &DAE::CallAttributes,
 ) -> Result<Option<SigTy>> {
     match name {
@@ -756,7 +756,7 @@ fn emit_binary_array(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, rt: &str) ->
 /// Allocate a fresh array of element type `elem` whose dimensions are the given
 /// expressions (evaluated at runtime). Returns the scratch local holding the
 /// owned array handle.
-fn emit_alloc_from_exprs(ctx: &mut FnCtx, elem: &SigTy, dim_exprs: &[&Arc<DAE::Exp>]) -> Result<u32> {
+fn emit_alloc_from_exprs(ctx: &mut FnCtx, elem: &SigTy, dim_exprs: &[&metamodelica::Ref<DAE::Exp>]) -> Result<u32> {
     let rank = dim_exprs.len() as u32;
     let mut dim_temps = Vec::with_capacity(dim_exprs.len());
     for de in dim_exprs {
@@ -832,7 +832,7 @@ fn emit_array_reduce(ctx: &mut FnCtx, arr: &DAE::Exp, rt_fn: &str, extra: Option
     Ok(())
 }
 
-pub(super) fn unary_f64(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], instr: we::Instruction<'static>) -> Result<()> {
+pub(super) fn unary_f64(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp>], instr: we::Instruction<'static>) -> Result<()> {
     need_args(argv, 1, "<f64 builtin>")?;
     let w = compile_exp(ctx, argv[0])?;
     coerce(ctx, w, WTy::F64);
@@ -840,7 +840,7 @@ pub(super) fn unary_f64(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], instr: we::Ins
     Ok(())
 }
 
-pub(super) fn need_args(argv: &[&Arc<DAE::Exp>], n: usize, name: &str) -> Result<()> {
+pub(super) fn need_args(argv: &[&metamodelica::Ref<DAE::Exp>], n: usize, name: &str) -> Result<()> {
     if argv.len() != n {
         return Err("CodegenWasmJit: builtin argument count mismatch");
     }

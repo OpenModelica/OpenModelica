@@ -1701,6 +1701,12 @@ package SimCodeUtil
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
+  function simVarExactFromHT
+    input DAE.ComponentRef inCref;
+    input HashTableCrefSimVar.HashTable crefToSimVarHT;
+    output Option<SimCodeVar.SimVar> outSimVar;
+  end simVarExactFromHT;
+
   function simVarFromHT
     input DAE.ComponentRef inCref;
     input HashTableCrefSimVar.HashTable crefToSimVarHT;
@@ -1758,6 +1764,11 @@ package SimCodeUtil
     output Integer vr;
   end lookupVR;
 
+  function isFMUSimCode
+    input SimCode.SimCode simCode;
+    output Boolean isFMU;
+  end isFMUSimCode;
+
   function lookupVRForRealOutputDerivative
     input DAE.ComponentRef cr;
     input SimCode.SimCode simCode;
@@ -1780,6 +1791,12 @@ package SimCodeUtil
     input list<SimCode.JacobianColumn> columns;
     output Boolean b ;
   end jacobianColumnsAreEmpty;
+
+  function stripAsubIfNoIter
+    input DAE.Exp exp;
+    input Boolean hasIter;
+    output DAE.Exp outExp;
+  end stripAsubIfNoIter;
 
   function getFmiInitialAttributeStr
     input SimCodeVar.SimVar simVar;
@@ -4175,6 +4192,11 @@ package Expression
     input DAE.Exp inExp;
     output Boolean outIsCref;
   end isCref;
+
+  function containsAnyCall
+    input DAE.Exp inExp;
+    output Boolean outContainsCall;
+  end containsAnyCall;
 
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "

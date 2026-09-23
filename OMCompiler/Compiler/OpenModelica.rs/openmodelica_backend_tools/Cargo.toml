@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+openmodelica_loader = { path = "../openmodelica_loader", default-features = false }
 openmodelica_backend.workspace = true
 openmodelica_tpl.workspace = true
 metamodelica.workspace=true

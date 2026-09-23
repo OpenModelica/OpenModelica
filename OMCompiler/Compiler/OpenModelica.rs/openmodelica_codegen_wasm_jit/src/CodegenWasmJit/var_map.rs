@@ -16,7 +16,7 @@ pub(crate) struct SimVarMap {
     /// Shared with every [`SimCtx`] rather than copied per generated function, so
     /// filled through `Arc::make_mut` (single owner until emission starts).
     pub(crate) vars: Arc<HashMap<String, SimSlot>>,
-    pub(super) starts: Arc<HashMap<String, Option<Arc<DAE::Exp>>>>,
+    pub(super) starts: Arc<HashMap<String, Option<metamodelica::Ref<DAE::Exp>>>>,
     /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
     /// slot instead of the inline expression.
     pub(super) start_slots: Arc<HashMap<String, u32>>,
@@ -27,9 +27,9 @@ pub(crate) struct SimVarMap {
     /// `varKind = CONST` variables own no `SimData` slot: a reference is the
     /// binding literal, as in C's `varArrayNameValues`. `const_groups` is the
     /// `array_groups` counterpart, `const_acc` its transient accumulator.
-    pub(super) consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
+    pub(super) consts: Arc<HashMap<String, metamodelica::Ref<DAE::Exp>>>,
     pub(super) const_groups: Arc<HashMap<String, ConstGroup>>,
-    const_acc: HashMap<String, Vec<(Vec<i32>, Arc<DAE::Exp>, WTy)>>,
+    const_acc: HashMap<String, Vec<(Vec<i32>, metamodelica::Ref<DAE::Exp>, WTy)>>,
     /// External object cref key -> the mangled name of its class's destructor.
     pub(super) extobj_dtors: Arc<HashMap<String, String>>,
     /// Transient accumulator: base cref key -> the scalarized elements seen.
@@ -90,7 +90,7 @@ pub(crate) struct SimVarMap {
 /// C's `crefStrXml`: the display name `_init.xml` carries into `modelData`'s
 /// `info.name`, and with it the result file. `$DER` / `$PRE` qualifiers print as
 /// `der(...)` / `pre(...)`, nesting included (`$DER.$DER.x` -> `der(der(x))`).
-pub(crate) fn cref_display(cr: &Arc<DAE::ComponentRef>) -> Result<String> {
+pub(crate) fn cref_display(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Result<String> {
     use DAE::ComponentRef as C;
     Ok(match &**cr {
         C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$DER" => {
@@ -192,7 +192,7 @@ fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
 /// C's `time_unvarying`: a variable a literal parameter equation assigns is
 /// computed once at initialization, so the `.mat` stores it with the parameters
 /// (`CodegenC.functionUpdateBoundParameters`, `Expression.isSimpleLiteralValue`).
-pub(super) fn mark_unvarying(result_vars: &mut [ResultVar], param_eqs: &[Arc<SimCode::SimEqSystem>]) -> Result<()> {
+pub(super) fn mark_unvarying(result_vars: &mut [ResultVar], param_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Result<()> {
     let mut literal: HashSet<String> = HashSet::new();
     for eq in param_eqs {
         if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq
@@ -231,7 +231,7 @@ const OPT_RESULT_PREFIXES: [&str; 4] = ["$OMC$object", "$con$", "$finalCon$", "$
 /// Evaluate a constant variable's binding to a scalar, for the `*ConstVars`
 /// lists (which have no SimData slot). Handles the literal forms model constants
 /// actually take (numbers, booleans, enums, and unary minus thereof).
-pub(crate) fn const_value(exp: &Option<Arc<DAE::Exp>>) -> Option<f64> {
+pub(crate) fn const_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option<f64> {
     fn eval(e: &DAE::Exp) -> Option<f64> {
         use DAE::Exp as E;
         match e {
@@ -383,17 +383,17 @@ pub(crate) fn row_major_indices(dims: &[u32]) -> Vec<Vec<i32>> {
 }
 
 /// A copy of `cr` with `idx` appended as `INDEX` subscripts on its deepest ident.
-fn cref_with_indices(cr: &Arc<DAE::ComponentRef>, idx: &[i32]) -> Arc<DAE::ComponentRef> {
+fn cref_with_indices(cr: &metamodelica::Ref<DAE::ComponentRef>, idx: &[i32]) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     match &**cr {
         C::CREF_IDENT { ident, identType, .. } => {
-            let subs: List<Arc<DAE::Subscript>> = idx
+            let subs: List<metamodelica::Ref<DAE::Subscript>> = idx
                 .iter()
-                .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: i }) }))
+                .map(|&i| metamodelica::Ref::new(DAE::Subscript::INDEX { exp: metamodelica::Ref::new(DAE::Exp::ICONST { integer: i }) }))
                 .collect();
-            Arc::new(C::CREF_IDENT { ident: ident.clone(), identType: identType.clone(), subscriptLst: subs })
+            metamodelica::Ref::new(C::CREF_IDENT { ident: ident.clone(), identType: identType.clone(), subscriptLst: subs })
         }
-        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
@@ -404,14 +404,14 @@ fn cref_with_indices(cr: &Arc<DAE::ComponentRef>, idx: &[i32]) -> Arc<DAE::Compo
 }
 
 /// Index an optional array-valued attribute (start/nominal/min/max) to element `idx`.
-fn index_attr(attr: &Option<Arc<DAE::Exp>>, idx: &[i32]) -> Option<Arc<DAE::Exp>> {
+fn index_attr(attr: &Option<metamodelica::Ref<DAE::Exp>>, idx: &[i32]) -> Option<metamodelica::Ref<DAE::Exp>> {
     attr.as_ref().map(|e| index_exp(e, idx))
 }
 
 /// Element `idx` of an array expression: literal `ARRAY`/`MATRIX` indexed
 /// statically, otherwise a simplified `ASUB` — `x(each start = 1)` arrives as
 /// `{1.0 for $i in 1:n}`, which only folds through `simplifyAsub`.
-fn index_exp(exp: &Arc<DAE::Exp>, idx: &[i32]) -> Arc<DAE::Exp> {
+fn index_exp(exp: &metamodelica::Ref<DAE::Exp>, idx: &[i32]) -> metamodelica::Ref<DAE::Exp> {
     use DAE::Exp as E;
     if idx.is_empty() {
         return exp.clone();
@@ -431,11 +431,11 @@ fn index_exp(exp: &Arc<DAE::Exp>, idx: &[i32]) -> Arc<DAE::Exp> {
         }
         _ => {}
     }
-    let sub: List<Arc<DAE::Subscript>> = idx
+    let sub: List<metamodelica::Ref<DAE::Subscript>> = idx
         .iter()
-        .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(E::ICONST { integer: i }) }))
+        .map(|&i| metamodelica::Ref::new(DAE::Subscript::INDEX { exp: metamodelica::Ref::new(E::ICONST { integer: i }) }))
         .collect();
-    let asub = Arc::new(E::ASUB { exp: exp.clone(), sub: sub });
+    let asub = metamodelica::Ref::new(E::ASUB { exp: exp.clone(), sub: sub });
     openmodelica_frontend_base::ExpressionSimplify::simplify1(asub.clone())
         .map(|(e, _)| e)
         .unwrap_or(asub)
@@ -912,10 +912,10 @@ pub(super) fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32,
 
 /// If `cr` is a scalarized array element `base[c1,…,cn]` — the subscripts on the
 /// deepest component all constant — its base name and those subscripts.
-pub(super) fn array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<(String, Vec<i32>)>> {
+pub(super) fn array_element_of(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Result<Option<(String, Vec<i32>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
-    let mut node: &Arc<DAE::ComponentRef> = cr;
+    let mut node: &metamodelica::Ref<DAE::ComponentRef> = cr;
     loop {
         match &**node {
             C::CREF_IDENT { ident, subscriptLst, .. } => {
@@ -941,7 +941,7 @@ pub(super) fn array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<(St
 /// The array groups a scalarized element joins. `b[1].a[2].y` joins `b[1].a`,
 /// keyed as `sim_cref_key` spells it, and the flattened `b.a.y`, which is what
 /// `b[$i].a[$j].y` resolves through.
-pub(super) fn array_element_keys(cr: &Arc<DAE::ComponentRef>) -> Result<Vec<GroupEntry>> {
+pub(super) fn array_element_keys(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Result<Vec<GroupEntry>> {
     let mut out = Vec::new();
     if let Some((base, subs)) = array_element_of(cr)? {
         let mut pieces = vec![base.clone()];
@@ -978,14 +978,14 @@ pub(super) struct AccElem {
 
 /// The name with every subscript stripped, the subscripts outermost-first, and
 /// the pieces they sit between. `None` unless an outer component is subscripted.
-fn flat_array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<GroupEntry>> {
+fn flat_array_element_of(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Result<Option<GroupEntry>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut subs = Vec::new();
     let mut pieces = Vec::new();
     let mut piece = String::new();
     let mut qualified_subs = false;
-    let mut node: &Arc<DAE::ComponentRef> = cr;
+    let mut node: &metamodelica::Ref<DAE::ComponentRef> = cr;
     loop {
         let (ident, subscriptLst, next) = match &**node {
             C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
@@ -1024,7 +1024,7 @@ fn flat_array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<GroupEntr
 /// Parse a subscript list to constant 1-based integer indices, or `None` if any
 /// subscript is not a constant integer / enum / Boolean literal (a slice, `:`,
 /// expression).
-fn const_int_subscripts(subs: &List<Arc<DAE::Subscript>>) -> Result<Option<Vec<i32>>> {
+fn const_int_subscripts(subs: &List<metamodelica::Ref<DAE::Subscript>>) -> Result<Option<Vec<i32>>> {
     let mut out = Vec::new();
     for sub in &**subs {
         match &**sub {

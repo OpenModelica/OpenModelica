@@ -70,6 +70,9 @@ public:
   // Block until the QML shell has loaded (it loads asynchronously) and return
   // whether the animation scene is available.
   bool ensureScene() const;
+  // Why ensureScene() failed: the QML errors, the required modules that do not
+  // resolve and the import paths searched.
+  QString sceneError() const;
 
   // Frame the whole scene (bounding sphere) at the current view angle.
   void fitToScene();
@@ -91,6 +94,7 @@ private:
   // Build the scene root, the camera handle and the Quick3DScene once the shell
   // QML component has finished loading (statusChanged -> Ready).
   void createSceneFromShell();
+  void recordShellError();
   // Ray-pick at a view pixel: returns the hit Model's objectName (visualizer id).
   QString pickName(const QPointF& viewPos);
   // Shift+right-click: pick the visualizer under the cursor and pop up the
@@ -105,6 +109,7 @@ private:
   QQmlComponent* mpShellComponent;
   AbstractAnimationWindow* mpAnimationWindow;
   AbstractVisualizerObject* mpSelectedVisualizer;
+  QString mSceneError;
 
   // Orbit-camera state: an orientation (camera local axes → world) plus the
   // look-at point and distance. The camera sits at mCenter + backward*mDistance.

@@ -77,6 +77,8 @@ public:
 
   //! Root of every working copy. "/cloud" on the web target.
   static QString workingCopyRoot();
+  //! <workingCopyRoot>/<mountId>/<remoteName>.
+  static QString workingCopyPath(const QString &mountId, const QString &remoteName);
   static QString manifestRoot();
 
   QList<CloudMount> mounts();

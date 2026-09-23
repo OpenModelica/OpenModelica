@@ -1769,7 +1769,11 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
 
 /// `@MODELICA_SPEC_PLATFORM@`: the Modelica spec's `<os><bitness>`. macOS is
 /// darwin64 on aarch64 too, since its libraries are universal binaries.
-const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
+const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWasm {
+    // The spec names no wasm platform; a wasm library is installed under the
+    // triple it was built for, as `SimCodeFunctionUtil.wasmLibraryTriple` says.
+    "wasm32-wasip1"
+} else if Autoconf::isWindows {
     if Autoconf::is64Bit { "win64" } else { "win32" }
 } else if cfg!(target_os = "macos") {
     if Autoconf::is64Bit { "darwin64" } else { "darwin32" }
@@ -1782,7 +1786,11 @@ const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
 /// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows where
 /// it names the toolchain, as the table in OMCompiler/omc_config.h does. The
 /// MinGW distribution is MSYS2's UCRT64.
-const OPENMODELICA_SPEC_PLATFORM: &str = if cfg!(all(windows, target_env = "gnu")) {
+const OPENMODELICA_SPEC_PLATFORM: &str = if Autoconf::isWasm {
+    // The second spelling, for a library with no OS dependency at all: such a
+    // module is built for bare `wasm32` and runs under either ABI.
+    "wasm32"
+} else if cfg!(all(windows, target_env = "gnu")) {
     if Autoconf::is64Bit { "ucrt64" } else { "mingw32" }
 } else if Autoconf::isWindows {
     if Autoconf::is64Bit { "msvc64" } else { "msvc32" }

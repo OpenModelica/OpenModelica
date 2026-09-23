@@ -53,8 +53,14 @@ QString Helper::userHomeDirectory = "";
 QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OMEditInternal = "OMEditInternal";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
-                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)";
+QString Helper::omFileTypes = QString("All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml%1);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
+                                      ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)%2")
+#if defined(__EMSCRIPTEN__)
+                              // An archive is the only way a browser hands over a library with its Resources/.
+                              .arg(" *.zip", ";;Zipped Libraries (*.zip)");
+#else
+                              .arg("", "");
+#endif
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";

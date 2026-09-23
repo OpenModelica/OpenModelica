@@ -60,8 +60,6 @@ testing = {
     "4.1.0+maint.om"
   },
   "Modelica": {
-    "2.2.2+maint.om",
-    "3.1.0+maint.om",
     "3.2.1+maint.om",
     "3.2.2+maint.om",
     "3.2.3+maint.om",
@@ -69,7 +67,6 @@ testing = {
     "4.1.0+maint.om"
   },
   "ModelicaServices": {
-    "1.0.0",
     "3.2.1+maint.om",
     "3.2.2+maint.om",
     "3.2.3+maint.om",
@@ -95,8 +92,7 @@ testing = {
   },
   "SiemensPower": {
     "2.1.0-beta",
-    "2.2.0",
-    "OMCtest"
+    "2.2.0"
   },
   "ThermoPower": {
     "3.1.0-master"

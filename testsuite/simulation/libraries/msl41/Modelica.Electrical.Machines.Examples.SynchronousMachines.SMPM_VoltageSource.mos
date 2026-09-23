@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_VoltageSource
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_VoltageSource";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_VoltageSource);
+compareVars :=
+{
+   "inertiaLoad.phi",
+   "inertiaLoad.w",
+   "smpm.idq_sr[1]",
+   "smpm.idq_sr[2]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_VoltageSource"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_VoltageSource
+// {"inertiaLoad.phi", "inertiaLoad.w", "smpm.idq_sr[1]", "smpm.idq_sr[2]"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_VoltageSource', options = '', outputFormat = 'mat', variableFilter = 'time|inertiaLoad.phi|inertiaLoad.w|smpm.idq_sr.1.|smpm.idq_sr.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_VoltageSource_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

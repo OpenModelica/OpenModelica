@@ -101,15 +101,22 @@ pub fn set_release_fn(f: fn()) {
     RELEASE.store(f as usize, Relaxed);
 }
 
-/// Arm the ceiling again once recovery is done, above whatever the process
-/// could not hand back.
-pub fn rearm() {
+/// Hand back what the allocator is still holding, through whatever
+/// [`set_release_fn`] registered. Does nothing if the process registered
+/// nothing. For a caller that allocates in bulk and can pay the syscalls.
+pub fn release() {
     let p = RELEASE.load(Relaxed);
     if p != 0 {
         // SAFETY: only ever stored by `set_release_fn` from a `fn()`.
         let f: fn() = unsafe { std::mem::transmute(p) };
         f();
     }
+}
+
+/// Arm the ceiling again once recovery is done, above whatever the process
+/// could not hand back.
+pub fn rearm() {
+    release();
     let (resident, mapped) = footprint();
     if resident != 0 {
         let raise = |cur: &AtomicUsize, used: usize, limit: usize| {

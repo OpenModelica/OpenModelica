@@ -76,6 +76,10 @@ size_t calc_base_index_spec(int ndims, const _index_t* idx_vec,
 size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *arr);
 size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap);
 
+/* Reports an out-of-bounds subscript and exits. Returns size_t so that the
+ * omc_array_index* macros can use it as the failing arm of a conditional. */
+size_t omc_array_bounds_error(int dim, _index_t dim_size, _index_t sub);
+
 size_t calc_base_index_dims_subs(int ndims,...);
 
 int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a);

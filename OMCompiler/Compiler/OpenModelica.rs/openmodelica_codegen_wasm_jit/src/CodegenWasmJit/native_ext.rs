@@ -204,12 +204,13 @@ pub(super) fn link_fmu_component(
     let has_ext = first_external_import(model_wasm).is_some();
     let model = model_to_dylink(model_wasm)?;
     let plain_adapter = native_stub.is_none().then(|| drop_native_ext_import(adapter)).flatten();
-    let mut l = wit_component::Linker::default().validate(true);
-    l = l.library("adapter", plain_adapter.as_deref().unwrap_or(adapter), false).map_err(link_err)?;
+    let mut l = wit_component::Linker::default();
+    l.encoder().validate(true);
+    l.library("adapter", plain_adapter.as_deref().unwrap_or(adapter), false).map_err(link_err)?;
     if plain_adapter.is_some() {
-        l = l.library("native_absent", &native_ext_absent(), false).map_err(link_err)?;
+        l.library("native_absent", &native_ext_absent(), false).map_err(link_err)?;
     }
-    l = l.library("model", &model, false).map_err(link_err)?;
+    l.library("model", &model, false).map_err(link_err)?;
     // The adapter imports every solver whatever the flags say, so each is resolved
     // either way; what changes is whether the real library or its stub answers. CVODE
     // reaches the residual through a C function pointer, which works because every
@@ -218,37 +219,48 @@ pub(super) fn link_fmu_component(
         for lib in SOLVER_LIBRARIES {
             let bytes =
                 if wanted.contains(&lib.name) { lib.module() } else { lib.stub() };
-            l = l.library(lib.name, bytes, false).map_err(link_err)?;
+            l.library(lib.name, bytes, false).map_err(link_err)?;
         }
     }
-    if needs_lapack(model_wasm, ext_libs) {
-        l = l.library("lapack", LAPACK_DYLINK(), false).map_err(link_err)?;
-    }
+
     let real_solvers = solvers.is_some_and(|w| !w.is_empty());
     if has_ext || real_solvers {
         // modelicaexternalc before libc; the coexisting allocator (libc dlmalloc +
         // runtime rt_alloc over one shared heap) is intentional. A solver library
         // needs libc too, so it brings the same libraries along; the stubs do not.
         if has_ext {
-            // First, so a symbol they define wins over ModelicaExternalC's.
+            // First, so a symbol they define wins over the ones omc carries.
             let ext_bytes: Vec<Vec<u8>> =
                 ext_libs.iter().map(|lib| drop_redundant_initialize(&lib.bytes)).collect();
             for (lib, bytes) in ext_libs.iter().zip(&ext_bytes) {
-                l = l.library(&lib.name, bytes, false).map_err(link_err)?;
+                l.library(&lib.name, bytes, false).map_err(link_err)?;
             }
             if let Some(stub) = native_stub {
-                l = l.library("native_stub", stub, false).map_err(link_err)?;
+                l.library("native_stub", stub, false).map_err(link_err)?;
             }
-            l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK(), false).map_err(link_err)?;
+            // Only the libraries this model reaches, and what they need: an FMU
+            // that scans a string does not carry the MAT reader (see
+            // `openmodelica_wasm_jit::dylink::libraries_for`). The libraries linked
+            // beside the model ask for their own: `usertab` calls `ModelicaError`,
+            // and a model's own library may call the MSL's.
+            let mut wanted: Vec<String> = external_imports(model_wasm);
+            for bytes in ext_bytes.iter().map(|b| &b[..]).chain([USERTAB_DYLINK()]) {
+                wanted.extend(dylink_needs(bytes));
+            }
+            // Under the file name, which is what another library's NEEDED says.
+            for file in openmodelica_wasm_jit::dylink::libraries_for(&wanted) {
+                let Some(bytes) = openmodelica_wasm_jit::ext_library(file) else { continue };
+                l.library(file, bytes, false).map_err(link_err)?;
+            }
         }
-        l = l.library("libc", LIBC_PIC(), false).map_err(link_err)?;
+        l.library("libc", LIBC_PIC(), false).map_err(link_err)?;
         if has_ext {
             // Last, so a `usertab` from the model's own libraries wins.
-            l = l.library("usertab", USERTAB_DYLINK(), false).map_err(link_err)?;
+            l.library("usertab", USERTAB_DYLINK(), false).map_err(link_err)?;
         }
     }
     // Unconditional: the adapter is also what gives the FMU the stdout its
     // simulation log goes to.
-    l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER()).map_err(link_err)?;
+    l.encoder().adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER()).map_err(link_err)?;
     l.encode().map_err(link_err)
 }

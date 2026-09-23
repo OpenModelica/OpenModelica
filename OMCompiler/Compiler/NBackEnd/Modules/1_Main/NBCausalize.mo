@@ -77,6 +77,7 @@ protected
   // util imports
   import BackendUtil = NBBackendUtil;
   import Error;
+  import ErrorExt;
   import List;
   import StringUtil;
 
@@ -186,8 +187,8 @@ public
             TypeCheck.MatchKind kind;
 
           case StrongComponent.SINGLE_COMPONENT() algorithm
-            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(PointerCyclic.access(scc.var)));
-            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(PointerCyclic.access(scc.eqn)));
+            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
+            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
             (_, _, kind) := TypeCheck.matchTypes(ty1, ty2, Expression.fromCref(BVariable.getVarName(scc.var)));
 
             if kind <> NFTypeCheck.MatchKind.EXACT then
@@ -265,8 +266,8 @@ protected
   algorithm
     (variables, equations, full, matching, comps) := match kind
       local
-        list<PointerCyclic<Variable>> fixable, unfixable;
-        list<PointerCyclic<Equation>> initials, simulation;
+        list<Pointer<Variable>> fixable, unfixable;
+        list<Pointer<Equation>> initials, simulation;
         UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
       case kind guard(Partition.kindIsInitial(kind)) algorithm
@@ -352,6 +353,31 @@ protected
   end causalizePseudoArray;
 
   function causalizeTwin
+    "causalizes the twin from the seed and falls back to causalizing it from
+    scratch if that fails. The seed's matching was not built by the three
+    matching phases and can leave a variable that is not fixable unmatched
+    in the balancing of the initialization."
+    input output Partition twin;
+    input Partition seed;
+    input Adjacency.Matrix seed_matching;
+    input Adjacency.Matrix seed_sorting;
+    input UnorderedMap<Path, Function> funcMap;
+    input output VarData varData;
+    input output EqData eqData;
+  protected
+    list<Partition> no_twins;
+  algorithm
+    ErrorExt.setCheckpoint("NBCausalize.causalizeTwin");
+    try
+      (twin, varData, eqData) := causalizeTwinSeeded(twin, seed, seed_matching, seed_sorting, funcMap, varData, eqData);
+      ErrorExt.delCheckpoint("NBCausalize.causalizeTwin");
+    else
+      ErrorExt.rollBack("NBCausalize.causalizeTwin");
+      (twin, varData, eqData, no_twins) := causalizePseudoArray(twin, varData, eqData, funcMap, {});
+    end try;
+  end causalizeTwin;
+
+  function causalizeTwinSeeded
     "causalizes a partition over the same variables as the causalized seed and
     nearly the same equations: the rows of equal equations are taken from the
     seed's matrices and its matching is the starting point"
@@ -391,7 +417,7 @@ protected
     twin.adjacencyMatrix := SOME(full);
     twin.matching := SOME(matching);
     twin.strongComponents := SOME(listArray(comps));
-  end causalizeTwin;
+  end causalizeTwinSeeded;
 
   function causalizeDAEMode extends Module.causalizeInterface;
   algorithm

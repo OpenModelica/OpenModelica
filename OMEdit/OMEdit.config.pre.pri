@@ -41,13 +41,11 @@ QT += network core gui xml svg opengl printsupport widgets concurrent webenginew
 CONFIG(animation) {
   QT += quick quick3d qml quickwidgets
 }
-equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat openglwidgets
-  qtHaveModule(httpserver) {
-    QT += httpserver
-  } else {
-    message("QtHttpServer not found; building without the MCP server")
-  }
+QT += core5compat openglwidgets
+qtHaveModule(httpserver) {
+  QT += httpserver
+} else {
+  message("QtHttpServer not found; building without the MCP server")
 }
 
 # Set the C++ standard.

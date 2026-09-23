@@ -118,6 +118,8 @@ public
     end if;
   end regular;
 
+  constant Integer MAX_INDEX_REDUCTION_RESTARTS = 20 "index reduction restarts after which the system is considered unresolvable";
+
   function singular
     "author: kabdelhak
     Matching algorithm for bipartite graphs by Constantinos C. Pantelides.
@@ -143,6 +145,7 @@ public
     input Partition.Kind kind;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean clear = true              "start from scratch if true";
+    input Integer restarts = 0              "number of index reduction restarts so far";
   protected
     list<list<Integer>> marked_eqns;
     Option<Adjacency.Mapping> mapping;
@@ -179,7 +182,13 @@ public
         matching := regular(EMPTY_MATCHING, adj);
       else
         // ####### REDO INDEX REDUCTION IF NECESSARY #######
-        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, kind, transposed);
+        // a structurally singular system (e.g. over-determined) never becomes regular by differentiation
+        if restarts >= MAX_INDEX_REDUCTION_RESTARTS then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not resolve the structural singularity after "
+            + intString(restarts) + " index reduction steps. The system is probably over-determined or has a too high index."});
+          fail();
+        end if;
+        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, kind, transposed, restarts = restarts + 1);
       end if;
     end if;
   end singular;
@@ -318,8 +327,8 @@ public
     Adjacency.Mapping mapping;
     UnorderedMap<VariablePointer, IntLst> var_map_matched, var_map_unmatched;
     UnorderedMap<EquationPointer, IntLst> eqn_map_matched, eqn_map_unmatched;
-    PointerCyclic<Variable> arr_var;
-    PointerCyclic<Equation> arr_eqn;
+    Pointer<Variable> arr_var;
+    Pointer<Equation> arr_eqn;
     Integer start_idx;
   algorithm
     // pseudo array case

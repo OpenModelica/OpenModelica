@@ -139,17 +139,10 @@ pub struct Report {
     /// stay plain `Arc`, because a barrier that provably cannot reach a
     /// collected allocation hides nothing from the collector.
     pub traced_types: BTreeSet<String>,
-    /// Every `Mutable.*`/`Pointer.*` call whose cell content can sit on a
-    /// cycle, with the enclosing statement's position — the input to
-    /// `cyclic-cells --fix`.
-    pub cyclic_uses: Vec<crate::cyclic_fix::CyclicUse>,
     /// [`Report::traced_types`] counting only cell reachability — i.e. what the
     /// set becomes if capture-free function values stay plain `fn` pointers
     /// and so taint nothing.
     pub traced_cells_only: BTreeSet<String>,
-    /// Types that can reach a *declared* cyclic cell — the set that actually
-    /// needs the traced pointer once the sources are migrated.
-    pub traced_declared: BTreeSet<String>,
 }
 
 /// If `ty` is a cell type, return its kind and content type. The `Mutable`
@@ -165,80 +158,16 @@ fn cell_content(ty: &Ty) -> Option<(CellKind, &Ty)> {
     {
         let dotted = name.replace("::", ".");
         match dotted.as_str() {
-            "Mutable" | "Mutable.Mutable" | "MutableCyclic" | "MutableCyclic.MutableCyclic" => {
+            "Mutable" | "Mutable.Mutable" => {
                 return Some((CellKind::Mutable, &args[0]));
             }
-            "Pointer" | "Pointer.Pointer" | "PointerCyclic" | "PointerCyclic.PointerCyclic" => {
+            "Pointer" | "Pointer.Pointer" => {
                 return Some((CellKind::Pointer, &args[0]));
             }
             _ => {}
         }
     }
     None
-}
-
-/// True if `ty` is one of the *declared* cyclic cells (`MutableCyclic` /
-/// `PointerCyclic`). Once the sources are migrated these are the only cells
-/// that can sit on a cycle, so they are the only ones needing a traced
-/// representation — everything else is freed by reference counting.
-fn is_declared_cyclic_cell(ty: &Ty) -> bool {
-    matches!(ty, Ty::Generic(name, args) if args.len() == 1
-        && matches!(name.replace("::", ".").as_str(),
-            "MutableCyclic" | "MutableCyclic.MutableCyclic"
-                | "PointerCyclic" | "PointerCyclic.PointerCyclic"))
-}
-
-/// `ty_contains_cell` restricted to the declared cyclic cells.
-fn ty_reaches_cyclic_cell(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
-    if is_declared_cyclic_cell(ty) {
-        return true;
-    }
-    match ty {
-        Ty::Generic(name, args) => {
-            tainted.contains(&name.replace("::", "."))
-                || args.iter().any(|a| ty_reaches_cyclic_cell(a, tainted))
-        }
-        Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => {
-            ty_reaches_cyclic_cell(t, tainted)
-        }
-        Ty::Tuple(ts) => ts.iter().any(|t| ty_reaches_cyclic_cell(t, tainted)),
-        Ty::RustStruct(q) | Ty::RustEnum(q) | Ty::AliasTo(q) => tainted.contains(q),
-        Ty::UnionTypeVariant(q, _) => tainted.contains(q),
-        _ => false,
-    }
-}
-
-pub fn types_reaching_cyclic_cell(graph: &BTreeMap<String, Vec<Ty>>) -> BTreeSet<String> {
-    let mut tainted = BTreeSet::new();
-    loop {
-        let mut changed = false;
-        for (qname, field_tys) in graph {
-            if tainted.contains(qname) {
-                continue;
-            }
-            if field_tys.iter().any(|t| ty_reaches_cyclic_cell(t, &tainted)) {
-                tainted.insert(qname.clone());
-                changed = true;
-            }
-        }
-        if !changed {
-            return tainted;
-        }
-    }
-}
-
-/// Populate [`InstanceHierarchy::traced_types`]: every named type that can
-/// reach a declared cyclic cell, and so needs the collector's traced pointer.
-///
-/// Cheap enough to run in the codegen pipeline — it needs only the containment
-/// graph, not the typed function bodies the cycle analysis builds.
-pub fn detect_traced_types(hier: &mut InstanceHierarchy<'_>) {
-    let mut graph: BTreeMap<String, Vec<Ty>> = BTreeMap::new();
-    hierarchy::collect_struct_field_tys(&hier.top_level, "", &mut graph);
-    hier.traced_types = types_reaching_cyclic_cell(&graph)
-        .into_iter()
-        .filter(|q| graph.contains_key(q))
-        .collect();
 }
 
 /// Collect the qualified names of user-defined named types mentioned anywhere
@@ -686,6 +615,125 @@ fn cell_cyclic_types(
             }
         }
     }
+    // Greedy feedback arc set over the cell edges: the smallest set we can
+    // find whose removal leaves no cycle. Each one is a field that would have
+    // to become a weak reference for plain refcounting to reclaim everything.
+    if let Ok(path) = std::env::var("MMTORUST_WEAK_EDGES_OUT") {
+        let sccs_with_cell_edges = |dropped: &BTreeSet<(usize, usize)>| -> Vec<(usize, usize)> {
+            let mut idx = vec![usize::MAX; n];
+            let mut low = vec![0usize; n];
+            let mut comp = vec![usize::MAX; n];
+            let mut on = vec![false; n];
+            let (mut st, mut ctr, mut nc) = (Vec::new(), 0usize, 0usize);
+            for root in 0..n {
+                if idx[root] != usize::MAX {
+                    continue;
+                }
+                let mut call: Vec<(usize, usize)> = vec![(root, 0)];
+                while let Some(&mut (v, ref mut pi)) = call.last_mut() {
+                    if *pi == 0 {
+                        idx[v] = ctr;
+                        low[v] = ctr;
+                        ctr += 1;
+                        st.push(v);
+                        on[v] = true;
+                    }
+                    if *pi < adj[v].len() {
+                        let (w, _) = adj[v][*pi];
+                        *pi += 1;
+                        if dropped.contains(&(v, w)) {
+                            continue;
+                        }
+                        if idx[w] == usize::MAX {
+                            call.push((w, 0));
+                        } else if on[w] {
+                            low[v] = low[v].min(idx[w]);
+                        }
+                    } else {
+                        if low[v] == idx[v] {
+                            while let Some(w) = st.pop() {
+                                on[w] = false;
+                                comp[w] = nc;
+                                if w == v {
+                                    break;
+                                }
+                            }
+                            nc += 1;
+                        }
+                        call.pop();
+                        if let Some(&(parent, _)) = call.last() {
+                            low[parent] = low[parent].min(low[v]);
+                        }
+                    }
+                }
+            }
+            let mut out = Vec::new();
+            for v in 0..n {
+                for &(w, crosses) in &adj[v] {
+                    if crosses && comp[v] == comp[w] && !dropped.contains(&(v, w)) {
+                        out.push((v, w));
+                    }
+                }
+            }
+            out
+        };
+
+        let mut dropped: BTreeSet<(usize, usize)> = BTreeSet::new();
+        let mut order: Vec<(usize, usize)> = Vec::new();
+        loop {
+            let remaining = sccs_with_cell_edges(&dropped);
+            if remaining.is_empty() {
+                break;
+            }
+            // Drop whichever edge occurs most often; ties broken by name so the
+            // result is reproducible.
+            let mut count: BTreeMap<(usize, usize), usize> = BTreeMap::new();
+            for e in &remaining {
+                *count.entry(*e).or_default() += 1;
+            }
+            let best = *remaining
+                .iter()
+                .max_by_key(|e| (count[*e], std::cmp::Reverse(names[e.0].clone())))
+                .expect("non-empty");
+            dropped.insert(best);
+            order.push(best);
+        }
+        let mut out = format!(
+            "{} cell edges must become weak references for refcounting alone:\n",
+            order.len()
+        );
+        for (v, w) in &order {
+            out.push_str(&format!("    {} -> {}\n", names[*v], names[*w]));
+        }
+        std::fs::write(&path, out).expect("could not write weak edges");
+    }
+
+    if let Ok(path) = std::env::var("MMTORUST_CYCLE_EDGES_OUT") {
+        let mut out = String::new();
+        for scc in 0..scc_count {
+            if !scc_cyclic[scc] {
+                continue;
+            }
+            let members: Vec<&str> =
+                (0..n).filter(|&v| scc_of[v] == scc).map(|v| names[v].as_str()).collect();
+            out.push_str(&format!("SCC of {} types:\n", members.len()));
+            for m in &members {
+                out.push_str(&format!("    {m}\n"));
+            }
+            // The edges that close the cycle: an in-SCC edge crossing a cell.
+            // Making these weak would break the cycle without a collector.
+            for v in (0..n).filter(|&v| scc_of[v] == scc) {
+                for &(w, crosses) in &adj[v] {
+                    if crosses && scc_of[w] == scc {
+                        out.push_str(&format!("  cell edge: {} -> {}\n", names[v], names[w]));
+                    }
+                }
+            }
+            out.push('\n');
+        }
+        std::fs::write(&path, out).expect("could not write cycle edges");
+    }
+
     (0..n)
         .filter(|&v| scc_cyclic[scc_of[v]])
         .map(|v| names[v].clone())
@@ -865,40 +913,6 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         .filter(|(q, _)| !primitives.contains(&q.as_str()))
         .collect();
 
-    // Second walk over the already-typed bodies: every cell operation whose
-    // content can sit on a cycle, tagged with its statement's position so the
-    // `--fix` pass can find it in the source.
-    let mut cyclic_uses: Vec<crate::cyclic_fix::CyclicUse> = Vec::new();
-    for (_qname, stmts) in &bodies {
-        let mut visit = |func: &str, args: Vec<&TypedExp>, res: &Ty, info: Option<&Absyn::Info>| {
-            let Some(pkg) = func.split('.').next() else { return };
-            let kind = match pkg {
-                "Mutable" | "MutableCyclic" => CellKind::Mutable,
-                "Pointer" | "PointerCyclic" => CellKind::Pointer,
-                // `arrayUpdate` cycles are reported, never auto-rewritten.
-                _ => return,
-            };
-            // `create` yields the cell; every other operation takes it.
-            let content = args
-                .iter()
-                .find_map(|a| cell_content(&a.ty()).map(|(_, c)| c.clone()))
-                .or_else(|| cell_content(res).map(|(_, c)| c.clone()));
-            let Some(content) = content else { return };
-            let mut named = BTreeSet::new();
-            collect_named_types(&content, &mut named);
-            if !named.iter().any(|n| gc_types_full.contains(n)) {
-                return;
-            }
-            cyclic_uses.push(crate::cyclic_fix::CyclicUse {
-                info: info.cloned().unwrap_or_else(|| Absyn::dummyInfo.clone()),
-                kind,
-            });
-        };
-        for st in stmts {
-            visit_stmt(st, &mut visit);
-        }
-    }
-
     let traced_cells_only: BTreeSet<String> =
         types_containing_cell(&graph, &[CellKind::Mutable, CellKind::Pointer])
             .into_iter()
@@ -908,10 +922,6 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         .union(&hier.types_containing_dyn_fn)
         .filter(|q| graph.contains_key(*q))
         .cloned()
-        .collect();
-    let traced_declared: BTreeSet<String> = types_reaching_cyclic_cell(&graph)
-        .into_iter()
-        .filter(|q| graph.contains_key(q))
         .collect();
     let all_types: BTreeSet<String> = graph.keys().cloned().collect();
 
@@ -926,8 +936,6 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         all_types,
         traced_types,
         traced_cells_only,
-        traced_declared,
-        cyclic_uses,
     }
 }
 
@@ -943,9 +951,8 @@ pub fn print_report(report: &Report) {
         let traced = report.traced_types.len();
         println!(
             "── traced set: {traced} of {total} named types can reach a cell or a function \
-             value; {} if only cells count; {} reaching a declared cyclic cell ──",
-            report.traced_cells_only.len(),
-            report.traced_declared.len()
+             value; {} if only cells count ──",
+            report.traced_cells_only.len()
         );
         let mut per_pkg: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
         for q in &report.all_types {
@@ -1047,7 +1054,7 @@ pub fn print_report(report: &Report) {
         .collect();
     print_set(
         "cycles closed through `arrayUpdate` rather than a cell — the types are \
-         lying about what is mutable; convert the array to Mutable/MutableCyclic",
+         lying about what is mutable; convert the array to a Mutable cell",
         &array_only,
     );
 }

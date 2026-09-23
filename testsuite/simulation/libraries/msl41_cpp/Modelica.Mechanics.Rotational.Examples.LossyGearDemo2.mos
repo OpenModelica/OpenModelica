@@ -1,0 +1,53 @@
+// name:     Modelica.Mechanics.Rotational.Examples.LossyGearDemo2
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.LossyGearDemo2);
+compareVars :=
+{
+   "gear.flange_a.phi",
+   "Inertia1.w",
+   "Inertia2.w",
+   "Inertia2.phi",
+   "der(Inertia1.w)",
+   "gear.mode",
+   "gear.sa",
+   "bearingFriction.sa",
+   "bearingFriction.mode"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.Rotational.Examples.LossyGearDemo2
+// {"gear.flange_a.phi", "Inertia1.w", "Inertia2.w", "Inertia2.phi", "der(Inertia1.w)", "gear.mode", "gear.sa", "bearingFriction.sa", "bearingFriction.mode"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 0.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.LossyGearDemo2', options = '', outputFormat = 'mat', variableFilter = 'time|gear.flange_a.phi|Inertia1.w|Inertia2.w|Inertia2.phi|der[(]Inertia1.w[)]|gear.mode|gear.sa|bearingFriction.sa|bearingFriction.mode', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Mechanics.Rotational.Examples.LossyGearDemo2_res.mat
+// Messages: ERROR  : solver: DASSL: failed step at t = 0.308307: Number of event iteration steps exceeded at time: 0.308307
+// ERROR  : solver: SimManager: Simulation stopped with errors before t = 0.500000
+// ERROR  : solver: SimManager: DASSL: solve failed with idid = 5
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
+// ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
+//
+// "true
+// "
+// ""
+// endResult

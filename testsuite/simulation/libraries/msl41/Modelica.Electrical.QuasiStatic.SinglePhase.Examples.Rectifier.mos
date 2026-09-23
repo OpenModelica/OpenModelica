@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+// The model was renamed in MSL 4.0.0; the reference file kept its old name
+referenceFileName := "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier);
+compareVars :=
+{
+   "voltageQS.pin_p.reference.gamma",
+   "iAC.mean1.x",
+   //"iAC.mean2.x",
+   "iDC2.mean.x"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier
+// {"voltageQS.pin_p.reference.gamma", "iAC.mean1.x", "iDC2.mean.x"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|voltageQS.pin_p.reference.gamma|iAC.mean1.x|iDC2.mean.x', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

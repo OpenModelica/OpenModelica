@@ -13,7 +13,7 @@ pub enum Error {
     InitialAlgorithmsNotAllowed { info: Info },
     PderNotAllowed { info: Info },
     OverloadNotAllowed { info: Info },
-    WithinNotAllowed { path: Arc<Absyn::Path> },
+    WithinNotAllowed { path: metamodelica::Ref<Absyn::Path> },
     ConstraintsNotAllowed { info: Info },
     DefineUnitNotAllowed { info: Info },
     TextElementNotAllowed { info: Info },
@@ -58,30 +58,30 @@ pub struct Class {
 pub enum ClassDef {
     Parts {
         type_vars: Vec<String>,
-        class_attrs: Vec<Arc<Absyn::NamedArg>>,
+        class_attrs: Vec<metamodelica::Ref<Absyn::NamedArg>>,
         members: Vec<ClassMember>,
-        algorithms: Vec<Arc<Absyn::AlgorithmItem>>,
+        algorithms: Vec<metamodelica::Ref<Absyn::AlgorithmItem>>,
         external: Option<ExternalSection>,
-        annotations: Vec<Arc<Absyn::Annotation>>,
+        annotations: Vec<metamodelica::Ref<Absyn::Annotation>>,
         comment: Option<String>,
     },
     Derived {
-        type_spec: Arc<Absyn::TypeSpec>,
+        type_spec: metamodelica::Ref<Absyn::TypeSpec>,
         attributes: Absyn::ElementAttributes,
         arguments: Vec<Absyn::ElementArg>,
-        comment: Option<Arc<Absyn::Comment>>,
+        comment: Option<metamodelica::Ref<Absyn::Comment>>,
     },
     Enumeration {
-        enum_literals: Arc<Absyn::EnumDef>,
-        comment: Option<Arc<Absyn::Comment>>,
+        enum_literals: metamodelica::Ref<Absyn::EnumDef>,
+        comment: Option<metamodelica::Ref<Absyn::Comment>>,
     },
     ClassExtends {
         base_class_name: String,
         modifications: Vec<Absyn::ElementArg>,
         comment: Option<String>,
         members: Vec<ClassMember>,
-        algorithms: Vec<Arc<Absyn::AlgorithmItem>>,
-        annotations: Vec<Arc<Absyn::Annotation>>,
+        algorithms: Vec<metamodelica::Ref<Absyn::AlgorithmItem>>,
+        annotations: Vec<metamodelica::Ref<Absyn::Annotation>>,
     },
 }
 
@@ -109,11 +109,11 @@ pub struct ComponentMember {
     pub info: Info,
     pub variability: Absyn::Variability,
     pub direction: Absyn::Direction,
-    pub type_spec: Arc<Absyn::TypeSpec>,
+    pub type_spec: metamodelica::Ref<Absyn::TypeSpec>,
     pub name: String,
-    pub modification: Option<Arc<Absyn::Modification>>,
-    pub condition: Option<Arc<Absyn::Exp>>,
-    pub comment: Option<Arc<Absyn::Comment>>,
+    pub modification: Option<metamodelica::Ref<Absyn::Modification>>,
+    pub condition: Option<metamodelica::Ref<Absyn::Exp>>,
+    pub comment: Option<metamodelica::Ref<Absyn::Comment>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -132,9 +132,9 @@ pub struct ExtendsMember {
     pub final_prefix: bool,
     pub redeclare_keywords: Option<Absyn::RedeclareKeywords>,
     pub info: Info,
-    pub path: Arc<Absyn::Path>,
+    pub path: metamodelica::Ref<Absyn::Path>,
     pub element_args: Vec<Absyn::ElementArg>,
-    pub annotation: Option<Arc<Absyn::Annotation>>,
+    pub annotation: Option<metamodelica::Ref<Absyn::Annotation>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -142,13 +142,13 @@ pub struct ImportMember {
     pub visibility: Visibility,
     pub info: Info,
     pub import: Absyn::Import,
-    pub comment: Option<Arc<Absyn::Comment>>,
+    pub comment: Option<metamodelica::Ref<Absyn::Comment>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExternalSection {
-    pub decl: Arc<Absyn::ExternalDecl>,
-    pub annotation: Option<Arc<Absyn::Annotation>>,
+    pub decl: metamodelica::Ref<Absyn::ExternalDecl>,
+    pub annotation: Option<metamodelica::Ref<Absyn::Annotation>>,
 }
 
 pub fn from_program(prog: &Absyn::Program) -> Result<Program, Error> {
@@ -296,6 +296,7 @@ fn interface_to_crate(interface: &str) -> Option<String> {
         "backend_util" => Some("openmodelica_backend_util".to_owned()),
         "nbackend" => Some("openmodelica_nbackend".to_owned()),
         "nf_frontend" => Some("openmodelica_nf_frontend".to_owned()),
+        "nf_api" => Some("openmodelica_nf_api".to_owned()),
         "frontend" => Some("openmodelica_frontend".to_owned()),
         "frontend_base" => Some("openmodelica_frontend_base".to_owned()),
         "parser" => Some("openmodelica_ast".to_owned()),
@@ -327,6 +328,7 @@ fn interface_to_crate(interface: &str) -> Option<String> {
         "backend_main" => Some("openmodelica_backend_main".to_owned()),
         "codegen_wasm_jit" => Some("openmodelica_codegen_wasm_jit".to_owned()),
         "omgraphics" => Some("openmodelica_omgraphics".to_owned()),
+        "loader" => Some("openmodelica_loader".to_owned()),
         _ => None,
     }
 }
@@ -429,7 +431,7 @@ fn convert_class_part(
     part: Absyn::ClassPart,
     class_info: &Info,
     members: &mut Vec<ClassMember>,
-    algorithms: &mut Vec<Arc<Absyn::AlgorithmItem>>,
+    algorithms: &mut Vec<metamodelica::Ref<Absyn::AlgorithmItem>>,
     external: &mut Option<ExternalSection>,
 ) -> Result<(), Error> {
     match part {
@@ -463,7 +465,7 @@ fn is_nf_builtin(info: &Info) -> bool {
 }
 
 fn convert_element_items(
-    items: metamodelica::List<Arc<Absyn::ElementItem>>,
+    items: metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
     visibility: Visibility,
     class_info: &Info,
     members: &mut Vec<ClassMember>,

@@ -17,11 +17,17 @@ openmodelica/bootstrapping/CodegenUtil.tpl
 openmodelica/bootstrapping/SimCodeTV.mo
 openmodelica/bootstrapping/mine
 openmodelica/bootstrapping/theirs
+# Link left behind by BouncingBall_OMEdit_flags.mos: runtest.pl links loadFile("../BouncingBall.mo") one directory above its sandbox
+openmodelica/cppruntime/omedit/BouncingBall.mo
 /runtest.db.*
-simulation/libraries/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.csv
+simulation/libraries/msl41/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.csv
 simulation/modelica/solver/externalInput.csv
 # Reference files are stored as .mat.xz
 ReferenceFiles/**/*.mat
+# Reference files should never be stored as csv; convert them to mat and xz
+# compress them (filterSimulationResults can do the conversion). Arrow with
+# internal compression would be nicer, but not all readers handle it yet.
+ReferenceFiles/**/*.csv
 /invalid-files.log
 /invalid-files.sorted
 /.gitvalidfiles.sorted

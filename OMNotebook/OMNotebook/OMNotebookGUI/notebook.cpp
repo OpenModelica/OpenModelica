@@ -685,12 +685,7 @@ void NotebookWindow::createFormatMenu()
   auto fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  QFontDatabase fontDatabase;
-  QStringList fonts = fontDatabase.families( QFontDatabase::Latin );
-#else
   QStringList fonts = QFontDatabase::families( QFontDatabase::Latin );
-#endif
 
   for( int index = 0; index < fonts.count(); ++index )
   {
@@ -1739,9 +1734,7 @@ void NotebookWindow::updateFontMenu()
   QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
   if( !cursor.isNull() )
   {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    const QStringList families = {cursor.charFormat().fontFamily()};
-#elif (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
+#if (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
     const QStringList families = cursor.charFormat().fontFamilies().toStringList();
 #else
     const QStringList families = cursor.charFormat().fontFamilies();

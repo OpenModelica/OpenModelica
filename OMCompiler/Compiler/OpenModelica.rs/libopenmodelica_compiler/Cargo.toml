@@ -36,7 +36,7 @@ libc.workspace = true
 # Optional global allocators (native only; see the `mimalloc`/`jemalloc` features).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libmimalloc-sys = { version = "0.1", optional = true }
-tikv-jemallocator = { version = "0.6", optional = true }
+tikv-jemallocator = { version = "0.7", optional = true }
 # The wasm-jit engine, for `OMC_WASM_PRECOMPILE_CACHE`: the build compiles the
 # model-independent blobs once so no run has to. The wasm build keeps no on-disk
 # artifact cache, hence native only.
@@ -46,11 +46,14 @@ openmodelica_wasm_jit.workspace = true
 # wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock);
 # since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "=0.2.125"
+wasm-bindgen = "=0.2.128"
 openmodelica_wasi.workspace = true
 # Read the last simulation's results straight out of the runtime (src/wasm_api.rs
 # omc_sim_*), so the web simulator plots without an intermediate result file.
 openmodelica_codegen_wasm_jit.workspace = true
+# The wasm side-module loader `System.loadLibrary` routes to here, for
+# compile-time `external "C"` evaluation (src/wasm_api.rs omc_init).
+openmodelica_wasm_jit.workspace = true
 # Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
 openmodelica_frontend_types.workspace = true
 # Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C
@@ -58,14 +61,17 @@ openmodelica_frontend_types.workspace = true
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # Renders `plot(...)` as an SVG chart in-browser (src/wasm_plot.rs); pure-Rust
 # SVG backend (default features), so it builds for wasm32.
-charton = "0.5"
+charton = "0.6"
 # DOM access to insert the rendered SVG into the page's #log element.
-web-sys = { version = "0.3.102", features = ["Window", "Document", "Element", "Node"] }
+web-sys = { version = "0.3.105", features = ["Window", "Document", "Element", "Node"] }
 # Building the {urls, filename} pending-download list for the JS host (omc_take_pending_downloads).
-js-sys = "0.3.102"
+js-sys = "0.3.105"
 # charton → ahash seeds its hashmaps with getrandom, which needs the JS backend
 # explicitly selected on wasm (paired with the cfg in .cargo/config.toml).
-getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom = { version = "0.4", features = ["wasm_js"] }
+# ahash (via charton and arrow) is still on getrandom 0.3, which needs the
+# feature enabled on that copy too; nothing uses this alias directly.
+getrandom_0_3 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
 
 [features]
 # Code-generation targets forwarded to openmodelica_backend_main. `default`

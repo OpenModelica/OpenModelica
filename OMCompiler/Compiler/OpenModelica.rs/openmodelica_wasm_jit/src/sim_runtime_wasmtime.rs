@@ -256,23 +256,16 @@ pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String
         .map_err(|e| format!("obtaining runtime module: {e}"))
 }
 
-/// Path of the on-disk AOT cache for the runtime module. Keyed by a hash of the
-/// runtime bytes + the engine opt-level so different builds/configs don't
-/// collide; `deserialize` itself is the authoritative compatibility guard.
-///
-/// Stored under the per-user OpenModelica home (`$HOME/.openmodelica/cache`,
-/// the same convention as `…/.openmodelica/binaries`): persistent across
-/// reboots and not shared between users (unlike a world-writable temp dir, where
-/// the sticky bit would stop other users refreshing it). Falls back to the
-/// system temp dir if `$HOME` is unset or the cache dir can't be created.
-fn aot_cache_key(blob: &[u8], epoch: bool, inlining: bool) -> u64 {
+/// Keyed by the blob and by what wasmtime validates an artifact against: the
+/// target, its ISA flags, every tunable and wasmtime's own version. A name that
+/// did not move with those would be written once and rejected ever after, at a
+/// full recompile each time.
+fn aot_cache_key(engine: &wasmtime::Engine, blob: &[u8]) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
     blob.len().hash(&mut h);
     blob.hash(&mut h);
-    std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
-    inlining.hash(&mut h);
-    epoch.hash(&mut h);
+    engine.precompile_compatibility_hash().hash(&mut h);
     h.finish()
 }
 
@@ -280,7 +273,13 @@ fn aot_cache_name(tag: &str, key: u64) -> String {
     format!("wasmjit-{tag}-{key:016x}.cwasm")
 }
 
-fn aot_cache_path(tag: &str, key: u64) -> std::path::PathBuf {
+/// Where a run leaves the artifacts it compiled, and what
+/// `OMC_WASM_PRECOMPILE_CACHE=` fills in advance: the per-user OpenModelica home
+/// (`$HOME/.openmodelica/cache`, the same convention as `…/.openmodelica/binaries`),
+/// persistent across reboots and not shared between users -- in a world-writable
+/// temp dir the sticky bit would stop other users refreshing it. Falls back to
+/// the system temp dir if `$HOME` is unset or the directory can't be created.
+pub fn aot_cache_dir() -> std::path::PathBuf {
     let home = openmodelica_util::Settings::getHomeDir(false);
     let dir = if home.is_empty() {
         Some(std::env::temp_dir())
@@ -288,8 +287,11 @@ fn aot_cache_path(tag: &str, key: u64) -> std::path::PathBuf {
         let d = std::path::Path::new(&*home).join(".openmodelica").join("cache");
         std::fs::create_dir_all(&d).ok().map(|_| d)
     };
-    let dir = dir.unwrap_or_else(std::env::temp_dir);
-    dir.join(aot_cache_name(tag, key))
+    dir.unwrap_or_else(std::env::temp_dir)
+}
+
+fn aot_cache_path(tag: &str, key: u64) -> std::path::PathBuf {
+    aot_cache_dir().join(aot_cache_name(tag, key))
 }
 
 /// The same artifact as shipped with omc, if the build precompiled it. The
@@ -309,8 +311,8 @@ fn aot_installed_path(tag: &str, key: u64) -> Option<std::path::PathBuf> {
 
 /// Compile a *fixed* wasm blob through the on-disk AOT cache: the `external "C"`
 /// side libraries take ~0.7 s to compile against ~6 ms to load the artifact.
-fn aot_module(engine: &wasmtime::Engine, tag: &str, blob: &[u8], epoch: bool) -> std::result::Result<wasmtime::Module, String> {
-    let key = aot_cache_key(blob, epoch, inlining());
+fn aot_module(engine: &wasmtime::Engine, tag: &str, blob: &[u8]) -> std::result::Result<wasmtime::Module, String> {
+    let key = aot_cache_key(engine, blob);
     let path = aot_cache_path(tag, key);
     // Try the AOT artifact first (microseconds): the one the build installed, else
     // the one a previous run left in the per-user cache. `deserialize_file` is
@@ -347,7 +349,7 @@ pub fn library_module(
     blob: &[u8],
     fixed: bool,
 ) -> std::result::Result<wasmtime::Module, String> {
-    let key = aot_cache_key(blob, alarm_secs() != 0, inlining());
+    let key = aot_cache_key(engine, blob);
     // A module's types belong to the engine that compiled it.
     type Memo = std::sync::Mutex<HashMap<u64, (wasmtime::Engine, wasmtime::Module)>>;
     static MEMO: OnceLock<Memo> = OnceLock::new();
@@ -358,7 +360,7 @@ pub fn library_module(
         }
     }
     let m = match fixed {
-        true => aot_module(engine, &format!("lib-{name}"), blob, alarm_secs() != 0)?,
+        true => aot_module(engine, &format!("lib-{name}"), blob)?,
         false => wts(wasmtime::Module::new(engine, blob))?,
     };
     memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, (engine.clone(), m.clone()));
@@ -377,21 +379,23 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         ("lib-fmi3adapter".to_string(), crate::FMI3_MECS_CAPI_ADAPTER()),
         ("lib-lapack".to_string(), crate::LAPACK_DYLINK()),
         ("lib-libc.so".to_string(), crate::LIBC_PIC()),
-        ("lib-modelicaexternalc".to_string(), crate::EXTERNAL_C_DYLINK()),
         ("lib-usertab".to_string(), crate::USERTAB_DYLINK()),
     ];
+    for (file, bytes) in crate::EXT_FAMILY {
+        blobs.push((format!("lib-{}", file.trim_end_matches(".wasm")), bytes()));
+    }
     blobs.retain(|(_, b)| !b.is_empty());
-    // Both engines [`select_engine_for`] can land on: a model with one enormous
-    // function turns the inliner off, and would otherwise miss every installed
-    // artifact and compile the runtime and the side libraries for itself.
-    // `alarm_secs()` is 0 here, so these are the plain (non-epoch) engines — the
-    // ones a run uses unless it asked for the hard alarm.
-    let engines: Vec<(bool, &wasmtime::Engine)> =
-        [true, false].iter().map(|&inl| (inl, engine_for(false, inl))).collect();
+    // Every engine a run can land on: the inliner is off for a model with one
+    // enormous function, and `-alarm` picks the epoch-interrupting engine, which
+    // every testsuite and library-testing run asks for.
+    let engines: Vec<&wasmtime::Engine> = [true, false]
+        .iter()
+        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
+        .collect();
     let current: Vec<String> = blobs
         .iter()
         .flat_map(|(tag, blob)| {
-            engines.iter().map(move |&(inl, _)| aot_cache_name(tag, aot_cache_key(blob, false, inl)))
+            engines.iter().map(move |e| aot_cache_name(tag, aot_cache_key(e, blob)))
         })
         .collect();
     // What an earlier build left for a blob that has since changed. Keyed by the
@@ -409,17 +413,22 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     }
     let mut written = Vec::new();
     for (tag, blob) in blobs {
-        for &(inl, engine) in &engines {
-            let name = aot_cache_name(&tag, aot_cache_key(blob, false, inl));
+        for &engine in &engines {
+            let name = aot_cache_name(&tag, aot_cache_key(engine, blob));
             // Rebuilt on every build, so skip what is already there: only a blob that
             // actually changed is worth minutes of Cranelift.
             if dir.join(&name).is_file() {
                 continue;
             }
-            let module = wts(wasmtime::Module::new(engine, blob))?;
-            let bytes = wts(module.serialize())?;
             let path = dir.join(&name);
-            std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+            // Gigabytes of Cranelift each, and what one frees stays mapped, so
+            // drop it and hand the pages back before compiling the next.
+            {
+                let module = wts(wasmtime::Module::new(engine, blob))?;
+                let bytes = wts(module.serialize())?;
+                std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+            }
+            metamodelica::heap_limit::release();
             written.push(name);
         }
     }
@@ -427,7 +436,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
 }
 
 fn load_or_compile_runtime(epoch: bool, inlining: bool) -> std::result::Result<wasmtime::Module, String> {
-    aot_module(engine_for(epoch, inlining), "runtime", runtime_blob(), epoch)
+    aot_module(engine_for(epoch, inlining), "runtime", runtime_blob())
 }
 
 /// JIT-compile a generated model module on the shared engine. Called either on a
@@ -568,7 +577,7 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
         format!(
             "  `{name}` is in none of the model's libraries — the model declares no `Library` \
              annotation that resolves to one. Name a wasm module built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`, or, for a native run, the platform \
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`, or, for a native run, the platform \
              shared library the C target would link."
         )
     } else {
@@ -2516,7 +2525,15 @@ impl DylinkFmu {
             ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
         }
         if external_c {
-            ext_libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+            // A compiled artifact, so which of the family it calls into is no
+            // longer known by name: give it all of them. They are files on disk
+            // here, not a download.
+            for (file, bytes) in crate::EXT_FAMILY.iter().filter(|(f, _)| *f != "liblapack.wasm") {
+                let bytes = bytes();
+                if !bytes.is_empty() {
+                    ext_libs.push(Library::builtin(file, bytes));
+                }
+            }
             if !crate::USERTAB_DYLINK().is_empty() {
                 ext_libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
             }
@@ -2620,7 +2637,7 @@ impl DylinkFmu {
         add_host_builtins(&mut linker)?;
         wasi_shim::add_to_linker(&mut linker)?;
         // Fixed and model-independent: compiled once into the on-disk cache.
-        let fused_module = aot_module(engine, "fused", fused_bytes, alarm_secs() != 0)?;
+        let fused_module = aot_module(engine, "fused", fused_bytes)?;
         let mut store = wasmtime::Store::new(engine, HostState::new(WasiCtx::new(resources, Vec::new())));
 
         // Everything the fused module takes from the model, forwarded once the
@@ -2729,7 +2746,13 @@ impl DylinkFmu {
                 ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
             }
             if external_c {
-                ext_libs.push(Library::builtin("modelicaexternalc", crate::EXTERNAL_C_DYLINK()));
+                // As above: a compiled artifact gets the whole family.
+                for (file, bytes) in crate::EXT_FAMILY.iter().filter(|(f, _)| *f != "liblapack.wasm") {
+                    let bytes = bytes();
+                    if !bytes.is_empty() {
+                        ext_libs.push(Library::builtin(file, bytes));
+                    }
+                }
                 if !crate::USERTAB_DYLINK().is_empty() {
                     ext_libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
                 }

@@ -1,7 +1,17 @@
 encapsulated package RuntimeSources
   constant String fmu_sources_dir = "/include/omc/c/";
 
+  // Where the Rust crates a --simCodeTarget=C+Rust source FMU carries would be.
+  // This build system does not build the Rust simulation runtime, so nothing
+  // installs them and --fmiSources reports that.
+  constant String fmu_rust_sources_dir = "/share/omc/sources/rust";
+  constant String fmu_rust_manifest = "SimulationRuntime/rust/Cargo.toml";
+
   constant list<String> simrt_c_sources={COMMON_FILES};
+
+  // The libOpenModelicaRuntimeC half of simrt_c_sources, which is all a
+  // --simCodeTarget=C+Rust FMU compiles from C.
+  constant list<String> simrt_c_runtime_sources={RUNTIME_C_FILES};
 
   constant list<String> simrt_c_headers={COMMON_HEADERS};
 

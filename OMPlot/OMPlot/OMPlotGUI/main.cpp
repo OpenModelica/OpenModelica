@@ -34,11 +34,7 @@
  */
 
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QApplication>
-#else
-#include <QtGui/QApplication>
-#endif
 
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
@@ -268,9 +264,6 @@ int main(int argc, char *argv[])
   arguments.append(QString::number(yrange2right, 'g', 17));
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
   PlotApplication app(argc, argv, "OMPlot");
   // create the plot main window
   PlotMainWindow w;

@@ -239,7 +239,7 @@ public
   end RECORD_ELEMENT;
 
   record MUTABLE
-    MutableCyclic<Expression> exp;
+    Mutable<Expression> exp;
   end MUTABLE;
 
   record EMPTY
@@ -641,7 +641,7 @@ public
           hash := stringHashDjb2Continue(exp.fieldName, hash);
         then hash;
 
-      case MUTABLE() then hashContinue(MutableCyclic.access(exp.exp), hash);
+      case MUTABLE() then hashContinue(Mutable.access(exp.exp), hash);
       case EMPTY() then stringHashDjb2Continue("#EMPTY#", hash);
 
       case PARTIAL_FUNCTION_APPLICATION()
@@ -723,7 +723,7 @@ public
         Call c;
         list<Subscript> subs;
         ClockKind clk;
-        MutableCyclic<Expression> me;
+        Mutable<Expression> me;
         list<list<Expression>> mat;
         array<Expression> arr;
         InstNode node;
@@ -972,7 +972,7 @@ public
         algorithm
           MUTABLE(exp = me) := exp2;
         then
-          compare(MutableCyclic.access(exp1.exp), MutableCyclic.access(me));
+          compare(Mutable.access(exp1.exp), Mutable.access(me));
 
       case SHARED_LITERAL()
         algorithm
@@ -1073,7 +1073,7 @@ public
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
       case RECORD_ELEMENT()  then exp.ty;
-      case MUTABLE()         then typeOf(MutableCyclic.access(exp.exp));
+      case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case SHARED_LITERAL()  then typeOf(exp.exp);
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
@@ -1089,6 +1089,13 @@ public
     output Integer sz = Type.sizeOf(typeOf(exp));
   end sizeOf;
 
+  function callOf
+    input Expression exp;
+    output Call call;
+  algorithm
+    CALL(call = call) := exp;
+  end callOf;
+
   function sizeZero
     "returns true if its a constructor that is definitely of size zero;"
     input Expression exp;
@@ -1097,7 +1104,15 @@ public
     try
       b := 0 == sizeOf(exp);
     else
+      // fill(x, ..., 0, ...) is empty even if its dimension is not known as an integer
       b := false;
+      if isCallNamed(exp, "fill") then
+        for arg in listRest(Call.arguments(callOf(exp))) loop
+          if isZero(arg) then
+            b := true;
+          end if;
+        end for;
+      end if;
     end try;
   end sizeZero;
 
@@ -1162,7 +1177,7 @@ public
       case SUBSCRIPTED_EXP()      algorithm exp.ty := func(exp.ty); then exp;
       case TUPLE_ELEMENT()        algorithm exp.ty := func(exp.ty); then exp;
       case RECORD_ELEMENT()       algorithm exp.ty := func(exp.ty); then exp;
-      case MUTABLE()              algorithm MutableCyclic.update(exp.exp, applyToType(MutableCyclic.access(exp.exp), func)); then exp;
+      case MUTABLE()              algorithm Mutable.update(exp.exp, applyToType(Mutable.access(exp.exp), func)); then exp;
       case SHARED_LITERAL()       algorithm exp.exp := applyToType(exp.exp, func); then exp;
       case EMPTY()                algorithm exp.ty := func(exp.ty); then exp;
       case PARTIAL_FUNCTION_APPLICATION()  algorithm exp.ty := func(exp.ty); then exp;
@@ -2031,9 +2046,9 @@ public
         list<String> fields;
 
       // Cref is simple identifier, i
-      case CREF(cref = ComponentRef.CREF(node = node))
+      case CREF(cref = ComponentRef.CREF())
         guard ComponentRef.isSimple(exp.cref)
-        then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
+        then if InstNode.refEqual(iterator, ComponentRef.node(exp.cref)) then iteratorValue else exp;
 
       // Cref is qualified identifier, i.x
       case CREF(cref = ComponentRef.CREF())
@@ -2260,7 +2275,7 @@ public
       case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then "(" + toString(exp.recordExp) + ")." + exp.fieldName;
-      case MUTABLE() then toString(MutableCyclic.access(exp.exp));
+      case MUTABLE() then toString(Mutable.access(exp.exp));
       case SHARED_LITERAL() then "LITERAL(" + intString(exp.index) + ", " + toString(exp.exp) + ")";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
@@ -2361,7 +2376,7 @@ public
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format, escapeQuotes = false);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
       case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
-      case MUTABLE() then toFlatString(MutableCyclic.access(exp.exp), format);
+      case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
       case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
@@ -2521,7 +2536,7 @@ public
       case CAST() then getName(exp.exp);
       case BOX() then getName(exp.exp);
       case UNBOX() then getName(exp.exp);
-      case MUTABLE() then getName(MutableCyclic.access(exp.exp));
+      case MUTABLE() then getName(Mutable.access(exp.exp));
       case SHARED_LITERAL() then getName(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then ComponentRef.toString(exp.fn);
       case INSTANCE_NAME() then "getInstanceName";
@@ -2554,14 +2569,17 @@ public
   algorithm
     exp := match exp
       local
-        PointerCyclic<Variable> varPointer;
+        PointerWeak<Variable> varPointer;
         Option<Expression> nominal;
         Operator operator;
         Operator.SizeClassification sizeClass;
 
       // replace variables with their nominal values
-      case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
-        nominal := Variable.getNominal(PointerCyclic.access(varPointer));
+      case CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref))
+      algorithm
+        InstNode.VAR_NODE(varPointer = varPointer) := ComponentRef.node(exp.cref);
+        nominal := Variable.getNominal(Pointer.access(PointerWeak.upgrade(varPointer)));
       then Util.getOptionOrDefault(nominal, exp);
 
       // remove negation
@@ -2620,7 +2638,7 @@ public
       case CAST() then toAbsyn(exp.exp);
       case BOX() then toAbsyn(exp.exp);
       case UNBOX() then toAbsyn(exp.exp);
-      case MUTABLE() then toAbsyn(MutableCyclic.access(exp.exp));
+      case MUTABLE() then toAbsyn(Mutable.access(exp.exp));
       case SHARED_LITERAL() then toAbsyn(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION()
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
@@ -2729,7 +2747,7 @@ public
                                Type.toDAE(exp.ty),
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
-      case MUTABLE() then toDAE(MutableCyclic.access(exp.exp));
+      case MUTABLE() then toDAE(Mutable.access(exp.exp));
 
       // EMPTY expressions can be a sign of something having gone wrong, but we want to allow them in
       // some cases such as in records, so only allow them if the caller requests it.
@@ -3031,7 +3049,7 @@ public
 
       case MUTABLE()
         algorithm
-          MutableCyclic.update(exp.exp, map(MutableCyclic.access(exp.exp), func));
+          Mutable.update(exp.exp, map(Mutable.access(exp.exp), func));
         then
           exp;
 
@@ -3229,7 +3247,7 @@ public
 
       case MUTABLE()
         algorithm
-          MutableCyclic.update(exp.exp, mapReverse(MutableCyclic.access(exp.exp), func));
+          Mutable.update(exp.exp, mapReverse(Mutable.access(exp.exp), func));
         then
           exp;
 
@@ -3396,7 +3414,7 @@ public
 
       case MUTABLE()
         algorithm
-          MutableCyclic.update(exp.exp, func(MutableCyclic.access(exp.exp)));
+          Mutable.update(exp.exp, func(Mutable.access(exp.exp)));
         then
           exp;
 
@@ -3607,7 +3625,7 @@ public
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
       case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
-      case MUTABLE() then fold(MutableCyclic.access(exp.exp), func, arg);
+      case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
       case SHARED_LITERAL() then fold(exp.exp, func, arg);
       case PARTIAL_FUNCTION_APPLICATION() then foldList(exp.args, func, arg);
       else arg;
@@ -3759,7 +3777,7 @@ public
 
       case TUPLE_ELEMENT() algorithm apply(exp.tupleExp, func); then ();
       case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
-      case MUTABLE() algorithm apply(MutableCyclic.access(exp.exp), func); then ();
+      case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
       case SHARED_LITERAL() algorithm apply(exp.exp, func); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyList(exp.args, func); then ();
       else ();
@@ -3895,7 +3913,7 @@ public
 
       case TUPLE_ELEMENT() algorithm func(exp.tupleExp); then ();
       case RECORD_ELEMENT() algorithm func(exp.recordExp); then ();
-      case MUTABLE() algorithm func(MutableCyclic.access(exp.exp)); then ();
+      case MUTABLE() algorithm func(Mutable.access(exp.exp)); then ();
       case SHARED_LITERAL() algorithm func(exp.exp); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyListShallow(exp.args, func); then ();
       else ();
@@ -4113,8 +4131,8 @@ public
 
       case MUTABLE()
         algorithm
-          (e1, arg) := mapFold(MutableCyclic.access(exp.exp), func, arg);
-          MutableCyclic.update(exp.exp, e1);
+          (e1, arg) := mapFold(Mutable.access(exp.exp), func, arg);
+          Mutable.update(exp.exp, e1);
         then
           exp;
 
@@ -4345,8 +4363,8 @@ public
 
       case MUTABLE()
         algorithm
-          (e1, arg) := func(MutableCyclic.access(exp.exp), arg);
-          MutableCyclic.update(exp.exp, e1);
+          (e1, arg) := func(Mutable.access(exp.exp), arg);
+          Mutable.update(exp.exp, e1);
         then
           exp;
 
@@ -4490,7 +4508,7 @@ public
 
       case TUPLE_ELEMENT() then contains(exp.tupleExp, func);
       case RECORD_ELEMENT() then contains(exp.recordExp, func);
-      case MUTABLE() then contains(MutableCyclic.access(exp.exp), func);
+      case MUTABLE() then contains(Mutable.access(exp.exp), func);
       case SHARED_LITERAL() then contains(exp.exp, func);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       else false;
@@ -4605,7 +4623,7 @@ public
 
       case TUPLE_ELEMENT() then func(exp.tupleExp);
       case RECORD_ELEMENT() then func(exp.recordExp);
-      case MUTABLE() then func(MutableCyclic.access(exp.exp));
+      case MUTABLE() then func(Mutable.access(exp.exp));
       case SHARED_LITERAL() then func(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       else false;
@@ -5128,7 +5146,7 @@ public
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
-      case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
+      case Type.COMPLEX() then makeOperatorRecordZero(Type.complexNode(ty));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
       then fail();
@@ -5706,7 +5724,7 @@ public
         then Prefixes.variabilityMax(variability(exp.exp), Subscript.variabilityList(exp.subscripts));
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
       case RECORD_ELEMENT() then variability(exp.recordExp);
-      case MUTABLE() then variability(MutableCyclic.access(exp.exp));
+      case MUTABLE() then variability(Mutable.access(exp.exp));
       case SHARED_LITERAL() then variability(exp.exp);
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
@@ -5787,7 +5805,7 @@ public
         then Prefixes.purityMin(purity(exp.exp), Subscript.purityList(exp.subscripts));
       case TUPLE_ELEMENT() then purity(exp.tupleExp);
       case RECORD_ELEMENT() then purity(exp.recordExp);
-      case MUTABLE() then purity(MutableCyclic.access(exp.exp));
+      case MUTABLE() then purity(Mutable.access(exp.exp));
       case SHARED_LITERAL() then purity(exp.exp);
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
@@ -5823,7 +5841,7 @@ public
     input Expression exp;
     output Expression outExp;
   algorithm
-    outExp := MUTABLE(MutableCyclic.create(exp));
+    outExp := MUTABLE(Mutable.create(exp));
   end makeMutable;
 
   function makeImmutable
@@ -5831,7 +5849,7 @@ public
     output Expression outExp;
   algorithm
     outExp := match exp
-      case MUTABLE() then MutableCyclic.access(exp.exp);
+      case MUTABLE() then Mutable.access(exp.exp);
       else exp;
     end match;
   end makeImmutable;
@@ -5850,10 +5868,10 @@ public
     input Expression mutableExp;
     input Expression value;
   protected
-    MutableCyclic<Expression> exp_ptr;
+    Mutable<Expression> exp_ptr;
   algorithm
     MUTABLE(exp = exp_ptr) := mutableExp;
-    MutableCyclic.update(exp_ptr, value);
+    Mutable.update(exp_ptr, value);
   end updateMutable;
 
   function applyMutable
@@ -5864,10 +5882,10 @@ public
       input output Expression exp;
     end FuncType;
   protected
-    MutableCyclic<Expression> exp_ptr;
+    Mutable<Expression> exp_ptr;
   algorithm
     MUTABLE(exp = exp_ptr) := mutableExp;
-    MutableCyclic.update(exp_ptr, func(MutableCyclic.access(exp_ptr)));
+    Mutable.update(exp_ptr, func(Mutable.access(exp_ptr)));
   end applyMutable;
 
   function isEmpty
@@ -5957,8 +5975,9 @@ public
         ComponentRef cref;
         array<Expression> arr;
 
-      case RECORD(ty = Type.COMPLEX(cls = node))
+      case RECORD(ty = Type.COMPLEX())
         algorithm
+          node := Type.complexNode(recordExp.ty);
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
         then
@@ -5966,7 +5985,7 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -5975,9 +5994,10 @@ public
         then
           CREF(ty, cref);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
@@ -5985,8 +6005,9 @@ public
         then
           makeEmptyArray(ty);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
           arr := Array.map(recordExp.elements, function nthRecordElement(index = index));
           ty := Type.liftArrayLeft(typeOf(arrayGet(arr, 1)),
@@ -6006,7 +6027,7 @@ public
       else
         algorithm
           ty := typeOf(recordExp);
-          Type.COMPLEX(cls = node) := Type.arrayElementType(ty);
+          node := Type.complexNode(Type.arrayElementType(ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := Type.liftArrayLeftList(
@@ -6036,14 +6057,15 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(typeOf(recordExp));
+          node := Type.complexNode(Type.arrayElementType(typeOf(recordExp)));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
-        then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
+        then makeEmptyArray(InstNode.getType(Class.nthComponent(index,
+          InstNode.getClass(Type.complexNode(Type.arrayElementType(recordExp.ty))))));
 
       case ARRAY()
         algorithm
@@ -6052,8 +6074,9 @@ public
         then
           makeArray(ty, arr);
 
-      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node),
@@ -6075,7 +6098,7 @@ public
 
       else
         algorithm
-          Type.COMPLEX(cls = node) := typeOf(recordExp);
+          node := Type.complexNode(typeOf(recordExp));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));
@@ -6111,8 +6134,9 @@ public
 
       case RANGE()
         algorithm
-          exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), Absyn.dummyInfo);
+          exp.ty := TypeCheck.keepRangeSize(
+            TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
+              typeOf(exp.start), Absyn.dummyInfo), exp.ty);
         then
           ();
 
@@ -6148,15 +6172,15 @@ public
     input output Expression exp;
     input list<tuple<InstNode, Expression>> iterators;
           output list<Expression> ranges = {};
-          output list<MutableCyclic<Expression>> iters = {};
+          output list<Mutable<Expression>> iters = {};
   protected
     InstNode node;
     Expression range;
-    MutableCyclic<Expression> iter;
+    Mutable<Expression> iter;
   algorithm
     for i in iterators loop
       (node, range) := i;
-      iter := MutableCyclic.create(INTEGER(0));
+      iter := Mutable.create(INTEGER(0));
       ranges := list(replaceIterator(r, node, MUTABLE(iter)) for r in ranges);
       exp := replaceIterator(exp, node, MUTABLE(iter));
       iters := iter :: iters;
@@ -6184,7 +6208,7 @@ public
   protected
     Expression e;
     list<Expression> ranges = {};
-    list<MutableCyclic<Expression>> iters = {};
+    list<Mutable<Expression>> iters = {};
   algorithm
     (e, ranges, iters) := createIterationRanges(exp, iterators);
     result := foldReduction2(e, ranges, iters, foldExp, mapFn, foldFn);
@@ -6193,7 +6217,7 @@ public
   function foldReduction2
     input Expression exp;
     input list<Expression> ranges;
-    input list<MutableCyclic<Expression>> iterators;
+    input list<Mutable<Expression>> iterators;
     input Expression foldExp;
     input MapFn mapFn;
     input FoldFn foldFn;
@@ -6211,8 +6235,8 @@ public
   protected
     Expression range, value;
     list<Expression> ranges_rest;
-    MutableCyclic<Expression> iter;
-    list<MutableCyclic<Expression>> iters_rest;
+    Mutable<Expression> iter;
+    list<Mutable<Expression>> iters_rest;
     ExpressionIterator range_iter;
   algorithm
     if listEmpty(ranges) then
@@ -6226,7 +6250,7 @@ public
 
       while ExpressionIterator.hasNext(range_iter) loop
         (range_iter, value) := ExpressionIterator.next(range_iter);
-        MutableCyclic.update(iter, value);
+        Mutable.update(iter, value);
         result := foldReduction2(exp, ranges_rest, iters_rest, result, mapFn, foldFn);
       end while;
     end if;
@@ -6316,8 +6340,8 @@ public
     output Boolean matching;
   algorithm
     matching := match sub
-      case Subscript.SPLIT_INDEX() then InstNode.refEqual(sub.node, node);
-      case Subscript.SPLIT_PROXY() then InstNode.refEqual(sub.parent, node);
+      case Subscript.SPLIT_INDEX() then InstNode.refEqual(InstNode.borrow(sub.node), node);
+      case Subscript.SPLIT_PROXY() then InstNode.refEqual(InstNode.borrow(sub.parent), node);
       else false;
     end match;
   end filterSplitIndices2;
@@ -6483,7 +6507,7 @@ public
     list<Subscript> subs;
   algorithm
     exp := match exp
-      case MUTABLE() then MutableCyclic.access(exp.exp);
+      case MUTABLE() then Mutable.access(exp.exp);
 
       case SUBSCRIPTED_EXP(subscripts = subs)
         then applySubscripts(subs, exp.exp);
@@ -6986,12 +7010,14 @@ public
   algorithm
     exp := match exp
       local
-        PointerCyclic<Variable> var;
+        PointerWeak<Variable> var;
         Integer v;
 
       // backend replacement
-      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
-      then match PointerCyclic.access(var)
+      case Expression.CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref)) and ComponentRef.isResizable(exp.cref)
+      then match Pointer.access(PointerWeak.upgrade(
+          InstNode.varPointer(ComponentRef.node(exp.cref))))
           // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);

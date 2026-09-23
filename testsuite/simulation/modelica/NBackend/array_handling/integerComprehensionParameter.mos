@@ -1,0 +1,49 @@
+// name: integerComprehensionParameter
+// keywords: NewBackend
+// status: correct
+//
+// An Integer array comprehension as the modifier of a Real parameter of an
+// array of components. The vectorized binding used to get the wrong type
+// Real[1,1] and crashed in the attribute scalarization.
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+  block Gain
+    parameter Real k = 0;
+    Real y;
+  equation
+    y = k * time;
+  end Gain;
+
+  model integerComprehensionParameter
+    parameter Integer n = 2;
+    Gain g[n](final k = {(i-1) for i in 1:n});
+    Real z;
+  equation
+    z = sum(g.y);
+  end integerComprehensionParameter;
+"); getErrorString();
+
+simulate(integerComprehensionParameter, stopTime=2.0); getErrorString();
+val(g[1].k, 0.0);
+val(g[2].k, 0.0);
+val(z, 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "integerComprehensionParameter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'integerComprehensionParameter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 2.0
+// endResult

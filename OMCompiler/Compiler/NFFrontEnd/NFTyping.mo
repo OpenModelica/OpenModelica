@@ -50,6 +50,7 @@ import Equation = NFEquation;
 import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import NFModifier.Modifier;
 import SimplifyExp = NFSimplifyExp;
 import Statement = NFStatement;
@@ -147,7 +148,8 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
-  InstNode con, de;
+  NFInstNode.ScopeRef con, de;
+  NFInstNode.ScopeRef rec_con;
 algorithm
   () := match c
     case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
@@ -165,9 +167,9 @@ algorithm
         end if;
 
         () := match c.ty
-          case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+          case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_con))
             algorithm
-              typeStructor(con);
+              typeStructor(InstNode.borrow(rec_con));
             then
               ();
 
@@ -203,8 +205,8 @@ algorithm
     case Class.INSTANCED_BUILTIN(ty = Type.COMPLEX(complexTy =
         ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de)))
       algorithm
-        typeStructor(con);
-        typeStructor(de);
+        typeStructor(InstNode.borrow(con));
+        typeStructor(InstNode.borrow(de));
       then
         ();
 
@@ -250,7 +252,9 @@ function typeClassType
   output Type ty;
 protected
   Class cls, ty_cls;
-  InstNode node, ty_node;
+  InstNode ty_node;
+  NFInstNode.ScopeRef node;
+  Type cls_ty;
   Function fn;
   Boolean is_expandable;
 algorithm
@@ -259,15 +263,16 @@ algorithm
   ty := match cls
     case Class.INSTANCED_CLASS(restriction = Restriction.CONNECTOR(isExpandable = is_expandable))
       algorithm
-        ty := Type.COMPLEX(clsNode, makeConnectorType(cls.elements, is_expandable));
+        ty := Type.COMPLEX(InstNode.identityCell(clsNode), makeConnectorType(cls.elements, is_expandable));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
         ty;
 
-    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(cls = ty_node, complexTy = ComplexType.RECORD(constructor = node)))
+    case Class.INSTANCED_CLASS(ty = cls_ty as Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = node)))
       algorithm
-        ty := Type.COMPLEX(ty_node, makeRecordType(node));
+        ty_node := Type.complexNode(cls_ty);
+        ty := Type.COMPLEX(InstNode.identityCell(ty_node), makeRecordType(node));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -276,7 +281,7 @@ algorithm
     // A long class declaration of a type extending from a type has the type of the base class.
     case Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = ComplexType.EXTENDS_TYPE(node)))
       algorithm
-        ty := typeClassType(node, componentBinding, context, instanceNode);
+        ty := typeClassType(InstNode.borrow(node), componentBinding, context, instanceNode);
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -323,7 +328,7 @@ function makeConnectorType
   input Boolean isExpandable;
   output ComplexType connectorTy;
 protected
-  list<InstNode> pots = {}, flows = {}, streams = {}, exps = {};
+  list<NFInstNode.ScopeRef> pots = {}, flows = {}, streams = {}, exps = {};
   ConnectorType.Type cty;
 algorithm
   if isExpandable then
@@ -331,9 +336,9 @@ algorithm
       cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
 
       if intBitAnd(cty, ConnectorType.EXPANDABLE) > 0 then
-        exps := c :: exps;
+        exps := InstNode.scopeRef(c) :: exps;
       else
-        pots := c :: pots;
+        pots := InstNode.scopeRef(c) :: pots;
       end if;
     end for;
 
@@ -343,11 +348,11 @@ algorithm
       cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
 
       if intBitAnd(cty, ConnectorType.FLOW) > 0 then
-        flows := c :: flows;
+        flows := InstNode.scopeRef(c) :: flows;
       elseif intBitAnd(cty, ConnectorType.STREAM) > 0 then
-        streams := c :: streams;
+        streams := InstNode.scopeRef(c) :: streams;
       elseif intBitAnd(cty, ConnectorType.POTENTIAL) > 0 then
-        pots := c :: pots;
+        pots := InstNode.scopeRef(c) :: pots;
       else
         Error.addInternalError("Invalid connector type on component " + InstNode.name(c), InstNode.info(c));
         fail();
@@ -406,7 +411,7 @@ algorithm
 end checkConnectorTypeBalance;
 
 function makeRecordType
-  input InstNode constructor;
+  input NFInstNode.ScopeRef constructor;
   output ComplexType recordTy;
 protected
   CachedData cache;
@@ -414,13 +419,13 @@ protected
   array<Record.Field> fields;
   UnorderedMap<String, Integer> indexMap;
 algorithm
-  cache := InstNode.getFuncCache(constructor);
+  cache := InstNode.getFuncCache(InstNode.borrow(constructor));
 
   recordTy := matchcontinue cache
     case CachedData.FUNCTION()
       algorithm
         fn := List.find(cache.funcs, Function.isDefaultRecordConstructor);
-        (fields, indexMap) := Record.collectRecordFields(fn.node);
+        (fields, indexMap) := Record.collectRecordFields(InstNode.fromHandle(fn.node));
       then
         ComplexType.RECORD(constructor, fields, indexMap);
 
@@ -1451,9 +1456,9 @@ algorithm
 
     case Expression.MUTABLE()
       algorithm
-        e1 := MutableCyclic.access(exp.exp);
+        e1 := Mutable.access(exp.exp);
         (e1, ty, variability, purity) := typeExp(e1, context, info, retype);
-        exp.exp := MutableCyclic.create(e1);
+        exp.exp := Mutable.create(e1);
       then
         (exp, ty, variability, purity);
 
@@ -1610,10 +1615,10 @@ algorithm
         algorithm
           // Count the number of dimensions on the parent the subscript came
           // from, and add that many split index subscripts to the list.
-          dim_count := InstNode.dimensionCount(s.parent);
+          dim_count := InstNode.dimensionCount(InstNode.borrow(s.parent));
 
           for i in 1:dim_count loop
-            outSubscripts := Subscript.makeSplitIndex(s.parent, i) :: outSubscripts;
+            outSubscripts := Subscript.makeSplitIndex(InstNode.borrow(s.parent), i) :: outSubscripts;
           end for;
 
           // If the origin and parent of the subscript is not the same it
@@ -1624,14 +1629,14 @@ algorithm
           //   T x[1, 2]
           // we then have origin = T and parent = x and generate
           //   T x[1, 2](start = fill({1, 2, 3}, size(x, 1), size(x, 2))).
-          if not InstNode.refEqual(s.origin, s.parent) then
+          if not InstNode.refEqual(InstNode.borrow(s.origin), InstNode.borrow(s.parent)) then
             // The number of fill dimensions is size(parent) - size(origin).
-            dim_count := dim_count - InstNode.dimensionCount(s.origin);
+            dim_count := dim_count - InstNode.dimensionCount(InstNode.borrow(s.origin));
 
             // Add size expressions to the list of fill dimensions.
             if dim_count > 0 then
-              ty := InstNode.getType(s.parent);
-              cr_exp := Expression.fromCref(ComponentRef.fromNode(s.parent, ty));
+              ty := InstNode.getType(InstNode.borrow(s.parent));
+              cr_exp := Expression.fromCref(ComponentRef.fromNode(InstNode.borrow(s.parent), ty));
               dims := Type.arrayDims(ty);
 
               for i in 1:dim_count loop
@@ -1866,9 +1871,10 @@ algorithm
 
   for cr in crl loop
     () := match cr
-      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = _)
+      case ComponentRef.CREF(subscripts = _)
+          guard InstNode.isComponent(ComponentRef.node(cr))
         algorithm
-          node := InstNode.resolveOuter(cr.node);
+          node := InstNode.resolveOuter(ComponentRef.node(cr));
           c := InstNode.component(node);
 
           // If the component is untyped it might have an array type whose dimensions
@@ -2023,6 +2029,8 @@ function typeCref2
         output Variability subsVariability;
 
   import NFComponentRef.Origin;
+protected
+  InstNode cr_node;
 algorithm
   (cref, subsVariability) := match cref
     local
@@ -2034,17 +2042,18 @@ algorithm
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
-        cref.ty := InstNode.getType(cref.node);
+        cref.ty := InstNode.getType(ComponentRef.node(cref));
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
         (cref, Variability.CONSTANT);
 
-    case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
+    case ComponentRef.CREF() guard InstNode.isComponent(ComponentRef.node(cref))
       algorithm
+        cr_node := ComponentRef.node(cref);
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_ty := typeComponent(cref.node, InstContext.nodeContext(cref.node, context), typeChildren = firstPart or not InstContext.inDimension(context));
+        node_ty := typeComponent(cr_node, InstContext.nodeContext(cr_node, context), typeChildren = firstPart or not InstContext.inDimension(context));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, Expression.CREF(node_ty, cref), context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
@@ -2052,22 +2061,23 @@ algorithm
       then
         (ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr), subsVariability);
 
-    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
-      guard firstPart and InstNode.isFunction(cref.node)
+    case ComponentRef.CREF()
+      guard InstNode.isClass(ComponentRef.node(cref)) and firstPart and
+            InstNode.isFunction(ComponentRef.node(cref))
       algorithm
-        fn :: _ := Function.typeNodeCache(cref.node);
+        fn :: _ := Function.typeNodeCache(ComponentRef.node(cref));
         cref.ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTION_REFERENCE);
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
         (cref, Variability.CONSTANT);
 
-    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
+    case ComponentRef.CREF() guard InstNode.isClass(ComponentRef.node(cref))
       algorithm
-        cref.ty := InstNode.getType(cref.node);
+        cref.ty := InstNode.getType(ComponentRef.node(cref));
       then
         (cref, Variability.CONSTANT);
 
-    case ComponentRef.CREF(node = InstNode.NAME_NODE())
+    case ComponentRef.CREF() guard InstNode.isName(ComponentRef.node(cref))
       algorithm
         (_, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
           Expression.CREF(cref.ty, cref), context, info, checkSubscripts = false);
@@ -2928,6 +2938,7 @@ algorithm
       Component comp;
       Type ty;
       InstNode node;
+      NFInstNode.NodeHandle out_cell;
       Expression exp;
 
     case Sections.EXTERNAL()
@@ -2954,13 +2965,14 @@ algorithm
         // If we have a single output, set the external declaration's output to
         // be a reference to the function's output. Otherwise leave it as empty.
         if single_output then
-          {node} := fn.outputs;
+          {out_cell} := fn.outputs;
+          node := InstNode.fromHandle(out_cell);
           ty := InstNode.getType(node);
           extDecl.outputRef := ComponentRef.fromNode(node, ty);
         end if;
 
         // Generate function arguments from the function's components.
-        comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(fn.node)));
+        comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(InstNode.fromHandle(fn.node))));
         if arrayLength(comps) > 0 then
           args := {};
           for c in comps loop
@@ -3099,7 +3111,7 @@ function typeConnect
   input Expression lhsConn;
   input Expression rhsConn;
   input InstContext.Type context;
-  input InstNode scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation connEq;
 protected
@@ -3165,7 +3177,7 @@ algorithm
   () := match connExp
     case Expression.CREF(cref = cr as ComponentRef.CREF(origin = Origin.CREF))
       algorithm
-        if not InstNode.isConnector(cr.node) then
+        if not InstNode.isConnector(ComponentRef.node(cr)) then
           Error.addSourceMessageAndFail(Error.INVALID_CONNECTOR_TYPE,
             {ComponentRef.toString(cr)}, info);
         end if;
@@ -3175,10 +3187,11 @@ algorithm
             {ComponentRef.toString(cr)}, info);
         end if;
 
-        if ComponentRef.subscriptsVariability(cr) > Variability.PARAMETER then
+        // subscripts that depend on resizable parameters are allowed
+        if ComponentRef.subscriptsVariability(cr) > Variability.NON_STRUCTURAL_PARAMETER then
           subs := ComponentRef.subscriptsAllFlat(cr);
           for sub in subs loop
-            if Subscript.variability(sub) > Variability.PARAMETER then
+            if Subscript.variability(sub) > Variability.NON_STRUCTURAL_PARAMETER then
               Error.addSourceMessage(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
                 {Expression.toString(connExp), Subscript.toString(sub)}, info);
               fail();
@@ -3211,7 +3224,7 @@ algorithm
     // non-connector is the very last part.
     case ComponentRef.CREF(origin = Origin.CREF)
       then if isConnector then
-        checkConnectorForm(cref.restCref, InstNode.isConnector(cref.node)) else false;
+        checkConnectorForm(cref.restCref, InstNode.isConnector(ComponentRef.node(cref))) else false;
 
     else true;
   end match;
@@ -3481,7 +3494,7 @@ function typeEqualityEquation
   input Expression lhsExp;
   input Expression rhsExp;
   input InstContext.Type context;
-  input InstNode scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation eq;
 protected
@@ -3510,7 +3523,7 @@ algorithm
     fail();
   end if;
 
-  eq := Equation.makeEquality(e1, e2, ty, source, scope);
+  eq := Equation.EQUALITY(e1, e2, ty, scope, source, NFEquation.ScalarizeMode.NO_PREFERENCE);
 
   if Expression.isExternalCall(e2) then
     Call.updateExternalRecordArgs(Expression.tupleElements(e1));
@@ -3554,7 +3567,7 @@ protected
   InstNode iterator;
   Option<Expression> range;
   list<Equation> body;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
   DAE.ElementSource src;
   SourceInfo info;
   Expression range_exp;
@@ -3572,7 +3585,8 @@ algorithm
   (range_exp, _, range_var) := typeIterator(iterator, range_exp, context, structural = true);
   next_context := InstContext.set(context, NFInstContext.FOR);
 
-  if range_var > Variability.PARAMETER or Structural.isExpressionNotFixed(range_exp, maxDepth = 100) then
+  // A range with resizable parameters is still expandable, its bounds are evaluated to resolve connections.
+  if range_var > Variability.NON_STRUCTURAL_PARAMETER or Structural.isExpressionNotFixed(range_exp, maxDepth = 100) then
     next_context := InstContext.set(context, NFInstContext.NONEXPANDABLE);
   end if;
 
@@ -3583,7 +3597,7 @@ end typeForEquation;
 function typeIfEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
-  input InstNode scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation ifEq;
 protected
@@ -3636,7 +3650,7 @@ end typeIfEquation;
 function typeWhenEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
-  input InstNode scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   output Equation whenEq;
 protected

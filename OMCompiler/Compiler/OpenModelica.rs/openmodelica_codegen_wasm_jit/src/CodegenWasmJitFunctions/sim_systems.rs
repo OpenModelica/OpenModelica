@@ -7,7 +7,6 @@
 //! shared lowering primitives (`FnCtx`, `compile_exp`, `coerce`, `mem_arg`, …)
 //! through `super::*` without widening their visibility.
 
-use std::sync::Arc;
 
 use metamodelica::Result;
 
@@ -74,18 +73,18 @@ pub(crate) fn residual_rows(residuals: &[NlsResidual]) -> Option<usize> {
 /// (a run `r[res_index + shift]` from iterating `exp` over integer ranges), or a
 /// `SES_GENERIC_RESIDUAL` (the same over a list of flat indices).
 pub(crate) enum NlsResidual {
-    Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
+    Scalar { exp: metamodelica::Ref<DAE::Exp>, res_index: i32 },
     /// An array-valued `SES_RESIDUAL`: `rows` entries from `res_index`.
-    Array { exp: Arc<DAE::Exp>, res_index: i32, rows: usize },
+    Array { exp: metamodelica::Ref<DAE::Exp>, res_index: i32, rows: usize },
     For {
         iterators: Vec<BackendDAE::SimIterator>,
-        exp: Arc<DAE::Exp>,
+        exp: metamodelica::Ref<DAE::Exp>,
         res_index: i32,
     },
     Generic {
         iterators: Vec<BackendDAE::SimIterator>,
         scal_indices: Vec<i32>,
-        exp: Arc<DAE::Exp>,
+        exp: metamodelica::Ref<DAE::Exp>,
         res_index: i32,
     },
 }
@@ -106,7 +105,7 @@ impl NlsResidual {
 /// `SES_INVERSE_ALGORITHM` — the known output crefs whose displacement is it.
 pub(crate) enum NlsResiduals {
     Explicit(Vec<NlsResidual>),
-    InverseAlgorithm(Vec<Arc<DAE::ComponentRef>>),
+    InverseAlgorithm(Vec<metamodelica::Ref<DAE::ComponentRef>>),
 }
 
 /// A torn system's iteration variable: its `SimData` slot and the slot's type.
@@ -258,7 +257,7 @@ fn emit_generic_residual(
     ctx: &mut FnCtx,
     iterators: &[BackendDAE::SimIterator],
     scal_indices: &[i32],
-    exp: &Arc<DAE::Exp>,
+    exp: &metamodelica::Ref<DAE::Exp>,
     res_index: i32,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -281,7 +280,7 @@ fn emit_generic_residual(
 /// C's `OLD_<i>` backup of the outputs an inverse algorithm must not change.
 pub(crate) fn backup_known_outputs(
     ctx: &mut FnCtx,
-    crefs: &[Arc<DAE::ComponentRef>],
+    crefs: &[metamodelica::Ref<DAE::ComponentRef>],
 ) -> Result<Vec<(u32, WTy)>> {
     let mut saved = Vec::with_capacity(crefs.len());
     for cr in crefs {
@@ -297,7 +296,7 @@ pub(crate) fn backup_known_outputs(
 /// Put the [`backup_known_outputs`] values back.
 pub(crate) fn restore_known_outputs(
     ctx: &mut FnCtx,
-    crefs: &[Arc<DAE::ComponentRef>],
+    crefs: &[metamodelica::Ref<DAE::ComponentRef>],
     saved: &[(u32, WTy)],
 ) -> Result<()> {
     for (cr, &(local, wty)) in crefs.iter().zip(saved) {
@@ -314,7 +313,7 @@ pub(crate) fn restore_known_outputs(
 fn emit_inverse_algorithm_residual(
     ctx: &mut FnCtx,
     n: usize,
-    known: &[Arc<DAE::ComponentRef>],
+    known: &[metamodelica::Ref<DAE::ComponentRef>],
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -351,24 +350,34 @@ fn emit_inverse_algorithm_residual(
 }
 
 /// Emit a `SES_FOR_RESIDUAL`: nested `for` loops (outermost first) storing
-/// `r[res_index + Σ(iter_k - start_k)] = exp` (C's `indexShift`). Each iterator
-/// registers as a wasm local so `compile_exp` resolves `x[$i]` and bare `$i`.
+/// `r[res_index + flatten(offsets)] = exp` (C's `indexShift`/`forIteratorBody`),
+/// where `flatten` is a mixed-radix (Horner) combination of each iterator's own
+/// offset and size -- first-listed iterator least significant -- not a plain sum,
+/// which is only bijective for a single iterator and otherwise collapses most
+/// (i1,i2,...) combinations onto the same `res[]` slot, leaving the rest of the
+/// residual vector uninitialized. Each iterator registers as a wasm local so
+/// `compile_exp` resolves `x[$i]` and bare `$i`.
 fn emit_for_residual(
     ctx: &mut FnCtx,
     iterators: &[BackendDAE::SimIterator],
-    exp: &Arc<DAE::Exp>,
+    exp: &metamodelica::Ref<DAE::Exp>,
     res_index: i32,
     outer: &[(u32, u32)],
 ) -> Result<()> {
     use we::Instruction as I;
     let Some((sim_it, rest)) = iterators.split_first() else {
-        // addr = r + (res_index + Σ(it - start)) * 8
+        // addr = r + (res_index + flatten(outer)) * 8, outer[k] = (offset_k, size_k),
+        // flatten = off_0 + size_0*(off_1 + size_1*(... + size_{n-2}*off_{n-1}))
         ctx.emit(I::LocalGet(2)); // r
         ctx.emit(I::I32Const(res_index));
-        for &(it, start_l) in outer {
-            ctx.emit(I::LocalGet(it));
-            ctx.emit(I::LocalGet(start_l));
-            ctx.emit(I::I32Sub);
+        if let Some(&(last_off, _)) = outer.last() {
+            ctx.emit(I::LocalGet(last_off));
+            for &(off_l, size_l) in outer[..outer.len() - 1].iter().rev() {
+                ctx.emit(I::LocalGet(size_l));
+                ctx.emit(I::I32Mul);
+                ctx.emit(I::LocalGet(off_l));
+                ctx.emit(I::I32Add);
+            }
             ctx.emit(I::I32Add);
         }
         ctx.emit(I::I32Const(8));
@@ -379,7 +388,7 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = sim_it else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, size, .. } = sim_it else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -400,14 +409,28 @@ fn emit_for_residual(
     let pw = compile_exp(ctx, stop)?;
     coerce(ctx, pw, WTy::I32);
     ctx.emit(I::LocalSet(stop_l));
+    // this iterator's offset ((it-start)/step) and size, for the flatten above
+    let off_l = ctx.alloc_temp(WTy::I32);
+    let size_l = ctx.alloc_temp(WTy::I32);
+    {
+        let w = compile_exp(ctx, size)?;
+        coerce(ctx, w, WTy::I32);
+    }
+    ctx.emit(I::LocalSet(size_l));
     ctx.emit(I::Block(we::BlockType::Empty));
     ctx.emit(I::Loop(we::BlockType::Empty));
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(stop_l));
     ctx.emit(I::I32GtS);
     ctx.emit(I::BrIf(1));
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(start_l));
+    ctx.emit(I::I32Sub);
+    ctx.emit(I::LocalGet(step_l));
+    ctx.emit(I::I32DivS);
+    ctx.emit(I::LocalSet(off_l));
     let mut inner = outer.to_vec();
-    inner.push((it, start_l));
+    inner.push((off_l, size_l));
     emit_for_residual(ctx, rest, exp, res_index, &inner)?;
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(step_l));
@@ -767,7 +790,7 @@ pub(crate) fn emit_nls_jac_csc_body(
 /// `rt_solve_lin_dense_sparse` over `rt_linsolve`, matching C's per-system choice.
 pub(crate) fn compile_linear_system(
     ctx: &mut FnCtx,
-    iter_vars: &[Arc<DAE::ComponentRef>],
+    iter_vars: &[metamodelica::Ref<DAE::ComponentRef>],
     residuals: &[NlsResidual],
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
@@ -1186,7 +1209,7 @@ fn emit_lin_solve_scatter(
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn compile_linear_system_analytic(
     ctx: &mut FnCtx,
-    iter_vars: &[Arc<DAE::ComponentRef>],
+    iter_vars: &[metamodelica::Ref<DAE::ComponentRef>],
     residuals: &[NlsResidual],
     seed_offs: &[u32],
     result_offs: &[u32],
@@ -1440,7 +1463,7 @@ pub(crate) fn lin_jac_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> (Vec
 pub(crate) fn compile_linear_system_analytic_csc(
     ctx: &mut FnCtx,
     handle: i32,
-    iter_vars: &[Arc<DAE::ComponentRef>],
+    iter_vars: &[metamodelica::Ref<DAE::ComponentRef>],
     residuals: &[NlsResidual],
     seed_offs: &[u32],
     result_offs: &[u32],
@@ -1754,10 +1777,10 @@ pub(crate) fn nls_lss_handle(k: u32) -> u32 {
 /// [`lin_use_sparse`], matching C's per-system choice.
 pub(crate) fn compile_linear_system_symbolic(
     ctx: &mut FnCtx,
-    vars: &[Arc<DAE::ComponentRef>],
+    vars: &[metamodelica::Ref<DAE::ComponentRef>],
     n: usize,
-    a_entries: &[(usize, usize, &Arc<DAE::Exp>)],
-    b_exps: &[&Arc<DAE::Exp>],
+    a_entries: &[(usize, usize, &metamodelica::Ref<DAE::Exp>)],
+    b_exps: &[&metamodelica::Ref<DAE::Exp>],
     inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     index: i32,
 ) -> Result<()> {
@@ -1801,7 +1824,7 @@ pub(crate) fn compile_linear_system_symbolic(
         let nnz = a_entries.len();
         // Column-major, row-sorted within a column (CSC requires it; simJac is
         // already column-major but re-sort defensively).
-        let mut entries: Vec<(usize, usize, &Arc<DAE::Exp>)> = a_entries.to_vec();
+        let mut entries: Vec<(usize, usize, &metamodelica::Ref<DAE::Exp>)> = a_entries.to_vec();
         entries.sort_by_key(|&(row, col, _)| (col, row));
         let mut colptr = vec![0i32; n + 1];
         for &(_, col, _) in &entries {
@@ -1925,7 +1948,7 @@ fn emit_b_exps(
     ctx: &mut FnCtx,
     base: u32,
     b_off: u32,
-    b_exps: &[&Arc<DAE::Exp>],
+    b_exps: &[&metamodelica::Ref<DAE::Exp>],
 ) -> Result<()> {
     for (i, exp) in b_exps.iter().enumerate() {
         ctx.emit(we::Instruction::LocalGet(base));
@@ -2231,7 +2254,7 @@ pub(crate) fn emit_dt_solving(ctx: &mut FnCtx, index: i32, strict: i32, linear: 
 /// violated local constraint reports itself and ends the evaluation, which is what
 /// `residualFuncConstraints` returning 1 does. Nothing more is written into `r`, so
 /// the solver reads the previous evaluation's values — as C does on that return.
-pub(crate) fn emit_dt_local_constraint(ctx: &mut FnCtx, cond: &Arc<DAE::Exp>) -> Result<()> {
+pub(crate) fn emit_dt_local_constraint(ctx: &mut FnCtx, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
     use we::Instruction as I;
     let w = compile_exp(ctx, cond)?;
     coerce(ctx, w, WTy::I32);
@@ -2257,7 +2280,7 @@ pub(crate) fn emit_dynamic_tearing(
     casual_index: i32,
     strict_index: i32,
     linear: bool,
-    cons: &[(Arc<DAE::Exp>, bool)],
+    cons: &[(metamodelica::Ref<DAE::Exp>, bool)],
     lower_casual: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     lower_strict: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {

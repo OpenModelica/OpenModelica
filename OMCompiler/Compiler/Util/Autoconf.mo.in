@@ -14,6 +14,11 @@ encapsulated package Autoconf
   constant String exeExt = if isWindows then ".exe" else "";
   constant String dllExt = "@SHREXT@";
 
+  // omc itself built as a wasm module (the browser build): no dlopen, no native
+  // toolchain, a shared library is a wasm side module. No configure run produces
+  // this; the Rust port's hand-written Autoconf.rs sets it from the target arch.
+  constant Boolean isWasm = dllExt == ".wasm";
+
   constant Boolean haveBStatic = @BSTATIC@;
   constant String bstatic = if haveBStatic then "-Wl,-Bstatic" else "";
   constant String bdynamic = if haveBStatic then "-Wl,-Bdynamic" else "";

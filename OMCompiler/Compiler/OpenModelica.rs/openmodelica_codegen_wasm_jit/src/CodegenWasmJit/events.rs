@@ -8,8 +8,8 @@ use super::*;
 /// index as it appears in the `sample(index,…)` calls in equations.
 pub(super) struct SampleInfo {
     pub(super) index: i32,
-    pub(super) start: Arc<DAE::Exp>,
-    pub(super) interval: Arc<DAE::Exp>,
+    pub(super) start: metamodelica::Ref<DAE::Exp>,
+    pub(super) interval: metamodelica::Ref<DAE::Exp>,
 }
 
 /// One state-event zero-crossing. The driver's DASKR root callback watches `g`
@@ -20,12 +20,12 @@ pub(crate) enum ZcInfo {
     /// step. A Real inequality is lowered with a hysteresis band and held-relation
     /// direction (see `compile_relation`), consistent with how the same relation
     /// reads in the equations, so an event fires exactly when the relation flips.
-    Bool { expr: Arc<DAE::Exp> },
+    Bool { expr: metamodelica::Ref<DAE::Exp> },
     /// A math-event builtin (`integer`/`floor`/`ceil`/`div`/`mod`): `g =
     /// (test(fresh arg) != test(pre[idx])) ? 1 : -1`, C's `zeroCrossingTpl`. `ops`
     /// are the operands (1 for integer/floor/ceil, 2 for div/mod).
     /// `expr` is the original call, only for the `LOG_EVENTS` description.
-    Math { kind: MathEventKind, ops: Vec<Arc<DAE::Exp>>, idx: u32, expr: Arc<DAE::Exp> },
+    Math { kind: MathEventKind, ops: Vec<metamodelica::Ref<DAE::Exp>>, idx: u32, expr: metamodelica::Ref<DAE::Exp> },
 }
 
 /// A math-event builtin's discretizing test (what `mathEventsValuePre` compares).
@@ -103,7 +103,7 @@ pub(super) fn collect_zero_crossings(
                         .is_some() =>
                 {
                     let kind = math_event_kind(path_ident_name(path).unwrap(), count(expLst) as usize).unwrap();
-                    let argv: Vec<Arc<DAE::Exp>> = lst(expLst).cloned().collect();
+                    let argv: Vec<metamodelica::Ref<DAE::Exp>> = lst(expLst).cloned().collect();
                     let idx = math_event_index(argv.last().unwrap())?;
                     let ops = argv[..argv.len() - 1].to_vec();
                     out.push(ZcInfo::Math { kind, ops, idx, expr: relation.clone() });
@@ -119,9 +119,9 @@ pub(super) fn collect_zero_crossings(
 /// offsets `gout` mixed-radix, first iterator least significant. The counts are
 /// constant, so the same slots come from substituting each iterator value in.
 fn expand_iter_crossing(
-    relation: &Arc<DAE::Exp>,
+    relation: &metamodelica::Ref<DAE::Exp>,
     iters: &Option<List<openmodelica_backend_types::BackendDAE::SimIterator>>,
-) -> Result<Vec<Arc<DAE::Exp>>> {
+) -> Result<Vec<metamodelica::Ref<DAE::Exp>>> {
     let Some(iters) = iters else { return Ok(vec![relation.clone()]) };
     let mut out = vec![relation.clone()];
     for iter in lst(iters) {
@@ -145,13 +145,13 @@ fn expand_iter_crossing(
 }
 
 /// An iterator's name and per-iteration value, and the same for its dependents.
-type IteratorBindings = (String, Vec<Arc<DAE::Exp>>, Vec<(String, Vec<Arc<DAE::Exp>>)>);
+type IteratorBindings = (String, Vec<metamodelica::Ref<DAE::Exp>>, Vec<(String, Vec<metamodelica::Ref<DAE::Exp>>)>);
 
 pub(super) fn iterator_bindings(
     iter: &openmodelica_backend_types::BackendDAE::SimIterator,
 ) -> Result<IteratorBindings> {
     use openmodelica_backend_types::BackendDAE::SimIterator as S;
-    let iconst = |v: i32| Arc::new(DAE::Exp::ICONST { integer: v });
+    let iconst = |v: i32| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v });
     let (name, sub_iter, values) = match iter {
         S::SIM_ITERATOR_RANGE { name, start, step, non_resizable_size, sub_iter, .. } => {
             let (Some(start), Some(step)) = (const_int_exp(start), const_int_exp(step)) else {
@@ -179,10 +179,10 @@ pub(super) fn const_int_exp(e: &DAE::Exp) -> Option<i32> {
 }
 
 /// Replace the bare iterator `name`, including inside cref subscripts.
-pub(super) fn subst_iterator(exp: &Arc<DAE::Exp>, name: &str, value: &Arc<DAE::Exp>) -> Result<Arc<DAE::Exp>> {
+pub(super) fn subst_iterator(exp: &metamodelica::Ref<DAE::Exp>, name: &str, value: &metamodelica::Ref<DAE::Exp>) -> Result<metamodelica::Ref<DAE::Exp>> {
     let name = name.to_string();
     let value = value.clone();
-    let replace = move |e: Arc<DAE::Exp>, acc: i32| -> Result<(Arc<DAE::Exp>, i32)> {
+    let replace = move |e: metamodelica::Ref<DAE::Exp>, acc: i32| -> Result<(metamodelica::Ref<DAE::Exp>, i32)> {
         if let DAE::Exp::CREF { componentRef, .. } = &*e {
             if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef {
                 if subscriptLst.is_empty() && ident.as_str() == name {
@@ -201,7 +201,7 @@ pub(super) fn subst_iterator(exp: &Arc<DAE::Exp>, name: &str, value: &Arc<DAE::E
 /// untouched while still consuming its index.
 pub(super) fn collect_relations(
     rels: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>,
-) -> Result<Vec<Option<Arc<DAE::Exp>>>> {
+) -> Result<Vec<Option<metamodelica::Ref<DAE::Exp>>>> {
     let mut out = Vec::new();
     for zc in lst(rels) {
         for relation in expand_iter_crossing(&zc.relation_, &zc.iter)? {
@@ -239,9 +239,9 @@ pub(super) fn collect_samples(
 /// `functionEquationsSynchronous`).
 pub(super) struct ClockInfo {
     pub(super) meta: BaseClockMeta,
-    pub(super) kind: Arc<DAE::ClockKind>,
+    pub(super) kind: metamodelica::Ref<DAE::ClockKind>,
     /// Equations of each sub-partition (`equations ++ removedEquations`).
-    pub(super) sub_eqs: Vec<Vec<Arc<SimCode::SimEqSystem>>>,
+    pub(super) sub_eqs: Vec<Vec<metamodelica::Ref<SimCode::SimEqSystem>>>,
 }
 
 /// Split a `ClockedPartition` list into per-base-clock info, assigning the flat

@@ -170,6 +170,10 @@ unsafe extern "C" {
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.
+    #[cfg_attr(
+        shim_trampolines,
+        link_name = "omr_shim_assert_simulation_withEquationIndexes"
+    )]
     fn omc_assert_simulation_withEquationIndexes(
         threadData: *mut threadData_t,
         info: FILE_INFO,
@@ -177,6 +181,10 @@ unsafe extern "C" {
         msg: *const c_char,
         ...
     ) -> !;
+    #[cfg_attr(
+        shim_trampolines,
+        link_name = "omr_shim_assert_warning_simulation_withEquationIndexes"
+    )]
     fn omc_assert_warning_simulation_withEquationIndexes(
         info: FILE_INFO,
         indexes: *const c_int,
@@ -843,7 +851,12 @@ pub extern "C" fn _event_div_integer(
             *math_pre(data, index + 1) = x2 as f64;
         }
     }
-    let (v1, v2) = unsafe { (*math_pre(data, index) as i64, *math_pre(data, index + 1) as i64) };
+    let (v1, v2) = unsafe {
+        (
+            *math_pre(data, index) as modelica_integer,
+            *math_pre(data, index + 1) as modelica_integer,
+        )
+    };
     if v2 == 0 {
         let time = unsafe { (**(*data).localData).timeValue };
         // C's `%f`, so the message does not turn on the event time's last bits.

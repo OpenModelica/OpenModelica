@@ -2068,6 +2068,12 @@ restart attempt is appended to ``languageserver_crash.log`` in OMEdit's
 temporary directory (*Tools > Open Temporary Directory*), so the log can be
 attached to a bug report.
 
+**The language server is a separate project.**
+`modelica-language-server <https://github.com/OpenModelica/modelica-language-server>`_
+has its own repository and issue tracker.  File LSP-behavior bugs there: bad
+hover text, missed definitions, the process crashing.  OMEdit failing to
+start or manage the process is still an OMEdit issue.
+
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
 

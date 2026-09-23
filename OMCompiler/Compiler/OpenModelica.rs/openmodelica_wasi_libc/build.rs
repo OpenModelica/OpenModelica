@@ -27,13 +27,16 @@ fn main() {
     let adapter_dest = out_dir.join("wasi_snapshot_preview1.reactor.wasm");
     provide_preview1_adapter(&adapter_dest);
 
-    let mec_dest = out_dir.join("modelicaexternalc_dylink.wasm");
+    let ext_dests: Vec<PathBuf> = EXT_LIBS.iter().map(|l| out_dir.join(l.file)).collect();
     let libc_dest = out_dir.join("libc_pic.wasm");
     let usertab_dest = out_dir.join("usertab_dylink.wasm");
 
-    // The CI hand-over: with all three side modules already built there is
-    // nothing here that needs a wasm toolchain or the sysroot.
-    if ![&mec_dest, &libc_dest, &usertab_dest].iter().all(|d| prebuilt_in(d)) {
+    // The CI hand-over: with every side module already built there is nothing
+    // here that needs a wasm toolchain or the sysroot.
+    let mut all: Vec<&PathBuf> = ext_dests.iter().collect();
+    all.push(&libc_dest);
+    all.push(&usertab_dest);
+    if !all.iter().all(|d| prebuilt_in(d)) {
         // PIC wasi sysroot: provided by CMake's rust_wasi_pic_sysroot target.
         let sysroot = ensure_pic_wasi_sysroot();
         let triple = "wasm32-wasip1";
@@ -44,17 +47,21 @@ fn main() {
         }
         copy(&libc_so, &libc_dest);
 
-        // ModelicaExternalC dylink: mandatory for FMI wasm FMU export.
-        let module = build_external_c_dylink(&crate_dir, &out_dir, &sysroot, triple)
-            .unwrap_or_else(|e| panic!("failed to build the PIC ModelicaExternalC dylink module: {e}"));
-        copy(&module, &mec_dest);
+        // In order: each links against the ones before it.
+        for (lib, dest) in EXT_LIBS.iter().zip(&ext_dests) {
+            let module = build_external_c_dylink(lib, &crate_dir, &out_dir, &sysroot, triple)
+                .unwrap_or_else(|e| panic!("failed to build the PIC `{}` dylink module: {e}", lib.file));
+            copy(&module, dest);
+        }
 
         let usertab = build_usertab_dylink(&out_dir, &sysroot, triple)
             .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
         copy(&usertab, &usertab_dest);
     }
 
-    publish(&[&mec_dest, &libc_dest, &usertab_dest, &adapter_dest]);
+    let mut published: Vec<&Path> = ext_dests.iter().map(|p| p.as_path()).collect();
+    published.extend([libc_dest.as_path(), usertab_dest.as_path(), adapter_dest.as_path()]);
+    publish(&published);
 }
 
 /// The side modules this script builds are wasm whatever platform omc is being
@@ -77,7 +84,7 @@ fn prebuilt_in(dest: &Path) -> bool {
 /// Copy the finished blobs out of `OUT_DIR`: to `OMC_WASM_PREBUILT_OUT` for a later
 /// build's `OMC_WASM_PREBUILT_IN`, and to `OMC_WASM_BLOB_OUT`, which is what the
 /// install rule ships (omc reads them from there at run time, not from its binary).
-fn publish(blobs: &[&PathBuf]) {
+fn publish(blobs: &[&Path]) {
     for var in ["OMC_WASM_PREBUILT_OUT", "OMC_WASM_BLOB_OUT"] {
         println!("cargo:rerun-if-env-changed={var}");
         let Some(dir) = std::env::var_os(var) else { continue };
@@ -130,40 +137,113 @@ fn wasm_hdf5() -> Option<(PathBuf, PathBuf)> {
     Some((dir.join("include"), archive))
 }
 
-/// Compile ModelicaExternalC (+ `external_c_callbacks.c`,
-/// `external_c_stubs.c`) to a PIC dylink side module, then strip its
+/// The ModelicaExternalC family, one shared library per MSL library: a model that
+/// scans a string has no use for the MAT reader. Built in this order, each linked
+/// against the ones before it, so wasm-ld records the dependency in `dylink.0`
+/// NEEDED and the loader closes over it without the index naming one internal
+/// symbol.
+///
+/// The base carries `external_c_callbacks.c` and `external_c_stubs.c`, so a
+/// `ModelicaFormatError` from any of them is still formatted by the guest's own
+/// `vsnprintf`.
+struct ExtLib {
+    /// What it ships as, and what `dylink.0` NEEDED names.
+    file: &'static str,
+    /// Sources under the MSL's `C-Sources`.
+    sources: &'static [&'static str],
+    /// The bundled zlib, compiled in whole.
+    zlib: bool,
+    /// The HDF5 archive, for MAT v7.3.
+    hdf5: bool,
+    /// Which earlier libraries it links against.
+    needs: &'static [&'static str],
+}
+
+const EXT_LIBS: &[ExtLib] = &[
+    ExtLib {
+        file: "ModelicaExternalC.wasm",
+        sources: &["ModelicaInternal.c", "ModelicaStrings.c", "ModelicaRandom.c",
+                   "ModelicaFFT.c", "snprintf.c"],
+        zlib: false,
+        hdf5: false,
+        needs: &[],
+    },
+    ExtLib {
+        file: "zlib.wasm",
+        sources: &[],
+        zlib: true,
+        hdf5: false,
+        needs: &[],
+    },
+    ExtLib {
+        // On its own as it is natively (`libhdf5.so`); the archive comes whole,
+        // since nothing in this module references it.
+        file: "hdf5.wasm",
+        sources: &[],
+        zlib: false,
+        hdf5: true,
+        needs: &["ModelicaExternalC.wasm", "zlib.wasm"],
+    },
+    ExtLib {
+        file: "ModelicaMatIO.wasm",
+        sources: &["ModelicaMatIO.c"],
+        zlib: false,
+        hdf5: false,
+        needs: &["ModelicaExternalC.wasm", "zlib.wasm", "hdf5.wasm"],
+    },
+    ExtLib {
+        file: "ModelicaIO.wasm",
+        sources: &["ModelicaIO.c"],
+        zlib: false,
+        hdf5: false,
+        needs: &["ModelicaExternalC.wasm", "ModelicaMatIO.wasm"],
+    },
+    ExtLib {
+        file: "ModelicaStandardTables.wasm",
+        sources: &["ModelicaStandardTables.c"],
+        zlib: false,
+        hdf5: false,
+        // `usertab` stays an `env` import, so a model's own may override it.
+        needs: &["ModelicaExternalC.wasm", "ModelicaIO.wasm"],
+    },
+];
+
+/// Compile one of [`EXT_LIBS`] to a PIC dylink side module, then strip its
 /// `_initialize` export: reactor mode emits both `_initialize` and
 /// `__wasm_call_ctors`, and `wit_component::Linker` rejects a library
 /// exporting both — keep the dylink-standard `__wasm_call_ctors`.
-fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, triple: &str) -> Result<PathBuf, String> {
+fn build_external_c_dylink(
+    lib: &ExtLib,
+    crate_dir: &Path,
+    out_dir: &Path,
+    sysroot: &Path,
+    triple: &str,
+) -> Result<PathBuf, String> {
     println!("cargo:rerun-if-env-changed=OMC_EXTERNAL_C_SOURCES");
     let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from).ok_or_else(|| {
         "OMC_EXTERNAL_C_SOURCES not set".to_owned()
     })?;
-    // No usertab source, so it stays an `env.usertab` import the FMU link resolves
-    // against the model's own libraries first.
-    let names = [
-        "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
-        "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
-        "ModelicaInternal.c", "ModelicaFFT.c",
-    ];
-    let mut srcs: Vec<PathBuf> = names.iter().map(|n| c_sources.join(n)).collect();
+    let mut srcs: Vec<PathBuf> = lib.sources.iter().map(|n| c_sources.join(n)).collect();
     if let Some(missing) = srcs.iter().find(|p| !p.exists()) {
         return Err(format!("missing {}", missing.display()));
     }
     let zlib_dir = c_sources.join("zlib");
-    let mut zlib = collect_c_files(&zlib_dir);
-    zlib.sort();
-    srcs.extend(zlib);
-    let stubs = crate_dir.join("external_c_stubs.c");
-    let callbacks = crate_dir.join("external_c_callbacks.c");
-    println!("cargo:rerun-if-changed={}", stubs.display());
-    println!("cargo:rerun-if-changed={}", callbacks.display());
+    if lib.zlib {
+        let mut zlib = collect_c_files(&zlib_dir);
+        zlib.sort();
+        srcs.extend(zlib);
+    }
+    // The base carries what the others call and wasi-libc does not have.
+    if lib.needs.is_empty() && !lib.zlib {
+        srcs.push(crate_dir.join("external_c_stubs.c"));
+        srcs.push(crate_dir.join("external_c_callbacks.c"));
+    }
     for s in &srcs {
         println!("cargo:rerun-if-changed={}", s.display());
     }
 
-    let raw = out_dir.join("modelicaexternalc_dylink_raw.wasm");
+    let stem = lib.file.trim_end_matches(".wasm");
+    let raw = out_dir.join(format!("{stem}_raw.wasm"));
     let builtins = find_wasm_builtins().ok_or("no libclang_rt.builtins-wasm32.a found")?;
     let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
     let mut cmd = Command::new(&clang);
@@ -173,11 +253,19 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
                "-DNO_MUTEX", "-DHAVE_ZLIB", "-Wno-error=implicit-function-declaration"])
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
-        .args(&srcs).arg(&stubs).arg(&callbacks);
+        .args(&srcs);
+    // Every one compiles against the HDF5 headers: the MAT reader for its calls,
+    // the base because `external_c_callbacks.c` stubs HDF5's plugin-loader
+    // dlopen/dlsym under the same HAVE_HDF5. Only `hdf5.wasm` takes the archive.
     if let Some((include, archive)) = wasm_hdf5() {
-        // HDF5's plugin loader's dlopen/dlsym are stubbed in
-        // external_c_callbacks.c under the same HAVE_HDF5.
-        cmd.arg("-DHAVE_HDF5=1").arg("-I").arg(include).arg(archive);
+        cmd.arg("-DHAVE_HDF5=1").arg("-I").arg(include);
+        if lib.hdf5 {
+            cmd.args(["-Wl,--whole-archive"]).arg(archive).args(["-Wl,--no-whole-archive"]);
+        }
+    }
+    // Linking against the libraries it needs is what puts them in NEEDED.
+    for dep in lib.needs {
+        cmd.arg(out_dir.join(dep));
     }
     let status = cmd
         .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry",
@@ -187,11 +275,11 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
         .status()
         .map_err(|e| format!("spawn {clang}: {e}"))?;
     if !status.success() {
-        return Err(format!("clang (dylink) exited with {status}"));
+        return Err(format!("clang (dylink) exited with {status} for {}", lib.file));
     }
     let bytes = std::fs::read(&raw).map_err(|e| format!("read raw dylink: {e}"))?;
     let stripped = strip_wasm_export(&bytes, "_initialize");
-    let out = out_dir.join("modelicaexternalc_dylink_stripped.wasm");
+    let out = out_dir.join(format!("{stem}_stripped.wasm"));
     std::fs::write(&out, &stripped).map_err(|e| format!("write dylink: {e}"))?;
     Ok(out)
 }

@@ -9,11 +9,24 @@
 #
 # So name the components we own, and package only those. A component that is new here has to be
 # added deliberately, which is the point: an install rule should not be able to invent a package.
+
+## The metapackage ####################################################################################
+# The Autoconf packaging had an `openmodelica` package that pulled in the whole tool chain; CPack
+# packaging replaced it with nothing. It returns as a component with no program of its own: its
+# dependencies are what make it a metapackage. OpenModelicaCPackOptions.in.cmake works them out per
+# cpack run, and names the package "openmodelica" rather than "openmodelica-meta".
+#
+# The licence file keeps it from being empty: a component with no install rule is never registered,
+# so the loop below would drop it, and dpkg and rpm expect every package to carry its copyright.
+install(FILES "${PROJECT_SOURCE_DIR}/OSMC-License.txt"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/openmodelica"
+        RENAME copyright
+        COMPONENT meta)
+
 set(OM_PACKAGE_COMPONENTS
     omc
     simrt
     simrtcpp
-    fmu
     omsimulator
     omshellterminal
     omplot
@@ -25,6 +38,8 @@ set(OM_PACKAGE_COMPONENTS
     omsens
     omoptim
     omlibrary
+    # Installed above. It holds no program, only dependencies on the components here.
+    meta
 )
 
 # Components are registered by the install() rules that ran, so which of ours exist depends on the
@@ -81,11 +96,19 @@ cpack_add_component_group(Runtimes
                     DESCRIPTION
                    "The OpenModleica simulation runtime libraries and tools.")
 
+# This also carries what building an FMU needs: the runtime, dgesv and CMinpack sources under
+# share/omc/sources/c that every FMU export copies into the FMU it builds
+# (SimCodeMain.callTargetTemplatesFMU -- not only a source-code one, despite the name of the
+# file that installs them), and the static libSimulationRuntimeFMI and
+# libOpenModelicaFMIRuntimeC the result links. They were a component, and so a package, of
+# their own for a while; nothing but omc-generated code ever used them, and omc cannot export
+# an FMU without them, so they are not separately installable and do not need to be separately
+# packaged. The Autoconf packaging shipped them in omc-common for the same reason.
 cpack_add_component(simrt
                     DISPLAY_NAME "Simulation Runtime"
                     DEPENDS omc
                     GROUP Runtimes
-                    DESCRIPTION "The OpenModelica C simulation runtime libraries and tools."
+                    DESCRIPTION "The OpenModelica C simulation runtime libraries and tools, including what is needed to build an FMU."
                     )
 
 cpack_add_component(simrtcpp
@@ -93,14 +116,6 @@ cpack_add_component(simrtcpp
                     DEPENDS simrt
                     GROUP Runtimes
                     DESCRIPTION "The OpenModelica C++ simulation runtime libraries and tools."
-                    )
-
-cpack_add_component(fmu
-                    DISPLAY_NAME "FMU Support"
-                    DEPENDS simrt
-                    GROUP Runtimes
-                    DESCRIPTION "The libaries and files needed to compile an OpenModelica
-FMU (normal or Source-Code FMU) including the simulation runtime source files needed for creating Source-Code FMUs."
                     )
 
 cpack_add_component(omsimulator
@@ -184,6 +199,15 @@ cpack_add_component(omlibrary
                     DISPLAY_NAME "Modelica libraries"
                     DEPENDS omc
                     DESCRIPTION "The cache of Modelica libraries that omc can install without network access."
+                    )
+
+## The metapackage
+# No DEPENDS here: only the DEB and RPM generators build a metapackage, and the list is decided at
+# cpack time (OpenModelicaCPackOptions.in.cmake). A component that selected every other one would
+# only get in the way of the graphical installers, which show the component tree instead.
+cpack_add_component(meta
+                    DISPLAY_NAME "OpenModelica"
+                    DESCRIPTION "The OpenModelica tool chain: the compiler, the simulation runtime and the graphical clients."
                     )
 
 ## Documentation

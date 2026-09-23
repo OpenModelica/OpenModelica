@@ -15,10 +15,14 @@
 //! wit-bindgen's `cabi_realloc`.
 
 #![no_std]
+// The FMI C entry points a native host reaches this state machine through are not
+// in the tree yet, so what only the wasm component calls is unused there.
+#![cfg_attr(not(feature = "wasm"), allow(dead_code))]
 
 extern crate alloc;
 // Linked in for its allocator, panic handler, memory and `rt_*` exports, which
 // also satisfy the model's `env` imports.
+#[cfg(feature = "wasm")]
 extern crate openmodelica_codegen_wasm_jit_runtime;
 
 use alloc::string::{String, ToString};
@@ -32,11 +36,14 @@ use openmodelica_sim_meta::driver::{
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
-use openmodelica_sim_meta::{decode, omclog, simflags, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
+#[cfg(feature = "wasm")]
+use openmodelica_sim_meta::decode;
+use openmodelica_sim_meta::{omclog, simflags, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
 // library's exports, and the model's `rt_*` + memory against this adapter's.
+#[cfg(feature = "wasm")]
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
     // The two-argument entry points, not yet guarded: a failed `assert()` in one of
@@ -53,7 +60,7 @@ unsafe extern "C" {
 // The rest of the driver's entry points, imported only by the me_cs build, which
 // also carries the model's own simulation runtime (`om:sim/simulation`). The
 // emitter exports all of them from every model, so the link resolves regardless.
-#[cfg(all(feature = "me", feature = "cs"))]
+#[cfg(all(feature = "wasm", feature = "me", feature = "cs"))]
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
@@ -69,6 +76,7 @@ unsafe extern "C" {
 
 // Each entry point again, wrapped by the emitter in a `try_table` for the model-error
 // tag: 1 means a failed `assert()` unwound out of it.
+#[cfg(feature = "wasm")]
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
     #[link_name = "functionParameters$guard"]
@@ -128,9 +136,28 @@ unsafe extern "C" {
 // and the `log-message` callback (`fmi3LogMessage`) carries what
 // `fmu3_model_interface.c` sends through `FILTERED_LOG`.
 
+/// The same two streams a native host already has. The crate is `no_std`, so std
+/// is named explicitly.
+#[cfg(not(feature = "wasm"))]
+extern crate std;
+
+#[cfg(not(feature = "wasm"))]
+mod stdio {
+    use std::io::Write;
+    pub fn print(bytes: &[u8]) {
+        let mut out = std::io::stdout();
+        let _ = out.write_all(bytes);
+        let _ = out.flush();
+    }
+    pub fn stderr(bytes: &[u8]) {
+        let _ = std::io::stderr().write_all(bytes);
+    }
+}
+
 /// The FMU's stdout, which for a component is WASI's: `fd_write` on the preview1
 /// descriptor, which the adapter `CodegenWasmJit::link_fmu_component` composes in
 /// bridges to `wasi:cli/stdout`.
+#[cfg(feature = "wasm")]
 mod stdio {
     const STDOUT: i32 = 1;
     const STDERR: i32 = 2;
@@ -205,7 +232,26 @@ fn logger() -> &'static mut Logger {
     unsafe { &mut *core::ptr::addr_of_mut!(LOGGER) }
 }
 
-#[cfg(not(feature = "capi"))]
+/// A native host has no WIT callback and no stdout of its own: the FMI C layer
+/// installs the importer's logger here at instantiate.
+#[cfg(not(feature = "wasm"))]
+static mut LOG_HOOK: Option<fn(Status, &str, &str)> = None;
+
+/// Install the logger every `log_raw` below reaches. Called once per process by
+/// the C entry points, before any instance exists.
+#[cfg(not(feature = "wasm"))]
+pub fn set_log_hook(f: fn(Status, &str, &str)) {
+    unsafe { LOG_HOOK = Some(f) };
+}
+
+#[cfg(not(feature = "wasm"))]
+fn log_raw(status: Status, cat: u32, msg: &str) {
+    if let Some(f) = unsafe { LOG_HOOK } {
+        f(status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
+    }
+}
+
+#[cfg(all(feature = "wasm", not(feature = "capi")))]
 fn log_raw(status: Status, cat: u32, msg: &str) {
     let l = logger();
     fmi::fmi3::callbacks::log_message(&l.name, status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
@@ -214,7 +260,7 @@ fn log_raw(status: Status, cat: u32, msg: &str) {
 /// Linked as a core module there is no importer to call back into, so what the
 /// component sends through `fmi3LogMessage` goes where its `-lv` streams already
 /// go: the FMU's stdout, which the host captures.
-#[cfg(feature = "capi")]
+#[cfg(all(feature = "wasm", feature = "capi"))]
 fn log_raw(status: Status, cat: u32, msg: &str) {
     let _ = status;
     let l = logger();
@@ -233,7 +279,7 @@ const UNKNOWN_MODEL_FN: &str = "fmi3-me: unknown model function";
 /// `model terminate`), as the standalone driver's reporting also assumes.
 /// A call that ends on a trap: the `assert()` behind it goes to the logger (C's
 /// `omc_assert_fmi`), anything else to [`err_status`].
-fn failed(e: &mut Engine, sim_data: u32, err: &'static str) -> Status {
+fn failed<E: SimEngine>(e: &mut E, sim_data: u32, err: &'static str) -> Status {
     if let Some(pa) = e.take_pending_assert() {
         let (info, cond) = driver::assert_info(e, &pa);
         let time = driver::read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
@@ -296,6 +342,7 @@ fn terminate_fmi(pos: &str, msg: &str) {
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.
+#[cfg(feature = "wasm")]
 fn rt_string(handle: i32) -> String {
     use openmodelica_codegen_wasm_jit_runtime as rt;
     let h = handle as u32;
@@ -308,6 +355,7 @@ fn rt_string(handle: i32) -> String {
 }
 
 /// C's `omc_assert_fmi_common`: the source position, then the message.
+#[cfg(feature = "wasm")]
 fn assert_message(msg: i32, file: i32, sline: i32) -> String {
     driver::ext_assert_message(&rt_string(file), sline, &rt_string(msg))
 }
@@ -325,6 +373,7 @@ static mut PENDING: Option<[i32; 9]> = None;
 /// `cond` picks which C implementation is mirrored: `fmi2Instantiate` swaps in
 /// `omc_assert_fmi` only for the `FUNCTION_CONTEXT` pointer, while an equation
 /// `assert()` stays on `omc_assert_simulation_withEquationIndexes`'s `LOG_ASSERT`.
+#[cfg(feature = "wasm")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert(
     msg: i32,
@@ -357,6 +406,7 @@ pub extern "C" fn rt_assert(
 }
 
 /// Warning-level assertion: non-fatal, so continue (C's `omc_assert_fmi_warning`).
+#[cfg(feature = "wasm")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert_warning(
     _cond: i32,
@@ -374,12 +424,14 @@ pub extern "C" fn rt_assert_warning(
 
 /// The `print` builtin: model output, which C sends to stdout unformatted — not a
 /// `-lv` stream.
+#[cfg(feature = "wasm")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_print(str: i32) {
     stdio::print(rt_string(str).as_bytes());
 }
 
 /// Where the runtime's `omc_assert` writes: it has no WASI of its own.
+#[cfg(feature = "wasm")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_stderr_write(ptr: *const u8, len: usize) {
     let bytes = unsafe { core::slice::from_raw_parts(ptr, len) };
@@ -388,14 +440,46 @@ pub extern "C" fn rt_stderr_write(ptr: *const u8, len: usize) {
 
 /// Per-row assert formatting: the FMI master steps the model instead of the emitted
 /// `simulate` loop that calls this.
+#[cfg(feature = "wasm")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_row_asserts(_sim_data: i32, _warn: i32) -> i32 {
     0
 }
 
+/// What this component needs of its host beyond [`SimEngine`]: the two things
+/// that are the *runtime's* rather than the model's. A wasm component answers
+/// with the in-wasm runtime's, a native FMU with its own.
+pub trait FmiHost: SimEngine {
+    /// Which of the `-s`/`-nls`/... settings this build can actually honour, so a
+    /// flag the export baked in but the link left out is rejected rather than
+    /// quietly ignored.
+    fn sim_capabilities(&self) -> simflags::Capabilities;
+    /// Hand the parsed flags to the solvers. Takes `self`, because a native host's
+    /// solver settings live in the `SIMULATION_INFO` its engine addresses.
+    fn apply_sim_flags(&mut self, flags: &simflags::SimFlags);
+    /// Release the model's `SimData` block. A native host owns it elsewhere (the
+    /// region map is over `DATA`), so the default does nothing.
+    fn free_sim_data(&mut self, _sim_data: u32) {}
+}
+
 // ── SimEngine over the merged module's shared linear memory ──────────────────
+#[cfg(feature = "wasm")]
 struct Engine;
 
+#[cfg(feature = "wasm")]
+impl FmiHost for Engine {
+    fn sim_capabilities(&self) -> simflags::Capabilities {
+        openmodelica_codegen_wasm_jit_runtime::sim_capabilities()
+    }
+    fn apply_sim_flags(&mut self, flags: &simflags::SimFlags) {
+        openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(flags);
+    }
+    fn free_sim_data(&mut self, sim_data: u32) {
+        openmodelica_codegen_wasm_jit_runtime::rt_free(sim_data);
+    }
+}
+
+#[cfg(feature = "wasm")]
 impl SimEngine for Engine {
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> driver::Result<()> {
         let src = unsafe { core::slice::from_raw_parts(addr as *const u8, buf.len()) };
@@ -578,7 +662,10 @@ struct Updated {
     fired: bool,
 }
 
-struct MeState {
+struct MeState<E: FmiHost + 'static> {
+    /// The model this instance drives. A wasm component's is a ZST over its own
+    /// linear memory; a native FMU's owns the `DATA` the generated C was handed.
+    engine: E,
     sim_data: u32,
     layout: Layout,
     /// The whole metadata blob: the start state comes from it at instantiate, and
@@ -640,37 +727,30 @@ struct MeState {
     sync: Option<openmodelica_sim_meta::sync::Sync>,
 }
 
-impl MeState {
+impl<E: FmiHost + 'static> MeState<E> {
     fn read_f64(&self, off: u32) -> f64 {
-        driver::read_f64(&Engine, self.sim_data + off).unwrap_or(0.0)
+        driver::read_f64(&self.engine, self.sim_data + off).unwrap_or(0.0)
     }
-    fn write_f64(&self, off: u32, v: f64) {
-        let mut e = Engine;
-        let _ = driver::write_f64(&mut e, self.sim_data + off, v);
+    fn write_f64(&mut self, off: u32, v: f64) {
+        let e = &mut self.engine;
+        let _ = driver::write_f64(&mut *e, self.sim_data + off, v);
     }
     fn read_i32(&self, off: u32) -> i32 {
-        driver::read_i32(&Engine, self.sim_data + off).unwrap_or(0)
+        driver::read_i32(&self.engine, self.sim_data + off).unwrap_or(0)
     }
-    fn write_i32(&self, off: u32, v: i32) {
-        let mut e = Engine;
+    fn write_i32(&mut self, off: u32, v: i32) {
+        let e = &mut self.engine;
         let _ = e.write_bytes(self.sim_data + off, &v.to_le_bytes());
     }
     /// Read the runtime `String` referenced by the i32 handle in slot `off`.
     fn read_string(&self, off: u32) -> String {
-        rt_string(self.read_i32(off))
+        self.engine.string_at(self.sim_data + off).unwrap_or_default()
     }
     /// Store `s` as a fresh runtime `String` handle in slot `off`, releasing the
     /// handle it replaces (a no-op on the null handle).
-    fn write_string(&self, off: u32, s: &str) {
-        use openmodelica_codegen_wasm_jit_runtime as rt;
-        let old = self.read_i32(off) as u32;
-        let bytes = s.as_bytes();
-        let h = rt::rt_str_new(bytes.len() as u32);
-        unsafe {
-            core::ptr::copy_nonoverlapping(bytes.as_ptr(), rt::rt_str_data(h) as *mut u8, bytes.len());
-        }
-        self.write_i32(off, h as i32);
-        rt::rt_release(old);
+    fn write_string(&mut self, off: u32, s: &str) {
+        let (sim_data, bytes) = (self.sim_data, s.as_bytes());
+        let _ = self.engine.set_string(sim_data + off, bytes);
     }
     /// C's `fmi2Instantiate`/`fmi2Reset`: the `start` attributes, readable before
     /// the importer leaves Initialization Mode. A failure here is left to the
@@ -682,12 +762,12 @@ impl MeState {
             return;
         }
         self.terminated = true;
-        let _ = Engine.call1_if_present("callExternalObjectDestructors", self.sim_data);
+        let _ = self.engine.call1_if_present("callExternalObjectDestructors", self.sim_data);
     }
 
-    fn seed_start_state(&self) {
-        let mut e = Engine;
-        let _ = driver::seed_start_state(&mut e, self.sim_data, &self.meta);
+    fn seed_start_state(&mut self) {
+        let e = &mut self.engine;
+        let _ = driver::seed_start_state(&mut *e, self.sim_data, &self.meta);
     }
 
     /// `functionOutputs`, not `functionAlgebraics`: a getter runs no discrete update.
@@ -695,12 +775,12 @@ impl MeState {
     /// A `--daeMode` model has neither: its continuous equations are the residual
     /// `F(t, x, x', z) = 0`. In DAE mode the importer has set `x'` and `z` and reads
     /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
-    fn eval(&self) -> driver::Result<()> {
-        let mut e = Engine;
+    fn eval(&mut self) -> driver::Result<()> {
+        let e = &mut self.engine;
         if self.layout.dae_mode() {
             if !self.dae_mode && !self.dae_current {
                 let dae = self.meta.dae.as_ref().ok_or("fmi3: DAE-mode model without DAE metadata")?;
-                dae_solve_explicit(&mut e, self.sim_data, &self.layout, dae)?;
+                dae_solve_explicit(&mut *e, self.sim_data, &self.layout, dae)?;
             }
             return e.call2(
                 driver::MODEL_FN_DAE,
@@ -718,7 +798,7 @@ impl MeState {
         if self.layout.dae_mode() {
             return self.update_if_needed();
         }
-        self.evaluate(|m| Engine.call1("functionODE", m.sim_data))
+        self.evaluate(|m| { let sd = m.sim_data; m.engine.call1("functionODE", sd) })
     }
 
     /// C's try block around one FMI call: a model error or an unsolved nonlinear
@@ -730,23 +810,25 @@ impl MeState {
     /// `completed_integrator_step` asks for Event Mode, which evaluates live: the
     /// event settles it, or it fails there.
     fn evaluate(&mut self, f: impl FnOnce(&mut Self) -> driver::Result<()>) -> Result<(), Status> {
-        let mut e = Engine;
         self.write_i32(self.layout.nls_fail_off, 0);
-        let region = self.continuous_time.then(|| driver::open_fmi_call_region(&mut e));
+        let region =
+            self.continuous_time.then(|| driver::open_fmi_call_region(&mut self.engine));
         let hold = self.mode != Mode::Init && !self.event_mode;
         if hold {
             driver::open_assert_window();
         }
         let run = f(self);
         if hold {
-            let held = driver::take_suppressed_assert(&mut e, self.sim_data, !self.assert_logged)
-                .map_err(err_status)?;
+            let held =
+                driver::take_suppressed_assert(&mut self.engine, self.sim_data, !self.assert_logged)
+                    .map_err(err_status)?;
             self.assert_held |= held;
             self.assert_logged |= held;
         }
-        let absorbed = region.is_some_and(|save| driver::close_fmi_call_region(&mut e, save));
-        let unsolved = driver::take_nls_failure(&mut e, self.sim_data, &self.layout);
-        run.map_err(|err| failed(&mut e, self.sim_data, err))?;
+        let absorbed =
+            region.is_some_and(|save| driver::close_fmi_call_region(&mut self.engine, save));
+        let unsolved = driver::take_nls_failure(&mut self.engine, self.sim_data, &self.layout);
+        run.map_err(|err| failed(&mut self.engine, self.sim_data, err))?;
         if absorbed || unsolved {
             return Err(if self.continuous_time { Status::Discard } else { Status::Error });
         }
@@ -782,9 +864,9 @@ impl MeState {
         }
         self.jacobian_cache.clear();
         self.jacobian_cache.resize(n * n, 0.0);
-        let mut e = Engine;
+        let e = &mut self.engine;
         let matrix = &mut self.jacobian_cache;
-        driver::eval_sym_jacobian(&mut e, self.sim_data, jac, 0, true, &mut |row, col, _, v| {
+        driver::eval_sym_jacobian(&mut *e, self.sim_data, jac, 0, true, &mut |row, col, _, v| {
             matrix[col * n + row] = v;
         })
         .map_err(|_| Status::Error)?;
@@ -812,7 +894,7 @@ impl MeState {
     /// The event update at `time`: C's `simulationUpdate` order — the timers, then the
     /// event, then the timers again for an event clock — with the CS driver ordering
     /// its own schedule where it owns one.
-    fn run_event_update(&mut self, e: &mut Engine, time: f64) -> driver::Result<Updated> {
+    fn run_event_update(&mut self, time: f64) -> driver::Result<Updated> {
         let (sim_data, layout) = (self.sim_data, self.layout);
         let mut ticked = false;
         #[cfg(feature = "cs")]
@@ -823,8 +905,8 @@ impl MeState {
         if !cs_owns_clocks && self.sync.as_ref().is_some_and(|s| s.next_time() <= time + openmodelica_sim_meta::sync::SYNC_EPS) {
             let mut sync = self.sync.take().expect("checked");
             self.write_i32(layout.rel_fresh_off, 0);
-            let r = driver::eval_continuous(e, sim_data, &layout)
-                .and_then(|()| driver::fmi_handle_timers(e, &mut sync, &self.meta, sim_data, time));
+            let r = driver::eval_continuous(&mut self.engine, sim_data, &layout)
+                .and_then(|()| driver::fmi_handle_timers(&mut self.engine, &mut sync, &self.meta, sim_data, time));
             self.sync = Some(sync);
             ticked = r?;
         }
@@ -836,12 +918,12 @@ impl MeState {
             // Route through the driver so its sample and clock schedules advance in
             // step with the integrator (see `CsDriver::do_event_update`).
             let due = d.time_event_due(time);
-            (d.do_event_update(e, meta, time)?, true, due)
+            (d.do_event_update(&mut self.engine, meta, time)?, true, due)
         } else {
-            (event_update(e, sim_data, &layout, self.samples.as_mut(), time)?, false, sample_due)
+            (event_update(&mut self.engine, sim_data, &layout, self.samples.as_mut(), time)?, false, sample_due)
         };
         #[cfg(not(feature = "cs"))]
-        let (up, clocks_handled, fired) = (event_update(e, sim_data, &layout, self.samples.as_mut(), time)?, false, sample_due);
+        let (up, clocks_handled, fired) = (event_update(&mut self.engine, sim_data, &layout, self.samples.as_mut(), time)?, false, sample_due);
 
         // C's `discreteCall = 0` at the end of `functionDAE`: left in event mode, every
         // later evaluation restores the relations and hides the next crossing.
@@ -850,7 +932,7 @@ impl MeState {
         // After the discrete update, as `perform_simulation` has it rather than before
         // it as C's FMU export does: the state-set Jacobian is worth no more than the
         // point it is evaluated at.
-        let reselected = self.dss.reselect(e, sim_data, &self.meta)?;
+        let reselected = self.dss.reselect(&mut self.engine, sim_data, &self.meta)?;
         if reselected {
             self.need_update = true;
             self.dae_current = false;
@@ -861,7 +943,7 @@ impl MeState {
         let mut next = up.next_event_time;
         if !clocks_handled {
             if let Some(mut sync) = self.sync.take() {
-                let r = driver::fmi_handle_timers(e, &mut sync, &self.meta, sim_data, time);
+                let r = driver::fmi_handle_timers(&mut self.engine, &mut sync, &self.meta, sim_data, time);
                 let tc = sync.next_time();
                 self.sync = Some(sync);
                 ticked |= r?;
@@ -877,15 +959,15 @@ impl MeState {
     /// keep setting and get a fresh solve each time.
     fn run_init(&mut self) -> driver::Result<()> {
         set_param_overrides(self.init_overrides.clone(), self.init_start_overrides.clone(), Vec::new());
-        let mut e = Engine;
         let start_time = self.read_f64(TIME_OFF);
         // No `-csvInput` on the FMI path: the importer drives the inputs.
-        run_initialization(&mut e, self.sim_data, &self.layout, &[], start_time)?;
-        self.dss = driver::StateSelection::initial(&mut e, self.sim_data, &self.meta)?;
+        run_initialization(&mut self.engine, self.sim_data, &self.layout, &[], start_time)?;
+        self.dss = driver::StateSelection::initial(&mut self.engine, self.sim_data, &self.meta)?;
         // C's `initializeModel` runs `initSynchronous` too.
         if !self.meta.clocks.is_empty() {
-            let mut sync = openmodelica_sim_meta::sync::Sync::new(&mut e, &self.meta, self.sim_data)?;
-            sync.take_fired(&mut e, start_time)?;
+            let mut sync =
+                openmodelica_sim_meta::sync::Sync::new(&mut self.engine, &self.meta, self.sim_data)?;
+            sync.take_fired(&mut self.engine, start_time)?;
             self.sync = Some(sync);
         }
         // After the init equations, so they land in the slots last.
@@ -910,19 +992,19 @@ impl MeState {
 // One crate, three FMU types selected by the `me`/`cs` features: `me` → Model
 // Exchange, `cs` → Co-Simulation, both → a single me_cs component. All builds
 // share the state, the vr table and the 54 common resource methods.
-#[cfg(all(feature = "me", not(feature = "cs")))]
+#[cfg(all(feature = "wasm", feature = "me", not(feature = "cs")))]
 wit_bindgen::generate!({
     world: "model-exchange-fmu",
     path: "wit",
     std_feature,
 });
-#[cfg(all(feature = "cs", not(feature = "me")))]
+#[cfg(all(feature = "wasm", feature = "cs", not(feature = "me")))]
 wit_bindgen::generate!({
     world: "co-simulation-fmu",
     path: "wit",
     std_feature,
 });
-#[cfg(all(feature = "me", feature = "cs"))]
+#[cfg(all(feature = "wasm", feature = "me", feature = "cs"))]
 wit_bindgen::generate!({
     world: "model-exchange-and-co-simulation-fmu",
     path: "wit",
@@ -932,31 +1014,104 @@ wit_bindgen::generate!({
     with: { "om:sim/simulation@0.1.0": generate, "om:ext/native@0.1.0": generate },
 });
 
+#[cfg(feature = "wasm")]
 use exports::fmi::fmi3::common::Guest as CommonGuest;
-#[cfg(feature = "me")]
+#[cfg(all(feature = "wasm", feature = "me"))]
 use exports::fmi::fmi3::model_exchange::{
     CompletedStepResult, Guest as MeGuest, GuestModelExchangeInstance, ModelExchangeInstance,
 };
-#[cfg(feature = "cs")]
+#[cfg(all(feature = "wasm", feature = "cs"))]
 use exports::fmi::fmi3::co_simulation::{
     CoSimulationInstance, DoStepResult, Guest as CsGuest, GuestCoSimulationInstance,
 };
 // The shared types (`use types.{…}` in both interfaces) are one type; import them
 // from whichever interface this build exports, preferring model-exchange.
-#[cfg(feature = "me")]
+#[cfg(all(feature = "wasm", feature = "me"))]
 use exports::fmi::fmi3::model_exchange::{
     DiscreteStatesInfo, IntervalFraction, IntervalQualifier, Status, VariableDependency,
 };
-#[cfg(all(feature = "cs", not(feature = "me")))]
+#[cfg(all(feature = "wasm", feature = "cs", not(feature = "me")))]
 use exports::fmi::fmi3::co_simulation::{
     DiscreteStatesInfo, IntervalFraction, IntervalQualifier, Status, VariableDependency,
 };
 
-pub struct Instance {
-    st: RefCell<MeState>,
+/// The seven types the state machine names, which a wasm build gets from
+/// `wit_bindgen::generate!`. Mirrors `wit/fmi3-types.wit`,
+/// `wit/fmi3-model-exchange.wit` and `wit/fmi3-co-simulation.wit`; the FMI C API
+/// over this crate converts them to the standard's own enums and out-parameters.
+#[cfg(not(feature = "wasm"))]
+pub mod fmi_types {
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    pub enum Status {
+        Ok,
+        Warning,
+        Discard,
+        Error,
+        Fatal,
+    }
+
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    pub enum IntervalQualifier {
+        NotYetKnown,
+        Unchanged,
+        Changed,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    pub struct IntervalFraction {
+        pub counter: u64,
+        pub resolution: u64,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    pub struct VariableDependency {
+        pub dependent: u32,
+        pub element: u64,
+        pub independent: u32,
+        pub kind: u8,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    pub struct DiscreteStatesInfo {
+        pub new_discrete_states_needed: bool,
+        pub terminate_simulation: bool,
+        pub nominals_of_continuous_states_changed: bool,
+        pub values_of_continuous_states_changed: bool,
+        pub next_event_time_defined: bool,
+        pub next_event_time: f64,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    pub struct CompletedStepResult {
+        pub enter_event_mode: bool,
+        pub terminate_simulation: bool,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    pub struct DoStepResult {
+        pub last_successful_time: f64,
+        pub event_handling_needed: bool,
+        pub terminate_simulation: bool,
+        pub early_return: bool,
+        pub discarded: bool,
+    }
+}
+#[cfg(not(feature = "wasm"))]
+#[allow(unused_imports)]
+use fmi_types::{
+    CompletedStepResult, DiscreteStatesInfo, DoStepResult, IntervalFraction, IntervalQualifier,
+    Status, VariableDependency,
+};
+
+/// This crate's own instantiation: the wasm component's engine.
+#[cfg(feature = "wasm")]
+pub type WasmInstance = Instance<Engine>;
+
+pub struct Instance<E: FmiHost + 'static> {
+    st: RefCell<MeState<E>>,
 }
 
-impl Instance {
+impl<E: FmiHost + 'static> Instance<E> {
     /// `fmi3FreeInstance`: the destructors unless `fmi3Terminate` ran them, then
     /// the model's memory.
     pub fn free(self) {
@@ -964,7 +1119,8 @@ impl Instance {
         st.destruct_external_objects();
         #[cfg(feature = "cs")]
         drop(st.cs.take());
-        openmodelica_codegen_wasm_jit_runtime::rt_free(st.sim_data);
+        let sim_data = st.sim_data;
+        st.engine.free_sim_data(sim_data);
     }
 }
 
@@ -973,7 +1129,7 @@ impl Instance {
 /// The simulation flags the export hard-coded into the metadata. The export linked
 /// exactly the libraries these reach, so a rejection here means the two disagree and
 /// the instance must not come up quietly using another solver.
-fn apply_baked_solver_flags(flags: &str) -> Option<()> {
+fn apply_baked_solver_flags<H: FmiHost>(host: &mut H, flags: &str) -> Option<()> {
     if flags.is_empty() {
         return Some(());
     }
@@ -981,10 +1137,7 @@ fn apply_baked_solver_flags(flags: &str) -> Option<()> {
         .chain(flags.split_whitespace().map(str::to_string))
         .collect();
     // An FMU writes no result file; `-variableFilter` is the importer's.
-    let cap = simflags::Capabilities {
-        variable_filter: true,
-        ..openmodelica_codegen_wasm_jit_runtime::sim_capabilities()
-    };
+    let cap = simflags::Capabilities { variable_filter: true, ..host.sim_capabilities() };
     let parsed = simflags::parse(&argv)
         .and_then(|f| {
             simflags::check(&f, cap)?;
@@ -994,7 +1147,7 @@ fn apply_baked_solver_flags(flags: &str) -> Option<()> {
             omclog::error!(omclog::ASSERT, false, "this FMU was exported with `{flags}`: {e}")
         })
         .ok()?;
-    openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&parsed);
+    host.apply_sim_flags(&parsed);
     simflags::print_notices(&parsed);
     let streams = parsed.log_mask & !omclog::ALWAYS_ON;
     simflags::set_flags(parsed);
@@ -1002,7 +1155,8 @@ fn apply_baked_solver_flags(flags: &str) -> Option<()> {
     Some(())
 }
 
-fn new_state() -> Option<MeState> {
+#[cfg(feature = "wasm")]
+fn new_state() -> Option<MeState<Engine>> {
     #[allow(unused_mut)]
     let mut meta = read_meta();
     let layout = meta.layout;
@@ -1011,11 +1165,13 @@ fn new_state() -> Option<MeState> {
     }
     // From the model's own DefaultExperiment, as in C's FMU.
     openmodelica_codegen_wasm_jit_runtime::rt_set_step_size(meta.step_size());
-    apply_baked_solver_flags(&meta.fmi_solver_flags)?;
+    let mut engine = Engine;
+    apply_baked_solver_flags(&mut engine, &meta.fmi_solver_flags)?;
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_sim_data_new(layout.total);
     let dae_enable_vr = meta.fmi_dae_enable_vr;
     let dss = driver::StateSelection::new(&meta);
-    let st = MeState {
+    let mut st = MeState {
+        engine,
         sim_data,
         layout,
         vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
@@ -1049,6 +1205,7 @@ fn new_state() -> Option<MeState> {
 }
 
 /// The metadata blob the emitter embedded in the model module.
+#[cfg(feature = "wasm")]
 fn read_meta() -> openmodelica_sim_meta::SimMeta {
     let ptr = unsafe { om_meta_ptr() };
     let len = unsafe { om_meta_len() } as usize;
@@ -1060,652 +1217,30 @@ fn read_meta() -> openmodelica_sim_meta::SimMeta {
 /// `model-exchange-instance` declare the same getters/setters and mode
 /// transitions). One body, expanded into whichever guest trait this build's world
 /// generated.
-macro_rules! shared_instance_methods {
-    () => {
-
-    /// C's `omcSetDebugLogging`: every category off, then the named ones follow
-    /// `logging_on`; an unknown name is reported unfiltered, as in C. A category
-    /// named like a runtime stream (`LOG_EVENTS`; the export declares them all)
-    /// switches that stream instead.
-    fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
-        let mut cats = 0u32;
-        let mut unknown: Vec<String> = Vec::new();
-        let mut streams: Vec<String> = Vec::new();
-        let mut fmi_categories = false;
-        for c in categories {
-            match CATEGORIES.iter().position(|n| *n == c) {
-                Some(i) => {
-                    fmi_categories = true;
-                    if logging_on {
-                        cats |= 1 << i;
-                    }
-                }
-                None if omclog::STREAM_NAME.contains(&c.as_str()) => streams.push(c),
-                None => unknown.push(c),
-            }
-        }
-        if fmi_categories || streams.is_empty() {
-            logger().cats = cats;
-        }
-        if let Ok(m) = omclog::mask_from_streams(&streams) {
-            let m = m & !omclog::ALWAYS_ON;
-            let cur = omclog::mask();
-            omclog::set_mask(if logging_on { cur | m } else { cur & !m });
-        }
-        for c in unknown {
-            log_raw(
-                Status::Warning,
-                CAT_ERROR,
-                &alloc::format!("logging category '{c}' is not supported by model"),
-            );
-        }
-        Status::Ok
-    }
-
-    fn enter_initialization_mode(
-        &self,
-        tolerance: Option<f64>,
-        start_time: f64,
-        _stop_time: Option<f64>,
-    ) -> Status {
-        let mut st = self.st.borrow_mut();
-        // The sets made while Instantiated stay: C's `setStartValues` here turns
-        // the live values into the `start` attributes the initial solve reads.
-        st.mode = Mode::Init;
-        st.need_update = true;
-        st.dae_current = false;
-        st.write_f64(TIME_OFF, start_time);
-        let (sim_data, layout) = (st.sim_data, st.layout);
-        let mut e = Engine;
-        match set_zc_tolerance(&mut e, sim_data, &layout, tolerance.unwrap_or(0.0)) {
-            Ok(()) => Status::Ok,
-            Err(err) => err_status(err),
-        }
-    }
-
-    fn exit_initialization_mode(&self) -> Status {
-        let mut st = self.st.borrow_mut();
-        // Only when something was set since the last solve: a get in Initialization
-        // Mode has already run it otherwise.
-        if let Err(status) = st.update_if_needed() {
-            return status;
-        }
-        st.mode = Mode::Ready;
-        // Exiting Initialization Mode leaves the instance in Event Mode.
-        st.event_mode = true;
-        // `run_initialization` has run `initSample`, so the schedule is readable.
-        if st.layout.n_samples > 0 {
-            let start_time = st.read_f64(TIME_OFF);
-            match Samples::load(&Engine, st.sim_data, &st.layout, start_time) {
-                Ok(s) => st.samples = Some(s),
-                Err(err) => return err_status(err),
-            }
-        }
-        // The CS driver is built lazily on the first `do-step` (see there): a me_cs
-        // component driven in Model Exchange must not pay for — or be perturbed by —
-        // a driver it never uses. Event Mode is the exception: the master's first
-        // action after init is an event iteration (`update-discrete-states`), which
-        // must run through the driver's sample schedule, so build it eagerly.
-        #[cfg(feature = "cs")]
-        if st.defer != CsDefer::None {
-            let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
-            let st = &mut *st;
-            match CsDriver::new(&mut Engine, &st.meta, sim_data, t, defer, st.sync.take()) {
-                Ok(d) => st.cs = Some(d),
-                Err(err) => return err_status(err),
-            }
-        }
-        Status::Ok
-    }
-
-    fn enter_event_mode(&self) -> Status {
-        let mut st = self.st.borrow_mut();
-        st.continuous_time = false;
-        st.event_mode = true;
-        st.assert_held = false;
-        Status::Ok
-    }
-
-    /// The master has located the event and set time/states; run the discrete
-    /// update here. `iterate_discrete` already runs to a fixed point, so one pass
-    /// always suffices and `new-discrete-states-needed` stays false.
-    ///
-    /// C's `simulationUpdate` holds a violated `assert()` over the whole update: one
-    /// the event itself raises is forgiven when something did happen at this point,
-    /// and fails the call otherwise (`settle_event_asserts`).
-    fn update_discrete_states(&self) -> Result<DiscreteStatesInfo, Status> {
-        let mut st = self.st.borrow_mut();
-        let (sim_data, layout) = (st.sim_data, st.layout);
-        let time = st.read_f64(TIME_OFF);
-        let mut e = Engine;
-        let before = match driver::discrete_snapshot(&e, sim_data, &layout) {
-            Ok(b) => b,
-            Err(err) => return Err(failed(&mut e, sim_data, err)),
-        };
-        driver::open_assert_window();
-        let updated = st.run_event_update(&mut e, time);
-        let settled = match &updated {
-            Ok(u) => driver::settle_event_asserts(&mut e, sim_data, &layout, &before, u.fired, !st.assert_logged),
-            Err(_) => driver::take_suppressed_assert(&mut e, sim_data, false).map(|_| false),
-        };
-        // Settled, so the next violation is a new one to report.
-        if !matches!(settled, Ok(false)) {
-            st.assert_logged = false;
-        }
-        let u = match updated {
-            Ok(u) => u,
-            Err(err) => return Err(failed(&mut e, sim_data, err)),
-        };
-        if let Err(err) = settled {
-            return Err(failed(&mut e, sim_data, err));
-        }
-        Ok(DiscreteStatesInfo {
-            new_discrete_states_needed: false,
-            terminate_simulation: u.up.terminate,
-            // C's `updateSolverNominals`: a pivoted state set integrates other
-            // variables, with other nominals.
-            nominals_of_continuous_states_changed: u.reselected,
-            values_of_continuous_states_changed: u.up.states_changed || u.ticked || u.reselected,
-            next_event_time_defined: u.next.is_some(),
-            next_event_time: u.next.unwrap_or(0.0),
-        })
-    }
-
-    fn terminate(&self) -> Status {
-        let mut st = self.st.borrow_mut();
-        #[cfg(feature = "cs")]
-        if omclog::active(omclog::STATS) {
-            if let Some(d) = &st.cs {
-                let mut stats = openmodelica_sim_meta::SolveStats::default();
-                d.fill_stats(&mut stats);
-                stdio::print(openmodelica_sim_meta::stats::log_stats_block(&stats).as_bytes());
-            }
-        }
-        st.destruct_external_objects();
-        Status::Ok
-    }
-
-    /// Back to the instantiated state: what initialization and the steps after it
-    /// built goes with the `SimData` it was built over, or the next run continues
-    /// from the last one.
-    fn reset(&self) -> Status {
-        let mut st = self.st.borrow_mut();
-        st.destruct_external_objects();
-        unsafe {
-            core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
-        }
-        st.mode = Mode::Instantiated;
-        st.continuous_time = false;
-        st.dae_mode = false;
-        st.configuring = false;
-        st.need_update = true;
-        st.terminated = false;
-        st.dae_current = false;
-        st.init_overrides.clear();
-        st.init_start_overrides.clear();
-        st.init_string_overrides.clear();
-        st.samples = None;
-        st.sync = None;
-        #[cfg(feature = "cs")]
-        {
-            st.cs = None;
-        }
-        st.seed_start_state();
-        Status::Ok
-    }
-
-    /// The one structural parameter is `fixed`: Configuration Mode is open from
-    /// Instantiated only, not the Reconfiguration Mode a `tunable` one would allow.
-    fn enter_configuration_mode(&self) -> Status {
-        let mut st = self.st.borrow_mut();
-        if st.mode != Mode::Instantiated || st.configuring {
-            return err_status("fmi3EnterConfigurationMode: only allowed in the Instantiated state");
-        }
-        st.configuring = true;
-        Status::Ok
-    }
-    fn exit_configuration_mode(&self) -> Status {
-        let mut st = self.st.borrow_mut();
-        if !st.configuring {
-            return err_status("fmi3ExitConfigurationMode: not in Configuration Mode");
-        }
-        st.configuring = false;
-        Status::Ok
-    }
-
-    // ── Getters ───────────────────────────────────────────────────────────────
-    fn get_float32(&self, _: Vec<u32>) -> Result<Vec<f32>, Status> {
-        Err(Status::Error)
-    }
-    fn get_float64(&self, vrs: Vec<u32>) -> Result<Vec<f64>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let vrs = st.vrs.expand(&vrs);
-        let mut out = Vec::with_capacity(vrs.len());
-        for vr in vrs {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::F64 => out.push(e.negate.apply_f64(st.read_f64(e.off))),
-                _ => return Err(bad_vr("fmi3GetFloat64", vr, "a Float64 variable")),
-            }
-        }
-        Ok(out)
-    }
-    fn get_int8(&self, _: Vec<u32>) -> Result<Vec<i8>, Status> {
-        Err(Status::Error)
-    }
-    fn get_int16(&self, _: Vec<u32>) -> Result<Vec<i16>, Status> {
-        Err(Status::Error)
-    }
-    fn get_int32(&self, vrs: Vec<u32>) -> Result<Vec<i32>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let vrs = st.vrs.expand(&vrs);
-        let mut out = Vec::with_capacity(vrs.len());
-        for vr in vrs {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.is_string => {
-                    out.push(e.negate.apply_i32(st.read_i32(e.off)))
-                }
-                _ => return Err(bad_vr("fmi3GetInt32", vr, "an Int32 variable")),
-            }
-        }
-        Ok(out)
-    }
-    // fmi3 accesses `<Enumeration>` vars via Int64; they are `WTy::I32` slots here,
-    // so widen/narrow around the i32.
-    fn get_int64(&self, vrs: Vec<u32>) -> Result<Vec<i64>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let vrs = st.vrs.expand(&vrs);
-        let mut out = Vec::with_capacity(vrs.len());
-        for vr in vrs {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.is_string => {
-                    out.push(e.negate.apply_i32(st.read_i32(e.off)) as i64)
-                }
-                _ => return Err(bad_vr("fmi3GetInt64", vr, "an Int64 variable")),
-            }
-        }
-        Ok(out)
-    }
-    fn get_uint8(&self, _: Vec<u32>) -> Result<Vec<u8>, Status> {
-        Err(Status::Error)
-    }
-    fn get_uint16(&self, _: Vec<u32>) -> Result<Vec<u16>, Status> {
-        Err(Status::Error)
-    }
-    fn get_uint32(&self, _: Vec<u32>) -> Result<Vec<u32>, Status> {
-        Err(Status::Error)
-    }
-    fn get_uint64(&self, vrs: Vec<u32>) -> Result<Vec<u64>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let vrs = st.vrs.expand(&vrs);
-        let mut out = Vec::with_capacity(vrs.len());
-        for vr in vrs {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.is_string => out.push(st.read_i32(e.off) as u64),
-                _ => return Err(bad_vr("fmi3GetUInt64", vr, "a UInt64 variable")),
-            }
-        }
-        Ok(out)
-    }
-    fn get_boolean(&self, vrs: Vec<u32>) -> Result<Vec<bool>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let vrs = st.vrs.expand(&vrs);
-        let mut out = Vec::with_capacity(vrs.len());
-        for vr in vrs {
-            if vr == st.dae_enable_vr && vr != 0 {
-                out.push(st.dae_mode);
-                continue;
-            }
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.is_string => {
-                    out.push(e.negate.apply_i32(st.read_i32(e.off)) != 0)
-                }
-                _ => return Err(bad_vr("fmi3GetBoolean", vr, "a Boolean variable")),
-            }
-        }
-        Ok(out)
-    }
-    fn get_string(&self, vrs: Vec<u32>) -> Result<Vec<String>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let vrs = st.vrs.expand(&vrs);
-        let mut out = Vec::with_capacity(vrs.len());
-        for vr in vrs {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.is_string => out.push(st.read_string(e.off)),
-                _ => return Err(bad_vr("fmi3GetString", vr, "a String variable")),
-            }
-        }
-        Ok(out)
-    }
-    fn get_binary(&self, _: Vec<u32>) -> Result<Vec<Vec<u8>>, Status> {
-        Err(Status::Error)
-    }
-    fn get_clock(&self, _: Vec<u32>) -> Result<Vec<bool>, Status> {
-        Err(Status::Error)
-    }
-
-    // ── Setters ───────────────────────────────────────────────────────────────
-    fn set_float32(&self, _: Vec<u32>, _: Vec<f32>) -> Status {
-        Status::Error
-    }
-    fn set_float64(&self, vrs: Vec<u32>, values: Vec<f64>) -> Status {
-        let mut st = self.st.borrow_mut();
-        let vrs = st.vrs.expand(&vrs);
-        if vrs.len() != values.len() {
-            return err_status(&alloc::format!("fmi3SetFloat64: {} values for {} value references", values.len(), vrs.len()));
-        }
-        for (vr, v) in vrs.into_iter().zip(values) {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::F64 && e.negate == Neg::None => {
-                    st.write_f64(e.off, v);
-                    if st.mode != Mode::Ready {
-                        let start = e.start_off != 0;
-                        st.record_override(if start { e.start_off } else { e.off }, WTy::F64, v, start);
-                    }
-                }
-                _ => return bad_vr("fmi3SetFloat64", vr, "a settable Float64 variable"),
-            }
-        }
-        st.need_update = true;
-        st.dae_current = false;
-        Status::Ok
-    }
-    fn set_int8(&self, _: Vec<u32>, _: Vec<i8>) -> Status {
-        Status::Error
-    }
-    fn set_int16(&self, _: Vec<u32>, _: Vec<i16>) -> Status {
-        Status::Error
-    }
-    fn set_int32(&self, vrs: Vec<u32>, values: Vec<i32>) -> Status {
-        let mut st = self.st.borrow_mut();
-        let vrs = st.vrs.expand(&vrs);
-        if vrs.len() != values.len() {
-            return err_status(&alloc::format!("fmi3SetInt32: {} values for {} value references", values.len(), vrs.len()));
-        }
-        for (vr, v) in vrs.into_iter().zip(values) {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
-                    st.write_i32(e.off, v);
-                    if st.mode != Mode::Ready {
-                        st.record_override(e.off, WTy::I32, v as f64, false);
-                    }
-                }
-                _ => return bad_vr("fmi3SetInt32", vr, "a settable Int32 variable"),
-            }
-        }
-        st.need_update = true;
-        st.dae_current = false;
-        Status::Ok
-    }
-    fn set_int64(&self, vrs: Vec<u32>, values: Vec<i64>) -> Status {
-        let mut st = self.st.borrow_mut();
-        let vrs = st.vrs.expand(&vrs);
-        if vrs.len() != values.len() {
-            return err_status(&alloc::format!("fmi3SetInt64: {} values for {} value references", values.len(), vrs.len()));
-        }
-        for (vr, v) in vrs.into_iter().zip(values) {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
-                    st.write_i32(e.off, v as i32);
-                    if st.mode != Mode::Ready {
-                        st.record_override(e.off, WTy::I32, v as f64, false);
-                    }
-                }
-                _ => return bad_vr("fmi3SetInt64", vr, "a settable Int64 variable"),
-            }
-        }
-        st.need_update = true;
-        st.dae_current = false;
-        Status::Ok
-    }
-    fn set_uint8(&self, _: Vec<u32>, _: Vec<u8>) -> Status {
-        Status::Error
-    }
-    fn set_uint16(&self, _: Vec<u32>, _: Vec<u16>) -> Status {
-        Status::Error
-    }
-    fn set_uint32(&self, _: Vec<u32>, _: Vec<u32>) -> Status {
-        Status::Error
-    }
-    fn set_uint64(&self, vrs: Vec<u32>, values: Vec<u64>) -> Status {
-        let mut st = self.st.borrow_mut();
-        let vrs = st.vrs.expand(&vrs);
-        if vrs.len() != values.len() {
-            return err_status(&alloc::format!("fmi3SetUInt64: {} values for {} value references", values.len(), vrs.len()));
-        }
-        for (vr, v) in vrs.into_iter().zip(values) {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
-                    st.write_i32(e.off, v as i32);
-                    if st.mode != Mode::Ready {
-                        st.record_override(e.off, WTy::I32, v as f64, false);
-                    }
-                }
-                _ => return bad_vr("fmi3SetUInt64", vr, "a settable UInt64 variable"),
-            }
-        }
-        st.need_update = true;
-        st.dae_current = false;
-        Status::Ok
-    }
-    fn set_boolean(&self, vrs: Vec<u32>, values: Vec<bool>) -> Status {
-        let mut st = self.st.borrow_mut();
-        let vrs = st.vrs.expand(&vrs);
-        if vrs.len() != values.len() {
-            return err_status(&alloc::format!("fmi3SetBoolean: {} values for {} value references", values.len(), vrs.len()));
-        }
-        for (vr, v) in vrs.into_iter().zip(values) {
-            if vr == st.dae_enable_vr && vr != 0 {
-                if !st.configuring {
-                    return err_status("fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode");
-                }
-                // A `--daeMode` export with every residual eliminated still declares it.
-                st.dae_mode = v;
-                continue;
-            }
-            match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
-                    let iv = if v { 1 } else { 0 };
-                    st.write_i32(e.off, iv);
-                    if st.mode != Mode::Ready {
-                        st.record_override(e.off, WTy::I32, iv as f64, false);
-                    }
-                }
-                _ => return bad_vr("fmi3SetBoolean", vr, "a settable Boolean variable"),
-            }
-        }
-        st.need_update = true;
-        st.dae_current = false;
-        Status::Ok
-    }
-    fn set_string(&self, vrs: Vec<u32>, values: Vec<String>) -> Status {
-        let mut st = self.st.borrow_mut();
-        let vrs = st.vrs.expand(&vrs);
-        if vrs.len() != values.len() {
-            return err_status(&alloc::format!("fmi3SetString: {} values for {} value references", values.len(), vrs.len()));
-        }
-        for (vr, val) in vrs.into_iter().zip(values) {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.is_string => {
-                    st.write_string(e.off, &val);
-                    if st.mode != Mode::Ready {
-                        st.init_string_overrides.retain(|(o, _)| *o != e.off);
-                        st.init_string_overrides.push((e.off, val)); // see the field
-                    }
-                }
-                _ => return bad_vr("fmi3SetString", vr, "a settable String variable"),
-            }
-        }
-        st.need_update = true;
-        st.dae_current = false;
-        Status::Ok
-    }
-    fn set_binary(&self, _: Vec<u32>, _: Vec<Vec<u8>>) -> Status {
-        Status::Error
-    }
-    fn set_clock(&self, _: Vec<u32>, _: Vec<bool>) -> Status {
-        Status::Error
-    }
-
-    fn get_number_of_variable_dependencies(&self, _: u32) -> Result<u64, Status> {
-        Err(Status::Error)
-    }
-    fn get_variable_dependencies(&self, _: u32) -> Result<Vec<VariableDependency>, Status> {
-        Err(Status::Error)
-    }
-
-    fn get_fmu_state(&self) -> Result<Vec<u8>, Status> {
-        let st = self.st.borrow();
-        let mut bytes = vec![0u8; st.layout.total as usize];
-        let _ = Engine.read_bytes(st.sim_data, &mut bytes);
-        Ok(bytes)
-    }
-    fn set_fmu_state(&self, state: Vec<u8>) -> Status {
-        let st = self.st.borrow();
-        if state.len() != st.layout.total as usize {
-            return Status::Error;
-        }
-        let mut e = Engine;
-        let _ = e.write_bytes(st.sim_data, &state);
-        Status::Ok
-    }
-
-    /// `d(derivatives)/d(states) · seed`, out of the model's symbolic Jacobian.
-    ///
-    /// Lets an importer integrate the FMU with the Jacobian the model was
-    /// compiled with instead of differencing it. Only derivatives with respect
-    /// to states are answered — the only block the symbolic Jacobian holds.
-    fn get_directional_derivative(
-        &self,
-        unknowns: Vec<u32>,
-        knowns: Vec<u32>,
-        seed: Vec<f64>,
-    ) -> Result<Vec<f64>, Status> {
-        if knowns.len() != seed.len() {
-            return Err(Status::Error);
-        }
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let n = st.layout.n_states as usize;
-        let rows: Vec<usize> = unknowns.iter().filter_map(|vr| st.derivative_index(*vr)).collect();
-        let cols: Vec<usize> = knowns.iter().filter_map(|vr| st.state_index(*vr)).collect();
-        if rows.len() != unknowns.len() || cols.len() != knowns.len() {
-            return Err(Status::Error);
-        }
-        let jacobian = st.jacobian(n)?;
-        Ok(rows
-            .iter()
-            .map(|&row| {
-                cols.iter()
-                    .zip(&seed)
-                    .map(|(&col, s)| jacobian[col * n + row] * s)
-                    .sum()
-            })
-            .collect())
-    }
-    fn get_adjoint_derivative(
-        &self,
-        _: Vec<u32>,
-        _: Vec<u32>,
-        _: Vec<f64>,
-    ) -> Result<Vec<f64>, Status> {
-        Err(Status::Error)
-    }
-
-    fn get_interval_decimal(&self, _: Vec<u32>) -> Result<Vec<(f64, IntervalQualifier)>, Status> {
-        Err(Status::Error)
-    }
-    fn get_interval_fraction(
-        &self,
-        _: Vec<u32>,
-    ) -> Result<Vec<(IntervalFraction, IntervalQualifier)>, Status> {
-        Err(Status::Error)
-    }
-    fn get_shift_decimal(&self, _: Vec<u32>) -> Result<Vec<f64>, Status> {
-        Err(Status::Error)
-    }
-    fn get_shift_fraction(&self, _: Vec<u32>) -> Result<Vec<IntervalFraction>, Status> {
-        Err(Status::Error)
-    }
-    fn set_interval_decimal(&self, _: Vec<u32>, _: Vec<f64>) -> Status {
-        Status::Error
-    }
-    fn set_interval_fraction(&self, _: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
-        Status::Error
-    }
-    fn set_shift_decimal(&self, _: Vec<u32>, _: Vec<f64>) -> Status {
-        Status::Error
-    }
-    fn set_shift_fraction(&self, _: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
-        Status::Error
-    }
-    fn evaluate_discrete_states(&self) -> Status {
-        Status::Ok
-    }
-    fn enter_step_mode(&self) -> Status {
-        self.st.borrow_mut().event_mode = false;
-        Status::Ok
-    }
-
-    /// C's `fmi2GetRealOutputDerivatives`: `$<name>_der`. C reports the first
-    /// derivative whatever order is asked for.
-    fn get_output_derivatives(&self, requests: Vec<(u32, u32)>) -> Result<Vec<f64>, Status> {
-        let mut st = self.st.borrow_mut();
-        st.update_if_needed()?;
-        let mut out = Vec::with_capacity(requests.len());
-        for (vr, _order) in requests {
-            match st.vrs.resolve(vr) {
-                Some(e) if e.der_off != 0 => out.push(st.read_f64(e.der_off)),
-                _ => {
-                    return Err(err_status(
-                        "the model has no output derivative for this variable                          (an FMU exported with -d=fmuExperimental has them)",
-                    ))
-                }
-            }
-        }
-        Ok(out)
-    }
-    };
-}
-
-#[cfg(feature = "me")]
-impl GuestModelExchangeInstance for Instance {
-    shared_instance_methods!();
-    fn instantiate_model_exchange(
-        instance_name: String,
-        _instantiation_token: String,
-        _resource_path: String,
-        _visible: bool,
-        logging_on: bool,
-    ) -> Option<ModelExchangeInstance> {
-        init_logging(instance_name, logging_on);
-        // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
-        // the FMU's `resources/` as this component's root, not the host path.
-        openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
-        let st = new_state()?;
-        Some(ModelExchangeInstance::new(Instance { st: RefCell::new(st) }))
-    }
-
-    fn enter_continuous_time_mode(&self) -> Status {
+/// The Model-Exchange half, kept in a macro for the same reason as
+/// [`shared_instance_methods`]: the wasm world implements a trait with them, a
+/// native FMU calls them on the instance directly.
+macro_rules! me_instance_methods {
+    // The wasm world expands these into a trait impl, where a visibility
+    // qualifier is not allowed; a native host wants them public.
+    () => { me_instance_methods!(@vis); };
+    (pub) => { me_instance_methods!(@vis pub); };
+    (@vis $($vis:tt)?) => {
+    $($vis)? fn enter_continuous_time_mode(&self) -> Status {
         let mut st = self.st.borrow_mut();
         st.continuous_time = true;
         st.event_mode = false;
         Status::Ok
     }
 
-    fn set_time(&self, time: f64) -> Status {
+    $($vis)? fn set_time(&self, time: f64) -> Status {
         let mut st = self.st.borrow_mut();
         st.write_f64(TIME_OFF, time);
         st.need_update = true;
         st.dae_current = false;
         Status::Ok
     }
-    fn set_continuous_states(&self, states: Vec<f64>) -> Status {
+    $($vis)? fn set_continuous_states(&self, states: Vec<f64>) -> Status {
         let mut st = self.st.borrow_mut();
         if states.len() != st.layout.n_states as usize {
             return Status::Error;
@@ -1724,7 +1259,7 @@ impl GuestModelExchangeInstance for Instance {
     ///
     /// In Continuous Time Mode this is the master's integrator residual, so it
     /// answers `fmi3Discard` -- C's `IRES = -1` -- for a model error (see `evaluate`).
-    fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
+    $($vis)? fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
         if st.need_update && (!st.dae_mode || st.mode == Mode::Init) {
             st.eval_ode()?;
@@ -1733,7 +1268,7 @@ impl GuestModelExchangeInstance for Instance {
         let base = REAL_OFF + n * 8;
         Ok((0..n).map(|i| st.read_f64(base + i * 8)).collect())
     }
-    fn get_event_indicators(&self) -> Result<Vec<f64>, Status> {
+    $($vis)? fn get_event_indicators(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
         if st.need_update {
             st.eval_ode()?;
@@ -1744,24 +1279,24 @@ impl GuestModelExchangeInstance for Instance {
         }
         // C's root callbacks: a crossing may read an algebraic `functionODE` skips.
         st.evaluate(|m| {
-            let mut e = Engine;
-            driver::eval_zc_equations(&mut e, m.sim_data, &m.layout)?;
-            e.call2(driver::MODEL_FN_ZC, m.sim_data, m.sim_data + m.layout.zc_off)
+            let (sim_data, layout) = (m.sim_data, m.layout);
+            driver::eval_zc_equations(&mut m.engine, sim_data, &layout)?;
+            m.engine.call2(driver::MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)
         })?;
         Ok((0..st.layout.n_zc).map(|i| st.read_f64(st.layout.zc_off + i * 8)).collect())
     }
-    fn get_continuous_states(&self) -> Result<Vec<f64>, Status> {
+    $($vis)? fn get_continuous_states(&self) -> Result<Vec<f64>, Status> {
         let st = self.st.borrow();
         Ok((0..st.layout.n_states).map(|i| st.read_f64(REAL_OFF + i * 8)).collect())
     }
-    fn get_nominals_of_continuous_states(&self) -> Result<Vec<f64>, Status> {
+    $($vis)? fn get_nominals_of_continuous_states(&self) -> Result<Vec<f64>, Status> {
         let st = self.st.borrow();
-        driver::state_nominals(&Engine, st.sim_data, &st.layout).map_err(err_status)
+        driver::state_nominals(&st.engine, st.sim_data, &st.layout).map_err(err_status)
     }
-    fn get_number_of_event_indicators(&self) -> Result<u64, Status> {
+    $($vis)? fn get_number_of_event_indicators(&self) -> Result<u64, Status> {
         Ok(self.st.borrow().layout.n_zc as u64)
     }
-    fn get_number_of_continuous_states(&self) -> Result<u64, Status> {
+    $($vis)? fn get_number_of_continuous_states(&self) -> Result<u64, Status> {
         Ok(self.st.borrow().layout.n_states as u64)
     }
 
@@ -1769,7 +1304,7 @@ impl GuestModelExchangeInstance for Instance {
     /// when-bodies outside Event Mode and save their `pre`, so the following
     /// `update-discrete-states` sees no edge and the `reinit` is lost. Every when
     /// is guarded by a zero-crossing or a sample, so Event Mode is reached anyway.
-    fn completed_integrator_step(
+    $($vis)? fn completed_integrator_step(
         &self,
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<CompletedStepResult, Status> {
@@ -1777,66 +1312,30 @@ impl GuestModelExchangeInstance for Instance {
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
         st.evaluate(|m| m.eval())?;
         // The only point the importer gives us to record the accepted step.
-        driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(err_status)?;
+        let (sim_data, layout) = (st.sim_data, st.layout);
+        driver::store_operators(&mut st.engine, sim_data, &layout).map_err(err_status)?;
         st.need_update = true;
         st.dae_current = false;
         let sim_data = st.sim_data;
         let m = &mut *st;
-        let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(err_status)?;
+        let switching = m.dss.would_change(&mut m.engine, sim_data, &m.meta).map_err(err_status)?;
         let assert_held = core::mem::take(&mut m.assert_held);
         Ok(CompletedStepResult {
             enter_event_mode: switching || assert_held,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,
         })
     }
+    };
 }
 
-
-struct Fmu;
-
-impl CommonGuest for Fmu {
-    fn get_version() -> String {
-        "3.0".to_string()
-    }
-}
-
-#[cfg(feature = "me")]
-impl MeGuest for Fmu {
-    type ModelExchangeInstance = Instance;
-}
-
-#[cfg(feature = "cs")]
-impl GuestCoSimulationInstance for Instance {
-    shared_instance_methods!();
-
-    fn instantiate_co_simulation(
-        instance_name: String,
-        _instantiation_token: String,
-        _resource_path: String,
-        _visible: bool,
-        logging_on: bool,
-        event_mode_used: bool,
-        early_return_allowed: bool,
-        _required_intermediate_variables: Vec<u32>,
-    ) -> Option<CoSimulationInstance> {
-        init_logging(instance_name, logging_on);
-        // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
-        // the FMU's `resources/` as this component's root, not the host path.
-        openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
-        let mut st = new_state()?;
-        st.defer = match (event_mode_used, early_return_allowed) {
-            (false, _) => CsDefer::None,
-            (true, false) => CsDefer::AtTarget,
-            (true, true) => CsDefer::Any,
-        };
-        // C's `fmi2Instantiate` sets the internal solver up here, CS only.
-        driver::log_cs_solver_setup(&st.meta, st.defer);
-        Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
-    }
-
-    /// Integrate to the communication point, reporting the events the instance's
-    /// [`CsDefer`] leaves to the master and resolving the rest.
-    fn do_step(
+/// The Co-Simulation half; see [`me_instance_methods`].
+macro_rules! cs_instance_methods {
+    // The wasm world expands these into a trait impl, where a visibility
+    // qualifier is not allowed; a native host wants them public.
+    () => { cs_instance_methods!(@vis); };
+    (pub) => { cs_instance_methods!(@vis pub); };
+    (@vis $($vis:tt)?) => {
+    $($vis)? fn do_step(
         &self,
         current_communication_point: f64,
         communication_step_size: f64,
@@ -1845,20 +1344,19 @@ impl GuestCoSimulationInstance for Instance {
         let mut st = self.st.borrow_mut();
         let target = current_communication_point + communication_step_size;
         let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
-        let mut e = Engine;
         let st = &mut *st;
         // Build the driver on first use, over the initialized state at the start
         // point (FMI ran Initialization Mode; the importer may also have set inputs).
         // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
-            match CsDriver::new(&mut e, &st.meta, sim_data, t, defer, st.sync.take()) {
+            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, defer, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
             }
         }
         let Some(driver) = st.cs.as_mut() else { return Err(Status::Error) };
         st.event_mode = false;
-        let outcome = driver.step_to(&mut e, &st.meta, target, defer, &mut st.dss);
+        let outcome = driver.step_to(&mut st.engine, &st.meta, target, defer, &mut st.dss);
         let last = driver.time();
         // C's `fmi2DoStep`: the getters now report the new time's values. The step
         // ended on `functionAlgebraics`, so a DAE model's unknowns are current and
@@ -1897,35 +1395,785 @@ impl GuestCoSimulationInstance for Instance {
                 early_return: true,
                 discarded: true,
             }),
-            Err(err) => Err(failed(&mut e, sim_data, err)),
+            Err(err) => Err(failed(&mut st.engine, sim_data, err)),
         }
     }
 
-    fn set_input_derivatives(&self, _: Vec<(u32, u32)>, _: Vec<f64>) -> Status {
+    $($vis)? fn set_input_derivatives(&self, _: Vec<(u32, u32)>, _: Vec<f64>) -> Status {
         Status::Error
+    }
+    };
+}
+
+macro_rules! shared_instance_methods {
+    // The wasm world expands these into a trait impl, where a visibility
+    // qualifier is not allowed; a native host wants them public.
+    () => { shared_instance_methods!(@vis); };
+    (pub) => { shared_instance_methods!(@vis pub); };
+    (@vis $($vis:tt)?) => {
+
+    /// C's `omcSetDebugLogging`: every category off, then the named ones follow
+    /// `logging_on`; an unknown name is reported unfiltered, as in C. A category
+    /// named like a runtime stream (`LOG_EVENTS`; the export declares them all)
+    /// switches that stream instead.
+    $($vis)? fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
+        let mut cats = 0u32;
+        let mut unknown: Vec<String> = Vec::new();
+        let mut streams: Vec<String> = Vec::new();
+        let mut fmi_categories = false;
+        for c in categories {
+            match CATEGORIES.iter().position(|n| *n == c) {
+                Some(i) => {
+                    fmi_categories = true;
+                    if logging_on {
+                        cats |= 1 << i;
+                    }
+                }
+                None if omclog::STREAM_NAME.contains(&c.as_str()) => streams.push(c),
+                None => unknown.push(c),
+            }
+        }
+        if fmi_categories || streams.is_empty() {
+            logger().cats = cats;
+        }
+        if let Ok(m) = omclog::mask_from_streams(&streams) {
+            let m = m & !omclog::ALWAYS_ON;
+            let cur = omclog::mask();
+            omclog::set_mask(if logging_on { cur | m } else { cur & !m });
+        }
+        for c in unknown {
+            log_raw(
+                Status::Warning,
+                CAT_ERROR,
+                &alloc::format!("logging category '{c}' is not supported by model"),
+            );
+        }
+        Status::Ok
+    }
+
+    $($vis)? fn enter_initialization_mode(
+        &self,
+        tolerance: Option<f64>,
+        start_time: f64,
+        _stop_time: Option<f64>,
+    ) -> Status {
+        let mut st = self.st.borrow_mut();
+        // The sets made while Instantiated stay: C's `setStartValues` here turns
+        // the live values into the `start` attributes the initial solve reads.
+        st.mode = Mode::Init;
+        st.need_update = true;
+        st.dae_current = false;
+        st.write_f64(TIME_OFF, start_time);
+        let (sim_data, layout) = (st.sim_data, st.layout);
+        match set_zc_tolerance(&mut st.engine, sim_data, &layout, tolerance.unwrap_or(0.0)) {
+            Ok(()) => Status::Ok,
+            Err(err) => err_status(err),
+        }
+    }
+
+    $($vis)? fn exit_initialization_mode(&self) -> Status {
+        let mut st = self.st.borrow_mut();
+        // Only when something was set since the last solve: a get in Initialization
+        // Mode has already run it otherwise.
+        if let Err(status) = st.update_if_needed() {
+            return status;
+        }
+        st.mode = Mode::Ready;
+        // Exiting Initialization Mode leaves the instance in Event Mode.
+        st.event_mode = true;
+        // `run_initialization` has run `initSample`, so the schedule is readable.
+        if st.layout.n_samples > 0 {
+            let start_time = st.read_f64(TIME_OFF);
+            let (sim_data, layout) = (st.sim_data, st.layout);
+            match Samples::load(&st.engine, sim_data, &layout, start_time) {
+                Ok(s) => st.samples = Some(s),
+                Err(err) => return err_status(err),
+            }
+        }
+        // The CS driver is built lazily on the first `do-step` (see there): a me_cs
+        // component driven in Model Exchange must not pay for — or be perturbed by —
+        // a driver it never uses. Event Mode is the exception: the master's first
+        // action after init is an event iteration (`update-discrete-states`), which
+        // must run through the driver's sample schedule, so build it eagerly.
+        #[cfg(feature = "cs")]
+        if st.defer != CsDefer::None {
+            let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
+            let st = &mut *st;
+            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, defer, st.sync.take()) {
+                Ok(d) => st.cs = Some(d),
+                Err(err) => return err_status(err),
+            }
+        }
+        Status::Ok
+    }
+
+    $($vis)? fn enter_event_mode(&self) -> Status {
+        let mut st = self.st.borrow_mut();
+        st.continuous_time = false;
+        st.event_mode = true;
+        st.assert_held = false;
+        Status::Ok
+    }
+
+    /// The master has located the event and set time/states; run the discrete
+    /// update here. `iterate_discrete` already runs to a fixed point, so one pass
+    /// always suffices and `new-discrete-states-needed` stays false.
+    ///
+    /// C's `simulationUpdate` holds a violated `assert()` over the whole update: one
+    /// the event itself raises is forgiven when something did happen at this point,
+    /// and fails the call otherwise (`settle_event_asserts`).
+    $($vis)? fn update_discrete_states(&self) -> Result<DiscreteStatesInfo, Status> {
+        let mut st = self.st.borrow_mut();
+        let (sim_data, layout) = (st.sim_data, st.layout);
+        let time = st.read_f64(TIME_OFF);
+        let before = match driver::discrete_snapshot(&st.engine, sim_data, &layout) {
+            Ok(b) => b,
+            Err(err) => return Err(failed(&mut st.engine, sim_data, err)),
+        };
+        driver::open_assert_window();
+        let updated = st.run_event_update(time);
+        // Copied out: `st.engine` is borrowed by the calls that want this flag.
+        let logged = st.assert_logged;
+        let settled = match &updated {
+            Ok(u) => driver::settle_event_asserts(&mut st.engine, sim_data, &layout, &before, u.fired, !logged),
+            Err(_) => driver::take_suppressed_assert(&mut st.engine, sim_data, false).map(|_| false),
+        };
+        // Settled, so the next violation is a new one to report.
+        if !matches!(settled, Ok(false)) {
+            st.assert_logged = false;
+        }
+        let u = match updated {
+            Ok(u) => u,
+            Err(err) => return Err(failed(&mut st.engine, sim_data, err)),
+        };
+        if let Err(err) = settled {
+            return Err(failed(&mut st.engine, sim_data, err));
+        }
+        Ok(DiscreteStatesInfo {
+            new_discrete_states_needed: false,
+            terminate_simulation: u.up.terminate,
+            // C's `updateSolverNominals`: a pivoted state set integrates other
+            // variables, with other nominals.
+            nominals_of_continuous_states_changed: u.reselected,
+            values_of_continuous_states_changed: u.up.states_changed || u.ticked || u.reselected,
+            next_event_time_defined: u.next.is_some(),
+            next_event_time: u.next.unwrap_or(0.0),
+        })
+    }
+
+    $($vis)? fn terminate(&self) -> Status {
+        let mut st = self.st.borrow_mut();
+        #[cfg(feature = "cs")]
+        if omclog::active(omclog::STATS) {
+            if let Some(d) = &st.cs {
+                let mut stats = openmodelica_sim_meta::SolveStats::default();
+                d.fill_stats(&mut stats);
+                stdio::print(openmodelica_sim_meta::stats::log_stats_block(&stats).as_bytes());
+            }
+        }
+        st.destruct_external_objects();
+        Status::Ok
+    }
+
+    /// Back to the instantiated state: what initialization and the steps after it
+    /// built goes with the `SimData` it was built over, or the next run continues
+    /// from the last one.
+    $($vis)? fn reset(&self) -> Status {
+        let mut st = self.st.borrow_mut();
+        st.destruct_external_objects();
+        unsafe {
+            core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
+        }
+        st.mode = Mode::Instantiated;
+        st.continuous_time = false;
+        st.dae_mode = false;
+        st.configuring = false;
+        st.need_update = true;
+        st.terminated = false;
+        st.dae_current = false;
+        st.init_overrides.clear();
+        st.init_start_overrides.clear();
+        st.init_string_overrides.clear();
+        st.samples = None;
+        st.sync = None;
+        #[cfg(feature = "cs")]
+        {
+            st.cs = None;
+        }
+        st.seed_start_state();
+        Status::Ok
+    }
+
+    /// The one structural parameter is `fixed`: Configuration Mode is open from
+    /// Instantiated only, not the Reconfiguration Mode a `tunable` one would allow.
+    $($vis)? fn enter_configuration_mode(&self) -> Status {
+        let mut st = self.st.borrow_mut();
+        if st.mode != Mode::Instantiated || st.configuring {
+            return err_status("fmi3EnterConfigurationMode: only allowed in the Instantiated state");
+        }
+        st.configuring = true;
+        Status::Ok
+    }
+    $($vis)? fn exit_configuration_mode(&self) -> Status {
+        let mut st = self.st.borrow_mut();
+        if !st.configuring {
+            return err_status("fmi3ExitConfigurationMode: not in Configuration Mode");
+        }
+        st.configuring = false;
+        Status::Ok
+    }
+
+    // ── Getters ───────────────────────────────────────────────────────────────
+    $($vis)? fn get_float32(&self, _: Vec<u32>) -> Result<Vec<f32>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_float64(&self, vrs: Vec<u32>) -> Result<Vec<f64>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let vrs = st.vrs.expand(&vrs);
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::F64 => out.push(e.negate.apply_f64(st.read_f64(e.off))),
+                _ => return Err(bad_vr("fmi3GetFloat64", vr, "a Float64 variable")),
+            }
+        }
+        Ok(out)
+    }
+    $($vis)? fn get_int8(&self, _: Vec<u32>) -> Result<Vec<i8>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_int16(&self, _: Vec<u32>) -> Result<Vec<i16>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_int32(&self, vrs: Vec<u32>) -> Result<Vec<i32>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let vrs = st.vrs.expand(&vrs);
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.is_string => {
+                    out.push(e.negate.apply_i32(st.read_i32(e.off)))
+                }
+                _ => return Err(bad_vr("fmi3GetInt32", vr, "an Int32 variable")),
+            }
+        }
+        Ok(out)
+    }
+    // fmi3 accesses `<Enumeration>` vars via Int64; they are `WTy::I32` slots here,
+    // so widen/narrow around the i32.
+    $($vis)? fn get_int64(&self, vrs: Vec<u32>) -> Result<Vec<i64>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let vrs = st.vrs.expand(&vrs);
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.is_string => {
+                    out.push(e.negate.apply_i32(st.read_i32(e.off)) as i64)
+                }
+                _ => return Err(bad_vr("fmi3GetInt64", vr, "an Int64 variable")),
+            }
+        }
+        Ok(out)
+    }
+    $($vis)? fn get_uint8(&self, _: Vec<u32>) -> Result<Vec<u8>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_uint16(&self, _: Vec<u32>) -> Result<Vec<u16>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_uint32(&self, _: Vec<u32>) -> Result<Vec<u32>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_uint64(&self, vrs: Vec<u32>) -> Result<Vec<u64>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let vrs = st.vrs.expand(&vrs);
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.is_string => out.push(st.read_i32(e.off) as u64),
+                _ => return Err(bad_vr("fmi3GetUInt64", vr, "a UInt64 variable")),
+            }
+        }
+        Ok(out)
+    }
+    $($vis)? fn get_boolean(&self, vrs: Vec<u32>) -> Result<Vec<bool>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let vrs = st.vrs.expand(&vrs);
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            if vr == st.dae_enable_vr && vr != 0 {
+                out.push(st.dae_mode);
+                continue;
+            }
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.is_string => {
+                    out.push(e.negate.apply_i32(st.read_i32(e.off)) != 0)
+                }
+                _ => return Err(bad_vr("fmi3GetBoolean", vr, "a Boolean variable")),
+            }
+        }
+        Ok(out)
+    }
+    $($vis)? fn get_string(&self, vrs: Vec<u32>) -> Result<Vec<String>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let vrs = st.vrs.expand(&vrs);
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.is_string => out.push(st.read_string(e.off)),
+                _ => return Err(bad_vr("fmi3GetString", vr, "a String variable")),
+            }
+        }
+        Ok(out)
+    }
+    $($vis)? fn get_binary(&self, _: Vec<u32>) -> Result<Vec<Vec<u8>>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_clock(&self, _: Vec<u32>) -> Result<Vec<bool>, Status> {
+        Err(Status::Error)
+    }
+
+    // ── Setters ───────────────────────────────────────────────────────────────
+    $($vis)? fn set_float32(&self, _: Vec<u32>, _: Vec<f32>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_float64(&self, vrs: Vec<u32>, values: Vec<f64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
+        if vrs.len() != values.len() {
+            return err_status(&alloc::format!("fmi3SetFloat64: {} values for {} value references", values.len(), vrs.len()));
+        }
+        for (vr, v) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::F64 && e.negate == Neg::None => {
+                    st.write_f64(e.off, v);
+                    if st.mode != Mode::Ready {
+                        let start = e.start_off != 0;
+                        st.record_override(if start { e.start_off } else { e.off }, WTy::F64, v, start);
+                    }
+                }
+                _ => return bad_vr("fmi3SetFloat64", vr, "a settable Float64 variable"),
+            }
+        }
+        st.need_update = true;
+        st.dae_current = false;
+        Status::Ok
+    }
+    $($vis)? fn set_int8(&self, _: Vec<u32>, _: Vec<i8>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_int16(&self, _: Vec<u32>, _: Vec<i16>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_int32(&self, vrs: Vec<u32>, values: Vec<i32>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
+        if vrs.len() != values.len() {
+            return err_status(&alloc::format!("fmi3SetInt32: {} values for {} value references", values.len(), vrs.len()));
+        }
+        for (vr, v) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    st.write_i32(e.off, v);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, v as f64, false);
+                    }
+                }
+                _ => return bad_vr("fmi3SetInt32", vr, "a settable Int32 variable"),
+            }
+        }
+        st.need_update = true;
+        st.dae_current = false;
+        Status::Ok
+    }
+    $($vis)? fn set_int64(&self, vrs: Vec<u32>, values: Vec<i64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
+        if vrs.len() != values.len() {
+            return err_status(&alloc::format!("fmi3SetInt64: {} values for {} value references", values.len(), vrs.len()));
+        }
+        for (vr, v) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    st.write_i32(e.off, v as i32);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, v as f64, false);
+                    }
+                }
+                _ => return bad_vr("fmi3SetInt64", vr, "a settable Int64 variable"),
+            }
+        }
+        st.need_update = true;
+        st.dae_current = false;
+        Status::Ok
+    }
+    $($vis)? fn set_uint8(&self, _: Vec<u32>, _: Vec<u8>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_uint16(&self, _: Vec<u32>, _: Vec<u16>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_uint32(&self, _: Vec<u32>, _: Vec<u32>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_uint64(&self, vrs: Vec<u32>, values: Vec<u64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
+        if vrs.len() != values.len() {
+            return err_status(&alloc::format!("fmi3SetUInt64: {} values for {} value references", values.len(), vrs.len()));
+        }
+        for (vr, v) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    st.write_i32(e.off, v as i32);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, v as f64, false);
+                    }
+                }
+                _ => return bad_vr("fmi3SetUInt64", vr, "a settable UInt64 variable"),
+            }
+        }
+        st.need_update = true;
+        st.dae_current = false;
+        Status::Ok
+    }
+    $($vis)? fn set_boolean(&self, vrs: Vec<u32>, values: Vec<bool>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
+        if vrs.len() != values.len() {
+            return err_status(&alloc::format!("fmi3SetBoolean: {} values for {} value references", values.len(), vrs.len()));
+        }
+        for (vr, v) in vrs.into_iter().zip(values) {
+            if vr == st.dae_enable_vr && vr != 0 {
+                if !st.configuring {
+                    return err_status("fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode");
+                }
+                // A `--daeMode` export with every residual eliminated still declares it.
+                st.dae_mode = v;
+                continue;
+            }
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    let iv = if v { 1 } else { 0 };
+                    st.write_i32(e.off, iv);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, iv as f64, false);
+                    }
+                }
+                _ => return bad_vr("fmi3SetBoolean", vr, "a settable Boolean variable"),
+            }
+        }
+        st.need_update = true;
+        st.dae_current = false;
+        Status::Ok
+    }
+    $($vis)? fn set_string(&self, vrs: Vec<u32>, values: Vec<String>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
+        if vrs.len() != values.len() {
+            return err_status(&alloc::format!("fmi3SetString: {} values for {} value references", values.len(), vrs.len()));
+        }
+        for (vr, val) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.is_string => {
+                    st.write_string(e.off, &val);
+                    if st.mode != Mode::Ready {
+                        st.init_string_overrides.retain(|(o, _)| *o != e.off);
+                        st.init_string_overrides.push((e.off, val)); // see the field
+                    }
+                }
+                _ => return bad_vr("fmi3SetString", vr, "a settable String variable"),
+            }
+        }
+        st.need_update = true;
+        st.dae_current = false;
+        Status::Ok
+    }
+    $($vis)? fn set_binary(&self, _: Vec<u32>, _: Vec<Vec<u8>>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_clock(&self, _: Vec<u32>, _: Vec<bool>) -> Status {
+        Status::Error
+    }
+
+    $($vis)? fn get_number_of_variable_dependencies(&self, _: u32) -> Result<u64, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_variable_dependencies(&self, _: u32) -> Result<Vec<VariableDependency>, Status> {
+        Err(Status::Error)
+    }
+
+    $($vis)? fn get_fmu_state(&self) -> Result<Vec<u8>, Status> {
+        let st = self.st.borrow();
+        let mut bytes = vec![0u8; st.layout.total as usize];
+        let _ = st.engine.read_bytes(st.sim_data, &mut bytes);
+        Ok(bytes)
+    }
+    $($vis)? fn set_fmu_state(&self, state: Vec<u8>) -> Status {
+        let mut st = self.st.borrow_mut();
+        if state.len() != st.layout.total as usize {
+            return Status::Error;
+        }
+        let sim_data = st.sim_data;
+        let _ = st.engine.write_bytes(sim_data, &state);
+        Status::Ok
+    }
+
+    /// `d(derivatives)/d(states) · seed`, out of the model's symbolic Jacobian.
+    ///
+    /// Lets an importer integrate the FMU with the Jacobian the model was
+    /// compiled with instead of differencing it. Only derivatives with respect
+    /// to states are answered — the only block the symbolic Jacobian holds.
+    $($vis)? fn get_directional_derivative(
+        &self,
+        unknowns: Vec<u32>,
+        knowns: Vec<u32>,
+        seed: Vec<f64>,
+    ) -> Result<Vec<f64>, Status> {
+        if knowns.len() != seed.len() {
+            return Err(Status::Error);
+        }
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let n = st.layout.n_states as usize;
+        let rows: Vec<usize> = unknowns.iter().filter_map(|vr| st.derivative_index(*vr)).collect();
+        let cols: Vec<usize> = knowns.iter().filter_map(|vr| st.state_index(*vr)).collect();
+        if rows.len() != unknowns.len() || cols.len() != knowns.len() {
+            return Err(Status::Error);
+        }
+        let jacobian = st.jacobian(n)?;
+        Ok(rows
+            .iter()
+            .map(|&row| {
+                cols.iter()
+                    .zip(&seed)
+                    .map(|(&col, s)| jacobian[col * n + row] * s)
+                    .sum()
+            })
+            .collect())
+    }
+    $($vis)? fn get_adjoint_derivative(
+        &self,
+        _: Vec<u32>,
+        _: Vec<u32>,
+        _: Vec<f64>,
+    ) -> Result<Vec<f64>, Status> {
+        Err(Status::Error)
+    }
+
+    $($vis)? fn get_interval_decimal(&self, _: Vec<u32>) -> Result<Vec<(f64, IntervalQualifier)>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_interval_fraction(
+        &self,
+        _: Vec<u32>,
+    ) -> Result<Vec<(IntervalFraction, IntervalQualifier)>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_shift_decimal(&self, _: Vec<u32>) -> Result<Vec<f64>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn get_shift_fraction(&self, _: Vec<u32>) -> Result<Vec<IntervalFraction>, Status> {
+        Err(Status::Error)
+    }
+    $($vis)? fn set_interval_decimal(&self, _: Vec<u32>, _: Vec<f64>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_interval_fraction(&self, _: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_shift_decimal(&self, _: Vec<u32>, _: Vec<f64>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn set_shift_fraction(&self, _: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
+        Status::Error
+    }
+    $($vis)? fn evaluate_discrete_states(&self) -> Status {
+        Status::Ok
+    }
+    $($vis)? fn enter_step_mode(&self) -> Status {
+        self.st.borrow_mut().event_mode = false;
+        Status::Ok
+    }
+
+    /// C's `fmi2GetRealOutputDerivatives`: `$<name>_der`. C reports the first
+    /// derivative whatever order is asked for.
+    $($vis)? fn get_output_derivatives(&self, requests: Vec<(u32, u32)>) -> Result<Vec<f64>, Status> {
+        let mut st = self.st.borrow_mut();
+        st.update_if_needed()?;
+        let mut out = Vec::with_capacity(requests.len());
+        for (vr, _order) in requests {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.der_off != 0 => out.push(st.read_f64(e.der_off)),
+                _ => {
+                    return Err(err_status(
+                        "the model has no output derivative for this variable                          (an FMU exported with -d=fmuExperimental has them)",
+                    ))
+                }
+            }
+        }
+        Ok(out)
+    }
+    };
+}
+
+#[cfg(all(feature = "wasm", feature = "me"))]
+impl GuestModelExchangeInstance for Instance<Engine> {
+    shared_instance_methods!();
+    fn instantiate_model_exchange(
+        instance_name: String,
+        _instantiation_token: String,
+        _resource_path: String,
+        _visible: bool,
+        logging_on: bool,
+    ) -> Option<ModelExchangeInstance> {
+        init_logging(instance_name, logging_on);
+        // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
+        // the FMU's `resources/` as this component's root, not the host path.
+        openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
+        let st = new_state()?;
+        Some(ModelExchangeInstance::new(Instance { st: RefCell::new(st) }))
+    }
+
+    me_instance_methods!();
+}
+
+
+#[cfg(feature = "wasm")]
+struct Fmu;
+
+#[cfg(feature = "wasm")]
+impl CommonGuest for Fmu {
+    fn get_version() -> String {
+        "3.0".to_string()
     }
 }
 
-#[cfg(feature = "cs")]
+#[cfg(all(feature = "wasm", feature = "me"))]
+impl MeGuest for Fmu {
+    type ModelExchangeInstance = Instance<Engine>;
+}
+
+#[cfg(all(feature = "wasm", feature = "cs"))]
+impl GuestCoSimulationInstance for Instance<Engine> {
+    shared_instance_methods!();
+
+    fn instantiate_co_simulation(
+        instance_name: String,
+        _instantiation_token: String,
+        _resource_path: String,
+        _visible: bool,
+        logging_on: bool,
+        event_mode_used: bool,
+        early_return_allowed: bool,
+        _required_intermediate_variables: Vec<u32>,
+    ) -> Option<CoSimulationInstance> {
+        init_logging(instance_name, logging_on);
+        // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
+        // the FMU's `resources/` as this component's root, not the host path.
+        openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
+        let mut st = new_state()?;
+        st.defer = match (event_mode_used, early_return_allowed) {
+            (false, _) => CsDefer::None,
+            (true, false) => CsDefer::AtTarget,
+            (true, true) => CsDefer::Any,
+        };
+        // C's `fmi2Instantiate` sets the internal solver up here, CS only.
+        driver::log_cs_solver_setup(&st.meta, st.defer);
+        Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
+    }
+
+    /// Integrate to the communication point, reporting the events the instance's
+    /// [`CsDefer`] leaves to the master and resolving the rest.
+    cs_instance_methods!();
+}
+
+#[cfg(all(feature = "wasm", feature = "cs"))]
 impl CsGuest for Fmu {
-    type CoSimulationInstance = Instance;
+    type CoSimulationInstance = Instance<Engine>;
 }
 
 /// The model's own simulation runtime, exported alongside the FMI interfaces by
 /// the me_cs build (the world that declares `om:sim/simulation`).
-#[cfg(all(feature = "me", feature = "cs"))]
+#[cfg(all(feature = "wasm", feature = "me", feature = "cs"))]
 mod sim_run;
 // The host serves it in the C-API (linked) build, where the WIT import has no
 // canonical-ABI lowering to reach it through.
-#[cfg(all(feature = "me", feature = "cs", not(feature = "capi")))]
+#[cfg(all(feature = "wasm", feature = "me", feature = "cs", not(feature = "capi")))]
 mod native_ext;
 
 /// The same adapter reached as a core module rather than a component, so a host
 /// can compile it once and keep the artifact.
-#[cfg(feature = "capi")]
+#[cfg(all(feature = "wasm", feature = "capi"))]
 mod capi;
 
 // The component's exports, which is what pulls in the resource intrinsics: the
 // C-API build is linked as a core module and needs none of them.
 #[cfg(not(feature = "capi"))]
+#[cfg(feature = "wasm")]
 export!(Fmu);
+
+/// The FMI surface as inherent methods, so a host that is not the wasm component
+/// can use it: a native FMU links this crate and brings its own [`SimEngine`].
+///
+/// The wasm world keeps its `Guest*` trait impls, which expand the same macros.
+/// A generic inherent method is only codegen'd for the engines that call it, so
+/// the component pays nothing for this.
+impl<E: FmiHost + 'static> Instance<E> {
+    /// A host that owns its model: the metadata comes from the exporter rather
+    /// than a blob in the module, and `sim_data` is wherever the engine maps the
+    /// model's block -- 0 for a C model, whose region map starts there.
+    pub fn new(mut engine: E, mut meta: openmodelica_sim_meta::SimMeta, sim_data: u32) -> Option<Self> {
+        let layout = meta.layout;
+        if layout.total == 0 {
+            return None;
+        }
+        apply_baked_solver_flags(&mut engine, &meta.fmi_solver_flags)?;
+        let dae_enable_vr = meta.fmi_dae_enable_vr;
+        let dss = driver::StateSelection::new(&meta);
+        let mut st = MeState {
+            engine,
+            sim_data,
+            layout,
+            vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
+            meta,
+            dss,
+            #[cfg(feature = "cs")]
+            cs: None,
+            #[cfg(feature = "cs")]
+            defer: CsDefer::None,
+            mode: Mode::Instantiated,
+            continuous_time: false,
+            dae_enable_vr,
+            dae_mode: false,
+            configuring: false,
+            dae_current: false,
+            need_update: true,
+            terminated: false,
+            event_mode: false,
+            assert_held: false,
+            assert_logged: false,
+            init_overrides: Vec::new(),
+            init_start_overrides: Vec::new(),
+            init_string_overrides: Vec::new(),
+            samples: None,
+            sync: None,
+            jacobian_cache: Vec::new(),
+            jacobian_valid: false,
+        };
+        st.seed_start_state();
+        Some(Instance { st: RefCell::new(st) })
+    }
+
+    shared_instance_methods!(pub);
+    #[cfg(feature = "me")]
+    me_instance_methods!(pub);
+    #[cfg(feature = "cs")]
+    cs_instance_methods!(pub);
+}

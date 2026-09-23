@@ -47,7 +47,7 @@ import Flags;
 import HashTableCrefSimVar;
 import List;
 import Pointer;
-import PointerCyclic;
+import PointerWeak;
 import UnorderedMap;
 import Util;
 import ProgramUtil;
@@ -150,7 +150,7 @@ public
 
   uniontype Identifier
     record IDENTIFIER
-      PointerCyclic<Equation> eqn;
+      Pointer<Equation> eqn;
       ComponentRef var_cref;
       Boolean resizable;
     end IDENTIFIER;
@@ -363,8 +363,6 @@ public
             nominal := {};
             min := {};
             max := {};
-            // all non constant parameter equations will be added to the initial system.
-            // There is no actual need for parameter equations block
             param := {};
             algorithms := {};
 
@@ -429,6 +427,10 @@ public
             (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := SimCodeUtilShared.createFunctions(program, oldFunctionTree);
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
+
+            // the bindings of the primary parameters are solved before the initialization, they come after the
+            // equations and before the Jacobians in the info file, so they need indices in that order
+            (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
@@ -900,7 +902,7 @@ public
     protected
       ComponentRef seedCref, cref;
     algorithm
-      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", PointerCyclic.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE))), Type.UNKNOWN());
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");

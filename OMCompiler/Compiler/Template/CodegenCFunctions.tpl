@@ -628,6 +628,8 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       #define <%rec_name%>_array_copy_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
       #define <%rec_name%>_array_alloc_copy(src,dst)  generic_array_alloc_copy(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
       #define <%rec_name%>_array_get(src,ndims,...)   (*(<%rec_name%>*)(generic_array_get(&src, sizeof(<%rec_name%>), __VA_ARGS__)))
+      #define <%rec_name%>_array_get1(src,ndims,dim1) (((<%rec_name%>*)(src).data)[omc_array_index1((src), (dim1))])
+      #define <%rec_name%>_array_get2(src,ndims,dim1,dim2) (((<%rec_name%>*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
       #define <%rec_name%>_set(dst,val,...)           generic_array_set(&dst, &val, <%cpy_func_name%>, sizeof(<%rec_name%>), __VA_ARGS__)
       >>
 end recordDeclarationFullHeader;
@@ -4300,6 +4302,26 @@ template expTypeRW(DAE.Type type)
   case T_METATYPE(__) case T_METABOXED(__)    then "TYPE_DESC_MMC"
 end expTypeRW;
 
+template arrayGetSuffix(DAE.Type arrayType, list<Subscript> subs)
+ "Picks the fixed-arity element accessor for a fully subscripted 1-D or 2-D array.
+  The variadic one walks a va_list on every access but is the only one that
+  expands its subscripts just once."
+::=
+  match arrayType
+  case T_ARRAY(dims=dims) then
+    if boolAnd(intEq(listLength(dims), listLength(subs)),
+               stringEq(unsafeSubs(subs), "")) then
+      (match listLength(subs) case 1 then "1" case 2 then "2" else "")
+end arrayGetSuffix;
+
+template unsafeSubs(list<Subscript> subs)
+ "Non-empty if expanding one of the subscripts more than once would not be safe."
+::=
+  (subs |> sub => match sub
+                  case INDEX(__) then (if Expression.containsAnyCall(exp) then "x")
+                  else "x")
+end unsafeSubs;
+
 template expTypeShort(DAE.Type type)
  "Generate type helper."
 ::=
@@ -4838,7 +4860,7 @@ match cr
     let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
 
     let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    let fullname_i = '<%typeName%>_array_get<%arrayGetSuffix(identType, cr.subscriptLst)%>(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
     let newpref = fullname_i + '.'
     functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
 
@@ -4861,7 +4883,7 @@ match cr
     let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
 
     let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    let fullname_i = '<%typeName%>_array_get<%arrayGetSuffix(identType, cr.subscriptLst)%>(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
     fullname_i
 
   case cr as CREF_IDENT() then
@@ -4885,7 +4907,7 @@ match cr
     let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
 
     let fullname = pref + System.unquoteIdentifier(cr.ident)
-    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    let fullname_i = '<%typeName%>_array_get<%arrayGetSuffix(identType, cr.subscriptLst)%>(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
     let newpref = fullname_i + '.'
     functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
 
@@ -4901,7 +4923,7 @@ match cr
     let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
 
     let fullname = pref + System.unquoteIdentifier(cr.ident)
-    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    let fullname_i = '<%typeName%>_array_get<%arrayGetSuffix(identType, cr.subscriptLst)%>(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
     fullname_i
 
   case cr as CREF_IDENT() then
@@ -6445,11 +6467,12 @@ case rel as RELATION(__) then
             res
         case SOME((exp,i,j)) then
           if isReal then
+            let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
             let tmp1 = tempDecl("modelica_real", &varDecls)
             let tmp2 = tempDecl("modelica_real", &varDecls)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
-            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);<%\n%>'
             res
           else
             let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
@@ -7618,7 +7641,10 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           indexed_assign_<%expTypeArray(ty)%>(<%reductionBodyExpr%>, &<%res%>, &<%tmp%>);
           >>
         else
-          '<%arrayTypeResult%>_get1(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
+          <<
+          <%arrayTypeResult%>_get1(<%res%>, 1, <%arrIndex%>) = <%reductionBodyExpr%>;
+          <%arrIndex%>++;
+          >>
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
@@ -7733,13 +7759,14 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           let addr = match iter.ty
             case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
               let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
-              '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>++)'
+              '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>)'
             else
-              '<%arrayType%>_get1(<%loopVar%>, 1, <%firstIndex%>++)'
+              '<%arrayType%>_get1(<%loopVar%>, 1, <%firstIndex%>)'
           (if stringEq(guardCond,"") then
           <<
           if(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
             <%iteratorName%> = <%addr%>;
+            <%firstIndex%>++;
             <%endLoop%>--;
           }
           >>
@@ -7747,6 +7774,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           <<
           while(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
             <%iteratorName%> = <%addr%>;
+            <%firstIndex%>++;
             <%guardExp%>
           }
           >>

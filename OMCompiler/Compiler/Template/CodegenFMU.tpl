@@ -902,14 +902,6 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars))))
   let ixEnd = intAdd(numAlgAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))))
   <<
-  <%if numAlgAliasVars then
-  <<
-  static const int realAliasIndexes[<%numAlgAliasVars%>] = {
-    <%vars.aliasVars |> v as SIMVAR(__) => aliasSetVR(simCode, aliasvar) ; separator=", "; align=20; alignSeparator=",\n" %>
-  };
-
-  >>
-  %>
   fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr) {
     if (vr < <%ixFirstParam%>) {
       return comp->fmuData->localData[0]->realVars[vr];
@@ -920,7 +912,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
     <%if numAlgAliasVars then
     <<
     if (vr < <%ixEnd%>) {
-      int ix = realAliasIndexes[vr-<%ixFirstAlias%>];
+      int ix = comp->fmuData->callback->fmiRealAliasIndexes[vr-<%ixFirstAlias%>];
       return ix>=0 ? getReal(comp, ix) : -getReal(comp, -(ix+1));
     }
     >>
@@ -957,7 +949,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
     <%if numAlgAliasVars then
     <<
     if (vr < <%ixEnd%>) {
-      int ix = realAliasIndexes[vr-<%ixFirstAlias%>];
+      int ix = comp->fmuData->callback->fmiRealAliasIndexes[vr-<%ixFirstAlias%>];
       return ix >= 0 ? setReal(comp, ix, value) : setReal(comp, -(ix+1), -value);
     }
     >>
@@ -968,14 +960,6 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   >>
 end setRealFunction2;
 
-template aliasSetVR(SimCode simCode, AliasVariable v)
-::=
-  match v
-  case NOALIAS(__) then error(sourceInfo(), "aliasSetVR expected an alias")
-  case ALIAS(__) then lookupVR(varName,simCode)
-  case NEGATEDALIAS(__) then intSub(-1, lookupVR(varName,simCode)) /* Subtracting 1 is necessary to make vr=0 possible to have a negative alias */
-end aliasSetVR;
-
 template getIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setInteger function for c file."
 ::=
@@ -985,14 +969,6 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
   let ixFirstAlias = intAdd(numParams, numAlgVars)
   let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
   <<
-  <% if numAliasVars then
-  <<
-  static const int intAliasIndexes[<%numAliasVars%>] = {
-    <%vars.intAliasVars |> v as SIMVAR(__) => aliasSetVR(simCode, aliasvar) ; separator=", "; align=20; alignSeparator=",\n" %>
-  };
-
-  >>
-  %>
   fmi2Integer getInteger(ModelInstance* comp, const fmi2ValueReference vr) {
     if (vr < <%ixFirstParam%>) {
       return comp->fmuData->localData[0]->integerVars[vr];
@@ -1003,7 +979,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
     <% if numAliasVars then
     <<
     if (vr < <%ixEnd%>) {
-      int ix = intAliasIndexes[vr-<%ixFirstAlias%>];
+      int ix = comp->fmuData->callback->fmiIntegerAliasIndexes[vr-<%ixFirstAlias%>];
       return ix>=0 ? getInteger(comp, ix) : -getInteger(comp, -(ix+1));
     }
     >>
@@ -1039,7 +1015,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
     <% if numAliasVars then
     <<
     if (vr < <%ixEnd%>) {
-      int ix = intAliasIndexes[vr-<%ixFirstAlias%>];
+      int ix = comp->fmuData->callback->fmiIntegerAliasIndexes[vr-<%ixFirstAlias%>];
       return ix >= 0 ? setInteger(comp, ix, value) : setInteger(comp, -(ix+1), -value);
     }
     >>

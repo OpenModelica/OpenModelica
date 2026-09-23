@@ -131,8 +131,8 @@ public
       input VariablePointers vars;
       output Mapping mapping;
     protected
-      list<PointerCyclic<Equation>> eqn_lst = EquationPointers.toList(eqns);
-      list<PointerCyclic<Variable>> var_lst = VariablePointers.toList(vars);
+      list<Pointer<Equation>> eqn_lst = EquationPointers.toList(eqns);
+      list<Pointer<Variable>> var_lst = VariablePointers.toList(vars);
       array<Integer> eqn_StA, var_StA;
       array<tuple<Integer,Integer>> eqn_AtS, var_AtS;
       Integer eqn_scalar_size, var_scalar_size;
@@ -155,8 +155,8 @@ public
 
     function expand
       input output Mapping mapping;
-      input list<PointerCyclic<Equation>> eqn_lst;
-      input list<PointerCyclic<Variable>> var_lst;
+      input list<Pointer<Equation>> eqn_lst;
+      input list<Pointer<Variable>> var_lst;
     protected
       array<Integer> eqn_StA, var_StA;
       array<tuple<Integer,Integer>> eqn_AtS, var_AtS;
@@ -261,8 +261,8 @@ public
       input output array<Integer> var_StA;
       input output array<tuple<Integer,Integer>> eqn_AtS;
       input output array<tuple<Integer,Integer>> var_AtS;
-      input list<PointerCyclic<Equation>> eqn_lst;
-      input list<PointerCyclic<Variable>> var_lst;
+      input list<Pointer<Equation>> eqn_lst;
+      input list<Pointer<Variable>> var_lst;
       input Integer eqn_idx_scal_start;
       input Integer eqn_idx_arr_start;
       input Integer var_idx_scal_start;
@@ -795,7 +795,7 @@ public
           dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
           sol_map := UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
           rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-          occ_set := collectDependenciesEquation(PointerCyclic.access(eqn_ptr), kind, vars.map, dep_map, sol_map, rep_set);
+          occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vars.map, dep_map, sol_map, rep_set);
           addInitialStartOccurrences(occ_set, dep_map, sol_map, rep_set, kind);
           equation_names[index] := Equation.getEqnName(eqn_ptr);
           occurrences[index]     := occ_set;
@@ -881,12 +881,32 @@ public
         output Boolean b = UnorderedSet.contains(cref, set) or
                            UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set);
       end filterSet;
+
+      function expandSlice
+        "a slice (e.g. i[1:2]) whose elements are seeds depends on each of the elements"
+        input ComponentRef cref;
+        input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+        output list<ComponentRef> crefs;
+      protected
+        Type ty;
+      algorithm
+        crefs := {cref};
+        if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
+          ty := ComponentRef.getSubscriptedType(cref);
+          if Type.isArray(ty) and Type.sizeOf(ty) <= 256 then
+            crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarize(cref, false));
+            if listEmpty(crefs) then
+              crefs := {cref};
+            end if;
+          end if;
+        end if;
+      end expandSlice;
     algorithm
       sparsity := match full
         local
           UnorderedMap<ComponentRef, Integer> index_map = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, Dependencies> inner_map = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
-          list<PointerCyclic<Equation>> eqns;
+          list<Pointer<Equation>> eqns;
           list<ComponentRef> var_crefs, pder_crefs, tmp_crefs;
           ComponentRef eqn_name, dep_cref, seed_cref, pder_cref;
           Option<ComponentRef> oseed_cref;
@@ -963,7 +983,7 @@ public
                   // as dependency information might not be combinable. optimize afterwards!
                   // ToDo: combine dependencies
                   (inner_deps, dep, repeated) := tpl;
-                  for dep_cref in inner_deps loop
+                  for dep_cref in List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)) loop
                     if filterSet(dep_cref, seed_set) then
                       // Try subscripted key first (NLS with per-element scalar seeds), then
                       // base key with subscript copy (ODE/DAE with full-array base seeds).
@@ -1030,7 +1050,7 @@ public
                 // save the row/result dependencies
                 // get the iterators (potentially need local iterators?)
                 eqn_names     := eqn_name :: eqn_names;
-                eqn_iters     := Equation.getForIterator(PointerCyclic.access(eqn)) :: eqn_iters;
+                eqn_iters     := Equation.getForIterator(Pointer.access(eqn)) :: eqn_iters;
                 deps          := dep_map :: deps;
                 reps          := rep_set :: reps;
                 solved_crefs  := pder_crefs :: solved_crefs;
@@ -1184,7 +1204,7 @@ public
       output array<Integer> seed_index = arrayCreate(EquationPointers.lastUsedIndex(eqns), 0);
     protected
       Integer n = VariablePointers.size(vars), i;
-      PointerCyclic<Equation> seed_eqn;
+      Pointer<Equation> seed_eqn;
     algorithm
       if n <> VariablePointers.size(seed_vars) or n <> VariablePointers.lastUsedIndex(vars) or n <> VariablePointers.lastUsedIndex(seed_vars) then return; end if;
       for j in 1:n loop
@@ -1194,7 +1214,7 @@ public
         i := EquationPointers.getEqnIndex(seed_eqns, Equation.getEqnName(eqn));
         if i > 0 then
           seed_eqn := EquationPointers.getEqnAt(seed_eqns, i);
-          if Equation.isEqual(PointerCyclic.access(eqn), PointerCyclic.access(seed_eqn)) then
+          if Equation.isEqual(Pointer.access(eqn), Pointer.access(seed_eqn)) then
             seed_index[EquationPointers.getEqnIndex(eqns, Equation.getEqnName(eqn))] := i;
           end if;
         end if;
@@ -1423,10 +1443,10 @@ public
     algorithm
       full := match full
         local
-          list<PointerCyclic<Variable>> new_vars = list(VariablePointers.getVarAt(vars, idx) for idx in UnorderedMap.valueList(vn));
-          list<PointerCyclic<Equation>> new_eqns = list(EquationPointers.getEqnAt(eqns, idx) for idx in UnorderedMap.valueList(en));
+          list<Pointer<Variable>> new_vars = list(VariablePointers.getVarAt(vars, idx) for idx in UnorderedMap.valueList(vn));
+          list<Pointer<Equation>> new_eqns = list(EquationPointers.getEqnAt(eqns, idx) for idx in UnorderedMap.valueList(en));
           Integer index, size = EquationPointers.size(eqns);
-          PointerCyclic<Equation> eqn_ptr;
+          Pointer<Equation> eqn_ptr;
           UnorderedSet<ComponentRef> occ_set;
         case FULL() algorithm
           // 0. enlargen the arrays
@@ -1442,7 +1462,7 @@ public
             for e in UnorderedMap.valueList(eo) loop
               eqn_ptr := EquationPointers.getEqnAt(eqns, e);
               index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
-              occ_set := collectDependenciesEquation(PointerCyclic.access(eqn_ptr), kind, vn, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
+              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vn, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
               full.occurrences[index] := UnorderedSet.union(full.occurrences[index], occ_set);
             end for;
           end if;
@@ -1452,7 +1472,7 @@ public
             for e in UnorderedMap.valueList(en) loop
               eqn_ptr := EquationPointers.getEqnAt(eqns, e);
               index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
-              occ_set := collectDependenciesEquation(PointerCyclic.access(eqn_ptr), kind, vars.map, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
+              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vars.map, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
               full.equation_names[index] := Equation.getEqnName(eqn_ptr);
               full.occurrences[index] := occ_set;
             end for;
@@ -1469,6 +1489,25 @@ public
       end if;
     end expandFull;
 
+    function containsLoopCref
+      "true if the expression contains a cref of the set, also as an element of an array in the set"
+      input Expression exp;
+      input UnorderedSet<ComponentRef> set;
+      output Boolean b = Expression.fold(exp, function isLoopCref(set = set), false);
+    end containsLoopCref;
+
+    function isLoopCref
+      input Expression exp;
+      input output Boolean b;
+      input UnorderedSet<ComponentRef> set;
+    algorithm
+      b := match (b, exp)
+        case (false, Expression.CREF())
+          then UnorderedSet.contains(exp.cref, set) or UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), set);
+        else b;
+      end match;
+    end isLoopCref;
+
     function refine
       "refines the solvability kind using differentiation
       Note: only updates the solvabilites of the variables and equations from the maps v and e"
@@ -1484,20 +1523,33 @@ public
       full := match full
         local
           DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcMap);
-          PointerCyclic<Equation> eqn_ptr;
+          Pointer<Equation> eqn_ptr;
           Expression residual = Expression.EMPTY(Type.REAL()), exp;
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
-          Boolean eqnIsDiscrete, eqnIsIf;
+          Boolean eqnIsDiscrete, eqnIsIf, eqnHasNoResidual;
+          Option<Expression> residual_opt;
 
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
             eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
-            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
+            // ALGORITHM equations have no simple scalar residual for getResidualExp --
+            // treat them like discrete equations (solveSimple fallback below) instead of
+            // crashing, now that NBTearing.mo's initialize can pass them in here.
+            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or Equation.isAlgorithm(eqn_ptr);
             eqnIsIf := Equation.isIfEquation(eqn_ptr);
+            eqnHasNoResidual := false;
             if not (eqnIsDiscrete or eqnIsIf) then
-              residual := Equation.getResidualExp(PointerCyclic.access(eqn_ptr));
+              // e.g. a RECORD_EQUATION whose type has no '+'/'-'/'0' operators (a plain
+              // Medium ThermodynamicState, for example) can't have a residual built at
+              // all -- fall back to IMPLICIT below instead of crashing.
+              residual_opt := Equation.tryGetResidualExp(eqn_ptr);
+              if isSome(residual_opt) then
+                SOME(residual) := residual_opt;
+              else
+                eqnHasNoResidual := true;
+              end if;
             end if;
             for var in UnorderedSet.toArray(full.occurrences[eqn_idx]) loop
               // only do something if var is to be refined
@@ -1509,9 +1561,9 @@ public
                   if eqnIsDiscrete or not BVariable.checkCref(var, function BVariable.isContinuous(staticAsContinuous = init), sourceInfo()) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
-                    (_, status, _) := Solve.solveSimple(PointerCyclic.access(eqn_ptr), var);
+                    (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
                     sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
-                  elseif eqnIsIf then
+                  elseif eqnIsIf or eqnHasNoResidual then
                     // TODO more thorough analysis
                     sol := Solvability.IMPLICIT();
                   else
@@ -1521,7 +1573,7 @@ public
                     exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
                     if Expression.isZero(exp) then
                       sol := Solvability.UNSOLVABLE();
-                    elseif Expression.containsCrefSet(exp, vars_set) then
+                    elseif containsLoopCref(exp, vars_set) then
                       // nonlinear -> unique solution if does not contain the variable itself
                       // TODO: might still be unique in some cases, even if contains the variable, e.g. `exp(x)`
                       sol := Solvability.EXPLICIT_NONLINEAR(Expression.containsCref(exp, var));
@@ -1964,7 +2016,7 @@ public
     end estimateEntries;
 
     function upgradeRow
-      input PointerCyclic<Equation> eqn_ptr;
+      input Pointer<Equation> eqn_ptr;
       input Integer eqn_arr_idx;
       input list<ComponentRef> dependencies             "dependent var crefs";
       input UnorderedMap<ComponentRef, Dependency> dep  "dependency map";
@@ -1978,7 +2030,7 @@ public
     protected
       Integer eqn_scal_idx, eqn_size;
       list<Integer> row;
-      Equation eqn = PointerCyclic.access(eqn_ptr);
+      Equation eqn = Pointer.access(eqn_ptr);
       Iterator iter = Equation.getForIterator(eqn);
       Type ty = Equation.getType(eqn, true);
       list<ComponentRef> names;
@@ -2635,7 +2687,7 @@ public
       case Expression.UNBOX()   then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
       case Expression.UNARY()   then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
       case Expression.LUNARY()  then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.MUTABLE() then collectDependencies(MutableCyclic.access(exp.exp), depth, map, dep_map, sol_map, rep_set);
+      case Expression.MUTABLE() then collectDependencies(Mutable.access(exp.exp), depth, map, dep_map, sol_map, rep_set);
 
       // in the size() operator nothing is solvable
       case Expression.SIZE() algorithm
@@ -2731,7 +2783,7 @@ public
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     output list<ComponentRef> crefs;
   protected
-    PointerCyclic<Variable> var;
+    Pointer<Variable> var;
     Integer sk = 1;
     list<Subscript> subs;
     list<ComponentRef> scalar_matches;
@@ -2764,6 +2816,11 @@ public
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
       return;
+    end if;
+
+    // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+      hasSetSub := true;
     end if;
 
     if hasSetSub then
@@ -2844,7 +2901,7 @@ public
 
     // get variables from 'then' branch
     for eqn in body.then_eqns loop
-      sets1  := collectDependenciesEquation(PointerCyclic.access(eqn), kind, map, dep_map, sol_map, rep_set) :: sets1;
+      sets1  := collectDependenciesEquation(Pointer.access(eqn), kind, map, dep_map, sol_map, rep_set) :: sets1;
     end for;
 
     // if there is an 'else' branch, mark those not occuring in both as implicit (maybe it should be unsolvable?)
@@ -3039,7 +3096,7 @@ public
       for cref in UnorderedSet.toList(occs) loop
         () := match BVariable.getVarStart(BVariable.getVarPointer(cref, sourceInfo()))
           local
-            PointerCyclic<Variable> start;
+            Pointer<Variable> start;
             ComponentRef start_cref;
 
           // only save the x -> x.start dependency not the other way around

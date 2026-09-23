@@ -1,0 +1,103 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+
+// This model was wrong in MSL 3.2.1 (ticket #2584); MSL 4 fixed it.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint);
+compareVars :=
+{
+   "bodyOfJoint.body.w_a[2]",
+   "joint.phi",
+   "freeMotionScalarInit.initAngle.angle[1]",
+   "freeMotionScalarInit.initAngle.angle[2]",
+   "freeMotionScalarInit.initAngle.angle[3]",
+   "bodyOfConstraint.body.w_a[1]",
+   "bodyOfConstraint.body.w_a[2]",
+   "bodyOfConstraint.body.w_a[3]",
+   "freeMotionScalarInit.angle_d_1",
+   "freeMotionScalarInit.angle_d_2",
+   "freeMotionScalarInit.angle_d_3"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint
+// {"bodyOfJoint.body.w_a[2]", "joint.phi", "freeMotionScalarInit.initAngle.angle[1]", "freeMotionScalarInit.initAngle.angle[2]", "freeMotionScalarInit.initAngle.angle[3]", "bodyOfConstraint.body.w_a[1]", "bodyOfConstraint.body.w_a[2]", "bodyOfConstraint.body.w_a[3]", "freeMotionScalarInit.angle_d_1", "freeMotionScalarInit.angle_d_2", "freeMotionScalarInit.angle_d_3"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint', options = '', outputFormat = 'mat', variableFilter = 'time|bodyOfJoint.body.w_a.2.|joint.phi|freeMotionScalarInit.initAngle.angle.1.|freeMotionScalarInit.initAngle.angle.2.|freeMotionScalarInit.initAngle.angle.3.|bodyOfConstraint.body.w_a.1.|bodyOfConstraint.body.w_a.2.|bodyOfConstraint.body.w_a.3.|freeMotionScalarInit.angle_d_1|freeMotionScalarInit.angle_d_2|freeMotionScalarInit.angle_d_3', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The linear system:
+// 1 : bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3] = (-0.14119408087712543) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] + 0.8130157214783864 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + 0.5648625214636235 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3]
+// 2 : bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] = 0.9663834860128886 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] + 0.23702889650558212 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + (-0.09960050292505122) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3]
+// 3 : 0.0 = (-0.5318108111446446) * bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] + 0.23702889650558212 * bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + 0.8130157214783864 * bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3]
+// 4 : bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] = 0.21486551488510405 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] + (-0.5318108111446446) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + 0.8191520442889918 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3]
+// [
+//   0.0 , 1.0 , 0.0 , 0.14119408087712543 ;
+//   0.0 , 0.0 , 1.0 , -0.9663834860128886 ;
+//   0.5318108111446446 , -0.8130157214783864 , -0.23702889650558212 , 0.0 ;
+//   1.0 , 0.0 , 0.0 , -0.21486551488510405
+// ]
+//   *
+// [
+//   bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] ;
+//   bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3] ;
+//   bodyOfConstraint.frame_a.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] ;
+//   freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1]
+// ]
+//   =
+// [
+//   0.8130157214783864 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + 0.5648625214636235 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3] ;
+//   0.23702889650558212 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + (-0.09960050292505122) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3] ;
+//   -0.0 ;
+//   (-0.5318108111446446) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,2] + 0.8191520442889918 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,3]
+// ]
+//  might be structurally or numerically singular for variable freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[3,1] since U(4,4) = 0.0. It might be hard to solve. Compilation continues anyway.
+// Warning: The linear system:
+// 1 : $DER.bodyOfConstraint.frame_a.R.T[3,3] = (-0.14119408087712543) * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,1] + 0.8130157214783864 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,2] + 0.5648625214636235 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,3]
+// 2 : $DER.bodyOfConstraint.frame_a.R.T[3,2] = 0.9663834860128886 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,1] + 0.23702889650558212 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,2] + (-0.09960050292505122) * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,3]
+// 3 : 0.0 = (-0.5318108111446446) * $DER.bodyOfConstraint.frame_a.R.T[3,1] + 0.23702889650558212 * $DER.bodyOfConstraint.frame_a.R.T[3,2] + 0.8130157214783864 * $DER.bodyOfConstraint.frame_a.R.T[3,3]
+// 4 : $DER.bodyOfConstraint.frame_a.R.T[3,1] = 0.21486551488510405 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,1] + (-0.5318108111446446) * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,2] + 0.8191520442889918 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,3]
+// [
+//   0.0 , 1.0 , 0.0 , 0.14119408087712543 ;
+//   0.0 , 0.0 , 1.0 , -0.9663834860128886 ;
+//   0.5318108111446446 , -0.8130157214783864 , -0.23702889650558212 , 0.0 ;
+//   1.0 , 0.0 , 0.0 , -0.21486551488510405
+// ]
+//   *
+// [
+//   $DER.bodyOfConstraint.frame_a.R.T[3,1] ;
+//   $DER.bodyOfConstraint.frame_a.R.T[3,3] ;
+//   $DER.bodyOfConstraint.frame_a.R.T[3,2] ;
+//   $DER.freeMotionScalarInit.initAngle.R_rel.T[3,1]
+// ]
+//   =
+// [
+//   0.8130157214783864 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,2] + 0.5648625214636235 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,3] ;
+//   0.23702889650558212 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,2] + (-0.09960050292505122) * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,3] ;
+//   -0.0 ;
+//   (-0.5318108111446446) * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,2] + 0.8191520442889918 * $DER.freeMotionScalarInit.initAngle.R_rel.T[3,3]
+// ]
+//  might be structurally or numerically singular for variable $DER.freeMotionScalarInit.initAngle.R_rel.T[3,1] since U(4,4) = 0.0. It might be hard to solve. Compilation continues anyway.
+//
+// "true
+// "
+// ""
+// endResult

@@ -50,7 +50,7 @@ import AvlSetCR;
 import AvlTreePathFunction;
 import DAE;
 import Mutable;
-import MutableCyclic;
+import MutableWeak;
 import SCode;
 
 protected
@@ -84,13 +84,18 @@ uniontype ImportTable
   end IMPORT_TABLE;
 end ImportTable;
 
-type Ref = MutableCyclic<Node> "one mutable slot; a node's identity is its cell";
+type Ref = Mutable<Node> "one mutable slot; a node's identity is its cell";
+type WeakRef = MutableWeak<Node> "a parent, held without owning it";
 
 uniontype Node
   record N
     Name     name       "node name, class/component/extends name, etc. see also *NodeName in above";
     Id       id         "Unique node id";
-    Parents  parents    "A node can have several parents depending on the context";
+    WeakParents parents "A node can have several parents depending on the context.
+                         Held weakly: a parent owns its children, so owning the
+                         parent back would make the graph unreclaimable by
+                         reference counting. The graph is rooted at the top node,
+                         which keeps every parent alive while it is reachable.";
     Children children   "List of uniquely named classes and variables";
     Data     data       "More data for this node, Class, Var, etc";
   end N;
@@ -244,7 +249,8 @@ uniontype Data
 end Data;
 
 type Refs = list<Ref>;
-type Parents = Refs;
+type Parents = Refs "as handed out by FNode.parents, already upgraded";
+type WeakParents = list<WeakRef> "as stored in a node; see Node.N.parents";
 type Scope = Refs;
 type Children = RefTree.Tree;
 
@@ -252,7 +258,6 @@ public constant Scope emptyScope = {} "empty scope";
 
 encapsulated package RefTree
   import BaseAvlTree;
-  import Mutable;
   import FCore.Name;
   import FCore.Ref;
   import FCore.Node;
@@ -268,7 +273,7 @@ encapsulated package RefTree
 
   redeclare function extends valueStr
   algorithm
-    Node.N(name = outString) := MutableCyclic.access(inValue);
+    Node.N(name = outString) := Mutable.access(inValue);
   end valueStr;
 
   redeclare function extends keyCompare
@@ -397,7 +402,6 @@ end Graph;
 
 uniontype Top
   record GTOP
-    MutableCyclic<Graph> graph;
     Name name "name of the graph";
     Ref node "the top node";
     Extra extra "extra information";
@@ -415,7 +419,7 @@ public type StructuralParameters = tuple<AvlSetCR.Tree,list<list<DAE.ComponentRe
 public uniontype Cache
   record CACHE
     Option<Graph> initialGraph "and the initial environment";
-    MutableCyclic<AvlTreePathFunction.Tree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
+    Mutable<AvlTreePathFunction.Tree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
     Absyn.Path modelName "name of the model being instantiated";
   end CACHE;
@@ -443,10 +447,10 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
 protected
-  MutableCyclic<AvlTreePathFunction.Tree> instFuncs;
+  Mutable<AvlTreePathFunction.Tree> instFuncs;
   StructuralParameters ht;
 algorithm
-  instFuncs := MutableCyclic.create(AvlTreePathFunction.Tree.EMPTY());
+  instFuncs := Mutable.create(AvlTreePathFunction.Tree.EMPTY());
   ht := (AvlSetCR.EMPTY(),{});
   cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
@@ -467,7 +471,7 @@ algorithm
   ocache := match (cache, var)
     local
       Option<Graph> initialGraph;
-      MutableCyclic<AvlTreePathFunction.Tree> functions;
+      Mutable<AvlTreePathFunction.Tree> functions;
       AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
@@ -507,7 +511,7 @@ public function setCacheClassName
 algorithm
   outCache := match inCache
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
       StructuralParameters ht;
       Option<Graph> igraph;
 
@@ -541,10 +545,10 @@ public function getCachedInstFunc
 algorithm
   func := match inCache
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
     case CACHE(functions=ef)
       algorithm
-        SOME(func) := AvlTreePathFunction.get(MutableCyclic.access(ef),path);
+        SOME(func) := AvlTreePathFunction.get(Mutable.access(ef),path);
       then func;
   end match;
 end getCachedInstFunc;
@@ -556,9 +560,9 @@ public function checkCachedInstFuncGuard
 algorithm
   () := match inCache
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
     case CACHE(functions=ef) algorithm
-      AvlTreePathFunction.get(MutableCyclic.access(ef),path);
+      AvlTreePathFunction.get(Mutable.access(ef),path);
     then ();
   end match;
 end checkCachedInstFuncGuard;
@@ -570,8 +574,8 @@ public function getFunctionTree
 algorithm
   ft := match cache
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
-    case CACHE(functions = ef) then MutableCyclic.access(ef);
+      Mutable<AvlTreePathFunction.Tree> ef;
+    case CACHE(functions = ef) then Mutable.access(ef);
     else AvlTreePathFunction.Tree.EMPTY();
   end match;
 end getFunctionTree;
@@ -585,7 +589,7 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
 
     // Don't overwrite SOME() with NONE()
     case (_, _)
@@ -596,7 +600,7 @@ algorithm
 
     case (CACHE(functions=ef),Absyn.FULLYQUALIFIED(_))
       algorithm
-        MutableCyclic.update(ef,AvlTreePathFunction.add(MutableCyclic.access(ef),func,NONE()));
+        Mutable.update(ef,AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
         // print("Func quard [new]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
@@ -617,11 +621,11 @@ public function addDaeFunction
 algorithm
   outCache := match inCache
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
 
     case CACHE(_,ef,_,_)
       algorithm
-        MutableCyclic.update(ef,AvlTreePathFunction.addDaeFunction(funcs, MutableCyclic.access(ef)));
+        Mutable.update(ef,AvlTreePathFunction.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -636,11 +640,11 @@ public function addDaeExtFunction
 algorithm
   outCache := match inCache
     local
-      MutableCyclic<AvlTreePathFunction.Tree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
 
     case CACHE(_,ef,_,_)
       algorithm
-        MutableCyclic.update(ef,AvlTreePathFunction.addDaeExtFunction(funcs, MutableCyclic.access(ef)));
+        Mutable.update(ef,AvlTreePathFunction.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -654,7 +658,7 @@ algorithm
   () := match inCache
     case CACHE()
       algorithm
-        MutableCyclic.update(inCache.functions, inFunctions);
+        Mutable.update(inCache.functions, inFunctions);
       then ();
     else ();
   end match;

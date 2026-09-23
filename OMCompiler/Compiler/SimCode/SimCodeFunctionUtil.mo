@@ -2864,7 +2864,9 @@ algorithm
             (if Flags.isSet(Flags.HPCOM) then "-fopenmp" else "");
   cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
-  if Flags.getConfigBool(Flags.PARMODAUTO) then
+  // The Rust simulation runtime serves ParModelica/auto's own interface, so
+  // linking the C++ one beside it would define PM_Model_create and friends twice.
+  if Flags.getConfigBool(Flags.PARMODAUTO) and not Config.simCodeRustRuntime() then
     ldflags := " " + Autoconf.parModelicaAutoLibs + " " + ldflags;
   end if;
   rtlibs := if isFunction then Autoconf.ldflags_runtime

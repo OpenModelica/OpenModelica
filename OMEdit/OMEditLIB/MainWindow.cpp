@@ -176,15 +176,9 @@ MainWindow::MainWindow(QWidget *parent)
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
    * DebuggerConfiguration section respectively from the settings file.
    */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   qRegisterMetaType<RecentFile>("RecentFile");
   qRegisterMetaType<FindTextOM>("FindTextOM");
   qRegisterMetaType<DebuggerConfiguration>("DebuggerConfiguration");
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
-  qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
-  qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
 #if QT_CONFIG(process)
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
@@ -2019,11 +2013,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   QFile omnotebookFile(omnotebookFileName);
   if (omnotebookFile.open(QIODevice::WriteOnly)) {
     QTextStream textStream(&omnotebookFile);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     textStream.setEncoding(QStringConverter::Utf8);
-#else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
-#endif
     textStream.setGenerateByteOrderMark(false);
     textStream << xmlDocument.toString();
     omnotebookFile.close();
@@ -2271,11 +2261,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       throw OMPlot::InvalidInputException(pPlotWindow->windowTitle(), QString(autoScale));
     }
     // plot variables
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList variablesList = QString(variables).split(" ", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-    QStringList variablesList = QString(variables).split(" ", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
     VariablesTreeItem *pVariableTreeItem;
     VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
     bool state = pVariablesTreeModel->blockSignals(true);
@@ -2591,6 +2577,29 @@ void MainWindow::openModelicaFile()
   if (fileNames.isEmpty()) {
     return;
   }
+#if defined(__EMSCRIPTEN__)
+  // A file picker cannot hand over a directory, so a zipped library is unpacked
+  // and what it holds is loaded instead of the archive.
+  QStringList pickedFiles;
+  foreach (const QString &file, fileNames) {
+    if (QFileInfo(file).suffix().compare("zip", Qt::CaseInsensitive) == 0) {
+      const QString dir = WasmLocalFiles::expandArchive(file);
+      const QStringList files = dir.isEmpty() ? QStringList() : WasmLocalFiles::libraryFiles(dir);
+      if (files.isEmpty()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+      pickedFiles << files;
+    } else {
+      pickedFiles << file;
+    }
+  }
+  fileNames = pickedFiles;
+  if (fileNames.isEmpty()) {
+    return;
+  }
+#endif
   int progressValue = 0;
   mpProgressBar->setRange(0, fileNames.size());
   showProgressBar();
@@ -2767,11 +2776,32 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
  */
 void MainWindow::openDirectory()
 {
+#if defined(__EMSCRIPTEN__)
+  // The browser uploads the picked folder, structure and all, and the library in it
+  // is loaded. The directory is deliberately not added to the Library Browser: QDir
+  // enumerates nothing through the worker-VFS engine, so that node comes up childless,
+  // and painting it traps in Qt's raster engine.
+  const QString dir = WasmLocalFiles::openFolder();
+  if (dir.isEmpty()) {
+    return;
+  }
+  const QStringList files = WasmLocalFiles::libraryFiles(dir);
+  if (files.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(dir),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  foreach (const QString &file, files) {
+    mpLibraryWidget->openFile(file, Helper::utf8, false);
+  }
+#else
   QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (dir.isEmpty()) {
     return;
   }
   mpLibraryWidget->openFile(dir, Helper::utf8, true);
+#endif
 }
 
 /*!
@@ -3769,12 +3799,8 @@ void MainWindow::openTerminal()
 #if QT_CONFIG(process)
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   const QStringList args(QProcess::splitCommand(arguments));
   process.start(terminalCommand, args);
-#else
-  process.start(terminalCommand + " " + arguments);
-#endif
   if (process.error() == QProcess::FailedToStart || process.hasStartupError()) {
     const QString processError = process.startupErrorString().isEmpty() ? process.errorString() : process.startupErrorString();
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")

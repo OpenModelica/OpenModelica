@@ -130,6 +130,15 @@ void CloudProvider::dispatch(CloudReply *pReply, const QNetworkRequest &request,
         dispatch(pReply, request, verb, body, parse, true);
         return;
       }
+      // For a caller that must make the hop itself; Qt would replay the
+      // Authorization header onto it.
+      if (status >= 300 && status < 400
+          && request.attribute(QNetworkRequest::RedirectPolicyAttribute).toInt()
+                 == QNetworkRequest::ManualRedirectPolicy) {
+        pReply->setRedirectUrl(request.url().resolved(QUrl(QString::fromUtf8(pNetworkReply->rawHeader("Location")))));
+        pReply->finish(CloudError());
+        return;
+      }
       if (status < 200 || status >= 300) {
         pReply->finish(classifyError(status, payload, pNetworkReply->errorString()));
         return;

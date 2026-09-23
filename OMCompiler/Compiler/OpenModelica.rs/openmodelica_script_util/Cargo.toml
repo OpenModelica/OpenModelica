@@ -26,7 +26,7 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # performs the transfer (Curl_wasm only bookkeeps via the VFS), so no browser/JS
 # crates are needed here.
 [target.'cfg(not(any(target_arch = "wasm32", target_os = "windows", target_os = "macos")))'.dependencies]
-curl.workspace = true
+curl = { workspace = true, optional = true }
 
 # macOS links the system libcurl out of the SDK, as Linux links the distribution's
 # -- but curl-rust's default `ssl` feature drags openssl-sys in on every unix, and
@@ -34,7 +34,7 @@ curl.workspace = true
 # the crate just links libcurl, whose own TLS backend serves https; only
 # curl-rust's OpenSSL-specific API is lost, which Curl.rs does not use.
 [target.'cfg(target_os = "macos")'.dependencies]
-curl = { version = "0.4", default-features = false }
+curl = { version = "0.4", default-features = false, optional = true }
 
 # On Windows there is no system libcurl to link; build the bundled libcurl from
 # source (static-curl). The `ssl` feature selects the OS TLS backend (schannel)
@@ -44,4 +44,11 @@ curl = { version = "0.4", default-features = false }
 # workspace dep's default-features when inheriting. Keep the version in sync
 # with workspace.dependencies.curl.
 [target.'cfg(target_os = "windows")'.dependencies]
-curl = { version = "0.4", default-features = false, features = ["static-curl", "ssl"] }
+curl = { version = "0.4", default-features = false, features = ["static-curl", "ssl"], optional = true }
+
+[features]
+# Downloads (installPackage, updatePackageIndex) over libcurl. On by default;
+# without it Curl falls back to the stub that only reports a file already on
+# disk, and the build needs neither libcurl nor its TLS/LDAP/SSH dependencies.
+default = ["curl"]
+curl = ["dep:curl"]

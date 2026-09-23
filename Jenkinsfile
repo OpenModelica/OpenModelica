@@ -185,13 +185,15 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"
-              ])
+              common.withSccache {
+                common.buildOMC_CMake([
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DOM_COMPILER_CACHE=sccache",
+                  "-DCMAKE_INSTALL_PREFIX=build",
+                  "-DCMAKE_C_COMPILER=gcc",
+                  "-DCMAKE_CXX_COMPILER=g++"
+                ])
+              }
             }
           }
         }
@@ -217,12 +219,14 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"])
+              common.withSccache {
+                common.buildOMC_CMake([
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DOM_COMPILER_CACHE=sccache",
+                  "-DCMAKE_INSTALL_PREFIX=build",
+                  "-DCMAKE_C_COMPILER=gcc",
+                  "-DCMAKE_CXX_COMPILER=g++"])
+              }
             }
           }
         }
@@ -252,8 +256,6 @@ pipeline {
                 "-DCMAKE_C_COMPILER=gcc",           // Always specify the compilers explicitly for macOS
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DCMAKE_Fortran_COMPILER=gfortran",
-                "-DOM_QT_MAJOR_VERSION=5",          // Use Qt5 on old macOS machines
-                "-DOM_OMEDIT_ENABLE_ANIMATION=OFF", // Qt5 has no Qt Quick 3D
                 "-DOM_OMC_ENABLE_COLPACK=OFF"])     // Disable ColPack (missing OpenMP)
             }
           }
@@ -636,24 +638,6 @@ pipeline {
           }
         }
 
-        stage('16 build-gui-clang-qt5') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt5', 'omedit-testsuite-clang-qt5') }
-          }
-        }
-
         stage('17 build-gui-clang-qt6') {
           agent {
             docker {
@@ -668,7 +652,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt6', 'omedit-testsuite-clang-qt6') }
+            script { common.buildGUIAndStash('omc-clang', 'omedit-testsuite-clang-qt6') }
           }
         }
 
@@ -744,6 +728,31 @@ pipeline {
             }
           }
         }
+
+        // The Windows smoke set (every test tagged '// win: yes', see
+        // testsuite/runWindowsTests.sh), against the install tree
+        // 'cmake-OMDev-gcc' stashed as 'omc-cmake-windows'. Its own stage, not
+        // part of that build, so a test failure here reads as a testsuite
+        // failure rather than a build failure.
+        stage('20 testsuite-windows') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildWindows }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.testWindowsSmoke()
+            }
+          }
+        }
       }
     }
     stage('FMPy + OMEdit testsuite') {
@@ -785,29 +794,6 @@ pipeline {
             script { common.fmpyLinux() }
           }
         }
-        stage('clang-qt5-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt5', 'qt5')
-            }
-          }
-        }
         stage('clang-qt6-omedit-testsuite') {
           agent {
             docker {
@@ -827,7 +813,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6', 'qt6')
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6')
             }
           }
         }

@@ -188,12 +188,16 @@ public
     (comp, dummy, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT() algorithm
-        Equation.map(PointerCyclic.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(comp.var, comp.eqn),
           casual  = NONE(),
-          linear  = false,
+          // a multi-dimensional var (e.g. matrix-coupled array equation like A*x=b with
+          // A a parameter matrix) can be genuinely linear even though it isn't solvable
+          // one scalar element at a time -- check like SLICED_COMPONENT does instead of
+          // always assuming nonlinear.
+          linear  = isLinearSlice(comp.eqn, ComponentRef.scalarize(BVariable.getVarName(comp.var), false), funcMap),
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT,
@@ -202,7 +206,7 @@ public
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
-        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(listHead(comp.vars)), Slice.getT(comp.eqn)), // this is wrong! need to take all vars
@@ -216,12 +220,12 @@ public
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
-        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),
           casual  = NONE(),
-          linear  = false,
+          linear  = isLinearSlice(Slice.getT(comp.eqn), ComponentRef.scalarize(comp.var_cref, false), funcMap),
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT,
@@ -235,7 +239,7 @@ public
       // SINGLE_COMPONENT/RESIZABLE_COMPONENT, keeping the slice instead of wrapping a
       // whole variable/equation. Was previously missing, falling through to "do nothing".
       case StrongComponent.SLICED_COMPONENT() algorithm
-        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = slicedImplicit(comp.var, comp.eqn),
@@ -294,8 +298,8 @@ public
     input Slice<EquationPointer> eqn;
     output list<Slice<EquationPointer>> slices;
   protected
-    PointerCyclic<Equation> eqn_ptr = Slice.getT(eqn);
-    Equation e = PointerCyclic.access(eqn_ptr);
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn);
+    Equation e = Pointer.access(eqn_ptr);
     list<Integer> indices = eqn.indices;
     ComponentRef base_cref;
     Expression residual;
@@ -303,39 +307,47 @@ public
     EquationAttributes attr;
     list<Subscript> subs;
     ComponentRef row_cref;
-    PointerCyclic<Variable> row_var;
+    Pointer<Variable> row_var;
     Variable row_var_data;
     Expression row_residual;
     Equation row_eqn;
+    Boolean is_for;
   algorithm
     if listEmpty(indices) then
       indices := list(i for i in 0:(Equation.size(eqn_ptr) - 1));
     end if;
-    if List.hasOneElement(indices) then
-      // already scalar (or a genuinely single-row slice): no row-collapse risk.
+    if List.hasOneElement(indices) and Equation.size(eqn_ptr) == 1 then
+      // already scalar: no row-collapse risk. A single row of a bigger array
+      // equation still has the residual variable of the whole array.
       slices := {eqn};
     else
       base_cref := Equation.getEqnName(eqn_ptr);
-      residual  := Equation.getResidualExp(e);
+      is_for    := Equation.isArrayBodyFor(e);
+      residual  := if is_for then Expression.EMPTY(Type.UNKNOWN()) else Equation.getResidualExp(e);
       elem_ty   := Type.arrayElementType(Expression.typeOf(residual));
       attr      := Equation.getAttributes(e);
       attr.residual := true;
       slices := {};
       for i in indices loop
-        subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
-        row_residual := Expression.applySubscripts(subs, residual);
+        if is_for then
+          row_residual := Equation.forArrayBodyRowResidual(e, i);
+          elem_ty      := Type.arrayElementType(Expression.typeOf(row_residual));
+        else
+          subs         := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, Equation.sizes(eqn_ptr)));
+          row_residual := Expression.applySubscripts(subs, residual);
+        end if;
         (row_var, row_cref) := BVariable.makeAuxVar(ComponentRef.toString(base_cref), i, elem_ty, false);
         // makeAuxVar tags the new var with a plain VariableKind derived from its type;
         // it must instead be marked RESIDUAL_VAR like any other residual variable, or
         // downstream Jacobian construction (NBJacobian.getTmpFilterFunction's
         // BVariable.isResidual check for LS/NLS/DAE) won't recognize it as a result row
         // and the Jacobian's sparsity pattern will come out empty for this equation.
-        row_var_data := PointerCyclic.access(row_var);
+        row_var_data := Pointer.access(row_var);
         row_var_data.backendinfo := BackendInfo.setVarKind(row_var_data.backendinfo, VariableKind.RESIDUAL_VAR());
-        PointerCyclic.update(row_var, row_var_data);
+        Pointer.update(row_var, row_var_data);
         attr.residualVar := SOME(row_var);
         row_eqn := Equation.SCALAR_EQUATION(elem_ty, Expression.fromCref(row_cref), row_residual, Equation.getSource(e), attr);
-        slices := Slice.SLICE(PointerCyclic.create(row_eqn), {}) :: slices;
+        slices := Slice.SLICE(Pointer.create(row_eqn), {}) :: slices;
       end for;
       slices := listReverse(slices);
     end if;
@@ -347,24 +359,34 @@ public
     (see checkLinearity for the normal, matrix-based version). Linear iff no
     partial derivative w.r.t. one of the crefs still contains any of them --
     catches both self- (x^2) and cross- (x*y) nonlinearity."
-    input PointerCyclic<Equation> eqn_ptr;
+    input Pointer<Equation> eqn_ptr;
     input list<ComponentRef> crefs;
     input UnorderedMap<Path, Function> funcMap;
     output Boolean linear = true;
   protected
-    Expression residual = Equation.getResidualExp(PointerCyclic.access(eqn_ptr));
+    Option<Expression> residual_opt = Equation.tryGetResidualExp(eqn_ptr);
+    Expression residual;
     Differentiate.DifferentiationArguments diffArgs;
     Expression derivative;
   algorithm
-    for cref in crefs loop
-      diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
-      (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-      for other in crefs loop
-        if Expression.containsCref(derivative, other) then
-          linear := false;
-        end if;
+    if isSome(residual_opt) then
+      SOME(residual) := residual_opt;
+      for cref in crefs loop
+        diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
+        (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+        for other in crefs loop
+          if Expression.containsCref(derivative, other) then
+            linear := false;
+          end if;
+        end for;
       end for;
-    end for;
+    else
+      // no residual could be constructed at all (e.g. a record type such as a
+      // Medium's ThermodynamicState with no '+'/'-'/'0' operators, see
+      // Equation.getResidualExp) -- can't check, so assume the conservative
+      // (nonlinear) default instead of crashing the whole compilation.
+      linear := false;
+    end if;
   end isLinearSlice;
 
   function getModule
@@ -390,24 +412,24 @@ public
 
   function getVariables
     input Tearing tearing;
-    output list<PointerCyclic<Variable>> variables;
+    output list<Pointer<Variable>> variables;
   algorithm
      variables := listAppend(var for var in list(Slice.getT(var) for var in tearing.iteration_vars) :: list(StrongComponent.getVariables(comp) for comp in tearing.innerEquations));
   end getVariables;
 
   function getResidualVars
     input Tearing tearing;
-    output list<PointerCyclic<Variable>> residuals = list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
+    output list<Pointer<Variable>> residuals = list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
 
   function getIterationVars
     input Tearing tearing;
-    output list<PointerCyclic<Variable>> iterationVars = list(Slice.getT(var) for var in tearing.iteration_vars);
+    output list<Pointer<Variable>> iterationVars = list(Slice.getT(var) for var in tearing.iteration_vars);
   end getIterationVars;
 
   function getResidualEqns
     input Tearing tearing;
-    output list<PointerCyclic<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
+    output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
   end getResidualEqns;
 
   function setResidualEqns
@@ -479,52 +501,47 @@ protected
     extends Module.tearingInterface;
     input checkVarInit varFunc = noFilterVar;
     input BEquation.checkEqn eqnFunc = noFilterEqn;
+    // varFunc/eqnFunc kept for API compatibility with getModule()'s partial applications,
+    // but no longer consulted below (see comment further down).
     partial function checkVarInit extends BVariable.checkVar;
       input Boolean init;
     end checkVarInit;
   protected
     Tearing strict;
-    list<ComponentRef> vars_lst, eqns_lst, all_vars_lst, all_eqns_lst;
-    UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
-    UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
-    UnorderedMap<ComponentRef, Integer> v_all, e_all "unfiltered loop vars/equations map, used for the linearity check";
-    constant Boolean init = Partition.kindIsInitial(kind);
+    list<ComponentRef> all_vars_lst, all_eqns_lst;
+    UnorderedSet<ComponentRef> vars_set        "all loop vars, used by refine to detect self-referential (nonlinear) dependencies";
+    UnorderedMap<ComponentRef, Integer> v_all, e_all "unfiltered loop vars/equations map";
   algorithm
     (comp, full, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         index := index + 1;
         comp.idx := index;
 
-        // filter variables and equations appropriately
-        vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard varFunc(Slice.getT(var), init) in strict.iteration_vars);
-        eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard eqnFunc(Slice.getT(eqn)) in strict.residual_eqns);
-
-        // the set of all loop variables used to determine solvability
-        vars_set := UnorderedSet.fromList(vars_lst, ComponentRef.hash, ComponentRef.isEqual);
-
-        // the sets of variables and equations
-        v := UnorderedMap.subMap(variables.map, vars_lst);
-        e := UnorderedMap.subMap(equations.map, eqns_lst);
-
-        // refine the adjacency matrix by updating solvability information
-        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, Partition.kindIsInitial(kind));
-
-        // checkLinearity needs the loop's full (unfiltered) variable/equation set: varFunc/eqnFunc
-        // (e.g. omcTearing's isDiscontinuous filter) narrow vars_lst/eqns_lst down to only the
-        // discontinuous members, which is often empty for a purely continuous loop. Feeding that
-        // empty set to checkLinearity made it vacuously return "linear" for any such loop.
-        // Use a tolerant lookup here (unlike the strict subMap above): not every name in the
-        // untorn iteration_vars/residual_eqns is necessarily registered in variables.map/
-        // equations.map yet, and subMap's getSafe would crash on those.
+        // refine and checkLinearity both need the loop's full, unfiltered var/eqn set --
+        // varFunc/eqnFunc's filtered one is often EMPTY for a purely continuous loop,
+        // which silently misclassified such loops as linear (see #16463). Tolerant
+        // lookup: not every name here is necessarily registered in variables.map/
+        // equations.map yet.
         all_vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
         all_eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        vars_set := UnorderedSet.fromList(all_vars_lst, ComponentRef.hash, ComponentRef.isEqual);
         v_all := tolerantSubMap(variables.map, all_vars_lst);
         e_all := tolerantSubMap(equations.map, all_eqns_lst);
+
+        // refine the adjacency matrix by updating solvability information
+        full := Adjacency.Matrix.refine(full, funcMap, v_all, e_all, variables, equations, vars_set, Partition.kindIsInitial(kind));
+
         comp.linear := checkLinearity(full, v_all, e_all);
       then (comp, full, index);
       else (comp, full, index);
     end match;
   end initialize;
+
+  function isPartialArraySlice
+    input Slice<EquationPointer> eqn;
+    output Boolean b = not listEmpty(eqn.indices) and (Equation.isArrayEquation(Slice.getT(eqn)) or Equation.isArrayBodyFor(Pointer.access(Slice.getT(eqn))))
+                       and Equation.size(Slice.getT(eqn)) > listLength(eqn.indices);
+  end isPartialArraySlice;
 
   function finalize extends Module.tearingInterface;
   protected
@@ -537,8 +554,9 @@ protected
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
-        // create residual equations
-        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false)) for eqn in List.flatten(acc));
+        // create residual equations, a part of an array equation needs residual variables for its rows only
+        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false))
+          for eqn in List.flatten(list(if isPartialArraySlice(eqn) then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -553,8 +571,8 @@ protected
     // only extracts discrete variables to be solved as inner equations
   protected
     Tearing strict, innerStrict;
-    list<PointerCyclic<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
-    list<PointerCyclic<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
+    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
+    list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
     Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> iteration_vars = {};
     Adjacency.Matrix adj, sub;
@@ -816,22 +834,22 @@ protected
 
   function filterDiscreteVariables
     "splits off all discrete variables. also splits off variables that belong to a record with a discrete variable in this algebraic loop"
-    input list<PointerCyclic<Variable>> vars_lst;
+    input list<Pointer<Variable>> vars_lst;
     input Boolean staticAsContinuous;
-    output list<PointerCyclic<Variable>> cont_vars;
-    output list<PointerCyclic<Variable>> disc_vars;
+    output list<Pointer<Variable>> cont_vars;
+    output list<Pointer<Variable>> disc_vars;
   protected
     UnorderedSet<ComponentRef> discrete_records = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    list<PointerCyclic<Variable>> rec_disc_vars;
+    list<Pointer<Variable>> rec_disc_vars;
 
     function addDiscreteRecord
       "checks if it has a record parent that needs to be added"
-      input PointerCyclic<Variable> var;
+      input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> discrete_records;
     algorithm
       () := match BVariable.getParent(var)
         local
-          PointerCyclic<Variable> parent;
+          Pointer<Variable> parent;
         case SOME(parent) algorithm
           UnorderedSet.add(BVariable.getVarName(parent), discrete_records);
           addDiscreteRecord(parent, discrete_records);
@@ -842,14 +860,14 @@ protected
 
     function checkDiscreteRecord
       "checks if continuous variable is part of records of which discretes are in this loop"
-      input PointerCyclic<Variable> var;
+      input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> discrete_records;
       input Boolean is_parent;
       output Boolean b;
     algorithm
       b := match BVariable.getParent(var)
         local
-          PointerCyclic<Variable> parent;
+          Pointer<Variable> parent;
         case SOME(parent) then checkDiscreteRecord(parent, discrete_records, true);
         else is_parent and UnorderedSet.contains(BVariable.getVarName(var), discrete_records);
       end match;
@@ -869,10 +887,10 @@ protected
   function getImpliedInnerVars
     "returns all implied inner variables if the equation is solved. necessary if e.g. trying to solve a single discrete output
     from an algorithm. The full algorithm and all outputs need to be made inner variables."
-    input PointerCyclic<Equation> eqn;
-    output list<PointerCyclic<Variable>> vars;
+    input Pointer<Equation> eqn;
+    output list<Pointer<Variable>> vars;
   algorithm
-    vars := match PointerCyclic.access(eqn)
+    vars := match Pointer.access(eqn)
       local
         Algorithm alg;
         Expression tpl;
