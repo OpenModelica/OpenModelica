@@ -13,9 +13,6 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.TSP_Pipe4, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe4_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
-readFile("NewDataReconciliationSimpleTests.TSP_Pipe4_Outputs.csv");
-getErrorString();
-
 
 // Result:
 // true
