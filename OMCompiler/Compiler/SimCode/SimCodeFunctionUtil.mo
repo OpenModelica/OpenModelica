@@ -2901,6 +2901,8 @@ algorithm
 end aliasRecordDeclarations2;
 
 protected function variableString
+  "The member as it is laid out in the struct: an array member is an array
+   descriptor whatever its dimension sizes."
   input SimCodeFunction.Variable var;
   output String str;
 algorithm
@@ -2909,7 +2911,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
+      then TypesDump.unparseType(Types.arrayElementType(ty)) + "[" + intString(Types.numberOfDimensions(ty)) + "] " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;
