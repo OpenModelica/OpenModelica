@@ -1,0 +1,40 @@
+// name:     DelayBufferGrowth
+// keywords: builtin delay
+// status: correct
+// teardown_command: rm -rf DelayBufferGrowth_* DelayBufferGrowth DelayBufferGrowth.exe DelayBufferGrowth.c DelayBufferGrowth.makefile DelayBufferGrowth.libs output.log
+//
+// The events store many values in the delay buffer after its oldest entries
+// were dropped, so it grows while it wraps around.
+
+loadString("model DelayBufferGrowth
+  Real x(start = 1, fixed = true);
+  Real y = delay(x, 1);
+  Real err = y - max(time, 1);
+  Integer n(start = 0, fixed = true);
+  discrete Real maxErr(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  when sample(1.5, 1e-4) and time < 1.7 then
+    n = pre(n) + 1;
+  end when;
+  when sample(0, 5e-4) then
+    maxErr = max(pre(maxErr), abs(err));
+  end when;
+end DelayBufferGrowth;"); getErrorString();
+
+simulate(DelayBufferGrowth, stopTime=2.8, numberOfIntervals=5600); getErrorString();
+val(maxErr, 2.8) < 1e-9;
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DelayBufferGrowth_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.8, numberOfIntervals = 5600, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DelayBufferGrowth', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult
