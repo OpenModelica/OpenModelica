@@ -492,16 +492,34 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Mo
     }
 }
 
-/// Join and stash the model module, the way `finishCompile` does, for a caller
-/// about to hand the run to a forked child: the child has no compile threads left
-/// and the work belongs to the compile phase anyway. A failure is left for the run
-/// to report.
+/// The model module on `engine`, kept in `model.prepared` so a resimulate does not
+/// recompile it.
+fn prepared_model_module(model: &SimModel, engine: &wasmtime::Engine) -> std::result::Result<wasmtime::Module, String> {
+    let prepared = model.prepared.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let m = match prepared {
+        Some(m) => m,
+        None => take_compiled_model(model)?,
+    };
+    // A hard alarm armed after the compile switches engines under the module.
+    let m = match wasmtime::Engine::same(m.engine(), engine) {
+        true => m,
+        false => wts(wasmtime::Module::new(engine, &model.wasm))?,
+    };
+    *model.prepared.lock().unwrap_or_else(|e| e.into_inner()) = Some(m.clone());
+    Ok(m)
+}
+
+/// Compile everything a run of `model` instantiates, for a caller about to hand
+/// the run to a forked child: wasmtime's compile pool does not survive the fork,
+/// so a compile there never finishes. Expects the run's [`set_alarm`], which picks
+/// the engine. A failure is left for the run to report.
 pub fn ensure_prepared(model: &SimModel) {
-    let mut prepared = model.prepared.lock().unwrap_or_else(|e| e.into_inner());
-    if prepared.is_none()
-        && let Ok(m) = take_compiled_model(model)
-    {
-        *prepared = Some(m);
+    select_engine_for(&model.wasm);
+    let engine = sim_engine();
+    let _ = runtime_module();
+    let _ = prepared_model_module(model, engine);
+    for lib in crate::dylink_engine::ext_libraries(model).unwrap_or_default() {
+        let _ = library_module(engine, &lib.name, &lib.bytes, lib.fixed);
     }
 }
 
@@ -1542,22 +1560,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // Prefer the module already prepared by `finishCompile` (buildModel's
     // compile phase, counted as `timeCompile`); otherwise join/compile here.
     let t_model = Instant::now();
-    // Clone, not take: keep the module cached so a resimulate reuses it instead
-    // of recompiling the whole model.
-    let prepared = model.prepared.lock().unwrap().clone();
-    let model_module = match prepared {
-        Some(m) => m,
-        None => take_compiled_model(model)?,
-    };
-    // A hard alarm armed after the compile switches engines under the module.
-    let model_module = if wasmtime::Engine::same(model_module.engine(), engine) {
-        model_module
-    } else {
-        wts(wasmtime::Module::new(engine, &model.wasm))?
-    };
-    // `take_compiled_model` consumes the job, so cache it here too: `finishCompile`
-    // does not run for a resimulate, which would then recompile on every run.
-    *model.prepared.lock().unwrap() = Some(model_module.clone());
+    let model_module = prepared_model_module(model, engine)?;
     let model_compile = t_model.elapsed();
     let compile_time = t_compile.elapsed();
     if bench {
