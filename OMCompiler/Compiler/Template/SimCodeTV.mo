@@ -1279,6 +1279,8 @@ package SimCodeFunction
       String ctor_name;
       String name;
       list<Variable> variables;
+      Absyn.Path defPath;
+      Boolean usedExternally;
     end RECORD_DECL_ADD_CONSTRCTOR;
     record RECORD_DECL_DEF
       Absyn.Path path;

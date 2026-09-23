@@ -539,6 +539,7 @@ algorithm
 
   collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);
   collectRecDeclsFromTypes(metarecordTypes, recDeclsMap);
+  addRecordDeclsForExtraConstructors(recDeclsMap);
 
   recordDecls := UnorderedMap.valueList(recDeclsMap);
   recordDecls := List.sort(recordDecls, orderRecordDecls);
@@ -549,6 +550,37 @@ algorithm
   g := Graph.buildGraph(recordDecls, getRecordDependencies, recordDecls);
   (recordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
 end elaborateFunctions;
+
+protected function addRecordDeclsForExtraConstructors
+  "An extra constructor builds a struct of its record type, which is otherwise
+   only declared where the record is used with its own defaults. Added after
+   collecting, so that such a use always provides the declaration."
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+algorithm
+  for decl in UnorderedMap.valueList(recDeclsMap) loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() guard not UnorderedMap.contains(decl.name, recDeclsMap)
+        algorithm
+          UnorderedMap.add(decl.name, SimCodeFunction.RECORD_DECL_FULL(decl.name, NONE(), decl.defPath,
+            list(variableWithoutBinding(v) for v in decl.variables), decl.usedExternally), recDeclsMap);
+        then ();
+      else ();
+    end match;
+  end for;
+end addRecordDeclsForExtraConstructors;
+
+protected function variableWithoutBinding
+  input output SimCodeFunction.Variable var;
+algorithm
+  () := match var
+    case SimCodeFunction.VARIABLE()
+      algorithm
+        var.value := NONE();
+        var.bind_from_outside := false;
+      then ();
+    else ();
+  end match;
+end variableWithoutBinding;
 
 protected function getRecordDependencies
   input SimCodeFunction.RecordDeclaration decl;
@@ -1664,16 +1696,8 @@ algorithm
           // Add it if does not exist. Otherwise do nothing.
           if isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars, path, usedExternally);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
-          end if;
-          // Also ensure the struct type itself is declared. Without this, sizeof(name) and
-          // function return types using 'name' produce "unknown type name" C errors, because
-          // RECORD_DECL_ADD_CONSTRCTOR does not emit a typedef or struct for the base record.
-          if Flags.getConfigBool(Flags.NEW_BACKEND) and isNone(UnorderedMap.get(name, recDeclsMap)) then
-            vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars, usedExternally);
-            UnorderedMap.add(name, recDecl, recDeclsMap);
             collectRecDeclsFromTypesVars(varlst, recDeclsMap);
           end if;
         end if;
@@ -1837,9 +1861,11 @@ protected function collectRecDeclsFromTypesVars
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for recTyVar in inRecordTypeVars loop
-    () := match recTyVar
-      case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
-        collectRecDeclsFromType(recTyVar.ty, recDeclsMap);
+    () := match Types.arrayElementType(recTyVar.ty)
+      local
+        DAE.Type ty;
+      case ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) algorithm
+        collectRecDeclsFromType(ty, recDeclsMap);
       then ();
 
       else ();
