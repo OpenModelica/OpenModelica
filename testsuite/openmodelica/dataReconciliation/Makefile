@@ -44,6 +44,7 @@ TSP_FourFlows1.mos\
 TSP_FourFlows3.mos\
 TSP_FourFlows8.mos\
 TSP_FourFlows10.mos\
+UncertainAliasSimulation.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

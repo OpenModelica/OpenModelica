@@ -8529,6 +8529,28 @@ algorithm
   strPreOptModules := Config.getPreOptModules();
 end getPreOptModulesString;
 
+public function isDataReconciliationEnabled
+  "Returns true if one of the data reconciliation pre-optimization modules is
+   enabled or the uncertainty extraction (modelEquationsUC) is running. The
+   uncertain attribute is only meaningful for these and must not influence a
+   plain simulation."
+  output Boolean enabled;
+protected
+  constant list<String> drModules = {"dataReconciliation", "dataReconciliationBoundaryConditions", "dataReconciliationStateEstimation"};
+algorithm
+  if isSome(getGlobalRoot(Global.uncertaintyExtraction)) then
+    enabled := true;
+    return;
+  end if;
+  for m in listAppend(Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), getPreOptModulesString()) loop
+    if listMember(m, drModules) then
+      enabled := true;
+      return;
+    end if;
+  end for;
+  enabled := false;
+end isDataReconciliationEnabled;
+
 protected function deprecatedDebugFlag
   input Flags.DebugFlag inFlag;
   input list<String> inModuleList;
