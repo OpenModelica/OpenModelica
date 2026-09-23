@@ -647,6 +647,8 @@ pub struct SPATIAL_DISTRIBUTION_DATA {
     pub transportedQuantity: *mut c_void,
     pub storedEvents: *mut c_void,
     pub lastStoredEventValue: c_int,
+    pub nWarningsRemovedEvents: c_ulong,
+    pub nWarningsOutputEvents: c_ulong,
 }
 
 #[repr(C)]

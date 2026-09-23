@@ -487,10 +487,24 @@ void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisp
     va_warningStreamPrint(stream, indentNext, format, args);
   }
   if (nDisplayed == maxWarnDisplays) {
-    infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %lu. "
-                                        "Suppressing further warning messages of the same type.", maxWarnDisplays);
-    infoStreamPrint(stream, indentNext, "Change limit with simulation flag -%s=<newLimit>", FLAG_NAME[FLAG_LV_MAX_WARN]);
+    warningStreamPrintLimitReached(stream, indentNext, maxWarnDisplays);
   }
+}
+
+/**
+ * @brief Tell that a repeated warning reached its display limit.
+ *
+ * For a warning that is displayed with its own sublines, so it cannot use
+ * warningStreamPrintWithLimit.
+ *
+ * @param stream          Stream of warning.
+ * @param indentNext      Will increase indentation level by one if true.
+ * @param maxWarnDisplays Maximum allowed warning displays.
+ */
+void warningStreamPrintLimitReached(int stream, int indentNext, unsigned long maxWarnDisplays) {
+  infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %lu. "
+                                      "Suppressing further warning messages of the same type.", maxWarnDisplays);
+  infoStreamPrint(stream, indentNext, "Change limit with simulation flag -%s=<newLimit>", FLAG_NAME[FLAG_LV_MAX_WARN]);
 }
 
 /**

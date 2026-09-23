@@ -116,6 +116,30 @@ fn extrapolate(left: Node, right: Node, at: f64) -> f64 {
     left.val + (right.val - left.val) / d * (at - left.pos)
 }
 
+/// C's `warnStepSizeTooBig`: the warning and its subline, `-lvMaxWarn` times.
+fn warn_step_size_too_big(n_displayed: &mut u64, what: &str, time: f64, index: u32, events: i32) {
+    let max_displayed = crate::solverflags::max_warn_displays();
+    *n_displayed += 1;
+    if *n_displayed > max_displayed {
+        return;
+    }
+    omclog::warning(
+        omclog::STDOUT,
+        true,
+        &format!("{what} more then one event from spatialDistribution. Step size to big!"),
+    );
+    omclog::warning!(
+        omclog::STDOUT,
+        false,
+        "time: {}, spatialDistribution index: {index}, number of events: {events}",
+        f(time),
+    );
+    omclog::close_warning(omclog::STDOUT);
+    if *n_displayed == max_displayed {
+        omclog::warning_limit_reached(omclog::STDOUT, max_displayed);
+    }
+}
+
 /// What [`Spatial::read_output`] found at the output edge.
 struct Read {
     out: f64,
@@ -142,6 +166,8 @@ struct Spatial {
     last_event_sign: f64,
     /// Second output of the last [`Spatial::eval`], for [`SpatialState::out1`].
     out1: f64,
+    n_warnings_removed_events: u64,
+    n_warnings_output_events: u64,
 }
 
 impl Spatial {
@@ -154,6 +180,8 @@ impl Spatial {
             old_pos_x: 0.0,
             last_event_sign: 0.0,
             out1: 0.0,
+            n_warnings_removed_events: 0,
+            n_warnings_output_events: 0,
         }
     }
 
@@ -331,18 +359,7 @@ impl Spatial {
 
         let walked = self.prune(positive);
         if walked > 1 {
-            omclog::warning(
-                omclog::STDOUT,
-                true,
-                "Removed more then one event from spatialDistribution. Step size to big!",
-            );
-            omclog::warning!(
-                omclog::STDOUT,
-                false,
-                "time: {}, spatialDistribution index: {index}, number of events: {walked}",
-                f(time),
-            );
-            omclog::close_warning(omclog::STDOUT);
+            warn_step_size_too_big(&mut self.n_warnings_removed_events, "Removed", time, index, walked);
         }
         self.old_pos_x = pos_x;
         omclog::close(omclog::SPATIALDISTR);
@@ -615,19 +632,13 @@ impl Spatial {
         } else {
             let read = self.read_output(in0, in1, pos_x, positive);
             if read.events > 1 {
-                omclog::warning(
-                    omclog::STDOUT,
-                    true,
-                    "Need to output more then one event from spatialDistribution. Step size to big!",
-                );
-                omclog::warning!(
-                    omclog::STDOUT,
-                    false,
-                    "time: {}, spatialDistribution index: {index}, number of events: {}",
-                    f(time),
+                warn_step_size_too_big(
+                    &mut self.n_warnings_output_events,
+                    "Need to output",
+                    time,
+                    index,
                     read.events,
                 );
-                omclog::close_warning(omclog::STDOUT);
             }
             // A discontinuity reached the output edge: a continuous call reports the
             // value in front of it so the zero crossing has something to bracket; the
