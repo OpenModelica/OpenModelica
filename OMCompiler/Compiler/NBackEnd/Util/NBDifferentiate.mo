@@ -1303,7 +1303,7 @@ public
               (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
               elem_exps := elem_res :: elem_exps;
             end for;
-            res := Expression.makeArray(exp.ty, listArray(listReverse(elem_exps)));
+            res := makeShapedArray(exp.ty, listReverse(elem_exps));
           end if;
         end if;
       then (res, diffArguments);
@@ -1315,6 +1315,39 @@ public
 
     end match;
   end differentiateComponentRef;
+
+  function makeShapedArray
+    "Builds an array expression of type ty from its scalar elements given in row-major
+     order. A multi-dimensional type gets one nested array per leading dimension, e.g.
+     Real[2, 1] with {a, b} becomes {{a}, {b}}, so that the shape matches the type. A flat
+     array of scalars typed as a matrix breaks the code generation."
+    input Type ty;
+    input list<Expression> elems "row-major";
+    output Expression res;
+  protected
+    list<Dimension> dims = Type.arrayDims(ty);
+    Type row_ty;
+    Integer row_size, n_rows;
+    list<Expression> rows = {}, row, remaining = elems;
+  algorithm
+    if listLength(dims) < 2 then
+      res := Expression.makeArray(ty, listArray(elems));
+    else
+      row_ty := Type.ARRAY(Type.arrayElementType(ty), listRest(dims));
+      row_size := Type.sizeOf(row_ty);
+      if row_size < 1 or listLength(elems) <> row_size * Dimension.size(listHead(dims)) then
+        // sizes that do not add up, keep the previous (flat) result rather than guess
+        res := Expression.makeArray(ty, listArray(elems));
+      else
+        n_rows := Dimension.size(listHead(dims));
+        for i in 1:n_rows loop
+          (row, remaining) := List.split(remaining, row_size);
+          rows := makeShapedArray(row_ty, row) :: rows;
+        end for;
+        res := Expression.makeArray(ty, listArray(listReverse(rows)));
+      end if;
+    end if;
+  end makeShapedArray;
 
   function differentiateComponentRefNoCollect
     input output Expression exp;

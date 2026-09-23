@@ -2323,6 +2323,54 @@ modelica_real min_real_array(const real_array a)
 }
 
 /**
+ * @brief Index of the first minimal element in `a`, needed for the derivative of min(a).
+ *
+ * @param a Source real array.
+ * @return One-based index of the minimum, 0 if empty.
+ */
+modelica_integer argmin_real_array(const real_array a)
+{
+    size_t i, nr_of_elements;
+    modelica_integer arg = 0;
+
+    omc_assert_macro(base_array_ok(&a));
+
+    nr_of_elements = base_array_nr_of_elements(a);
+    for (i = 0; i < nr_of_elements; ++i)
+    {
+        if (arg == 0 || real_get(a, i) < real_get(a, arg - 1))
+        {
+            arg = (modelica_integer)i + 1;
+        }
+    }
+    return arg;
+}
+
+/**
+ * @brief Index of the first maximal element in `a`, needed for the derivative of max(a).
+ *
+ * @param a Source real array.
+ * @return One-based index of the maximum, 0 if empty.
+ */
+modelica_integer argmax_real_array(const real_array a)
+{
+    size_t i, nr_of_elements;
+    modelica_integer arg = 0;
+
+    omc_assert_macro(base_array_ok(&a));
+
+    nr_of_elements = base_array_nr_of_elements(a);
+    for (i = 0; i < nr_of_elements; ++i)
+    {
+        if (arg == 0 || real_get(a, i) > real_get(a, arg - 1))
+        {
+            arg = (modelica_integer)i + 1;
+        }
+    }
+    return arg;
+}
+
+/**
  * @brief Compute the sum of all elements in `a`.
  *
  * @param a Source real array.

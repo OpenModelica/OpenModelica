@@ -7388,6 +7388,18 @@ let &sub = buffer ""
     let &preExp += '<%tvar%> = max_<%arr_tp_str%>(<%expVar%>);<%\n%>'
     tvar
 
+  case CALL(path=IDENT(name="argmin"), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let tvar = tempDecl("modelica_integer", &varDecls, &varFrees)
+    let &preExp += '<%tvar%> = argmin_real_array(<%expVar%>);<%\n%>'
+    tvar
+
+  case CALL(path=IDENT(name="argmax"), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let tvar = tempDecl("modelica_integer", &varDecls, &varFrees)
+    let &preExp += '<%tvar%> = argmax_real_array(<%expVar%>);<%\n%>'
+    tvar
+
   case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let arr_tp_str = expTypeArray(ty)

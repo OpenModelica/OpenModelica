@@ -200,6 +200,8 @@ extern void linspace_real_array(modelica_real x1, modelica_real x2, int n,
                                 real_array *dest);
 extern modelica_real min_real_array(const real_array a);
 extern modelica_real max_real_array(const real_array a);
+extern modelica_integer argmin_real_array(const real_array a);
+extern modelica_integer argmax_real_array(const real_array a);
 extern modelica_real sum_real_array(const real_array a);
 extern modelica_real product_real_array(const real_array a);
 extern void symmetric_real_array(const real_array *a, real_array *dest);
