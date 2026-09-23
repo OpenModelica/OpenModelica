@@ -193,6 +193,14 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
     set(FMU_TARGET_SYSTEM_TUPLE "windows")
   endif()
   set(FMU_TARGET_PLATFORM "${FMU_TARGET_ARCH}-${FMU_TARGET_SYSTEM_TUPLE}")
+elseif(FMU_TARGET_ARCH STREQUAL "arm" AND FMU_TARGET_SYSTEM_NAME STREQUAL "linux")
+  # The FMI 1.0/2.0 spec only defines win/linux/darwin 32/64 as binaries
+  # folder names, so 32-bit ARM Linux (as cross-compiled by e.g.
+  # arm-linux-gnueabihf-gcc, CMAKE_SYSTEM_PROCESSOR "arm") has no bitness-only
+  # name to fall back on; it would otherwise collide with the 32-bit x86
+  # build's "linux32". Use the community convention of the full GNU target
+  # triple instead, matching what the old Autoconf --host=<triple> build used.
+  set(FMU_TARGET_PLATFORM "arm-linux-gnueabihf")
 elseif(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
   set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}64")
 else()
