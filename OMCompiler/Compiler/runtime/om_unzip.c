@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "../../3rdParty/fmi-library/ThirdParty/Zlib/zlib-1.3.1/contrib/minizip/unzip.h"
+#include <unzip.h>
 #include "util/omc_str_utils.h"
 #include "util/omc_file.h"
 #include "errorext.h"
