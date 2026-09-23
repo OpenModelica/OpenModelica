@@ -58,7 +58,7 @@ CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_MOO_ROOT = 3rdParty/moo
 OMC_PRIMME_ROOT = 3rdParty/primme-3.2.3
-OMC_COLPACK_ROOT = 3rdParty/ColPack
+OMC_COLPACK_ROOT = 3rdParty/ColPack-src
 OMC_TBB_ROOT = 3rdParty/oneTBB
 
 
