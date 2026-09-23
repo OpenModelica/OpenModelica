@@ -2,8 +2,7 @@
 # cmake/spellcheck.sh
 #
 # Spellcheck gettext strings in Modelica compiler sources using aspell.
-# Used by the 'spellcheck' CMake target (cmake/omc_spellcheck.cmake) and
-# the 'spellcheck' Makefile target (Makefile.in).
+# Used by the 'spellcheck' CMake target (cmake/omc_spellcheck.cmake).
 #
 # Usage: spellcheck.sh <source_dir> <aspell_executable>
 # Exit code: 0 on success, 1 on spellcheck failure.

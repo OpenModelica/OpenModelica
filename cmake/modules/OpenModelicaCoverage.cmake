@@ -5,7 +5,7 @@
 # in or below those directories is covered:
 #   OMCompiler/Compiler/CMakeLists.txt          (the OpenModelicaCompiler target)
 #   OMCompiler/SimulationRuntime/c/CMakeLists.txt
-#   OMCompiler/SimulationRuntime/cpp/cmake_3.14.cmake
+#   OMCompiler/SimulationRuntime/cpp/CMakeLists.txt
 #
 # MetaModelica coverage: the compiler is written in MetaModelica, which omc
 # translates to C before anything is compiled, so gcov would normally only ever

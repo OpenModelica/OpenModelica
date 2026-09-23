@@ -1243,9 +1243,9 @@ function(omc_rust_setup_codegen)
     # Strip unused `import X;` from the Susan-generated *.mo before transpiling:
     # mmtorust lowers every import to a `use crate::X`, so an unused import
     # becomes a `use` of a crate the target does not depend on (e.g.
-    # `openmodelica_backend::SimCodeUtil` in openmodelica_codegen_xml). The C
-    # build runs the same boot/find-unused-import.sh. It exits non-zero when it
-    # removes something, so `; true` keeps the build going.
+    # `openmodelica_backend::SimCodeUtil` in openmodelica_codegen_xml). CI runs
+    # the same boot/find-unused-import.sh over the hand-written sources. It exits
+    # non-zero when it removes something, so `; true` keeps the build going.
     COMMAND bash -c "\"$0\" \"$@\" ; true" ${CMAKE_CURRENT_SOURCE_DIR}/boot/find-unused-import.sh ${TPL_OUTPUT_MO_FILES}
     COMMAND ${CMAKE_COMMAND} -E env OMC_SCRIPTING_API_QT_OUT=${OMC_SCRIPTING_API_QT_DIR}
             ${MMTORUST_BIN} --sources ${RUST_SOURCES_FILE}

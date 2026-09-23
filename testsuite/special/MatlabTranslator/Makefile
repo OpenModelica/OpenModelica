@@ -1,14 +1,18 @@
-# Probe the omc of a CMake build, first hit wins
+# Probe the omc of a CMake build, first hit wins. ?= so that an OMC= from the
+# caller (or the environment) takes precedence over the probe.
 OMC_CANDIDATES := ../../../build/install_cmake/bin/omc \
                   ../../../build_cmake/install_cmake/bin/omc \
                   ../../../build/bin/omc
-OMC := $(firstword $(realpath $(wildcard $(OMC_CANDIDATES))) $(lastword $(OMC_CANDIDATES)))
+OMC ?= $(firstword $(realpath $(wildcard $(OMC_CANDIDATES))) $(lastword $(OMC_CANDIDATES)))
 
-# Susan writes AbsynDumpTpl.mo into the build tree, or in-source for an in-source build
+# Susan writes AbsynDumpTpl.mo into the build tree, or in-source for an in-source build.
+# ?= only assigns when the caller did not set it; the CI does (see testMatlabTranslator
+# in .CI/common.groovy). The right-hand side must not mention OMCOMPILERGENERATEDSOURCES
+# itself: ?= defines a recursively expanded variable, so that would be a self-reference.
 OMC_GENERATED_MO_CANDIDATES := ../../../build_cmake/OMCompiler/Compiler/generated-mo \
                                ../../../build/OMCompiler/Compiler/generated-mo \
                                ../../../OMCompiler/Compiler
-OMCOMPILERGENERATEDSOURCES := $(firstword $(realpath $(wildcard $(OMC_GENERATED_MO_CANDIDATES))) $(lastword $(OMC_GENERATED_MO_CANDIDATES)))
+OMCOMPILERGENERATEDSOURCES ?= $(firstword $(realpath $(wildcard $(OMC_GENERATED_MO_CANDIDATES))) $(lastword $(OMC_GENERATED_MO_CANDIDATES)))
 
 .PHONY: test parser clean
 

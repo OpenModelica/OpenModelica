@@ -24,7 +24,7 @@ dependencies needed to compile OpenModelica.
 - [build-deps-fedora-43][fedora-43-dev]: Fedora 43.
 - [build-deps-fedora-44][fedora-44-dev]: Fedora 44.
 - [build-deps-ubuntu-26-rust][ubuntu-resolute-rust-dev]: Ubuntu 26.04 with the
-  Rust/clang/wasm toolchain, reproducing the `cmake-rust-clang` CI stage.
+  Rust/clang/wasm toolchain, reproducing the `rust-clang` CI stage.
 
 There are two flavors:
 
@@ -45,9 +45,9 @@ Open command pallet (`Strg+Shift+P`) and run
 `>Dev Containers: Open Folder in Container...`, select the OpenModelica
 directory. Then select a devcontainer.json file to start.
 
-## Reproducing the cmake-rust-clang CI stage
+## Reproducing the rust-clang CI stage
 
-`build-deps-ubuntu-26-rust` pins the same image the `cmake-rust-clang` stage in
+`build-deps-ubuntu-26-rust` pins the same image the `rust-clang` stage in
 [../Jenkinsfile][jenkinsfile] uses and mounts the same cargo/sccache/omlibrary
 cache volumes. Inside the container run:
 

@@ -18,7 +18,6 @@ if not loadFile(mm_src_file) then
 end if;
 
 if not checkInterfaceOfPackages(class_typename, {
-// Also update Compiler/boot/CompileFile.mos if you change this file.
   {"parser", "error", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
   {"backend", "backend_types", "simcode_types", "backend_util", "frontend", "util", "tpl", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "ast_collections", "dump_extra", "frontend_inst", "script_util", "program_util", "simcode_util", "frontend_base", "error", "codegen_graphml", "loader", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
   {"backend_types", "frontend", "util", "frontend_types", "frontend_dump", "ast_collections", "util_datatypes_basic", "parser", "frontend_base", "error", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},

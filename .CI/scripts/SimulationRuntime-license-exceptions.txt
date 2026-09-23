@@ -44,8 +44,6 @@ OMCompiler/tools/
 
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc
-OMCompiler/Compiler/boot/bootstrap-sources
-OMCompiler/Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h
 OMCompiler/Compiler/Lexers/LexerJSON.mo
 OMCompiler/Compiler/Lexers/LexerModelicaDiff.mo
 OMCompiler/Compiler/OpenModelicaBootstrappingHeader.h
@@ -82,9 +80,6 @@ OMCompiler/Compiler/Util/Autoconf.mo
 OMCompiler/Compiler/*.mos
 OMCompiler/Parser/*.mos
 OMCompiler/toJulia/*.mos
-
-# Martin Sjölund - Part of a Modelica library we don't have OSMC-PL for
-OMCompiler/Compiler/boot/include/msgpack-modelica.h
 
 # Dave Gamble - cJSON
 OMCompiler/Compiler/runtime/cJSON.*
@@ -135,7 +130,6 @@ OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
 
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
-OMCompiler/SimulationRuntime/c/RuntimeSources.mo.tpl
 
 # =============================================================================
 # SimulationRuntime/fmi/
@@ -292,7 +286,6 @@ OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 # OMNotebook
 # =============================================================================
 
-OMNotebook/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro
 
 # =============================================================================
 # OMParser
