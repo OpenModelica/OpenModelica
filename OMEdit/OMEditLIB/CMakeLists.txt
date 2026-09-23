@@ -415,15 +415,19 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # guards with if(NOT TARGET ZLIB::ZLIB)), so Qt6::Svg never gets linked
   # against the real system libz.so.1 it needs. Link it explicitly instead of
   # relying on ZLIB::ZLIB, which two different consumers need to mean two
-  # different things here.
-  find_library(OM_SYSTEM_ZLIB_LIB NAMES z)
-
-  if (OM_SYSTEM_ZLIB_LIB)
-    target_link_libraries(OMEditLib PUBLIC ${OM_SYSTEM_ZLIB_LIB})
+  # different things here. With OM_USE_SYSTEM_ZLIB, omc::3rd::zlib is that system zlib.
+  if (OM_USE_SYSTEM_ZLIB)
+    target_link_libraries(OMEditLib PUBLIC omc::3rd::zlib)
   else ()
-    message(WARNING
-      "Could not find the system zlib (libz.so.1). "
-      "Qt6::Svg may fail to link due to unresolved inflateEnd.")
+    find_library(OM_SYSTEM_ZLIB_LIB NAMES z)
+
+    if (OM_SYSTEM_ZLIB_LIB)
+      target_link_libraries(OMEditLib PUBLIC ${OM_SYSTEM_ZLIB_LIB})
+    else ()
+      message(WARNING
+        "Could not find the system zlib (libz.so.1). "
+        "Qt6::Svg may fail to link due to unresolved inflateEnd.")
+    endif ()
   endif ()
 endif ()
 
