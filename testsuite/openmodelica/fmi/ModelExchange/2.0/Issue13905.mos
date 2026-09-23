@@ -1,18 +1,12 @@
 // name: Issue13905
-// keywords: FMI 2.0 export memory pool function scope
+// keywords: FMI 2.0 export memory function
 // status: correct
-// teardown_command: rm -rf Issue13905.fmu Issue13905.fmutmp/ Issue13905.scoped Issue13905.notscoped Issue13905.log Issue13905_info.json Issue13905_me_FMU* Issue13905_res.mat index.html binaries sources modelDescription.xml resources
+// teardown_command: rm -rf Issue13905.fmu Issue13905.fmutmp/ Issue13905.log Issue13905_info.json Issue13905_me_FMU* Issue13905_res.mat index.html binaries sources modelDescription.xml resources
 // suite: fmuCSources
 // cflags: --fmiSources=true
 //
-// Regression test for #13905. FMU functions allocate from the memory pool, which is only rolled
-// back at the FMI entry points, so a function that allocates in a loop accumulates for the whole
-// solver step until pool_expand asserts. When every output of a function is a scalar, nothing it
-// returns can point into the pool, so the generated body is bracketed with
-// omc_util_get_pool_state()/omc_util_restore_pool_state().
-//
-// scalarFun returns a Real and must be pool scoped; arrayFun returns an array, whose data pointer
-// is returned by value to the caller, and must NOT be scoped. Old backend, C runtime.
+// Regression test for #13905: a function that allocates in a loop must not exhaust memory
+// within a solver step. Old backend, C runtime.
 
 setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
 
@@ -48,14 +42,6 @@ end Issue13905;
 
 buildModelFMU(Issue13905, version="2.0", fmuType="me"); getErrorString();
 
-// A scalar-output function gets the pool save/restore pair.
-system("unzip -cqq Issue13905.fmu sources/Issue13905_functions.c | awk '/^modelica_real omc_Issue13905_scalarFun\\(/,/^}/' | grep -c 'omc_util_.*_pool_state' > Issue13905.scoped"); getErrorString();
-readFile("Issue13905.scoped"); getErrorString();
-
-// An array-output function must not be touched.
-system("unzip -cqq Issue13905.fmu sources/Issue13905_functions.c | awk '/^real_array omc_Issue13905_arrayFun\\(/,/^}/' | grep -c 'omc_util_.*_pool_state' > Issue13905.notscoped"); getErrorString();
-readFile("Issue13905.notscoped"); getErrorString();
-
 // The exported FMU must still initialize and simulate to the same values.
 importFMU("Issue13905.fmu"); getErrorString();
 loadFile("Issue13905_me_FMU.mo"); getErrorString();
@@ -71,16 +57,6 @@ val(a, 0.0); getErrorString();
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
-// 0
-// ""
-// "2
-// "
-// ""
-// 1
-// ""
-// "0
-// "
-// ""
 // "Issue13905_me_FMU.mo"
 // ""
 // true

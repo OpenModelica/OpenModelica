@@ -41,6 +41,7 @@
 #endif
 
 #include <openmodelica.h>
+#include <util/omc_error.h>   /* FILE_INFO, for the assert reporters below */
 
 enum enumErrorType {ErrorType_syntax=0,ErrorType_grammar,ErrorType_translation,ErrorType_symbolic,ErrorType_runtime,ErrorType_scripting};
 enum enumErrorLevel {ErrorLevel_internal=0,ErrorLevel_error,ErrorLevel_warning,ErrorLevel_notification};
@@ -49,6 +50,10 @@ typedef enum enumErrorLevel ErrorLevel;
 const char* ErrorLevel_toStr(int ix);
 const char* ErrorType_toStr(int ix);
 int showErrorMessages(threadData_t *threadData);
+
+/* Handed to a dlopened function library's omc_set_assert_reporters. */
+void Error_assertReport(threadData_t *threadData, FILE_INFO info, const char *msg, va_list args);
+void Error_assertWarningReport(FILE_INFO info, const char *msg, va_list args);
 
 void c_add_message(threadData_t *threadData,int errorID,
        ErrorType type,

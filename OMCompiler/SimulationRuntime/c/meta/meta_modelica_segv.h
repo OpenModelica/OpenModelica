@@ -25,81 +25,10 @@
  *
  */
 
-/* Stack overflow handling */
 
 #ifndef META_MODELICA_SEGV_H_
 #define META_MODELICA_SEGV_H_
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-#include <setjmp.h>
-
-#define MMC_TRY_STACK() { jmp_buf *oldMMCJumper = threadData->mmc_jumper; { MMC_TRY_INTERNAL(mmc_stack_overflow_jumper) threadData->mmc_stack_overflow_jumper = &new_mmc_jumper;
-#define MMC_ELSE_STACK() } else { threadData->mmc_jumper = oldMMCJumper; threadData->mmc_stack_overflow_jumper = old_jumper;
-#define MMC_CATCH_STACK() MMC_CATCH_INTERNAL(mmc_stack_overflow_jumper) } threadData->mmc_jumper = oldMMCJumper; }
-
-#if defined(OMC_MINIMAL_RUNTIME)
-static inline void printStacktraceMessages(void)
-{
-}
-#else
-void printStacktraceMessages(void);
-#endif
-void mmc_setStacktraceMessages(int numSkip, int numFrames);
+#include "../util/omc_stackoverflow.h"
+void* mmc_getStacktraceMessages_threadData(threadData_t *threadData);
 void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
-void init_metamodelica_segv_handler(void);
-#if defined(OMC_MINIMAL_RUNTIME)
-static inline void mmc_init_stackoverflow(threadData_t *threadData)
-{
-}
-#else
-void mmc_init_stackoverflow(threadData_t *threadData);
-#endif
-
-#if defined(__linux__) || defined(__APPLE__)
-static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData)
-{
-  if (oldThreadData)
-    threadData->stackBottom = oldThreadData->stackBottom;
-  else
-    mmc_init_stackoverflow(threadData);
-}
-#else
-static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData __attribute__((unused)))
-{
-  mmc_init_stackoverflow(threadData);
-}
-#endif
-
-#ifndef __has_builtin
-  #define __has_builtin(x) 0  /* Compatibility with non-clang compilers */
-#endif
-
-/* Does not work very well with many stack frames because we are close to the stack end when we need this data... */
-#define MMC_SEGV_TRACE_NFRAMES 1024
-
-void mmc_do_stackoverflow(threadData_t *threadData);
-
-static inline void mmc_check_stackoverflow(threadData_t *threadData)
-{
-#if __has_builtin(__builtin_frame_address) || defined(__GNUC__)
-  if (__builtin_frame_address(0) < threadData->stackBottom)
-#else
-  /* No way of getting the frame address except hoping for the best */
-  int addr;
-  if ((void*) &addr < threadData->stackBottom)
-#endif
-  {
-    mmc_do_stackoverflow(threadData);
-  }
-}
-
-#define MMC_SO() mmc_check_stackoverflow(threadData)
-
-#if defined(__cplusplus)
-}
-#endif
-
 #endif

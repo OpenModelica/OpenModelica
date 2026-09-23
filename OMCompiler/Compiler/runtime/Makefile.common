@@ -57,6 +57,9 @@ install: libomcruntime$(SHREXT) libomcbackendruntime.a
 # If we are using the Makefiles then assume we have PThreads available.
 CPPFLAGS += -DOM_HAVE_PTHREADS
 
+# MetaModelica code; set here rather than left to include order.
+CPPFLAGS += -DOMC_METAMODELICA_RUNTIME=1
+
 OBJEXT=.o
 BOOTH=../OpenModelicaBootstrappingHeader.h
 ifeq ($(BOOTSTRAPPING),1)

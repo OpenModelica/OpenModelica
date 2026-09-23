@@ -40,15 +40,15 @@
 extern "C" {
 #endif
 
+#include "meta_modelica_string.h"
 #include "meta_modelica_builtin_boxptr.h"
-#include "../util/modelica_string_lit.h"
+#include "meta_modelica_string_lit.h"
 
-typedef modelica_metatype metamodelica_string;
 typedef const modelica_metatype metamodelica_string_const;
 
-extern modelica_string intString(modelica_integer);
+extern metamodelica_string intString(modelica_integer);
 extern modelica_string realString(modelica_real);
-static inline modelica_string boolString(modelica_integer i)
+static inline metamodelica_string boolString(modelica_integer i)
 {
   return mmc_strings_boolString[i];
 }
@@ -207,9 +207,6 @@ extern modelica_metatype nobox_getGlobalRoot(threadData_t*,modelica_integer);
 extern void boxptr_setGlobalRoot(threadData_t*,modelica_metatype, modelica_metatype);
 extern modelica_metatype boxptr_valueConstructor(threadData_t*,modelica_metatype);
 #define referenceEq(X,Y) ((X) == (Y))
-
-extern modelica_real realMaxLit(void);
-extern modelica_integer intMaxLit(void);
 
 extern modelica_boolean setStackOverflowSignal(modelica_boolean);
 extern metamodelica_string referenceDebugString(modelica_metatype fnptr);

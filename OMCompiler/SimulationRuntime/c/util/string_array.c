@@ -27,6 +27,10 @@
 
 
 #include "string_array.h"
+#if defined(OMC_METAMODELICA_RUNTIME)
+/* The string vocabulary of this runtime; util/omc_string.h stands down here. */
+#include "../meta/meta_modelica_string.h"
+#endif
 #include "../gc/omc_gc.h"
 #include "index_spec.h"
 #include "modelica_string.h"
@@ -43,9 +47,11 @@ static inline modelica_string *string_ptrget(const string_array *a, size_t i)
     return ((modelica_string *) a->data) + i;
 }
 
+/* An element slot owns its reference, like every other slot a string can live
+   in; a freshly allocated buffer is zeroed, so the release is a no-op there. */
 static inline void string_set(string_array *a, size_t i, modelica_string r)
 {
-    ((modelica_string *) a->data)[i] = r;
+    omc_string_store(((modelica_string *) a->data) + i, r);
 }
 
 modelica_string string_get(const string_array a, size_t i)
@@ -122,13 +128,41 @@ void copy_string_array_data_mem(const string_array source, modelica_string *dest
     nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        dest[i] = string_get(*&source, i);
+        omc_string_store(dest + i, string_get(*&source, i));
     }
 }
 
 void copy_string_array(const string_array source, string_array *dest)
 {
     string_array_alloc_copy(source,*dest);
+}
+
+/* What simple_array_copy_data is for the other element types. A memcpy would
+   duplicate the pointers without the destination taking a reference. */
+void omc_string_array_alloc_copy(const string_array source, string_array *dest)
+{
+    size_t i, nr_of_elements;
+
+    simple_array_alloc_copy(source, dest, sizeof(modelica_string));
+    nr_of_elements = base_array_nr_of_elements(*dest);
+    for(i = 0; i < nr_of_elements; ++i) {
+        omc_string_retain(((modelica_string *) dest->data)[i]);
+    }
+}
+
+void omc_string_array_copy_data(const string_array source, string_array *dest)
+{
+    size_t i, nr_of_elements;
+
+    assert(base_array_ok(&source));
+    assert(base_array_ok(dest));
+
+    nr_of_elements = base_array_nr_of_elements(source);
+    assert(nr_of_elements == base_array_nr_of_elements(*dest));
+
+    for(i = 0; i < nr_of_elements; ++i) {
+        string_set(dest, i, string_get(source, i));
+    }
 }
 
 /*
@@ -166,7 +200,7 @@ void print_string_matrix(const string_array *source)
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
                 value = string_get(*source, (i * source->dim_size[1]) + j);
-                printf("%s\t", MMC_STRINGDATA(value));
+                printf("%s\t", omc_string_data(value));
             }
             printf("\n");
         }
@@ -184,11 +218,11 @@ void print_string_array(const string_array *source)
     data = (modelica_string *) source->data;
     if(source->ndims == 1) {
         for(i = 1; i < source->dim_size[0]; ++i) {
-            printf("%s, ", MMC_STRINGDATA(*data));
+            printf("%s, ", omc_string_data(*data));
             ++data;
         }
         if(0 < source->dim_size[0]) {
-            printf("%s", MMC_STRINGDATA(*data));
+            printf("%s", omc_string_data(*data));
         }
     } else if(source->ndims > 1) {
         size_t k, n;
@@ -199,11 +233,11 @@ void print_string_array(const string_array *source)
         for(k = 0; k < n; ++k) {
             for(i = 0; i < source->dim_size[1]; ++i) {
                 for(j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%s, ", MMC_STRINGDATA(*data));
+                    printf("%s, ", omc_string_data(*data));
                     ++data;
                 }
                 if(0 < source->dim_size[0]) {
-                    printf("%s", MMC_STRINGDATA(*data));
+                    printf("%s", omc_string_data(*data));
                 }
                 printf("\n");
             }
@@ -269,6 +303,8 @@ void indexed_assign_string_array(const string_array source,
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
     omc_assert_macro(j == base_array_nr_of_elements(source));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_size);
 }
 
 /*
@@ -336,6 +372,9 @@ void index_string_array(const string_array * source,
                                                    source, source_spec)));
 
     } while(0 == next_index(source->ndims, idx_vec1, idx_size));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_vec2);
+    omc_rc_release_inline(idx_size);
 }
 
 /*
@@ -367,6 +406,7 @@ void simple_index_alloc_string_array1(const string_array * source, int i1,
 
     dest->ndims = source->ndims - 1;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i+1];
@@ -601,6 +641,7 @@ void cat_alloc_string_array(int k, string_array* dest, int n,
     dest->data = string_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     for(j = 0; j < dest->ndims; j++) {
         dest->dim_size[j] = elts[0]->dim_size[j];
     }
@@ -628,9 +669,8 @@ void cat_alloc_string_array(int k, string_array* dest, int n,
 void promote_alloc_string_array(const string_array * a, int n,
                                 string_array* dest)
 {
-    clone_string_array_spec(a,dest);
-    alloc_string_array_data(dest);
-    promote_string_array(a,n,dest);
+    dest->flexible = a->flexible;
+    promote_string_array(a, n, dest);
 }
 
 /* function: promote_string_array.
@@ -647,6 +687,10 @@ void promote_string_array(const string_array * a, int n,string_array* dest)
 
     dest->dim_size = size_alloc(n+a->ndims);
     dest->data = a->data;
+    dest->owns_data = a->owns_data;
+    if (dest->owns_data) {
+        omc_rc_retain_inline(dest->data);
+    }
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
         dest->dim_size[i] = a->dim_size[i];
@@ -672,6 +716,7 @@ void promote_scalar_string_array(modelica_string s,int n,
 
     /* Alloc size */
     dest->dim_size = size_alloc(n);
+    dest->owns_data = 1;
 
     /* Alloc data */
     dest->data = string_alloc(1);
@@ -854,7 +899,7 @@ const char** data_of_string_c89_array(const string_array a)
   size_t sz = base_array_nr_of_elements(a);
   const char **res = (const char**) omc_alloc_interface.malloc(sz*sizeof(const char*));
   for (i=0; i<sz; i++) {
-    res[i] = MMC_STRINGDATA(((void**)a.data)[i]);
+    res[i] = omc_string_data(((void**)a.data)[i]);
   }
   return res;
 }
@@ -864,6 +909,6 @@ void unpack_string_array(const string_array *a, const char **data)
   size_t sz = base_array_nr_of_elements(*a);
   long i;
   for (i=0; i<sz; i++) {
-    ((void**)a->data)[i] = mmc_mk_scon(data[i]);
+    ((void**)a->data)[i] = omc_string_new(data[i]);
   }
 }

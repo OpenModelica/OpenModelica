@@ -15689,6 +15689,19 @@ algorithm
   end match;
 end getSimCode;
 
+public function isSimulationCodegen
+  "Whether the templates are running for a simulation or an FMU rather than for
+   functions on their own. Only those set the SimCode structure, and only those
+   compile against the counted runtime, so it also answers which of the two
+   vocabularies the generated C is written in."
+  output Boolean simulation;
+protected
+  Option<SimCode.SimCode> ocode;
+algorithm
+  ocode := getGlobalRoot(Global.optionSimCode);
+  simulation := match ocode case SOME(_) then true; else false; end match;
+end isSimulationCodegen;
+
 public function isContiguousArrayCref
   "Whether the scalarized elements of an array cref occupy consecutive slots of
    one variable array, so the C target may address them through the first one."
@@ -15866,10 +15879,12 @@ end localCref2Index;
 public function codegenExpSanityCheck "Handle some things that Susan cannot handle:
 * Expand simulation context arrays that contain variables stored in different locations...
 * We could move collapsing arrays here since it should be safer to do so when we can lookup which index a variable corresponds to...
+* Drop the boxing around calls through a function value (unboxFunctionReferenceCall).
 "
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
 algorithm
+  e := unboxFunctionReferenceCall(e);
   if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
   end if;
@@ -15900,6 +15915,108 @@ algorithm
     else e;
   end match;
 end codegenExpSanityCheck;
+
+public function unboxFunctionReferenceCall
+  "Drops the boxing around a call through a function value: C calls it with the
+   unboxed signature of the function it refers to. MetaModelica keeps it, since
+   a polymorphic function needs it and a closure there can outlive its frame."
+  input output DAE.Exp exp;
+protected
+  DAE.Exp e;
+  DAE.CallAttributes attr;
+algorithm
+  if Config.acceptMetaModelicaGrammar() then
+    return;
+  end if;
+
+  exp := match exp
+    case DAE.UNBOX(exp = e as DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true)))
+      then unboxFunctionReferenceCall(e);
+    case DAE.UNBOX(exp = e as DAE.TSUB(exp = DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true))))
+      then unboxFunctionReferenceCall(e);
+    case DAE.TSUB(exp = e as DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true)))
+      algorithm
+        exp.exp := unboxFunctionReferenceCall(e);
+        exp.ty := Types.unboxedType(exp.ty);
+      then exp;
+    case DAE.CALL(attr = attr as DAE.CALL_ATTR(isFunctionPointerCall = true))
+      algorithm
+        exp.expLst := list(unboxArgument(a) for a in exp.expLst);
+        attr.ty := unboxResultType(attr.ty);
+        exp.attr := attr;
+      then exp;
+    case DAE.PARTEVALFUNCTION()
+      algorithm
+        exp.expList := list(unboxArgument(a) for a in exp.expList);
+        exp.ty := unboxFunctionReferenceType(exp.ty);
+        exp.origType := unboxFunctionReferenceType(exp.origType);
+      then exp;
+    else exp;
+  end match;
+end unboxFunctionReferenceCall;
+
+protected function unboxArgument
+  "A boxed record literal is a METARECORDCALL with boxed fields."
+  input output DAE.Exp exp;
+protected
+  DAE.Exp e;
+  list<DAE.Exp> args;
+algorithm
+  exp := match exp
+    case DAE.BOX() then unboxFunctionReferenceCall(exp.exp);
+    case DAE.METARECORDCALL(index = -1)
+      algorithm
+        args := list(unboxArgument(a) for a in exp.args);
+      then
+        DAE.RECORD(exp.path, args, exp.fieldNames,
+          DAE.T_COMPLEX(ClassInf.RECORD(exp.path),
+            list(DAE.TYPES_VAR(n, DAE.dummyAttrVar, Expression.typeof(a), DAE.UNBOUND(), false, NONE())
+              threaded for a in args, n in exp.fieldNames),
+            NONE(), false));
+    case DAE.SHARED_LITERAL(exp = e as DAE.BOX()) then unboxArgument(e);
+    case DAE.SHARED_LITERAL(exp = e as DAE.METARECORDCALL(index = -1)) then unboxArgument(e);
+    else unboxFunctionReferenceCall(exp);
+  end match;
+end unboxArgument;
+
+protected function unboxResultType
+  input output DAE.Type ty;
+algorithm
+  ty := match ty
+    case DAE.T_TUPLE()
+      algorithm
+        ty.types := list(Types.unboxedType(t) for t in ty.types);
+      then ty;
+    else Types.unboxedType(ty);
+  end match;
+end unboxResultType;
+
+protected function unboxFunctionReferenceType
+  input output DAE.Type ty;
+protected
+  DAE.Type fty;
+algorithm
+  ty := match ty
+    case DAE.T_FUNCTION_REFERENCE_VAR(functionType = fty as DAE.T_FUNCTION())
+      algorithm
+        fty.funcArg := list(unboxFuncArg(a) for a in fty.funcArg);
+        fty.funcResultType := unboxResultType(fty.funcResultType);
+        ty.functionType := fty;
+      then ty;
+    else ty;
+  end match;
+end unboxFunctionReferenceType;
+
+protected function unboxFuncArg
+  input output DAE.FuncArg arg;
+algorithm
+  arg := match arg
+    case DAE.FUNCARG()
+      algorithm
+        arg.ty := Types.unboxedType(arg.ty);
+      then arg;
+  end match;
+end unboxFuncArg;
 
 public function absoluteClockIdxForBaseClock
   input Integer baseClockIdx; // one-based

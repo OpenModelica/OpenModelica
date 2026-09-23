@@ -512,7 +512,7 @@ static int B_nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   kinsolData->countResCalls++;
 
 #ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   if (kinsolData->useScaling) {
@@ -527,10 +527,10 @@ static int B_nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
     nlsKinsolInplaceScaleF(kinsolData, f);
   };
 
-  iflag = 0 /* success */;
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { iflag = 0 /* success */; }
 
 #ifndef OMC_EMCC
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   return iflag;

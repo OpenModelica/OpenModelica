@@ -2869,7 +2869,9 @@ algorithm
   if Flags.getConfigBool(Flags.PARMODAUTO) and not Config.simCodeRustRuntime() then
     ldflags := " " + Autoconf.parModelicaAutoLibs + " " + ldflags;
   end if;
-  rtlibs := if isFunction then Autoconf.ldflags_runtime
+  // A MetaModelica function library is dlopened into omc and hands values back
+  // through omc's own vocabulary, so it links the runtime omc links.
+  rtlibs := if isFunction then (if Config.acceptMetaModelicaGrammar() then Autoconf.ldflags_runtime_mmc else Autoconf.ldflags_runtime)
             elseif isFMU then Autoconf.ldflags_runtime_fmu
             elseif Config.simCodeRustRuntime() then Autoconf.ldflags_runtime_sim_rust
             else Autoconf.ldflags_runtime_sim;

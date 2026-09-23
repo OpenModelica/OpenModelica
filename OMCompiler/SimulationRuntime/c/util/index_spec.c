@@ -28,6 +28,7 @@
 
 #include "index_spec.h"
 #include "../gc/omc_gc.h"
+#include "../gc/omc_rc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -107,6 +108,28 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
     va_end(ap);
 
 	assert(index_spec_ok(dest));
+}
+
+/* Frees what create_index_spec allocated. An 'S' index came from
+   make_index_array; an 'A' index is the data of an integer array it borrows. */
+void omc_index_spec_release(index_spec_t* s)
+{
+    int i;
+    if(s->index == NULL) {
+        return;
+    }
+    for(i = 0; i < s->ndims; ++i) {
+        if(s->index_type[i] == 'S') {
+            omc_rc_release_inline(s->index[i]);
+        }
+    }
+    omc_rc_release_inline(s->index);
+    omc_rc_release_inline(s->dim_size);
+    omc_rc_release_inline(s->index_type);
+    s->index = NULL;
+    s->dim_size = NULL;
+    s->index_type = NULL;
+    s->ndims = 0;
 }
 
 /* make_index_array

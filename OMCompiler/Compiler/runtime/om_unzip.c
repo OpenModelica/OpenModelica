@@ -37,7 +37,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "../../3rdParty/fmi-library/ThirdParty/Zlib/zlib-1.3.1/contrib/minizip/unzip.h"
-#include "util/modelica_string.h"
+#include "util/omc_str_utils.h"
 #include "util/omc_file.h"
 #include "errorext.h"
 #include "systemimpl.h"

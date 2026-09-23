@@ -712,6 +712,8 @@ void indexed_assign_real_array(const real_array source, real_array *dest,
     } while (0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
     omc_assert_macro(j == base_array_nr_of_elements(source));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_size);
 }
 
 /**
@@ -784,6 +786,8 @@ void index_real_array(const real_array *source,
     } while (0 == next_index(source->ndims, idx_vec1, idx_size));
 
     omc_assert_macro(j == base_array_nr_of_elements(*dest));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_size);
 }
 
 /**
@@ -819,6 +823,7 @@ void simple_index_alloc_real_array1(const real_array *source, int i1,
 
     dest->ndims = source->ndims - 1;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     omc_assert_macro(dest->dim_size);
 
     for (i = 0; i < dest->ndims; ++i)
@@ -1131,6 +1136,7 @@ void cat_alloc_real_array(int k,
     dest->data = real_alloc(n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     for (j = 0; j < dest->ndims; j++)
     {
         dest->dim_size[j] = elts[0]->dim_size[j];
@@ -1803,8 +1809,7 @@ real_array exp_alloc_real_array(const real_array a, modelica_integer b)
  */
 void promote_alloc_real_array(const real_array *a, int n, real_array *dest)
 {
-    clone_real_array_spec(a, dest);
-    alloc_real_array_data(dest);
+    dest->flexible = a->flexible;
     promote_real_array(a, n, dest);
 }
 
@@ -1820,6 +1825,10 @@ void promote_real_array(const real_array *a, int n, real_array *dest)
 
     dest->dim_size = size_alloc(n + a->ndims);
     dest->data = a->data;
+    dest->owns_data = a->owns_data;
+    if (dest->owns_data) {
+        omc_rc_retain_inline(dest->data);
+    }
     /* Assert a->ndims>=n */
     for (i = 0; i < a->ndims; ++i)
     {
@@ -1846,6 +1855,7 @@ void promote_scalar_real_array(modelica_real s, int n, real_array *dest)
 
     /* Alloc size */
     dest->dim_size = size_alloc(n);
+    dest->owns_data = 1;
 
     /* Alloc data */
     dest->data = real_alloc(1);

@@ -48,6 +48,7 @@ encapsulated package Autoconf
   constant String ldflags_basic = "";
 
   constant String ldflags_runtime = "";
+  constant String ldflags_runtime_mmc = "";
   constant String ldflags_runtime_sim = "";
   constant String ldflags_runtime_sim_rust = "";
   constant String ldflags_runtime_fmu = "";

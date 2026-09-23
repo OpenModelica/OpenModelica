@@ -88,7 +88,7 @@ int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL
   int ret = -1;
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   if (counter)
@@ -102,10 +102,10 @@ int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL
   data->simulationInfo->evalSelection = selection;
   data->callback->functionODE(data, threadData);
 
-  ret = 0;
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { ret = 0; }
 
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   return ret;

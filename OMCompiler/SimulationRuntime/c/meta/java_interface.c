@@ -25,7 +25,7 @@
  *
  */
 
-#include "modelica_string.h"
+#include "meta_modelica_string.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows/MinGW */
 
@@ -454,12 +454,13 @@ jobject NewFlatJavaDoubleArray(JNIEnv* env, modelica_real* base, int num)
     return jarr;
 }
 
-jobject NewFlatJavaStringArray(JNIEnv* env, modelica_string* base, int num)
+jobject NewFlatJavaStringArray(JNIEnv* env, metamodelica_string* base, int num)
 {
   jobject jarr = NewJavaArray(env);
   int i;
   for(i=0; i<num; i++) {
-    jobject o = NewJavaString(env, base[i]);
+    /* base[i] is a tagged MetaModelica string; NewJavaString wants the bytes. */
+    jobject o = NewJavaString(env, MMC_STRINGDATA(base[i]));
     JavaArrayAdd(env, jarr, o);
     (*env)->DeleteLocalRef(env, o);
   }
@@ -502,11 +503,11 @@ void GetFlatJavaBooleanArray(JNIEnv* env, jobject jarr, modelica_boolean* base, 
   }
 }
 
-void GetFlatJavaStringArray(JNIEnv* env, jobject jarr, modelica_string* base, int num)
+void GetFlatJavaStringArray(JNIEnv* env, jobject jarr, metamodelica_string* base, int num)
 {
   int i;
   for(i=0; i<num; i++) {
-    base[i] = mmc_mk_scon(GetJavaString(env, JavaArrayGet(env,jarr,i)));
+    base[i] = omc_string_new(GetJavaString(env, JavaArrayGet(env,jarr,i)));
   }
 }
 
@@ -685,7 +686,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   if(hdr == MMC_REALHDR) /* REAL */
     return NewJavaDouble(env,mmc_prim_get_real(mmc));
   if(MMC_HDRISSTRING(hdr)) /* STRING */
-    return NewJavaString(env,MMC_STRINGDATA(mmc));
+    return NewJavaString(env,omc_string_data(mmc));
   if(hdr == MMC_NILHDR) /* Empty list; Tested, but not in OMC. */ {
     return NewJavaArray(env);
   }
@@ -870,7 +871,7 @@ void* jobject_to_mmc_bool(JNIEnv* env, jobject obj)
 
 void* jobject_to_mmc_string(JNIEnv* env, jobject obj)
 {
-  return mmc_mk_scon(GetJavaString(env, obj));
+  return omc_string_new(GetJavaString(env, obj));
 }
 
 void* jobject_to_mmc_tuple(JNIEnv* env, jobject obj)
@@ -1068,19 +1069,19 @@ jobject GetObjectFromJavaMap(JNIEnv* env, jobject map, const char* key) {
   return res;
 }
 
-modelica_string GetStackTrace(JNIEnv* env, jobject t)
+metamodelica_string GetStackTrace(JNIEnv* env, jobject t)
 {
   jmethodID mid;
   jclass cls;
   jstring msg;
-  modelica_string res;
+  metamodelica_string res;
 
   cls = (*env)->FindClass(env, "org/openmodelica/ModelicaHelper");
   CHECK_FOR_JAVA_EXCEPTION(env);
   mid = (*env)->GetStaticMethodID(env, cls, "getStackTrace", "(Ljava/lang/Throwable;)Ljava/lang/String;");
   CHECK_FOR_JAVA_EXCEPTION(env);
   msg = (*env)->CallStaticObjectMethod(env, cls, mid, t);
-  res = mmc_mk_scon(copyJstring(env, msg));
+  res = omc_string_new(copyJstring(env, msg));
 
   (*env)->DeleteLocalRef(env, msg);
   (*env)->DeleteLocalRef(env, cls);

@@ -28,13 +28,13 @@
 #include "setjmp.h"
 #include <stdio.h>
 #include "omc_error.h"
+#include <string.h>
+#include "omc_init.h"
 #include "simulation_options.h"
-/* For MMC_THROW, so we can end this thing */
-#include "../meta/meta_modelica.h"
 
 const FILE_INFO omc_dummyFileInfo = omc_dummyFileInfo_val;
 
-void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
@@ -261,42 +261,56 @@ void printInfo(FILE *stream, FILE_INFO info)
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
+static void (*omc_assert_reporter)(threadData_t*, FILE_INFO, const char*, va_list) = NULL;
+static void (*omc_assert_warning_reporter)(FILE_INFO, const char*, va_list) = NULL;
+
+void omc_set_assert_reporters(void (*err)(threadData_t*, FILE_INFO, const char*, va_list),
+                              void (*warn)(FILE_INFO, const char*, va_list))
+{
+  omc_assert_reporter = err;
+  omc_assert_warning_reporter = warn;
+}
+
 void omc_assert_function(threadData_t* threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
   va_start(ap,msg);
-  printInfo(stderr, info);
-  fputs("Modelica Assert: ", stderr);
-  vfprintf(stderr,msg,ap);
-  fputs("!\n", stderr);
+  if (omc_assert_reporter) {
+    omc_assert_reporter(threadData, info, msg, ap);
+  } else {
+    printInfo(stderr, info);
+    fputs("Modelica Assert: ", stderr);
+    vfprintf(stderr,msg,ap);
+    fputs("!\n", stderr);
+  }
   va_end(ap);
   fflush(NULL);
-  if (threadData) {
-    MMC_THROW_INTERNAL();
-  } else {
-    MMC_THROW();
-  }
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  OMC_ERROR_RAISE();
 }
 
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
   va_start(ap,msg);
-  printInfo(stderr, info);
-  fputs("Warning, assertion triggered: ", stderr);
-  vfprintf(stderr,msg,ap);
-  fputs("!\n", stderr);
+  if (omc_assert_warning_reporter) {
+    omc_assert_warning_reporter(info, msg, ap);
+  } else {
+    printInfo(stderr, info);
+    fputs("Warning, assertion triggered: ", stderr);
+    vfprintf(stderr,msg,ap);
+    fputs("!\n", stderr);
+  }
   va_end(ap);
   fflush(NULL);
 }
 
 void omc_throw_function(threadData_t *threadData)
 {
-  if (threadData) {
-    MMC_THROW_INTERNAL();
-  } else {
-    MMC_THROW();
-  }
+  /* Unlike a model's assert this jumps: it ends the run, and no generated frame
+     is on the stack to owe a release. */
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  OMC_THROW_INTERNAL();
 }
 
 void omc_terminate_function(FILE_INFO info, const char *msg, ...)
@@ -309,7 +323,7 @@ void omc_terminate_function(FILE_INFO info, const char *msg, ...)
   fputs("!\n", stderr);
   va_end(ap);
   fflush(NULL);
-  MMC_THROW();
+  OMC_THROW();
 }
 
 void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
@@ -565,6 +579,9 @@ static inline int throwPrintsMessage(threadData_t *threadData)
 
 static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 {
+  if (threadData->externalJumpBuffer) {
+    return threadData->externalJumpBuffer;
+  }
   switch (threadData->currentErrorStage) {
   case ERROR_EVENTSEARCH:
   case ERROR_SIMULATION:
@@ -631,6 +648,59 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 #endif
+}
+
+#if !defined(OMC_METAMODELICA_RUNTIME)
+/* A raise lands at the nearest checker, which retries the step. During event
+   handling there is nothing left to retry from, so jump to the stage's landing. */
+void omc_external_error(threadData_t *threadData)
+{
+  if (threadData->currentErrorStage == ERROR_EVENTHANDLING) {
+    longjmp(*getBestJumpBuffer(threadData), 1);
+  }
+  OMC_ERROR_RAISE();
+}
+#endif
+
+int omc_error_take(threadData_t *threadData)
+{
+  int raised = threadData->errorState;
+  threadData->errorState = 0;
+  return raised;
+}
+
+/* The raising counterparts of throwStreamPrint*, for generated code: they
+   return, so the caller leaves through its own _return: and runs its releases. */
+void raiseStreamPrint(threadData_t *threadData, const char *format, ...)
+{
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+#if !defined(OMC_MINIMAL_LOGGING)
+  if (throwPrintsMessage(threadData)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
+    messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
+  }
+#endif
+  OMC_ERROR_RAISE();
+}
+
+void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
+{
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+#if !defined(OMC_MINIMAL_LOGGING)
+  if (throwPrintsMessage(threadData)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
+    messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  }
+#endif
+  OMC_ERROR_RAISE();
 }
 
 /**

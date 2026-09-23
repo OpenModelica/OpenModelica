@@ -86,7 +86,7 @@ static const char *mmcString(const modelica_string *s)
   if (s == NULL || *s == NULL) {
     return "";
   }
-  const char *str = MMC_STRINGDATA(*s);
+  const char *str = omc_string_data(*s);
   return str ? str : "";
 }
 

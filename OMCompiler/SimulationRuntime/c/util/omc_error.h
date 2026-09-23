@@ -55,20 +55,25 @@ DLLDataDirection extern const FILE_INFO omc_dummyFileInfo;
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
 // Defined in omc_error.c
-DLLDataDirection extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
+DLLDataDirection extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...);
 DLLDataDirection extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
 DLLDataDirection extern void (*omc_terminate)(FILE_INFO, const char*, ...);
 DLLDataDirection extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 
 // Defined in simulation_omc_assert.c
-DLLDataDirection extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
+DLLDataDirection extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...);
 DLLDataDirection extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
 
 void initDumpSystem(void);
 void deactivateLogging(void);
 void reactivateLogging(void);
-void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
+/* omc reads its own copy of the message buffer, so an assert in a function
+   library dlopened into it reports through these instead of to stderr. The
+   raise still belongs to this runtime: the frame owes its releases. */
+void omc_set_assert_reporters(void (*err)(threadData_t*, FILE_INFO, const char*, va_list),
+                              void (*warn)(FILE_INFO, const char*, va_list));
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 
@@ -192,6 +197,15 @@ static inline void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO 
 extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
 extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5), noreturn));
+
+/* Raise instead of throw: generated code checks the flag and leaves through its
+   own _return:, so no frame is skipped. */
+extern void raiseStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+/* OMC_ERROR_RAISED and OMC_ERROR_CLEAR in one, for a caller that cannot see the
+   field: the Rust simulation runtime mirrors threadData_t only as far as
+   `parent`, because what follows depends on build options. */
+extern int omc_error_take(threadData_t *threadData);
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else

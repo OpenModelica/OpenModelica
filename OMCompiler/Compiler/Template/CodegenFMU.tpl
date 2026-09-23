@@ -559,8 +559,9 @@ template initializeFunction(list<SimEqSystem> allEquations)
 ::=
   let &sub = buffer ""
   let &varDecls = buffer "" /*BUFD*/
+  let &varFrees = buffer ""
   let eqPart = ""/* (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls)
+      equation_(eq, contextOther, &varDecls, &varFrees)
     ;separator="\n") */
   <<
   // Used to set the first time event, if any.
@@ -594,6 +595,10 @@ template initVals(SimVar var, String arrayName) ::=
             <<
             put_real_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
             >>
+          case T_STRING() then
+            <<
+            omc_string_store(&comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start, comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>]);
+            >>
           else
             <<
             comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start = comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>];
@@ -605,6 +610,10 @@ template initParams(SimVar var, String arrayName) ::=
     case SIMVAR(index=index, type_=T_REAL(__)) then
       <<
       put_real_element(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      >>
+    case SIMVAR(index=index, type_=T_STRING()) then
+      <<
+      omc_string_store(&comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start, comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]);
       >>
     case SIMVAR(index=index) then
       <<
@@ -620,6 +629,10 @@ template initValsDefault(SimVar var, String arrayName) ::=
       <<
       put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
+    case SIMVAR(index=index, type_=T_STRING()) then
+      <<
+      omc_string_move(&comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start, <%initValDefault(var)%>);
+      >>
     case SIMVAR(index=index) then
       <<
       comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = <%initValDefault(var)%>;
@@ -632,9 +645,9 @@ template initParamsDefault(SimVar var, String arrayName) ::=
       <<
       put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
-    case SIMVAR(index=index, type_=T_STRING(), initialValue=SOME(v as SCONST(__))) then
+    case SIMVAR(index=index, type_=T_STRING()) then
       <<
-      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */
+      omc_string_move(&comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start, <%initValDefault(var)%>);
       >>
     case SIMVAR(index=index) then
       <<
@@ -646,9 +659,9 @@ template initValDefault(SimVar var) ::=
   match var
     case var as SIMVAR(__) then
     match var.initialValue
+      case SOME(v as SCONST(__)) then 'omc_string_new(<%initVal(v)%>)'
       case SOME(v as ICONST(__))
       case SOME(v as RCONST(__))
-      case SOME(v as SCONST(__))
       case SOME(v as BCONST(__))
       case SOME(v as ENUM_LITERAL(__))
       // non-scalarized array start (broadcast scalar) given as an array
@@ -666,7 +679,7 @@ template initValDefault(SimVar var) ::=
           case T_ARRAY(ty=T_ENUMERATION())
           case T_ARRAY(ty=T_BOOL()) then '0'
           case T_STRING(__)
-          case T_ARRAY(ty=T_STRING()) then 'mmc_mk_scon("")'
+          case T_ARRAY(ty=T_STRING()) then 'omc_string_new("")'
           else error(sourceInfo(), 'Unknown type for initValDefault: <%unparseType(var.type_)%>')
 end initValDefault;
 
@@ -1152,7 +1165,7 @@ match simVar
   if stringEq(arrayName, "stringVars")
   then
   <<
-  case <%lookupVR(name,simCode)%> : return MMC_STRINGDATA(comp->fmuData->localData[0]-><%arrayName%>[<%index%>]); break;
+  case <%lookupVR(name,simCode)%> : return omc_string_data(comp->fmuData->localData[0]-><%arrayName%>[<%index%>]); break;
   >>
   else
   <<
@@ -1169,7 +1182,7 @@ match simVar
   if stringEq(arrayName,  "stringParameter")
   then
   <<
-  case <%lookupVR(name,simCode)%> : return MMC_STRINGDATA(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]); break;
+  case <%lookupVR(name,simCode)%> : return omc_string_data(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]); break;
   >>
   else
   <<
@@ -1222,7 +1235,7 @@ match simVar
   if stringEq(arrayName, "stringVars")
   then
   <<
-  case <%lookupVR(name,simCode)%> : comp->fmuData->localData[0]-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
+  case <%lookupVR(name,simCode)%> : omc_string_move(&comp->fmuData->localData[0]-><%arrayName%>[<%index%>], omc_string_new(value)); break;
   >>
   else
   <<
@@ -1239,7 +1252,7 @@ match simVar
   if stringEq(arrayName, "stringParameter")
   then
   <<
-  case <%lookupVR(name,simCode)%> : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
+  case <%lookupVR(name,simCode)%> : omc_string_move(&comp->fmuData->simulationInfo-><%arrayName%>[<%index%>], omc_string_new(value)); break;
   >>
   else
   <<
@@ -3982,10 +3995,11 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     simulationInfo->stopTime = <%s.stopTime%>;
     simulationInfo->stepSize = <%s.stepSize%>;
     simulationInfo->tolerance = <%s.tolerance%>;
-    simulationInfo->solverMethod = "<%s.method%>";
-    simulationInfo->outputFormat = "<%s.outputFormat%>";
-    simulationInfo->variableFilter = "<%s.variableFilter%>";
-    simulationInfo->OPENMODELICAHOME = "<%makefileParams.omhome%>";
+    /* Freed in deInitializeDataStruc, like the ones read from the init XML. */
+    simulationInfo->solverMethod = GC_strdup("<%s.method%>");
+    simulationInfo->outputFormat = GC_strdup("<%s.outputFormat%>");
+    simulationInfo->variableFilter = GC_strdup("<%s.variableFilter%>");
+    simulationInfo->OPENMODELICAHOME = GC_strdup("<%makefileParams.omhome%>");
   }
 
   void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData)
@@ -4082,7 +4096,7 @@ template scalarValFMU(Exp e, String default)
   match e
   case ICONST(__) then integer
   case RCONST(__) then real
-  case SCONST(__) then 'mmc_mk_scon("<%Util.escapeModelicaStringToCString(string)%>")'
+  case SCONST(__) then 'omc_string_new("<%Util.escapeModelicaStringToCString(string)%>")'
   case BCONST(__) then if bool then 1 else 0
   case ENUM_LITERAL(__) then '<%index%>'
   case ARRAY(array = first :: _) then scalarValFMU(first, default)
@@ -4103,8 +4117,8 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
   match type_
     case T_REAL(__) then
       <<
-      <%attrstr%>.unit = "<%Util.escapeModelicaStringToCString(unit)%>";
-      <%attrstr%>.displayUnit = "<%Util.escapeModelicaStringToCString(displayUnit)%>";
+      omc_string_move(&<%attrstr%>.unit, omc_string_new("<%Util.escapeModelicaStringToCString(unit)%>"));
+      omc_string_move(&<%attrstr%>.displayUnit, omc_string_new("<%Util.escapeModelicaStringToCString(displayUnit)%>"));
       put_real_element(<%optInitValFMU(minValue,"-DBL_MAX")%>, 0, &<%attrstr%>.min);
       put_real_element(<%optInitValFMU(maxValue,"DBL_MAX")%>, 0, &<%attrstr%>.max);
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
@@ -4126,7 +4140,7 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       >>
     case T_STRING(__) then
       <<
-      <%attrstr%>.start = <%optInitValFMU(startValue,"mmc_mk_scon(\"\")")%>;
+      omc_string_move(&<%attrstr%>.start, <%optInitValFMU(startValue,"omc_string_new(\"\")")%>);
       >>
     case T_ENUMERATION(__) then
       <<

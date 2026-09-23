@@ -68,6 +68,8 @@ extern void copy_string_array_data_mem(const string_array source,modelica_string
 
 /* Copy string array*/
 extern void copy_string_array(const string_array source, string_array* dest);
+extern void omc_string_array_copy_data(const string_array source, string_array* dest);
+extern void omc_string_array_alloc_copy(const string_array source, string_array* dest);
 
 extern modelica_string* calc_string_index(int ndims, const _index_t* idx_vec, const string_array * arr);
 extern modelica_string* calc_string_index_va(const string_array * source,int ndims,

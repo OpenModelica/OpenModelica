@@ -36,10 +36,10 @@
  * both C++ and C. So __cplusplus has to be undefined for jni.h.
  */
 #undef __cplusplus
-#include "jni.h"
+#include "../util/jni.h"
 #define __cplusplus
 #else
-#include "jni.h"
+#include "../util/jni.h"
 #endif
 
 #define EXIT_CODE_JAVA_ERROR 17
@@ -59,13 +59,13 @@ jobject JavaArrayGet(JNIEnv* env, jobject arr, jint ix);
 /* T[n] -> ModelicaArray<T> */
 jobject NewFlatJavaIntegerArray(JNIEnv* env, modelica_integer* base, int num);
 jobject NewFlatJavaDoubleArray(JNIEnv* env, modelica_real* base, int num);
-jobject NewFlatJavaStringArray(JNIEnv* env, modelica_string* base, int num);
+jobject NewFlatJavaStringArray(JNIEnv* env, metamodelica_string* base, int num);
 jobject NewFlatJavaBooleanArray(JNIEnv* env, modelica_boolean* base, int num);
 /* ModelicaArray<T> -> T[n] */
 void GetFlatJavaIntegerArray(JNIEnv* env, jobject arr, modelica_integer* base, int num);
 void GetFlatJavaDoubleArray(JNIEnv* env, jobject arr, modelica_real* base, int num);
 void GetFlatJavaBooleanArray(JNIEnv* env, jobject arr, modelica_boolean* base, int num);
-void GetFlatJavaStringArray(JNIEnv* env, jobject arr, modelica_string* base, int num);
+void GetFlatJavaStringArray(JNIEnv* env, jobject arr, metamodelica_string* base, int num);
 
 /* Pass-Record-by-Map */
 jobject NewJavaRecord(JNIEnv* env, const char* recordName, int ctor_index /* -1 record, >= 0 uniontype */, jobject map);

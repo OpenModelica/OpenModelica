@@ -1,11 +1,16 @@
 
 #Files for meta folder
-META_OBJS = meta_modelica_builtin$(OBJ_EXT) \
+META_OBJS = java_interface$(OBJ_EXT) \
+            meta_modelica_builtin$(OBJ_EXT) \
             meta_modelica_segv$(OBJ_EXT) \
+            meta_modelica_string_lit$(OBJ_EXT) \
             meta_modelica$(OBJ_EXT) \
             realString$(OBJ_EXT)
 
-META_HFILES = meta_modelica_builtin_boxptr.h \
+META_HFILES = java_interface.h \
+              meta_modelica_string_lit.h \
+              meta_modelica_string.h \
+              meta_modelica_builtin_boxptr.h \
               meta_modelica_builtin_boxvar.h \
               meta_modelica_builtin.h \
               meta_modelica_mk_box.h \
@@ -13,8 +18,8 @@ META_HFILES = meta_modelica_builtin_boxptr.h \
               meta_modelica.h
 
 #Files for gc folder
-GC_OBJS_MINIMAL = memory_pool$(OBJ_EXT) omc_gc$(OBJ_EXT)
-GC_HFILES_MINIMAL = memory_pool.h
+GC_OBJS_MINIMAL = omc_alloc$(OBJ_EXT) omc_rc$(OBJ_EXT) omc_gc$(OBJ_EXT)
+GC_HFILES_MINIMAL = omc_alloc.h omc_rc.h
 
 GC_OBJS = $(GC_OBJS_MINIMAL)
 GC_HFILES = omc_gc.h $(GC_HFILES_MINIMAL)
@@ -39,6 +44,9 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   modelica_string_lit$(OBJ_EXT) \
                   modelica_string$(OBJ_EXT) \
                   ModelicaUtilities$(OBJ_EXT) \
+                  omc_box$(OBJ_EXT) \
+                  omc_string$(OBJ_EXT) \
+                  omc_str_utils$(OBJ_EXT) \
                   omc_error$(OBJ_EXT) \
                   omc_file$(OBJ_EXT) \
                   omc_init$(OBJ_EXT) \
@@ -65,6 +73,9 @@ UTIL_HFILES_MINIMAL=base_array.h \
                     modelica_string_lit.h \
                     modelica_string.h \
                     modelica.h \
+                    omc_box.h \
+                    omc_string.h \
+                    omc_str_utils.h \
                     omc_error.h \
                     omc_file.h \
                     omc_init.h \
@@ -80,15 +91,15 @@ UTIL_HFILES_MINIMAL=base_array.h \
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   UTIL_OBJS=$(UTIL_OBJS_MINIMAL) \
-            java_interface$(OBJ_EXT) \
             libcsv$(OBJ_EXT) \
+            omc_stackoverflow$(OBJ_EXT) \
             OldModelicaTables$(OBJ_EXT) \
             read_csv$(OBJ_EXT) \
             rtclock$(OBJ_EXT) \
             tinymt64$(OBJ_EXT) \
             write_csv$(OBJ_EXT)
   UTIL_HFILES=$(UTIL_HFILES_MINIMAL) \
-              java_interface.h \
+              omc_stackoverflow.h \
               jni_md_solaris.h \
               jni_md_windows.h \
               jni_md.h \
@@ -328,7 +339,7 @@ SIMHFILESPATH = $(SIM_HFILES:%=$(SIMPATH)%)
 FMIPATH = fmi/
 FMIOBJSPATH = $(FMI_OBJS:%=$(BUILDPATH)/$(FMIPATH)%)
 
-ALL_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) $(BUILDPATH)/meta/meta_modelica_catch$(OBJ_EXT)
+ALL_OBJS = $(GCOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC)
 
 # External solvers needed by FMI for ME
 ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
@@ -372,6 +383,11 @@ ALL_HEADERS = $(METAHFILESPATH) $(GCFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPAT
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(GCPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/ dataReconciliation/
 ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*$(OBJ_EXT)
 
-BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) meta/meta_modelica_catch$(OBJ_EXT)
+# meta/meta_modelica_string.h owns those names here, so the counted string and
+# box would not compile; modelica_string.c stays for the String(x) formatters.
+MMC_UTIL_OBJS = $(filter-out modelica_string_lit$(OBJ_EXT) omc_box$(OBJ_EXT) omc_string$(OBJ_EXT),$(UTIL_OBJS))
+MMCUTILOBJSPATH = $(MMC_UTIL_OBJS:%=$(BUILDPATH)/$(UTILPATH)%)
+
+BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(MMCUTILOBJSPATH) $(BUILDPATH)/meta/meta_modelica_catch$(OBJ_EXT)
 
 COMMON_HEADERS = util/omc_msvc.h util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_dll.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h

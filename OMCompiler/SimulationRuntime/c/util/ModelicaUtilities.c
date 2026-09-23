@@ -30,7 +30,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "omc_error.h"
+#include "ModelicaUtilitiesExtra.h"
+#include "../gc/omc_rc.h"
 
 void OpenModelica_Simulation_ModelicaVFormatMessage(const char*string, va_list args) {
   va_infoStreamPrint(OMC_LOG_STDOUT, 0, string, args);
@@ -99,6 +102,18 @@ void ModelicaVFormatError(const char*string, va_list args) {
   abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
+/* omc installs its own error handlers, but a function library dlopened into it
+   links its own runtime and so its own copies of these. */
+void omc_set_modelica_error_handlers(void (*err)(const char*), void (*verr)(const char*,va_list))
+{
+  if (err) {
+    OpenModelica_ModelicaError = err;
+  }
+  if (verr) {
+    OpenModelica_ModelicaVFormatError = verr;
+  }
+}
+
 void ModelicaFormatError(const char* string, ...) {
   va_list args;
   va_start(args, string);
@@ -106,6 +121,67 @@ void ModelicaFormatError(const char* string, ...) {
   va_end(args);
   abort();  // Silence invalid noreturn warning. This is never reached.
 }
+
+#if defined(OMC_METAMODELICA_RUNTIME)
+
+size_t omc_external_strings_mark(void) { return 0; }
+void omc_external_strings_release(size_t mark) { (void) mark; }
+#define omc_external_strings_push(P) ((void) (P))
+
+#else
+
+#if defined(_MSC_VER)
+#define OMC_THREAD_LOCAL __declspec(thread)
+#else
+#define OMC_THREAD_LOCAL __thread
+#endif
+
+/* A fixed per-thread array; the heap is touched only by a call that overflows
+   it, and that is freed once the call drains. */
+#define OMC_EXT_STRINGS_FIXED 64
+
+static OMC_THREAD_LOCAL void *extStringsFixed[OMC_EXT_STRINGS_FIXED];
+static OMC_THREAD_LOCAL void **extStringsHeap = NULL;
+static OMC_THREAD_LOCAL size_t extStringsUsed = 0;
+static OMC_THREAD_LOCAL size_t extStringsSize = OMC_EXT_STRINGS_FIXED;
+
+static void omc_external_strings_push(void *p)
+{
+  if (extStringsUsed == extStringsSize) {
+    size_t grown = 2*extStringsSize;
+    void **buf = (void**) realloc(extStringsHeap, grown*sizeof(void*));
+    if (!buf) {
+      mmc_do_out_of_memory();
+    }
+    if (!extStringsHeap) {
+      memcpy(buf, extStringsFixed, OMC_EXT_STRINGS_FIXED*sizeof(void*));
+    }
+    extStringsHeap = buf;
+    extStringsSize = grown;
+  }
+  (extStringsHeap ? extStringsHeap : extStringsFixed)[extStringsUsed++] = p;
+}
+
+size_t omc_external_strings_mark(void)
+{
+  return extStringsUsed;
+}
+
+void omc_external_strings_release(size_t mark)
+{
+  void **buf = extStringsHeap ? extStringsHeap : extStringsFixed;
+
+  while (extStringsUsed > mark) {
+    omc_rc_release_inline(buf[--extStringsUsed]);
+  }
+  if (extStringsUsed == 0 && extStringsHeap) {
+    free(extStringsHeap);
+    extStringsHeap = NULL;
+    extStringsSize = OMC_EXT_STRINGS_FIXED;
+  }
+}
+
+#endif
 
 char* ModelicaAllocateString(size_t len) {
   char *res = ModelicaAllocateStringWithErrorReturn(len);
@@ -119,6 +195,7 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len) {
   char *res = omc_alloc_interface.malloc_string(len+1);
   if (res != NULL) {
     res[len] = '\0';
+    omc_external_strings_push(res);
   }
   return res;
 }
@@ -128,5 +205,6 @@ char* ModelicaDuplicateString(const char *str) {
   if (!res) {
     ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
   }
+  omc_external_strings_push(res);
   return res;
 }

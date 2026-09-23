@@ -40,7 +40,6 @@
 #include "../arrayIndex.h"
 #include "epsilon.h"
 #include "external_input.h"
-#include "meta/meta_modelica.h"
 #include "model_help.h"
 #include "omc_math.h"
 #include "simulation/options.h"
@@ -538,7 +537,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   assertStreamPrint(threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
@@ -665,13 +664,14 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         }
       }
 
-    } while(dasslData->idid == 1);
+    } while(dasslData->idid == 1 && !OMC_ERROR_RAISED());
 
     states = dasslData->states;
   }
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
   threadData->currentErrorStage = saveJumpState;
 
@@ -829,7 +829,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
 
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /* read input vars */
@@ -847,9 +847,9 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
     delta[i] = data->localData[0]->realVars[data->modelData->nStates + i] - yd[i];
   }
   printVector(OMC_LOG_DASSL_STATES, "dd", delta, data->modelData->nStates, *t);
-  success = 1;
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   if (!success) {
