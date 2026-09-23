@@ -55,7 +55,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 return compile_cref_read_qual(ctx, componentRef);
             }
             // A scalar/whole-value reference, or a subscripted array element.
-            let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
+            let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = &**componentRef else {
                 return Err("CodegenWasmJit: unsupported component reference");
             };
             let name = ident.to_string();
@@ -84,7 +84,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 // the element straight out of it; only a heap element is retained.
                 if is_scalar_index(subscriptLst, rank) {
                     let idx_exps = index_subscripts(subscriptLst, rank)?;
-                    emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+                    emit_elem_addr(ctx, idx, &elem, &idx_exps, static_dims(identType).as_deref())?;
                     elem_load(ctx, &elem);
                     retain_on_stack(ctx, &elem)?;
                     Ok(elem.wty())
