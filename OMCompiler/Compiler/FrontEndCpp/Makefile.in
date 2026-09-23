@@ -5,7 +5,7 @@
 #
 
 TOP_DIR=@abs_top_builddir@
-GCINCLUDE = -DGC_THREADS -I$(top_builddir)/3rdParty/gc/include
+GCINCLUDE = -DGC_THREADS -DOMC_METAMODELICA_RUNTIME=1 -I$(top_builddir)/3rdParty/gc/include
 OMC_CONFIG_INC = $(top_builddir)
 
 CFLAGS = @CFLAGS@ @CHECK_C_ERRORS@

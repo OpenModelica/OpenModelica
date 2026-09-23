@@ -72,8 +72,8 @@ template genGlobalDef(Literal lit)
     let escapedLength = System.unescapedStringLength(escaped) // =listLength(value_)?
     <<
     #define <%dataName%> "<%escaped%>"
-    static const MMC_DEFSTRINGLIT(<%structName%>,<%escapedLength%>,<%dataName%>);
-    #define <%name%> MMC_REFSTRINGLIT(<%structName%>)
+    static const OMC_DEFSTRINGLIT(<%structName%>,<%escapedLength%>,<%dataName%>);
+    #define <%name%> OMC_REFSTRINGLIT(<%structName%>)
 
     >>
   case LITRECORD(var=var,args=args) then
@@ -82,8 +82,8 @@ template genGlobalDef(Literal lit)
       let dataName = <<_OMC_LIT_DATA_<%name%>>>
       let structName = <<_OMC_LIT_STRUCT_<%name%>>>
       <<
-      static const MMC_DEFSTRUCTLIT(<%structName%>,<%ty.index%>,<%listLength(args)%>) {<%args |> arg => genVarName(arg) ; separator=","%>}};
-      #define <%name%> MMC_REFSTRUCTLIT(<%structName%>)
+      static const OMC_DEFBOXLIT(<%structName%>,<%ty.index%>,<%listLength(args)%>) {<%args |> arg => genVarName(arg) ; separator=","%>}};
+      #define <%name%> OMC_REFBOXLIT(<%structName%>)
 
       >>
     end match
@@ -149,9 +149,9 @@ template genInFunction(MidCode.Function fn)
       <%inputDefs%>
       <%outputDefs%>
       <%inputLines%>
-      MMC_TRY_TOP_INTERNAL()
+      OMC_TRY_TOP_INTERNAL()
       <%callretval%>omc_<%underscorePath(name)%>(<%callargs%>);
-      MMC_CATCH_TOP(return 1)
+      OMC_CATCH_TOP(return 1)
       <%outputLines%>
       <%if listEmpty(outputs) then "write_noretcall(outVar);"%>
       fflush(NULL);
@@ -405,17 +405,17 @@ template genRValue(MidCode.RValue rvalue)
         (<<&<%genTypeUnderscorePath(ty)%>__desc>>),
         elementargs
         } ; separator=", "
-      <<mmc_mk_box(<%arguments%>)>>
+      <<omc_mk_box(<%arguments%>)>>
     else
       let arguments = {
         (<<<%metatypeSlots%>>>),
         (metatypeCtor),
         elementargs
         } ; separator=", "
-      <<mmc_mk_box(<%arguments%>)>>
+      <<omc_mk_box(<%arguments%>)>>
 
   case MidCode.METAFIELD(src=src, index=index, ty=ty) then
-    <<MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%genVarName(src)%>),<%intAdd(index,1)%>))>>
+    <<OMC_BOX_FIELD(<%genVarName(src)%>, <%intAdd(index,1)%>)>>
   case MidCode.UNIONTYPEVARIANT() then
     <<(MMC_HDRCTOR(MMC_GETHDR(<%genVarName(src)%>)) - 3)>>
   case MidCode.ISSOME(src=src) then
@@ -629,11 +629,11 @@ template varBox(MidCode.Var var)
   match var case VAR(name=name,ty=ty) then
     match ty
     case T_INTEGER(__)
-    case T_ENUMERATION(__) then 'mmc_mk_icon(<%name%>)'
-    case T_BOOL(__) then 'mmc_mk_icon(<%name%>)'
-    case T_REAL(__) then 'mmc_mk_rcon(<%name%>)'
-    case T_STRING(__) then 'mmc_mk_string(<%name%>)'
-    case T_COMPLEX(__) then 'mmc_mk_box(<%name%>)' //?
+    case T_ENUMERATION(__) then 'omc_mk_icon(<%name%>)'
+    case T_BOOL(__) then 'omc_mk_icon(<%name%>)'
+    case T_REAL(__) then 'omc_mk_rcon(<%name%>)'
+    case T_STRING(__) then 'omc_mk_string(<%name%>)'
+    case T_COMPLEX(__) then 'omc_mk_box(<%name%>)' //?
     else name
     end match
   end match
@@ -648,10 +648,10 @@ template varUnbox(MidCode.Var var)
   match var case VAR(name=name,ty=ty) then
     match ty
     case T_METABOXED(ty=T_INTEGER(__))
-    case T_METABOXED(ty=T_ENUMERATION(__))then 'mmc_unbox_integer(<%name%>)'
-    case T_METABOXED(ty=T_BOOL(__)) then 'mmc_unbox_integer(<%name%>)'
-    case T_METABOXED(ty=T_REAL(__)) then 'mmc_unbox_real(<%name%>)'
-    case T_STRING(__) then 'mmc_unbox_string(<%name%>)'
+    case T_METABOXED(ty=T_ENUMERATION(__))then 'omc_unbox_integer(<%name%>)'
+    case T_METABOXED(ty=T_BOOL(__)) then 'omc_unbox_integer(<%name%>)'
+    case T_METABOXED(ty=T_REAL(__)) then 'omc_unbox_real(<%name%>)'
+    case T_STRING(__) then 'omc_unbox_string(<%name%>)'
     else name
     end match
   end match
@@ -662,10 +662,10 @@ template varUnbox2(MidCode.Var var)
   match var case VAR(name=name,ty=ty) then
     match ty
     case T_INTEGER(__)
-    case T_ENUMERATION(__) then 'mmc_unbox_integer(<%name%>)'
-    case T_BOOL(__) then 'mmc_unbox_integer(<%name%>)'
-    case T_REAL(__) then 'mmc_unbox_real(<%name%>)'
-    case T_STRING(__) then 'mmc_unbox_string(<%name%>)'
+    case T_ENUMERATION(__) then 'omc_unbox_integer(<%name%>)'
+    case T_BOOL(__) then 'omc_unbox_integer(<%name%>)'
+    case T_REAL(__) then 'omc_unbox_real(<%name%>)'
+    case T_STRING(__) then 'omc_unbox_string(<%name%>)'
     else name
     end match
   end match
@@ -722,7 +722,7 @@ template identBuiltinCall(Absyn.Path path)
   case Absyn.IDENT(name="anyString") then "mmc_anyString"
   case Absyn.IDENT(name="fail") then "MMC_THROW_INTERNAL"
   case Absyn.IDENT(name="intMod") then "modelica_mod_integer"
-  //TODO: print -> puts(MMC_STRINGDATA(...))
+  //TODO: print -> puts(omc_string_data(...))
   //TODO: mmc_get_field (usual macro solution)
   //TODO: bitwise operators (could be done in DAEToMid instead)
   //TODO: mod, div, max, min?

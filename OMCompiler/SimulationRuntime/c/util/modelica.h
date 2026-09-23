@@ -41,8 +41,14 @@ extern "C" {
 #include "omc_msvc.h"
 #include "../omc_inline.h"
 
+/* One string vocabulary per runtime, under the same names. */
+#if defined(OMC_METAMODELICA_RUNTIME)
+#include "../meta/meta_modelica_string.h"
+#else
 #include "modelica_string.h"
+#endif
 #include "../gc/omc_gc.h"
+#include "ModelicaUtilitiesExtra.h"
 #include "index_spec.h"
 
 #include "string_array.h"
@@ -52,14 +58,12 @@ extern "C" {
 #include "integer_array.h"
 #include "generic_array.h"
 
+#include "omc_box.h"
 #include "utility.h"
 #include "division.h"
 
 #include <assert.h>
-#include "read_write.h"
 #include "../simulation_data.h"
-#include "../meta/meta_modelica.h"
-#include "../meta/meta_modelica_builtin.h"
 #include "varinfo.h"
 
 #if defined(__cplusplus)

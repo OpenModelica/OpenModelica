@@ -738,20 +738,17 @@ fn ensure_runtime(reg: &mut Registry) -> Result<()> {
     }
     let &lib = reg.libs.values().next().ok_or_else(|| "executeFunction: no library loaded")?;
     let mmc_init = dlsym_addr(lib, "mmc_init").ok_or_else(|| "runtime symbol `mmc_init` not found")?;
-    let gc_alloc = dlsym_addr(lib, "GC_malloc_uncollectable").ok_or_else(|| "runtime symbol `GC_malloc_uncollectable` not found")?;
     // Pin the runtime shared object: locate it from `mmc_init`'s address and
-    // re-open it so later closes of function libraries leave the GC heap and
-    // `threadData` valid.
+    // re-open it so later closes of function libraries leave `threadData` valid.
     dl::pin_containing(mmc_init);
     unsafe {
         let init: extern "C" fn() = std::mem::transmute(mmc_init);
         init();
-        let alloc: extern "C" fn(usize) -> *mut c_void = std::mem::transmute(gc_alloc);
-        let td = alloc(THREADDATA_SIZE);
+        // One per process, alive until it ends.
+        let td = libc::calloc(1, THREADDATA_SIZE);
         if td.is_null() {
             return Err("executeFunction: threadData allocation failed");
         }
-        std::ptr::write_bytes(td as *mut u8, 0, THREADDATA_SIZE);
         reg.thread_data = td as usize;
     }
     // The runtime that owns the `OpenModelica_Modelica*Error` pointers and

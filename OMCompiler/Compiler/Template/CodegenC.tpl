@@ -354,10 +354,11 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   let body = clockedPartitions |> partition hasindex baseClockIdx =>
 
     let &varDecls = buffer ""
+    let &varFrees = buffer ""
     let &auxFunction = buffer ""
     match partition
       case CLOCKED_PARTITION(__) then
-        let baseClockStr = baseClockInit(baseClock, baseClockIdx, subPartitions, varDecls, auxFunction)
+        let baseClockStr = baseClockInit(baseClock, baseClockIdx, subPartitions, varDecls, varFrees, auxFunction)
         <<
         <%varDecls%>
         <%auxFunction%>
@@ -375,13 +376,13 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   >>
 end functionInitSynchronous;
 
-template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartition> subPartitions, Text &varDecls, Text &auxFunction)
+template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartition> subPartitions, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
   let &preExp = buffer ""
   let intervalCounter = match baseClock
     case RATIONAL_CLOCK() then
       if isConst(intervalCounter) then
-        daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+        daeExp(intervalCounter, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
     case INFERRED_CLOCK() then
@@ -390,18 +391,18 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
       '-1'
   let resolution = match baseClock
     case RATIONAL_CLOCK() then
-      daeExp(resolution, contextOther, &preExp, &varDecls, &auxFunction)
+      daeExp(resolution, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
     else
       '1'
   let startInterval = match baseClock
     case EVENT_CLOCK() then
-      daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
+      daeExp(startInterval, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
     else
       '0'
   let interval = match baseClock
     case REAL_CLOCK() then
       if isConst(interval) then
-        daeExp(interval, contextOther, &preExp, &varDecls, &auxFunction)
+        daeExp(interval, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
     case INFERRED_CLOCK() then
@@ -470,11 +471,12 @@ end makeCRational;
 template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let body = clockedPartitions |> partition hasindex i =>
     match partition
       case CLOCKED_PARTITION(__) then
-        let caseBody = updatePartition(i, baseClock, &varDecls, &auxFunction)
+        let caseBody = updatePartition(i, baseClock, &varDecls, &varFrees, &auxFunction)
         <<
         case <%i%>:
           <%caseBody%>
@@ -497,7 +499,7 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
   >>
 end functionUpdateSynchronous;
 
-template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Text &auxFunction)
+template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Update intervalCounter or interval of base-clock"
 ::=
   let &preExp = buffer ""
@@ -509,7 +511,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
         /* Nothing to do */
         >>
       else
-        let intervalCounterStr = daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+        let intervalCounterStr = daeExp(intervalCounter, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
         <<
         <%preExp%>
         data->simulationInfo->baseClocks[base_idx].intervalCounter = <%intervalCounterStr%>;
@@ -521,7 +523,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
         /* Nothing to do */
         >>
       else
-        let interval_ = daeExp(interval, contextOther, &preExp, &varDecls, &auxFunction)
+        let interval_ = daeExp(interval, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
         <<
         <%preExp%>
         data->simulationInfo->baseClocks[base_idx].interval = <%interval_%>;
@@ -953,7 +955,9 @@ template simulationFile_jac_header(SimCode simCode)
     case simCode as SIMCODE(__) then
     <<
     /* Jacobians */
-    static _index_t one_dim[1] = { 1 };
+    /* Immortal, like any literal array: omc_array_release also drops dim_size. */
+    static struct { mmc_uint_t rc; _index_t d[1]; } one_dim_lit = { OMC_RC_IMMORTAL, { 1 } };
+    #define one_dim (one_dim_lit.d)
     static modelica_real nominal_data[1] = { 1.0 };
     static modelica_real start_data[1]   = { 0.0 };
     static modelica_real min_data[1]   = { -DBL_MAX };
@@ -1284,18 +1288,16 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), Flags.isSet(HPCOM)) then
                      <<
                      mmc_init_nogc();
-                     omc_alloc_interface = omc_alloc_interface_pooled;
                      omc_alloc_interface.init();
                      >>
                    else if stringEq(Config.simCodeTarget(),"JavaScript") then
                      <<
                      mmc_init_nogc();
-                     omc_alloc_interface = omc_alloc_interface_pooled;
                      omc_alloc_interface.init();
                      >>
                    else
                      <<
-                     MMC_INIT(0);
+                     OMC_INIT(0);
                      omc_alloc_interface.init();
                      >>
     let pminit = if Flags.getConfigBool(Flags.PARMODAUTO) then
@@ -1588,7 +1590,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     <<
-    OpenModelica_updateUriMapping(threadData, MMC_REFSTRUCTLIT(_OMC_LIT_RESOURCES));
+    OpenModelica_updateUriMapping(threadData, <%litRefBox()%>(_OMC_LIT_RESOURCES));
     data->modelData->modelName = "<%dotPath(name)%>";
     data->modelData->modelFilePrefix = "<%fileNamePrefix%>";
     data->modelData->modelFileName = "<%fileName%>";
@@ -1636,7 +1638,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
         ;
       #endif /* defined(_MSC_VER) */
       #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
-      data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";
+      /* Freed with the model data, like the one the resources branch builds. */
+      data->modelData->modelDataXml.fileName = GC_strdup("<%fileNamePrefix%>_info.json");
       data->modelData->resourcesDir = NULL;
       >>
     else
@@ -1718,14 +1721,14 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   <<
   #define _OMC_LIT_RESOURCE_<%index0%>_name_data "<%escName%>"
   #define _OMC_LIT_RESOURCE_<%index0%>_dir_data "<%escDir%>"
-  static const MMC_DEFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_name,<%unescapedStringLength(escName)%>,_OMC_LIT_RESOURCE_<%index0%>_name_data);
-  static const MMC_DEFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_dir,<%unescapedStringLength(escDir)%>,_OMC_LIT_RESOURCE_<%index0%>_dir_data);
+  static const <%litDefString()%>(_OMC_LIT_RESOURCE_<%index0%>_name,<%unescapedStringLength(escName)%>,_OMC_LIT_RESOURCE_<%index0%>_name_data);
+  static const <%litDefString()%>(_OMC_LIT_RESOURCE_<%index0%>_dir,<%unescapedStringLength(escDir)%>,_OMC_LIT_RESOURCE_<%index0%>_dir_data);
   <%\n%>
   >>
   %>
-  static const MMC_DEFSTRUCTLIT(_OMC_LIT_RESOURCES,<%intMul(2,listLength(sortedClasses))%>,MMC_ARRAY_TAG) {<%
+  static const <%litDefBox()%>(_OMC_LIT_RESOURCES,<%intMul(2,listLength(sortedClasses))%>,<%litArrayTag(intMul(2,listLength(sortedClasses)))%>) {<%
     sortedClasses |> c as CLASS(info=SOURCEINFO(fileName=fileName)) hasindex index0 =>
-    'MMC_REFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_name), MMC_REFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_dir)' ; separator=", "
+    '<%litRefString()%>(_OMC_LIT_RESOURCE_<%index0%>_name), <%litRefString()%>(_OMC_LIT_RESOURCE_<%index0%>_dir)' ; separator=", "
   %>}};
   >>
   %>
@@ -2238,6 +2241,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
   "Generates function initSample() in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let body = (timeEvents |> timeEvent =>
       match timeEvent
@@ -2246,19 +2250,19 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           let &sub = buffer ""
           let forHead = match iter
             case SOME(iter_) then (iter_ |> it =>
-              forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+              forIterator(it, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
               ;separator="\n";empty)
             else ""
           let forBody = match iter
             case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
-              forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+              forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
               ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
             else ""
           let forTail = match iter
             case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
             else ""
-          let e1 = daeExp(startExp, contextOther, &preExp, &varDecls, &auxFunction)
-          let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &auxFunction)
+          let e1 = daeExp(startExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+          let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%forHead%>
           <%preExp%>
@@ -2381,9 +2385,10 @@ let &sub = buffer ""
              >>
        let &preDisc = buffer ""
        let &varDecls = buffer ""
+       let &varFrees = buffer ""
        let &auxFunction = buffer ""
        let discExp = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
-          let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc, &varDecls, &auxFunction)
+          let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc, &varDecls, &varFrees, &auxFunction)
           <<
           <%cref(cref, &sub)%> = <%expPart%>;
           >>
@@ -2561,6 +2566,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
       match ls.jacobianMatrix
         case SOME(__) then
           let &varDeclsRes = buffer "" /*BUFD*/
+          let &varFreesRes = buffer ""
           let &auxFunction = buffer ""
           let &tmp = buffer ""
           let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
@@ -2575,7 +2581,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
               ;separator="\n")
             end match)
           let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, res_index)
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, varFreesRes, auxFunction, index, res_index)
             case SES_FOR_RESIDUAL(__) then "case 1"
           ;separator="\n")
           let eqnbody =
@@ -2600,25 +2606,29 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             JACOBIAN* jacobian = NULL;
             <%varDeclsRes%>
             <%equation_withProfile(ls.index, eqnbody)%>
+            _return: OMC_LABEL_UNUSED ;
+            <%varFreesRes%>
           }
           OMC_DISABLE_OPT
           <%initializeStaticLSVars(ls.vars, ls.index)%>
           >>
         else
           let &varDecls = buffer "" /*BUFD*/
+          let &varFrees = buffer ""
           let &auxFunction = buffer ""
           let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
             case SES_RESIDUAL(__) then
               let &preExp = buffer "" /*BUFD*/
-              let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
+              let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &varFrees, &auxFunction)
               '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
             case SES_FOR_RESIDUAL(__) then "case 2"
           ;separator="\n")
 
           let &varDecls2 = buffer "" /*BUFD*/
+          let &varFrees2 = buffer ""
           let vectorb = (ls.beqs |> exp hasindex i0 =>
             let &preExp = buffer "" /*BUFD*/
-            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &varFrees2, &auxFunction)
               '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData, threadData);'
           ;separator="\n")
           <<
@@ -2630,6 +2640,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
             <%varDecls%>
             <%equation_withProfile(ls.index, MatrixA)%>
+            _return: OMC_LABEL_UNUSED ;
+            <%varFrees%>
           }
           OMC_DISABLE_OPT
           void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
@@ -2638,6 +2650,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
             <%varDecls2%>
             <%equation_withProfile(ls.index, vectorb)%>
+            _return: OMC_LABEL_UNUSED ;
+            <%varFrees2%>
           }
           OMC_DISABLE_OPT
           <%initializeStaticLSVars(ls.vars, ls.index)%>
@@ -2651,6 +2665,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          // for strict tearing set
          let &sub = buffer ""
          let &varDeclsRes = buffer "" /*BUFD*/
+         let &varFreesRes = buffer ""
          let &auxFunction = buffer ""
          let &tmp = buffer ""
          let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(var.name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
@@ -2658,11 +2673,12 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
          let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, res_index)
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, varFreesRes, auxFunction, index, res_index)
             case SES_FOR_RESIDUAL(__) then "case 3"
            ;separator="\n")
          // for casual tearing set
          let &varDeclsRes2 = buffer "" /*BUFD*/
+         let &varFreesRes2 = buffer ""
          let &auxFunction2 = buffer ""
          let &tmp2 = buffer ""
          let xlocs2 = (at.vars |> var as SIMVAR() hasindex i0 => '<%cref(var.name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
@@ -2670,7 +2686,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
          let body2 = (at.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, res_index)
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, varFreesRes2, auxFunction2, index, res_index)
             case SES_FOR_RESIDUAL(__) then "case 4"
            ;separator="\n")
        <<
@@ -2694,6 +2710,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <%body%>
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
          threadData->lastEquationSolved = <%ls.index%>;
+         _return: OMC_LABEL_UNUSED ;
+         <%varFreesRes%>
        }
        OMC_DISABLE_OPT
        <%initializeStaticLSVars(ls.vars, ls.index)%>
@@ -2718,6 +2736,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <%body2%>
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
          threadData->lastEquationSolved = <%at.index%>;
+         _return: OMC_LABEL_UNUSED ;
+         <%varFreesRes2%>
        }
        OMC_DISABLE_OPT
        <%initializeStaticLSVars(at.vars, at.index)%>
@@ -2725,36 +2745,40 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        else
          // for strict tearing set
          let &varDecls = buffer "" /*BUFD*/
+         let &varFrees = buffer ""
          let &auxFunction = buffer ""
          let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
            case SES_RESIDUAL(__) then
              let &preExp = buffer "" /*BUFD*/
-             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
+             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &varFrees, &auxFunction)
                '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
            case SES_FOR_RESIDUAL(__) then "case 5"
           ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
+         let &varFrees2 = buffer ""
          let vectorb = (ls.beqs |> exp hasindex i0 =>
            let &preExp = buffer "" /*BUFD*/
-           let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
+           let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &varFrees2, &auxFunction)
              '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData, threadData);'
           ;separator="\n")
          // for casual tearing set
          let &varDecls3 = buffer "" /*BUFD*/
+         let &varFrees3 = buffer ""
          let &auxFunction2 = buffer ""
          let MatrixA2 = (at.simJac |> (row, col, eq) hasindex i0 => match eq
            case SES_RESIDUAL(__) then
              let &preExp3 = buffer "" /*BUFD*/
-             let expPart3 = daeExp(exp, contextSimulationDiscrete, &preExp3,  &varDecls3, &auxFunction2)
+             let expPart3 = daeExp(exp, contextSimulationDiscrete, &preExp3,  &varDecls3, &varFrees3, &auxFunction2)
                '<%preExp3%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart3%>, <%i0%>, linearSystemData, threadData);'
            case SES_FOR_RESIDUAL(__) then "case 6"
           ;separator="\n")
 
          let &varDecls4 = buffer "" /*BUFD*/
+         let &varFrees4 = buffer ""
          let vectorb2 = (at.beqs |> exp hasindex i0 =>
            let &preExp4 = buffer "" /*BUFD*/
-           let expPart4 = daeExp(exp, contextSimulationDiscrete, &preExp4, &varDecls4, &auxFunction2)
+           let expPart4 = daeExp(exp, contextSimulationDiscrete, &preExp4, &varDecls4, &varFrees4, &auxFunction2)
              '<%preExp4%>linearSystemData->setBElement(<%i0%>, <%expPart4%>, linearSystemData, threadData);'
            ;separator="\n")
        <<
@@ -2766,6 +2790,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
+         _return: OMC_LABEL_UNUSED ;
+         <%varFrees%>
        }
        OMC_DISABLE_OPT
        void setLinearVectorb<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
@@ -2774,6 +2800,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
+         _return: OMC_LABEL_UNUSED ;
+         <%varFrees2%>
        }
        OMC_DISABLE_OPT
        <%initializeStaticLSVars(ls.vars, ls.index)%>
@@ -2786,6 +2814,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
          <%varDecls3%>
          <%MatrixA2%>
+         _return: OMC_LABEL_UNUSED ;
+         <%varFrees3%>
        }
        OMC_DISABLE_OPT
        void setLinearVectorb<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
@@ -2794,6 +2824,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
          <%varDecls4%>
          <%vectorb2%>
+         _return: OMC_LABEL_UNUSED ;
+         <%varFrees4%>
        }
        OMC_DISABLE_OPT
        <%initializeStaticLSVars(at.vars, at.index)%>
@@ -2933,8 +2965,9 @@ template createGlobalConstraints(list<SimEqSystem> innerEqns)
          case con as DAE.CONSTRAINT_DT(constraint = c, localCon = localCon) then
            let &preExp = buffer ""
            let &varDecls = buffer ""
+           let &varFrees = buffer ""
            let &auxFunction = buffer ""
-           let condition = daeExp(c, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+           let condition = daeExp(c, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
            <<
            <%varDecls%>
            <%auxFunction%>
@@ -2967,6 +3000,7 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNa
     /* local constraints */
     <%createLocalConstraints(eq)%>
     <%equation_call(eq, modelNamePrefixStr, contextSimulationDiscrete)%>
+    <%errorCheck(contextSimulationDiscrete)%>
     >>
   end match
 end functionExtraResidualsPreBody;
@@ -2988,6 +3022,7 @@ template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String
     /* local constraints */
     <%createLocalConstraints(eq)%>
     <%equation_call(eq, modelNamePrefixStr, contextJacobian)%>
+    <%errorCheck(contextJacobian)%>
     >>
   end match
 end functionExtraResidualsPreBodyJacobian;
@@ -3001,8 +3036,9 @@ template createLocalConstraints(SimEqSystem eq)
       case con as DAE.CONSTRAINT_DT(constraint = c, localCon = true) then
         let &preExp = buffer ""
         let &varDecls = buffer ""
+        let &varFrees = buffer ""
         let &auxFunction = buffer ""
-        let condition = daeExp(c, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+        let condition = daeExp(c, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
         <<
         <%varDecls%>
         <%auxFunction%>
@@ -3201,6 +3237,7 @@ let &sub = buffer ""
 match system
   case nls as NONLINEARSYSTEM(__) then
     let &varDecls = buffer ""
+    let &varFrees = buffer ""
     let &innerEqns = buffer ""
     let &dummyPrototypes = buffer ""
     let innerNLSSystems = functionNonLinearResiduals(nls.eqs, modelNamePrefix, dummyPrototypes)
@@ -3235,17 +3272,17 @@ match system
         >>
       else
         (nls.eqs |> eq2 hasindex i0 => match eq2
-          case SES_RESIDUAL(__) then equationResidual(exp, varDecls, innerEqns, index, res_index)
+          case SES_RESIDUAL(__) then equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
           case SES_FOR_RESIDUAL(__) then
             let &preExp = buffer ""
             let &auxFunction = buffer ""
-            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
             let forPart = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
-                  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-                  let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                  let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                  let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                  let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+                  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+                  let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+                  let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+                  let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+                  let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
                   <<for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
                   <%sub_iter_%>
                   >>
@@ -3256,7 +3293,7 @@ match system
             // most (i1,i2,...) combinations onto the same slot and never writes the
             // rest of res[], leaving that part of the residual vector uninitialized.
             // Flatten properly, matching how array crefs are indexed elsewhere here.
-            let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
+            let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
             let assignment = (if isArrayType(typeof(exp))
               then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+(<%indexShift%>));'
               else '<%preExp%>res[<%res_index%>+(<%indexShift%>)] = <%expPart%>;')
@@ -3271,13 +3308,13 @@ match system
             let &preExp = buffer ""
             let &auxFunction = buffer ""
             let idx_len = listLength(scal_indices)
-            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
             let iter_ = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
-                let iter = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-                let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-                let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+                let iter = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+                let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+                let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+                let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+                let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
                 <<
                 const int <%iter%>_size = <%stop_%> - <%start_%> / <%step_%> + 1;
                 int <%iter%>_loc = tmp % <%iter%>_size;
@@ -3329,8 +3366,8 @@ match system
           for (j=0; j<<%listLength(nls.crefs)%>; j++) {
             res[j] = NAN;
           }
-          throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
-          <%if intEq(whichSet, 0) then "return;" else "return 1;"%>
+          raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
+          OMC_ERROR_CHECK();
         }
       }
       <%xlocs%>
@@ -3344,6 +3381,8 @@ match system
       <%restoreKnownOutputs%>
       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
       threadData->lastEquationSolved = <%nls.index%>;
+      _return: OMC_LABEL_UNUSED ;
+      <%varFrees%>
       <%returnValue%>
     }
     >>
@@ -3392,10 +3431,11 @@ match sparsity
   case SPARSITY() then
     let &preExp = buffer ""
     let &varDecls = buffer ""
+    let &varFrees = buffer ""
     let &auxFunction = buffer ""
     let &sub = buffer ""
-    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n")
-    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExp, &varDecls, &auxFunction, &sub, 'inSysData->sparsePattern') ;separator="\n")
+    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n")
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, 'inSysData->sparsePattern') ;separator="\n")
     let &varDecls += 'unsigned int local_row_base = 0;<%\n%>'
     <<
 
@@ -3428,6 +3468,7 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, inSysData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      <%varFrees%>
 
       /* Compute coloring at runtime from the actual pattern (see initialResizableAnalyticJacobians).
        * nRows = inSysData->size (NLS equation count); nCols = number of seed directions. */
@@ -3740,8 +3781,9 @@ template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String a
 
       let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
       let &varDecls = buffer ""
+      let &varFrees = buffer ""
       let &auxFunction = buffer ""
-      let body = functionUpdateBoundVariableAttributesFunctionsSimpleAssign(eq, attribute, context, &varDecls, &auxFunction)
+      let body = functionUpdateBoundVariableAttributesFunctionsSimpleAssign(eq, attribute, context, &varDecls, &varFrees, &auxFunction)
 
       <<
       /*
@@ -3752,6 +3794,8 @@ template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String a
         const int equationIndexes[2] = {1,<%ix%>};
         <%&varDecls%>
         <%equation_withProfile(ix, body)%>
+        _return: OMC_LABEL_UNUSED ;
+        <%varFrees%>
       }
 
       >>
@@ -3760,7 +3804,7 @@ template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String a
 end functionUpdateBoundVariableAttributesFunctions;
 
 template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem eq, String attribute, Context context,
-                              Text &varDecls, Text &auxFunction)
+                              Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an equation that is just a simple assignment for an attribute binding.
   The attribute type is given by the function argument 'attibute' (e.g min, max ...)"
 ::=
@@ -3769,7 +3813,7 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
     case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
       let &sub = buffer ""
       let &preExp = buffer ""
-      let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+      let expPart = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
       let postExp = if isStartCref(cref) then
         <<
         <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
@@ -3951,7 +3995,7 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
   end match
 end functionInitialEquations_lambda0;
 
-template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Text &eqs, String modelNamePrefix)
+template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Text &varFrees, Text &eqs, String modelNamePrefix)
  "Generates an equation."
 ::=
   match eq
@@ -3961,7 +4005,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       'res = 0;'
     else
       let &preExp = buffer ""
-      let expPart = daeExp(exp, contextOther, &preExp, &varDecls, &eqs)
+      let expPart = daeExp(exp, contextOther, &preExp, &varDecls, &varFrees, &eqs)
       <<
       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%e.index%>);' %>
       <%preExp%>res = <%expPart%>;
@@ -3984,10 +4028,11 @@ template functionRemovedInitialEquations(list<SimEqSystem> removedInitalEquation
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &tmp = buffer ""
 
   let body = (removedInitalEquations |> eq2 =>
-       functionRemovedInitialEquationsBody(eq2, &varDecls, &tmp, modelNamePrefix)
+       functionRemovedInitialEquationsBody(eq2, &varDecls, &varFrees, &tmp, modelNamePrefix)
      ;separator="\n")
 
   <<
@@ -4000,6 +4045,8 @@ template functionRemovedInitialEquations(list<SimEqSystem> removedInitalEquation
 
     <%body%>
 
+    _return: OMC_LABEL_UNUSED ;
+    <%varFrees%>
     return 0;
   }
   >>
@@ -4009,12 +4056,13 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
       let &preExp = buffer ""
-      let eRes = daeExp(e, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
-      let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
-      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let eRes = daeExp(e, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       equationIndexes[1] = <%id%>;
       <%preExp%>
@@ -4029,6 +4077,8 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
     <%varDecls%>
     <%storePart%>
 
+    _return: OMC_LABEL_UNUSED ;
+    <%varFrees%>
     return 0;
   }
   >>
@@ -4038,13 +4088,14 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, in0=in0, in1=in1, pos=pos, dir=dir, condition=condition) =>
       let &preExp = buffer ""
-      let in0T = daeExp(in0, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
-      let in1T = daeExp(in1, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
-      let posT = daeExp(pos, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
-      let dirT = daeExp(dir, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let in0T = daeExp(in0, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let in1T = daeExp(in1, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let posT = daeExp(pos, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let dirT = daeExp(dir, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       // TODO @kabdelhak Use index of equation here, not the index of the spatial distribution
       let storeStmts =
         <<
@@ -4058,7 +4109,7 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
       match condition
         case SOME(cond) then
           let &condPreExp = buffer ""
-          let condT = daeExp(cond, contextSimulationNonDiscrete, &condPreExp, &varDecls, &auxFunction)
+          let condT = daeExp(cond, contextSimulationNonDiscrete, &condPreExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%condPreExp%>
           if(<%condT%>)
@@ -4079,6 +4130,8 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
     <%varDecls%>
     <%storePart%>
 
+    _return: OMC_LABEL_UNUSED ;
+    <%varFrees%>
     return 0;
   }
   >>
@@ -4088,11 +4141,12 @@ template functionInitSpatialDistribution(SpatialDistributionInfo spatialInfo, St
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, initPnts=initPnts, initVals=initVals, initSize=initSize) =>
       let &preExp = buffer ""
-      let initPntsT = daeExp(initPnts, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
-      let initValsT = daeExp(initVals, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let initPntsT = daeExp(initPnts, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let initValsT = daeExp(initVals, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
       initSpatialDistribution(data, threadData, <%index%>, &<%initPntsT%>, &<%initValsT%>, <%initSize%>);<%\n%>
@@ -4105,6 +4159,8 @@ template functionInitSpatialDistribution(SpatialDistributionInfo spatialInfo, St
     <%varDecls%>
     <%storePart%>
 
+    _return: OMC_LABEL_UNUSED ;
+    <%varFrees%>
     return 0;
   }
   >>
@@ -4114,7 +4170,7 @@ end functionInitSpatialDistribution;
 // Begin: Modified functions for HpcOm
 //------------------------------------
 
-template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<tuple<Schedule,Schedule,Schedule>> hpcOmSchedulesOpt, String modelNamePrefixStr)
+template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Text &varFrees, Option<tuple<Schedule,Schedule,Schedule>> hpcOmSchedulesOpt, String modelNamePrefixStr)
 ::=
  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmSchedulesOpt, modelNamePrefixStr) ; separator="\n")
  match listLength(eqs)
@@ -4192,12 +4248,12 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         omp_set_dynamic(0);
         #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
         {
-            MMC_TRY_TOP()
+            OMC_TRY_TOP()
             <%odeEqs%>
-            MMC_CATCH_TOP(fail=1)
+            OMC_CATCH_TOP(fail=1)
         }
         if (fail) {
-          MMC_THROW_INTERNAL()
+          OMC_THROW_INTERNAL()
         }
       }
       >>
@@ -4400,11 +4456,11 @@ template functionXXX_system0_HPCOM_Level0Section(list<SimEqSystem> derivativEqua
   #pragma omp section
   {
     int fail=0;
-    MMC_TRY_TOP()
+    OMC_TRY_TOP()
     <%function_HPCOM_Task(derivativEquations,name,iTask,iType,modelNamePrefixStr)%>
-    MMC_CATCH_TOP(fail=1)
+    OMC_CATCH_TOP(fail=1)
     if (fail) {
-      MMC_THROW_INTERNAL()
+      OMC_THROW_INTERNAL()
     }
   }
   >>
@@ -4474,11 +4530,11 @@ template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations,
       #pragma omp section
       {
         int fail=0;
-        MMC_TRY_TOP()
+        OMC_TRY_TOP()
         <%threadTasks%>
-        MMC_CATCH_TOP(fail=1)
+        OMC_CATCH_TOP(fail=1)
         if (fail) {
-          MMC_THROW_INTERNAL()
+          OMC_THROW_INTERNAL()
         }
       }
       >>
@@ -4638,7 +4694,7 @@ template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquat
   void* function<%name%>_system<%n%>_thread_<%idx%>(void *arg)
   {
     DATA *data = (DATA*) arg;
-    MMC_TRY_TOP()
+    OMC_TRY_TOP()
     while(1)
     {
       <%assLock%>
@@ -4649,7 +4705,7 @@ template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquat
       <%taskEqs%>
       <%relLock%>
     }
-    MMC_CATCH_TOP(return NULL;) /* No exit status?? */
+    OMC_CATCH_TOP(return NULL;) /* No exit status?? */
   }
   >>
 end functionXXX_system0_HPCOM_PThread_func;
@@ -4657,7 +4713,7 @@ end functionXXX_system0_HPCOM_PThread_func;
 template functionXXX_system0_HPCOM_PThread_call(String name, Integer n, Integer idx)
 ::=
   <<
-  GC_pthread_create(&odeThread_<%idx%>, NULL, function<%name%>_system<%n%>_thread_<%idx%>, data);
+  omc_pthread_create(&odeThread_<%idx%>, NULL, function<%name%>_system<%n%>_thread_<%idx%>, data);
   >>
 end functionXXX_system0_HPCOM_PThread_call;
 
@@ -4727,7 +4783,7 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
   >>
 end functionXXX_system;
 
-template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, String modelNamePrefixStr)
+template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Text &varFrees, String modelNamePrefixStr)
 ::=
   let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0,modelNamePrefixStr) ; separator="\n")
   match listLength(eqs)
@@ -4852,7 +4908,7 @@ else
   equation_withProfile(ix, body)
 end equationNamesArrayFormat;
 
-template functionXXX_systems_arrayFormat(list<list<SimEqSystem>> eqlstlst, String name, Text &fncalls, Text &nrfuncs, Text &varDecls, String modelNamePrefixStr)
+template functionXXX_systems_arrayFormat(list<list<SimEqSystem>> eqlstlst, String name, Text &fncalls, Text &nrfuncs, Text &varDecls, Text &varFrees, String modelNamePrefixStr)
 ::=
 match eqlstlst
   case {}
@@ -4886,14 +4942,16 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   let () = System.tmpTickReset(0)
   let &nrfuncs = buffer ""
   let &varDecls2 = buffer ""
+  let &varFrees2 = buffer ""
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &fncalls = buffer ""
   let systems = if Flags.isSet(Flags.HPCOM) then
-                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedules, modelNamePrefix))
+                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, &varFrees, hpcOmSchedules, modelNamePrefix))
                 else if Flags.getConfigBool(Flags.PARMODAUTO) then
-                    (functionXXX_systems_arrayFormat(derivativEquations, "ODE", &fncalls, &nrfuncs, &varDecls, modelNamePrefix))
+                    (functionXXX_systems_arrayFormat(derivativEquations, "ODE", &fncalls, &nrfuncs, &varDecls, &varFrees, modelNamePrefix))
                 else
-                    (functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls, modelNamePrefix))
+                    (functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls, &varFrees, modelNamePrefix))
   /* let systems = functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls) */
   let &tmp = buffer ""
   <<
@@ -4927,8 +4985,9 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &fncalls = buffer ""
-  let systems = functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix)
+  let systems = functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, &varFrees, modelNamePrefix)
   <<
   <%systems%>
   /* for continuous time variables */
@@ -5064,14 +5123,16 @@ match sparsityMatrix
     let algIndexes = genVarIndexes(algVars, "algIndexes")
     let &preExpC = buffer ""
     let &varDeclsC = buffer ""
+    let &varFreesC = buffer ""
     let &auxFunctionC = buffer ""
     let &subC = buffer ""
-    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExpC, &varDeclsC, &auxFunctionC, &subC) ;separator="\n")
+    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExpC, &varDeclsC, &varFreesC, &auxFunctionC, &subC) ;separator="\n")
     let &preExpF = buffer ""
     let &varDeclsF = buffer ""
+    let &varFreesF = buffer ""
     let &auxFunctionF = buffer ""
     let &subF = buffer ""
-    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'daeModeData->sparsePattern') ;separator="\n")
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExpF, &varDeclsF, &varFreesF, &auxFunctionF, &subF, 'daeModeData->sparsePattern') ;separator="\n")
     let &varDeclsF += 'unsigned int local_row_base = 0;<%\n%>'
     <<
     /* initialize the daeMode variables */
@@ -5119,6 +5180,8 @@ match sparsityMatrix
       computeColumnColoring(daeModeData->sparsePattern, <%nRows%>, <%nCols%>);
       sortSparseColumns(daeModeData->sparsePattern, <%nCols%>);
 
+      _return: OMC_LABEL_UNUSED ;
+      <%varFreesC%><%varFreesF%>
       return 0;
     }
     >>
@@ -5186,7 +5249,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let forwardEqs = equationsForZeroCrossings |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefix); separator="\n"
 
   let &varDecls2 = buffer ""
-  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &auxFunction)
+  let &varFrees2 = buffer ""
+  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &varFrees2, &auxFunction)
 
   let resDesc = (zeroCrossings |> ZERO_CROSSING(__) =>
     let &descStr = buffer '<%Util.escapeModelicaStringToCString(dumpExp(relation_,""))%>"'
@@ -5248,6 +5312,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ZC);
   #endif
 
+    _return: OMC_LABEL_UNUSED ;
+    <%varFrees2%>
     return 0;
   }
   >>
@@ -5261,29 +5327,29 @@ template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
     else <<"<%descStr%>>>
 end descriptionString;
 
-template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text &auxFunction)
+template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for zero crossings."
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) =>
-    zeroCrossingTpl(index, relation_, iter, &varDecls, &auxFunction)
+    zeroCrossingTpl(index, relation_, iter, &varDecls, &varFrees, &auxFunction)
   ;separator="\n";empty)
 end zeroCrossingsTpl;
 
 
 
-template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &auxFunction)
+template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
   let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
     case SOME(iter_) then (iter_ |> it =>
-      forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      forIterator(it, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
       ;separator="\n";empty)
     else ""
   let forBody = match iter
     case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
-      forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
       ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
     else ""
   let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
@@ -5303,7 +5369,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   // pre-existing (working) behavior for a scalar occurrence.
   match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
-    let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5314,7 +5380,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%forTail%>
     >>
   case (exp1 as LBINARY(__)) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5325,7 +5391,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%forTail%>
     >>
   case (exp1 as LUNARY(__)) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5338,8 +5404,8 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
     << >>
   case CALL(path=IDENT(name="integer"), expLst={exp1, idx}) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5350,8 +5416,8 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%forTail%>
     >>
   case CALL(path=IDENT(name="floor"), expLst={exp1, idx}) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5362,8 +5428,8 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%forTail%>
     >>
   case CALL(path=IDENT(name="ceil"), expLst={exp1, idx}) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5374,11 +5440,11 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%forTail%>
     >>
   case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let tvar1 = tempDecl("modelica_real", &varDecls)
-    let tvar2 = tempDecl("modelica_real", &varDecls)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let tvar1 = tempDecl("modelica_real", &varDecls, &varFrees)
+    let tvar2 = tempDecl("modelica_real", &varDecls, &varFrees)
     let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
     let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
     <<
@@ -5391,9 +5457,9 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%forTail%>
     >>
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
-    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
-    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -5413,8 +5479,9 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
 ::=
   let &auxFunction = buffer ""
   let &varDecls = buffer ""
-  let relationsCode = relationsTpl(relations, contextZeroCross, &varDecls, &auxFunction)
-  let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls, &auxFunction)
+  let &varFrees = buffer ""
+  let relationsCode = relationsTpl(relations, contextZeroCross, &varDecls, &varFrees, &auxFunction)
+  let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls, &varFrees, &auxFunction)
 
   let resDesc = (relations |> ZERO_CROSSING(__) =>
     let &descStr = buffer '<%Util.escapeModelicaStringToCString(dumpExp(relation_,""))%>"'
@@ -5455,32 +5522,34 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
       <%relationsCodeElse%>
     }
 
+    _return: OMC_LABEL_UNUSED ;
+    <%varFrees%>
     return 0;
   }
   >>
 end functionRelations;
 
-template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls, Text &auxFunction)
+template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for zero crossings."
 ::=
   (relations |> ZERO_CROSSING(__) =>
-    relationTpl(index, relation_, iter, context, &varDecls, &auxFunction)
+    relationTpl(index, relation_, iter, context, &varDecls, &varFrees, &auxFunction)
   ;separator="\n";empty)
 end relationsTpl;
 
-template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Context context, Text &varDecls, Text &auxFunction)
+template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
   let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
     case SOME(iter_) then (iter_ |> it =>
-      forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      forIterator(it, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
       ;separator="\n";empty)
     else ""
   let forBody = match iter
     case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
-      forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
       ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
     else ""
   let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
@@ -5490,7 +5559,7 @@ template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> ite
   // See zeroCrossingTpl above for why this strip is needed.
   match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
-    let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let res = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     start_index = current_index;
     <%forHead%>
@@ -6006,10 +6075,11 @@ match sparsity
   case SPARSITY() then
     let &preExp = buffer ""
     let &varDecls = buffer ""
+    let &varFrees = buffer ""
     let &auxFunction = buffer ""
     let &sub = buffer ""
-    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n")
-    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExp, &varDecls, &auxFunction, &sub, 'jacobian->sparsePattern') ;separator="\n")
+    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n")
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, 'jacobian->sparsePattern') ;separator="\n")
     let &varDecls += 'unsigned int local_row_base = 0;<%\n%>'
     let sizeRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
     // Adjoint metadata describes the primal CSC pattern using adjoint variable
@@ -6056,6 +6126,7 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%patternCols%> * sizeof(unsigned int));
       <%fillCode%>
+      <%varFrees%>
 
       <%if isAdjoint then <<
       /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
@@ -6094,7 +6165,7 @@ match sparsity
     >>
 end initialResizableAnalyticJacobians;
 
-template resizableSparsityRowCount(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template resizableSparsityRowCount(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 "Count phase: for each (row,col) pair in this SparsityRow, increment col_counts[col].
  For REGULAR 1D WHOLEDIM seeds (dep.kinds=[false], not rep) inside WHOLEDIM/multi-dim-WHOLEDIM sc,
  emits a single col_counts[v.index + _wr_k]++ (diagonal). All other cases use REDUCTION (full loop)."
@@ -6103,7 +6174,7 @@ match row
   // Explicitly bind 'dependencies' as 'deps' so it is accessible inside nested list iterators.
   // Susan does not propagate implicit record-field access into nested lambdas.
   case SPARSITY_ROW(dependencies=deps) then
-    let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
+    let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n";empty)
     let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
     let bodyCode = (solved_crefs |> sc hasindex k =>
       // depsCode: dep-aware; for REGULAR 1D WHOLEDIM seeds uses resizableColCountRegular(_wr<%k%>).
@@ -6115,15 +6186,15 @@ match row
             if not listEmpty(kinds) then
               if not listHead(kinds) then
                 match crefSubs(seed)
-                case {WHOLEDIM()} then resizableColCountRegular(seed, nCols, k, context, &preExp, &varDecls, &auxFunction)
-                else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
-              else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
-            else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
-          else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
-        else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+                case {WHOLEDIM()} then resizableColCountRegular(seed, nCols, k, context, &preExp, &varDecls, &varFrees, &auxFunction)
+                else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
+              else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
+          else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
       ;separator="\n")
       // depsCodeReduced: always REDUCTION; used for SLICE sc (column alignment differs) and non-loop cases
-      let depsCodeReduced = (deps |> (seed, _, _) => resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction) ;separator="\n")
+      let depsCodeReduced = (deps |> (seed, _, _) => resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction) ;separator="\n")
       match crefSubs(sc)
         case {WHOLEDIM()} then
           match context
@@ -6137,7 +6208,7 @@ match row
                 // once. _wr<%k%> becomes the flattened 0-based offset of the current
                 // outer-loop iteration, so any REGULAR-seed diagonal code referencing it
                 // still resolves to the right column.
-                let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
@@ -6145,7 +6216,7 @@ match row
                 }
                 >>
               else
-                let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 <<
                 {
                   unsigned int _wr<%k%>;
@@ -6161,8 +6232,8 @@ match row
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case SIMVAR() then
-              let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
-              let nSlice = tempDecl("modelica_integer", &varDecls)
+              let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+              let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
               let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
               <<
               {
@@ -6196,7 +6267,7 @@ match row
                   // corrupted sparsity pattern (see the LSGreenH2Production.Plant
                   // windTurbine NLS). flatIdx is sc's own flattened position from ALL
                   // of its iterators, exactly like the single-WHOLEDIM case.
-                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
                   <<
                   {
                     unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
@@ -6207,8 +6278,8 @@ match row
                   // no enclosing for-equation iterators (e.g. a genuine dense array
                   // equation): must match the fill template which generates two
                   // nested loops.
-                  let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                  let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+                  let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                   <<
                   {
                     unsigned int _wo<%k%>;
@@ -6230,7 +6301,7 @@ match row
                 if not listEmpty(equation_iterators) then
                   // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard
                   // is needed and what flatIdx computes.
-                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
+                  let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
                   <<
                   {
                     unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
@@ -6238,7 +6309,7 @@ match row
                   }
                   >>
                 else
-                  let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                  let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                   <<
                   {
                     unsigned int _wr<%k%>;
@@ -6262,7 +6333,7 @@ match row
     else ''
 end resizableSparsityRowCount;
 
-template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Count phase for a REGULAR 1D whole-array seed: emit col_counts[v.index + _wr<%k%>]++ (one
  column aligned with the outer row-loop variable _wr<%k%>). Only call when dep.kinds=[false]
  and not rep — the caller is responsible for checking those conditions inline."
@@ -6278,18 +6349,18 @@ template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, C
       <%seedComment%>
       col_counts[<%v.index%> + _wr<%k%>]++;
       >>
-    else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
-  else resizableColCount(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+    else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
 end resizableColCountRegular;
 
-template resizableColCount(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+template resizableColCount(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match crefSubs(seed)
-    case {} then resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+    case {} then resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
     else
       match simVarExactFromHT(seed, jacHT)
       case SOME(ev as SIMVAR()) then
@@ -6297,11 +6368,11 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
       <%seedComment%>
       if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { col_counts[<%ev.index%>]++; }
       >>
-      else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &auxFunction)
-  else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &auxFunction)
+      else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
 end resizableColCount;
 
-template resizableColCountBase(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+template resizableColCountBase(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Increment col_counts for one dependency cref."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6318,7 +6389,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
         match listReverse(crefSubs(seed))
         case INDEX() :: _ then
           let &offsetPreExp = buffer ""
-          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
+          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           <%offsetPreExp%>
@@ -6333,7 +6404,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           col_counts[<%v.index%>]++;
           >>
         case {WHOLEDIM()} then
-          let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           {
@@ -6344,8 +6415,8 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           }
           >>
         case {SLICE(exp=sliceExp)} then
-          let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
-          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
           let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
           <<
           <%seedComment%>
@@ -6358,10 +6429,10 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           >>
         case SLICE(exp=outerSliceExp) :: {WHOLEDIM()} then
           // outer SLICE (e.g. module[1:9]) + inner WHOLEDIM (fillSubscripts added [:] for array field)
-          let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
-          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
           let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
-          let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           {
@@ -6376,8 +6447,8 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           >>
         case WHOLEDIM() :: {WHOLEDIM()} then
           // 2D array, both dims whole (e.g. module[:].T[:])
-          let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
-          let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+          let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           {
@@ -6393,12 +6464,12 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
-            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &outerPreExp = buffer ""
             let outer_off = match outer_rev_subs
               case {} then '0'
-              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
-            let col = tempDecl("modelica_integer", &varDecls)
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &varFrees, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls, &varFrees)
             <<
             <%seedComment%>
             {
@@ -6414,14 +6485,14 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             >>
           case SLICE(exp=sliceExp) :: outer_rev_subs then
             // inner SLICE (e.g. module[i].T[1:9]) - outer dims are INDEX subs
-            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
-            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
             let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
-            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &outerPreExp = buffer ""
             let outer_off = match outer_rev_subs
               case {} then '0'
-              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &varFrees, &auxFunction)
             <<
             <%seedComment%>
             {
@@ -6434,10 +6505,10 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             >>
           case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
             // reversed [INDEX, WHOLEDIM] = original [WHOLEDIM, INDEX]: outer WHOLE, inner fixed INDEX
-            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
-            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &innerPreExp = buffer ""
-            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &varFrees, &auxFunction)
             <<
             <%seedComment%>
             {
@@ -6450,12 +6521,12 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             >>
           case INDEX(exp=innerIndexExp) :: {SLICE(exp=outerSliceExp)} then
             // reversed [INDEX, SLICE] = original [SLICE, INDEX]: outer SLICE range, inner fixed INDEX
-            let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
-            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
             let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
-            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &innerPreExp = buffer ""
-            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &varFrees, &auxFunction)
             <<
             <%seedComment%>
             {
@@ -6468,8 +6539,8 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             >>
           else
             let &offsetPreExp = buffer ""
-            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
-            let col = tempDecl("modelica_integer", &varDecls)
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls, &varFrees)
             <<
             <%seedComment%>
             <%offsetPreExp%>
@@ -6480,16 +6551,16 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
   else ''
 end resizableColCountBase;
 
-template resizableSparsityRowFill(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub, String spPattern)
+template resizableSparsityRowFill(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Fill phase: for each (row,col) pair, write spPattern->index[col_fill[col]++] = row.
  Uses resizableFillDepsForRow helper to avoid nested iteration over two record fields."
 ::=
 match row
   case SPARSITY_ROW() then
-    let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
+    let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n";empty)
     let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
     let bodyCode = (solved_crefs |> sc hasindex k =>
-      resizableFillDepsForRow(row, nCols, k, sc, context, &preExp, &varDecls, &auxFunction, &sub, spPattern)
+      resizableFillDepsForRow(row, nCols, k, sc, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, spPattern)
     ;separator="\n")
     let scNames = (solved_crefs |> sc => System.stringReplace(System.stringReplace(crefStrNoUnderscore(sc), "/*", ""), "*/", "") ;separator=", ")
     if bodyCode then
@@ -6502,7 +6573,7 @@ match row
     else ''
 end resizableSparsityRowFill;
 
-template resizableFillDepsForRow(SparsityRow row, Integer nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub, String spPattern)
+template resizableFillDepsForRow(SparsityRow row, Integer nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Generate fill code for solved_cref sc (row index k) against all dependencies in row.
  Explicitly binds dependencies and equation_iterators in the SPARSITY_ROW pattern to keep them in scope through nested matches."
 ::=
@@ -6518,15 +6589,15 @@ match row
           if not listEmpty(kinds) then
             if not listHead(kinds) then
               match crefSubs(seed)
-              case {WHOLEDIM()} then resizableColFillRegular(seed, nCols, 'row_<%k%>', k, context, &preExp, &varDecls, &auxFunction, spPattern)
-              else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
-            else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
-          else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
-        else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
-      else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
+              case {WHOLEDIM()} then resizableColFillRegular(seed, nCols, 'row_<%k%>', k, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+              else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+            else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+          else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+        else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+      else resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
     ;separator="\n")
     // depsWholeReduced: always REDUCTION; used for SLICE sc where column ≠ _wr<%k%>.
-    let depsWholeReduced = (deps |> (seed, _, _) => resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+    let depsWholeReduced = (deps |> (seed, _, _) => resizableColFill(seed, nCols, 'row_<%k%>', context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
     match crefSubs(sc)
       case {WHOLEDIM()} then
         match context
@@ -6542,7 +6613,7 @@ match row
               // simple_der_for.mos). flatIdx here is sc's OWN subscript expression
               // (e.g. i1-1 for x[i1], or (1+i1)-1 for x[1+i1]), matching how columns are
               // already correctly computed from v.index + offset.
-              let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+              let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
               <<
               {
                 unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
@@ -6551,7 +6622,7 @@ match row
               }
               >>
             else
-              let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
               <<
               {
                 unsigned int _wr<%k%>;
@@ -6568,8 +6639,8 @@ match row
         case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
           match simVarFromHT(crefStripSubs(sc), jacHT)
           case v as SIMVAR() then
-            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
-            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
             let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
             <<
             {
@@ -6588,7 +6659,7 @@ match row
           match simVarFromHT(crefStripSubs(sc), jacHT)
           case v as SIMVAR() then
             let rowExpr = '<%v.index%>'
-            let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+            let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
             <<
             <%fillCode%>
             >>
@@ -6615,7 +6686,7 @@ match row
                 // LSGreenH2Production.Plant windTurbine NLS); compute sc's own
                 // flattened row directly from its iterators instead, exactly like
                 // the single-WHOLEDIM-with-iterators case.
-                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
@@ -6624,8 +6695,8 @@ match row
                 }
                 >>
               else
-                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
-                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 <<
                 {
                   unsigned int _wo<%k%>;
@@ -6649,7 +6720,7 @@ match row
               if not listEmpty(iters) then
                 // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard is
                 // needed and what flatIdx computes.
-                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+                let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
@@ -6658,7 +6729,7 @@ match row
                 }
                 >>
               else
-                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 <<
                 {
                   unsigned int _wr<%k%>;
@@ -6677,7 +6748,7 @@ match row
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case SIMVAR() then
-              let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
               <<
               {
                 unsigned int _wo<%k%>;
@@ -6696,8 +6767,8 @@ match row
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case SIMVAR() then
-              let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
-              let nSlice = tempDecl("modelica_integer", &varDecls)
+              let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+              let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
               let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
               <<
               {
@@ -6725,9 +6796,9 @@ match row
               // SparsityRow entries whose target rows overlap with other rows already
               // assigned by the same or another equation (see simple_der_for.mos).
               let &offsetPreExp = buffer ""
-              let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &offsetPreExp, &varDecls, &auxFunction)
+              let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
               let rowExpr = '<%v.index%> + (unsigned int)(<%offset%>)'
-              let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+              let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
               <<
               <%offsetPreExp%>
               <%fillCode%>
@@ -6737,7 +6808,7 @@ match row
 end resizableFillDepsForRow;
 
 
-template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Fill phase for a REGULAR 1D whole-array seed: emit a single diagonal entry
  spPattern->index[col_fill[v.index + _wr<%k%>]++] = row. Only call when dep.kinds=[false]
  and not rep — the caller is responsible for checking those conditions inline."
@@ -6753,18 +6824,18 @@ template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExp
       <%seedComment%>
       <%spPattern%>->index[col_fill[<%v.index%> + _wr<%k%>]++] = <%rowExpr%>;
       >>
-    else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
-  else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+    else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+  else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
 end resizableColFillRegular;
 
-template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match crefSubs(seed)
-    case {} then resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+    case {} then resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
     else
       match simVarExactFromHT(seed, jacHT)
       case SOME(ev as SIMVAR()) then
@@ -6772,11 +6843,11 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
       <%seedComment%>
       if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%ev.index%>]++] = <%rowExpr%>; }
       >>
-      else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
-  else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+      else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
+  else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
 end resizableColFill;
 
-template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6791,7 +6862,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
         match listReverse(crefSubs(seed))
         case INDEX() :: _ then
           let &offsetPreExp = buffer ""
-          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
+          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           <%offsetPreExp%>
@@ -6806,7 +6877,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           <%spPattern%>->index[col_fill[<%v.index%>]++] = <%rowExpr%>;
           >>
         case {WHOLEDIM()} then
-          let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           {
@@ -6817,8 +6888,8 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           }
           >>
         case {SLICE(exp=sliceExp)} then
-          let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
-          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
           let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
           <<
           <%seedComment%>
@@ -6831,10 +6902,10 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           >>
         case SLICE(exp=outerSliceExp) :: {WHOLEDIM()} then
           // outer SLICE (e.g. module[1:9]) + inner WHOLEDIM (fillSubscripts added [:] for array field)
-          let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
-          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
           let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
-          let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           {
@@ -6849,8 +6920,8 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           >>
         case WHOLEDIM() :: {WHOLEDIM()} then
           // 2D array, both dims whole (e.g. module[:].T[:])
-          let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
-          let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+          let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%seedComment%>
           {
@@ -6866,12 +6937,12 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
-            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &outerPreExp = buffer ""
             let outer_off = match outer_rev_subs
               case {} then '0'
-              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
-            let col = tempDecl("modelica_integer", &varDecls)
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &varFrees, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls, &varFrees)
             <<
             <%seedComment%>
             {
@@ -6887,14 +6958,14 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             >>
           case SLICE(exp=sliceExp) :: outer_rev_subs then
             // inner SLICE (e.g. module[i].T[1:9]) - outer dims are INDEX subs
-            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
-            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
             let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
-            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &outerPreExp = buffer ""
             let outer_off = match outer_rev_subs
               case {} then '0'
-              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &varFrees, &auxFunction)
             <<
             <%seedComment%>
             {
@@ -6907,10 +6978,10 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             >>
           case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
             // reversed [INDEX, WHOLEDIM] = original [WHOLEDIM, INDEX]: outer WHOLE, inner fixed INDEX
-            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
-            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &innerPreExp = buffer ""
-            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &varFrees, &auxFunction)
             <<
             <%seedComment%>
             {
@@ -6923,12 +6994,12 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             >>
           case INDEX(exp=innerIndexExp) :: {SLICE(exp=outerSliceExp)} then
             // reversed [INDEX, SLICE] = original [SLICE, INDEX]: outer SLICE range, inner fixed INDEX
-            let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
-            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
             let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
-            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &innerPreExp = buffer ""
-            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &varFrees, &auxFunction)
             <<
             <%seedComment%>
             {
@@ -6941,8 +7012,8 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             >>
           else
             let &offsetPreExp = buffer ""
-            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
-            let col = tempDecl("modelica_integer", &varDecls)
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls, &varFrees)
             <<
             <%seedComment%>
             <%offsetPreExp%>
@@ -6953,7 +7024,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
   else ''
 end resizableColFillBase;
 
-template seedSizeAssignments(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+template seedSizeAssignments(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
 match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
@@ -6961,7 +7032,7 @@ match context
     case v as SIMVAR(varKind=BackendDAE.JAC_VAR())
     case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR())
     case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-      let dims = (List.zip(crefDims(seed), crefSubs(seed)) |> (dim, sub) hasindex i0 => dimensionSizeAssignment(dim, sub, v.index, i0, context, &preExp, &varDecls, &auxFunction) ;separator="*")
+      let dims = (List.zip(crefDims(seed), crefSubs(seed)) |> (dim, sub) hasindex i0 => dimensionSizeAssignment(dim, sub, v.index, i0, context, &preExp, &varDecls, &varFrees, &auxFunction) ;separator="*")
       let &preExp += 'number_of_entries += <%if stringEq(dims, '') then '1' else dims%>;<%\n%> /*<%jacSparsityIndex(crefStripSubs(seed), context)%>*/' // ToDo: multiply size of iterator here
       <<
 
@@ -6969,10 +7040,10 @@ match context
     else 'NOT FOUND'
 end seedSizeAssignments;
 
-template dimensionSizeAssignment(Dimension dim, Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+template dimensionSizeAssignment(Dimension dim, Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
   let tmp_name = 's<%var_index%>_<%dim_index%>'
-  let dim_exp = dimension(dim, context, &preExp, &varDecls, &auxFunction)
+  let dim_exp = dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
   let &varDecls += 'size_t <%tmp_name%> = <%dim_exp%>;<%\n%>'
   match sub
     case INDEX() then '1'
@@ -7224,6 +7295,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
   let &tmp = buffer ""
   let &varD = buffer ""
+  let &varDFrees = buffer ""
   let &tempeqns = buffer ""
   let &OMC_DISABLE_OPT = buffer ""
   let() = System.tmpTickResetIndex(0,1) /* Boxed array indices */
@@ -7233,24 +7305,24 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   let x = match eq
   case e as SES_SIMPLE_ASSIGN(__)
   case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
-    then equationSimpleAssign(e, context, &varD, &tempeqns)
+    then equationSimpleAssign(e, context, &varD, &varDFrees, &tempeqns)
   case e as SES_ARRAY_CALL_ASSIGN(__)
-    then equationArrayCallAssign(e, context, &varD, &tempeqns)
+    then equationArrayCallAssign(e, context, &varD, &varDFrees, &tempeqns)
   case e as SES_RESIZABLE_ASSIGN(__)
-    then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+    then equationGenericAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix)
   case e as SES_GENERIC_ASSIGN(__)
-    then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+    then equationGenericAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix)
   case e as SES_ENTWINED_ASSIGN(__)
-    then equationEntwinedAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+    then equationEntwinedAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix)
   case e as SES_IFEQUATION(__)
-    then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix, init)
+    then equationIfEquationAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix, init)
   case e as SES_ALGORITHM(__)
   case e as SES_INVERSE_ALGORITHM(__)
-    then equationAlgorithm(e, context, &varD, &tempeqns)
+    then equationAlgorithm(e, context, &varD, &varDFrees, &tempeqns)
   case e as SES_LINEAR(__)
     then
     let &OMC_DISABLE_OPT += 'OMC_DISABLE_OPT<%\n%>'
-    equationLinear(e, context, &varD)
+    equationLinear(e, context, &varD, &varDFrees)
   // no dynamic tearing
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
@@ -7262,7 +7334,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     let &tempeqns += (at.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
   equationNonlinear(e, context, modelNamePrefix, init)
   case e as SES_WHEN(__)
-    then equationWhen(e, context, &varD, &tempeqns)
+    then equationWhen(e, context, &varD, &varDFrees, &tempeqns)
   case e as SES_RESIDUAL(__)
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
   case e as SES_FOR_RESIDUAL(__)
@@ -7288,6 +7360,8 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%equation_withProfile(ix, x)%>
+    _return: OMC_LABEL_UNUSED ;
+    <%varDFrees%>
   }
   >>
   <<
@@ -7325,6 +7399,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         else  ""
     let &tmp = buffer ""
     let &varD = buffer ""
+    let &varDFrees = buffer ""
     let &tempeqns = buffer ""
     let &tempeqns2 = buffer ""
     let() = System.tmpTickResetIndex(0,1) /* Boxed array indices */
@@ -7333,31 +7408,31 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
 
         case e as SES_SIMPLE_ASSIGN(__)
         case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
-        then equationSimpleAssign(e, context, &varD, &tempeqns)
+        then equationSimpleAssign(e, context, &varD, &varDFrees, &tempeqns)
 
         case e as SES_ARRAY_CALL_ASSIGN(__)
-        then equationArrayCallAssign(e, context, &varD, &tempeqns)
+        then equationArrayCallAssign(e, context, &varD, &varDFrees, &tempeqns)
 
         case e as SES_RESIZABLE_ASSIGN(__)
-        then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+        then equationGenericAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix)
 
         case e as SES_GENERIC_ASSIGN(__)
-        then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+        then equationGenericAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix)
 
         case e as SES_ENTWINED_ASSIGN(__)
-        then equationEntwinedAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+        then equationEntwinedAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix)
 
         case e as SES_IFEQUATION(__)
-        then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix, init)
+        then equationIfEquationAssign(e, context, &varD, &varDFrees, &tempeqns, modelNamePrefix, init)
 
         case e as SES_ALGORITHM(__)
-        then equationAlgorithm(e, context, &varD, &tempeqns)
+        then equationAlgorithm(e, context, &varD, &varDFrees, &tempeqns)
 
         case e as SES_INVERSE_ALGORITHM(__)
-        then equationAlgorithm(e, context, &varD, &tempeqns)
+        then equationAlgorithm(e, context, &varD, &varDFrees, &tempeqns)
 
         case e as SES_LINEAR(__)
-        then equationLinear(e, context, &varD)
+        then equationLinear(e, context, &varD, &varDFrees)
 
         case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
         then
@@ -7365,7 +7440,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           equationNonlinear(e, context, modelNamePrefix, init)
 
         case e as SES_WHEN(__)
-        then equationWhen(e, context, &varD, &tempeqns)
+        then equationWhen(e, context, &varD, &varDFrees, &tempeqns)
 
         case e as SES_RESIDUAL(__)
         then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
@@ -7383,13 +7458,13 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
             eqs + res
 
         case e as SES_FOR_LOOP(__)
-        then equationForLoop(e, context, &varD, &tempeqns)
+        then equationForLoop(e, context, &varD, &varDFrees, &tempeqns)
 
         else "NOT IMPLEMENTED EQUATION equation_"
 
     let x2 = match eq
         case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__)))
-        then equationLinearAlternativeTearing(e, context, &varD)
+        then equationLinearAlternativeTearing(e, context, &varD, &varDFrees)
 
         case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__)))
         then
@@ -7418,6 +7493,8 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%equation_withProfile(ix, x)%>
+          _return: OMC_LABEL_UNUSED ;
+          <%varDFrees%>
         }
 
         <%tempeqns2%>
@@ -7431,6 +7508,8 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           const int equationIndexes[2] = {1,<%ix2%>};
           <%&varD%>
           <%equation_withProfile(ix2, x2)%>
+          _return: OMC_LABEL_UNUSED ;
+          <%varDFrees%>
         }
         >>
 
@@ -7452,6 +7531,8 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%equation_withProfile(ix, x)%>
+          _return: OMC_LABEL_UNUSED ;
+          <%varDFrees%>
         }
         >>
         else
@@ -7468,6 +7549,8 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%equation_withProfile(ix, x)%>
+          _return: OMC_LABEL_UNUSED ;
+          <%varDFrees%>
         }
         >>
   )
@@ -7502,11 +7585,14 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
     let argsType = match context
       case JACOBIAN_CONTEXT() then 'DATA*, threadData_t*, JACOBIAN*, JACOBIAN*'
       else 'DATA*, threadData_t*'
+    // Stop at an equation that raised: the ones after it must not run and
+    // report asserts of their own.
     let body = match selection
       case "" then
         <<
         for (int id = 0; id < <%nFuncs%>; id++) {
           eqFunctions[id](<%args%>);
+          if (OMC_ERROR_RAISED()) break;
         }
         >>
       else
@@ -7515,10 +7601,12 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
           for (int i = 0; i < <%selection%>->n; i++) {
             int id = <%selection%>->idx[i];
             eqFunctions[id](<%args%>);
+            if (OMC_ERROR_RAISED()) break;
           }
         } else {
           for (int id = 0; id < <%nFuncs%>; id++) {
             eqFunctions[id](<%args%>);
+            if (OMC_ERROR_RAISED()) break;
           }
         }
         >>
@@ -7574,7 +7662,7 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
 end equationNames_;
 
 template equationSimpleAssign(SimEqSystem eq, Context context,
-                              Text &varDecls, Text &auxFunction)
+                              Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an equation that is just a simple assignment."
 ::=
 match eq
@@ -7585,7 +7673,7 @@ case SES_SIMPLE_ASSIGN(__)
 case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let &sub = buffer ""
   let &preExp = buffer ""
-  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+  let expPart = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
   let postExp = if isStartCref(cref) then
     // Special handling for pre variables
     let name = match cref
@@ -7595,7 +7683,9 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
         '<%crefVarInfo(popCref(cref))%>.name'
     end match
     <<
-    <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
+    <%if stringEq(crefType(cref), "modelica_string")
+      then 'omc_string_store(&(<%cref(popCref(cref), &sub)%>), <%cref(cref, &sub)%>);'
+      else '<%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;'%>
     <%if stringEq(isPrintableCrefType(popCref(cref)), "true") then
       <<
       infoStreamPrint(OMC_LOG_INIT_V, 0,
@@ -7605,18 +7695,22 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
       >>
     %>
     >>
-  let lhs = equationSimpleAssignLhs(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+  let lhs = equationSimpleAssignLhs(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+  // A String variable's slot owns its reference (util/omc_string.h).
+  let assign = if stringEq(crefType(cref), "modelica_string")
+    then 'omc_string_store(&(<%lhs%>), <%expPart%>);'
+    else '<%lhs%> = <%expPart%>;'
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
-  <%lhs%> = <%expPart%>;
+  <%assign%>
   <%postExp%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
 
 template equationSimpleAssignLhs(ComponentRef cref, Context context,
-                                 Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+                                 Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
  "Generates the left hand side cref of a simple assignment.
   When sim code scalarization is disabled (new backend), array elements like
   arr[2] are not standalone simvars. They have to be addressed relative to the
@@ -7627,33 +7721,33 @@ template equationSimpleAssignLhs(ComponentRef cref, Context context,
   case FUNCTION_CONTEXT(__)
   case JACOBIAN_CONTEXT(__)
   case OMSI_CONTEXT(__) then
-    contextCref(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+    contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
   else
     // Note: $START crefs address the (array valued) start attribute and must
     // not be flattened here, they keep the regular handling.
     if boolAnd(boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))), boolNot(isStartCref(cref))) then
       match crefSubs(crefArrayGetFirstCref(cref))
       case {} then
-        contextCref(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+        contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
       else
-        let &idxSub = buffer '<%indexSubs(crefDims(cref), crefSubs(crefArrayGetFirstCref(cref)), context, &preExp, &varDecls, &auxFunction)%>'
-        contextCref(crefStripSubs(cref), context, &preExp, &varDecls, &auxFunction, &idxSub)
+        let &idxSub = buffer '<%indexSubs(crefDims(cref), crefSubs(crefArrayGetFirstCref(cref)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
+        contextCref(crefStripSubs(cref), context, &preExp, &varDecls, &varFrees, &auxFunction, &idxSub)
     else
-      contextCref(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+      contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
 end equationSimpleAssignLhs;
 
-template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
+template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an equation that is a for-loop."
 ::=
 match eq
 case SES_FOR_LOOP(__) then
   let &preExp = buffer ""
-  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let crefPart = daeExp(crefExp(cref), context, &preExp, &varDecls, &auxFunction)
+  let expPart = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  let crefPart = daeExp(crefExp(cref), context, &preExp, &varDecls, &varFrees, &auxFunction)
   //let bodyStr = daeExpIteratedCref(body)
   let start = dumpExp(startIt,"\"")
   let stop = dumpExp(endIt,"\"")
-  let iterVar = daeExp(iter, context, &preExp, &varDecls, &auxFunction)
+  let iterVar = daeExp(iter, context, &preExp, &varDecls, &varFrees, &auxFunction)
   <<
   <%modelicaLine(eqInfo(eq))%>
   modelica_integer  $P<%dumpExp(iter,"\"")%> = 0; // the iterator
@@ -7668,7 +7762,7 @@ end equationForLoop;
 
 
 template equationArrayCallAssign(SimEqSystem eq, Context context,
-                                 Text &varDecls, Text &auxFunction)
+                                 Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates equation on form 'cref_array = call(...)'."
 ::=
 <<
@@ -7677,9 +7771,14 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 
 case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
-  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  if crefSubIsScalar(lhs.componentRef) then
-    let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
+  let expPart = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  if boolAnd(crefSubIsScalar(lhs.componentRef), isStartCref(lhs.componentRef)) then
+    <<
+    <%preExp%>
+    <%startArrayScatter(lhs.componentRef, expTypeFromExpShort(eqn.exp), expPart, &varDecls, &varFrees)%>
+    >>
+  else if crefSubIsScalar(lhs.componentRef) then
+    let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction, false)
     match expTypeFromExpShort(eqn.exp)
       case "boolean" then
       <<
@@ -7703,7 +7802,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       >>
     else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
   else
-    let assign = algStmtAssignArrWithRhsExpStr(lhs, expPart, context, &preExp, &varDecls, &auxFunction)
+    let assign = algStmtAssignArrWithRhsExpStr(lhs, expPart, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     <%preExp%>
     <%assign%>
@@ -7713,10 +7812,10 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
 >>
 end equationArrayCallAssign;
 
-template equationResidual(Exp exp, Text &varDecls, Text &auxFunction, Integer eq_index, Integer res_index)
+template equationResidual(Exp exp, Text &varDecls, Text &varFrees, Text &auxFunction, Integer eq_index, Integer res_index)
 ::=
 let &preExp = buffer ""
-let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
 let assignment = (if isArrayType(typeof(exp))
   then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>);'
   else '<%preExp%>res[<%res_index%>] = <%expPart%>;')
@@ -7724,7 +7823,7 @@ equation_withProfile(eq_index, assignment)
 end equationResidual;
 
 template equationGenericAssign(SimEqSystem eq, Context context,
-                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+                                 Text &varDecls, Text &varFrees, Text &auxFunction, String modelNamePrefix)
  "Generate a call for a generic for-loop structure with an index-list."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
@@ -7735,8 +7834,8 @@ template equationGenericAssign(SimEqSystem eq, Context context,
 case eqn as SES_RESIZABLE_ASSIGN() then
   let &preExp = buffer ""
   let &sub = buffer ""
-  let forIter = (iters |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub);separator="\n";empty)
-  let forNames = (iters |> it => forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub);separator=", ";empty)
+  let forIter = (iters |> it => forIterator(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub);separator="\n";empty)
+  let forNames = (iters |> it => forIteratorName(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub);separator=", ";empty)
   let forTail = (iters |> it => "}";separator="\n";empty)
   <<
     <%forIter%>
@@ -7757,7 +7856,7 @@ case eqn as SES_GENERIC_ASSIGN() then
 end equationGenericAssign;
 
 template equationEntwinedAssign(SimEqSystem eq, Context context,
-                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+                                 Text &varDecls, Text &varFrees, Text &auxFunction, String modelNamePrefix)
  "Generate a call for entwined generic for-loop structures with an index-lists and a call order."
 
 ::=
@@ -7771,12 +7870,12 @@ case eqn as SES_ENTWINED_ASSIGN() then
   <<
   int call_indices[<%call_num%>] = {<%(single_calls |> call => '0'; separator=", ")%>};
   const int call_order[<%call_order_len%>] = {<%(call_order |> idx => '<%idx%>'; separator=", ")%>};
-  <%(single_calls |> call hasindex i0 => entwinedSingleCallIndices(call, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
+  <%(single_calls |> call hasindex i0 => entwinedSingleCallIndices(call, context, &varDecls, &varFrees, &auxFunction, modelNamePrefix); separator="\n")%>
   for(int i=0; i<<%call_order_len%>; i++)
   {
     switch(call_order[i])
     {
-    <%(single_calls |> call hasindex i0 => entwinedSingleCall(call, i0, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
+    <%(single_calls |> call hasindex i0 => entwinedSingleCall(call, i0, context, &varDecls, &varFrees, &auxFunction, modelNamePrefix); separator="\n")%>
       default:
         throwStreamPrint(NULL, "Call index %d at pos %d unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
         break;
@@ -7789,7 +7888,7 @@ case eqn as SES_ENTWINED_ASSIGN() then
 end equationEntwinedAssign;
 
 template entwinedSingleCallIndices(SimEqSystem eq, Context context,
-                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+                                 Text &varDecls, Text &varFrees, Text &auxFunction, String modelNamePrefix)
 ::=
 <<
 <%match eq
@@ -7804,7 +7903,7 @@ else ""
 end entwinedSingleCallIndices;
 
 template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
-                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+                                 Text &varDecls, Text &varFrees, Text &auxFunction, String modelNamePrefix)
 ::=
 <<
 <%match eq
@@ -7820,25 +7919,25 @@ case eqn as SES_GENERIC_ASSIGN() then
 case eqn as SES_SIMPLE_ASSIGN(__) then
   <<
     case <%i0%>:
-      <%equationSimpleAssign(eqn, context, &varDecls, &auxFunction)%>
+      <%equationSimpleAssign(eqn, context, &varDecls, &varFrees, &auxFunction)%>
       break;
   >>
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   <<
     case <%i0%>:
-      <%equationArrayCallAssign(eqn, context, &varDecls, &auxFunction)%>
+      <%equationArrayCallAssign(eqn, context, &varDecls, &varFrees, &auxFunction)%>
       break;
   >>
 case eqn as SES_ALGORITHM(__) then
   <<
     case <%i0%>:
-      <%equationAlgorithm(eqn, context, &varDecls, &auxFunction)%>
+      <%equationAlgorithm(eqn, context, &varDecls, &varFrees, &auxFunction)%>
       break;
   >>
 case eqn as SES_WHEN(__) then
   <<
     case <%i0%>:
-      <%equationWhen(eqn, context, &varDecls, &auxFunction)%>
+      <%equationWhen(eqn, context, &varDecls, &varFrees, &auxFunction)%>
       break;
   >>
 else
@@ -7847,7 +7946,7 @@ else
 >>
 end entwinedSingleCall;
 
-template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
+template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates an equation that is an algorithm."
 ::=
 match eq
@@ -7855,7 +7954,7 @@ match eq
 case alg as SES_INVERSE_ALGORITHM(insideNonLinearSystem=true)
 case SES_ALGORITHM(__) then
   (statements |> stmt =>
-    algStatement(stmt, context, &varDecls, &auxFunction)
+    algStatement(stmt, context, &varDecls, &varFrees, &auxFunction)
   ;separator="\n")
 /* Generates an equation that is an inverse algorithm
   without continuous variables, discrete variables are
@@ -7867,7 +7966,7 @@ case alg as SES_INVERSE_ALGORITHM(__) then
        'OLD_<%i0%> = <%cref(cr, &sub)%>;'
       ;separator="\n")
   let stmts = (statements |> stmt =>
-    algStatement(stmt, context, &varDecls, &auxFunction)
+    algStatement(stmt, context, &varDecls, &varFrees, &auxFunction)
   ;separator="\n")
   let restoreKnownVars = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = OLD_<%i0%>;' ;separator="\n")
   <<
@@ -7880,7 +7979,7 @@ case alg as SES_INVERSE_ALGORITHM(__) then
   >>
 end equationAlgorithm;
 
-template equationLinear(SimEqSystem eq, Context context, Text &varDecls)
+template equationLinear(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees)
  "Generates a linear equation system."
 ::=
 match eq
@@ -7903,7 +8002,8 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* check if solution process was successful */
   if (retValue > 0){
     const int indexes[2] = {1,<%ls.index%>};
-    throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", data->localData[0]->timeValue);
+    raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", data->localData[0]->timeValue);
+    OMC_ERROR_CHECK();
     <%returnval2%>
   }
   /* write solution */
@@ -7915,7 +8015,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
 end equationLinear;
 
 
-template equationLinearAlternativeTearing(SimEqSystem eq, Context context, Text &varDecls)
+template equationLinearAlternativeTearing(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees)
  "Generates a linear equation system for the alternative tearing set."
 ::=
 match eq
@@ -7990,7 +8090,8 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       /* check if solution process was successful */
       if (retValue > 0){
         const int indexes[2] = {1,<%nls.index%>};
-        throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
+        raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
+        OMC_ERROR_CHECK();
         <%match at case SOME(__) then 'return 0;'%>
       }
       /* write solution */
@@ -8044,14 +8145,14 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       >>
 end equationNonlinearAlternativeTearing;
 
-template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
+template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates a when equation."
 ::=
   match eq
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
       let &sub = buffer ""
       let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
-      let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
+      let assign = whenOperators(whenStmtLst, context, &varDecls, &varFrees, auxFunction)
       <<
       if(<%helpIf%>)
       {
@@ -8063,8 +8164,8 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
       let &sub = buffer ""
       let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
-      let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
-      let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,&auxFunction)
+      let assign = whenOperators(whenStmtLst, context, &varDecls, &varFrees, auxFunction)
+      let elseWhen = equationElseWhen(elseWhenEq,context,varDecls, varFrees,&auxFunction)
       <<
       if(<%helpIf%>)
       {
@@ -8076,14 +8177,14 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
       >>
 end equationWhen;
 
-template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
+template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates a else when equation."
 ::=
 let &sub = buffer ""
 match eq
 case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
   let helpIf = (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
-  let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
+  let assign = whenOperators(whenStmtLst, context, &varDecls, &varFrees, auxFunction)
 
   if not listEmpty(conditions) then
     <<
@@ -8096,8 +8197,8 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE())
     >>
 case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
   let helpIf = (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
-  let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
-  let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, auxFunction)
+  let assign = whenOperators(whenStmtLst, context, &varDecls, &varFrees, auxFunction)
+  let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, varFrees, auxFunction)
   let body = if not listEmpty(conditions) then
     <<
     else if(<%helpIf%>)
@@ -8114,20 +8215,20 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(el
   >>
 end equationElseWhen;
 
-template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDecls, Text &auxFunction)
+template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
   "Generates body statements for when equation."
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(lhs, typeof(right), right, context, &varDecls, &auxFunction)
+    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(lhs, typeof(right), right, context, &varDecls, &varFrees, &auxFunction)
     case ASSIGN(left = lhs as DAE.TUPLE(PR = expLst as firstexp::_), right = DAE.CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
-    let lhsCrefs = (listRest(expLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
+    let lhsCrefs = (listRest(expLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, varFrees, preExp, postExp, &auxFunction))
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expLst))))
-    let call = daeExpCallTuple(right, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
-    let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &auxFunction)
+    let call = daeExpCallTuple(right, lhsCrefs2, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
       <%callassign%>
@@ -8136,7 +8237,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
     case REINIT(__) then
       let &sub = buffer ""
       let &preExp = buffer ""
-      let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       let lhs = match crefTypeConsiderSubs(stateVar)
          case DAE.T_ARRAY(__) then
            'copy_real_array_data_mem(<%val%>, &<%cref(stateVar, &sub)%>);'
@@ -8150,17 +8251,17 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       >>
     case TERMINATE(__) then
       let &preExp = buffer ""
-      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
       FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
-      omc_terminate(info, MMC_STRINGDATA(<%msgVar%>));
+      omc_terminate(info, omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
-      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &auxFunction, info)
+      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction, info)
     case NORETCALL(__) then
       let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
       <% if isCIdentifier(expPart) then "" else '<%expPart%>;' %>
@@ -8171,14 +8272,14 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
   >>
 end whenOperators;
 
-template whenAssign(Exp left, Type ty, Exp right, Context context, Text &varDecls, Text &auxFunction)
+template whenAssign(Exp left, Type ty, Exp right, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates assignment for when."
 ::=
 match ty
   case T_ARRAY(__) then
     let &preExp = buffer ""
-    let expPart = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    let assign = algStmtAssignArrWithRhsExpStr(left, expPart, context, &preExp, &varDecls, &auxFunction)
+    let expPart = daeExp(right, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let assign = algStmtAssignArrWithRhsExpStr(left, expPart, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     <%preExp%>
     <%assign%>
@@ -8203,22 +8304,22 @@ match ty
     // >>
   else
     let &preExp = buffer ""
-    let varPart = daeExp(left, context, &preExp, &varDecls, &auxFunction)
-    let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
+    let varPart = daeExp(left, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let exp = daeExp(right, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     <%preExp%>
     <%varPart%> = <%exp%>;
     >>
 end whenAssign;
 
-template equationIfEquationAssign(SimEqSystem eq, Context context, Text &varDecls, Text &eqnsDecls, String modelNamePrefixStr, Boolean init)
+template equationIfEquationAssign(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &eqnsDecls, String modelNamePrefixStr, Boolean init)
  "Generates a if equation."
 ::=
 match eq
 case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let &preExp = buffer ""
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
-    let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
+    let condition = daeExp(e, context, &preExp, &varDecls, &varFrees, &eqnsDecls)
     let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, -1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
     let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
     <<
@@ -8612,6 +8713,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
     case OPTIMIZATION_ATTRS(__) then
       let &sub = buffer ""
       let &varDecls = buffer ""
+      let &varFrees = buffer ""
       let &preExp = buffer ""
       let &varDecls1 = buffer ""
       let &preExp1 = buffer ""
@@ -8631,7 +8733,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 
       let startTimeOpt = match startTimeE
         case SOME(exp) then
-          let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
+          let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           *startTimeOpt = <%startTimeOptExp%>;
           >>
@@ -8774,7 +8876,7 @@ static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_
 end functionXXX_systemPartial;
 
 
-template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, String modelNamePrefixStr, ModelInfo modelInfo)
+template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Text &varFrees, String modelNamePrefixStr, ModelInfo modelInfo)
 ::=
   let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_systemPartial(eq,name,i0,modelNamePrefixStr,modelInfo) ; separator="\n")
   match listLength(eqs)
@@ -8834,13 +8936,14 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
     let &sub = buffer ""
     let &preExp = buffer ""
     let &varDecls = buffer ""
+    let &varFrees = buffer ""
     let &auxFunction = buffer ""
 
     match call
     case SINGLE_GENERIC_CALL() then
-      let body_ = genericCallLhsRhs(lhs, rhs, context, &preExp, &varDecls, &auxFunction)
-      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
-      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let body_ = genericCallLhsRhs(lhs, rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = "\n")
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
       /*
@@ -8854,13 +8957,15 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%iter_%>
         <%preExp%>
         <%body_%>;
+        _return: OMC_LABEL_UNUSED ;
+        <%varFrees%>
       }
       >>
 
     case IF_GENERIC_CALL() then
-      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
-      let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
-      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = "\n")
+      let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = " else ")
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
       /*
@@ -8874,13 +8979,15 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%iter_%>
         <%preExp%>
         <%branches_%>
+        _return: OMC_LABEL_UNUSED ;
+        <%varFrees%>
       }
       >>
 
     case WHEN_GENERIC_CALL() then
-      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
-      let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
-      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = "\n")
+      let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator = " else ")
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
       /*
@@ -8894,44 +9001,46 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%iter_%>
         <%preExp%>
         <%branches_%>
+        _return: OMC_LABEL_UNUSED ;
+        <%varFrees%>
       }
       >>
   ; separator="\n\n")
 end genericCallBodies;
 
-template genericCallLhsRhs(DAE.Exp lhs, DAE.Exp rhs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+template genericCallLhsRhs(DAE.Exp lhs, DAE.Exp rhs, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::= match lhs
     case CREF(componentRef=cr, ty = T_ARRAY()) then
-      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
-      let start_ = if isStartCref(cr) then algStmtAssignArrWithRhsExpStr(makeCrefExp(popCref(cr), crefTypeFull(cr)), rhs_, context, &preExp, &varDecls, &auxFunction) else ""
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let start_ = if isStartCref(cr) then algStmtAssignArrWithRhsExpStr(makeCrefExp(popCref(cr), crefTypeFull(cr)), rhs_, context, &preExp, &varDecls, &varFrees, &auxFunction) else ""
       <<
-      <%algStmtAssignArrWithRhsExpStr(lhs, rhs_, context, &preExp, &varDecls, &auxFunction)%>
+      <%algStmtAssignArrWithRhsExpStr(lhs, rhs_, context, &preExp, &varDecls, &varFrees, &auxFunction)%>
       <%start_%>
       >>
     case CREF(componentRef=cr) then
-      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
-      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
-      let start_ = if isStartCref(cr) then genericCallLhsRhs(makeCrefExp(popCref(cr), crefTypeFull(cr)), rhs, context, &preExp, &varDecls, &auxFunction) else ""
+      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let start_ = if isStartCref(cr) then genericCallLhsRhs(makeCrefExp(popCref(cr), crefTypeFull(cr)), rhs, context, &preExp, &varDecls, &varFrees, &auxFunction) else ""
       <<
       <%lhs_%> = <%rhs_%>;
       <%start_%>
       >>
     else
-      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
-      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%lhs_%> = <%rhs_%>;
       >>
 end genericCallLhsRhs;
 
-template genericBranch(SimBranch branch, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template genericBranch(SimBranch branch, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 ::= match branch
   case SIM_BRANCH() then
     let condition_ = match condition
-      case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &auxFunction)%>)>>
+      case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)>>
       else ""
     let body_ = (body |> (lhs, rhs) =>
-      <<<%daeExp(lhs, context, &preExp, &varDecls, &auxFunction)%> = <%daeExp(rhs, context, &preExp, &varDecls, &auxFunction)%>;>>
+      <<<%daeExp(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction)%> = <%daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)%>;>>
       ; separator="\n")
     <<
     <%condition_%>{
@@ -8940,9 +9049,9 @@ template genericBranch(SimBranch branch, Context context, Text &preExp, Text &va
     >>
   case SIM_BRANCH_STMT() then
     let condition_ = match condition
-      case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &auxFunction)%>)>>
+      case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)>>
       else ""
-    let body_ = (body |> stmt => algStatement(stmt, context, &varDecls, &auxFunction); separator="\n")
+    let body_ = (body |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction); separator="\n")
     <<
     <%condition_%>{
       <%body_%>
@@ -8950,14 +9059,14 @@ template genericBranch(SimBranch branch, Context context, Text &preExp, Text &va
     >>
 end genericBranch;
 
-template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 ::= match iter
   case SIM_ITERATOR_RANGE() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let start_ = daeExp(start, context, &preExp, &varDecls, &auxFunction)
-    let step_ = daeExp(step, context, &preExp, &varDecls, &auxFunction)
-    let size_ = daeExp(size, context, &preExp, &varDecls, &auxFunction)
-    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    let start_ = daeExp(start, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let step_ = daeExp(step, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let size_ = daeExp(size, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
     int <%iter_%>_loc = tmp % <%size_%>;
     int <%iter_%> = <%step_%> * <%iter_%>_loc + <%start_%>;
@@ -8965,8 +9074,8 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     let arr = (lst |> elem => '<%elem%>'; separator=", ")
     <<
     static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
@@ -8977,42 +9086,42 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     >>
 end genericIterator;
 
-template resizableIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template resizableIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 ::= match iter
   case SIM_ITERATOR_RANGE() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
     <%sub_iter_%>
     >>
 end resizableIterator;
 
-template forIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template forIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 ::= match iter
   case SIM_ITERATOR_RANGE() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let start_ = daeExp(start, context, &preExp, &varDecls, &auxFunction)
-    let step_ = daeExp(step, context, &preExp, &varDecls, &auxFunction)
-    let stop_ = daeExp(stop, context, &preExp, &varDecls, &auxFunction)
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    let start_ = daeExp(start, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let step_ = daeExp(step, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let stop_ = daeExp(stop, context, &preExp, &varDecls, &varFrees, &auxFunction)
     // sub_iter: dependent iterators whose values are selected by the outer range iterator.
     // Emit them inside the loop body so expressions referencing them compile correctly.
-    let subIterDecls = (sub_iter |> si => subIterator(si, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    let subIterDecls = (sub_iter |> si => subIterator(si, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
     for(modelica_integer <%iter_%>=<%start_%>; in_range_integer(<%iter_%>, <%start_%>, <%stop_%>); <%iter_%>+=<%step_%>){
     <%if subIterDecls then subIterDecls%>
     >>
   case SIM_ITERATOR_LIST() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
     let arr = (lst |> elem => '<%elem%>'; separator=", ")
     // Pass the 0-based loop counter (iter__=0..N-1) as '<%iter_%>_+1' so subIterator's
     // name_arr[parent_iter-1] resolves to name_arr[iter__], selecting the right element.
-    let subIterDecls = (sub_iter |> si => subIterator(si, '<%iter_%>_+1', context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    let subIterDecls = (sub_iter |> si => subIterator(si, '<%iter_%>_+1', context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
     static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
     for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
@@ -9021,27 +9130,27 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     >>
 end forIterator;
 
-template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 ::= match iter
   case SIM_ITERATOR_RANGE() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let start_ = daeExp(start, context, &preExp, &varDecls, &auxFunction)
-    let step_ = daeExp(step, context, &preExp, &varDecls, &auxFunction)
-    let size_ = daeExp(size, context, &preExp, &varDecls, &auxFunction)
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    let start_ = daeExp(start, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let step_ = daeExp(step, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let size_ = daeExp(size, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     (<%iter_%>-<%start_%>)/<%step_%>+<%size_%>*(
     >>
   case SIM_ITERATOR_LIST() then
-    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
     <<
     <%iter_%>_+<%size%>*(
     >>
 end forIteratorBody;
 
-template forIteratorName(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+template forIteratorName(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR_RANGE() then contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  case SIM_ITERATOR_LIST() then contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+  case SIM_ITERATOR_RANGE() then contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+  case SIM_ITERATOR_LIST() then contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
 end forIteratorName;
 
 
@@ -9057,8 +9166,9 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
       let &sub = buffer ""
       let &preExp = buffer ""
       let &varDecls = buffer ""
+      let &varFrees = buffer ""
       let &auxFunction = buffer ""
-      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       <<void genericCall_<%sub_name%><%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>);>>;
   separator="\n\n")
 end genericCallHeaders;

@@ -73,32 +73,6 @@ extern "C" {
 /* max object size on 32/64 bit systems in bytes */
 #define MMC_MAX_OBJECT_SIZE_BYTES MMC_WORDS_TO_BYTES(MMC_MAX_SLOTS)
 
-/* adrpo: circumvent MinGW GCC 4.4.0 bugs with optimization */
-#if defined(__MINGW32__)
-#define GCC_VERSION (__GNUC__ * 10000 \
-                               + __GNUC_MINOR__ * 100 \
-                               + __GNUC_PATCHLEVEL__)
-
-/* Test for MinGW GCC = 4.4.0 */
-#if (GCC_VERSION == 40400)
-
-typedef float mmc_switch_type;
-#define MMC_SWITCH_CAST(X) ((int)X)
-
-#else /* not MinGW GCC 4.4.0 */
-
-typedef int mmc_switch_type;
-#define MMC_SWITCH_CAST(X) (X)
-
-#endif
-
-#else /* not MINGW */
-
-typedef int mmc_switch_type;
-#define MMC_SWITCH_CAST(X) (X)
-
-#endif
-
 #define RML_STYLE_TAGPTR
 
 #ifdef RML_STYLE_TAGPTR

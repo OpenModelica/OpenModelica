@@ -37,12 +37,12 @@
 
 #include "arrayIndex.h"
 #include "simulation_input_xml.h"
+#include <errno.h>
 #include "simulation_runtime.h"
 #include "options.h"
 #include "../util/omc_error.h"
 #include "../util/omc_file.h"
 #include "../util/omc_strdup.h"
-#include "../meta/meta_modelica.h"
 #include "../util/modelica_string.h"
 #include "solver/model_help.h"
 
@@ -647,7 +647,7 @@ static void read_var_attribute_string(omc_ModelVariable *v, STRING_ATTRIBUTE *at
 {
   attribute->start = read_value_string(findHashStringStringEmpty(v,"start"));
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), MMC_STRINGDATA(attribute->start));
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), omc_string_data(attribute->start));
 }
 
 /**
@@ -1301,16 +1301,12 @@ static inline modelica_boolean read_value_bool(const char *s)
  * @brief Read modelica_string from a string
  *
  * @param s                 String
- * @return modelica_string  Modelica string. Needs to be freed by caller.
+ * @return modelica_string  Modelica string, owned by the slot it is stored in
+ *                          and released by `freeModelDataVarArrays`.
  */
 static inline modelica_string read_value_string(const char *s)
 {
-  char* buffer;
-  modelica_string* str;
-  buffer = omc_strdup(s); /* memory is allocated here, must be freed by the caller */
-  str = mmc_mk_scon_persist(buffer);
-  free(buffer);
-  return str;
+  return omc_string_new(s);
 }
 
 static char* trim(char *str) {

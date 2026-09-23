@@ -61,6 +61,7 @@ extern "C" {
 #include <math.h>
 
 #include "util/rtclock.h"
+#include "util/ModelicaUtilitiesExtra.h"
 #include "omc_config.h"
 #include "errorext.h"
 #include "omc_lapack.h"
@@ -1391,6 +1392,29 @@ static const char* SystemImpl__getUUIDStr(void)
   return uuidStr;
 }
 
+/* A function library links its own copy of the simulation runtime, so its
+   ModelicaError and its asserts would report to that copy rather than to omc. */
+static void installModelicaErrorHandlers(void *sym)
+{
+  typedef void (*omc_set_handlers_t)(void (*)(const char*), void (*)(const char*,va_list));
+  omc_set_handlers_t set = (omc_set_handlers_t) sym;
+
+  if (set) {
+    set(OpenModelica_ModelicaError, OpenModelica_ModelicaVFormatError);
+  }
+}
+
+static void installAssertReporters(void *sym)
+{
+  typedef void (*omc_set_reporters_t)(void (*)(threadData_t*, FILE_INFO, const char*, va_list),
+                                      void (*)(FILE_INFO, const char*, va_list));
+  omc_set_reporters_t set = (omc_set_reporters_t) sym;
+
+  if (set) {
+    set(Error_assertReport, Error_assertWarningReport);
+  }
+}
+
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -1452,6 +1476,9 @@ static int loadLibraryWithBinding(const char *str, int relativePath, int printDe
     return -1;
   }
 
+  installModelicaErrorHandlers((void*) GetProcAddress(h, "omc_set_modelica_error_handlers"));
+  installAssertReporters((void*) GetProcAddress(h, "omc_set_assert_reporters"));
+
   libIndex = alloc_ptr();
   if (libIndex < 0) {
     //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
@@ -1500,6 +1527,9 @@ static int loadLibraryWithBinding(const char *str, int relativePath, int printDe
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
+
+  installModelicaErrorHandlers(dlsym(h, "omc_set_modelica_error_handlers"));
+  installAssertReporters(dlsym(h, "omc_set_assert_reporters"));
 
   libIndex = alloc_ptr();
   if (libIndex < 0) {

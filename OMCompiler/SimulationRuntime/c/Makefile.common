@@ -131,7 +131,10 @@ simulation/solver/sundials_util.h \
 simulation/solver/sym_solver_ssc.h \
 simulation/solver/synchronous.h
 
-RUNTIMEMETA_HEADERS = meta/meta_modelica_builtin_boxptr.h \
+RUNTIMEMETA_HEADERS = meta/java_interface.h \
+meta/meta_modelica_string_lit.h \
+meta/meta_modelica_string.h \
+meta/meta_modelica_builtin_boxptr.h \
 meta/meta_modelica_builtin_boxvar.h \
 meta/meta_modelica_builtin.h \
 meta/meta_modelica.h \
@@ -139,7 +142,7 @@ meta/meta_modelica_data.h \
 meta/meta_modelica_mk_box.h \
 meta/meta_modelica_segv.h
 
-RUNTIMEMETAGC_HEADERS = gc/omc_gc.h gc/memory_pool.h
+RUNTIMEMETAGC_HEADERS = gc/omc_gc.h gc/omc_rc.h gc/omc_alloc.h
 
 RUNTIMEUTIL_HEADERS = \
 util/base_array.h \
@@ -149,9 +152,13 @@ util/division.h \
 util/generic_array.h \
 util/index_spec.h \
 util/integer_array.h \
-util/java_interface.h \
+util/ModelicaUtilitiesExtra.h \
 util/modelica.h \
 util/modelica_string.h \
+util/omc_box.h \
+util/omc_stackoverflow.h \
+util/omc_str_utils.h \
+util/omc_string.h \
 util/omc_error.h \
 util/omc_file.h \
 util/omc_mmap.h \
@@ -183,11 +190,26 @@ simulation/solver/initialization/initialization.h
 
 ALL_RUNTIME_HEADERS = $(RUNTIME_HEADERS) $(RUNTIMELINEAR_HEADERS) $(RUNTIMEOPTIMZ_HEADERS) $(RUNTIMESIMULATION_HEADERS) $(RUNTIMESIMRESULTS_HEADERS) $(RUNTIMESIMSOLVER_HEADERS) $(RUNTIMEINITIALIZATION_HEADERS) $(RUNTIMEMETA_HEADERS) $(RUNTIMEMETAGC_HEADERS) $(RUNTIMEUTIL_HEADERS) $(RUNTIMEDATARECONCILE_HEADERS)
 
-.PHONY : clean all emcc emcc-clean emcc/libSimulationRuntimeC.so fmi-runtime
+.PHONY : clean all emcc emcc-clean emcc/libSimulationRuntimeC.so fmi-runtime base_objs mmc_objs
 
 all : install
 
 all_objs : $(ALL_OBJS)
+
+# The same sources against the collected vocabulary, built into their own tree
+# and their own library; libOpenModelicaRuntimeC is the counted one.
+MMCBUILDPATH = build/mmc
+MMC_BASE_OBJS = $(BASE_OBJS:$(BUILDPATH)/%=$(MMCBUILDPATH)/%)
+LIBRUNTIMEMMC = $(subst OpenModelicaRuntimeC,OpenModelicaRuntimeMMC,$(LIBRUNTIME))
+
+# What generated code links: no meta/, and the counted string and box.
+RC_BASE_OBJS = $(GCOBJSPATH) $(UTILOBJSPATH)
+
+base_objs : $(BASE_OBJS)
+
+mmc_objs :
+	$(MAKE) -f $(LIBMAKEFILE) base_objs BUILDPATH=$(MMCBUILDPATH) \
+		EXTRA_CFLAGS="$(EXTRA_CFLAGS) -DOMC_METAMODELICA_RUNTIME=1"
 
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
@@ -216,23 +238,40 @@ libSimulationRuntimeC.bc: $(ALL_OBJS) Makefile.objs
 	@rm -f $@
 	$(CC) -o $@ $(ALL_OBJS)
 
-libOpenModelicaRuntimeC.a: $(BASE_OBJS) Makefile.objs
+libOpenModelicaRuntimeC.a: $(RC_BASE_OBJS) Makefile.objs
 	@# You have to remove the old archive first or it may contain old objects
 	@rm -f $@
-	$(AR) $@ $(BASE_OBJS)
+	$(AR) $@ $(RC_BASE_OBJS)
 	ranlib $@
 
-libOpenModelicaRuntimeC.so: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
+libOpenModelicaRuntimeC.so: $(RC_BASE_OBJS) Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS)
+	$(CC) -shared -o $@ $(RC_BASE_OBJS) $(LDFLAGS)
 
-libOpenModelicaRuntimeC.dll: $(BASE_OBJS) $(RYUDIR)/libryu.a Makefile.objs
+libOpenModelicaRuntimeC.dll: $(RC_BASE_OBJS) $(RYUDIR)/libryu.a Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -L$(RYUDIR) -lomcgc -lryu -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
+	$(CC) -shared -o $@ $(RC_BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -L$(RYUDIR) -lryu -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
 
-libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) $(RYUDIR)/libryu.a $(GCOBJPATH_MINIMAL) Makefile.objs
+libOpenModelicaRuntimeC.dylib: $(RC_BASE_OBJS) $(RYUDIR)/libryu.a Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
+	$(CC) -shared -o $@ $(RC_BASE_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
+
+libOpenModelicaRuntimeMMC.a: mmc_objs Makefile.objs
+	@rm -f $@
+	$(AR) $@ $(MMC_BASE_OBJS)
+	ranlib $@
+
+libOpenModelicaRuntimeMMC.so: mmc_objs Makefile.objs
+	@rm -f $@
+	$(CC) -shared -o $@ $(MMC_BASE_OBJS) $(LDFLAGS)
+
+libOpenModelicaRuntimeMMC.dll: mmc_objs $(RYUDIR)/libryu.a Makefile.objs
+	@rm -f $@
+	$(CC) -shared -o $@ $(MMC_BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -L$(RYUDIR) -lomcgc -lryu -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
+
+libOpenModelicaRuntimeMMC.dylib: mmc_objs $(RYUDIR)/libryu.a Makefile.objs
+	@rm -f $@
+	$(CC) -shared -o $@ $(MMC_BASE_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
 
 libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
@@ -303,13 +342,13 @@ $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 
 $(BUILDPATH)/simulation/socket$(OBJ_EXT): simulation/socket_win.inc simulation/socket_unix.inc
 
-bootstrap-dependencies: $(LIBRUNTIME)
+bootstrap-dependencies: $(LIBRUNTIME) $(LIBRUNTIMEMMC)
 ifeq (MINGW,$(findstring MINGW,$(shell uname)))
-	cp -p $(LIBRUNTIME) $(builddir_bin)
+	cp -p $(LIBRUNTIME) $(LIBRUNTIMEMMC) $(builddir_bin)
 # 	copy the import (dll.a) lib as well.
-	cp -p $(LIBRUNTIME).a $(builddir_lib)
+	cp -p $(LIBRUNTIME).a $(LIBRUNTIMEMMC).a $(builddir_lib)
 else
-	cp -p $(LIBRUNTIME) $(builddir_lib)
+	cp -p $(LIBRUNTIME) $(LIBRUNTIMEMMC) $(builddir_lib)
 endif
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)/c/

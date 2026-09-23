@@ -59,6 +59,13 @@ algorithm
   assert(false, getInstanceName());
 end getSimCode;
 
+function isSimulationCodegen
+  "This compiler is built to compile functions; it generates no simulation."
+  output Boolean simulation;
+algorithm
+  simulation := false;
+end isSimulationCodegen;
+
 function cref2simvar<A,B>
   input A inCref;
   input B inCrefToSimVarHT;
@@ -112,6 +119,12 @@ function codegenExpSanityCheck
 algorithm
   /* Do nothing */
 end codegenExpSanityCheck;
+
+function unboxFunctionReferenceCall
+  input output DAE.Exp exp;
+algorithm
+  /* Do nothing */
+end unboxFunctionReferenceCall;
 
 function getExpNominal
   input output DAE.Exp e;

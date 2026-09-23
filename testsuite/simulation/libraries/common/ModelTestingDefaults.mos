@@ -20,4 +20,5 @@ outputFormat :="mat";
 simflags := ""; // Options sent to the simulation runtime
 timeout := 480; // 8 minutes should be enough for any model
 timeoutSim := 360; // 6 minutes should be enough for any model
+ignoreSimulation := false; // Compilation: do not require that the model still fails to simulate
 echo(true);

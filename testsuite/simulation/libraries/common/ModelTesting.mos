@@ -82,7 +82,7 @@ elseif modelTestingType == OpenModelicaModelTesting.Kind.Compilation then
   error:=getErrorString();
   print(if res[1] <> "" then "Compilation succeeded\n" else "Compilation failed\n");
   print(error);
-  if res[1] <> "" then
+  if res[1] <> "" and not ignoreSimulation then
     base := basename(res[1]);
     info:=checkSettings();
     os:=info.OS;

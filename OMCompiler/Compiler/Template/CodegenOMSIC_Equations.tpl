@@ -66,8 +66,9 @@ template generateEquationFunction(SimEqSystem eq, String modelNamePrefixStr,Stri
   let equationInfos = CodegenUtilSimulation.dumpEqs(fill(eq,1))
 
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
-  let equationCode = equationCStr(eq, &varDecls, &auxFunction, context)
+  let equationCode = equationCStr(eq, &varDecls, &varFrees, &auxFunction, context)
 
   let funcName = (match eq
     case SES_RESIDUAL(__) then
@@ -117,7 +118,7 @@ template generateEquationFunction(SimEqSystem eq, String modelNamePrefixStr,Stri
 end generateEquationFunction;
 
 
-template equationCStr(SimEqSystem eq, Text &varDecls, Text &auxFunction, Context context)
+template equationCStr(SimEqSystem eq, Text &varDecls, Text &varFrees, Text &auxFunction, Context context)
  "Generates an equation that is just a simple assignment."
 ::=
   let &preExp = buffer ""
@@ -125,19 +126,19 @@ template equationCStr(SimEqSystem eq, Text &varDecls, Text &auxFunction, Context
   match eq
   case SES_SIMPLE_ASSIGN(__) then
     let crefStr = CodegenCFunctions.crefOMSI(cref, context)
-    let expPart = CodegenCFunctions.daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let expPart = CodegenCFunctions.daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     <%preExp%>
     <%crefStr%> = <%expPart%>;
     >>
   case SES_RESIDUAL(__) then
-    let expPart = CodegenCFunctions.daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let expPart = CodegenCFunctions.daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
     <%preExp%>
     *res = <%expPart%>;
     >>
   case SES_WHEN(__) then
-    let whenEq = equationWhen(eq, context, &varDecls, &auxFunction)
+    let whenEq = equationWhen(eq, context, &varDecls, &varFrees, &auxFunction)
     <<
     <%whenEq%>
     >>
@@ -201,13 +202,14 @@ template generateMatrixColumnInitialization(OMSIFunction column)
 "Helper function for template generateMatrixInitialization."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let &body = buffer ""
 
   match column
   case omsiFunction as OMSI_FUNCTION(__) then
     let _ = (equations |> eq =>
-      let &body += equationCStr(eq, &varDecls, &auxFunction, omsiFunction.context)
+      let &body += equationCStr(eq, &varDecls, &varFrees, &auxFunction, omsiFunction.context)
       <<>>
     )
 
@@ -243,6 +245,7 @@ template generateDereivativeMatrixColumnFunction(OMSIFunction column, String mod
   let bodyBuffer = ""
   let &preExp = buffer ""
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
 
   match column
@@ -265,6 +268,7 @@ template generateDereivativeMatrixColumnCall(OMSIFunction column, String modelNa
   let bodyBuffer = ""
   let &preExp = buffer ""
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
 
   match column
@@ -297,7 +301,7 @@ end generateDereivativeMatrixColumnCall;
 *
 ****************************************/
 
-template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
+template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates a when equation."
 ::=
   match eq
@@ -311,7 +315,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
                 case ASSIGN(left=lhs as DAE.CREF(componentRef=left), right=right) then
                   let &preExp = buffer ""
                   let lhs = CodegenCFunctions.crefOMSI(left, context)
-                  let rhs = CodegenCFunctions.daeExp(right, context, &preExp, &varDecls, &auxFunction)
+                  let rhs = CodegenCFunctions.daeExp(right, context, &preExp, &varDecls, &varFrees, &auxFunction)
                   <<
                     <%preExp%>
                     <%lhs%> = <%rhs%>;
@@ -319,7 +323,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
 
                 case REINIT(stateVar=stateVar, value=value, source=source) then
                   let &preExp = buffer ""
-                  let val = CodegenCFunctions.daeExp(value, context, &preExp, &varDecls, &auxFunction)
+                  let val = CodegenCFunctions.daeExp(value, context, &preExp, &varDecls, &varFrees, &auxFunction)
                   let lhs = match crefTypeConsiderSubs(stateVar)
                     case DAE.T_ARRAY(__) then
                       'TODO: Implement for arrays!'

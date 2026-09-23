@@ -36,7 +36,6 @@
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
-#include "../../meta/meta_modelica.h"
 #include "dae_mode.h"
 
 #include "../../util/omc_error.h"
@@ -112,6 +111,12 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   data->simulationInfo->needToReThrow = 0 /* false */;
 
   prefixedName_updateContinuousSystem(data, threadData);
+  /* Everything below would evaluate the model again, on the point that just
+     failed. */
+  if (OMC_ERROR_RAISED()) {
+    data->simulationInfo->noThrowAsserts = 0 /* false */;
+    return NO_TIMER_FIRED;
+  }
 
   if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
     DATA_SYM_SOLVER_SSC* solverData = (DATA_SYM_SOLVER_SSC*) solverInfo->solverData;
@@ -120,6 +125,10 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   }
 
   saveZeroCrossings(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    data->simulationInfo->noThrowAsserts = 0 /* false */;
+    return NO_TIMER_FIRED;
+  }
 
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
@@ -490,7 +499,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
       /* try */
 #if !defined(OMC_EMCC)
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       {
         printAllVars(data, 0, OMC_LOG_SOLVER_V);
@@ -577,6 +586,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           break;
         }
         syncStep = simulationUpdate(data, threadData, solverInfo);
+        /* The step is only over if it came back clean. */
+        if (!OMC_ERROR_RAISED()) {
         retry = 0; /* reset retry */
 
         fmtEmitStep(data, threadData, &fmt, solverInfo);
@@ -605,10 +616,11 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
           break;
         }
-        success = 1;
+        }
       }
+      if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+      OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (!success) { /* catch */
         if(0 == retry) {

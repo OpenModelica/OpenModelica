@@ -427,6 +427,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   endif ()
 endif ()
 
+# StringHandler formats reals with om_format.h.
+target_link_libraries(OMEditLib PUBLIC omc::3rd::ryu)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::libzmq)

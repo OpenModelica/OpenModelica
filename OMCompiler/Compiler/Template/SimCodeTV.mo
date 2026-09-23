@@ -1690,6 +1690,10 @@ package SimCodeUtil
     output SimCode.SimCode code;
   end getSimCode;
 
+  function isSimulationCodegen
+    output Boolean simulation;
+  end isSimulationCodegen;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
@@ -1736,6 +1740,11 @@ package SimCodeUtil
     input SimCodeFunction.Context context;
     output DAE.Exp outExp;
   end codegenExpSanityCheck;
+
+  function unboxFunctionReferenceCall
+    input DAE.Exp inExp;
+    output DAE.Exp outExp;
+  end unboxFunctionReferenceCall;
 
   function selectScalarLiteralAssignments
     input list<SimCode.SimEqSystem> inEqs;

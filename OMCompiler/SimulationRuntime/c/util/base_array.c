@@ -27,8 +27,13 @@
 
 
 #include "base_array.h"
+#if defined(OMC_METAMODELICA_RUNTIME)
+/* The string vocabulary of this runtime; util/omc_string.h stands down here. */
+#include "../meta/meta_modelica_string.h"
+#endif
 #include "index_spec.h"
 #include "../gc/omc_gc.h"
+#include "omc_string.h"
 #include "omc_error.h"
 
 #include <stdlib.h>
@@ -195,6 +200,7 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
     }
 
     dest->flexible = 0;
+    dest->owns_data = 0;
 }
 
 /**
@@ -427,6 +433,7 @@ void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
     dest->dim_size[0] = n;
     dest->data = data;
     dest->flexible = 0;
+    dest->owns_data = 1;
 }
 
 /**
@@ -447,6 +454,7 @@ void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
     dest->dim_size[1] = c;
     dest->data = data;
     dest->flexible = 0;
+    dest->owns_data = 1;
 }
 
 /**
@@ -486,6 +494,7 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
     }
 
     dest->flexible = 0;
+    dest->owns_data = 1;
 
     return nr_of_elements;
 }
@@ -518,6 +527,7 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
     }
 
     dest->flexible = source->flexible;
+    dest->owns_data = 1;
 }
 
 /**
@@ -715,6 +725,7 @@ void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* des
 
     dest->ndims = source->ndims;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     assert(dest->dim_size);
 
     for(i = 0; i < dest->ndims; ++i) {
@@ -760,6 +771,7 @@ void index_alloc_base_array_size(const real_array * source,
 
     dest->ndims = imax(j,1);
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     for(i = 0; i < dest->ndims; ++i) {
       dest->dim_size[i] = 0;
     }
@@ -830,3 +842,54 @@ void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array
     *_idx_vec1 = idx_vec1;
     *_idx_size = idx_size;
 }
+
+void omc_array_retain(base_array_t *a)
+{
+    if (!a) {
+        return;
+    }
+    if (a->owns_data) {
+        omc_rc_retain_inline(a->data);
+    }
+    omc_rc_retain_inline(a->dim_size);
+}
+
+void omc_array_release(base_array_t *a)
+{
+    if (!a) {
+        return;
+    }
+    if (a->owns_data) {
+        omc_rc_release_inline(a->data);
+    }
+    omc_rc_release_inline(a->dim_size);
+    a->data = NULL;
+    a->dim_size = NULL;
+    a->ndims = 0;
+    a->owns_data = 0;
+}
+
+void omc_record_array_release(base_array_t *a, void (*release)(void*), size_t elem_size)
+{
+    if (a && a->owns_data && a->data && omc_rc_is_last(a->data)) {
+        size_t i, n = base_array_nr_of_elements(*a);
+        char *elems = (char*) a->data;
+        for (i = 0; i < n; ++i) {
+            release(elems + i*elem_size);
+        }
+    }
+    omc_array_release(a);
+}
+
+void omc_string_array_release(base_array_t *a)
+{
+    if (a && a->owns_data && a->data && omc_rc_is_last(a->data)) {
+        size_t i, n = base_array_nr_of_elements(*a);
+        modelica_string *elems = (modelica_string*) a->data;
+        for (i = 0; i < n; ++i) {
+            omc_string_release(elems[i]);
+        }
+    }
+    omc_array_release(a);
+}
+

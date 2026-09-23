@@ -27,6 +27,7 @@ encapsulated package Autoconf
   constant String pathDelimiter = "/";
 
   constant String ldflags_runtime = "@RT_LDFLAGS_GENERATED_CODE@";
+  constant String ldflags_runtime_mmc = "@RT_LDFLAGS_GENERATED_CODE_MMC@";
   constant String ldflags_runtime_sim = "@RT_LDFLAGS_GENERATED_CODE_SIM@";
   constant String ldflags_runtime_sim_rust = "@RT_LDFLAGS_GENERATED_CODE_SIM_RUST@";
   constant String ldflags_runtime_fmu = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@";

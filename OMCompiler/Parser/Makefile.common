@@ -7,6 +7,11 @@ OMC_CONFIG_INC = ../
 
 CPPFLAGS += -DOM_HAVE_PTHREADS
 
+# The parser builds MetaModelica values. ModelicaParserCommon.h reaches
+# gc/omc_gc.h before meta/meta_modelica.h can set this itself, and the include
+# guard keeps whichever allocator was bound first.
+CPPFLAGS += -DOMC_METAMODELICA_RUNTIME=1
+
 BUILDINC = -I$(OMC_CONFIG_INC) -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
 
 .PHONY: all

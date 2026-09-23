@@ -159,14 +159,14 @@ modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
         size_t scalarIdx = simulationInfo->stringVarsIndex[arrayIdx] + i;
         modelica_string v1 = simulationInfo->stringVarsPre[scalarIdx];
         modelica_string v2 = data->localData[0]->stringVars[scalarIdx];
-        if (0 != strcmp(MMC_STRINGDATA(v1), MMC_STRINGDATA(v2)))
+        if (!stringEqual(v1, v2))
         {
           needToIterate = TRUE;
           if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
           {
             printMultiDimArrayIndex(&modelData->stringVarsData[arrayIdx].dimension, scalarIdx, index_buffer, buffer_size);
             infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %s to %s",
-                            modelData->stringVarsData[arrayIdx].info.name, MMC_STRINGDATA(v1), MMC_STRINGDATA(v2));
+                            modelData->stringVarsData[arrayIdx].info.name, omc_string_data(v1), omc_string_data(v2));
           }
           else
           {

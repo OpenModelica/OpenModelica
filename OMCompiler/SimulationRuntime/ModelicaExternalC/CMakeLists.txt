@@ -14,12 +14,12 @@ endif()
 cmake_minimum_required(VERSION 3.14)
 project(OMModelicaExternalC)
 
-# For the Rust omc these shared libraries deliberately do not link the C runtime
-# (see ModelicaExternalC_shared below): omc resolves their ModelicaUtilities
-# symbols out of its own process at dlopen. ELF is happy to leave them
-# undefined; Mach-O has to be told to defer them.
+# These shared libraries link no OpenModelica runtime: ModelicaUtilities.h is
+# the tool's side of the interface, and whoever dlopens the library resolves it
+# out of its own process. ELF is happy to leave the symbols undefined; Mach-O
+# has to be told to defer them.
 function(omc_defer_modelica_utilities tgt)
-  if(OM_OMC_ENABLE_RUST AND APPLE)
+  if(APPLE)
     target_link_options(${tgt} PRIVATE -Wl,-undefined,dynamic_lookup)
   endif()
 endfunction()
@@ -54,14 +54,6 @@ if(UNIX)
   target_link_libraries(ModelicaExternalC_shared PUBLIC m)
 endif()
 
-# The Rust omc provides its own ModelicaUtilities (the wasm-jit/FFI simulation
-# environment, exported by libOpenModelicaCompiler) and never initialises the C
-# runtime's GC/threadData. So for the Rust target leave the ModelicaUtilities
-# symbols undefined in the ffi .so — resolved at dlopen against the omc process —
-# instead of dragging in libOpenModelicaRuntimeC via DT_NEEDED.
-if(NOT OM_OMC_ENABLE_RUST)
-  target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
-endif()
 omc_defer_modelica_utilities(ModelicaExternalC_shared)
 
 if(MINGW)
@@ -94,11 +86,6 @@ set_target_properties(ModelicaMatIO_shared
 target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
 omc_modelica_matio_hdf5(ModelicaMatIO_shared PUBLIC)
-# See ModelicaExternalC_shared above: decouple the ffi .so from the C runtime for
-# the Rust target so ModelicaUtilities resolves to our own implementation.
-if(NOT OM_OMC_ENABLE_RUST)
-  target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
-endif()
 omc_defer_modelica_utilities(ModelicaMatIO_shared)
 
 if(MINGW)
@@ -205,6 +192,19 @@ install(TARGETS ModelicaExternalC
 # This is so that they are not on the normal link path of simulation executables.
 # We do not want to have them for anything other than FFI based for constant
 # evaluation by omc (They are only loaded never linked)
+
+# ffi/ is one directory below the lib dir the project-wide rpath points at.
+if(APPLE)
+  set(OMC_MEC_FFI_RPATH "@loader_path;@loader_path/..")
+else()
+  set(OMC_MEC_FFI_RPATH "$ORIGIN;$ORIGIN/..")
+endif()
+set_target_properties(ModelicaExternalC_shared
+                      ModelicaMatIO_shared
+                      ModelicaIO_shared
+                      ModelicaStandardTables_shared
+                      PROPERTIES INSTALL_RPATH "${OMC_MEC_FFI_RPATH}")
+
 install(TARGETS ModelicaExternalC_shared
                 ModelicaMatIO_shared
                 ModelicaIO_shared

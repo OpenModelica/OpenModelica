@@ -38,7 +38,6 @@
 #include <math.h>
 
 #include "omc_error.h"
-#include "../meta/meta_modelica.h"
 
 static OMC_INLINE modelica_integer *integer_ptrget(const integer_array *a, size_t i)
 {
@@ -322,6 +321,8 @@ void indexed_assign_integer_array(const integer_array source, integer_array* des
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
     omc_assert_macro(j == base_array_nr_of_elements(source));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_size);
 }
 
 /*
@@ -389,6 +390,9 @@ void index_integer_array(const integer_array * source,
                                                      source, source_spec)));
 
     } while(0 == next_index(source->ndims, idx_vec1, idx_size));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_vec2);
+    omc_rc_release_inline(idx_size);
 }
 
 /*
@@ -421,6 +425,7 @@ void simple_index_alloc_integer_array1(const integer_array * source, int i1,
 
     dest->ndims = source->ndims - 1;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i+1];
@@ -656,6 +661,7 @@ void cat_alloc_integer_array(int k, integer_array* dest, int n,
     dest->data = integer_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     for(j = 0; j < dest->ndims; j++) {
         dest->dim_size[j] = elts[0]->dim_size[j];
     }
@@ -1133,9 +1139,8 @@ integer_array exp_alloc_integer_array(const integer_array a,modelica_integer b)
  */
 void promote_alloc_integer_array(const integer_array * a, int n, integer_array* dest)
 {
-    clone_integer_array_spec(a,dest);
-    alloc_integer_array_data(dest);
-    promote_integer_array(a,n,dest);
+    dest->flexible = a->flexible;
+    promote_integer_array(a, n, dest);
 }
 
 /* function: promote_integer_array.
@@ -1152,6 +1157,10 @@ void promote_integer_array(const integer_array * a, int n,integer_array* dest)
 
     dest->dim_size = size_alloc(n+a->ndims);
     dest->data = a->data;
+    dest->owns_data = a->owns_data;
+    if (dest->owns_data) {
+        omc_rc_retain_inline(dest->data);
+    }
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
         dest->dim_size[i] = a->dim_size[i];
@@ -1174,6 +1183,7 @@ void promote_scalar_integer_array(modelica_integer s,int n,integer_array* dest)
 
     /* Alloc size */
     dest->dim_size = size_alloc(n);
+    dest->owns_data = 1;
 
     /* Alloc data */
     dest->data = integer_alloc(1);
