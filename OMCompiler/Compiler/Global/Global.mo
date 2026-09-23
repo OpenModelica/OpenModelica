@@ -112,6 +112,10 @@ constant Integer nbCreatedVars = 39;
 // modifications are not applied to it. Dropped with the top scope by
 // NFInstanceAPI.clearTopScopeCache.
 constant Integer nfDiagramIconCache = 40;
+// SOME(true) while the old uncertainty extraction (modelEquationsUC) lowers a
+// model, which, like data reconciliation, must keep its uncertain=refine
+// variables out of alias elimination.
+constant Integer uncertaintyExtraction = 41;
 
 // indexes in System.tick
 // ----------------------
@@ -156,6 +160,7 @@ algorithm
   setGlobalRoot(nfTopScope, {});
   setGlobalRoot(nbCreatedVars, {});
   setGlobalRoot(nfDiagramIconCache, NONE());
+  setGlobalRoot(uncertaintyExtraction, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

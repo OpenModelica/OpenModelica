@@ -51,6 +51,7 @@ pub fn initialize() -> () {
     crate::Globals::stackoverFlowIndex.with(|__root| *__root.borrow_mut() = None);
     crate::Globals::currentInstVar.with(|__root| *__root.borrow_mut() = None);
     crate::Globals::isInStream.with(|__root| *__root.borrow_mut() = None);
+    crate::Globals::uncertaintyExtraction.with(|__root| *__root.borrow_mut() = None);
     crate::Globals::sharedLibraryCacheIndex.with(|__root| *__root.borrow_mut() = metamodelica::nil());
     crate::Globals::codegenTryThrowIndex.with(|__root| *__root.borrow_mut() = metamodelica::nil());
     crate::Globals::packageIndexCacheIndex.with(|__root| *__root.borrow_mut() = None);

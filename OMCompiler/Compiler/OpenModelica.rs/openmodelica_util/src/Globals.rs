@@ -263,4 +263,12 @@ thread_local! {
     /// Source: `SimCodeFunctionUtil.extLibraryBuildAttempted`.
     pub static extLibraryBuildIndex: RefCell<metamodelica::List<ArcStr>> =
         RefCell::new(metamodelica::nil());
+
+    /// Index 41 — Whether the old uncertainty extraction is lowering a model.
+    ///
+    /// Set to `Some(true)` while `Uncertainties.modelEquationsUC` lowers and
+    /// simplifies the model; `None` otherwise.
+    /// Source: `Uncertainties.mo`, read by `BackendDAEUtil.isDataReconciliationEnabled`.
+    pub static uncertaintyExtraction: RefCell<Option<bool>> =
+        const { RefCell::new(None) };
 }
