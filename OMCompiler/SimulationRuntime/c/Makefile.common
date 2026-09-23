@@ -61,10 +61,10 @@ CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
 CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
 LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
 RYUDIR=$(top_builddir)/3rdParty/ryu/ryu/
-IPOPTDIR = $(top_builddir)/3rdParty/moo-0.1.0/third-party/Ipopt.cmake/Ipopt/sources/src
+IPOPTDIR = $(top_builddir)/3rdParty/moo/third-party/Ipopt.cmake/Ipopt/sources/src
 IPOPT_HEADERS = Interfaces Common Linalg Apps Algorithm
 IPOPT_INCLUDES = $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
-COLPACKDIR = $(top_builddir)/3rdParty/ColPack
+COLPACKDIR = $(top_builddir)/3rdParty/ColPack-src
 COLPACK_HEADERS = inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphBicoloring src/BipartiteGraphPartialColoring src/Recovery src/SMPGC
 COLPACK_INCLUDES = $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
 
@@ -199,7 +199,7 @@ libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
 		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_core \
 		-lipopt -ldmumps -lmumps_common -lseq -lgfortran \
-		-lprimme -lcolpack\
+		-lprimme -lColPack -fopenmp \
 		-llis -lcminpack -lomcgc \
 		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
 		-Wl,--export-all-symbols,--out-implib,$@.a

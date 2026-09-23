@@ -185,21 +185,21 @@ endif()
 set(Boost_LIBRARIES_NEW)
 foreach(lib ${Boost_LIBRARIES_})
   # Convert "Boost:SomeCrazyLib" to "-lboost_SomeCrazyLib" for ModelicaConfig_gcc.inc
-  if(${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support newer cmake >= 3.16
+  # An old FindBoost gives plain library paths instead of imported targets.
+  set(libNew "${lib}")
+  if(TARGET "${lib}")
     # Reading LOCATION off a non-IMPORTED target (OM_FETCH_BOOST) is an error.
     get_target_property(libImported "${lib}" IMPORTED)
     if(libImported)
-      get_target_property(libNew "${lib}" LOCATION)
+      get_target_property(libLocation "${lib}" LOCATION)
     else()
-      get_target_property(libNew "${lib}" OUTPUT_NAME)
+      get_target_property(libLocation "${lib}" OUTPUT_NAME)
     endif()
-    if(NOT libNew) # could not find it
-      set(libNew ${lib})
+    if(libLocation)
+      set(libNew "${libLocation}")
     endif()
-    get_filename_component(libNew "${libNew}" NAME_WE)
-  else(${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support older cmake <= 3.16
-    get_filename_component(libNew "${lib}" NAME_WE)
-  endif(${CMAKE_VERSION} VERSION_GREATER "3.16.0")
+  endif()
+  get_filename_component(libNew "${libNew}" NAME_WE)
   string(REGEX REPLACE "^lib" "" libNew ${libNew})
   set(Boost_LIBRARIES_NEW "${Boost_LIBRARIES_NEW} ${LINKER_LIB_PREFIX}${libNew}")
 endforeach()
