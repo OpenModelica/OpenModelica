@@ -229,12 +229,12 @@ typedef struct JACOBIAN
   unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
                                            corresponding CSC (column oriented) nz positions of J. Size nnz. */
 
-
   // Stuff that needs to be kept for rust compile compatibility, but is not used in C code
   jacobianColumn_func_ptr constantEqns;
   modelica_boolean isRowEval;
   modelica_boolean isBidirectional;
   JACOBIAN_AVAILABILITY availability;
+  JACOBIAN* adjointJacobian;
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
