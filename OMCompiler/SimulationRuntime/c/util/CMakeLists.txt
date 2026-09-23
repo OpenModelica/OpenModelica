@@ -130,3 +130,9 @@ target_include_directories(OpenModelicaRuntimeCUtilMMC PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC omc::3rd::omcgc OMCPThreads::OMCPThreads)
+
+if(MINGW)
+  target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC regex)
+elseif(MSVC)
+  target_link_libraries(OpenModelicaRuntimeCUtilMMC PUBLIC omc::3rd::regex)
+endif()
