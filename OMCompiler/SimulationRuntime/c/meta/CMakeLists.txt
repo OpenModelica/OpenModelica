@@ -29,10 +29,12 @@ add_library(OpenModelicaRuntimeMMC SHARED ${OMC_MMC_SOURCES}
   $<TARGET_OBJECTS:OpenModelicaRuntimeCGCMMC>)
 add_library(omc::mmc::runtime ALIAS OpenModelicaRuntimeMMC)
 
+# $<TARGET_OBJECTS> does not carry OpenModelicaRuntimeCUtilMMC's regex along.
 if(MINGW)
-  target_link_libraries(OpenModelicaRuntimeMMC PUBLIC dbghelp)
+  target_link_libraries(OpenModelicaRuntimeMMC PUBLIC dbghelp regex)
   target_link_options(OpenModelicaRuntimeMMC PRIVATE -Wl,--export-all-symbols)
 elseif(MSVC)
+  target_link_libraries(OpenModelicaRuntimeMMC PUBLIC omc::3rd::regex)
   set_target_properties(OpenModelicaRuntimeMMC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
