@@ -5,7 +5,7 @@
 #
 
 TOP_DIR=@abs_top_builddir@
-FMIINCLUDE = ../../3rdParty/FMIL/install/include
+FMIINCLUDE = ../../3rdParty/fmi-library/install/include
 GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 CJSONINCLUDE = ../../3rdParty/cJSON
 ZMQINCLUDE = ../../3rdParty/libzmq/include

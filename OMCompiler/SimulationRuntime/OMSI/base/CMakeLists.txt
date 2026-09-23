@@ -25,7 +25,7 @@ set_target_properties(${OSUBaseName} PROPERTIES MACOSX_RPATH ON)
 # TODO: Remove when switching to CMake build
 if(NOT TARGET omc::3rd::FMIL::expat)
   find_library(LIB_EXPAT NAMES expat libexpat
-    PATHS ${OMBUILDDIR}/lib/omc ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/)
+    PATHS ${OMBUILDDIR}/lib/omc ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/fmi-library/build_omc/ExpatEx/)
   if(NOT LIB_EXPAT)
     message(FATAL_ERROR "Could not find expat library")
   endif()
@@ -53,7 +53,7 @@ if(TARGET omc::3rd::FMIL::expat)
 else()
   # Fallback for "standalone" makefile build
   # TODO: Remove when switching to CMake build
-  install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/libexpat.a DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/fmi-library/build_omc/ExpatEx/libexpat.a DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 install(FILES

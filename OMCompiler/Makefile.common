@@ -421,28 +421,28 @@ testlibrariemsl41cpp:
 
 # Build and install FMILibrary
 fmil: $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB)
-$(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
+$(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/fmi-library/build_omc/Makefile
 	@# Pass CC/CFLAGS/CPPFLAGS because FMIL does not configure subprojects with the selected CC. Shocking; a cmake project not working the way it should.
-	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
-	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
-	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT)
-	cp -pPR 3rdParty/FMIL/install/$(LIB_OMC)/$(LIBFMILIB) $(builddir_lib_omc)
+	test -f 3rdParty/fmi-library/build_omc/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/fmi-library/build_omc
+	test -d 3rdParty/fmi-library/install || $(MAKE) -C 3rdParty/fmi-library/build_omc install
+	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/fmi-library/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/fmi-library/install/$(LIB_OMC)/libfmilib_shared$(SHREXT)
+	cp -pPR 3rdParty/fmi-library/install/$(LIB_OMC)/$(LIBFMILIB) $(builddir_lib_omc)
 # On Windows do NOT alias libfmilib$(SHREXT) -> libfmilib_shared.dll: MSYS `ln -sf` copies (no real symlink),
 # so this would create a stray libfmilib.dll next to libfmilib.a and make `-lfmilib` ambiguous. Keep static `-lfmilib`.
-	cp -v -pPR 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib* $(builddir_lib_omc);\
+	cp -v -pPR 3rdParty/fmi-library/install/$(LIB_OMC)/libfmilib* $(builddir_lib_omc);\
 	test ! -f $(OMBUILDDIR)/$(LIB_OMC)/libfmilib_shared$(SHREXT) -o "$(SHREXT)" = ".dll" || ln -sf libfmilib_shared$(SHREXT) $(OMBUILDDIR)/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	mkdir -p $(builddir_inc)/fmil/
-	cp -pPR 3rdParty/FMIL/install/include/* $(builddir_inc)/fmil/
+	cp -pPR 3rdParty/fmi-library/install/include/* $(builddir_inc)/fmil/
 
-3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt $(LIBMODELICAZLIB)
-	test -d 3rdParty/FMIL
-	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=ON -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
+3rdParty/fmi-library/build_omc/Makefile: 3rdParty/fmi-library/CMakeLists.txt $(LIBMODELICAZLIB)
+	test -f 3rdParty/fmi-library/CMakeLists.txt
+	mkdir -p 3rdParty/fmi-library/build_omc
+	(cd 3rdParty/fmi-library/build_omc && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=ON -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil
-	cp -pPR 3rdParty/FMIL/build/ExpatEx/install/lib/libexpat$(STAEXT) $(builddir_lib_omc)
+	cp -pPR 3rdParty/fmi-library/build_omc/ExpatEx/install/lib/libexpat$(STAEXT) $(builddir_lib_omc)
 
 qjson:
 	test -d 3rdParty/qjson-0.8.1
@@ -564,7 +564,7 @@ distclean: clean
 	rm -f config.status config.log
 	rm -rf build/
 fmil-clean:
-	rm -rf 3rdParty/FMIL/build 3rdParty/FMIL/install 3rdParty/FMIL/Makefile
+	rm -rf 3rdParty/fmi-library/build_omc 3rdParty/fmi-library/install
 gc-clean:
 	if test -f 3rdParty/gc/Makefile; then $(MAKE) -C 3rdParty/gc distclean; fi
 	rm -f 3rdParty/gc/Makefile
