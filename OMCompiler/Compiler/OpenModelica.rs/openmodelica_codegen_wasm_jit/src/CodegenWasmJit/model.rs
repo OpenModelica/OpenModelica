@@ -323,7 +323,11 @@ pub(super) fn build_sim_model(
                         // Sources that only wrap a platform library still compile,
                         // and keeping the result would hide the functions from the
                         // host fallback that can serve them.
-                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm);
+                        let carried = match ext_builtin {
+                            true => openmodelica_wasm_jit::dylink::libraries_for(ext_imports.iter().map(|s| s.name.as_str())),
+                            false => Vec::new(),
+                        };
+                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm, &carried);
                         if unresolved.is_empty() {
                             ext_libs.wasm.push(l);
                         } else {
