@@ -5189,6 +5189,7 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
        if stringEq(sub, "") then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
        else '(&(jacobian->seedVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then
+       if boolAnd(stringEq(sub, ""), isJacobianColumnCref(cr)) then '0.0' else
        // Subscripted seed cref not in jac_map (e.g. a cross-Jacobian seed
        // reference, or a whole-array seed accessed with a dynamic subscript).
        // Retry with the subscripts stripped: if the base cref resolves to a
@@ -6091,7 +6092,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
               let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
               let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
               '((modelica_<%type%>*)&(<%nosubname%>))'
-            else if isContiguousArrayCref(cr) then
+            else if isContiguousArrayCref(cr, context) then
               let &sub = buffer ""
               let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
               '((modelica_<%type%>*)&(<%nosubname%>))'
@@ -6104,7 +6105,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
       let &sub = buffer ""
       let dimsLenStr = listLength(crefDims(cr))
       let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
-      let arrData = if isContiguousArrayCref(crefStripSubs(cr)) then
+      let arrData = if isContiguousArrayCref(crefStripSubs(cr), context) then
           '&<%contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
         else
           '<%daeExpCrefRhsArrayElems(crefStripSubs(cr), type, context, &preExp, &varDecls, &varFrees, &auxFunction)%>.data'
@@ -6116,7 +6117,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithVariableSubs(cr) then
-      if isContiguousArrayCref(crefStripSubs(cr)) then
+      if isContiguousArrayCref(crefStripSubs(cr), context) then
         let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
         let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
         '<%nosubname%>'
