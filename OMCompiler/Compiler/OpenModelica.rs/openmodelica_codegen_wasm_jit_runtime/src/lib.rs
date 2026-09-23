@@ -180,11 +180,74 @@ use alloc::format;
 use alloc::string::String;
 use core::alloc::{GlobalAlloc, Layout};
 
-// dlmalloc is the global allocator on both targets so every allocation in the
+// dlmalloc is the heap on both targets so every allocation in the
 // merged module — runtime `rt_alloc`, and on wasip1 the driver's `Vec`s — shares
 // one heap. (It builds for wasip1 too.)
-#[global_allocator]
+#[cfg_attr(not(target_arch = "wasm32"), global_allocator)]
 static GLOBAL: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
+
+/// The Rust heap in wasm: `GLOBAL` behind size-class free lists, as `rt_alloc`
+/// has, for the solvers' per-call work vectors. Single-threaded, as `FREE`.
+#[cfg(target_arch = "wasm32")]
+mod rust_heap {
+    use super::{ALIGN, GLOBAL};
+    use core::alloc::{GlobalAlloc, Layout};
+
+    const CACHE_MAX: usize = 1024;
+    /// Class `c` holds blocks of `(c + 1) * ALIGN` bytes.
+    const CLASSES: usize = CACHE_MAX / ALIGN;
+
+    struct RustHeap(core::cell::UnsafeCell<[*mut u8; CLASSES]>);
+    unsafe impl Sync for RustHeap {}
+
+    #[global_allocator]
+    static RUST_HEAP: RustHeap = RustHeap(core::cell::UnsafeCell::new([core::ptr::null_mut(); CLASSES]));
+
+    #[inline]
+    fn class(l: Layout) -> Option<usize> {
+        (l.size() <= CACHE_MAX && l.align() <= ALIGN).then(|| (l.size().max(1) - 1) / ALIGN)
+    }
+
+    unsafe impl GlobalAlloc for RustHeap {
+        #[inline]
+        unsafe fn alloc(&self, l: Layout) -> *mut u8 {
+            let Some(c) = class(l) else { return unsafe { GLOBAL.alloc(l) } };
+            let lists = unsafe { &mut *self.0.get() };
+            let head = lists[c];
+            if head.is_null() {
+                return unsafe { GLOBAL.alloc(Layout::from_size_align_unchecked((c + 1) * ALIGN, ALIGN)) };
+            }
+            lists[c] = unsafe { *(head as *mut *mut u8) };
+            head
+        }
+
+        #[inline]
+        unsafe fn dealloc(&self, p: *mut u8, l: Layout) {
+            let Some(c) = class(l) else { return unsafe { GLOBAL.dealloc(p, l) } };
+            let lists = unsafe { &mut *self.0.get() };
+            unsafe { *(p as *mut *mut u8) = lists[c] };
+            lists[c] = p;
+        }
+
+        unsafe fn realloc(&self, p: *mut u8, l: Layout, new_size: usize) -> *mut u8 {
+            let new = unsafe { Layout::from_size_align_unchecked(new_size, l.align()) };
+            match (class(l), class(new)) {
+                (None, None) => unsafe { GLOBAL.realloc(p, l, new_size) },
+                (Some(a), Some(b)) if a == b => p,
+                _ => {
+                    let q = unsafe { self.alloc(new) };
+                    if !q.is_null() {
+                        unsafe {
+                            core::ptr::copy_nonoverlapping(p, q, l.size().min(new_size));
+                            self.dealloc(p, l);
+                        }
+                    }
+                    q
+                }
+            }
+        }
+    }
+}
 
 /// Abort into a wasm trap; on the host `cargo test` build (no wasm intrinsics)
 /// this is an ordinary unreachable — the numeric paths under test never hit it.
