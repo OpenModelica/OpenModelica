@@ -317,12 +317,18 @@ pub(super) fn dylink_needs(bytes: &[u8]) -> Vec<String> {
 }
 
 /// Which of `needs` nothing in the wasm world defines; `--allow-undefined` lets a
-/// library link without them.
-pub(super) fn unresolved_dylink_needs(needs: &[String], lib: &ExtLibrary, others: &[ExtLibrary]) -> Vec<String> {
+/// library link without them. `carried` are the shipped libraries loaded beside it.
+pub(super) fn unresolved_dylink_needs(
+    needs: &[String],
+    lib: &ExtLibrary,
+    others: &[ExtLibrary],
+    carried: &[&str],
+) -> Vec<String> {
     let mut defined: HashSet<&str> = HashSet::new();
     for bytes in others
         .iter()
         .map(|l| &l.bytes[..])
+        .chain(carried.iter().filter_map(|f| openmodelica_wasm_jit::ext_library(f)))
         .chain([&lib.bytes[..], LIBC_PIC(), openmodelica_wasm_jit::RUNTIME_WASM()])
     {
         defined.extend(wasm_exports(bytes));
