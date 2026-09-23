@@ -951,13 +951,13 @@ void mul_integer_vector_matrix(const integer_array * a, const integer_array * b,
     omc_assert_macro(b->ndims == 2);
     /* Assert dest vector of correct size */
 
-    i_size = a->dim_size[0];
-    j_size = b->dim_size[1];
+    i_size = b->dim_size[1];
+    j_size = b->dim_size[0];
 
     for(i = 0; i < i_size; ++i) {
         tmp = 0;
         for(j = 0; j < j_size; ++j) {
-            tmp += integer_get(*a, j) * integer_get(*b, (j * j_size) + i);
+            tmp += integer_get(*a, j) * integer_get(*b, (j * i_size) + i);
         }
         integer_set(dest, i, tmp);
     }

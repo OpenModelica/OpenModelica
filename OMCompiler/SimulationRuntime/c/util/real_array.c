@@ -1535,15 +1535,15 @@ void mul_real_vector_matrix(const real_array *a, const real_array *b, real_array
     /* Assert b matrix */
     /* Assert dest vector of correct size */
 
-    i_size = a->dim_size[0];
-    j_size = b->dim_size[1];
+    i_size = b->dim_size[1];
+    j_size = b->dim_size[0];
 
     for (i = 0; i < i_size; ++i)
     {
         tmp = 0;
         for (j = 0; j < j_size; ++j)
         {
-            tmp += real_get(*a, j) * real_get(*b, (j * j_size) + i);
+            tmp += real_get(*a, j) * real_get(*b, (j * i_size) + i);
         }
         real_set(dest, i, tmp);
     }
