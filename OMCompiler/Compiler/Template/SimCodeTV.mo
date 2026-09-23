@@ -1950,6 +1950,12 @@ package SimCodeFunctionUtil
     output DAE.Exp cRefOut;
   end buildCrefExpFromSubs;
 
+  function padAsubSubscripts
+    input DAE.Exp exp;
+    input list<DAE.Subscript> subs;
+    output list<DAE.Subscript> outSubs;
+  end padAsubSubscripts;
+
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
 
