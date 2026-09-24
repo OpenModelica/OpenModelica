@@ -643,8 +643,8 @@ pipeline {
           }
         }
 
-        // parmod, MetaModelica, the Matlab translator, the icon generator and the
-        // C unit tests. Short runs sharing one image, so one node: split up, the
+        // parmod, the Matlab translator, the icon generator and the C unit tests.
+        // Short runs sharing one image, so one node: split up, the
         // image pull and the git checkout cost more than the tests.
         stage('18 testsuite-misc') {
           agent {
