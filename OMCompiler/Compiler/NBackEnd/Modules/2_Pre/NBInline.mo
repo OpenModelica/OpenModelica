@@ -310,12 +310,12 @@ protected
     Expression new_exp;
   algorithm
     exp := match exp
-      case Expression.CREF(ty = Type.COMPLEX(cls = cls)) guard(Type.isRecord(exp.ty) and isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo())) algorithm
+      case Expression.CREF(ty = Type.COMPLEX()) guard(Type.isRecord(exp.ty) and isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo())) algorithm
         var_ptr  := BVariable.getVarPointer(exp.cref, sourceInfo());
         children := BVariable.getRecordChildren(var_ptr);
         if List.any(children, BVariable.isConst) and List.compareLength(children, Type.recordFields(exp.ty)) == 0 then
           elements := list(Replacements.recordChildArg(child) for child in BVariable.getRecordChildrenCref(exp.cref));
-          new_exp  := Expression.makeRecord(InstNode.fullPath(cls), exp.ty, elements);
+          new_exp  := Expression.makeRecord(InstNode.fullPath(Type.complexNode(exp.ty)), exp.ty, elements);
         else
           new_exp  := exp;
         end if;
