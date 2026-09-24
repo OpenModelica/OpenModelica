@@ -1,0 +1,57 @@
+// name: ifEquationFunctionCall
+// keywords: NewBackend function if-equation for-equation assert
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -rf IfEqFunctionCall*
+//
+// A function call in a branch of an if-equation inside a for-equation must only be evaluated
+// if the branch is taken. Here the assert of the function would fail for k > n.
+
+loadString("
+function checkedSum
+  input Integer n;
+  input Integer k;
+  output Integer s;
+algorithm
+  assert(n >= k, \"n must be k or greater.\");
+  s := n + k;
+end checkedSum;
+
+model IfEqFunctionCall
+  Real y[4];
+  Integer n;
+equation
+  n = 2;
+  for k in 1:4 loop
+    if n >= k then
+      y[k] = checkedSum(n, k);
+    else
+      y[k] = 0.0;
+    end if;
+  end for;
+  annotation(experiment(StopTime = 1));
+end IfEqFunctionCall;
+"); getErrorString();
+
+simulate(IfEqFunctionCall); getErrorString();
+val(y[1], 0);
+val(y[2], 0);
+val(y[3], 0);
+val(y[4], 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IfEqFunctionCall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'IfEqFunctionCall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 4.0
+// 0.0
+// 0.0
+// endResult

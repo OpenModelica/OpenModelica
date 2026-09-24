@@ -5650,6 +5650,8 @@ template rcZeroInit(String ty)
   match rcKind(ty)
     case "" then ""
     case "string" then " = NULL"
+    // a record without members is an aggregate with no elements, where {0} is an error
+    case "record" then " = {}"
     else " = {0}"
 end rcZeroInit;
 
@@ -8851,7 +8853,7 @@ template startArrayGather(ComponentRef cr, Text type, Text arr, Text ndims, Text
   let idx = tempDecl("modelica_integer", &varDecls, &varFrees)
   <<
   alloc_<%type%>_array(&<%arr%>, <%ndims%>, <%dims%>);
-  for (<%idx%> = 0; <%idx%> < <%type%>_array_nr_of_elements(<%arr%>); <%idx%>++) {
+  for (<%idx%> = 0; <%idx%> < base_array_nr_of_elements(<%arr%>); <%idx%>++) {
     <%if stringEq(type, "string")
        then 'omc_string_store(((modelica_string*)<%arr%>.data) + <%idx%>, <%startArrayElement(cr, type, idx)%>);'
        else '((modelica_<%type%>*)<%arr%>.data)[<%idx%>] = <%startArrayElement(cr, type, idx)%>;'%>
@@ -8865,7 +8867,7 @@ template startArrayScatter(ComponentRef cr, Text type, Text arr, Text &varDecls,
 ::=
   let idx = tempDecl("modelica_integer", &varDecls, &varFrees)
   <<
-  for (<%idx%> = 0; <%idx%> < <%type%>_array_nr_of_elements(<%arr%>); <%idx%>++) {
+  for (<%idx%> = 0; <%idx%> < base_array_nr_of_elements(<%arr%>); <%idx%>++) {
     <%if stringEq(type, "string")
        then 'omc_string_store(&(<%startArrayElement(cr, type, idx)%>), ((modelica_string*)<%arr%>.data)[<%idx%>]);'
        else '<%startArrayElement(cr, type, idx)%> = ((modelica_<%type%>*)<%arr%>.data)[<%idx%>];'%>

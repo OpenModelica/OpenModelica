@@ -9039,8 +9039,16 @@ template genericBranch(SimBranch branch, Context context, Text &preExp, Text &va
     let condition_ = match condition
       case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)>>
       else ""
+    // the pre-statements of a body (e.g. a function call and its error check) must run in
+    // the branch, not before the whole if chain where they would run for every branch
     let body_ = (body |> (lhs, rhs) =>
-      <<<%daeExp(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction)%> = <%daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)%>;>>
+      let &bodyPre = buffer ""
+      let lhs_ = daeExp(lhs, context, &bodyPre, &varDecls, &varFrees, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &bodyPre, &varDecls, &varFrees, &auxFunction)
+      <<
+      <%bodyPre%>
+      <%lhs_%> = <%rhs_%>;
+      >>
       ; separator="\n")
     <<
     <%condition_%>{
