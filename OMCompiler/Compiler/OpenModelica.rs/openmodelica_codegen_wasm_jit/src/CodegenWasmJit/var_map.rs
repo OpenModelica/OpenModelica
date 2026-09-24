@@ -20,6 +20,9 @@ pub(crate) struct SimVarMap {
     /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
     /// slot instead of the inline expression.
     pub(super) start_slots: Arc<HashMap<String, u32>>,
+    /// Alias cref key -> (target cref key, negation); `$START.<alias>` reads the
+    /// target's start, as C does.
+    pub(super) start_aliases: Arc<HashMap<String, (String, Neg)>>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
     pub(super) array_groups: Arc<HashMap<String, ArrayGroup>>,
     /// The arrays that are not one contiguous range (see `ScatterGroup`).
@@ -548,6 +551,7 @@ pub(super) fn build_var_map(
         vars: Arc::default(),
         starts: Arc::default(),
         start_slots: Arc::default(),
+        start_aliases: Arc::default(),
         array_groups: Arc::default(),
         scatter_groups: Arc::default(),
         consts: Arc::default(),
@@ -850,6 +854,8 @@ pub(super) fn build_var_map(
             heap: tslot.heap,
         };
         Arc::make_mut(&mut map.vars).insert(sim_cref_key(&av.name)?, slot);
+        let start_neg = if negate { Neg::None.toggle(is_bool) } else { Neg::None };
+        Arc::make_mut(&mut map.start_aliases).insert(sim_cref_key(&av.name)?, (tkey.clone(), start_neg));
         // An alias array is assigned as a whole, so it needs a group over the
         // target's slots.
         for g in array_element_keys(&av.name)? {
