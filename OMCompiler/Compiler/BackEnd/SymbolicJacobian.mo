@@ -1664,6 +1664,7 @@ algorithm
 try
   // for now perform on collapsed system
   backendDAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+  backendDAE := sampleLeftLimit(backendDAE);
   backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
   backendDAE := BackendDAEUtil.transformBackendDAE(backendDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
 
@@ -1726,6 +1727,82 @@ else
   outFunctionTree := inBackendDAE.shared.functionTree;
 end try;
 end createFMIModelDerivatives;
+
+protected function sampleLeftLimit
+  "A clocked partition reads the variables of the continuous partitions through
+  $getPart, the sample operator, at the clock tick and before they are updated.
+  A discrete-time variable can jump at the tick, the sample reads its value from
+  before the jump, so the clocked equation does not depend on it instantly. A
+  loop closed over a sample/hold pair, as in ClockToBoolean, is legal for that
+  reason, but merged with the continuous partitions it becomes a purely discrete
+  algebraic loop that cannot be sorted. Put such variables in pre() inside the
+  $getPart of the clocked equations: the value stays the same and the dependency
+  is cut. A continuous-time variable does not jump, its dependency is kept."
+  input output BackendDAE.BackendDAE dae;
+protected
+  list<BackendDAE.Variables> contVars;
+algorithm
+  contVars := list(syst.orderedVars for syst guard not BackendDAEUtil.isClockedSyst(syst) in dae.eqs);
+  dae.eqs := list(if BackendDAEUtil.isClockedSyst(syst) then sampleLeftLimitSyst(syst, contVars) else syst for syst in dae.eqs);
+end sampleLeftLimit;
+
+protected function sampleLeftLimitSyst
+  input output BackendDAE.EqSystem syst;
+  input list<BackendDAE.Variables> contVars;
+algorithm
+  syst.orderedEqs := BackendEquation.traverseEquationArray_WithUpdate(syst.orderedEqs, sampleLeftLimitEqn, contVars);
+end sampleLeftLimitSyst;
+
+protected function sampleLeftLimitEqn
+  input output BackendDAE.Equation eq;
+  input output list<BackendDAE.Variables> contVars;
+algorithm
+  eq := BackendEquation.traverseExpsOfEquation(eq, Expression.traverseSubexpressionsHelper, (sampleLeftLimitExp, contVars));
+end sampleLeftLimitEqn;
+
+protected function sampleLeftLimitExp
+  input output DAE.Exp exp;
+  input output list<BackendDAE.Variables> contVars;
+protected
+  DAE.Exp arg;
+algorithm
+  exp := match exp
+    case DAE.CALL(path = Absyn.IDENT("$getPart"), expLst = {arg})
+      algorithm
+        (arg, _) := Expression.traverseExpBottomUp(arg, crefLeftLimitExp, contVars);
+        exp.expLst := {arg};
+      then exp;
+    else exp;
+  end match;
+end sampleLeftLimitExp;
+
+protected function crefLeftLimitExp
+  input output DAE.Exp exp;
+  input output list<BackendDAE.Variables> contVars;
+algorithm
+  exp := match exp
+    case DAE.CREF() guard isDiscreteVarIn(exp.componentRef, contVars)
+      then Expression.makePureBuiltinCall("pre", {exp}, exp.ty);
+    else exp;
+  end match;
+end crefLeftLimitExp;
+
+protected function isDiscreteVarIn
+  input DAE.ComponentRef cref;
+  input list<BackendDAE.Variables> varsLst;
+  output Boolean isDiscrete = false;
+protected
+  BackendDAE.Var var;
+algorithm
+  for vars in varsLst loop
+    try
+      (var, _) := BackendVariable.getVarSingle(cref, vars);
+      isDiscrete := BackendVariable.isVarDiscrete(var);
+      return;
+    else
+    end try;
+  end for;
+end isDiscreteVarIn;
 
 protected function fmiDerSparsePattern
   "The FMIDER dependency pattern of a DAE that is a single partition, taken as it
