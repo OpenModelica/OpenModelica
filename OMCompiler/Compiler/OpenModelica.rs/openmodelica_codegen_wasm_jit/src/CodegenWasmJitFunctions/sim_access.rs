@@ -1216,7 +1216,17 @@ fn emit_sim_start_scalar(ctx: &mut FnCtx, key: &str) -> Result<Option<WTy>> {
             ctx.emit(we::Instruction::F64Const(0.0.into()));
             Ok(Some(WTy::F64))
         }
-        None => Ok(None),
+        None => {
+            // `$START` of an alias reads the start of its target, as C does.
+            let Some((target, neg)) = ctx.sim()?.start_aliases.get(key).cloned() else {
+                return Ok(None);
+            };
+            let wty = emit_sim_start_scalar(ctx, &target)?;
+            if let Some(wty) = wty {
+                emit_neg(ctx, wty, neg);
+            }
+            Ok(wty)
+        }
     }
 }
 

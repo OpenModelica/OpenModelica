@@ -136,6 +136,8 @@ pub(crate) struct SimCtx {
     /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
     /// present, else the inline expression. Empty while building the fill function.
     pub(crate) start_slots: Arc<HashMap<String, u32>>,
+    /// Alias cref key -> (target cref key, negation) for `$START.<alias>`.
+    pub(crate) start_aliases: Arc<HashMap<String, (String, Neg)>>,
     /// Canonical cref key of an *array-valued* model variable (the base name with
     /// no final subscript, e.g. `body.R_start.T`) -> the contiguous slot range its
     /// scalarized elements occupy. A whole-array reference reads/writes the range

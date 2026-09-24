@@ -1901,6 +1901,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         vars: SlotMap::new(var_map.vars.clone()),
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
+        start_aliases: var_map.start_aliases.clone(),
         array_groups: var_map.array_groups.clone(),
         scatter_groups: var_map.scatter_groups.clone(),
         consts: var_map.consts.clone(),
