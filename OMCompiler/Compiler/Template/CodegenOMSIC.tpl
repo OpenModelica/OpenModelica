@@ -192,8 +192,6 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     # Libraries
     EXPAT_LIBDIR=$(OMLIB)/omc
     EXPAT_LIB=expat
-    # Empty when OpenModelica was built against the system expat; -l$(EXPAT_LIB) then finds that one.
-    EXPAT_BUNDLED_LIBS=$(wildcard $(EXPAT_LIBDIR)/lib$(EXPAT_LIB).*)
 
     LAPACK_LIBDIR=<%lapackDirWin%>
     LAPACK_LIB=<%match makefileParams.platform case "win32" case "win64" then 'openblas' else 'lapack'%>
@@ -240,7 +238,9 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     <%\t%>cp -a $(OMLIB)/omc/omsi/libOMSIC_static.* <%fileNamePrefix%>.fmutmp/sources/libs
     <%\t%>cp -a $(OMLIB)/omc/omsi/libOMSISolver_static.* <%fileNamePrefix%>.fmutmp/sources/libs
     <%\t%># Third party libraries
-    <%\t%>$(if $(EXPAT_BUNDLED_LIBS),cp -f $(EXPAT_BUNDLED_LIBS) <%fileNamePrefix%>.fmutmp/sources/libs)
+    <%\t%># No libexpat there when OpenModelica was built against the system expat; -l$(EXPAT_LIB) then finds that one.
+    <%\t%># Tested in the shell, not with $(wildcard): OMLIB is shell-quoted.
+    <%\t%>if ls $(EXPAT_LIBDIR)/lib$(EXPAT_LIB).* >/dev/null 2>&1; then cp -f $(EXPAT_LIBDIR)/lib$(EXPAT_LIB).* <%fileNamePrefix%>.fmutmp/sources/libs; fi
     <%\t%>cp -fP $(THIRD_PARTY_DYNAMIC_LIBS) <%fileNamePrefix%>.fmutmp/binaries/<%makefileParams.platform%>
 
     <%\t%>cp -a modelDescription.xml <%fileNamePrefix%>.fmutmp/
