@@ -2801,6 +2801,17 @@ public
     alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, SOME(diffInfo), alg.scope, alg.source);
   end differentiateAlgorithm;
 
+  function wildIfNotCref
+    "replaces direct non-cref tuple elements by a wildcard"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.TUPLE()
+      then Expression.TUPLE(exp.ty, list(if Expression.isCref(e) then e else Expression.CREF(Expression.typeOf(e), ComponentRef.WILD()) for e in exp.elements));
+      else exp;
+    end match;
+  end wildIfNotCref;
+
   function differentiateStatement
     input Statement stmt;
     input UnorderedSet<Statement> diffInfo;
@@ -2841,6 +2852,16 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
+      // I-c. differentiate tuple assignment from a function call
+      // (a, b) := f(x) -> (a', b') := f'(x, x')
+      case diff_stmt as Statement.ASSIGNMENT(lhs = Expression.TUPLE()) guard(Expression.isCall(diff_stmt.rhs)) algorithm
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        // outputs without a derivative variable (e.g. Integer) are ignored
+        diff_stmt.lhs := wildIfNotCref(lhs);
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};
 

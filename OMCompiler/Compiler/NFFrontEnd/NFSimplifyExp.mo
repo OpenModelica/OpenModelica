@@ -871,6 +871,12 @@ algorithm
       // remove expressions that are in both arguments and inv_arguments
       (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
 
+      // a neutral constant can not be removed if it is the only source of the dimensions, e.g. s * {1.0}
+      if neutralConst and not listEmpty(arguments) and Type.dimensionCount(Expression.typeOf(new_const)) >
+          List.fold(listAppend(arguments, inv_arguments), maxDimensionCount, 0) then
+        neutralConst := false;
+      end if;
+
       result := match (mcl, arguments, inv_arguments)
         // const + {} - {} = const
         case (NFOperator.MathClassification.ADDITION, {}, {})
@@ -889,7 +895,9 @@ algorithm
         then Expression.negate(tmp);
 
         // 0 * {...} / {...} = 0
-        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const) and not Type.isArray(Operator.typeOf(operator))) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const) and Type.hasKnownSize(Operator.typeOf(operator)))
+        then Expression.makeZero(Operator.typeOf(operator));
 
         else Expression.MULTARY(
             arguments     = if neutralConst then arguments else new_const :: arguments,
@@ -1082,9 +1090,11 @@ function simplifyBinaryMul
   output Expression outExp;
 algorithm
   outExp := match exp1
-    // 0 * e = 0
-    case Expression.INTEGER(value = 0) then exp1;
-    case Expression.REAL(value = 0.0) then exp1;
+    // 0 * e = 0, the zero has to keep the dimensions if e is an array
+    case Expression.INTEGER(value = 0) guard(not Type.isArray(Operator.typeOf(op))) then exp1;
+    case Expression.REAL(value = 0.0) guard(not Type.isArray(Operator.typeOf(op))) then exp1;
+    case Expression.INTEGER(value = 0) guard(Type.hasKnownSize(Operator.typeOf(op))) then Expression.makeZero(Operator.typeOf(op));
+    case Expression.REAL(value = 0.0) guard(Type.hasKnownSize(Operator.typeOf(op))) then Expression.makeZero(Operator.typeOf(op));
 
     // 1 * e = e
     case Expression.INTEGER(value = 1) then exp2;
@@ -1385,6 +1395,13 @@ algorithm
     else Expression.CAST(ty, exp);
   end match;
 end simplifyCast;
+
+function maxDimensionCount
+  input Expression exp;
+  input output Integer count;
+algorithm
+  count := max(count, Type.dimensionCount(Expression.typeOf(exp)));
+end maxDimensionCount;
 
 function simplifySubscriptedExp
   input output Expression subscriptedExp;

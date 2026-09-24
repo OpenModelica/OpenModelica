@@ -3261,8 +3261,13 @@ protected
 
     for var in Vector.toList(unassigned) loop
       if InstNode.isOutput(var) then
-        Error.addSourceMessage(Error.GENERATED_FUNCTION_UNASSIGNED_OUTPUT,
-          {InstNode.name(var), fn_name}, InstNode.info(var));
+        if Type.isDiscrete(InstNode.getType(var)) then
+          // the derivative of a discrete output (e.g. an Integer error code) is zero
+          uninitialized := var :: uninitialized;
+        else
+          Error.addSourceMessage(Error.GENERATED_FUNCTION_UNASSIGNED_OUTPUT,
+            {InstNode.name(var), fn_name}, InstNode.info(var));
+        end if;
       end if;
     end for;
 
