@@ -7,7 +7,7 @@ REM Arguments
 REM 1 platform (msvc64|msvc32), msvc64 if omitted
 REM
 REM Exits with 1, saying so, when no Visual Studio with the C++ toolset is found.
-where /q cl.exe && where /q nmake.exe && exit /b 0
+where cl.exe >NUL 2>&1 && where nmake.exe >NUL 2>&1 && exit /b 0
 set VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe
 if not exist "%VSWHERE%" set VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe
 if not exist "%VSWHERE%" goto :NOT_FOUND
