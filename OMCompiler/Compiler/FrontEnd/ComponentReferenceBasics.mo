@@ -901,43 +901,45 @@ algorithm
   res := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ",") + "}";
 end printComponentRefListStr;
 
-public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
+public constant Integer crefHashSeed = 5381;
+
+public function hashComponentRef
+  "djb2 continued over the qualifiers and subscripts in order."
   input DAE.ComponentRef cr;
-  output Integer hash;
+  output Integer hash = crefHashSeed;
+protected
+  DAE.ComponentRef c = cr;
+  Boolean last = false;
 algorithm
-hash := match cr
-  local
-    DAE.Ident id;
-    DAE.Type tp;
-    list<DAE.Subscript> subs;
-    DAE.ComponentRef cr1;
-  case DAE.CREF_IDENT(id,tp,subs) algorithm
-    //print("IDENT, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
-  then stringHashDjb2(id) + hashSubscripts(tp,subs);
-
-  case DAE.CREF_QUAL(id,tp,subs,cr1) algorithm
-    //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
-  then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
-
-  else 0;
-end match;
+  while not last loop
+    (hash, c, last) := match c
+      case DAE.CREF_IDENT() then (crefHashSubscripts(c.subscriptLst, crefHashIdent(c.ident, hash)), c, true);
+      case DAE.CREF_QUAL() then (crefHashSubscripts(c.subscriptLst, crefHashIdent(c.ident, hash)), c.componentRef, false);
+      else (hash, c, true);
+    end match;
+  end while;
 end hashComponentRef;
 
-protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"
-  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
-  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real,
-  // so the dimensions of tp cannot be used as the per-subscript factor yet.
-  input DAE.Type tp;
+public function crefHashIdent
+  input String ident;
+  input Integer hash;
+  output Integer outHash = stringHashDjb2Continue(ident, stringHashDjb2Continue(".", hash));
+end crefHashIdent;
+
+protected function crefHashSubscripts
   input list<DAE.Subscript> subs;
-  output Integer hash = 0;
-protected
-  Integer factor = 1;
+  input output Integer hash;
 algorithm
-  for s in subs loop
-    hash := hash + hashSubscript(s)*factor;
-    factor := factor*1000/* *dim */;
+  for sub in subs loop
+    hash := crefHashSubscript(sub, hash);
   end for;
-end hashSubscripts;
+end crefHashSubscripts;
+
+public function crefHashSubscript
+  input DAE.Subscript sub;
+  input Integer hash;
+  output Integer outHash = intHashDjb2Continue(hashSubscript(sub), stringHashDjb2Continue("[", hash));
+end crefHashSubscript;
 
 public function hashSubscript "help function"
   input DAE.Subscript sub;
