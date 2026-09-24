@@ -1427,6 +1427,19 @@ protected
     end if;
   end optionMinMax;
 
+  function isAuxStart
+    "true if the start value is the call of a function alias variable"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CALL()            then true;
+      case Expression.RECORD_ELEMENT()  then Expression.isCall(exp.recordExp);
+      case Expression.TUPLE_ELEMENT()   then Expression.isCall(exp.tupleExp);
+      else false;
+    end match;
+  end isAuxStart;
+
   function optionStartFixed
     "Collects start and fixed attributes if available."
     input Pointer<Variable> var_ptr;
@@ -1437,8 +1450,11 @@ protected
   algorithm
     if isSome(attr_start) then
       SOME(start_b) := attr_start;
-      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), start_b, attrcollector.start_binding_map);
+      // the generated start values of function alias variables (see NBFunctionAlias) are only guesses
+      if not (BVariable.isFunctionAlias(var_ptr) and Binding.source(start_b) == NFBinding.Source.GENERATED and isAuxStart(Binding.getTypedExp(start_b))) then
+        UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
+        UnorderedMap.add(BVariable.getVarName(var_ptr), start_b, attrcollector.start_binding_map);
+      end if;
     end if;
     if isSome(attr_fixed) then
       SOME(fixed_b) := attr_fixed;

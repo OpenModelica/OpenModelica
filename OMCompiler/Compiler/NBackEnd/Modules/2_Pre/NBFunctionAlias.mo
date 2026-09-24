@@ -52,6 +52,7 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -69,6 +70,7 @@ protected
   import NBVariable.{VariablePointer, VariablePointers, VarData};
 
   // Util imports
+  import List;
   import StringUtil;
   import UnorderedMap;
 public
@@ -289,7 +291,7 @@ protected
     Pointer<Integer> aux_index = Pointer.create(1);
     list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck = {}, new_vars_infr = {};
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck = {}, new_eqns_infr = {};
-    list<tuple<Call_Id, Call_Aux>> debug_lst_sim = {}, debug_lst_ini;
+    list<tuple<Call_Id, Call_Aux>> debug_lst_sim = {}, debug_lst_ini, sim_aliases = {};
   algorithm
     () := match (eqData, varData)
       case (EqData.EQ_DATA_SIM(), VarData.VAR_DATA_SIM()) algorithm
@@ -305,8 +307,9 @@ protected
         (new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init) :=
           resolveAux(map, eqData.uniqueIndex, false, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init);
 
+        sim_aliases := UnorderedMap.toList(map);
         if Flags.isSet(Flags.DUMP_CSE) then
-          debug_lst_sim := UnorderedMap.toList(map);
+          debug_lst_sim := sim_aliases;
         end if;
 
         // afterwards collect all functions from initial equations
@@ -348,6 +351,11 @@ protected
       BackendDAE.lowerRecordChildren(var, VarData.getVariables(varData));
     end for;
 
+    // the record children exist now, so the auxiliary variables can get their start values
+    for tpl in sim_aliases loop
+      addAuxStartValue(Util.tuple21(tpl), Util.tuple22(tpl));
+    end for;
+
     // dump if flag is set
     if Flags.isSet(Flags.DUMP_CSE) then
       // remove sim vars from final map to see whats exclusively initial
@@ -361,6 +369,129 @@ protected
       print(aliasListToString(UnorderedMap.toList(infer_map), BClock.toString, ComponentRef.toString, "Inferred Clocked Function"));
     end if;
   end functionAliasDefault;
+
+  function addAuxStartValue
+    "The continuous outputs of a function call start at the call itself. The arguments are replaced by their
+    start values in the initialization, so a changed start value of an argument also changes the start value here.
+    Without it the outputs start at zero, which can make the Jacobian singular at the start (e.g. for products).
+    Only calls that can safely be evaluated at the start values are used."
+    input Call_Id id;
+    input Call_Aux aux;
+  algorithm
+    if aux.kind == EquationKind.CONTINUOUS and Iterator.isEmpty(id.iter) then
+      () := match (id.call, aux.replacer)
+        local
+          Integer i = 0;
+          Expression replacer, call_exp;
+
+        case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), replacer as Expression.CREF(cref = ComponentRef.CREF()))
+          guard(isStartUsefulFunction(Call.typedFunction(call_exp.call))) algorithm
+            setAuxStartValue(BVariable.getVarPointer(replacer.cref, sourceInfo()), id.call);
+        then ();
+
+        case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), replacer as Expression.TUPLE())
+          guard(isStartUsefulFunction(Call.typedFunction(call_exp.call))) algorithm
+            for elem in replacer.elements loop
+              i := i + 1;
+              () := match elem
+                case Expression.CREF(cref = ComponentRef.CREF())
+                  algorithm
+                    setAuxStartValue(BVariable.getVarPointer(elem.cref, sourceInfo()), Expression.tupleElement(id.call, i));
+                then ();
+                else ();
+              end match;
+            end for;
+        then ();
+
+        else ();
+      end match;
+    end if;
+  end addAuxStartValue;
+
+  function setAuxStartValue
+    "sets the start value of a real variable (or all real children of a record) to the expression"
+    input Pointer<Variable> var_ptr;
+    input Expression exp;
+  protected
+    list<Pointer<Variable>> children = BVariable.getRecordChildren(var_ptr);
+    Variable var;
+  algorithm
+    if listEmpty(children) then
+      var := Pointer.access(var_ptr);
+      if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(var_ptr) and not BVariable.isRecord(var_ptr) then
+        Pointer.update(var_ptr, BVariable.setStartAttribute(var, exp));
+      end if;
+    else
+      for child in children loop
+        var := Pointer.access(child);
+        if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(child) and not BVariable.isRecord(child) then
+          Pointer.update(child, BVariable.setStartAttribute(var, Expression.recordElement(ComponentRef.firstName(var.name), exp)));
+        end if;
+      end for;
+    end if;
+  end setAuxStartValue;
+
+  function isStartUsefulFunction
+    "builtin functions (sin, abs, ...) are cheap to iterate on and not worth a start equation"
+    input Function fn;
+    output Boolean b = not Function.isBuiltin(fn) and isStartSafeFunction(fn, 0);
+  end isStartUsefulFunction;
+
+  function isStartSafeFunction
+    "A function can be evaluated at the start values of its arguments if it can not fail: no asserts or terminates,
+    not impure or external, and all functions it calls are safe as well."
+    input Function fn;
+    input Integer depth;
+    output Boolean safe;
+  protected
+    list<Statement> body;
+    Pointer<Boolean> unsafe;
+  algorithm
+    if Function.isBuiltin(fn) or Function.isDefaultRecordConstructor(fn) then
+      safe := true;
+    elseif depth > 4 or Function.isExternal(fn) or Function.isImpure(fn) then
+      safe := false;
+    else
+      body   := Function.getBody(fn);
+      unsafe := Pointer.create(List.any(body, function Statement.contains(fn = isUnsafeStatement)));
+      if not Pointer.access(unsafe) then
+        Statement.applyExpList(body, function markUnsafeCalls(unsafe = unsafe, depth = depth));
+      end if;
+      safe := not Pointer.access(unsafe);
+    end if;
+  end isStartSafeFunction;
+
+  function isUnsafeStatement
+    input Statement stmt;
+    output Boolean b;
+  algorithm
+    b := match stmt
+      case Statement.ASSERT()     then true;
+      case Statement.TERMINATE()  then true;
+      else false;
+    end match;
+  end isUnsafeStatement;
+
+  function markUnsafeCalls
+    input Expression exp;
+    input Pointer<Boolean> unsafe;
+    input Integer depth;
+  algorithm
+    if not Pointer.access(unsafe) and Expression.contains(exp, function isUnsafeCallExp(depth = depth)) then
+      Pointer.update(unsafe, true);
+    end if;
+  end markUnsafeCalls;
+
+  function isUnsafeCallExp
+    input Expression exp;
+    input Integer depth;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CALL(call = Call.TYPED_CALL()) then not isStartSafeFunction(Call.typedFunction(exp.call), depth + 1);
+      else false;
+    end match;
+  end isUnsafeCallExp;
 
   function aliasListToString<T1, T2>
     input list<tuple<T1, T2>> aux_lst;
