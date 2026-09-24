@@ -14,6 +14,7 @@ arrayScalar.mos \
 algebraicLoop.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
+tupleAssignmentDerivative.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
