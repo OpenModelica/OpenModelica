@@ -217,28 +217,31 @@ static void prepareAdjointJacobianForRowEvaluation(JACOBIAN* jacobian)
 
 static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, JACOBIAN* adjointJacobian)
 {
-  forwardJacobian->sizeTmpVarsAdj = adjointJacobian->sizeTmpVars;
+  forwardJacobian->sizeTmpVarsAdj = adjointJacobian->sizeTmpVarsAdj;
   forwardJacobian->sparsePatternT = adjointJacobian->sparsePattern;
-  forwardJacobian->seedVarsAdj = adjointJacobian->seedVars;
-  forwardJacobian->tmpVarsAdj = adjointJacobian->tmpVars;
-  forwardJacobian->resultVarsAdj = adjointJacobian->resultVars;
-  forwardJacobian->dagT = adjointJacobian->dag;
-  forwardJacobian->evalSelectionRow = adjointJacobian->evalSelectionCol;
-  forwardJacobian->evalRow = adjointJacobian->evalColumn;
-  forwardJacobian->constRowEqns = adjointJacobian->constColEqns;
+  forwardJacobian->seedVarsAdj = adjointJacobian->seedVarsAdj;
+  forwardJacobian->tmpVarsAdj = adjointJacobian->tmpVarsAdj;
+  forwardJacobian->resultVarsAdj = adjointJacobian->resultVarsAdj;
+  forwardJacobian->dagT = adjointJacobian->dagT;
+  forwardJacobian->evalSelectionRow = adjointJacobian->evalSelectionRow;
+  forwardJacobian->evalRow = adjointJacobian->evalRow;
+  forwardJacobian->constRowEqns = adjointJacobian->constRowEqns;
 
-  adjointJacobian->sizeTmpVars = 0;
+  /* The adjoint Jacobian owns the CSR pattern in sparsePattern after cscToCsr().
+   * Transfer that storage to the unified Jacobian before freeing the container. */
   adjointJacobian->sparsePattern = NULL;
-  adjointJacobian->seedVars = NULL;
-  adjointJacobian->tmpVars = NULL;
-  adjointJacobian->resultVars = NULL;
-  adjointJacobian->dag = NULL;
-  adjointJacobian->evalSelectionCol = NULL;
-  adjointJacobian->evalColumn = NULL;
-  adjointJacobian->constColEqns = NULL;
-}
+  //adjointJacobian->sparsePatternT = NULL;
+  adjointJacobian->seedVarsAdj = NULL;
+  adjointJacobian->tmpVarsAdj = NULL;
+  adjointJacobian->resultVarsAdj = NULL;
+  adjointJacobian->dagT = NULL;
+  adjointJacobian->evalSelectionRow = NULL;
+  adjointJacobian->evalRow = NULL;
+  adjointJacobian->constRowEqns = NULL;
 
-/*!
+  freeJacobian(adjointJacobian);
+}
+/**
  * \brief Row-wise Jacobian evaluation.
  *
  * Assumptions:
@@ -1308,20 +1311,27 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   int forwardStatus = 1;
   int adjointStatus = 1;
 
+  printf("Initializing symbolic ODE Jacobian with method %s\n", JACOBIAN_METHOD_NAME[*jacobianMethod]);
+
   if (needForwardJacobian) {
+    printf("Initializing forward Jacobian A in needForwardJacobian.\n");
     forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
   }
 
   if (wantAdjoint || wantBidirectional) {
+    printf("Initializing adjoint Jacobian ADJ in wantAdjoint or wantBidirectional.\n");
     adjointStatus = data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
   }
 
   if (wantBidirectional) {
-    if (forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalColumn) {
+    printf("Initializing bidirectional Jacobian in wantBidirectional.\n");
+    if (forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalRow) {
+      printf("Bidirectional Jacobian successfully initialized.\n");
       transferAdjointJacobianToUnifiedStorage(forwardJacobian, adjointJacobian);
       initBidirectionalRecovery(forwardJacobian);
       jacobian = forwardJacobian;
     } else {
+      printf("Bidirectional Jacobian not available, falling back to forward Jacobian.\n");
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
@@ -1329,14 +1339,19 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
       jacobian = forwardJacobian;
     }
   } else if (wantAdjoint) {
-    if (adjointStatus == 0 && adjointJacobian->evalColumn) {
-      prepareAdjointJacobianForRowEvaluation(adjointJacobian);
+    printf("Initializing adjoint Jacobian in wantAdjoint.\n");
+    printf("Adjoint Jacobian status: %d, evalRow: %p\n", adjointStatus, adjointJacobian->evalRow);
+    if (adjointStatus == 0 && adjointJacobian->evalRow) {
+      printf("Adjoint Jacobian successfully initialized.\n");
+      // prepareAdjointJacobianForRowEvaluation(adjointJacobian);
       jacobian = adjointJacobian;
     } else {
+      printf("Adjoint Jacobian not available, falling back to forward Jacobian.\n");
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=symbolicAdjoint or =bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
       if (!needForwardJacobian) {
+        printf("Initializing forward Jacobian A as fallback.\n");
         forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
       }
       *jacobianMethod = COLOREDSYMJAC;
@@ -1345,6 +1360,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   }
 
   if (jacobian->sparsePattern != NULL) {
+    printf("Sorting sparse pattern of Jacobian for ascending secondary indices.\n");
     /* KLU and the sparse pattern printers require ascending secondary indices. */
     sortSparseColumns(jacobian->sparsePattern, (unsigned int) jacobian->sizeCols);
   }
