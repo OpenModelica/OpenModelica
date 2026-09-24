@@ -17,10 +17,13 @@ project(OMModelicaExternalC)
 # These shared libraries link no OpenModelica runtime: ModelicaUtilities.h is
 # the tool's side of the interface, and whoever dlopens the library resolves it
 # out of its own process. ELF is happy to leave the symbols undefined; Mach-O
-# has to be told to defer them.
+# has to be told to defer them. A Windows DLL cannot leave them undefined, so
+# there it links the runtime omc itself links, the one copy in the process.
 function(omc_defer_modelica_utilities tgt)
   if(APPLE)
     target_link_options(${tgt} PRIVATE -Wl,-undefined,dynamic_lookup)
+  elseif(WIN32)
+    target_link_libraries(${tgt} PRIVATE omc::mmc::runtime)
   endif()
 endfunction()
 
