@@ -36,6 +36,8 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
+/* minizip-ng's compat unzip.h does not include zlib.h, which provides uLong. */
+#include <zlib.h>
 #include <unzip.h>
 #include "util/omc_str_utils.h"
 #include "util/omc_file.h"
