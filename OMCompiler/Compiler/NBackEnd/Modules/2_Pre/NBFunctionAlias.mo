@@ -383,15 +383,16 @@ protected
         local
           Integer i = 0;
           Expression replacer, call_exp;
+          list<Expression> elements;
 
         case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), replacer as Expression.CREF(cref = ComponentRef.CREF()))
           guard(isStartUsefulFunction(Call.typedFunction(call_exp.call))) algorithm
             setAuxStartValue(BVariable.getVarPointer(replacer.cref, sourceInfo()), id.call);
         then ();
 
-        case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), replacer as Expression.TUPLE())
+        case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), Expression.TUPLE(elements = elements))
           guard(isStartUsefulFunction(Call.typedFunction(call_exp.call))) algorithm
-            for elem in replacer.elements loop
+            for elem in elements loop
               i := i + 1;
               () := match elem
                 case Expression.CREF(cref = ComponentRef.CREF())
