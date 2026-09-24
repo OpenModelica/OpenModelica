@@ -123,7 +123,7 @@ pub(super) struct AdjJacInfo {
 /// A scratch slot per seed and column variable from `cursor` on; also returns the
 /// non-seed slots.
 pub(super) fn register_jac_slots(
-    jm: &SimCode::JacobianMatrix,
+    jm: &Arc<SimCode::JacobianMatrix>,
     rows: usize,
     cols: usize,
     cursor: &mut u32,
@@ -170,7 +170,7 @@ pub(super) fn register_jac_slots(
     }
     let mut result_offs = vec![None; rows];
     let mut others = Vec::new();
-    for sv in &column_vars {
+    for sv in column_vars.iter() {
         let Some(off) = insert(sv, var_map, cursor)? else { continue };
         others.push(off);
         if matches!(sv.varKind, VarKind::JAC_VAR)
@@ -496,7 +496,7 @@ pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &SlotMap, n
     let seed_offs = jac_seed_offs_by_column(jm, &listed, n)
         .ok_or("CodegenWasmJit: torn-linear Jacobian seed columns are not a permutation")?;
     let mut result_offs = vec![u32::MAX; n];
-    for sv in &jac_column_vars(jm) {
+    for sv in jac_column_vars(jm).iter() {
         if matches!(sv.varKind, VarKind::JAC_VAR) {
             let row = jac_result_row(sv).filter(|&r| r < n)
                 .ok_or("CodegenWasmJit: torn-linear Jacobian result var has no row index")?;
@@ -558,7 +558,7 @@ pub(super) fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> 
     }
     // Column c (iteration var) gets residual row r whenever result r depends on seed c.
     let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n];
-    for sv in &jac_column_vars(jm) {
+    for sv in jac_column_vars(jm).iter() {
         if !matches!(sv.varKind, VarKind::JAC_VAR) {
             continue;
         }
@@ -751,6 +751,7 @@ fn build_residual_fn(
         }
     };
     let budget = nls_chunk_instrs();
+    let all_scalar = nls_residuals_all_scalar(explicit);
     let mut fns: Vec<we::Function> = Vec::new();
     let (mut eq, mut store) = (0usize, 0usize);
     loop {
@@ -767,7 +768,7 @@ fn build_residual_fn(
         }
         if eq == inner.len() {
             while store < explicit.len() {
-                emit_nls_residual_store(&mut ctx, explicit, store)?;
+                emit_nls_residual_store(&mut ctx, explicit, all_scalar, store)?;
                 store += 1;
                 if ctx.instr_len() >= budget {
                     break;

@@ -289,7 +289,7 @@ pub(crate) fn build_frames(
 /// read it from. A row without one is a structural zero (C reads it back from its
 /// `calloc`d `resultVars`); a row the pattern claims but the lowering cannot
 /// produce — an array-valued `$pDER` result — would silently zero the matrix.
-fn covers_sparsity(jm: &SimCode::JacobianMatrix, rows: u32) -> bool {
+fn covers_sparsity(jm: &std::sync::Arc<SimCode::JacobianMatrix>, rows: u32) -> bool {
     let produced: Vec<usize> = crate::CodegenWasmJit::jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
@@ -334,7 +334,7 @@ pub(crate) fn symbolic_jacobians(
 
 /// C's `sizeRows`: one past the last row either a `JAC_VAR` result or the sparsity
 /// pattern names.
-fn matrix_rows(jm: &SimCode::JacobianMatrix) -> u32 {
+fn matrix_rows(jm: &std::sync::Arc<SimCode::JacobianMatrix>) -> u32 {
     let results = crate::CodegenWasmJit::jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))

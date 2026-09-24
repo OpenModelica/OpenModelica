@@ -281,9 +281,10 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
             _ => {}
         }
     }
+    let subs = cref_subs(cref);
     // Array element with a non-constant subscript (e.g. a `for`-loop iterator):
     // resolve the element address at run time instead of via a static slot key.
-    if let Some((base, sub_exps)) = array_ref_of(cref)? {
+    if let Some((base, sub_exps)) = if subs == CrefSubs::Other { array_ref_of(cref)? } else { None } {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
             if let Some(group) = ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
                 let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?;
@@ -300,6 +301,9 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
                 return Ok(Some(wty));
             }
         }
+    }
+    if subs == CrefSubs::None {
+        return compile_sim_scalar_read(ctx, cref);
     }
     // Contiguous slice `base[i,…,:]`: gather the row-major block.
     for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
@@ -323,12 +327,20 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
             }
         }
     }
-    if sim_cref_key(cref).is_err() {
-        if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
-            return Ok(Some(wty));
+    compile_sim_scalar_read(ctx, cref)
+}
+
+/// The rest of [`compile_sim_cref_read`] once no array element or slice form applies.
+fn compile_sim_scalar_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Option<WTy>> {
+    let key = match sim_cref_key(cref) {
+        Ok(key) => key,
+        Err(_) => {
+            if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
+                return Ok(Some(wty));
+            }
+            sim_cref_key_fatal(cref)?
         }
-    }
-    let key = sim_cref_key_fatal(cref)?;
+    };
     let slot = match ctx.sim()?.vars.get(&key) {
         Some(s) => *s,
         None => {
@@ -450,8 +462,9 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
             return Ok(false);
         }
     }
+    let subs = cref_subs(cref);
     // Array element with a non-constant subscript: store to the run-time address.
-    if let Some((base, sub_exps)) = array_ref_of(cref)? {
+    if let Some((base, sub_exps)) = if subs == CrefSubs::Other { array_ref_of(cref)? } else { None } {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
             // Either group leaves the element's address on the stack.
             let elem = match ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
@@ -472,28 +485,30 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
             }
         }
     }
-    // Contiguous slice `base[i,…,:] := arr`: scatter into the row-major block.
-    for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
-        let (base, leading) = slice;
-        if let Some(group) =
-            ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
-        {
-            emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
-            return Ok(true);
-        }
-    }
-    // Any other selection (`base[lo:hi] := v`, a column, a partial index): apply it
-    // to a gathered copy of the whole array and scatter that back.
-    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
-        let (base, subs) = selection;
-        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
-            if subs_select_array(&subs, &group) {
-                let arr = ctx.alloc_temp(WTy::I32);
-                emit_sim_array_gather(ctx, &group)?;
-                ctx.emit(we::Instruction::LocalSet(arr));
-                compile_slice_assign(ctx, arr, &subs, rhs)?;
-                emit_sim_array_scatter(ctx, &group, RhsSource::Temp { local: arr, wty: WTy::I32 })?;
+    if subs != CrefSubs::None {
+        // Contiguous slice `base[i,…,:] := arr`: scatter into the row-major block.
+        for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
+            let (base, leading) = slice;
+            if let Some(group) =
+                ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+            {
+                emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
                 return Ok(true);
+            }
+        }
+        // Any other selection (`base[lo:hi] := v`, a column, a partial index): apply it
+        // to a gathered copy of the whole array and scatter that back.
+        for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+            let (base, subs) = selection;
+            if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+                if subs_select_array(&subs, &group) {
+                    let arr = ctx.alloc_temp(WTy::I32);
+                    emit_sim_array_gather(ctx, &group)?;
+                    ctx.emit(we::Instruction::LocalSet(arr));
+                    compile_slice_assign(ctx, arr, &subs, rhs)?;
+                    emit_sim_array_scatter(ctx, &group, RhsSource::Temp { local: arr, wty: WTy::I32 })?;
+                    return Ok(true);
+                }
             }
         }
     }
