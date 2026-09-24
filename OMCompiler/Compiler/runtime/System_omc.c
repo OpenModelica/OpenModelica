@@ -209,19 +209,41 @@ extern const char* System_basename(const char* str)
   return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
+#if defined(_MSC_VER)
+/* POSIX dirname() for either separator and an optional drive prefix. */
+static const char* msvc_dirname(char *path)
+{
+#define IS_SEP(c) ((c) == '/' || (c) == '\\')
+  char *start = path;
+  size_t n;
+  if (isalpha((unsigned char)path[0]) && path[1] == ':') {
+    start += 2;
+  }
+  n = strlen(start);
+  while (n > 1 && IS_SEP(start[n-1])) n--;
+  while (n > 0 && !IS_SEP(start[n-1])) n--;
+  if (n == 0) {
+    if (start == path) {
+      return ".";
+    }
+    *start = '\0';
+    return path;
+  }
+  while (n > 1 && IS_SEP(start[n-1])) n--;
+  start[n] = '\0';
+  return path;
+#undef IS_SEP
+}
+#endif
+
 extern const char* System_dirname(const char* str)
 {
   char *cpy = omc_alloc_interface.malloc_strdup(str);
-  char *res = NULL;
 #if defined(_MSC_VER)
-  char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
-  _splitpath(str, drive, dir, filename, extension);
-  sprintf(cpy, "%s/%s/",drive,dir);
-  res = cpy;
+  return msvc_dirname(cpy);
 #else
-  res = dirname(cpy);
+  return dirname(cpy);
 #endif
-  return res;
 }
 
 extern int System_strncmp(const char *str1, const char *str2, int len)

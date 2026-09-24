@@ -70,7 +70,7 @@ typedef struct {
 } omc_alloc_interface_t;
 
 DLLDataDirection extern omc_alloc_interface_t omc_alloc_interface;
-extern omc_alloc_interface_t omc_alloc_interface_rc;
+DLLDataDirection extern omc_alloc_interface_t omc_alloc_interface_rc;
 
 /*
  * ERROR_STAGE defines different
