@@ -1,0 +1,70 @@
+
+# -----------------------------------------------------------------------------
+# Coverage of the FMU export sources. Only in the CMakeLists.txt.in of an
+# OpenModelica built with -DOM_ENABLE_COVERAGE=ON, which appends this; see
+# cmake/modules/OpenModelicaCoverage.cmake in the OpenModelica sources.
+#
+# The fmi-export/*.c are compiled nowhere but here, so this is where they are
+# instrumented. omc deletes this build directory, and with it the notes gcov
+# needs, as soon as the FMU is packed. Notes and counters therefore go to a
+# directory of their own, one per FMU build. That is $OMC_COVERAGE_FMU_DIR if
+# set, or else the directory the OpenModelica build collects coverage from -
+# as long as that build is still there to collect it.
+#
+# Left out when the FMU is cross compiled, or built with another compiler than
+# OpenModelica was: the counters could not be read back with the same gcov.
+# -----------------------------------------------------------------------------
+set(OM_COVERAGE_FMU_DIR "$ENV{OMC_COVERAGE_FMU_DIR}")
+if(NOT OM_COVERAGE_FMU_DIR AND IS_DIRECTORY "@CMAKE_BINARY_DIR@")
+  set(OM_COVERAGE_FMU_DIR "@OM_COVERAGE_FMU_DIR@")
+endif()
+
+if(OM_COVERAGE_FMU_DIR
+   AND NOT CMAKE_CROSSCOMPILING
+   AND CMAKE_C_COMPILER_ID STREQUAL "@CMAKE_C_COMPILER_ID@")
+  # Unique per FMU build: an FMU rebuilt at the same path must not have its
+  # counters merged into the notes of the previous build.
+  string(RANDOM LENGTH 16 _om_coverage_nonce)
+  string(TIMESTAMP _om_coverage_time "%s")
+  string(MD5 _om_coverage_id "${CMAKE_CURRENT_BINARY_DIR};${_om_coverage_time};${_om_coverage_nonce}")
+  set(_om_coverage_dir "${OM_COVERAGE_FMU_DIR}/${FMU_NAME_HASH}-${_om_coverage_id}")
+  file(MAKE_DIRECTORY "${_om_coverage_dir}")
+  message(STATUS "Coverage of the FMU export sources: ${_om_coverage_dir}")
+
+  get_target_property(_om_target_sources ${FMU_NAME_HASH} SOURCES)
+  set(_om_instrumented_sources)
+  foreach(_om_source IN LISTS _om_target_sources)
+    get_filename_component(_om_dir "${_om_source}" DIRECTORY)
+    get_filename_component(_om_name "${_om_source}" NAME)
+    if(NOT _om_dir STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/fmi-export" OR NOT _om_name MATCHES "\\.c$")
+      list(APPEND _om_instrumented_sources "${_om_source}")
+      continue()
+    endif()
+
+    # This is a copy that is gone by the time the counters are read. Compile it
+    # as the original in the OpenModelica sources instead, which it is line for
+    # line (omc only swaps the header one #include pulls in): gcov follows the
+    # #line and reads the original. Its own directory stays first for the
+    # quoted #includes, which do not follow #line.
+    set(_om_wrapped "${CMAKE_CURRENT_BINARY_DIR}/om-coverage/fmi-export/${_om_name}")
+    file(READ "${_om_source}" _om_text)
+    file(WRITE "${_om_wrapped}" "#line 1 \"@OM_COVERAGE_FMU_EXPORT_DIR@/${_om_name}\"\n${_om_text}")
+    list(APPEND _om_instrumented_sources "${_om_wrapped}")
+
+    # COMPILE_FLAGS rather than COMPILE_OPTIONS: it is passed on verbatim, so
+    # the two -Xclang can't be de-duplicated into one.
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+      # -dumpdir puts both the .gcno and the .gcda there.
+      set(_om_redirect "-fprofile-abs-path -dumpdir \"${_om_coverage_dir}/\"")
+    else()
+      set(_om_redirect "-Xclang \"-coverage-notes-file=${_om_coverage_dir}/${_om_name}.gcno\" -Xclang \"-coverage-data-file=${_om_coverage_dir}/${_om_name}.gcda\"")
+    endif()
+    set_property(SOURCE "${_om_wrapped}" APPEND_STRING PROPERTY COMPILE_FLAGS
+                 " -iquote \"${_om_dir}\" @OM_COVERAGE_COMPILE_FLAGS@ ${_om_redirect}")
+  endforeach()
+  set_property(TARGET ${FMU_NAME_HASH} PROPERTY SOURCES ${_om_instrumented_sources})
+
+  if(BUILD_SHARED_LIBS)
+    target_link_options(${FMU_NAME_HASH} PRIVATE --coverage)
+  endif()
+endif()
