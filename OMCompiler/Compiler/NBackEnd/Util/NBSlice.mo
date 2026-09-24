@@ -1472,7 +1472,10 @@ protected
         regulars := Dependency.toBoolean(d);
         if List.all(regulars, Util.id) then
           // II.1 all regular - single dependency per row.
-          resolveAllRegular(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
+          // The rows of a for-equation are ordered by iteration, then by the elements of its body. If
+          // the dependency is only an element of the body (e.g. one output of a tuple) its rows are not
+          // contiguous but a whole body apart.
+          resolveAllRegular(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes, Type.sizeOf(ty, true));
         elseif List.any(regulars, Util.id) then
           // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
           resolveMixed(cref, original_cref, eqn_name, skip_idx, ty, frames, regulars, map, m, mapping, modes);
@@ -1500,12 +1503,13 @@ protected
     input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
     input ModeTable modes;
+    input Integer stride = 0                                "rows of a whole equation body (0: same as the dependency)";
   protected
     Integer mode;
     list<ComponentRef> scalarized;
     list<Val2> scal_indices = {};
     Val2 idx_lst;
-    Integer scal_size = 0, shift;
+    Integer scal_size = 0, shift, body_size = if iter_size > 0 then intDiv(size, iter_size) else size;
   algorithm
     mode        := Modes.add(modes, Mode.create(eqn_name, {original_cref}, false));
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
@@ -1521,7 +1525,11 @@ protected
       for i in 1:size/scal_size loop
         for indices in scal_indices loop
           for scal_idx in indices loop
-            addMatrixEntry(m, skip_idx + shift, scal_idx, mode);
+            if stride > body_size and body_size > 0 then
+              addMatrixEntry(m, skip_idx + intDiv(shift, body_size) * stride + intMod(shift, body_size), scal_idx, mode);
+            else
+              addMatrixEntry(m, skip_idx + shift, scal_idx, mode);
+            end if;
             shift := shift + 1;
           end for;
         end for;
