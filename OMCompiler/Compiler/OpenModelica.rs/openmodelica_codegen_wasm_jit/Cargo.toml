@@ -23,7 +23,7 @@ openmodelica_ast.workspace = true
 openmodelica_simcode_types.workspace = true
 # SimCodeUtil::getFMI3ValueReference: the FMU export's value references must be
 # the ones CodegenFMU3 puts in modelDescription.xml.
-openmodelica_backend.workspace = true
+openmodelica_codegen_util.workspace=true
 openmodelica_backend_types.workspace = true
 openmodelica_error.workspace = true
 openmodelica_frontend_types.workspace = true

@@ -7775,7 +7775,7 @@ case CALL(attr=attr as CALL_ATTR(__)) then
 end daeExpCallFunctionReference;
 
 template unboxedFunctionReferences()
- "See SimCodeUtil.unboxFunctionReferenceCall."
+ "See SimCodeCodegenUtil.unboxFunctionReferenceCall."
 ::= if Config.acceptMetaModelicaGrammar() then "" else "x"
 end unboxedFunctionReferences;
 

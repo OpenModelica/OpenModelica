@@ -34,7 +34,6 @@ openmodelica_backend/src/BackendVarTransform.rs
 openmodelica_backend/src/BackendVariable.rs
 openmodelica_backend/src/BinaryTree.rs
 openmodelica_backend/src/Causalize.rs
-openmodelica_backend/src/CodegenUtil.rs
 openmodelica_backend/src/CommonSubExpression.rs
 openmodelica_backend/src/DAEMode.rs
 openmodelica_backend/src/DataReconciliation.rs
@@ -61,7 +60,6 @@ openmodelica_backend/src/IndexReduction.rs
 openmodelica_backend/src/Initialization.rs
 openmodelica_backend/src/InlineArrayEquations.rs
 openmodelica_backend/src/Matching.rs
-openmodelica_backend/src/MidCode.rs
 openmodelica_backend/src/OnRelaxation.rs
 openmodelica_backend/src/PriorityQueue.rs
 openmodelica_backend/src/ReduceDAE.rs
@@ -140,12 +138,17 @@ openmodelica_codegen_cpp_omsi_ext/src/CodegenOMSICpp.rs
 openmodelica_codegen_fmu/src/CodegenFMU1.rs
 openmodelica_codegen_fmu/src/CodegenFMU2.rs
 openmodelica_codegen_fmu/src/CodegenFMUCommon.rs
+openmodelica_codegen_fmu/src/CodegenFMUModelDescription.rs
 openmodelica_codegen_fmu_c/src/CodegenFMU.rs
 openmodelica_codegen_fmu_omsi/src/CodegenOMSIC.rs
 openmodelica_codegen_fmu_omsi/src/CodegenOMSIC_Equations.rs
 openmodelica_codegen_fmu_omsi/src/CodegenOMSI_common.rs
 openmodelica_codegen_graphml/src/GraphML.rs
 openmodelica_codegen_graphml/src/GraphMLDumpTpl.rs
+openmodelica_codegen_util/src/CodegenUtil.rs
+openmodelica_codegen_util/src/HpcOmCodegenUtil.rs
+openmodelica_codegen_util/src/MidCode.rs
+openmodelica_codegen_util/src/SimCodeCodegenUtil.rs
 openmodelica_codegen_xml/src/CodegenXML.rs
 openmodelica_dump_extra/src/BlockCallRewrite.rs
 openmodelica_dump_extra/src/DumpGraphviz.rs
@@ -473,6 +476,7 @@ openmodelica_codegen_fmu/src/lib.rs
 openmodelica_codegen_fmu_c/src/lib.rs
 openmodelica_codegen_fmu_omsi/src/lib.rs
 openmodelica_codegen_graphml/src/lib.rs
+openmodelica_codegen_util/src/lib.rs
 openmodelica_codegen_wasm_jit/src/lib.rs
 openmodelica_codegen_xml/src/lib.rs
 openmodelica_dump_extra/src/lib.rs

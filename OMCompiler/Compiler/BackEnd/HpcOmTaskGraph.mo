@@ -68,6 +68,7 @@ import SimCodeUtil;
 import SimCodeVar;
 import System;
 import Util;
+import HpcOmCodegenUtil;
 
 
 //----------------------------
@@ -6664,12 +6665,12 @@ algorithm
   oMapping := matchcontinue iMapping
     case _
       algorithm
-        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
+        (simEqIdx,_) := HpcOmCodegenUtil.getIndexBySimCodeEq(iEquation);
         tmpMapping := arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
       then tmpMapping;
     else
       algorithm
-        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
+        (simEqIdx,_) := HpcOmCodegenUtil.getIndexBySimCodeEq(iEquation);
         //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
       then iMapping;
   end matchcontinue;
@@ -6705,63 +6706,6 @@ algorithm
       then fail();
   end match;
 end getSimCodeEqByIndexAndMapping1;
-
-public function getSimCodeEqByIndex "author: marcusw
-  Returns the SimEqSystem which has the given Index. This method is called from susan."
-  input list<SimCode.SimEqSystem> iEqs; //All SimEqSystems
-  input Integer iIdx; //The index of the required system
-  output SimCode.SimEqSystem oEq;
-protected
-  list<SimCode.SimEqSystem> rest;
-  SimCode.SimEqSystem head;
-  Integer headIdx,headIdx2;
-algorithm
-  oEq := matchcontinue iEqs
-    case head::rest
-      algorithm
-        (headIdx,headIdx2) := getIndexBySimCodeEq(head);
-        //print("getSimCodeEqByIndex listLength: " + intString(listLength(iEqs)) + " head idx: " + intString(headIdx) + "\n");
-        true := intEq(headIdx,iIdx) or intEq(headIdx2,iIdx);
-      then head;
-    case head::rest then getSimCodeEqByIndex(rest,iIdx);
-    else
-      algorithm
-        print("getSimCodeEqByIndex failed. Looking for Index " + intString(iIdx) + "\n");
-        //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
-      then fail();
-  end matchcontinue;
-end getSimCodeEqByIndex;
-
-protected function getIndexBySimCodeEq "author: marcusw
-  Just a small helper function to get the index of a SimEqSystem."
-  input SimCode.SimEqSystem iEq;
-  output Integer oIdx;
-  output Integer oIdx2;
-protected
-  Integer index,index2;
-algorithm
-  (oIdx,oIdx2) := match iEq
-    case SimCode.SES_RESIDUAL(index=index) then (index,0);
-    case SimCode.SES_SIMPLE_ASSIGN(index=index) then (index,0);
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index) then (index,0);
-    case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then (index,0);
-    case SimCode.SES_IFEQUATION(index=index) then (index,0);
-    case SimCode.SES_ALGORITHM(index=index) then (index,0);
-    // no dynamic tearing
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), NONE()) then (index,0);
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), NONE()) then (index,0);
-    // dynamic tearing
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), SOME(SimCode.LINEARSYSTEM(index=index2))) then (index,index2);
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2))) then (index,index2);
-    case SimCode.SES_MIXED(index=index) then (index,0);
-    case SimCode.SES_WHEN(index=index) then (index,0);
-    case SimCode.SES_ALIAS(aliasOf=index) then (index,0);
-    else
-      algorithm
-        Error.addInternalError(getInstanceName()+" failed", sourceInfo());
-      then fail();
-  end match;
-end getIndexBySimCodeEq;
 
 protected function getSimCodeEqsByTaskList "author: marcusw
   Get the simCode.SimEqSystem - objects references by the given tasks."

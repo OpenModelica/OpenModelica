@@ -140,6 +140,8 @@ openmodelica_codegen_fmu/Cargo.toml
 openmodelica_codegen_fmu_c/Cargo.toml
 openmodelica_codegen_fmu_omsi/Cargo.toml
 openmodelica_codegen_graphml/Cargo.toml
+openmodelica_codegen_util/Cargo.toml
+openmodelica_codegen_util/src/Globals.rs
 openmodelica_codegen_wasm_jit/Cargo.toml
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/artifact.rs

@@ -128,6 +128,7 @@ import Testsuite;
 import Util;
 import SerializeTaskSystemInfo;
 import File;
+import SimCodeCodegenUtil;
 
 public
 uniontype FmuTranslation
@@ -505,7 +506,7 @@ protected
 algorithm
   res := (false,{});
   try
-    SimCodeUtil.resetFunctionIndex();
+    SimCodeCodegenUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
     if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
       Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
@@ -525,7 +526,7 @@ function runTpl
 algorithm
   res := (false,{});
   try
-    SimCodeUtil.resetFunctionIndex();
+    SimCodeCodegenUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
     Tpl.tplCallWithFailErrorNoArg(func);
     res := (true,SimCodeUtil.getFunctionIndex());
@@ -565,7 +566,7 @@ protected
   algorithm
     res := (false,{});
     try
-      SimCodeUtil.resetFunctionIndex();
+      SimCodeCodegenUtil.resetFunctionIndex();
       SimCodeFunctionUtil.codegenResetTryThrowIndex();
       func();
       res := (true,SimCodeUtil.getFunctionIndex());
@@ -1038,14 +1039,14 @@ algorithm
       lsDaeManifestStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
         CodegenFMU3.fmiLsDaeManifest(Tpl.emptyTxt, simCode));
       Error.addMessage(Error.FMU_EXPORT_FMI_LS_DAE_DRAFT,
-        {SimCodeUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
+        {SimCodeCodegenUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
       ExecStat.execStat("FMU fmi-ls-manifest.xml");
     end if;
     // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
     // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
     if not bareExport then
       terminalsDir := fmutmp + "/terminalsAndIcons/";
-      terminals := SimCodeUtil.getFMI3Terminals(simCode);
+      terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode);
       if not listEmpty(terminals) then
         Util.createDirectoryTree(terminalsDir);
         System.writeFile(terminalsDir + "terminalsAndIcons.xml",
@@ -1077,13 +1078,14 @@ end emitWasmFMU;
 
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."
-  input SimCode.SimCode simCode;
+  input SimCode.SimCode inSimCode;
   input String target;
   input String FMUVersion;
   input String FMUType;
   input Absyn.Program program;
   input Boolean translateOnly = false "keep the translation in memory instead of writing the FMU";
 protected
+  SimCode.SimCode simCode = SimCodeUtil.addFMI3Figures(inSimCode, FMUVersion);
   // "wasm" is the standalone simulation target and has no FMU export of its own;
   // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
   String fmuTarget = if target == "wasm" then "wasm-jit" else target;
@@ -1215,7 +1217,7 @@ algorithm
           end if;
         end if;
 
-        SimCodeUtil.resetFunctionIndex();
+        SimCodeCodegenUtil.resetFunctionIndex();
         varInfo := simCode.modelInfo.varInfo;
 
 
@@ -1332,7 +1334,7 @@ algorithm
           // FMI 3.0 Terminals: create the terminalsAndIcons/ directory (the
           // CodegenFMU3 template writes terminalsAndIcons.xml into it) when the
           // model has connector-derived terminals.
-          if not listEmpty(SimCodeUtil.getFMI3Terminals(simCode)) then
+          if not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode)) then
             Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
           end if;
         end if;
@@ -2383,14 +2385,14 @@ algorithm
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
       //create hash table
-      crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+      crefToSimVarHT := SimCodeCodegenUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
       symJacs := listReverse(Util.getOption(daeModeSP) :: symJacs);
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
-      crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+      crefToSimVarHT := SimCodeCodegenUtil.createCrefToSimVarHT(modelInfo);
 
       if isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
@@ -2438,7 +2440,7 @@ algorithm
     (_, resVars) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
     (residualVars, _) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     residualVars := SimCodeUtil.rewriteIndex(residualVars, 0);
-    (residualVars, _) := SimCodeUtil.setVariableIndexHelper(residualVars, 0, 0);
+    (residualVars, _) := SimCodeCodegenUtil.setVariableIndexHelper(residualVars, 0, 0);
     crefToSimVarHT:= List.fold(residualVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create auxiliary variables, set index and push them SimCode Hash Table
@@ -2446,7 +2448,7 @@ algorithm
     (auxiliaryVars, _) :=  BackendVariable.traverseBackendDAEVars(auxVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     auxiliaryVars := List.sort(auxiliaryVars, SimCodeUtil.simVarCompareByCrefSubsAtEndlLexical);
     auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 0);
-    (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0, 0);
+    (auxiliaryVars, _) := SimCodeCodegenUtil.setVariableIndexHelper(auxiliaryVars, 0, 0);
     crefToSimVarHT:= List.fold(auxiliaryVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create SimCodeVars for algebraic states
@@ -2555,7 +2557,8 @@ algorithm
       daeModeData                 = daeModeData,
       inlineEquations             = {},
       omsiData                    = NONE(),
-      scalarized                  = true
+      scalarized                  = true,
+      fmiFigures                  = {}
     );
 
     (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);

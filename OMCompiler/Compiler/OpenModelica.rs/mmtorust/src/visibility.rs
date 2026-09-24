@@ -72,10 +72,10 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     "FlagsUtil.allDebugFlags",
     // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the FMI 2.0 wasm FMU
     // ships these offsets for its loader.
-    "SimCodeUtil.getFMI2ValueReferenceOffsets",
+    "SimCodeCodegenUtil.getFMI2ValueReferenceOffsets",
     // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the arrow result
     // file's `modelica.units` needs the unit database's display conversions.
-    "SimCodeUtil.unitConversion",
+    "SimCodeCodegenUtil.unitConversion",
     // openmodelica_gendoc/src/{icons,main}.rs → the documentation generator
     // instantiates a library once and renders each class' icon from the model
     // instance, then drops the top scope.

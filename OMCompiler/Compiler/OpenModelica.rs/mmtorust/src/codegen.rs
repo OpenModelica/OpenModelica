@@ -12998,15 +12998,12 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // (see FrontEnd/BackendInterface.mo and its `__OpenModelica_Interface`).
         "backendInterface" => Some("openmodelica_frontend_dump"),
         // openmodelica_backend — symbolTable/rewriteRulesIndex hold SymbolTable
-        // types defined here. optionSimCode holds a SimCode value whose type now
-        // lives in openmodelica_simcode_types, but the root accessor stays in
-        // openmodelica_backend (which depends on simcode_types): the types crate
+        // and RewriteRules types defined here.
+        "symbolTable" | "rewriteRulesIndex" => Some("openmodelica_backend"),
+        // openmodelica_codegen_util — optionSimCode and fmi3VariableAliasCache
+        // hold SimCode values read by the codegen queries there. The types crate
         // is datatype-only and must not own mutable global state.
-        // fmi3VariableAliasCache holds SimCodeVar.SimVar lists; same reasoning as
-        // optionSimCode — the types crate must not own mutable global state.
-        "symbolTable" | "rewriteRulesIndex" | "optionSimCode" | "fmi3VariableAliasCache" => {
-            Some("openmodelica_backend")
-        }
+        "optionSimCode" | "fmi3VariableAliasCache" => Some("openmodelica_codegen_util"),
         // openmodelica_backend_main — the interactive cache holds a tuple
         // whose third element is `Interactive.GraphicEnvCache`, a uniontype
         // defined in Script/Interactive.mo (→ openmodelica_backend_main). The

@@ -245,7 +245,7 @@ fn emit_relation_nominal(ctx: &mut FnCtx, e1: &metamodelica::Ref<DAE::Exp>, e2: 
 }
 
 fn nominal_exp(e: &metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
-    openmodelica_backend::SimCodeUtil::getExpNominal(e.clone())
+    openmodelica_codegen_util::SimCodeCodegenUtil::getExpNominal(e.clone())
         .unwrap_or_else(|_| metamodelica::Ref::new(DAE::Exp::RCONST { real: 1.0.into() }))
 }
 

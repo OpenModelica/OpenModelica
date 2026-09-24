@@ -44,19 +44,23 @@ import SimCodeVar;
 
 protected
 import BackendDAE.VarKind;
+import ClassInf;
 import CR=ComponentReference;
 import Config;
 import DAE.{Exp,Type};
+import DAEUtil;
 import Dump;
+import Error;
 import Expression;
 import ExpressionBasics.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
-import SimCodeUtil;
 import Types;
+import TypesDump;
 import Util;
+import SimCodeCodegenUtil;
 
 public
 
@@ -337,7 +341,7 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input Integer valueReference;
   input Integer classIndex;
 protected
-  Integer inputIndex = SimCodeUtil.getInputIndex(simVar);
+  Integer inputIndex = SimCodeCodegenUtil.getInputIndex(simVar);
   SourceInfo info = simVar.source.info;
 algorithm
 
@@ -578,7 +582,7 @@ algorithm
       File.write(file, "\"alias\" aliasVariable=\"");
       CR.writeCref(file, aliasvar.varName, XML);
       File.write(file, "\" aliasVariableId=\"");
-      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true));
+      File.write(file, SimCodeCodegenUtil.getValueReference(simVar, SimCodeCodegenUtil.getSimCode(), true));
       File.write(file, "\"");
     then ();
   case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.NEGATEDALIAS())
@@ -586,7 +590,7 @@ algorithm
       File.write(file, "\"negatedAlias\" aliasVariable=\"");
       CR.writeCref(file, aliasvar.varName, XML);
       File.write(file, "\" aliasVariableId=\"");
-      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true));
+      File.write(file, SimCodeCodegenUtil.getValueReference(simVar, SimCodeCodegenUtil.getSimCode(), true));
       File.write(file, "\"");
     then ();
   else

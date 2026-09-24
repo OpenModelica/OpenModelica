@@ -136,6 +136,7 @@ import Settings;
 import SimCodeMain;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
+import SimCodeUtil;
 import StateMachineFlatten;
 import SimpleModelicaParser;
 import SimulationResults;
