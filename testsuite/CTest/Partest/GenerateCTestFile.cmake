@@ -4,7 +4,7 @@
 #
 # This is kept out of the normal CMake configure on purpose: the CI stages
 # that use this only unstash an installed omc, not a configured build tree
-# (see ctestCMakeStashed() in .CI/common.groovy), and reconfiguring the whole
+# (see ctestStashed() in .CI/common.groovy), and reconfiguring the whole
 # OpenModelica project just to register tests would dwarf the cost of this
 # Perl-only discovery step. It is also why this only picks up tests from
 # testsuite/: discovery is delegated entirely to runtests.pl, which never

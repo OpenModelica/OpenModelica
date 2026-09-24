@@ -124,7 +124,7 @@ goto rule ## func ## Ex; }}
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __func__, __FILE__, __LINE__); exit(1);
 
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
-  #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
+  #if !defined(OMC_GENERATE_RELOCATABLE_CODE)
   modelica_boolean omc_AbsynUtil_isDerCref(threadData_t* threadData, void* exp);
   void* omc_AbsynUtil_setClassCommentsAfterEnd(threadData_t* threadData, void* cl, void *comments);
   #else
@@ -205,11 +205,7 @@ goto rule ## func ## Ex; }}
   #if !defined(OMJULIA)
     #include "meta/meta_modelica.h"
     #define ADD_METARECORD_DEFINITIONS static
-    #if defined(OMC_BOOTSTRAPPING)
-      #include "../Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h"
-    #else
-      #include "../Compiler/OpenModelicaBootstrappingHeader.h"
-    #endif
+    #include "../Compiler/OpenModelicaBootstrappingHeader.h"
     parser_members members;
     void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
   #else /* Julia */
@@ -234,9 +230,7 @@ stored_definition returns [void* ast]
       pANTLR3_COMMON_TOKEN tok;
       while (tok = INPUT->get(INPUT,omc_first_comment++)) {
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
           commentAfterEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfterEnd);
-#endif
         }
       }
       if (!listEmpty(commentAfterEnd) && cl && !listEmpty(cl)) {
@@ -266,9 +260,7 @@ class_definition_list [int firstClass] returns [void* ast]
     for (;omc_first_comment<last;omc_first_comment++) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
       commentAfterEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfterEnd);
-#endif
       }
     }
     if (!listEmpty(commentAfterEnd)) {
@@ -291,9 +283,7 @@ class_definition [int final, int firstClass] returns [void* ast]
         for (;omc_first_comment<last;omc_first_comment++) {
           pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
           if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
           commentBeforeClass = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBeforeClass);
-#endif
           }
         }
       }
@@ -305,17 +295,13 @@ class_definition [int final, int firstClass] returns [void* ast]
       for (;omc_first_comment<last;omc_first_comment++) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
         commentBeforeEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBeforeEnd);
-#endif
         }
       }
       $ast = Absyn__CLASS($cs.name, mmc_mk_bcon(p), mmc_mk_bcon(final), mmc_mk_bcon(e), ct, $cs.ast,
-#if !defined(OMC_BOOTSTRAPPING)
       listReverseInPlace(commentBeforeClass),
       listReverseInPlace(commentBeforeEnd),
       mmc_mk_nil(),
-#endif
       PARSER_INFO($start));
     }
   ;
@@ -893,9 +879,7 @@ argument_list [int canHaveBreak] returns [void* ast]
   for (;first<last;last--) {
     pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
     if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
       commentAst = mmc_mk_cons_typed(Absyn_ElementArg, Absyn__ELEMENTARGCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),commentAst);
-#endif
     }
   }
 } :
@@ -907,9 +891,7 @@ argument_list [int canHaveBreak] returns [void* ast]
     for (;first<last;last--) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
         ast = mmc_mk_cons_typed(Absyn_ElementArg, Absyn__ELEMENTARGCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
-#endif
       }
     }
     ast = listAppend(or_nil(as), ast);
@@ -1562,9 +1544,7 @@ expression[int allowPartEvalFunc] returns [void* ast]
   for (;omc_first_comment<last;omc_first_comment++) {
     pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
     if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-#if !defined(OMC_BOOTSTRAPPING)
       commentBeforeEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBeforeEnd);
-#endif
     }
   }
 } :
@@ -1586,16 +1566,12 @@ expression[int allowPartEvalFunc] returns [void* ast]
     for (;omc_first_comment<last;omc_first_comment++) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-  #if !defined(OMC_BOOTSTRAPPING)
         commentAfterEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfterEnd);
-  #endif
       }
     }
-  #if !defined(OMC_BOOTSTRAPPING)
     if (!(listEmpty(commentBeforeEnd) && listEmpty(commentAfterEnd))) {
       $ast = Absyn__EXPRESSIONCOMMENT(listReverseInPlace(commentBeforeEnd), $ast, listReverseInPlace(commentAfterEnd));
     }
-  #endif
   }
   ;
   finally{ OM_POP(1); }
@@ -1855,11 +1831,7 @@ primary returns [void* ast]
         }
       } else {
         $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
-#if defined(OMC_BOOTSTRAPPING)
-        el;
-#else
         Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
-#endif
       }
     }
   | LBRACK el=matrix_expression_list RBRACK { $ast = Absyn__MATRIX(el); }
