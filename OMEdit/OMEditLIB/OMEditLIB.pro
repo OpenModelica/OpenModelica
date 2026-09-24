@@ -30,11 +30,10 @@
 #
 # See the full OSMC Public License conditions for more details.
 
-# NOTE: OMEdit is built with CMake; this qmake project is NOT a build system any
-# more. It is kept only because `lupdate` reads SOURCES/HEADERS/TRANSLATIONS from
-# it to update the .ts files -- see Resources/nls/README.md. Keep the source
-# lists below in sync with OMEditLIB/CMakeLists.txt, or new translatable strings
-# will be missed.
+# NOTE: Not a build file; OMEdit is built with CMake. `lupdate` reads
+# SOURCES/HEADERS/TRANSLATIONS from here to update the .ts files, see
+# Resources/nls/README.md. Keep the source lists in sync with
+# OMEditLIB/CMakeLists.txt, or new translatable strings will be missed.
 include(../OMEdit.config.pre.pri)
 TARGET = OMEdit
 

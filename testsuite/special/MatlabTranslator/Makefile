@@ -6,7 +6,7 @@ OMC_CANDIDATES := ../../../build/install_cmake/bin/omc \
 OMC ?= $(firstword $(realpath $(wildcard $(OMC_CANDIDATES))) $(lastword $(OMC_CANDIDATES)))
 
 # Susan writes AbsynDumpTpl.mo into the build tree, or in-source for an in-source build.
-# ?= only assigns when the caller did not set it; the CI does (see testMatlabTranslator
+# ?= only assigns when the caller did not set it; the CI does (see testMisc
 # in .CI/common.groovy). The right-hand side must not mention OMCOMPILERGENERATEDSOURCES
 # itself: ?= defines a recursively expanded variable, so that would be a self-reference.
 OMC_GENERATED_MO_CANDIDATES := ../../../build_cmake/OMCompiler/Compiler/generated-mo \

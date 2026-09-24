@@ -41,8 +41,7 @@ pipeline {
           // scan-build has to wrap the *configure* too: that is when CMake records
           // which compiler to use, and scan-build works by pointing CC/CXX at its
           // own analyzer wrappers. ccache must be off for the same reason.
-          // --exclude keeps the 3rdParty sources out of the report; the old
-          // Autoconf job achieved that by deleting the directory before building.
+          // --exclude keeps the 3rdParty sources out of the report.
           def scanBuild = "scan-build --exclude ${env.WORKSPACE}/OMCompiler/3rdParty"
           sh "mkdir -p html"
           sh """

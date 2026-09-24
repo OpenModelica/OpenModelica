@@ -143,8 +143,7 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   // tree; just check the stashed one is usable, like partestRust does.
   sh label: 'Check the omc-diff version', script: 'build/bin/omc-diff -v1.4'
 
-  // Susan's generated *.mo live in the CMake build tree; rtest's default guess
-  // (OMCompiler/Compiler/) is where the removed Autoconf build put them.
+  // Susan's generated *.mo live in the CMake build tree.
   withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {
   sh (label: "Run the testsuite (partition ${partition}/${partitionmodulo}${extraArgs ? ', ' + extraArgs : ''})", script: """#!/bin/bash -x
   ulimit -t 1500
@@ -230,8 +229,7 @@ void makeLibsAndCache() {
 }
 
 // Decompress testsuite/ReferenceFiles/*/*.mat.xz next to themselves, where the
-// tests read them ($REFERENCEFILES, set by rtest). runtests.pl used to do this
-// itself through the removed top-level Makefile, so every stage that runs
+// tests read them ($REFERENCEFILES, set by rtest). Every stage that runs
 // partest has to call this (or makeLibsAndCache()) first.
 void extractReferenceFiles() {
   sh label: 'Extract the reference files',
@@ -1304,13 +1302,9 @@ void ctestRust() {
   }
 }
 
-// Build the whole tree with the GUI clients and run the OMEdit testsuite.
-//
-// This is a full CMake build rather than "build the GUI on top of an existing
-// omc": CMake has no equivalent of the Autoconf build's per-target .skip stamps,
-// and the OMEdit tests are CTest tests whose registered command lines hold
-// absolute paths into the build tree - so building them on one agent and running
-// them on another (which is what the old stash/unstash split did) is not safe.
+// Build the whole tree with the GUI clients and run the OMEdit testsuite. The
+// OMEdit tests are CTest tests registered with absolute build-tree paths, so
+// they run in the stage that builds them.
 void buildGUIAndRunOMEditTestsuite() {
   withSccache {
     buildOMC([
@@ -1328,8 +1322,7 @@ void buildGUIAndRunOMEditTestsuite() {
   // The tests browse the MSL, so they need the test libraries and a writable HOME.
   makeLibsAndCache()
   try {
-    // --repeat until-pass:5 replaces the retry loop the old RunOMEditTestsuite.sh
-    // had; these GUI tests are flaky.
+    // These GUI tests are flaky, so each is retried up to 5 times.
     sh label: 'RunOMEditTestsuite', script: """
     # The test binaries live in the build tree, not in build/bin, so they cannot
     # deduce the installation dir from their own path; and omc needs a writable
@@ -1639,9 +1632,8 @@ void checks() {
   // It's really bad if we mess up the repo and can no longer build properly
   sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
   // TODO: trailing-whitespace-error tab-error
-  // These used to be Makefile.in targets; they are CMake targets now
-  // (cmake/omc_source_checks.cmake), but the scripts behind them need no
-  // configured build dir, so call them directly.
+  // The scripts behind the source-check targets (cmake/omc_source_checks.cmake)
+  // need no configured build dir.
   sh 'bash cmake/source_checks.sh bom-error .'
   sh 'bash cmake/source_checks.sh utf8-error .'
   sh 'bash cmake/source_checks.sh thumbsdb-error .'

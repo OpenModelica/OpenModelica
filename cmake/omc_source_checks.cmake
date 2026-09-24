@@ -1,8 +1,6 @@
 # cmake/omc_source_checks.cmake
 #
-# Source hygiene targets. These used to be targets of the top-level Makefile.in
-# of the autotools build; they are CMake targets now that CMake is the only
-# supported build system.
+# Source hygiene targets.
 #
 # Run with, e.g.:
 #   cmake --build <build_dir> --target bom-error

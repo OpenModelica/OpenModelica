@@ -78,10 +78,6 @@ build_cmake/
 .vscode/
 revision.h
 omc_config.unix.h
-# autoconf output of the FMU source-export build project, generated at
-# CMake configure time (SimulationRuntime/fmi/export/buildproject/CMakeLists.txt)
-SimulationRuntime/fmi/export/buildproject/configure
-SimulationRuntime/fmi/export/buildproject/autom4te.cache/
 SimulationRuntime/OMSICpp/Build_*/
 SimulationRuntime/OMSICpp/Debug/
 SimulationRuntime/OMSICpp/.cproject

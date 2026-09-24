@@ -45,8 +45,7 @@ pipeline {
       steps {
         script {
           env.PATH="${env.MACPORTS}/bin:${env.PATH}"
-          // The GUI clients are part of the same CMake build, so there is no
-          // separate buildGUI step any more.
+          // Builds the GUI clients too.
           common.buildOMC([
             "-DCMAKE_BUILD_TYPE=Release",
             "-DCMAKE_INSTALL_PREFIX=build",

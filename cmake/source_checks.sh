@@ -1,8 +1,7 @@
 #!/bin/bash
 # cmake/source_checks.sh
 #
-# Source hygiene checks that used to live as targets in the top-level Makefile.in
-# of the removed autotools build. Driven by the CMake targets defined in
+# Source hygiene checks, driven by the CMake targets defined in
 # cmake/omc_source_checks.cmake.
 #
 # Usage: source_checks.sh <check> <source_dir>
