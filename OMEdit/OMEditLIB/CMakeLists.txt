@@ -655,6 +655,19 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       install(FILES "${_ls_cache}/tree-sitter-modelica.wasm"
                     "${_ls_cache}/web-tree-sitter.wasm"
               DESTINATION ${MODELICA_LS_INSTALL_DIR})
+      # The Linux server is a Node.js single executable application, built on the official node
+      # binary: that links its own zlib and is not a PIE, and nothing short of building node from
+      # source changes either. So the omedit .deb carries lintian overrides for the two, limited
+      # to this file.
+      if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(_ls_overrides "${CMAKE_CURRENT_BINARY_DIR}/lintian-overrides/omedit")
+        file(WRITE "${_ls_overrides}"
+             "# The bundled modelica-language-server is a Node.js single executable application.\n"
+             "omedit: embedded-library zlib [*/${MODELICA_LS_EXE_NAME}]\n"
+             "omedit: hardening-no-pie [*/${MODELICA_LS_EXE_NAME}]\n")
+        install(FILES "${_ls_overrides}"
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/lintian/overrides)
+      endif()
       # Also handed to OMEditGUI, which puts them beside the built executable so
       # a build-tree OMEdit finds a server without being installed first. The
       # binary is renamed there too, so pass the name it must end up with.

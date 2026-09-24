@@ -1,0 +1,51 @@
+# rpmlint configuration for the CPack RPM packages, passed with `rpmlint -c` (.CI/common.groovy,
+# checkRpm). It filters what the packages do on purpose, so that what rpmlint still reports is
+# what there is to fix. Each filter is a regular expression matched against a whole report line,
+# e.g. "simrt.x86_64: W: devel-file-in-non-devel-package /usr/include/omc/c/...".
+
+# rpmbuild on Fedora and Enterprise Linux compresses man pages with gzip (brp-compress), and the
+# pages are installed as .gz already. rpmlint's built-in default is bzip2, so without this every
+# page is reported as manpage-not-compressed.
+CompressExtension = "gz"
+
+# The licence is an SPDX expression (OpenModelicaCPackOptions.in.cmake, CPACK_RPM_PACKAGE_LICENSE),
+# as Fedora requires. rpmlint's built-in list predates SPDX and reports even AGPL-3.0-only as
+# invalid-license, so the two identifiers used are listed here.
+ValidLicenses = ["AGPL-3.0-only", "LicenseRef-OSMC-PL-1.8"]
+
+Filters = [
+    # omc compiles and links every model it simulates, so the headers and static libraries of the
+    # simulation runtime are what simrt and simrtcpp are for, not a -devel package to split off.
+    # omc, omplot and omsimulator install headers of their own for the same generated code.
+    'devel-file-in-non-devel-package',
+    'static-library-without-debuginfo',
+
+    # The tools omc runs to build a simulation: expat-devel and lapack-devel are linked by the
+    # generated makefile (OpenModelicaCPackOptions.in.cmake, _om_omc_tools).
+    '^omc\.[^:]+: E: devel-dependency (expat-devel|lapack-devel)',
+
+    # The packages of one build require each other at exactly %{version}-%{release}, as the .deb
+    # packages do with (= version): they are built together and do not mix.
+    'requires-on-release',
+
+    # Packages are signed when the repository is published, not when cpack builds them.
+    'no-signature',
+
+    # The programs find the libraries in the private lib/<triple>/omc directory through a
+    # $ORIGIN-relative RUNPATH. Fedora's packaging guidelines allow an rpath to internal libraries.
+    'binary-or-shlib-defines-rpath .* \(RUNPATH: \$ORIGIN',
+
+    # Names, not misspellings, and the British spelling the descriptions are written in.
+    "spelling-error \\(.(Modelica|simrt|omc|omc's|installPackage|readline|modelling|metapackage)[\"']",
+
+    # Modelica sources, not translations.
+    'file-not-in-%lang .*\.mo$',
+
+    # Helper scripts for Python and Julia, installed 644 on purpose (OMCompiler/Compiler/CMakeLists.txt):
+    # executable, rpmbuild would make the package require their interpreters, julia included.
+    'non-executable-script /usr/share/omc/scripts/[^ ]+\.(py|jl) ',
+
+    # Licence notices of third-party files, which are not ours to rewrite: the JNI headers from
+    # OpenJDK and the GPL notice of the contributed ngspicetoModelica.py.
+    'incorrect-fsf-address .*/(jni[^/]*\.h|ngspicetoModelica\.py)$',
+]

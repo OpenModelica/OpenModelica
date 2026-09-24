@@ -315,7 +315,12 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQ
 else()
 endif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
-install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
+# The library only carries the precompiled header, and only the MSVC makefile links it (PCH_LIB in
+# ModelicaConfig_msvc.inc). Elsewhere it is an archive with no code in it, which lintian reports as
+# no-code-sections.
+if(MSVC)
+  install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
+endif()
 install(FILES
   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Modelica.h
   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ModelicaDefine.h

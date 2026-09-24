@@ -46,9 +46,9 @@ set(OM_PACKAGE_COMPONENTS
 # no-copyright-file and no-changelog. The directory is named after the *binary package*, which is not
 # always the component name (meta is packaged as openmodelica), hence om_package_name().
 #
-# These install rules are also what registers each component with CMake. They therefore have to run
-# before the get_cmake_property(... COMPONENTS) below picks the list up -- and they are the only
-# rules the meta component has, since a metapackage ships no program of its own.
+# These install rules also register each component they name with CMake, so they are only added for
+# the components that some other rule registered already, and for meta. They are the only rules the
+# meta component has, since a metapackage ships no program of its own.
 #
 # The changelog is generated rather than maintained: this project's history is its git log, and a
 # hand-written debian/changelog would only ever restate the version that is already in the package.
@@ -155,7 +155,17 @@ else()
                   "and lintian will report no-changelog.")
 endif()
 
+# Which components exist has to be read before the rules below, because they register every
+# component they name. Read afterwards, a component this build left out -- omoptim unless
+# OM_OMOPTIM_ENABLE is on -- would be registered by its copyright file alone and packaged as an
+# empty package (lintian: empty-binary-package). meta has no rules of its own, so it is kept anyway.
+get_cmake_property(OM_REGISTERED_COMPONENTS COMPONENTS)
+list(APPEND OM_REGISTERED_COMPONENTS meta)
+
 foreach(comp IN LISTS OM_PACKAGE_COMPONENTS)
+  if(NOT comp IN_LIST OM_REGISTERED_COMPONENTS)
+    continue()
+  endif()
   om_package_name(${comp} _om_doc_package)
   install(FILES "${OM_COPYRIGHT_FILE}"
           DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${_om_doc_package}"
@@ -167,7 +177,6 @@ foreach(comp IN LISTS OM_PACKAGE_COMPONENTS)
   endif()
 endforeach()
 
-get_cmake_property(OM_REGISTERED_COMPONENTS COMPONENTS)
 set(CPACK_COMPONENTS_ALL "")
 foreach(comp IN LISTS OM_PACKAGE_COMPONENTS)
   if(comp IN_LIST OM_REGISTERED_COMPONENTS)
@@ -378,11 +387,11 @@ that installPackage() works on a machine with no network access."
 cpack_add_component(meta
                     DISPLAY_NAME "OpenModelica"
                     DESCRIPTION
-                    "OpenModelica modelling and simulation environment
+                    "Modelica modelling and simulation environment
 OpenModelica is an open-source environment for modelling and simulating
 systems described in the Modelica language.
 .
-This package installs the whole tool chain: the compiler, the simulation
+This metapackage installs the whole tool chain: the compiler, the simulation
 runtime and the graphical clients. It contains no files of its own."
                     )
 

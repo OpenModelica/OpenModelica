@@ -29,7 +29,8 @@ set(OM_MANPAGES
     OMEdit:OMEdit:omedit
     OMShell:OMShell:omshell
     OMShell-terminal:OMShell-terminal:omshellterminal
-    OMNotebook:OMNotebook:omnotebook)
+    OMNotebook:OMNotebook:omnotebook
+    OMCppOSUSimulation:OMCppOSUSimulation:simrt)
 if(OM_ENABLE_OMSIMULATOR)
   list(APPEND OM_MANPAGES OMSimulator:omc:omsimulator)
 endif()

@@ -162,12 +162,7 @@ openmodelica_scripting_qt = {path = "openmodelica_scripting_qt"}
 [profile.release]
 lto = "thin"
 codegen-units = 1
-# Cargo's own release default only drops the debug info, leaving the symbol table behind, and
-# libomc_result.so is installed with install(PROGRAMS) -- which CMake never strips, unlike
-# install(TARGETS) under CPACK_STRIP_FILES. So the packaged library kept its symbols and lintian
-# reported unstripped-binary-or-object for it alone.
 # Add `debug = true` and `strip = false` here for a release build with backtraces.
-strip = true
 
 # libffi-sys fork that assembles win64.S with clang-cl (not ml64) so the
 # windows-msvc cross build works. Pending upstream merge of the same change.

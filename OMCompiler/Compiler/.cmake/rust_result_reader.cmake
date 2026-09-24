@@ -56,7 +56,9 @@ function(omc_result_reader_library)
   else()
     set(_lib ${_out}/libomc_result.so)
   endif()
+  # The workspace manifest too: its [profile.release] (strip) decides what the library is built as.
   file(GLOB_RECURSE _rust_srcs CONFIGURE_DEPENDS
+       ${_workspace}/Cargo.toml
        ${_crate}/src/*.rs ${_crate}/Cargo.toml ${_crate}/include/omc_result.h
        ${_workspace}/openmodelica_result_files/src/*.rs
        ${_workspace}/openmodelica_mat_reader/src/*.rs

@@ -313,6 +313,27 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
     endif()
   endforeach()
 
+  # Every package's Summary and %description, from the component's DESCRIPTION: its first line is
+  # the synopsis and the rest the long description, as CPackDeb splits it for the Debian control
+  # file. CPackRPM does fall back to the component DESCRIPTION for %description, but takes the
+  # Summary from CPACK_PACKAGE_DESCRIPTION_SUMMARY, so every package was summarised as the
+  # project -- "OpenModelica built using CMake" -- and the synopsis repeated at the top of the
+  # description. A line holding only "." is the Debian paragraph break; rpm uses a blank line.
+  foreach(_om_component IN LISTS CPACK_COMPONENTS_ALL)
+    string(TOUPPER "${_om_component}" _om_component_upper)
+    set(_om_description "${CPACK_COMPONENT_${_om_component_upper}_DESCRIPTION}")
+    string(FIND "${_om_description}" "\n" _om_newline)
+    if(_om_newline EQUAL -1)
+      continue()
+    endif()
+    string(SUBSTRING "${_om_description}" 0 ${_om_newline} _om_summary)
+    math(EXPR _om_newline "${_om_newline} + 1")
+    string(SUBSTRING "${_om_description}" ${_om_newline} -1 _om_body)
+    string(REGEX REPLACE "(^|\n)\\.(\n|$)" "\\1\\2" _om_body "${_om_body}")
+    set(CPACK_RPM_${_om_component_upper}_PACKAGE_SUMMARY "${_om_summary}")
+    set(CPACK_RPM_${_om_component_upper}_PACKAGE_DESCRIPTION "${_om_body}")
+  endforeach()
+
   # The tools omc runs rather than links, which rpmbuild's dependency generator cannot see:
   # CPACK_DEBIAN_OMC_PACKAGE_DEPENDS under RPM names, where build-essential is gcc, gcc-c++ and
   # make and the -dev packages are -devel. The Autoconf spec required these too, bar clang.
@@ -335,12 +356,30 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
       "omsens = %{version}-%{release}, omlibrary = %{version}-%{release}")
 
   # A short identifier, which is what the tag is for: CPACK_RESOURCE_FILE_LICENSE is the path of
-  # the licence file, so rpm -qi printed a path off the build machine. OSMC-PL is what the
-  # Autoconf spec declared; the text offers AGPL version 3 as an alternative.
-  set(CPACK_RPM_PACKAGE_LICENSE "OSMC-PL")
+  # the licence file, so rpm -qi printed a path off the build machine. An SPDX expression, as
+  # Fedora and rpmlint expect (the bare "OSMC-PL" the Autoconf spec declared is reported as
+  # invalid-license), stating the same choice as the DEP-5 copyright file of the .deb packages:
+  # the OSMC-PL 1.8, which SPDX does not list and so is a LicenseRef-, or the AGPL version 3.
+  set(CPACK_RPM_PACKAGE_LICENSE "AGPL-3.0-only OR LicenseRef-OSMC-PL-1.8")
+
+  # CPackRPM has no variable for the Packager tag; rpmbuild takes it from this macro.
+  # rpmlint reports no-packager-tag without it.
+  set(CPACK_RPM_SPEC_MORE_DEFINE
+      "%define packager OpenModelica Build System <${CPACK_PACKAGE_CONTACT}>")
+
+  # Every package that installs a man page would otherwise own /usr/share/man and
+  # /usr/share/man/man1, which belong to the filesystem package (rpmlint:
+  # standard-dir-owned-by-package). CPack's default list leaves these two out.
+  set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/share/man /usr/share/man/man1)
 
   # The documentation is the same on every architecture.
   set(CPACK_RPM_DOC_PACKAGE_ARCHITECTURE "noarch")
+  # So are these: OMNotebook documents, the Modelica library cache and a metapackage with no
+  # files but its documentation (rpmlint: no-binary).
+  set(CPACK_RPM_DRCONTROL_PACKAGE_ARCHITECTURE "noarch")
+  set(CPACK_RPM_DRMODELICA_PACKAGE_ARCHITECTURE "noarch")
+  set(CPACK_RPM_OMLIBRARY_PACKAGE_ARCHITECTURE "noarch")
+  set(CPACK_RPM_META_PACKAGE_ARCHITECTURE "noarch")
 
 
 elseif(CPACK_GENERATOR STREQUAL "productbuild")

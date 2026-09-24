@@ -796,11 +796,17 @@ void checkDeb() {
   sh label: 'lintian version', script: 'lintian --version'
   // --tag-display-limit 0 because lintian elides a tag after a few instances,
   // and the elided ones are exactly what says how much is left to fix.
+  //
+  // initial-upload-closes-no-bugs is for a package entering the Debian archive,
+  // whose first changelog entry has to close its ITP bug. Ours are published in
+  // our own repository, and the changelog components.cmake generates always has
+  // exactly one entry, so every package would report it on every build.
   sh label: 'Run lintian', script: '''
     : > lintian.txt
     for f in build_cmake/_packages/*.deb; do
       echo "=== $f ===" >> lintian.txt
-      lintian --tag-display-limit 0 -c "$f" >> lintian.txt 2>&1 || true
+      lintian --tag-display-limit 0 --suppress-tags initial-upload-closes-no-bugs \
+        -c "$f" >> lintian.txt 2>&1 || true
     done
     cat lintian.txt
   '''
@@ -817,7 +823,7 @@ void checkRpm() {
     : > rpmlint.txt
     for f in build_cmake/_packages/*.rpm; do
       echo "=== $f ===" >> rpmlint.txt
-      rpmlint "$f" >> rpmlint.txt 2>&1 || true
+      rpmlint -c cmake/packaging/rpmlint.toml "$f" >> rpmlint.txt 2>&1 || true
     done
     cat rpmlint.txt
   '''
