@@ -6,6 +6,7 @@ spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
 algorithmWhen.mos\
+algorithmWhenPreCondition.mos\
 AssertNoEvent.mos\
 integerIteratorNoEvent.mos\
 
