@@ -116,7 +116,9 @@ import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
 import NFInst;
+import NFSCodeEnv;
 import NFSCodeFlatten;
+import NFSCodeLookup;
 import NFUsedElements;
 import Obfuscate;
 import OMGraphics;
@@ -2036,6 +2038,24 @@ algorithm
 
     case ("saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
                             Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+      then Values.BOOL(false);
+
+    case ("previous_saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
+                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then
+          saveTotalModel(filename, classpath, b1, b2, b3, previous = true);
+          b := true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b := false;
+        end if;
+      then
+        Values.BOOL(b);
+
+    case ("previous_saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
+                                     Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
       then Values.BOOL(false);
 
     case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
@@ -8045,10 +8065,15 @@ protected function saveTotalModel
   input Boolean stripAnnotations;
   input Boolean stripComments;
   input Boolean obfuscate;
+  input Boolean previous = false "Use previousGetTotalModel.";
 protected
   String result, obfuscate_map;
 algorithm
-  (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  if previous then
+    (result, obfuscate_map) := previousGetTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  else
+    (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  end if;
   if obfuscate then
     System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
   end if;
@@ -8096,6 +8121,46 @@ algorithm
     result := result + "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
   end if;
 end getTotalModel;
+
+protected function previousGetTotalModel
+  "The previous implementation of getTotalModel, which finds the used classes
+   with NFSCodeFlatten. Kept for comparison by previous_saveTotalModel."
+  input Absyn.Path classpath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
+  output String result;
+  output String obfuscate_map = "";
+protected
+  SCode.Program scodeP;
+  String str,str1,str2,str3;
+  NFSCodeEnv.Env env;
+  SCode.Comment cmt;
+  Absyn.Path cls_path = classpath;
+algorithm
+  loadProgram(cls_path);
+  scodeP := SymbolTable.getSCode();
+  (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(cls_path, scodeP);
+  (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(cls_path, env, Absyn.dummyInfo);
+  scodeP := SCodeUtil.removeBuiltinsFromTopScope(scodeP);
+
+  if stripAnnotations or stripComments then
+    scodeP := SCodeUtil.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
+  end if;
+
+  if obfuscate then
+    (scodeP, cls_path, cmt, obfuscate_map) := Obfuscate.obfuscateProgram(scodeP, cls_path, cmt);
+  end if;
+
+  str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
+  str1 := AbsynUtil.pathLastIdent(cls_path) + "_total";
+  str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
+  str2 := if stringEq(str2,"") then "" else (" " + str2);
+  str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+  str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
+  str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
+  result := str + str1;
+end previousGetTotalModel;
 
 protected function getTotalProgramNF
   "Returns the loaded program reduced to the given class and what it uses. The

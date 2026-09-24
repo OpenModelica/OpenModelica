@@ -2374,6 +2374,23 @@ loaded with loadFile() or passing the file to the compiler on the command line.<
   preferredView="text");
 end saveTotalModel;
 
+function previous_saveTotalModel
+  "Saves a model and dependencies to a single file, the previous way."
+  input String fileName;
+  input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
+  input Boolean obfuscate = false;
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>The previous implementation of <a href=\"modelica://OpenModelica.Scripting.saveTotalModel\">saveTotalModel()</a>,
+which finds the classes <code>className</code> depends upon with the dependency
+analysis of the old frontend. It is kept for comparison for now and will be removed.</p>
+</html>"),
+  preferredView="text");
+end previous_saveTotalModel;
+
 
 function getTotalModel
   "Saves a model and dependencies to a single string."
