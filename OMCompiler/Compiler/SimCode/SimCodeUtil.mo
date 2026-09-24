@@ -17664,7 +17664,6 @@ algorithm
              + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
              + "SET RESULT=%ERRORLEVEL%\n"
              + "endlocal\n"
-             + "\n"
              + "EXIT /b %RESULT%\n";
         File.write(file, str);
       then fileName;
