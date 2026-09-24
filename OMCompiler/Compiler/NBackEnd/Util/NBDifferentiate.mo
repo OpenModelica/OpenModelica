@@ -1094,7 +1094,8 @@ public
       // Any variable that is in the HT will be differentiated accordingly. 0 otherwise
       case (Expression.CREF(), DifferentiationType.FUNCTION, SOME(diff_map)) algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
-        if UnorderedMap.contains(strippedCref, diff_map) then
+        // discrete variables (e.g. for-loop iterators with the name of a local) have no derivative
+        if not Type.isDiscrete(Type.arrayElementType(exp.ty)) and UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
@@ -1475,6 +1476,9 @@ public
           if isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
             der_func := addDiffInfo(func, der_func, diffArguments);
+          elseif List.any(func.inputs, InstNode.isFunction) then
+            // the body calls the function input, which has no derivative (e.g. solveOneNonlinearEquation)
+            fail();
           else
             (der_func, diffArguments) := differentiateFunction(func, interface_map, diffArguments);
           end if;
