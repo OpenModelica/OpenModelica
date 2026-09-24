@@ -2086,7 +2086,8 @@ let &sub = buffer ""
           >>
         case SIMVAR(aliasvar=NOALIAS()) then
           <<
-          data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;
+          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
+          data->simulationInfo->inputVars[<%i0%>] = <%expTypeShort(type_)%>_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
           >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
@@ -2107,7 +2108,8 @@ let &sub = buffer ""
           >>
         case SIMVAR(aliasvar=NOALIAS()) then
           <<
-          data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];
+          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
+          put_<%expTypeShort(type_)%>_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
           >>
         else
           error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
@@ -3616,8 +3618,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
         <<
         <%cComment%>
         sysData->nominal[i] = 1.0;
-        sysData->min[i]     = <%crefAttributes(cr)%>.min;
-        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        sysData->min[i]     = integer_get(<%crefAttributes(cr)%>.min, 0);
+        sysData->max[i++]   = integer_get(<%crefAttributes(cr)%>.max, 0);
         >>
       else
         <<
@@ -3826,20 +3828,21 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         %>
         >>
 
+      let ty = crefShortType(cref)
       let updateEqs = match attribute
         case "nominal"
         case "min"
         case "max" then
           <<
           if (<%crefVarDimension(cref)%>.numberOfDimensions == 0) {
-            put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
+            put_<%ty%>_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
           } else {
             throwStreamPrint(NULL, "Not yet implemented for array <%attribute%>.");
           }
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char <%attribute%>_buffer[2048];
-            real_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
+            <%ty%>_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
             infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=%s)",
               <%crefVarInfo(cref)%>.name,
               <%attribute%>_buffer);

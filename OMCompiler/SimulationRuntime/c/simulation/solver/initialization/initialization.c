@@ -151,39 +151,45 @@ void dumpInitialSolution(DATA *simData)
     messageClose(OMC_LOG_SOTI);
   }
 
-  if (0 < mData->nVariablesInteger)
+  if (0 < mData->nVariablesIntegerArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "integer variables");
-    for(i=0; i<mData->nVariablesInteger; ++i)
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1,
-                                   mData->integerVarsData[i].info.name,
-                                   mData->integerVarsData[i].attribute.start,
-                                   simData->localData[0]->integerVars[i],
-                                   sInfo->integerVarsPre[i]);
+    for(i=0; i<mData->nVariablesIntegerArray; ++i) {
+      integer_vector_to_string(&mData->integerVarsData[i].attribute.start, mData->integerVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=%s) = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1,
+                      mData->integerVarsData[i].info.name,
+                      start_buffer,
+                      simData->localData[0]->integerVars[sInfo->integerVarsIndex[i]],
+                      sInfo->integerVarsPre[sInfo->integerVarsIndex[i]]);
+    }
     messageClose(OMC_LOG_SOTI);
   }
 
-  if (0 < mData->nVariablesBoolean)
+  if (0 < mData->nVariablesBooleanArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "boolean variables");
-    for(i=0; i<mData->nVariablesBoolean; ++i)
+    for(i=0; i<mData->nVariablesBooleanArray; ++i) {
+      boolean_vector_to_string(&mData->booleanVarsData[i].attribute.start, mData->booleanVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
-                                   mData->booleanVarsData[i].info.name,
-                                   mData->booleanVarsData[i].attribute.start ? "true" : "false",
-                                   simData->localData[0]->booleanVars[i] ? "true" : "false",
-                                   sInfo->booleanVarsPre[i] ? "true" : "false");
+                      mData->booleanVarsData[i].info.name,
+                      start_buffer,
+                      simData->localData[0]->booleanVars[sInfo->booleanVarsIndex[i]] ? "true" : "false",
+                      sInfo->booleanVarsPre[sInfo->booleanVarsIndex[i]] ? "true" : "false");
+    }
     messageClose(OMC_LOG_SOTI);
   }
 
-  if (0 < mData->nVariablesString)
+  if (0 < mData->nVariablesStringArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "string variables");
-    for(i=0; i<mData->nVariablesString; ++i)
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", i+1,
-                                   mData->stringVarsData[i].info.name,
-                                   omc_string_data(mData->stringVarsData[i].attribute.start),
-                                   omc_string_data(simData->localData[0]->stringVars[i]),
-                                   omc_string_data(sInfo->stringVarsPre[i]));
+    for(i=0; i<mData->nVariablesStringArray; ++i) {
+      string_vector_to_string(&mData->stringVarsData[i].attribute.start, mData->stringVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] String %s(start=%s) = \"%s\" (pre: \"%s\")", i+1,
+                      mData->stringVarsData[i].info.name,
+                      start_buffer,
+                      omc_string_data(simData->localData[0]->stringVars[sInfo->stringVarsIndex[i]]),
+                      omc_string_data(sInfo->stringVarsPre[sInfo->stringVarsIndex[i]]));
+    }
     messageClose(OMC_LOG_SOTI);
   }
 
@@ -610,7 +616,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import integer variables");
-    for(i=0; i<mData->nVariablesInteger; ++i) {
+    for(i=0; i<mData->nVariablesIntegerArray; ++i) {
+      if (mData->integerVarsData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+      }
       if (isQuantityOverridden(mData->integerVarsData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of integer variable %s: overridden on command line", mData->integerVarsData[i].info.name);
         continue;
@@ -624,8 +633,8 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->integerVarsData[i].attribute.start = (modelica_integer) value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerVarsData[i].info.name, mData->integerVarsData[i].attribute.start);
+        put_integer_element((modelica_integer) value, 0, &mData->integerVarsData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerVarsData[i].info.name, integer_get(mData->integerVarsData[i].attribute.start, 0));
       } else if((strlen(mData->integerVarsData[i].info.name) > 0) &&
               (mData->integerVarsData[i].info.name[0] != '$') &&
               (strncmp(mData->integerVarsData[i].info.name, "der($", 5) != 0)) {
@@ -635,7 +644,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import boolean variables");
-    for(i=0; i<mData->nVariablesBoolean; ++i) {
+    for(i=0; i<mData->nVariablesBooleanArray; ++i) {
+      if (mData->booleanVarsData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+      }
       if (isQuantityOverridden(mData->booleanVarsData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of boolean variable %s: overridden on command line", mData->booleanVarsData[i].info.name);
         continue;
@@ -649,13 +661,13 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->booleanVarsData[i].attribute.start = (modelica_integer) value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanVarsData[i].info.name, mData->booleanVarsData[i].attribute.start ? "true" : "false");
+        put_boolean_element((modelica_boolean) value, 0, &mData->booleanVarsData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanVarsData[i].info.name, boolean_get(mData->booleanVarsData[i].attribute.start, 0) ? "true" : "false");
       } else if((strlen(mData->booleanVarsData[i].info.name) > 0) &&
               (mData->booleanVarsData[i].info.name[0] != '$') &&
               (strncmp(mData->booleanVarsData[i].info.name, "der($", 5) != 0)) {
         /* skip warnings about self-generated variables */
-        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean variable %s from given file", mData->integerVarsData[i].info.name);
+        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean variable %s from given file", mData->booleanVarsData[i].info.name);
       }
     }
 
@@ -690,8 +702,11 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import integer parameters");
-    for(i=0; i<mData->nParametersInteger; ++i)
+    for(i=0; i<mData->nParametersIntegerArray; ++i)
     {
+      if (mData->integerParameterData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array parameters not yet implemented!");
+      }
       if (isQuantityOverridden(mData->integerParameterData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of integer parameter %s: overridden on command line", mData->integerParameterData[i].info.name);
         continue;
@@ -706,16 +721,19 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
       if (pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->integerParameterData[i].attribute.start = (modelica_integer)value;
+        put_integer_element((modelica_integer)value, 0, &mData->integerParameterData[i].attribute.start);
         data->simulationInfo->integerParameter[i] = (modelica_integer)value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerParameterData[i].info.name, integer_get(mData->integerParameterData[i].attribute.start, 0));
       } else {
         warningStreamPrint(OMC_LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import boolean parameters");
-    for(i=0; i<mData->nParametersBoolean; ++i) {
+    for(i=0; i<mData->nParametersBooleanArray; ++i) {
+      if (mData->booleanParameterData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array parameters not yet implemented!");
+      }
       if (isQuantityOverridden(mData->booleanParameterData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of boolean parameter %s: overridden on command line", mData->booleanParameterData[i].info.name);
         continue;
@@ -730,9 +748,9 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
+        put_boolean_element((modelica_boolean)value, 0, &mData->booleanParameterData[i].attribute.start);
         data->simulationInfo->booleanParameter[i] = (modelica_boolean)value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, boolean_get(mData->booleanParameterData[i].attribute.start, 0) ? "true" : "false");
       } else {
         warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
       }

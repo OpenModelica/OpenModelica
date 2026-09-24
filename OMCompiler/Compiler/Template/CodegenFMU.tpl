@@ -587,37 +587,18 @@ template initVals(SimVar var, String arrayName) ::=
       else if stringEq(crefStr(name),"der($dummy)") then
         ''
       else
-        match type_
-          // For a non-scalarized real array the start attribute is a single
-          // (broadcast) scalar element, so it is set like a scalar real.
-          case T_REAL()
-          case T_ARRAY(ty=T_REAL()) then
-            <<
-            put_real_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
-            >>
-          case T_STRING() then
-            <<
-            omc_string_store(&comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start, comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>]);
-            >>
-          else
-            <<
-            comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start = comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>];
-            >>
+        // For a non-scalarized array the start attribute is a single
+        // (broadcast) scalar element, so it is set like a scalar.
+        <<
+        put_<%expTypeShort(type_)%>_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
+        >>
 end initVals;
 
 template initParams(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(index=index, type_=T_REAL(__)) then
+    case SIMVAR(index=index, type_=type_) then
       <<
-      put_real_element(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
-      >>
-    case SIMVAR(index=index, type_=T_STRING()) then
-      <<
-      omc_string_store(&comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start, comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]);
-      >>
-    case SIMVAR(index=index) then
-      <<
-      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = comp->fmuData->simulationInfo-><%arrayName%>[<%index%>];
+      put_<%expTypeShort(type_)%>_element(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initParams;
 
@@ -629,13 +610,14 @@ template initValsDefault(SimVar var, String arrayName) ::=
       <<
       put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
-    case SIMVAR(index=index, type_=T_STRING()) then
+    case SIMVAR(index=index, type_=T_STRING())
+    case SIMVAR(index=index, type_=T_ARRAY(ty=T_STRING())) then
       <<
-      omc_string_move(&comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start, <%initValDefault(var)%>);
+      omc_string_move((modelica_string*) comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
       >>
-    case SIMVAR(index=index) then
+    case SIMVAR(index=index, type_=type_) then
       <<
-      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = <%initValDefault(var)%>;
+      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initValsDefault;
 
@@ -647,11 +629,11 @@ template initParamsDefault(SimVar var, String arrayName) ::=
       >>
     case SIMVAR(index=index, type_=T_STRING()) then
       <<
-      omc_string_move(&comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start, <%initValDefault(var)%>);
+      omc_string_move((modelica_string*) comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
       >>
-    case SIMVAR(index=index) then
+    case SIMVAR(index=index, type_=type_) then
       <<
-      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = <%initValDefault(var)%>;
+      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initParamsDefault;
 
@@ -1014,7 +996,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
     // set start value attribute for all variable that has start value, till initialization mode
     if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
-      comp->fmuData->modelData->integerVarsData[vr].attribute.start = value;
+      put_integer_element(value, 0, &comp->fmuData->modelData->integerVarsData[vr].attribute.start);
     }
     if (vr < <%ixFirstParam%>) {
       comp->fmuData->localData[0]->integerVars[vr] = value;
@@ -3986,6 +3968,9 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   <<
   #include "simulation_data.h"
   #include "util/real_array.h"
+  #include "util/integer_array.h"
+  #include "util/boolean_array.h"
+  #include "util/string_array.h"
 
   OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
 
@@ -4128,26 +4113,26 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       >>
     case T_INTEGER(__) then
       <<
-      <%attrstr%>.min = <%optInitValFMU(minValue,"-LONG_MAX")%>;
-      <%attrstr%>.max = <%optInitValFMU(maxValue,"LONG_MAX")%>;
+      put_integer_element(<%optInitValFMU(minValue,"-LONG_MAX")%>, 0, &<%attrstr%>.min);
+      put_integer_element(<%optInitValFMU(maxValue,"LONG_MAX")%>, 0, &<%attrstr%>.max);
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
+      put_integer_element(<%optInitValFMU(startValue,"0")%>, 0, &<%attrstr%>.start);
       >>
     case T_BOOL(__) then
       <<
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
+      put_boolean_element(<%optInitValFMU(startValue,"0")%>, 0, &<%attrstr%>.start);
       >>
     case T_STRING(__) then
       <<
-      omc_string_move(&<%attrstr%>.start, <%optInitValFMU(startValue,"omc_string_new(\"\")")%>);
+      omc_string_move((modelica_string*) <%attrstr%>.start.data, <%optInitValFMU(startValue,"omc_string_new(\"\")")%>);
       >>
     case T_ENUMERATION(__) then
       <<
-      <%attrstr%>.min = <%optInitValFMU(minValue,"1")%>;
-      <%attrstr%>.max = <%optInitValFMU(maxValue,listLength(names))%>;
+      put_integer_element(<%optInitValFMU(minValue,"1")%>, 0, &<%attrstr%>.min);
+      put_integer_element(<%optInitValFMU(maxValue,listLength(names))%>, 0, &<%attrstr%>.max);
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
+      put_integer_element(<%optInitValFMU(startValue,"0")%>, 0, &<%attrstr%>.start);
       >>
     case T_ARRAY(ty=ty) then
       // non-scalarized array variable: emit the attributes using the element type

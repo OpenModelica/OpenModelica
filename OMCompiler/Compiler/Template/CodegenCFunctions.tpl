@@ -8834,13 +8834,16 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
             // array-building contexts (real_array_create(&tmp, &<expr>, ...)),
             // and a plain ?: ternary is an rvalue whose address cannot be taken.
             match ty
-              case "real" then
+              case "real"
+              case "integer"
+              case "boolean"
+              case "string" then
                 let &nosub = buffer ""
                 let attr = varAttributes(var, &nosub)
                 if stringEq(&sub, "") then
-                  '((modelica_real *)(<%attr%>.start.data))[0]'
+                  '((modelica_<%ty%> *)(<%attr%>.start.data))[0]'
                 else
-                  '(*(real_array_nr_of_elements(<%attr%>.start) == 1 ? &((modelica_real *)(<%attr%>.start.data))[0] : &((modelica_real *)(<%attr%>.start.data))<%&sub%>))'
+                  '(*(base_array_nr_of_elements(<%attr%>.start) == 1 ? &((modelica_<%ty%> *)(<%attr%>.start.data))[0] : &((modelica_<%ty%> *)(<%attr%>.start.data))<%&sub%>))'
               else
                 '<%varAttributes(var, &sub)%>.start'
           else if isPre then
@@ -8890,7 +8893,7 @@ template startArrayElement(ComponentRef cr, Text type, Text idx)
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'startArrayElement got negative index=<%index%> for <%crefStr(name)%>') else
     let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
-    if stringEq(type, "real") then '((modelica_real*)(<%entry%>.data))[0]' else entry
+    '((modelica_<%type%>*)(<%entry%>.data))[0]'
 end startArrayElement;
 
 template varArrayName(SimVar var)

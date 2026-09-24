@@ -274,8 +274,11 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
                         "Failed to calculate length of variable.",
                         dimensionAttribute->valueReference);
 
-      dimensionAttribute->start = structuralParameter->attribute.start;
-      length = length * structuralParameter->attribute.start;
+      assertStreamPrint(NULL, structuralParameter->dimension.numberOfDimensions == 0,
+                        "Structural parameter '%s' specifying a dimension has to be a scalar.",
+                        structuralParameter->info.name);
+      dimensionAttribute->start = integer_get(structuralParameter->attribute.start, 0);
+      length = length * dimensionAttribute->start;
       break;
 
     default:
@@ -718,6 +721,28 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 }
 
 /**
+ * @brief Get element `dim_idx` of a real attribute.
+ *
+ * An attribute with a single element (`each` or no attribute given in the
+ * init XML) holds the value for all elements of the array variable.
+ *
+ * @param attribute       Attribute array.
+ * @param dim_idx         Index inside array variable as 1D representation.
+ * @return modelica_real  Attribute value of element `dim_idx`.
+ */
+static modelica_real real_attribute_get(const real_array *attribute, size_t dim_idx)
+{
+  const size_t n = (size_t) base_array_nr_of_elements(*attribute);
+
+  if (n == 1) {
+    return real_get(*attribute, 0);
+  }
+  assertStreamPrint(NULL, dim_idx < n,
+                    "real_attribute_get: dim_idx %zu out of bounds [0, %zu)", dim_idx, n);
+  return real_get(*attribute, dim_idx);
+}
+
+/**
  * @brief Get start attribute by scalar (flattened) index.
  *
  * Look up array index and dimension from reverse index map based on variable
@@ -751,21 +776,21 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                             "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nStates);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
 
         case VAR_KIND_VARIABLE:
           assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                             "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nVariablesReal);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
 
         case VAR_KIND_PARAMETER:
           assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                             "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nParametersReal);
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
 
         default:
           throwStreamPrint(NULL,
@@ -807,21 +832,21 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                         "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                         scalar_idx, (size_t)modelData->nStates);
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 
     case VAR_KIND_VARIABLE:
       assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                         "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                         scalar_idx, (size_t)modelData->nVariablesReal);
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 
     case VAR_KIND_PARAMETER:
       assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                         "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                         scalar_idx, (size_t)modelData->nParametersReal);
       revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-      return real_get(modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 
     default:
       throwStreamPrint(NULL,
@@ -864,21 +889,21 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                             "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nStates);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
 
         case VAR_KIND_VARIABLE:
           assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                             "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nVariablesReal);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
 
         case VAR_KIND_PARAMETER:
           assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                             "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nParametersReal);
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
 
         default:
           throwStreamPrint(NULL,
@@ -926,21 +951,21 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                             "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nStates);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
 
         case VAR_KIND_VARIABLE:
           assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                             "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nVariablesReal);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
 
         case VAR_KIND_PARAMETER:
           assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                             "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nParametersReal);
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
 
         default:
           throwStreamPrint(NULL,

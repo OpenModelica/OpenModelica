@@ -131,7 +131,7 @@ int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* ida
   for(i=0; i < data->modelData->nStates; ++i) {
     const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     idaData->nominal[i] = fmax(fabs(nominal), 1e-32);
-    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, idaData->nominal[i]);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[data->simulationInfo->realVarsReverseIndex[i].array_idx].info.name, idaData->nominal[i]);
   }
 
   /* daeMode: set nominal values for algebraic variables */

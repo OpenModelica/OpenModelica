@@ -949,3 +949,21 @@ modelica_boolean max_boolean_array(const boolean_array a)
 
   return 0;
 }
+
+static int boolean_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    return snprintf(buffer, bufsize, "%s", ((const modelica_boolean *)data)[i] ? "true" : "false");
+}
+
+/**
+ * @brief Write boolean vector into null-terminated string.
+ *
+ * @param source    Boolean vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
+ */
+void boolean_vector_to_string(const boolean_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
+{
+    base_vector_to_string(source, isScalar, boolean_element_to_string, buffer, bufsize);
+}

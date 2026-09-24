@@ -913,3 +913,22 @@ void unpack_string_array(const string_array *a, const char **data)
     ((void**)a->data)[i] = omc_string_new(data[i]);
   }
 }
+
+static int string_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    modelica_string s = ((const modelica_string *)data)[i];
+    return snprintf(buffer, bufsize, "\"%s\"", s ? omc_string_data(s) : "");
+}
+
+/**
+ * @brief Write string vector into null-terminated string.
+ *
+ * @param source    String vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
+ */
+void string_vector_to_string(const string_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
+{
+    base_vector_to_string(source, isScalar, string_element_to_string, buffer, bufsize);
+}

@@ -1,0 +1,83 @@
+// name: array_start_int_bool_string
+// keywords: NewBackend array start Integer Boolean String
+// status: correct
+//
+// Non-scalarized Integer, Boolean and String array variables and parameters
+// with element-wise start values. The start attributes are read from the init
+// XML file as arrays, every array element has to get its own start value.
+
+loadString("
+model array_start_int_bool_string
+  parameter Integer p[3] = {10, 20, 30} annotation(Evaluate=false);
+  parameter Boolean q[2] = {true, false} annotation(Evaluate=false);
+  parameter String s[2] = {\"a\", \"b c\"} annotation(Evaluate=false);
+  discrete Integer k[3](start = {1, 2, 3}, each fixed = true);
+  discrete Boolean c[2](start = {false, true}, each fixed = true);
+equation
+  when sample(0.5, 0.5) then
+    k = pre(k) + p;
+    c = q;
+  end when;
+end array_start_int_bool_string;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+simulate(array_start_int_bool_string, stopTime=1.0, simflags="-lv=LOG_INIT_V"); getErrorString();
+
+val(k[1], 0.0);
+val(k[2], 0.0);
+val(k[3], 0.0);
+val(c[1], 0.0);
+val(c[2], 0.0);
+val(k[1], 1.0);
+val(k[2], 1.0);
+val(k[3], 1.0);
+val(c[1], 1.0);
+val(c[2], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "array_start_int_bool_string_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'array_start_int_bool_string', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | integer parameters
+// |                 | |       | | | [1] parameter Integer p(start={10, 20, 30}, fixed=true) = 10
+// |                 | |       | | boolean parameters
+// |                 | |       | | | [1] parameter Boolean q(start={true, false}, fixed=true) = true
+// |                 | |       | | string parameters
+// |                 | |       | | | [1] parameter String s(start={\"a\", \"b c\"}) = \"a\"
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | integer variables
+// |                 | |       | | | [1] Integer k(start={1, 2, 3}) = 1 (pre: 1)
+// |                 | |       | | boolean variables
+// |                 | |       | | | [1] Boolean $TEV_1(start=false) = false (pre: false)
+// |                 | |       | | | [2] Boolean $TEV_0(start=false) = false (pre: false)
+// |                 | |       | | | [3] Boolean c(start={false, true}) = false (pre: false)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 3.0
+// 0.0
+// 1.0
+// 21.0
+// 42.0
+// 63.0
+// 1.0
+// 0.0
+// endResult
