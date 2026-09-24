@@ -1562,12 +1562,12 @@ void buildGccOMC() {
       "-DOM_ENABLE_COVERAGE=ON"])
   }
 
-  // The compiler as translated to C, for crossBuildOMCWindows(). Autoconf is
-  // configured per target, so that stage translates its own.
-  stash name: 'omc-c-sources',
-        includes: 'build_cmake/OMCompiler/Compiler/c_files/*.c,' +
-                  'build_cmake/OMCompiler/Compiler/c_files/*.h',
-        excludes: 'build_cmake/OMCompiler/Compiler/c_files/Autoconf*'
+  // The compiler translated to C for MSVC, for crossBuildOMCWindows().
+  sh label: 'Translate the compiler for MSVC',
+     script: "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target generate-msvc-c-sources"
+  stash name: 'omc-msvc-c-sources',
+        includes: 'build_cmake/OMCompiler/Compiler/msvc-c-sources/*.c,' +
+                  'build_cmake/OMCompiler/Compiler/msvc-c-sources/*.h'
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see ctestStashed).
@@ -1847,18 +1847,15 @@ void testWindowsSmoke() {
 
 // The C omc cross-compiled to Windows (MSVC) with the Rust nightly's win64
 // toolchain. A cross build cannot run bomc, so it compiles the C that
-// 'cmake-jammy-gcc' translated, and the Rust omc of 'cmake-rust-clang'
-// translates the one target-specific package, Autoconf.
+// 'cmake-jammy-gcc' translated for MSVC.
 void crossBuildOMCWindows() {
   Map t = nightlyTarget('win64')
   standardSetup()
-  unstash 'omc-rust'
-  unstash 'omc-c-sources'
-  sh 'mv build_cmake/OMCompiler/Compiler/c_files omc-c-sources && rm -rf build_cmake'
+  unstash 'omc-msvc-c-sources'
+  sh 'mv build_cmake/OMCompiler/Compiler/msvc-c-sources omc-c-sources && rm -rf build_cmake'
   List flags = ['-DCMAKE_BUILD_TYPE=Release',
                 "-DCMAKE_TOOLCHAIN_FILE=${t.toolchain}",
                 "-DRUST_OMC_TARGET=${t.triple}",
-                "-DOM_OMC_HOST_EXECUTABLE=${env.WORKSPACE}/build/bin/omc",
                 "-DOM_OMC_PREBUILT_C_SOURCES=${env.WORKSPACE}/omc-c-sources",
                 '-DOM_ENABLE_GUI_CLIENTS=OFF',
                 '-DOM_OMC_ENABLE_CPP_RUNTIME=OFF',
