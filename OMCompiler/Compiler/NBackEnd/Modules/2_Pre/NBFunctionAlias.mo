@@ -51,6 +51,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import Operator = NFOperator;
   import NFFunction.Function;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -489,7 +490,17 @@ protected
     output Boolean b;
   algorithm
     b := match exp
-      case Expression.CALL(call = Call.TYPED_CALL()) then not isStartSafeFunction(Call.typedFunction(exp.call), depth + 1);
+      local
+        Function fn;
+      // the generated code asserts on divisions by zero and on the domain of sqrt and log
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.DIV))              then not Expression.isLiteral(exp.exp2);
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.DIV_EW))           then not Expression.isLiteral(exp.exp2);
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.DIV_SCALAR_ARRAY)) then not Expression.isLiteral(exp.exp2);
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.DIV_ARRAY_SCALAR)) then not Expression.isLiteral(exp.exp2);
+      case Expression.CALL(call = Call.TYPED_CALL()) algorithm
+        fn := Call.typedFunction(exp.call);
+      then if Function.isBuiltin(fn) then List.contains({"sqrt", "log", "log10"}, AbsynUtil.pathLastIdent(Function.name(fn)), stringEq)
+           else not isStartSafeFunction(fn, depth + 1);
       else false;
     end match;
   end isUnsafeCallExp;
