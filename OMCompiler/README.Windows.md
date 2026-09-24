@@ -72,16 +72,13 @@ Install the following programs:
 - [Git](https://git-scm.com/downloads) (should already be installed)
 - [Java SE Development Kit](https://www.oracle.com/java/technologies/downloads/) (for javac)
 - [CMake](https://cmake.org/download/) (>= v3.21)
-- [rustup](https://rustup.rs) (optional if you disable it; see
-  [1.4 Rust toolchain](#14-rust-toolchain) for which toolchain to pick and how to
-  disable)
+- [rustup](https://rustup.rs) (see [1.4 Rust toolchain](#14-rust-toolchain) for
+  which toolchain to pick)
 
 ### 1.4 Rust toolchain
 
-The C simulation runtime writes result files through the Rust `libomc_result`
-(`OM_RUST_RESULT_WRITERS`) and the GUI clients read them back through it
-(`OM_RUST_RESULT_READERS`). If disabled the C runtime falls back to the C
-readers and writers, which cannot handle `.arrow`.
+Result files are read and written through the Rust `libomc_result`, and
+`--simCodeTarget=C` links the Rust simulation runtime.
 
 The crates use the 2024 edition, so `cargo`/`rustc` 1.85 or newer. Install
 [rustup](https://rustup.rs) from Windows (not through pacman), with
@@ -108,17 +105,8 @@ rustup override set stable-x86_64-pc-windows-gnu
 cargo -vV   # the host: line must end in -gnu here, -msvc for MSVC
 ```
 
-To build without Rust readers and writer at all:
-
-```bash
-cmake -S . -B build_cmake -Wno-dev -G "MSYS Makefiles" \
-  -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF
-```
-
-Two larger components are off by default: `-DOM_ENABLE_RUST_SIM_RUNTIME=ON` (the
-runtime `--simCodeTarget=C+Rust` links, stable is enough) and
-`-DOM_OMC_ENABLE_RUST=ON` (the compiler as the Rust port, needs the pinned
-nightly in [Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md)).
+`-DOM_OMC_ENABLE_RUST=ON` (the compiler as the Rust port, off by default) needs
+the pinned nightly in [Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md).
 
 ### 1.5 Environment Variables
 

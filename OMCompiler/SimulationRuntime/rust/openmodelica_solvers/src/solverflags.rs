@@ -16,6 +16,8 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
+use crate::atomic64::AtomicU64;
+
 /// `-nls`
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Nls {
@@ -78,15 +80,14 @@ static LSS: AtomicU32 = AtomicU32::new(0);
 /// `-nlssMinSize` / `-nlssMaxDensity`, C's `nonlinearSparseSolverMinSize` /
 /// `nonlinearSparseSolverMaxDensity`, at their defaults until a run sets them.
 static NLSS_MIN_SIZE: AtomicU32 = AtomicU32::new(1000);
-static NLSS_MAX_DENSITY: core::sync::atomic::AtomicU64 =
-    core::sync::atomic::AtomicU64::new(0x3FB999999999999A); // 0.1
+static NLSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(0x3FB999999999999A); // 0.1
 
 /// C's `newtonFTol` / `newtonXTol` / `maxStepFactor` (`model_help.c`), which
 /// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor` move. The homotopy Newton
 /// and KINSOL both read them, so they live here rather than in either solver.
-static NEWTON_FTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3D719799812DEA11); // 1e-12
-static NEWTON_XTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3D719799812DEA11);
-static MAX_STEP_FACTOR: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x426D1A94A2000000); // 1e12
+static NEWTON_FTOL: AtomicU64 = AtomicU64::new(0x3D719799812DEA11); // 1e-12
+static NEWTON_XTOL: AtomicU64 = AtomicU64::new(0x3D719799812DEA11);
+static MAX_STEP_FACTOR: AtomicU64 = AtomicU64::new(0x426D1A94A2000000); // 1e12
 
 pub fn set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f64) {
     NEWTON_FTOL.store(ftol.to_bits(), Ordering::Relaxed);
@@ -108,8 +109,8 @@ pub fn max_step_factor() -> f64 {
 }
 
 /// `-nlsJacTestATol` / `-nlsJacTestRTol`, at C's defaults until a run sets them.
-static JAC_TEST_ATOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3D19000000000000); // 100 * DBL_EPSILON
-static JAC_TEST_RTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3F1A36E2EB1C432D); // 1e-4
+static JAC_TEST_ATOL: AtomicU64 = AtomicU64::new(0x3D19000000000000); // 100 * DBL_EPSILON
+static JAC_TEST_RTOL: AtomicU64 = AtomicU64::new(0x3F1A36E2EB1C432D); // 1e-4
 
 pub fn set_jac_test_tolerances(atol: f64, rtol: f64) {
     JAC_TEST_ATOL.store(atol.to_bits(), Ordering::Relaxed);
@@ -126,8 +127,8 @@ pub fn jac_test_tolerances() -> (f64, f64) {
 
 /// `-svdCount` / `-svdSigma` / `-svdTol`.
 static SVD_COUNT: AtomicU32 = AtomicU32::new(0);
-static SVD_SIGMA: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
-static SVD_TOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
+static SVD_SIGMA: AtomicU64 = AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
+static SVD_TOL: AtomicU64 = AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
 
 pub fn set_svd(count: u32, sigma: f64, tol: f64) {
     SVD_COUNT.store(count, Ordering::Relaxed);

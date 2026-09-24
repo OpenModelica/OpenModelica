@@ -156,7 +156,7 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
 
 /// Generated code returns a raised error (`OMC_ERROR_RAISE`) rather than
 /// jumping, so a completed region may still have failed; consume it here.
-fn error_raised(thread_data: *mut threadData_t) -> bool {
+pub(crate) fn error_raised(thread_data: *mut threadData_t) -> bool {
     !thread_data.is_null() && unsafe { omc_error_take(thread_data) } != 0
 }
 
@@ -300,26 +300,32 @@ fn throw_prints_message(stage: c_int) -> bool {
 /// buffer `getBestJumpBuffer` picks for the stage. Unlike `omc_assert_simulation`
 /// the message is a debug one, and `ERROR_OPTIMIZE` takes the simulation buffer.
 pub(crate) fn throw_stream(threadData: *mut threadData_t, msg: &str) -> ! {
-    let stage = if threadData.is_null() {
-        error_stage::SIMULATION
-    } else {
-        unsafe { (*threadData).currentErrorStage }
-    };
-    let target = {
-        if throw_prints_message(stage) {
-            omclog::debug(omclog::ASSERT, false, msg);
-        }
-        match stage {
-            error_stage::EVENTSEARCH
-            | error_stage::SIMULATION
-            | error_stage::NONLINEARSOLVER
-            | error_stage::INTEGRATOR
-            | error_stage::OPTIMIZE => jump::SIMULATION,
-            _ => jump::GLOBAL,
-        }
+    if throw_prints_message(current_stage(threadData)) {
+        omclog::debug(omclog::ASSERT, false, msg);
+    }
+    rethrow(threadData)
+}
+
+/// [`throw_stream`] for an error that has already been reported.
+pub(crate) fn rethrow(threadData: *mut threadData_t) -> ! {
+    let target = match current_stage(threadData) {
+        error_stage::EVENTSEARCH
+        | error_stage::SIMULATION
+        | error_stage::NONLINEARSOLVER
+        | error_stage::INTEGRATOR
+        | error_stage::OPTIMIZE => jump::SIMULATION,
+        _ => jump::GLOBAL,
     };
     unsafe { omr_jump(threadData, target) };
     unreachable!("omr_jump returned")
+}
+
+fn current_stage(threadData: *mut threadData_t) -> c_int {
+    if threadData.is_null() {
+        error_stage::SIMULATION
+    } else {
+        unsafe { (*threadData).currentErrorStage }
+    }
 }
 
 /// The shim's last resort: nothing can catch this, so say why and stop.
@@ -416,6 +422,49 @@ pub extern "C" fn initJacobian(
     j.csrToCscMap = ptr::null_mut();
 }
 
+/// C's `initBidirectionalRecovery`: which of the forward (CSC) and adjoint (CSR)
+/// nonzeros each direction recovers alone, and each CSR entry's CSC position.
+#[unsafe(no_mangle)]
+pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
+    let fwd = unsafe { &mut *fwd };
+    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else { return };
+    let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe { adj.sparsePattern.as_ref() })
+    else {
+        return;
+    };
+    let nnz = f.nnz as usize;
+    fwd.recoverMask = calloc_bytes(nnz) as *mut u8;
+    adj.recoverMask = calloc_bytes(nnz) as *mut u8;
+    adj.csrToCscMap = calloc_bytes(nnz * 4) as *mut c_uint;
+    let at = |p: *mut c_uint, k: usize| unsafe { *p.add(k) as usize };
+    // The nonzeros of one lead index, and the leads they point at.
+    let span = |sp: &SPARSE_PATTERN, k: usize| at(sp.leadindex, k)..at(sp.leadindex, k + 1);
+    for j in 0..fwd.sizeCols {
+        let cj = at(f.colorCols, j);
+        for nz in span(f, j) {
+            let i = at(f.index, nz);
+            let unique = span(a, i).all(|k| {
+                let j2 = at(a.index, k);
+                j2 == j || at(f.colorCols, j2) != cj
+            });
+            unsafe { *fwd.recoverMask.add(nz) = unique as u8 };
+        }
+    }
+    for i in 0..fwd.sizeRows {
+        let ri = at(a.colorCols, i);
+        for nz in span(a, i) {
+            let j = at(a.index, nz);
+            let unique = span(f, j).all(|k| {
+                let i2 = at(f.index, k);
+                i2 == i || at(a.colorCols, i2) != ri
+            });
+            unsafe { *adj.recoverMask.add(nz) = unique as u8 };
+            let csc = span(f, j).find(|&k| at(f.index, k) == i).unwrap_or(0);
+            unsafe { *adj.csrToCscMap.add(nz) = csc as c_uint };
+        }
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn allocSparsePattern(
     n_leadIndex: c_uint,
@@ -484,10 +533,15 @@ unsafe extern "C" fn omr_message_text(
     indent_next: c_int,
     msg: *mut c_char,
     _subline: c_int,
-    _indexes: *const c_int,
+    indexes: *const c_int,
 ) {
     let text = with_position(&info, &cstr(msg));
-    omclog::message_text(ty as omclog::LogType, stream as omclog::Stream, indent_next != 0, &text);
+    // C's equation index list: the count, then the indexes.
+    let used = match unsafe { indexes.as_ref() } {
+        Some(&n) if n > 0 => unsafe { core::slice::from_raw_parts(indexes.add(1), n as usize) },
+        _ => &[],
+    };
+    omclog::message_text_used(ty as omclog::LogType, stream as omclog::Stream, indent_next != 0, &text, used);
 }
 
 unsafe extern "C" fn omr_message_close(stream: c_int) {

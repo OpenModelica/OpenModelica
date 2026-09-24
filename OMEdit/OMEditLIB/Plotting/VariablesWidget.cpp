@@ -868,18 +868,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     MainWindow::instance()->printStandardOutAndErrorFilesMessages();
   }
   /* open the result file, for the final values */
-#ifdef OM_LEGACY_RESULT_READERS
-  ModelicaMatReader matReader;
-  matReader.file = 0;
-  const char *msg[] = {""};
-  if (fileName.endsWith(".mat")) {
-    //Read in mat file
-    if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toUtf8().constData(), &matReader))) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(filePath + "/" + fileName)
-                                                            .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
-    }
-  }
-#else
   omc::ResultFile matReader;
   if (fileName.endsWith(".mat") || fileName.endsWith(".arrow")) {
     try {
@@ -889,7 +877,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                                             .arg(QString(e.what())), Helper::scriptingKind, Helper::errorLevel));
     }
   }
-#endif
   // create hash based VariableNode
   VariableNode *pTopVariableNode = new VariableNode(variabledata);
   // remove time from variables list
@@ -1038,12 +1025,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   insertVariablesItems(pTopVariableNode, pTopVariablesTreeItem);
   // Delete VariableNode
   delete pTopVariableNode;
-#ifdef OM_LEGACY_RESULT_READERS
-  /* close the .mat file */
-  if (fileName.endsWith(".mat") && matReader.file) {
-    omc_free_matlab4_reader(&matReader);
-  }
-#endif
   /* Ticket #3016.
    * If you only have one model the message "You must select a class to re-simulate" is annoying.
    * A default behavior of selecting the (single) model would be good.
@@ -1230,16 +1211,6 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
     if (*changeAble) {
       *value = scalarVariable.start;
     } else { /* Read the final value of the variable from the result file. */
-#ifdef OM_LEGACY_RESULT_READERS
-      if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
-        *value = "";
-        ModelicaMatVariable_t *var = omc_matlab4_find_var(pMatReader, variableToFind.toUtf8().constData());
-        double res = 0.0;
-        if (var && !omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader))) {
-          *value = StringHandler::number(res);
-        }
-      }
-#else
       if (pMatReader->isOpen()) {
         *value = "";
         double res = 0.0;
@@ -1247,7 +1218,6 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
           *value = StringHandler::number(res);
         }
       }
-#endif
     }
     *unit = scalarVariable.unit;
     *displayUnit = scalarVariable.displayUnit;
@@ -1557,10 +1527,6 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpVariablesTreeView->setColumnWidth(3, 70);
   mpVariablesTreeView->setColumnHidden(2, true); // hide Unit column
   mpLastActiveSubWindow = 0;
-#ifdef OM_LEGACY_RESULT_READERS
-  mModelicaMatReader.file = 0;
-  mpCSVData = 0;
-#endif
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -2010,62 +1976,9 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 {
   double value = 0.0;
   bool found = false;
-#ifndef OM_LEGACY_RESULT_READERS
   if (mResultFile.isOpen()) {
     found = mResultFile.valueAt(variable.toStdString(), time, value);
   }
-#else
-  const double tolerance = 1e-12;
-
-  if (mModelicaMatReader.file) {
-    ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
-    if (var) {
-      omc_matlab4_val(&value, &mModelicaMatReader, var, time);
-      found = true;
-    }
-  } else if (mpCSVData) {
-    double *timeDataSet = read_csv_dataset(mpCSVData, "time");
-    if (timeDataSet) {
-      for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
-        // relative distance. See #14959
-        double diff  = qAbs(timeDataSet[i] - time);
-        double scale = qMax(qAbs(timeDataSet[i]), qAbs(time));
-        if (diff <= tolerance * qMax(1.0, scale)) {
-          double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
-          if (varDataSet) {
-            value = varDataSet[i];
-            found = true;
-            break;
-          }
-        }
-      }
-    }
-  } else if (mPlotFileReader.isOpen()) {
-    QTextStream textStream(&mPlotFileReader);
-    QString currentLine;
-    bool variableFound = false;
-    while (!textStream.atEnd()) {
-      currentLine = textStream.readLine();
-      if (currentLine.compare(QString("DataSet: %1").arg(variable)) == 0) {
-        variableFound = true;
-      } else if (variableFound) {
-        if (currentLine.startsWith("DataSet:")) { // new dataset started. Unable to find the value.
-          break;
-        }
-        QStringList values = currentLine.split(",");
-        const double t = values[0].toDouble();
-        double diff  = qAbs(t - time);
-        double scale = qMax(qAbs(t), qAbs(time));
-        if (diff <= tolerance * qMax(1.0, scale)) {
-          value = values[1].toDouble();
-          found = true;
-          break;
-        }
-      }
-    }
-    textStream.seek(0);
-  }
-#endif
 
   if (reportError && !found) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.",
@@ -2727,21 +2640,7 @@ void VariablesWidget::selectInteractivePlotWindow(VariablesTreeItem *pVariablesT
  */
 void VariablesWidget::closeResultFile()
 {
-#ifdef OM_LEGACY_RESULT_READERS
-  if (mModelicaMatReader.file) {
-    omc_free_matlab4_reader(&mModelicaMatReader);
-    mModelicaMatReader.file = 0;
-  }
-  if (mpCSVData) {
-    omc_free_csv_reader(mpCSVData);
-    mpCSVData = 0;
-  }
-  if (mPlotFileReader.isOpen()) {
-    mPlotFileReader.close();
-  }
-#else
   mResultFile.close();
-#endif
   mOpenedResultFileName = "";
 }
 
@@ -2759,7 +2658,6 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
     QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
     bool errorOpeningFile = false;
     QString errorString = "";
-#ifndef OM_LEGACY_RESULT_READERS
     try {
       mResultFile.open(fileName.toStdString());
       startTime = mResultFile.startTime();
@@ -2768,72 +2666,6 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
       errorOpeningFile = true;
       errorString = e.what();
     }
-#else
-    if (pVariablesTreeItem->getFileName().endsWith(".mat")) {
-      const char *msg[] = {""};
-      if (0 == (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
-        startTime = omc_matlab4_startTime(&mModelicaMatReader);
-        stopTime = omc_matlab4_stopTime(&mModelicaMatReader);
-      } else {
-        errorOpeningFile = true;
-        errorString = msg[0];
-      }
-    } else if (pVariablesTreeItem->getFileName().endsWith(".csv")) {
-      mpCSVData = read_csv(fileName.toUtf8().constData());
-      if (mpCSVData) {
-        //Read in timevector
-        double *timeVals = read_csv_dataset(mpCSVData, "time");
-        if (timeVals == NULL) {
-          errorOpeningFile = true;
-          errorString = "Error reading time from CSV file.";
-        } else {
-          startTime = timeVals[0];
-          stopTime = timeVals[mpCSVData->numsteps-1];
-        }
-      } else {
-        errorOpeningFile = true;
-        errorString = "Error reading CSV file.";
-      }
-    } else if (pVariablesTreeItem->getFileName().endsWith(".plt")) {
-      mPlotFileReader.setFileName(fileName);
-      if (mPlotFileReader.open(QIODevice::ReadOnly)) {
-        QTextStream textStream(&mPlotFileReader);
-        // read the interval size from the file
-        int intervalSize = 0;
-        QString currentLine;
-        while (!textStream.atEnd()) {
-          currentLine = textStream.readLine();
-          if (currentLine.startsWith("#IntervalSize")) {
-            intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
-            break;
-          }
-        }
-        // Read start and stop time
-        while (!textStream.atEnd()) {
-          currentLine = textStream.readLine();
-          QString currentVariable;
-          if (currentLine.contains("DataSet:")) {
-            currentVariable = currentLine.remove("DataSet: ");
-            if (currentVariable == "time") {
-              // read the variable values now
-              currentLine = textStream.readLine();
-              QStringList values = currentLine.split(",");
-              startTime = QString(values[0]).toDouble();
-              for(int j = 0; j < intervalSize-1; j++) {
-                currentLine = textStream.readLine();
-              }
-              values = currentLine.split(",");
-              stopTime = QString(values[0]).toDouble();
-              break;
-            }
-          }
-        }
-      } else {
-        errorOpeningFile = true;
-        errorString = mPlotFileReader.errorString();
-      }
-    }
-#endif
     // check file opening error
     if (errorOpeningFile) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,

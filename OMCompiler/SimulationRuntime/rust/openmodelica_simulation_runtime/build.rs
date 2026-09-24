@@ -22,7 +22,7 @@ fn link_runtime_c() {
         for lib in libs.split('|').filter(|s| !s.is_empty()) {
             println!("cargo:rustc-cdylib-link-arg={lib}");
         }
-        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C+Rust
+        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C
         // links this cdylib rather than SimulationRuntimeC.dll. reexport_def.cmake
         // derives /EXPORT: switches from the archive; they have to be a response
         // file because rustc writes the cdylib's own .def and ours would replace it.

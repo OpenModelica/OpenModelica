@@ -98,6 +98,13 @@ pub(crate) fn build_opt_info(
     jacs: [Option<OptJac>; 3],
     var_map: &crate::CodegenWasmJit::SimVarMap,
 ) -> Result<Option<OptInfo>, &'static str> {
+    if let Some(name) = first_array_variable(&sim_code.modelInfo.vars)? {
+        let msg = format!(
+            "Optimization does not support array variables, but {name} is an array. Use \
+             --simCodeScalarize=true."
+        );
+        return Ok(Some(OptInfo { setup_error: Some(msg), ..Default::default() }));
+    }
     if !is_optimization(sim_code) {
         return Ok(None);
     }
@@ -168,7 +175,34 @@ pub(crate) fn build_opt_info(
         jac_b,
         jac_c,
         jac_d,
+        setup_error: None,
     }))
+}
+
+/// C's `firstArrayVariable` (`optimizer_main.c`), over the variables as the backend
+/// left them: the optimizer maps variables to optimization variables by scalar index.
+fn first_array_variable(vars: &SimCodeVar::SimVars) -> Result<Option<String>, &'static str> {
+    // NBackend's scalarized elements still carry their parent's `numArrayElement`.
+    if openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::SIM_CODE_SCALARIZE.clone())? {
+        return Ok(None);
+    }
+    let found = [
+        &vars.stateVars,
+        &vars.derivativeVars,
+        &vars.algVars,
+        &vars.discreteAlgVars,
+        &vars.intAlgVars,
+        &vars.boolAlgVars,
+        &vars.stringAlgVars,
+        &vars.paramVars,
+        &vars.intParamVars,
+        &vars.boolParamVars,
+        &vars.stringParamVars,
+    ]
+    .into_iter()
+    .flat_map(|l| lst(l))
+    .find(|sv| lst(&sv.numArrayElement).next().is_some());
+    Ok(found.map(|sv| crate::CodegenWasmJit::cref_display(&sv.name).unwrap_or_default()))
 }
 
 /// The row of matrix `matrix` holding `term`'s derivative: the `JAC_VAR` result

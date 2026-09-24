@@ -239,7 +239,7 @@ public
 
     // Check combination host+namespace+repository+tag
     isKnownTag := match (image.tag, isOpenModelicaImage)
-      case (SOME("v1.27.0"), true) then true;
+      case (SOME("v1.28.0"), true) then true;
       case (_, true)
         algorithm
           Error.addCompilerWarning("Container image \"" + toString(image) + "\" is not tested for this OpenModelica version.");
@@ -252,8 +252,8 @@ public
     hasKnownDigest := match (image.digest, isKnownTag)
       local
         String digest;
-      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1153451071?tag=v1.27.0
-      case (SOME("sha256:5289cb061e29168b201f6f707a9343a18fb76b4f7e421ed9614104a78129a49c"), true) then true;
+      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1293204639?tag=v1.28.0
+      case (SOME("sha256:7f0038259e8de276384dc1a0d7297f947e8f3dc4457c08d5dced32f2e49599d8"), true) then true;
       case (SOME(digest), true)
       algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
@@ -366,7 +366,7 @@ public
 
     // Verification using cosign
     cmd := "cosign verify " + quoteForShell(imageReference) +
-           " --certificate-identity=https://github.com/OpenModelica/openmodelica-crossbuild/.github/workflows/publish.yml@refs/tags/v1.27.0" +
+           " --certificate-identity=https://github.com/OpenModelica/openmodelica-crossbuild/.github/workflows/publish.yml@refs/tags/v1.28.0" +
            " --certificate-oidc-issuer=https://token.actions.githubusercontent.com";
 
     System.appendFile(cosignLogFile, cmd + "\n");

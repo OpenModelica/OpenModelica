@@ -1486,7 +1486,7 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
    * copy the ring buffer data to INTERNAL_FMU_STATE
   */
   SIMULATION_DATA tmpSimData = {0};
-  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++)
+  for (int i = 0; i < SIZERINGBUFFER; i++)
   {
     tmpSimData.timeValue = fmudata->localData[i]->timeValue;
     /* allocate memory for all Real variables */
@@ -1808,7 +1808,7 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
   fmi2Byte *currElement = (fmi2Byte *) serializedState;
 
   SIMULATION_DATA tmpSimData = {0};
-  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++) {
+  for (int i = 0; i < SIZERINGBUFFER; i++) {
 
     /* timeValue */
     memcpy(&(tmpSimData.timeValue), currElement, sizeof(modelica_real));

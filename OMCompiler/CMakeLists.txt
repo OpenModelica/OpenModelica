@@ -52,6 +52,8 @@ else()
 endif()
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ${_om_cpp_runtime_default})
 
+omc_option(OM_OMC_ENABLE_C_OLD_RUNTIME "Build libSimulationRuntimeC, the C simulation runtime --simCodeTarget=C.old links." ON)
+
 # Its own switch because it is the last thing in the C runtime tree needing
 # oneTBB, which a cross build has no reason to acquire.
 omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica (--parmodauto) runtime." ON)
@@ -252,9 +254,9 @@ else()
   # The runtime angle-includes omc_config.unix.h, generated under Compiler/.
   include(${CMAKE_CURRENT_SOURCE_DIR}/Compiler/runtime/omc_config_unix.cmake)
 endif()
-# libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links instead of
-# libSimulationRuntimeC. After Compiler, which is where the Rust working copy and
-# cargo target directory are set up (rust_omc.cmake) when omc is the Rust port.
+# libSimulationRuntimeRust, what `--simCodeTarget=C` links. After Compiler,
+# which is where the Rust working copy and cargo target directory are set up
+# (rust_omc.cmake) when omc is the Rust port.
 # Skipped where the rest of the simulation runtime is: the wasm bundle does not
 # use it, and the GUI-only stage builds against a prebuilt cdylib.
 if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)

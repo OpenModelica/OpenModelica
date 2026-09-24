@@ -48,7 +48,7 @@
 #include "events.h"
 #include "model_help.h"
 #include "openmodelica.h"
-#include "../results/simulation_result_mat4.h"
+#include "../results/simulation_result_rust.h"
 #include "openmodelica_func.h"
 #include "util/read_matlab4.h"
 #include "util/varinfo.h"
@@ -1594,6 +1594,7 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
 
     /* write out current localData[0] to .mat file */
     simulation_result file_result;
+    const char *outputFormat = data->simulationInfo->outputFormat;
 
     file_result.filename = path;
     file_result.numpoints = 2;
@@ -1601,10 +1602,12 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
 
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Trying to write write initial guess for NLS system with index %d to file %s.\n", nls_idx, path);
 
-    mat4_init4(&file_result, data, threadData);
-    mat4_writeParameterData4(&file_result, data, threadData);
-    mat4_emit4(&file_result, data, threadData);
-    mat4_free4(&file_result, data, threadData);
+    data->simulationInfo->outputFormat = "mat";
+    rust_result_init(&file_result, data, threadData);
+    rust_result_writeParameterData(&file_result, data, threadData);
+    rust_result_emit(&file_result, data, threadData);
+    rust_result_free(&file_result, data, threadData);
+    data->simulationInfo->outputFormat = outputFormat;
 
     /* exit as we do not want to compute any of the following variables; the
      * throw unwinds into the solver, which keeps its message to OMC_LOG_NLS */

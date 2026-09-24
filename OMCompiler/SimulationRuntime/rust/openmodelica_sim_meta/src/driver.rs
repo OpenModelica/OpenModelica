@@ -1271,7 +1271,18 @@ static CANCEL_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_cancel_hook(f: fn() -> bool) {
     CANCEL_HOOK.store(f as usize, Ordering::Relaxed);
 }
+// Fires once per step, where the step loops poll for cancellation: C's
+// `communicateStatus("Running", ...)`.
+static STEP_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_step_hook(f: fn()) {
+    STEP_HOOK.store(f as usize, Ordering::Relaxed);
+}
 pub(crate) fn cancel_requested() -> bool {
+    let p = STEP_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
     let p = CANCEL_HOOK.load(Ordering::Relaxed);
     if p == 0 {
         return false;
@@ -2928,27 +2939,40 @@ fn run_homotopy_continuation(
     omclog::info(omclog::INIT_HOMOTOPY, true, "homotopy process\n---------------------------");
     // C runs every step unconditionally and checks the systems once at the end
     // (`check_nonlinear_solutions`), so a system that misses at lambda = 1/3 and
-    // lands at lambda = 1 is not a failure. A model assert still aborts.
-    for step in 0..=steps {
-        let lambda = (step as f64 / steps as f64).min(1.0);
-        write_f64(e, sim_data + layout.lambda_off, lambda)?;
-        omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
-        if step == 0 {
-            call_initial_equations_lambda0(e, sim_data, layout)?;
-        } else {
-            write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-            e.call1("functionInitialEquations", sim_data)?;
+    // lands at lambda = 1 is not a failure. A model assert or a raised error
+    // still aborts, after the block is closed.
+    let steps_run = (|| {
+        for step in 0..=steps {
+            let lambda = (step as f64 / steps as f64).min(1.0);
+            write_f64(e, sim_data + layout.lambda_off, lambda)?;
+            omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
+            if step == 0 {
+                call_initial_equations_lambda0(e, sim_data, layout)?;
+            } else {
+                write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+                e.call1("functionInitialEquations", sim_data)?;
+            }
+            omclog::info!(
+                omclog::INIT_HOMOTOPY,
+                false,
+                "homotopy parameter lambda = {} done\n---------------------------",
+                format_g(lambda, 6),
+            );
+            path.row(e, sim_data, layout, lambda);
         }
-        omclog::info!(
-            omclog::INIT_HOMOTOPY,
-            false,
-            "homotopy parameter lambda = {} done\n---------------------------",
-            format_g(lambda, 6),
-        );
-        path.row(e, sim_data, layout, lambda);
-    }
+        Ok(())
+    })();
     omclog::close(omclog::INIT_HOMOTOPY);
     path.finish();
+    if let Err(err) = steps_run {
+        omclog::error(
+            omclog::ASSERT,
+            false,
+            "Failed to solve the initialization problem with global homotopy with equidistant step size.",
+        );
+        omclog::debug(omclog::ASSERT, false, "Unable to solve initialization problem.");
+        return Err(err);
+    }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
     if check_nls(e, sim_data, layout).is_err() {
         omclog::error(
@@ -2957,7 +2981,9 @@ fn run_homotopy_continuation(
             "Failed to solve the initialization problem with global homotopy with equidistant step size.",
         );
         init_report::set_failed_step(steps);
-        return Err("CodegenWasmJit: homotopy initialization did not converge at lambda");
+        omclog::debug(omclog::ASSERT, false, "Unable to solve initialization problem.");
+        log_init_assert_notice();
+        return Err(ASSERT_ERR);
     }
     Ok(())
 }
@@ -4628,10 +4654,10 @@ fn alloc_gbode(
     };
     let colors = jac_a.map_or(0, |j| j.colors.len());
     let sym = jac_a.is_some_and(|j| j.sym.is_some());
+    let adj = jac_a.and_then(|j| j.sym.as_ref()).is_some_and(|s| s.adj.is_some());
     let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-    let gb =
-        crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors, sym)
-            .map_err(leak_error)?;
+    let gb = crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors, sym, adj)
+        .map_err(leak_error)?;
     Ok(Some(alloc::boxed::Box::new(gb)))
 }
 
@@ -4897,6 +4923,24 @@ pub fn drive(
                 run_initialization_model(e, sim_data, model)
                     .map_err(|err| enrich_trap_init(e, err, start))?;
                 open_result(e, model, sim_data)?;
+                // What `runOptimizer` throws before it starts, which `solver_main`'s
+                // catch retries once before the run ends.
+                let setup_error = match &model.opt {
+                    None => Some(crate::optimization::NOT_COMPILED),
+                    Some(o) => o.setup_error.as_deref(),
+                };
+                if let Some(msg) = setup_error {
+                    omclog::debug(omclog::ASSERT, false, msg);
+                    omclog::warning(omclog::STDOUT, false, "Integrator attempt to handle a problem with a called assert.");
+                    omclog::debug(omclog::ASSERT, false, msg);
+                    omclog::info!(
+                        omclog::STDOUT,
+                        false,
+                        "model terminate | Simulation terminated by an assert at time: {}",
+                        format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
+                    );
+                    return Err(ASSERT_ERR);
+                }
                 return crate::optimization::run_optimizer(e, model, sim_data)
                     .map_err(|err| enrich_trap(e, err));
             }
@@ -5514,12 +5558,8 @@ enum JacAvail {
     Available,
 }
 
-/// What the model carries for the requested method. The adjoint Jacobian is a matrix
-/// of its own, which this backend never emits, so asking for it finds nothing.
-fn jac_availability(jac: Option<&JacAInfo>, requested: Option<JacobianMethod>) -> JacAvail {
-    if requested == Some(JacobianMethod::ColoredSymJacAdj) {
-        return JacAvail::NotAvailable;
-    }
+/// What the model carries for the requested method.
+fn jac_availability(jac: Option<&JacAInfo>) -> JacAvail {
     match jac {
         None => JacAvail::NotAvailable,
         Some(j) if j.sym.is_some() => JacAvail::Available,
@@ -5538,7 +5578,29 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
             omclog::warning(omclog::STDOUT, false, m);
         }
     };
-    let method = match jac_availability(jac, requested) {
+    // C's `initSymbolicOdeJacobian`: either direction the adjoint takes part in
+    // needs one, and without it the forward Jacobian stands in.
+    let has_adj = jac.and_then(|j| j.sym.as_ref()).is_some_and(|s| s.adj.is_some());
+    let requested = match requested {
+        Some(M::ColoredSymJacAdj) if !has_adj => {
+            warn(
+                "No adjoint symbolic Jacobian was generated (compile with \
+                 --generateDynamicJacobian=symbolicAdjoint or =bidirectional). Switching to the \
+                 forward symbolic Jacobian.",
+            );
+            None
+        }
+        Some(M::BicoloredSymJac) if !has_adj => {
+            warn(
+                "No bidirectional symbolic Jacobian was generated (compile with \
+                 --generateDynamicJacobian=bidirectional). Switching to the forward symbolic \
+                 Jacobian.",
+            );
+            None
+        }
+        r => r,
+    };
+    let method = match jac_availability(jac) {
         JacAvail::NotAvailable => {
             if !matches!(requested, None | Some(M::InternalNumJac)) {
                 warn("Jacobian not available, switching to internal numerical Jacobian.");
@@ -5562,26 +5624,18 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
     if log {
         omclog::info!(omclog::JAC, false, "Using Jacobian method: {}", method.desc());
     }
-    // Without an adjoint C's `evalJacobian` degenerates to the colored evaluation.
-    match method {
-        M::BicoloredSymJac if jac.and_then(|j| j.sym.as_ref()).is_none_or(|s| s.adj.is_none()) => {
-            if log {
-                omclog::warning(
-                    omclog::SOLVER,
-                    false,
-                    "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; \
-                     falling back to standard colored symbolic evaluation.",
-                );
-            }
-            M::ColoredSymJac
-        }
-        m => m,
-    }
+    method
 }
 
 /// Whether the method assembles from the symbolic column equations.
 fn jac_method_symbolic(m: JacobianMethod) -> bool {
-    matches!(m, JacobianMethod::SymJac | JacobianMethod::ColoredSymJac | JacobianMethod::BicoloredSymJac)
+    matches!(
+        m,
+        JacobianMethod::SymJac
+            | JacobianMethod::ColoredSymJac
+            | JacobianMethod::ColoredSymJacAdj
+            | JacobianMethod::BicoloredSymJac
+    )
 }
 
 /// Whether the method evaluates once per colour rather than once per column.
@@ -5714,15 +5768,12 @@ unsafe fn dassl_jac(
     };
     let run = (|| -> Result<()> {
         write_time(e, ctx.sim_data, unsafe { *t })?;
-        if ctx.jac_method == JacobianMethod::BicoloredSymJac {
-            eval_bicolored_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, &mut |row, col, v| {
-                unsafe { *pd.add(col * n + row) = 0.0 - v };
-            })?;
-        } else if jac_method_symbolic(ctx.jac_method) {
+        if jac_method_symbolic(ctx.jac_method) {
             // C's `jacA_symColored` / `jacA_sym`. This residual is G = y' − f, the
             // negative of C's F = f − y', so ∂f/∂y enters negated (and the `cj·I`
             // below is added where C subtracts it).
-            eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, colored, &mut |row, col, _, v| {
+            let method = ctx.jac_method;
+            eval_ode_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, method, colored, &mut |row, col, _, v| {
                 unsafe { *pd.add(col * n + row) = 0.0 - v };
             })?;
         } else {
@@ -5939,16 +5990,44 @@ unsafe fn dassl_log_jacobian(
     Ok(())
 }
 
-/// C's `evalJacobianBidirectional`: a column phase over A's coloring and a row
-/// phase over the adjoint's, each entry taken from the phase that recovers it alone
-/// (`initBidirectionalRecovery`).
-pub fn eval_bicolored_jacobian(
+/// The ODE Jacobian through the method [`set_jacobian_method`] chose: C's
+/// `evalJacobian`, which dispatches on the selected Jacobian's properties.
+/// `set(row, col, k, value)` as in [`eval_sym_jacobian`].
+pub fn eval_ode_jacobian(
     e: &mut dyn SimEngine,
     sim_data: u32,
     jac: &JacAInfo,
     ctx_addr: u32,
+    method: JacobianMethod,
+    colored: bool,
+    set: &mut dyn FnMut(usize, usize, usize, f64),
+) -> Result<()> {
+    let (forward, adjoint) = match method {
+        JacobianMethod::BicoloredSymJac => (true, true),
+        JacobianMethod::ColoredSymJacAdj => (false, true),
+        _ => return eval_sym_jacobian(e, sim_data, jac, ctx_addr, colored, set),
+    };
+    let rows_by_col = &jac.rows_by_col;
+    eval_directions(e, sim_data, jac, ctx_addr, forward, adjoint, &mut |row, col, v| {
+        let k = rows_by_col[col].iter().position(|&r| r as usize == row).unwrap_or(usize::MAX);
+        set(row, col, k, v)
+    })
+}
+
+/// The column phase, the row phase (C's `evalJacobianRow`), or both (C's
+/// `evalJacobianBidirectional`), where each entry is taken from the phase that
+/// recovers it alone (`initBidirectionalRecovery`). Alone, a phase's own coloring
+/// recovers every entry.
+fn eval_directions(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    jac: &JacAInfo,
+    ctx_addr: u32,
+    forward: bool,
+    adjoint: bool,
     set: &mut dyn FnMut(usize, usize, f64),
 ) -> Result<()> {
+    let both = forward && adjoint;
     let sym = jac.sym.as_ref().ok_or("CodegenWasmJit: no symbolic Jacobian to evaluate")?;
     let adj = sym.adj.as_ref().ok_or("CodegenWasmJit: no adjoint Jacobian to evaluate")?;
     let n = jac.n as usize;
@@ -5971,23 +6050,26 @@ pub fn eval_bicolored_jacobian(
         }
     }
     let fwd_ok = |row: usize, col: usize| {
-        cols_by_row[row].iter().all(|&c2| c2 == col || col_color[c2] != col_color[col])
+        !both || cols_by_row[row].iter().all(|&c2| c2 == col || col_color[c2] != col_color[col])
     };
     let adj_ok = |row: usize, col: usize| {
-        jac.rows_by_col[col].iter().all(|&r2| r2 as usize == row || row_color[r2 as usize] != row_color[row])
+        !both
+            || jac.rows_by_col[col].iter().all(|&r2| r2 as usize == row || row_color[r2 as usize] != row_color[row])
     };
     set_context(e, ctx_addr, CONTEXT_SYM_JACOBIAN);
     let run = (|| -> Result<()> {
         for &off in sym.seed_offs.iter().chain(adj.seed_offs.iter()) {
             write_f64(e, sim_data + off, 0.0)?;
         }
-        if sym.has_constant {
+        if forward && sym.has_constant {
             e.call1("functionJacA_constantEqns", sim_data)?;
         }
-        if adj.has_constant {
+        if adjoint && adj.has_constant {
             e.call1("functionJacADJ_constantEqns", sim_data)?;
         }
-        for group in &jac.colors {
+        let forward_colors: &[Vec<u32>] = if forward { &jac.colors } else { &[] };
+        let adjoint_colors: &[Vec<u32>] = if adjoint { &adj.row_colors } else { &[] };
+        for group in forward_colors {
             for &c in group {
                 write_f64(e, sim_data + sym.seed_offs[c as usize], 1.0)?;
             }
@@ -6010,7 +6092,7 @@ pub fn eval_bicolored_jacobian(
         for &off in &adj.zero_offs {
             write_f64(e, sim_data + off, 0.0)?;
         }
-        for group in &adj.row_colors {
+        for group in adjoint_colors {
             for &r in group {
                 write_f64(e, sim_data + adj.seed_offs[r as usize], 1.0)?;
             }
@@ -7345,6 +7427,23 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
             Ok(())
         })();
         set_context(self.e, self.ctx_addr, CONTEXT_ALGEBRAIC);
+        run.is_ok()
+    }
+
+    fn jacobian_matrix(&mut self, t: f64, y: &[f64], method: JacobianMethod, j: &mut [f64]) -> bool {
+        let Some(jac) = self.jac_a else { return false };
+        let n = jac.n as usize;
+        let run = (|| -> Result<()> {
+            write_time(self.e, self.sim_data, t)?;
+            let mut bytes = vec![0u8; y.len() * 8];
+            for (i, v) in y.iter().enumerate() {
+                bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
+            }
+            self.e.write_bytes(self.states_base, &bytes)?;
+            eval_ode_jacobian(self.e, self.sim_data, jac, self.ctx_addr, method, true, &mut |row, col, _, v| {
+                j[col * n + row] = v;
+            })
+        })();
         run.is_ok()
     }
 
@@ -10465,7 +10564,8 @@ unsafe extern "C" fn ida_jac(
     // is F = f − y', so a column result is `∂F/∂y` already.
     if jac_method_symbolic(ctx.jac_method) {
         let run = (|| -> Result<()> {
-            eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, true, &mut |row, col, k, v| {
+            let method = ctx.jac_method;
+            eval_ode_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, method, true, &mut |row, col, k, v| {
                 vals[match pattern {
                     Some(p) => p.slots[col][k],
                     None => col * n + row,

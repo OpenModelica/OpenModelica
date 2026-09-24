@@ -941,7 +941,7 @@ mod tests {
     #[test]
     fn pending_event_is_reported_when_the_grid_reaches_it() {
         let dt = 2e-3;
-        let mut gb = Gbode::new(2, 1e-6, 1, 0, false).expect("allocate");
+        let mut gb = Gbode::new(2, 1e-6, 1, 0, false, false).expect("allocate");
         gb.set_experiment(0.0, 1.0, dt);
         gb.set_nominals(&[1.0, 1.0]);
         let mut e = Ball { calls: 0, nominals: [1.0, 1.0] };

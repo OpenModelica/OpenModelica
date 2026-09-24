@@ -51,6 +51,9 @@ struct Scratch {
     /// The same as the shared solver wants it, `colptr ++ rowidx`, for the dense
     /// ladder's scatter.
     pattern: Vec<u32>,
+    /// The pattern is the full one KINSOL gets for a system without its own, which
+    /// the model does not fill.
+    full_pattern: bool,
     /// C's `oldValueList`, as the depth the shared solver bounds it to.
     history: VecHistory,
     /// `solveHomotopy`'s residual scaling, which survives between calls.
@@ -202,7 +205,9 @@ impl nls::NlsModel for CModel {
             },
             (None, None) => return,
         };
-        if rc == -1 {
+        // An external function's `ModelicaError` returns with the error raised
+        // rather than jumping.
+        if rc == -1 || crate::support::error_raised(self.thread_data) {
             // The message is already on the log, from the assert itself. Recording
             // the hit is what turns this trial into a rejected one, exactly as the
             // wasm model's `rt_nls_note_assert` does.
@@ -322,11 +327,18 @@ struct CBackend<'a> {
     colptr: &'a [i32],
     rowidx: &'a [i32],
     nnz: usize,
+    /// The codegen chose the sparse format.
+    sparse_format: bool,
 }
 
 impl nls::NlsBackend for CBackend<'_> {
+    /// C's `initializeNonlinearSystemData`: a sparse-format system goes to KINSOL,
+    /// and `-nls=kinsol` takes every system with its pattern.
     fn has_sparse(&self) -> bool {
-        nls::kinsol::AVAILABLE && !self.colptr.is_empty()
+        nls::kinsol::AVAILABLE
+            && !self.colptr.is_empty()
+            && (self.sparse_format
+                || matches!(solverflags::nls(), solverflags::Nls::Kinsol | solverflags::Nls::KinsolB))
     }
 
     fn has_kinsol(&self) -> bool {
@@ -462,6 +474,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             colptr,
             rowidx,
             pattern,
+            full_pattern: false,
             history: VecHistory::default(),
             res_scaling: vec![0.0; size.max(1)],
             use_xscaling: true,
@@ -505,11 +518,11 @@ fn register_names(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) {
 }
 
 /// The system's `SPARSE_PATTERN` as CSC plus its colouring, or empty where the
-/// backend chose a dense factorization or the pattern does not survive C's
+/// model has none, it reaches past the system's rows, or it does not survive C's
 /// `sparsitySanityCheck`. A missing `analyticalJacobianColumn` is not a reason to
 /// drop it -- `nlsSparseJac` differences the pattern instead.
 fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>, Vec<u32>) {
-    if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() {
+    if sys.sparsePattern.is_null() {
         return (Vec::new(), Vec::new(), Vec::new());
     }
     let sp = unsafe { &*sys.sparsePattern };
@@ -523,7 +536,12 @@ fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i
         colptr[c] = colptr[cols];
     }
     let nnz = colptr[size] as usize;
-    let rowidx = (0..nnz).map(|k| unsafe { *sp.index.add(k) } as i32).collect();
+    let rowidx: Vec<i32> = (0..nnz).map(|k| unsafe { *sp.index.add(k) } as i32).collect();
+    // A torn system's Jacobian may carry residual rows past the system's own,
+    // which only the dense evaluation knows to leave out.
+    if rowidx.iter().any(|&r| r as usize >= size) {
+        return (Vec::new(), Vec::new(), Vec::new());
+    }
     // C's `colorCols` counts from 1; a column past `sizeCols` gets its own colour.
     let mut next = sp.maxColors;
     let colors = (0..size)
@@ -610,7 +628,7 @@ pub extern "C" fn solve_nonlinear_system(
     let sd: &mut Scratch = unsafe { &mut *scratch(sys) };
     // The homotopy solvers drive an `n x (n+1)` Jacobian, which no sparse pattern
     // describes; such a system fills the dense shape whatever its format says.
-    let csc = !sd.colptr.is_empty() && !lambda_unknown && has_jacobian;
+    let csc = !sd.colptr.is_empty() && !sd.full_pattern && !lambda_unknown && has_jacobian;
     // C's `initKinsolMemory` on a system without a pattern: `nnz = size*size`, a
     // full CSC whose value order is the dense column-major one the model fills.
     if sd.colptr.is_empty()
@@ -620,6 +638,7 @@ pub extern "C" fn solve_nonlinear_system(
         sd.colptr = (0..=size).map(|c| (c * size) as i32).collect();
         sd.rowidx = (0..size * size).map(|k| (k % size) as i32).collect();
         sd.pattern = sd.colptr.iter().chain(&sd.rowidx).map(|&v| v as u32).collect();
+        sd.full_pattern = true;
     }
     let full_pattern = !csc && !sd.colptr.is_empty();
     let outer_stage = unsafe { (*thread_data).currentErrorStage };
@@ -630,6 +649,7 @@ pub extern "C" fn solve_nonlinear_system(
         colptr: &sd.colptr,
         rowidx: &sd.rowidx,
         nnz: sd.rowidx.len(),
+        sparse_format: sys.matrixFormat == OMC_MATRIX_SPARSE,
     };
 
     let nominal = unsafe { core::slice::from_raw_parts(sys.nominal, size) }.to_vec();

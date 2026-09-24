@@ -3,11 +3,12 @@ cmake_minimum_required(VERSION 3.21)
 # Standalone Qt-for-WebAssembly build of OMNotebook. Like the OMShell web client
 # omc is not linked in process: it runs in the shared omc_worker.js Web Worker
 # and omcinteractiveenvironment.cpp bridges to it. OMPlot is built as a library
-# only (no OMPlot executable); instead of the whole simulation runtime it uses
-# just the result-file readers plus a small stdio shim for omc_file. Configure
-# with the Qt wasm toolchain, e.g.
+# only (no OMPlot executable) and reads result files through libomc_result.
+# Configure with the Qt wasm toolchain, e.g.
 #   <qt-wasm>/bin/qt-cmake -G "Unix Makefiles" -S . -B build
 project(OMNotebookQtWasm LANGUAGES C CXX)
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/omc_job_server.cmake)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -21,13 +22,14 @@ get_filename_component(OM_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../.." ABSOLUT
 set(NB     ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(OMPLOT ${OM_ROOT}/OMPlot/OMPlot/OMPlotGUI)
 set(QWT    ${OM_ROOT}/OMPlot/qwt)
-set(SIMRT  ${OM_ROOT}/OMCompiler/SimulationRuntime/c)
 
 # ---- qwt (built static so it links into the single wasm binary) ----
 set(USE_QT6 ON CACHE BOOL "" FORCE)
 set(QWT_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(OMQWT_LIBRARY_TYPE STATIC)
 add_subdirectory(${QWT} ${CMAKE_BINARY_DIR}/qwt)
+
+include(${OM_ROOT}/cmake/omc_result_emscripten.cmake)
 
 # ---- OMPlotLib (library only) ----
 add_library(OMPlotLib STATIC
@@ -60,19 +62,11 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotMainWindow.h
   ${OMPLOT}/ScaleDraw.h
   ${OMPLOT}/LogScaleEngine.h
-  ${OMPLOT}/LinearScaleEngine.h
-  # result-file readers + a stdio shim, instead of omc::simrt::runtime.
-  # omc_numbers.c provides om_strtod (used by read_csv.c).
-  ${SIMRT}/util/read_matlab4.c
-  ${SIMRT}/util/read_csv.c
-  ${SIMRT}/util/libcsv.c
-  ${SIMRT}/util/omc_numbers.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
-target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE
-                                    PUBLIC OM_LEGACY_RESULT_READERS)
-target_include_directories(OMPlotLib PUBLIC ${OMPLOT} PRIVATE ${SIMRT})
+  ${OMPLOT}/LinearScaleEngine.h)
+target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
+target_include_directories(OMPlotLib PUBLIC ${OMPLOT})
 target_link_libraries(OMPlotLib PUBLIC
-  Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt)
+  Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt omc::result)
 
 # ---- OMNotebook ----
 # Headers carrying Q_OBJECT / ui_*.h includes (Document, DocumentView, the

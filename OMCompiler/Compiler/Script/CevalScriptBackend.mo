@@ -4167,6 +4167,16 @@ algorithm
   end if;
 end runDockerCmd;
 
+protected function isDockerPlatform
+  input String platform;
+  output Boolean isDocker;
+algorithm
+  isDocker := match Util.stringSplitAtChar(platform, " ")
+    case _::"docker"::"run"::_ then true;
+    else false;
+  end match;
+end isDockerPlatform;
+
 protected function translateModelFMU
   "translates modelica model as FMU, generates only c code and does not build"
   input FCore.Cache inCache;
@@ -4825,6 +4835,13 @@ algorithm
 
   // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
   needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
+
+  // A docker build compiles the FMU from sources/, which --fmiSources=false only
+  // strips when packing, so the Rust half has to be there too.
+  if Config.simCodeRustRuntime() and not System.directoryExists(fmutmp + "/sources/rust")
+     and List.any(platforms, isDockerPlatform) then
+    SimCodeMain.copyFmuRustSources(fmutmp);
+  end if;
 
   // Configure and build the FMU with CMake
   // Compiling for several platforms takes minutes per platform, so report which one is

@@ -2030,11 +2030,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
 #if !defined(WITHOUT_ANIMATION)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
-#ifdef OM_LEGACY_RESULT_READERS
-      const bool animatable = simulationOptions.getFullResultFileName().endsWith(".mat");
-#else
       const bool animatable = simulationOptions.getFullResultFileName().endsWith(".mat") || simulationOptions.getFullResultFileName().endsWith(".arrow");
-#endif
       if (animatable) {
         MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow();
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();

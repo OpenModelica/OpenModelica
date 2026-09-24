@@ -38,7 +38,7 @@
 
 
 /* See the note in perform_simulation.c.inc: the Rust simulation runtime has its
- * own loop, so this one is compiled away under `--simCodeTarget=C+Rust`.
+ * own loop, so this one is compiled away under `--simCodeTarget=C`.
  */
 #if defined(OMC_RUST_SIMULATION_RUNTIME)
 

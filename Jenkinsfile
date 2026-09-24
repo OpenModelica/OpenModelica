@@ -29,8 +29,7 @@ pipeline {
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
-    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc with RUST_PARTEST_SIMCODETARGET (the wasm-jit partest always runs)')
-    string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'C+Rust', description: 'simCodeTarget for the ENABLE_RUST_PARTEST run (empty = compiler default)')
+    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc (the wasm-jit partest always runs)')
     // Read at queue time, before common.groovy is loaded.
     string(name: 'BUILD_PRIORITY',
            defaultValue: env.CHANGE_ID ? '3' : '5',
@@ -315,7 +314,7 @@ pipeline {
     stage('tests + extras') {
       parallel {
         // partest against the Rust-built omc; dedicated runtest cache. See
-        // common.partestRust(). Opt-in, on RUST_PARTEST_SIMCODETARGET; the
+        // common.partestRust(). Opt-in, on the default simCodeTarget; the
         // wasm-jit run is stages 23/24.
         stage('01 testsuite-rust 1/2') {
           agent {
@@ -336,7 +335,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 1, 2, false)
+                common.partestRust('', 1, 2, false)
               }
             }
           }
@@ -360,7 +359,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 2, 2, false)
+                common.partestRust('', 2, 2, false)
               }
             }
           }
@@ -792,7 +791,8 @@ pipeline {
           agent {
             docker {
               label 'linux'
-              image 'docker.openmodelica.org/fmpy:v0.3.18'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
+              alwaysPull true
               customWorkspace 'ws/OpenModelica'
             }
           }

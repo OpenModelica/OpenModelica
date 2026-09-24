@@ -229,6 +229,64 @@ fn dgesv_matches() {
     }
 }
 
+/// Equal, a NaN matching a NaN.
+fn same_bits(got: &[f64], want: &[f64], what: &str) {
+    let eq = got.iter().zip(want).all(|(g, w)| g == w || (g.is_nan() && w.is_nan()));
+    assert!(eq && got.len() == want.len(), "{what}\n  got    {got:?}\n  LAPACK {want:?}");
+}
+
+/// Below `FAER_LU_MIN` the LU pair is reference LAPACK's arithmetic exactly: a torn
+/// system that is singular in exact arithmetic is singular to both, or to neither,
+/// and a NaN in the matrix goes where reference LAPACK takes it.
+#[test]
+fn small_dgesv_is_bitwise_reference() {
+    let singular = |n: usize, seed: u64| {
+        let mut a = rand_mat(n, n, seed);
+        for i in 0..n {
+            a[i + (n - 1) * n] = a[i] * 0.1 + a[i + n] * 0.7;
+        }
+        a
+    };
+    let with_nan = |n: usize, seed: u64| {
+        let mut a = rand_mat(n, n, seed);
+        for j in 0..n {
+            a[1 + j * n] = f64::NAN;
+            a[j * n + j.saturating_sub(1)] = 0.0;
+        }
+        a
+    };
+    for n in 1..16 {
+        let n2 = n.max(2);
+        let cases = [
+            (n, rand_mat(n, n, 51 + n as u64), false),
+            (n2, singular(n2, 61 + n as u64), false),
+            (n2, with_nan(n2, 81 + n as u64), false),
+            (n2, with_nan(n2, 91 + n as u64), true),
+        ];
+        for (k, (n, a0, zero_rhs)) in cases.into_iter().enumerate() {
+            let b0 = match zero_rhs {
+                true => vec![0.0; n * 2],
+                false => rand_mat(n, 2, 71 + n as u64),
+            };
+            let (mut a, mut want_a) = (a0.clone(), a0);
+            let (mut b, mut want_b) = (b0.clone(), b0);
+            let (mut ipiv, mut wipiv) = (vec![0i32; n], vec![0i32; n]);
+            let mut winfo = 0;
+            let info = om::dgesv(n, 2, &mut a, n, &mut ipiv, &mut b, n);
+            unsafe {
+                dgesv_(&i(n), &i(2), want_a.as_mut_ptr(), &i(n), wipiv.as_mut_ptr(), want_b.as_mut_ptr(),
+                       &i(n), &mut winfo)
+            };
+            assert_eq!(info, winfo, "dgesv {n}/{k}: INFO");
+            same_i(&ipiv, &wipiv, &format!("dgesv {n}/{k}: IPIV"));
+            same_bits(&a, &want_a, &format!("dgesv {n}/{k}: factored A"));
+            if info == 0 {
+                same_bits(&b, &want_b, &format!("dgesv {n}/{k}: X"));
+            }
+        }
+    }
+}
+
 #[test]
 fn dgetrs_matches() {
     // `FAER_SOLVE_MIN` is well above the LU crossover, so the larger `n` here is

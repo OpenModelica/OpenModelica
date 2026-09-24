@@ -34,7 +34,27 @@ set(CVODE_DIRECTORY
     @CVODE_DIRECTORY@
     CACHE STRING
     "IF CVODE is needed provide a directory where to find it.")
-# --simCodeTarget=C+Rust: the sources under simulation/ and external_solvers/ are
+# As OM_LIBRARY_ARCH in OpenModelica's top-level CMakeLists.txt.
+if(CMAKE_LIBRARY_ARCHITECTURE)
+  set(OM_LIBRARY_ARCH "${CMAKE_LIBRARY_ARCHITECTURE}")
+else()
+  string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" OM_LIBRARY_ARCH)
+  if(OM_LIBRARY_ARCH STREQUAL "amd64")
+    set(OM_LIBRARY_ARCH "x86_64")
+  elseif(OM_LIBRARY_ARCH STREQUAL "arm64")
+    set(OM_LIBRARY_ARCH "aarch64")
+  endif()
+  if(APPLE)
+    set(OM_LIBRARY_ARCH "universal-apple-darwin")
+  elseif(MINGW OR CYGWIN)
+    string(APPEND OM_LIBRARY_ARCH "-windows-gnu")
+  elseif(WIN32)
+    string(APPEND OM_LIBRARY_ARCH "-windows-msvc")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    string(APPEND OM_LIBRARY_ARCH "-linux-gnu")
+  endif()
+endif()
+# --simCodeTarget=C: the sources under simulation/ and external_solvers/ are
 # not in this FMU. libSimulationRuntimeRust provides what they did, and is either
 # a prebuilt archive the exporting installation pointed at, or built from the
 # crates under rust/ (--fmiSources=slim or full).
@@ -308,7 +328,7 @@ if(OMC_RUST_SIMULATION_RUNTIME)
     set(OM_RUST_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/rust/SimulationRuntime/rust/Cargo.toml")
     if(NOT EXISTS "${OM_RUST_MANIFEST}")
       message(FATAL_ERROR
-              "This FMU was built with --simCodeTarget=C+Rust but carries neither a prebuilt "
+              "This FMU was built with --simCodeTarget=C but carries neither a prebuilt "
               "libSimulationRuntimeRust nor its sources. Re-export it with --fmiSources=slim "
               "or --fmiSources=full, or point -DRUST_SIM_RUNTIME_LIBRARY at an archive.")
     endif()
@@ -321,16 +341,24 @@ if(OMC_RUST_SIMULATION_RUNTIME)
     set(OM_RUST_TARGET_DIR "${CMAKE_BINARY_DIR}/rust-target"
         CACHE PATH "Cargo target directory for the FMU's Rust runtime.")
     set(OM_RUST_CARGO_FLAGS "")
+    # rustc's name for the archive, whatever the C toolchain calls one.
+    if(MSVC)
+      set(OM_RUST_SIM_RUNTIME_ARCHIVE "SimulationRuntimeRust.lib")
+    else()
+      set(OM_RUST_SIM_RUNTIME_ARCHIVE "libSimulationRuntimeRust.a")
+    endif()
     if(CMAKE_CROSSCOMPILING AND OM_RUST_TARGET_TRIPLE)
       list(APPEND OM_RUST_CARGO_FLAGS --target ${OM_RUST_TARGET_TRIPLE})
-      set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/${OM_RUST_TARGET_TRIPLE}/release/libSimulationRuntimeRust.a")
+      set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/${OM_RUST_TARGET_TRIPLE}/release/${OM_RUST_SIM_RUNTIME_ARCHIVE}")
     else()
-      set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/release/libSimulationRuntimeRust.a")
+      set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/release/${OM_RUST_SIM_RUNTIME_ARCHIVE}")
     endif()
+    # Only the archive: the crate's cdylib cannot link on Windows without the C half.
     add_custom_command(
       OUTPUT "${RUST_SIM_RUNTIME_LIBRARY}"
       COMMAND ${CMAKE_COMMAND} -E env OMC_SIMRT_FMI=1
-              ${CARGO_EXECUTABLE} build --release -p openmodelica_simulation_runtime
+              ${CARGO_EXECUTABLE} rustc --release -p openmodelica_simulation_runtime --lib
+              --crate-type staticlib
               --manifest-path "${OM_RUST_MANIFEST}"
               --target-dir "${OM_RUST_TARGET_DIR}" ${OM_RUST_CARGO_FLAGS}
       # cargo finds .cargo/config.toml by walking up from here, and

@@ -33,19 +33,21 @@ pub const ERROR_EVENTSEARCH: i32 = 4;
 pub const ERROR_EVENTHANDLING: i32 = 5;
 pub const ERROR_OPTIMIZE: i32 = 6;
 
-/// `util/rtclock.h`, and the one layout the two runtimes' headers disagree about:
-/// an FMU defines `OMC_MINIMAL_RUNTIME`, where the clock is a `typedef int`
-/// against a 16-byte union otherwise. It is the last field of
-/// `NONLINEAR_SYSTEM_DATA`, so the wrong one gives the right offsets and the wrong
-/// stride -- `nonlinearSystemData[1]` then reads `sparsePattern` out of
+/// `util/rtclock.h`: a 16-byte union, `LARGE_INTEGER` on Windows, `uint64_t` on
+/// macOS, and a `typedef int` under an FMU's `OMC_MINIMAL_RUNTIME`. It is the last
+/// field of `NONLINEAR_SYSTEM_DATA`, so the wrong one gives the right offsets and
+/// the wrong stride -- `nonlinearSystemData[1]` then reads `sparsePattern` out of
 /// `eqn_simcode_indices`.
-#[cfg(not(omc_fmi_runtime))]
+#[cfg(all(not(omc_fmi_runtime), not(any(windows, target_vendor = "apple"))))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct rtclock_t {
     pub a: u64,
     pub b: u64,
 }
+
+#[cfg(all(not(omc_fmi_runtime), any(windows, target_vendor = "apple")))]
+pub type rtclock_t = u64;
 
 #[cfg(omc_fmi_runtime)]
 pub type rtclock_t = c_int;

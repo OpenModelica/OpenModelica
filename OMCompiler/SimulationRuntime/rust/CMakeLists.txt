@@ -1,5 +1,5 @@
-# libSimulationRuntimeRust: the simulation runtime `--simCodeTarget=C+Rust` links
-# generated C against, instead of libSimulationRuntimeC.
+# libSimulationRuntimeRust: the simulation runtime `--simCodeTarget=C` links
+# generated C against.
 #
 # The crate is a member of the compiler workspace, so an omc build compiles it
 # and its dependencies exactly once. When omc is the Rust port
@@ -9,17 +9,9 @@
 # so build through the workspace rooted in this directory, which reaches the same
 # crates as plain path dependencies (see Cargo.toml).
 
-# Opt-in: building it needs a Rust toolchain a C-only build does not require.
-option(OM_ENABLE_RUST_SIM_RUNTIME
-       "Build libSimulationRuntimeRust, the runtime --simCodeTarget=C+Rust links." OFF)
-if(NOT OM_ENABLE_RUST_SIM_RUNTIME)
-  return()
-endif()
-
 find_program(CARGO_EXECUTABLE cargo)
 if(NOT CARGO_EXECUTABLE)
-  message(STATUS "cargo not found: skipping libSimulationRuntimeRust (--simCodeTarget=C+Rust will not link).")
-  return()
+  message(FATAL_ERROR "cargo was not found; libSimulationRuntimeRust needs a stable Rust toolchain.")
 endif()
 
 # rust_omc.cmake publishes its per-build working copy and cargo target directory
@@ -130,6 +122,19 @@ if(TARGET primme)
        "OMC_PRIMME_NATIVE_DIR=$<TARGET_FILE_DIR:primme>"
        "OMC_PRIMME_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/primme-3.2.3/include")
 endif()
+# MSVC has no lapack.lib/blas.lib for openmodelica_nls to name.
+if(MSVC)
+  set(_simrt_lapack "")
+  foreach(_l IN LISTS LAPACK_LIBRARIES BLAS_LIBRARIES)
+    if(IS_ABSOLUTE "${_l}" AND NOT _l IN_LIST _simrt_lapack)
+      list(APPEND _simrt_lapack "${_l}")
+    endif()
+  endforeach()
+  if(_simrt_lapack)
+    list(JOIN _simrt_lapack "|" _simrt_lapack)
+    list(APPEND _simrt_env "OMC_LAPACK_LINK=${_simrt_lapack}")
+  endif()
+endif()
 
 # libOpenModelicaRuntimeC, which owns the state both runtimes share with the
 # generated code (see build.rs). libSimulationRuntimeC links it too.
@@ -158,7 +163,7 @@ if(TARGET OpenModelicaRuntimeC)
     list(APPEND _simrt_env "OMC_RUNTIME_C_LINK=${_simrt_rtc_link}")
     if(WIN32)
       # Absorbing the archive is not enough on Windows: a cdylib exports only
-      # what Rust marks dllexport, so --simCodeTarget=C+Rust found none of the C
+      # what Rust marks dllexport, so --simCodeTarget=C found none of the C
       # runtime. An ELF .so exports it anyway.
       find_program(OMC_NM_EXECUTABLE NAMES llvm-nm nm)
       if(OMC_NM_EXECUTABLE)
@@ -170,7 +175,7 @@ if(TARGET OpenModelicaRuntimeC)
         list(APPEND _simrt_env "OMC_RUNTIME_C_DEF=${_simrt_def}")
       else()
         message(WARNING "No llvm-nm/nm found: libSimulationRuntimeRust will not "
-                        "re-export the C runtime, so --simCodeTarget=C+Rust cannot link.")
+                        "re-export the C runtime, so --simCodeTarget=C cannot link.")
       endif()
     endif()
   endif()
@@ -199,10 +204,18 @@ foreach(_e IN LISTS _simrt_env)
   endif()
 endforeach()
 list(APPEND _simrt_fmu_env "OMC_SIMRT_FMI=1")
+# Only the archive: cargo also links a dependency's cdylib, which cannot link on
+# Windows without the C half. cargo-zigbuild has no `rustc`.
+if(_simrt_cargo_cmd STREQUAL "zigbuild")
+  set(_simrt_fmu_cargo_cmd zigbuild)
+else()
+  string(REPLACE "build" "rustc" _simrt_fmu_cargo_cmd "${_simrt_cargo_cmd}")
+  list(APPEND _simrt_fmu_cargo_cmd -p openmodelica_simulation_runtime --lib --crate-type staticlib)
+endif()
 add_custom_target(SimulationRuntimeRustFmu ALL
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openmodelica_simulation_runtime_fmu
   ${OMC_JOB_SERVER_AWARE}
-  COMMAND ${_simrt_fmu_env} ${CARGO_EXECUTABLE} ${_simrt_cargo_cmd} --target-dir ${_simrt_fmu_target_dir}
+  COMMAND ${_simrt_fmu_env} ${CARGO_EXECUTABLE} ${_simrt_fmu_cargo_cmd} --target-dir ${_simrt_fmu_target_dir}
           ${_simrt_target_flag} ${_simrt_profile_flag}
   BYPRODUCTS ${_simrt_a}
   COMMENT "Rust: building libSimulationRuntimeRust.a for source-code FMUs"
@@ -231,7 +244,9 @@ else()
   install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
 endif()
 # Component fmu: it travels with the rest of what a source-code FMU is built from.
-install(FILES ${_simrt_a} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT fmu)
+# MSVC names it SimulationRuntimeRust.lib, which is the import library above.
+install(FILES ${_simrt_a} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT fmu
+        RENAME libSimulationRuntimeRust.a)
 
 # The crates themselves, for `--fmiSources=slim` / `=full` to put in the FMU.
 # The layout is the checkout's, because the manifests reach openmodelica_lapack by

@@ -620,7 +620,7 @@ impl Integrator {
         Ok(match solver {
             Solver::Dassl => Integrator::Dassl(Box::new(Dassl::new(nx, nz, tolerance, nominals))),
             Solver::Gbode => {
-                let gb = Gbode::new(nx, tolerance, nz, jac_colors, directional)
+                let gb = Gbode::new(nx, tolerance, nz, jac_colors, directional, false)
                     .map_err(|e| Error::Unsupported(format!("this solver configuration: {e}")))?;
                 Integrator::Gbode(Box::new(gb))
             }

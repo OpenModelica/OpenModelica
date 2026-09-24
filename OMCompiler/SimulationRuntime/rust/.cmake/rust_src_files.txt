@@ -137,6 +137,7 @@ openmodelica_simulation_runtime/src/nls.rs
 openmodelica_simulation_runtime/src/operators.rs
 openmodelica_simulation_runtime/src/optimization.rs
 openmodelica_simulation_runtime/src/parmod.rs
+openmodelica_simulation_runtime/src/port.rs
 openmodelica_simulation_runtime/src/run.rs
 openmodelica_simulation_runtime/src/shim.c
 openmodelica_simulation_runtime/src/shim_export.rs
@@ -148,6 +149,7 @@ openmodelica_simulation_runtime/src/systems.rs
 openmodelica_simulation_runtime/tests/abi_layout.rs
 openmodelica_solvers/Cargo.toml
 openmodelica_solvers/build.rs
+openmodelica_solvers/src/atomic64.rs
 openmodelica_solvers/src/clock.rs
 openmodelica_solvers/src/counters.rs
 openmodelica_solvers/src/dassl.rs

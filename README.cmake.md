@@ -104,10 +104,9 @@ OM_ENABLE_OMSIMULATOR=ON
 OM_ENABLE_ENCRYPTION=OFF
 OM_ENABLE_DOCS=OFF
 OM_ENABLE_TESTSUITE=ON             # OFF if there is no testsuite/
-OM_RUST_RESULT_READERS=ON          # OFF if cargo is not found
-OM_RUST_RESULT_WRITERS=ON          # OFF if cargo is not found
 OM_OMC_ENABLE_COMPILER=ON
 OM_OMC_ENABLE_CPP_RUNTIME=ON
+OM_OMC_ENABLE_C_OLD_RUNTIME=ON
 OM_OMC_ENABLE_PARMODELICA=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_OPTIMIZATION=ON
@@ -150,15 +149,12 @@ encryption support. Note that, for this to work, you need an additional module w
 not distributed in the default OpenModelcia source repository. Contact the OpenModelica
 team if you need encryption support.
 
-`OM_RUST_RESULT_WRITERS` makes the C simulation runtime write result files through
-`libomc_result`, the Rust result-file library, and `OM_RUST_RESULT_READERS` makes the GUI
-clients read them back through it. Both need `cargo` on the `PATH` (a stable toolchain of
-version 1.85 or newer) and default to `OFF` if CMake does not find it. Turning them off
-falls back to the C readers and writers, which cannot handle the `.arrow` format.
+The build needs `cargo` on the `PATH` (a stable toolchain of version 1.85 or newer): result
+files are read and written through `libomc_result`, the Rust result-file library, and
+`--simCodeTarget=C` links the Rust simulation runtime, `libSimulationRuntimeRust`.
 
-The Rust port of the compiler itself (`OM_OMC_ENABLE_RUST`) and the Rust simulation runtime
-that `--simCodeTarget=C+Rust` links (`OM_ENABLE_RUST_SIM_RUNTIME`) are separate options,
-both off by default. `OM_OMC_ENABLE_RUST` needs a pinned nightly toolchain; see
+The Rust port of the compiler itself (`OM_OMC_ENABLE_RUST`) is a separate option, off by
+default. It needs a pinned nightly toolchain; see
 [4.1.2](#412-openmodelicaomcompiler-options).
 
 #### 4.1.2. OpenModelica/OMCompiler Options
@@ -166,6 +162,9 @@ both off by default. `OM_OMC_ENABLE_RUST` needs a pinned nightly toolchain; see
 `OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based
 simulation runtime. This requires multiple Boost library components (filesystem,
 program_options, ...)
+
+`OM_OMC_ENABLE_C_OLD_RUNTIME` allows you to enable/disable the building of
+`libSimulationRuntimeC`, the C simulation runtime `--simCodeTarget=C.old` links.
 
 `OM_OMC_ENABLE_PARMODELICA` allows you to enable/disable the ParModelica (`--parmodauto`)
 runtime. It needs the Boost components graph and chrono.
