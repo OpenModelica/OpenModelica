@@ -635,8 +635,12 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
     }
     /* If token is StartElement, we'll see if we can read it.*/
     if (token == QXmlStreamReader::StartElement) {
-      /* If it's named ScalarVariable, we'll dig the information from there.*/
-      if (xmlReader.name() == QStringLiteral("ScalarVariable")) {
+      /* If it's named ScalarVariable or ArrayVariable, we'll dig the information from there.
+       * ArrayVariable is written instead of the scalarized elements when --simCodeScalarize=false.
+       * Its elements are taken from the result file, see insertVariablesItems.
+       */
+      const bool isArrayVariable = xmlReader.name() == QStringLiteral("ArrayVariable");
+      if (isArrayVariable || xmlReader.name() == QStringLiteral("ScalarVariable")) {
         ScalarVariable scalarVariable = VariablesTreeModel::parseScalarVariable(xmlReader);
         /* Skip variables,
          *   1. If ignoreHideResult is not set and hideResult is true.
@@ -645,6 +649,10 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
          */
         if ((ignoreHideResult || !scalarVariable.hideResultIsTrue)
             && ((protectedVariables && !scalarVariable.isEncrypted) || (!scalarVariable.isProtected || (!ignoreHideResult && scalarVariable.hideResultIsFalse)))) {
+          if (isArrayVariable) {
+            mArrayVariablesHash.insert(removeSubscripts(scalarVariable.name), scalarVariable);
+            continue;
+          }
           mScalarVariablesHash.insert(scalarVariable.name, scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.name);
@@ -781,6 +789,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mpActiveVariablesTreeItem = pTopVariablesTreeItem;
   /* open the model_init.xml file for reading */
   mScalarVariablesHash.clear();
+  mArrayVariablesHash.clear();
   QString initFileName, infoFileName;
   if (simulationOptions.isValid()) {
     initFileName = QString("%1_init.xml").arg(simulationOptions.getOutputFileName());
@@ -913,6 +922,14 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
      * So convert the list to set outside the loop.
      */
     variableSetFromResultFile = QSet<QString>(lst.begin(), lst.end());
+    /* The result file has the scalar elements x[1], x[2], ... of an ArrayVariable x. */
+    if (!mArrayVariablesHash.isEmpty()) {
+      foreach (QString variable, lst) {
+        if (!mScalarVariablesHash.contains(variable) && mArrayVariablesHash.contains(removeSubscripts(variable))) {
+          variablesList.append(variable);
+        }
+      }
+    }
   }
 
   QStringList parts;
@@ -1156,10 +1173,11 @@ void VariablesTreeModel::insertVariablesItems(VariableNode *pParentVariableNode,
 ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlReader)
 {
   ScalarVariable scalarVariable;
-  /* Let's check that we're really getting a ScalarVariable. */
-  if (xmlReader.tokenType() != QXmlStreamReader::StartElement && xmlReader.name() == QStringLiteral("ScalarVariable")) {
+  /* Let's check that we're really getting a ScalarVariable or ArrayVariable. */
+  if (xmlReader.tokenType() != QXmlStreamReader::StartElement) {
     return scalarVariable;
   }
+  const QString elementName = xmlReader.name().toString();
   /* Let's get the attributes for ScalarVariable */
   QXmlStreamAttributes attributes = xmlReader.attributes();
   /* Read the ScalarVariable attributes. */
@@ -1186,8 +1204,9 @@ ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlRead
   }
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
-  while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == QStringLiteral("ScalarVariable"))) {
-    if (xmlReader.tokenType() == QXmlStreamReader::StartElement) {
+  while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == elementName) && !xmlReader.atEnd()) {
+    /* Skip the Dimension elements of an ArrayVariable. */
+    if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() != QStringLiteral("Dimension")) {
       scalarVariable.type = xmlReader.name().toString();
       for (const QXmlStreamAttribute &attr : xmlReader.attributes()) {
         const QStringView name = attr.name();
@@ -1207,6 +1226,48 @@ ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlRead
 }
 
 /*!
+ * \brief VariablesTreeModel::removeSubscripts
+ * Removes all subscripts from a variable name, e.g., der(a[1].x[2,3]) becomes der(a.x).
+ * Subscripts inside quoted identifiers are kept.
+ * \param name
+ * \return
+ */
+QString VariablesTreeModel::removeSubscripts(const QString &name)
+{
+  QString result;
+  result.reserve(name.size());
+  int depth = 0;
+  bool quoted = false;
+  for (int i = 0; i < name.size(); ++i) {
+    const QChar c = name.at(i);
+    if (quoted) {
+      if (c == '\\' && i + 1 < name.size()) {
+        if (depth == 0) {
+          result.append(c);
+          result.append(name.at(i + 1));
+        }
+        ++i;
+        continue;
+      } else if (c == '\'') {
+        quoted = false;
+      }
+    } else if (c == '\'') {
+      quoted = true;
+    } else if (c == '[') {
+      ++depth;
+      continue;
+    } else if (c == ']' && depth > 0) {
+      --depth;
+      continue;
+    }
+    if (depth == 0) {
+      result.append(c);
+    }
+  }
+  return result;
+}
+
+/*!
  * \brief VariablesTreeModel::getVariableInformation
  * Returns the variable information like value, unit, displayunit and description.
  * \param pMatReader
@@ -1223,7 +1284,19 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
                                                 QString *variability, QString *unit, QString *displayUnit, QString *description)
 {
   ScalarVariable scalarVariable = mScalarVariablesHash.value(variableToFind);
-  if (scalarVariable.name.compare(variableToFind) == 0) {
+  bool found = scalarVariable.name.compare(variableToFind) == 0;
+  /* An element x[i] of an ArrayVariable x. Its value can't be changed since the
+   * simulation runtime only overrides the complete array.
+   */
+  if (!found && variableToFind.contains('[')) {
+    auto arrayVariable = mArrayVariablesHash.constFind(removeSubscripts(variableToFind));
+    if (arrayVariable != mArrayVariablesHash.constEnd()) {
+      scalarVariable = arrayVariable.value();
+      scalarVariable.isValueChangeable = false;
+      found = true;
+    }
+  }
+  if (found) {
     *type = scalarVariable.type;
     *changeAble = scalarVariable.isValueChangeable;
     *variability = scalarVariable.variability;
