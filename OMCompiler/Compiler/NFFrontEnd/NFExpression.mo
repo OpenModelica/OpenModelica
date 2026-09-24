@@ -1378,11 +1378,26 @@ public
   end makeArrayCheckLiteral;
 
   function makeEmptyArray
+    "Creates an array from a type where at least one of the dimensions is zero."
     input Type ty;
     output Expression outExp;
+  protected
+    list<Dimension> dims, non_empty_dims = {};
+    Type arr_ty;
   algorithm
-    outExp := ARRAY(ty, listArray({}), true);
-    annotation(__OpenModelica_EarlyInline = true);
+    // Split the dimensions on the first zero dimension.
+    dims := Type.arrayDims(ty);
+
+    while not Dimension.isZero(listHead(dims)) loop
+      non_empty_dims := listHead(dims) :: non_empty_dims;
+      dims := listRest(dims);
+    end while;
+
+    // Create an empty array with the zero dimension and the dimensions after.
+    arr_ty := Type.ARRAY(Type.arrayElementType(ty), dims);
+    outExp := ARRAY(arr_ty, listArray({}), true);
+    // Lift the empty array with the dimensions preceeding the zero dimension.
+    outExp := liftArrayList(non_empty_dims, outExp);
   end makeEmptyArray;
 
   function makeIntegerArray
