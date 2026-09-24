@@ -1,0 +1,62 @@
+// name: recordConstantArgument
+// keywords: NewBackend
+// status: correct
+
+loadString("
+package RecordConstantArgument
+  record Base
+    constant Boolean fixed;
+    constant Integer ncp(min=1);
+    final constant Integer nc = if fixed then 1 else ncp;
+    parameter Real w[ncp] = ones(ncp);
+  end Base;
+  record Sub
+    extends Base(final fixed = false, final ncp = 2, final w = {1, 2});
+  end Sub;
+  function inlined
+    input Base b;
+    input Real x;
+    output Real y;
+  algorithm
+    y := x * sum(b.w) + b.nc;
+  end inlined;
+  function notInlined
+    input Base b;
+    input Real x;
+    output Real y;
+  algorithm
+    y := 0;
+    for i in 1:b.ncp loop
+      y := y + x * b.w[i];
+    end for;
+    y := y + b.nc;
+  end notInlined;
+  model M
+    parameter Sub s;
+    parameter Base t = Sub();
+    Real y1 = inlined(s, time);
+    Real y2 = notInlined(t, time);
+  end M;
+end RecordConstantArgument;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(RecordConstantArgument.M); getErrorString();
+val(y1, 1);
+val(y2, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RecordConstantArgument.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RecordConstantArgument.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// 5.0
+// endResult

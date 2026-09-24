@@ -1275,17 +1275,16 @@ protected
       end if;
     end if;
 
-    // zero valued nominal values are not allowed
+    // zero valued nominal values are invalid, but the models still work, so they are only reported
     if not listEmpty(zeroes) then
-      str := getInstanceName() + " failed because zero values are not allowed.";
+      str := getInstanceName() + ": Zero valued nominal values are not allowed.";
       if Flags.isSet(Flags.DUMP_REPL) then
         str := str + "\n\tNominal map after replacements (violating array index = " + intString(index) + "):\n\t"
           + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
       else
         str := str + " Use -d=dumprepl for more information.\n";
       end if;
-      Error.addCompilerError(str);
-      fail();
+      Error.addCompilerWarning(str);
     end if;
   end checkNominalThresholdSingle;
 

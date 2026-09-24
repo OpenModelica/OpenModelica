@@ -10,6 +10,7 @@ NonTopLevelInputs.mos \
 record_arrays.mos \
 RecordCausality.mos \
 AliasRecord.mos \
+recordConstantArgument.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
