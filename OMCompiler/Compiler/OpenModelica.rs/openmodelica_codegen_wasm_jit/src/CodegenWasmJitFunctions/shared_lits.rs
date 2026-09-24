@@ -103,6 +103,7 @@ pub(crate) fn build_init_fn(
         ctrl_depth: 0,
         loops: Vec::new(),
         borrowed_locals: Vec::new(),
+        null_locals: Vec::new(),
         elem_ptr_tmp: None,
         src_loc: None,
         sim: None,
