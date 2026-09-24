@@ -149,36 +149,30 @@ algorithm
     local
       Expression e;
       list<Equation> body;
+      Dimension dim;
 
     case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
 
-    case Equation.FOR(range = SOME(_))
+    case Equation.FOR(range = SOME(e))
       algorithm
-        body := simplifyEquations(eq.body);
+        dim := Type.nthDimension(Expression.typeOf(e), 1);
 
-        if not Equation.containsExpList(body, function Expression.containsIterator(iterator = eq.iterator)) then
-          // Remove the surrounding loop if the equations inside aren't using the iterator.
+        if Dimension.isZero(dim) then
+          // Discard the for-loop if the iteration range is empty.
+        elseif Dimension.isOne(dim) and Flags.getConfigBool(Flags.NEW_BACKEND) then
+          // Unroll the loop if the iteration range is size 1.
+          // TODO: This breaks some of the -d=-nfScalarize tests because they rely on the broken way
+          //       the old backend handles for-loops, so only enable it for the new backend for now.
+          e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
+          e := SimplifyExp.simplify(e);
+          body := Equation.replaceIteratorList(eq.body, eq.iterator, e);
+          body := simplifyEquations(body);
           equations := List.append_reverse(body, equations);
         else
-          // TODO: This causes issues with the -nfScalarize tests for some
-          //       reason, which is the only case this applies to since we
-          //       normally unroll for loops and never get here.
-          //dim := Type.nthDimension(Expression.typeOf(e), 1);
-
-          //if Dimension.isOne(dim) then
-          //  // Unroll the loop if the iteration range consists of only one value.
-          //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
-          //  e := SimplifyExp.simplify(e);
-          //  body := Equation.replaceIteratorList(body, eq.iterator, e);
-          //  body := simplifyEquations(body);
-          //  equations := List.append_reverse(body, equations);
-          //elseif not Dimension.isZero(dim) then
-          //if not Dimension.isZero(dim) then
-            // Otherwise just simplify if the iteration range is not empty.
-            eq.range := Util.applyOption(eq.range, function SimplifyExp.simplify(includeScope = false));
-            eq.body := body;
-            equations := eq :: equations;
-          //end if;
+          // Otherwise just simplify the range and body of the loop.
+          eq.range := Util.applyOption(eq.range, function SimplifyExp.simplify(includeScope = false));
+          eq.body := simplifyEquations(eq.body);
+          equations := eq :: equations;
         end if;
       then
         equations;

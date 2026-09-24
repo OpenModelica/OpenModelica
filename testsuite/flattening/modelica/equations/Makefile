@@ -27,6 +27,8 @@ EquationFor4.mo \
 EquationFor5.mo \
 EquationFor6.mo \
 EquationFor7.mo \
+EquationFor8.mo \
+EquationFor9.mo \
 EquationIf1.mo \
 EquationIf2.mo \
 EquationIf3.mo \
