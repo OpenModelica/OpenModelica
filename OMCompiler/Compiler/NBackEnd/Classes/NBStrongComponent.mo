@@ -1217,8 +1217,9 @@ public
           then createSliceOrSingle(resolved_cref, var_slice, eqn_slice);
 
           // for equations that are not algebraic loops are caught earlier! Any for equation
-          // getting to this point is an actual algebraic loop
-          case (_, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)))
+          // getting to this point is an actual algebraic loop, unless it is a tuple that
+          // assigns a variable to each of its outputs in every iteration
+          case (_, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)) or Equation.isRecordOrTupleEquation(Slice.getT(eqn_slice)))
           then MULTI_COMPONENT(
             vars    = comp_vars,
             eqn     = eqn_slice,
