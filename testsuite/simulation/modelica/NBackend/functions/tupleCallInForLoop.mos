@@ -1,0 +1,50 @@
+// name: tupleCallInForLoop
+// keywords: NewBackend function tuple for-equation matching
+// status: correct
+// cflags: --newBackend
+//
+// A function call with several outputs in a for-equation over more than one index. The rows of
+// the equation are ordered by iteration first, so the rows of one output are a whole body
+// apart. They used to be placed next to each other, which made the matching singular and started
+// an index reduction that differentiates the function and, for a large function, runs out of
+// memory. Solving such an equation is not supported yet, but it has to fail right away.
+
+loadString("
+function f2
+  input Real u;
+  output Real a, b;
+algorithm
+  a := u;
+  b := 2 * u;
+end f2;
+
+model TupleCallInForLoop
+  Real a[3], b[3];
+equation
+  for i in 1:3 loop
+    (a[i], b[i]) = f2(time + i);
+  end for;
+end TupleCallInForLoop;
+"); getErrorString();
+
+translateModel(TupleCallInForLoop); getErrorString();
+
+// Result:
+// true
+// ""
+// false
+// "Error: Internal error NBEquation.Equation.getResidualExp failed for:
+// [TUPL] (2) ($FUN_1[$i1], $FUN_2[$i1]) = f2(time + CAST(Real, $i1)); ($RES_AUX_3)
+// Error: Internal error NBSolve.solveStrongComponent failed with status = Solve.UNSOLVABLE while trying to solve following strong component:
+// BLOCK: Sliced Component (status = Solve.UNPROCESSED, size = 3)
+// ----------------------------------------------------------------
+// ### Variable:
+// 	$FUN_1[$i1]
+// ### Equation:
+// 	[FOR-] (6) ($RES_AUX_2)
+// 	[----] for $i1 in 1:3 loop
+// 	[----]   [TUPL] (2) ($FUN_1[$i1], $FUN_2[$i1]) = f2(time + CAST(Real, $i1)); ($RES_AUX_3)
+// 	[----] end for;
+// 	slice: {4, 2, 0}
+// "
+// endResult
