@@ -1311,27 +1311,27 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   int forwardStatus = 1;
   int adjointStatus = 1;
 
-  printf("Initializing symbolic ODE Jacobian with method %s\n", JACOBIAN_METHOD_NAME[*jacobianMethod]);
+  //printf("Initializing symbolic ODE Jacobian with method %s\n", JACOBIAN_METHOD_NAME[*jacobianMethod]);
 
   if (needForwardJacobian) {
-    printf("Initializing forward Jacobian A in needForwardJacobian.\n");
+    //printf("Initializing forward Jacobian A in needForwardJacobian.\n");
     forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
   }
 
   if (wantAdjoint || wantBidirectional) {
-    printf("Initializing adjoint Jacobian ADJ in wantAdjoint or wantBidirectional.\n");
+    //printf("Initializing adjoint Jacobian ADJ in wantAdjoint or wantBidirectional.\n");
     adjointStatus = data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
   }
 
   if (wantBidirectional) {
-    printf("Initializing bidirectional Jacobian in wantBidirectional.\n");
+    //printf("Initializing bidirectional Jacobian in wantBidirectional.\n");
     if (forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalRow) {
-      printf("Bidirectional Jacobian successfully initialized.\n");
+      //printf("Bidirectional Jacobian successfully initialized.\n");
       transferAdjointJacobianToUnifiedStorage(forwardJacobian, adjointJacobian);
       initBidirectionalRecovery(forwardJacobian);
       jacobian = forwardJacobian;
     } else {
-      printf("Bidirectional Jacobian not available, falling back to forward Jacobian.\n");
+      //printf("Bidirectional Jacobian not available, falling back to forward Jacobian.\n");
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
@@ -1339,19 +1339,19 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
       jacobian = forwardJacobian;
     }
   } else if (wantAdjoint) {
-    printf("Initializing adjoint Jacobian in wantAdjoint.\n");
-    printf("Adjoint Jacobian status: %d, evalRow: %p\n", adjointStatus, adjointJacobian->evalRow);
+    //printf("Initializing adjoint Jacobian in wantAdjoint.\n");
+    //printf("Adjoint Jacobian status: %d, evalRow: %p\n", adjointStatus, adjointJacobian->evalRow);
     if (adjointStatus == 0 && adjointJacobian->evalRow) {
-      printf("Adjoint Jacobian successfully initialized.\n");
+      //printf("Adjoint Jacobian successfully initialized.\n");
       // prepareAdjointJacobianForRowEvaluation(adjointJacobian);
       jacobian = adjointJacobian;
     } else {
-      printf("Adjoint Jacobian not available, falling back to forward Jacobian.\n");
+      //printf("Adjoint Jacobian not available, falling back to forward Jacobian.\n");
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=symbolicAdjoint or =bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
       if (!needForwardJacobian) {
-        printf("Initializing forward Jacobian A as fallback.\n");
+        //printf("Initializing forward Jacobian A as fallback.\n");
         forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
       }
       *jacobianMethod = COLOREDSYMJAC;
@@ -1360,7 +1360,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   }
 
   if (jacobian->sparsePattern != NULL) {
-    printf("Sorting sparse pattern of Jacobian for ascending secondary indices.\n");
+    //printf("Sorting sparse pattern of Jacobian for ascending secondary indices.\n");
     /* KLU and the sparse pattern printers require ascending secondary indices. */
     sortSparseColumns(jacobian->sparsePattern, (unsigned int) jacobian->sizeCols);
   }
