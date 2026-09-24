@@ -5178,16 +5178,19 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
 ::=
  match context
    case JACOBIAN_CONTEXT(name=jacName, jacHT=SOME(jacHT)) then
+     let resultField = if stringEq(jacName, "ADJ") then "resultVarsAdj" else "resultVars"
+     let tmpField = if stringEq(jacName, "ADJ") then "tmpVarsAdj" else "tmpVars"
+     let seedField = if stringEq(jacName, "ADJ") then "seedVarsAdj" else "seedVars"
      match simVarFromHT(cr, jacHT)
      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then
-       if stringEq(sub, "") then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian->resultVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%resultField%>[<%index%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%resultField%>[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then
-       if stringEq(sub, "") then 'jacobian->tmpVars[<%index%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian->tmpVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%tmpField%>[<%index%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%tmpField%>[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-       if stringEq(sub, "") then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian->seedVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%seedField%>[<%index%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%seedField%>[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then
        if boolAnd(stringEq(sub, ""), isJacobianColumnCref(cr)) then '0.0' else
        // Subscripted seed cref not in jac_map (e.g. a cross-Jacobian seed
@@ -5198,14 +5201,14 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
        // Otherwise fall through to crefOld for actual values / loop iterators.
        match simVarFromHT(crefStripSubs(cr), jacHT)
        case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-         if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
-         else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+         if stringEq(sub, "") then 'jacobian-><%seedField%>[<%v.index%>]<%crefCCommentWithVariability(v)%>'
+         else '(&(jacobian-><%seedField%>[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
        else
          // Still not found: seed cached under a different Jacobian's name. Retry with the root renamed to this Jacobian.
          match simVarFromHT(crefRenameSeedRoot(crefStripSubs(cr), jacName), jacHT)
          case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-           if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
-           else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+           if stringEq(sub, "") then 'jacobian-><%seedField%>[<%v.index%>]<%crefCCommentWithVariability(v)%>'
+           else '(&(jacobian-><%seedField%>[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
          else crefOldSub(cr, ix, &sub)
 end jacCrefs;
 

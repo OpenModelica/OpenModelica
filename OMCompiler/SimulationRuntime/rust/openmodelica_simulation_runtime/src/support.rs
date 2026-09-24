@@ -394,19 +394,65 @@ pub extern "C" fn initJacobian(
     evalColumn: jacobianColumn_func_ptr,
     constantEqns: jacobianColumn_func_ptr,
     sparsePattern: *mut SPARSE_PATTERN,
+    isAdjoint: c_uint,
 ) {
     let j = unsafe { &mut *jacobian };
+    let size_direction = (sizeCols.max(sizeRows)) as usize;
     j.sizeCols = sizeCols as usize;
     j.sizeRows = sizeRows as usize;
-    j.sizeTmpVars = sizeTmpVars as usize;
-    j.seedVars = calloc_bytes(sizeCols as usize * 8) as *mut f64;
-    j.resultVars = calloc_bytes(sizeRows as usize * 8) as *mut f64;
-    j.tmpVars = calloc_bytes(sizeTmpVars as usize * 8) as *mut f64;
-    j.dag = dag;
-    j.evalSelection = ptr::null_mut();
-    j.evalColumn = evalColumn;
-    j.constantEqns = constantEqns;
-    j.sparsePattern = sparsePattern;
+    if isAdjoint == 1 {
+        j.seedVarsAdj = calloc_bytes(size_direction * 8) as *mut f64;
+        j.seedVars = ptr::null_mut();
+
+        j.resultVarsAdj = calloc_bytes(size_direction * 8) as *mut f64;
+        j.resultVars = ptr::null_mut();
+
+        j.sizeTmpVars = 0;
+        j.sizeTmpVarsAdj = sizeTmpVars as usize;
+
+        j.tmpVars = ptr::null_mut();
+        j.tmpVarsAdj = calloc_bytes(sizeTmpVars as usize * 8) as *mut f64;
+
+        j.dag = ptr::null_mut();
+        j.dagT = ptr::null_mut();
+
+        j.evalColumn = None;
+        j.evalRow = evalColumn;
+
+        j.constColEqns = None;
+        j.constRowEqns = constantEqns;
+
+        j.sparsePattern = ptr::null_mut();
+        j.sparsePatternT = sparsePattern;
+    } else {
+        j.seedVars = calloc_bytes(size_direction * 8) as *mut f64;
+        j.seedVarsAdj = ptr::null_mut();
+
+        j.resultVars = calloc_bytes(size_direction * 8) as *mut f64;
+        j.resultVarsAdj = ptr::null_mut();
+
+        j.sizeTmpVars = sizeTmpVars as usize;
+        j.sizeTmpVarsAdj = 0;
+
+        j.tmpVars = calloc_bytes(sizeTmpVars as usize * 8) as *mut f64;
+        j.tmpVarsAdj = ptr::null_mut();
+
+        j.dag = dag;
+        j.dagT = ptr::null_mut();
+
+        j.evalColumn = evalColumn;
+        j.evalRow = None;
+
+        j.constColEqns = constantEqns;
+        j.constRowEqns = None;
+
+        j.sparsePattern = sparsePattern;
+        j.sparsePatternT = ptr::null_mut();
+    }
+
+    j.evalSelectionCol = ptr::null_mut();
+    j.evalSelectionRow = ptr::null_mut();
+    j.constantEqns = None;
     j.availability = JACOBIAN_UNKNOWN;
     j.dae_cj = 0.0;
     j.isRowEval = 0;

@@ -32,6 +32,11 @@ pub const ERROR_NONLINEARSOLVER: i32 = 3;
 pub const ERROR_EVENTSEARCH: i32 = 4;
 pub const ERROR_EVENTHANDLING: i32 = 5;
 pub const ERROR_OPTIMIZE: i32 = 6;
+/// `simulation_data.h`'s `JACOBIAN_AVAILABILITY` enum.
+pub const JACOBIAN_UNKNOWN: c_int = 0;
+pub const JACOBIAN_NOT_AVAILABLE: c_int = 1;
+pub const JACOBIAN_ONLY_SPARSITY: c_int = 2;
+pub const JACOBIAN_AVAILABLE: c_int = 3;
 
 /// `util/rtclock.h`, and the one layout the two runtimes' headers disagree about:
 /// an FMU defines `OMC_MINIMAL_RUNTIME`, where the clock is a `typedef int`
@@ -162,32 +167,44 @@ pub type initialAnalyticalJacobian_func_ptr =
 
 #[repr(C)]
 pub struct JACOBIAN {
-    pub availability: c_int,
     pub sizeCols: usize,
     pub sizeRows: usize,
     pub sizeTmpVars: usize,
+    pub sizeTmpVarsAdj: usize,
+
     pub sparsePattern: *mut SPARSE_PATTERN,
+    pub sparsePatternT: *mut SPARSE_PATTERN,
+
     pub seedVars: *mut modelica_real,
     pub tmpVars: *mut modelica_real,
     pub resultVars: *mut modelica_real,
+
+    pub seedVarsAdj: *mut modelica_real,
+    pub tmpVarsAdj: *mut modelica_real,
+    pub resultVarsAdj: *mut modelica_real,
+
     pub dae_cj: modelica_real,
+
     pub dag: *mut c_void,
-    pub evalSelection: *mut c_void,
+    pub evalSelectionCol: *mut c_void,
     pub evalColumn: jacobianColumn_func_ptr,
-    pub constantEqns: jacobianColumn_func_ptr,
-    pub isRowEval: modelica_boolean,
-    pub cscPattern: *mut SPARSE_PATTERN,
-    pub isBidirectional: modelica_boolean,
-    pub adjointJacobian: *mut JACOBIAN,
+    pub constColEqns: jacobianColumn_func_ptr,
+
+    pub dagT: *mut c_void,
+    pub evalSelectionRow: *mut c_void,
+    pub evalRow: jacobianColumn_func_ptr,
+    pub constRowEqns: jacobianColumn_func_ptr,
+
     pub recoverMask: *mut u8,
     pub csrToCscMap: *mut c_uint,
-}
 
-/// `JACOBIAN_AVAILABILITY`
-pub const JACOBIAN_UNKNOWN: c_int = 0;
-pub const JACOBIAN_NOT_AVAILABLE: c_int = 1;
-pub const JACOBIAN_ONLY_SPARSITY: c_int = 2;
-pub const JACOBIAN_AVAILABLE: c_int = 3;
+
+    pub constantEqns: jacobianColumn_func_ptr,
+    pub isRowEval: modelica_boolean,
+    pub isBidirectional: modelica_boolean,
+    pub availability: c_int,
+    pub adjointJacobian: *mut JACOBIAN,
+}
 
 #[repr(C)]
 pub struct EXTERNAL_INPUT {
