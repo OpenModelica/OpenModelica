@@ -87,7 +87,7 @@ foreach(test_path IN LISTS test_list)
   string(REGEX MATCH "^[^/]+" label "${rel_path}")
 
   file(APPEND "${out_file}"
-    "add_test(\"${test_name}\" \"${PERL_EXECUTABLE}\" \"${TESTSUITE_DIR}/partest/runtest.pl\" \"${test_path}\" \"--no-colour\")\n"
+    "add_test(\"${test_name}\" \"${PERL_EXECUTABLE}\" \"${TESTSUITE_DIR}/partest/runtest.pl\" \"${test_path}\" \"--no-colour\" \"--print-fail-log\")\n"
     "set_tests_properties(\"${test_name}\" PROPERTIES\n"
     "  WORKING_DIRECTORY \"${TESTSUITE_DIR}\"\n"
     "  WILL_FAIL TRUE\n"

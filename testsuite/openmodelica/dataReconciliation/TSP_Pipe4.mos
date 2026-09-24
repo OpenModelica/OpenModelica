@@ -1,6 +1,8 @@
 // name:     TSP_Pipe4
 // keywords: extraction algorithm
 // status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe4_Inputs.csv
 
 
@@ -1375,8 +1377,5 @@ getErrorString();
 // Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
 // Error: Internal error : Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed
 // Error: pre-optimization module dataReconciliation (simulation) failed.
-// "
-// ""
-// "Error: Error opening file: NewDataReconciliationSimpleTests.TSP_Pipe4_Outputs.csv: No such file or directory.
 // "
 // endResult
