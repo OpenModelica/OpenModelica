@@ -465,30 +465,35 @@ function simplifySumProduct
 protected
   Boolean expanded;
   list<Expression> args;
-  Type ty;
+  Type ty, ety;
   Operator op;
 algorithm
-  if expand then
+  ty := Expression.typeOf(arg);
+
+  if Type.isEmptyArray(ty) then
+    ety := Type.arrayElementType(ty);
+    exp := if isSum then Expression.makeZero(ety) else Expression.makeOne(ety);
+  elseif expand then
     (exp, expanded) := ExpandExp.expand(arg);
 
     if expanded then
       args := Expression.arrayScalarElements(exp);
-      ty := Type.arrayElementType(Expression.typeOf(arg));
+      ety := Type.arrayElementType(ty);
 
       if listEmpty(args) then
-        exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
+        exp := if isSum then Expression.makeZero(ety) else Expression.makeOne(ety);
       else
-        op := if isSum then Operator.makeAdd(ty) else
-                            Operator.makeMul(ty);
+        op := if isSum then Operator.makeAdd(ety) else
+                            Operator.makeMul(ety);
         exp := Expression.MULTARY(args, {}, op);
         exp := simplify(exp);
       end if;
-
-      return;
+    else
+      exp := simplifyReducedArrayConstructor(arg, call);
     end if;
+  else
+    exp := simplifyReducedArrayConstructor(arg, call);
   end if;
-
-  exp := simplifyReducedArrayConstructor(arg, call);
 end simplifySumProduct;
 
 function simplifyReducedArrayConstructor
