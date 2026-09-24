@@ -1092,7 +1092,7 @@ algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   () := match (simCode,fmuTarget)
     local
-      String str, newdir, newpath, resourcesDir, dirname;
+      String str, newdir, newpath, resourcesDir, dirname, fileName;
       String fmutmp;
       String guid;
       list<SimCode.FmiTerminal> terminals;
@@ -1138,19 +1138,21 @@ algorithm
         Util.createDirectoryTree(resourcesDir);
         for path in simCode.modelInfo.resourcePaths loop
           dirname := System.dirname(path);
+          newpath := path;
           // on windows, remove ":" from the path!
           if Autoconf.os == "Windows_NT" then
             dirname := System.stringReplace(dirname, ":", "");
+            newpath := System.stringReplace(newpath, ":", "");
           end if;
           newdir := resourcesDir + dirname;
-          newpath := resourcesDir + path;
+          newpath := resourcesDir + newpath;
           if System.regularFileExists(newpath) or System.directoryExists(newpath) then
             /* Already copied. Maybe one resource loaded a library and this one only a file in the directory */
             continue;
           end if;
           Util.createDirectoryTree(newdir);
           // copy the file or directory
-          if 0 <> System.systemCall("cp -rf \"" + path + "\" \"" + newdir + "/\"") then
+          if not System.copyPath(path, newpath) then
             Error.addInternalError("Failed to copy path " + path + " to " + resourcesDir + dirname, sourceInfo());
           end if;
         end for;
@@ -1162,7 +1164,7 @@ algorithm
           case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
             algorithm
             needSundials := true;
-            if 0 <> System.systemCall("cp -rf \"" + pathToFlagsJson + "\" \"" + resourcesDir + simCode.fileNamePrefix+"_flags.json\"") then
+            if not System.copyFile(pathToFlagsJson, resourcesDir + simCode.fileNamePrefix + "_flags.json") then
               Error.addInternalError("Failed to copy " + pathToFlagsJson + " to " + resourcesDir + simCode.fileNamePrefix + "_flags.json", sourceInfo());
             end if;
             then();
@@ -1174,12 +1176,12 @@ algorithm
         // annotation, plus the CAD files it references (a portable FMU cannot rely
         // on the importer having the libraries the modelica:// URIs point at).
         if Flags.isSet(Flags.VISUAL_XML) and System.regularFileExists(simCode.fileNamePrefix + "_visual.xml") then
-          if 0 <> System.systemCall("cp -f \"" + simCode.fileNamePrefix + "_visual.xml\" \"" + resourcesDir + simCode.fileNamePrefix + "_visual.xml\"") then
+          if not System.copyFile(simCode.fileNamePrefix + "_visual.xml", resourcesDir + simCode.fileNamePrefix + "_visual.xml") then
             Error.addInternalError("Failed to copy " + simCode.fileNamePrefix + "_visual.xml to " + resourcesDir, sourceInfo());
           end if;
           for cad in visualizationCadFiles(simCode.fileNamePrefix + "_visual.xml") loop
             if System.regularFileExists(cad) and
-               0 <> System.systemCall("cp -f \"" + cad + "\" \"" + resourcesDir + System.basename(cad) + "\"") then
+               not System.copyFile(cad, resourcesDir + System.basename(cad)) then
               Error.addInternalError("Failed to copy CAD file " + cad + " to " + resourcesDir, sourceInfo());
             end if;
           end for;
@@ -1188,7 +1190,8 @@ algorithm
         SerializeSparsityPattern.serialize(simCode);
         for jac in simCode.jacobianMatrices loop
           if not listEmpty(jac.sparsity) then
-            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin" + "' '" + resourcesDir + "'") then
+            fileName := simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
+            if not System.rename(fileName, resourcesDir + fileName) then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin file", sourceInfo());
             end if;
           end if;
@@ -1205,7 +1208,8 @@ algorithm
         else
           // Add _info.json file to resources/ directory if neither --fmiFilter=blackBox nor --fmiFilter=protected are used
           if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_PROTECTED then
-            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_info.json" + "' '" + resourcesDir + "'") then
+            fileName := simCode.fileNamePrefix + "_info.json";
+            if not System.rename(fileName, resourcesDir + fileName) then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
             end if;
           end if;
@@ -2636,7 +2640,7 @@ algorithm
   end if;
   dest := fmutmp + "/sources/rust";
   Error.assertion(Util.createDirectoryTree(dest), "Failed to create directory " + dest, sourceInfo());
-  if 0 <> System.systemCall("cp -rf \"" + rust_sources_dir + "/.\" \"" + dest + "/\"") then
+  if not System.copyPath(rust_sources_dir, dest) then
     Error.addInternalError("Failed to copy the Rust runtime sources into " + dest, sourceInfo());
     return;
   end if;
@@ -2664,7 +2668,7 @@ algorithm
   end if;
 
   vendor := dest + "/vendor";
-  if 0 <> System.systemCall("cp -rf \"" + cache + "\" \"" + vendor + "\"") then
+  if not System.copyPath(cache, vendor) then
     Error.addInternalError("Failed to copy the vendored Rust dependencies into " + vendor, sourceInfo());
     return;
   end if;

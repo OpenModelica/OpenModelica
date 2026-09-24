@@ -17832,6 +17832,17 @@ algorithm
   end for;
 end make2CMakeInclude;
 
+public function msvcEnvironment
+  "The cmd prefix that enters the Visual Studio environment for the msvc
+  target, where the build tools and its cmake are not on the PATH. Empty for
+  other targets."
+  output String prefix = "";
+algorithm
+  if Autoconf.os == "Windows_NT" and StringUtil.startsWith(Config.simulationCodeTarget(), "msvc") then
+    prefix := "call \"" + System.stringReplace(Settings.getInstallationDirectoryPath() + "/share/omc/scripts/msvc_env.bat", "/", "\\") + "\" && ";
+  end if;
+end msvcEnvironment;
+
 public function getCMakeVersion
   "Get CMake version"
   input String pathToCMake = Autoconf.cmake;
@@ -17843,10 +17854,10 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  retVal := System.systemCallRestrictedEnv(pathToCMake + " --version", cmakeVersionLogFile);
+  retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
+    Error.addInternalError("Failed to get version from " + pathToCMake + ": " + System.readFile(cmakeVersionLogFile), sourceInfo());
     System.removeFile(cmakeVersionLogFile);
-    Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
     fail();
   end if;
   // Regex magic to read major.minor.patch version from cmake --version

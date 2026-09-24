@@ -1460,15 +1460,29 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion, String fileNamePr
   case SIMCODE(modelInfo=modelInfo as MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let includedir = '<%fileNamePrefixHash%>.fmutmp/sources/'
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
+  let omhome = makefileParams.omhome
+  let prefix = fileNamePrefix
   <<
   # FIXME: before you push into master...
   RUNTIMEDIR=<%makefileParams.omhome%>/include/omc/c/
   #COPY_RUNTIMEFILES=$(FMI_ME_OBJS:%= && (OMCFILE=% && cp $(RUNTIMEDIR)/$$OMCFILE.c $$OMCFILE.c))
 
   fmu:
-  <%\t%>rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
-  <%\t%>cp -a "<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefixHash%>.fmutmp/sources
-  <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
+  <%match getGeneralTarget(Config.simulationCodeTarget())
+  case "msvc" then
+  // nmake runs these in cmd; cmake comes with the Visual Studio environment.
+  <<
+  <%\t%>cmake -E rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%prefix%>_init.xml
+  <%\t%>cmake -E copy_directory "<%omhome%>/share/omc/runtime/c/fmi/buildproject" <%fileNamePrefixHash%>.fmutmp/sources
+  <%\t%>cmake -E copy <%prefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
+  >>
+  else
+  <<
+  <%\t%>rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%prefix%>_init.xml<%/*Already translated to .c*/%>
+  <%\t%>cp -a "<%omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefixHash%>.fmutmp/sources
+  <%\t%>cp -a <%prefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
+  >>
+  %>
   <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
      match  Config.simCodeTarget()
      case "omsicpp" then
