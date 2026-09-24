@@ -557,6 +557,7 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
       Option<OMSIData> omsiData;
+      list<FmiFigure> fmiFigures;
     end SIMCODE;
   end SimCode;
 
@@ -1361,7 +1362,7 @@ package SimCodeFunction
   constant list<SimCodeFunction.Variable> boxedRecordOutVars;
 end SimCodeFunction;
 
-package SimCodeUtil
+package SimCodeCodegenUtil
 
   function linearSystemMatrixFormat
     input SimCode.LinearSystem ls;
@@ -1546,11 +1547,6 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
-
-  function getFMI3Figures
-    input SimCode.SimCode simCode;
-    output list<SimCode.FmiFigure> figures;
-  end getFMI3Figures;
 
   function getFMI3VisualizationResource
     input SimCode.SimCode simCode;
@@ -1829,7 +1825,7 @@ package SimCodeUtil
     input SimCode.SimGenericCall call;
     output String str;
   end simGenericCallString;
-end SimCodeUtil;
+end SimCodeCodegenUtil;
 
 package SimCodeFunctionUtil
   function varName

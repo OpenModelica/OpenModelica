@@ -77,6 +77,7 @@ import Util;
 import Sorting;
 import System;
 import ElementSource;
+import SimCodeCodegenUtil;
 
 // =============================================================================
 // section for type definitions
@@ -577,8 +578,8 @@ algorithm
   costTornSparse := buildTorn + solveCost(rt, intReal(nnzA), true);
 
   // costed at the format the backend will emit for each
-  costUntorn := if BackendDAEUtil.useSparseSolver(n, nnz, isLinear) then costSparse else costDense;
-  costTorn := if BackendDAEUtil.useSparseSolver(t, nnzA, isLinear) then costTornSparse else costTornDense;
+  costUntorn := if SimCodeCodegenUtil.useSparseSolver(n, nnz, isLinear) then costSparse else costDense;
+  costTorn := if SimCodeCodegenUtil.useSparseSolver(t, nnzA, isLinear) then costTornSparse else costTornDense;
 
   if Flags.isSet(Flags.TEARING_COST) then
     print("[tearingCost] component " + intString(strongComponentIndex) + " " + (if isLinear then "LS" else "NLS")
@@ -589,8 +590,8 @@ algorithm
           + " digitsLost=" + realString(digitsLost) + " valuedCoeffs=" + intString(valued) + "/" + intString(nnz)
           + " cost dense=" + realString(costDense) + " sparse=" + realString(costSparse)
           + " tornDense=" + realString(costTornDense) + " tornSparse=" + realString(costTornSparse)
-          + " format=" + (if BackendDAEUtil.useSparseSolver(n, nnz, isLinear) then "sparse" else "dense")
-          + " tornFormat=" + (if BackendDAEUtil.useSparseSolver(t, nnzA, isLinear) then "sparse" else "dense") + "\n");
+          + " format=" + (if SimCodeCodegenUtil.useSparseSolver(n, nnz, isLinear) then "sparse" else "dense")
+          + " tornFormat=" + (if SimCodeCodegenUtil.useSparseSolver(t, nnzA, isLinear) then "sparse" else "dense") + "\n");
   end if;
 
   // a nonlinear system's cost is its Newton iterations, which this does not model

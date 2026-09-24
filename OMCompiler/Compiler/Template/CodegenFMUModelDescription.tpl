@@ -33,16 +33,32 @@
  *
  */
 
-encapsulated package MidCode
+// The modelDescription.xml of an FMU, dispatched on the FMI version.
 
-uniontype Program
-  record PROGRAM
-    String name;
-    list<Integer> functions;
-  end PROGRAM;
-end Program;
+package CodegenFMUModelDescription
 
-type Function = Integer;
+import interface SimCodeTV;
+import interface SimCodeBackendTV;
+import CodegenFMU1;
+import CodegenFMU2;
+import CodegenFMU3;
 
-annotation(__OpenModelica_Interface="codegen_util");
-end MidCode;
+template fmuModelDescriptionFile(SimCode simCode, String guid, String FMUVersion, String FMUType, list<String> sourceFiles)
+ "Generates code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  <?xml version="1.0" encoding="UTF-8"?>
+  <%
+  if isFMIVersion30(FMUVersion) then CodegenFMU3.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
+  else if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
+  else CodegenFMU1.fmiModelDescription(simCode,guid,FMUType)
+  %>
+  >>
+end fmuModelDescriptionFile;
+
+annotation(__OpenModelica_Interface="codegen_fmu");
+end CodegenFMUModelDescription;
+
+// vim: filetype=susan sw=2 sts=2

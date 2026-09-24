@@ -438,6 +438,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/ReverseLookup.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
@@ -446,6 +447,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
@@ -465,6 +467,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU2.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU3.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSI_common.mo
