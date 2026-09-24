@@ -46,9 +46,10 @@ extern "C" {
 #if !defined(_MSC_VER)
 #include <libgen.h>
 #include <unistd.h>
-#endif
-
 #include <dirent.h>
+#else
+#include "toni_ronnko_dirent.h"
+#endif
 
 #include "meta/meta_modelica.h"
 #include <limits.h>

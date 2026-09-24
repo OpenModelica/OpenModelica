@@ -36,10 +36,12 @@
 #include <ostream>
 
 #include "SourceInfo.h"
+#include "omc_dll.h"
 
 using namespace OpenModelica;
 
-extern "C" record_description SourceInfo_SOURCEINFO__desc;
+// Defined in the MetaModelica runtime DLL, unlike the other record descriptions.
+extern "C" DLLDataDirection record_description SourceInfo_SOURCEINFO__desc;
 
 SourceInfo::SourceInfo() noexcept
   : _isReadOnly{false}, _lineNumberStart{0}, _columnNumberStart{0},

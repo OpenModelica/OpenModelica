@@ -740,6 +740,31 @@ pipeline {
             }
           }
         }
+
+        // The C omc cross-compiled to Windows (MSVC) from the C sources
+        // 'cmake-jammy-gcc' translated. See common.crossBuildOMCWindows().
+        stage('21 cross-build-omc-msvc') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.crossBuildOMCWindows()
+            }
+          }
+        }
       }
     }
     stage('FMPy') {
