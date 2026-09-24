@@ -1201,6 +1201,10 @@ protected
         (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
+        // also for the removed equations, e.g. when equations that only have reinit
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.removed, eqData.uniqueIndex);
+        auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
+        auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
 
         // add auxiliary variables
         varData.variables := VariablePointers.addList(auxiliary_vars, varData.variables);
