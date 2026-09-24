@@ -83,7 +83,7 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow disabled);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow smoke disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -111,6 +111,8 @@ my %suite_enabled = (
                       # OM_RUST_RESULT_WRITERS). A CMake build has it wherever
                       # cargo is on PATH, which is what those options default to;
                       # a build without a Rust toolchain turns this off.
+  smoke        => 1,  # Also run on their own, where the whole testsuite is too
+                      # slow: testsuite/runWindowsTests.sh.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too

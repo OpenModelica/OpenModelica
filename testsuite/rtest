@@ -90,12 +90,6 @@ $skipped=0;
 # RTEST_RUN_DISABLED=1 (which is what partest's disabled suite and the makefiles'
 # failingtest targets set).
 $run_disabled=($ENV{'RTEST_RUN_DISABLED'} ? 1 : 0);
-# When set (RTEST_PLATFORM or --platform=NAME), a test is only run if it is
-# tagged '// NAME: yes'; every other test is skipped, the same as a disabled
-# one. Mirrors OMSimulator's testsuite/runtest.py --platform, so the two
-# testsuites read the same header convention. Unset by default: every existing
-# invocation (the Linux CI partest runs included) keeps running everything.
-$platform=($ENV{'RTEST_PLATFORM'} || "");
 $setbaseline=0;
 $verbose="yes";
 $returnwitherror=0;
@@ -569,13 +563,7 @@ sub dofile
         "env" => "",
         "suite" => "",
         "teardown_command" => "",
-        "stack_size" => "",
-        # '// win: yes' / '// mac: yes' / '// linux: yes' style platform tags;
-        # read only when -platform/RTEST_PLATFORM selects one of them.
-        "win" => "",
-        "mac" => "",
-        "linux" => "",
-        "ucrt64" => "");
+        "stack_size" => "");
     # The suites a test belongs to are only read from the header, i.e. before the
     # first line of code, the same as partest does.
     my $in_header = 1;
@@ -637,17 +625,6 @@ sub dofile
          return 0;
      }
      }
-
-    # A -platform/RTEST_PLATFORM run only runs tests tagged for that platform,
-    # e.g. '// win: yes'. Not part of $collectcases/$collectkeys: those report
-    # on the whole testsuite regardless of what a particular CI leg would run.
-    if ($platform ne "" and !$collectcases and !$collectkeys) {
-    if (!defined($info{$platform}) or lc($info{$platform}) ne "yes") {
-        printf(" %s %-82s... skipped (not tagged '%s: yes')\n", '.', $info{'name'}, $platform);
-        $skipped = $skipped + 1;
-        return 0;
-    }
-    }
 
     # Collecting files
     if ($collectcases) {
@@ -753,8 +730,6 @@ while ($#ARGV >= 0) {
       $collectcases = 1;
     } elsif ($arg eq "-nolib") {
       $set_modelica_lib = 0;
-    } elsif ($arg =~ m"^--platform=(.*)$") {
-      $platform = "$1";
     } else {
       $filearg = 1;
       dofile $arg;
@@ -830,13 +805,8 @@ if ($collectkeys || $collectcases) {
 }
 
 if ($skipped) {
-  if ($platform ne "") {
-    printf "== %d test%s skipped: not tagged '%s: yes'\n",
-           $skipped, $skipped == 1 ? "" : "s", $platform;
-  } else {
-    printf "== %d disabled test%s skipped, run them with rtest -disabled\n",
-           $skipped, $skipped == 1 ? "" : "s";
-  }
+  printf "== %d disabled test%s skipped, run them with rtest -disabled\n",
+         $skipped, $skipped == 1 ? "" : "s";
 }
 
 if ($returnwitherror && $total!=$successes) {

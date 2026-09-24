@@ -283,13 +283,12 @@ void sanityCheck(String installDir, Boolean buildCpp) {
 }
 
 /*
- * Run the Windows testsuite smoke set (testsuite/runWindowsTests.sh) against
- * an installed omc. Split out of sanityCheck() so it can run as its own
+ * Run the testsuite smoke set (testsuite/runWindowsTests.sh) against an
+ * installed omc. Split out of sanityCheck() so it can run as its own
  * 'tests + extras' stage: see testWindowsSmoke().
  *
- * A test opts into this set by tagging its own header '// win: yes' (see
- * testsuite/rtest's -platform/RTEST_PLATFORM); there is no separate list of
- * Windows tests to maintain here or on disk.
+ * A test opts into this set with '// suite: smoke' in its own header; there is
+ * no separate list of Windows tests to maintain here or on disk.
  *
  * @param installDir  Path to omc installation directory.
  */
@@ -307,7 +306,7 @@ void runWindowsTestsuite(String installDir) {
  * Install the one Modelica Standard Library version the Windows smoke set
  * needs (libraries/install-windows-smoke.mos), via the omc that
  * runWindowsTestsuite() below is about to run against. Only issue10523.mos
- * (an FMI 2.0 CoSimulation export test, tagged '// win: yes') needs this;
+ * (an FMI 2.0 CoSimulation export test in the smoke suite) needs this;
  * every other test in the set runs against nothing but omc itself, same as
  * before. There is no shared package cache wired up for Windows agents
  * (installTestLibraries()'s env.LIBRARIES is a Unix path), so this reaches
@@ -1858,7 +1857,7 @@ void crossBuildOMCWindows() {
                 "-DRUST_OMC_TARGET=${t.triple}",
                 "-DOM_OMC_PREBUILT_C_SOURCES=${env.WORKSPACE}/omc-c-sources",
                 '-DOM_ENABLE_GUI_CLIENTS=OFF',
-                '-DOM_OMC_ENABLE_CPP_RUNTIME=OFF',
+                '-DOM_OMC_ENABLE_CPP_RUNTIME=ON',
                 '-DOM_USE_CCACHE=OFF',
                 '-DCMAKE_C_COMPILER_LAUNCHER=sccache',
                 '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache',
@@ -1869,6 +1868,21 @@ void crossBuildOMCWindows() {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
   }
   nightlyCheckArtifacts(t)
+  testWindowsSmokeWine(nightlyInstallDir(t.name))
+}
+
+// The Windows smoke set against the MSVC omc in installDir, under wine, with
+// the compilers of the Linux host (testsuite/wine). The omc and omc-diff for
+// the build host are the Rust ones of 'omc-rust', which arrive in build/,
+// where rtest then has to find the omc under test.
+void testWindowsSmokeWine(String installDir) {
+  unstash 'omc-rust'
+  sh label: 'Install Modelica for the Windows smoke set',
+     script: 'cd libraries && ../build/bin/omc install-windows-smoke.mos'
+  sh label: 'Put the MSVC omc where rtest looks',
+     script: "mv build/bin/omc-diff ${installDir}/bin/ && rm -rf build && ln -s ${installDir} build"
+  sh label: 'Windows testsuite under wine',
+     script: "bash testsuite/runWindowsTests.sh --wine -j${numPhysicalCPU()}"
 }
 
 void crossBuildFMU() {

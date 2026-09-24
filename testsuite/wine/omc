@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# omc.exe under wine, where rtest looks for omc. Windows runs omc-diff.exe,
+# which reads the output in text mode, so drop the CR of each CRLF here too.
+set -o pipefail
+wine "$(dirname "$0")/omc.exe" "$@" 2>&1 | sed 's/\r$//'
