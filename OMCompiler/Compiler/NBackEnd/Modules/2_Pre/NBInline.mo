@@ -280,7 +280,56 @@ protected
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true),
         SOME(function BackendDAE.lowerComponentReference(variables = variables, complete = true)));
+
+    // constants are not assigned at runtime, replace them in function arguments by their bindings
+    eqData  := EqData.mapExp(eqData, replaceConstantArguments);
   end inline;
+
+  function replaceConstantArguments
+    "replaces constant crefs in function call arguments by their binding. Records
+    that have constant children are replaced by record expressions."
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        call.arguments := list(replaceConstantArgument(arg) for arg in call.arguments);
+      then Expression.CALL(call);
+      else exp;
+    end match;
+  end replaceConstantArguments;
+
+  function replaceConstantArgument
+    input output Expression exp;
+  protected
+    Pointer<Variable> var_ptr;
+    list<Pointer<Variable>> children;
+    list<Expression> elements;
+    InstNode cls;
+    Expression new_exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF(ty = Type.COMPLEX(cls = cls)) guard(Type.isRecord(exp.ty) and isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo())) algorithm
+        var_ptr  := BVariable.getVarPointer(exp.cref, sourceInfo());
+        children := BVariable.getRecordChildren(var_ptr);
+        if List.any(children, BVariable.isConst) and List.compareLength(children, Type.recordFields(exp.ty)) == 0 then
+          elements := list(Replacements.recordChildArg(child) for child in BVariable.getRecordChildrenCref(exp.cref));
+          new_exp  := Expression.makeRecord(InstNode.fullPath(cls), exp.ty, elements);
+        else
+          new_exp  := exp;
+        end if;
+      then new_exp;
+      case Expression.CREF() guard(isVarCref(exp.cref) and BVariable.checkCref(exp.cref, BVariable.isConst, sourceInfo()))
+      then Replacements.recordChildArg(exp.cref);
+      else exp;
+    end match;
+  end replaceConstantArgument;
+
+  function isVarCref
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isCref(cref) and InstNode.isVar(ComponentRef.node(cref));
+  end isVarCref;
 
 // =========================================================================
 //          ATTRIBUTE PROPAGATION (min/max/nominal/unit/... see #15947)
