@@ -134,22 +134,8 @@ pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy
     let layout = record_layout(fields);
     let obj = emit_record_alloc(ctx, &layout)?;
     for (i, (_, fty)) in fields.iter().enumerate() {
-        let w = compile_exp(ctx, field_exps[i])?;
+        let w = compile_private_value(ctx, field_exps[i], fty)?;
         coerce(ctx, w, fty.wty());
-        // Value semantics: a record/array field built from a non-fresh source
-        // (a variable, a field read) aliases that source's mutable object — copy
-        // it so the record owns a private value. Fresh constructors/calls/ranges
-        // are already privately owned and move in. (Strings are immutable.)
-        if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
-            if !value_rhs_is_fresh(field_exps[i]) {
-                let t = ctx.alloc_temp(WTy::I32);
-                ctx.emit(we::Instruction::LocalSet(t));
-                ctx.emit(we::Instruction::LocalGet(t));
-                ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-                ctx.emit(we::Instruction::LocalGet(t));
-                ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-            }
-        }
         // Store the owned (private) value into the field: address then value.
         let vt = ctx.alloc_temp(fty.wty());
         ctx.emit(we::Instruction::LocalSet(vt));
@@ -288,18 +274,8 @@ pub(super) fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()>
 
 /// One record-field binding, copied if it came from an alias (value semantics).
 fn emit_field_value(ctx: &mut FnCtx, fty: &SigTy, exp: &DAE::Exp) -> Result<()> {
-    let w = compile_exp(ctx, exp)?;
+    let w = compile_private_value(ctx, exp, fty)?;
     coerce(ctx, w, fty.wty());
-    if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
-        if !value_rhs_is_fresh(exp) {
-            let t = ctx.alloc_temp(WTy::I32);
-            ctx.emit(we::Instruction::LocalSet(t));
-            ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-            ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-        }
-    }
     Ok(())
 }
 
@@ -484,20 +460,10 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
         return Ok(());
     };
     // Heap field: compute the new owned value into a temp.
-    let w = compile_exp(ctx, rhs)?;
+    let w = compile_private_value(ctx, rhs, &fty)?;
     coerce(ctx, w, fty.wty());
     let val_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(val_t));
-    // Value semantics: a mutable array/record from a non-fresh source aliases it.
-    if let Some((copy_fn, rel_fn)) = value_copy_fns(&fty) {
-        if !value_rhs_is_fresh(rhs) {
-            ctx.emit(we::Instruction::LocalGet(val_t));
-            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-            ctx.emit(we::Instruction::LocalGet(val_t));
-            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-            ctx.emit(we::Instruction::LocalSet(val_t));
-        }
-    }
     // Release the previous field value (now that the new one is computed).
     ctx.emit(we::Instruction::LocalGet(rec_idx));
     field_load(ctx, fty.wty(), off);

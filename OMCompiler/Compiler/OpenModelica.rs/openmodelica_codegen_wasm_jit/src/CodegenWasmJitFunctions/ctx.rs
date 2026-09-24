@@ -70,6 +70,9 @@ pub(crate) struct FnCtx<'a> {
     /// skipped by `release_heap_locals` — currently the `for x in array` iterator,
     /// which aliases an element of the array that outlives the loop.
     pub(super) borrowed_locals: Vec<u32>,
+    /// Record locals still holding the null handle their first assignment
+    /// replaces, so that assignment has nothing to release.
+    pub(super) null_locals: Vec<u32>,
     /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
     /// straight-line, so one pair is enough.
     pub(super) elem_ptr_tmp: Option<(u32, u32)>,
@@ -551,6 +554,7 @@ impl<'a> FnCtx<'a> {
             ctrl_depth: 0,
             loops: Vec::new(),
             borrowed_locals: Vec::new(),
+            null_locals: Vec::new(),
             elem_ptr_tmp: None,
             src_loc: None,
             sim: Some(sim),
