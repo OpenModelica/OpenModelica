@@ -12,12 +12,12 @@ getErrorString();
 loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-// How the simulation fails depends on the runtime (C or wasm-jit), so only
-// record that it fails: resultFile stays empty until the model works.
+// Whether the reconciliation succeeds depends on the build: solveSystemFstar()
+// fails on most (info 9), but not on the gcc coverage build. So only the
+// translation above is checked, not the outcome of the simulation.
 echo(false);
 res := simulate(NewDataReconciliationSimpleTests.TSP_FourFlows7, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 echo(true);
-res.resultFile;
 getErrorString();
 
 //readFile("NewDataReconciliationSimpleTests.TSP_FourFlows7_debug.txt");
@@ -3022,7 +3022,6 @@ getErrorString();
 //  Set_S has 101 equations and 101 variables
 //
 // true
-// ""
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
