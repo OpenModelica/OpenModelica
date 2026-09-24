@@ -1159,6 +1159,21 @@ pub fn copyFile(source: ArcStr, destination: ArcStr) -> bool {
     openmodelica_wasi::fs::copy(source.as_str(), destination.as_str()).is_ok()
 }
 
+pub fn copyPath(source: ArcStr, destination: ArcStr) -> bool {
+    fn copy(from: &str, to: &str) -> std::io::Result<()> {
+        use openmodelica_wasi::fs;
+        if !fs::is_dir(from) {
+            return fs::copy(from, to).map(|_| ());
+        }
+        fs::create_dir_all(to)?;
+        for e in fs::read_dir(from)? {
+            copy(&format!("{from}/{}", e.name), &format!("{to}/{}", e.name))?;
+        }
+        Ok(())
+    }
+    copy(source.as_str(), destination.as_str()).is_ok()
+}
+
 pub fn removeDirectory(inString: ArcStr) -> bool {
     // `SystemImpl__removeDirectory` is more than a recursive delete; the
     // scripting `remove()` API relies on two quirks:

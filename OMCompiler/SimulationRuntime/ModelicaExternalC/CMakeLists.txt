@@ -208,6 +208,15 @@ set_target_properties(ModelicaExternalC_shared
                       ModelicaStandardTables_shared
                       PROPERTIES INSTALL_RPATH "${OMC_MEC_FFI_RPATH}")
 
+# MSVC names a DLL's import library like the static library of the same name.
+if(MSVC)
+  set_target_properties(ModelicaExternalC_shared
+                        ModelicaMatIO_shared
+                        ModelicaIO_shared
+                        ModelicaStandardTables_shared
+                        PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ffi)
+endif()
+
 install(TARGETS ModelicaExternalC_shared
                 ModelicaMatIO_shared
                 ModelicaIO_shared

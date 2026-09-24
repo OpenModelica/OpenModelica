@@ -3903,12 +3903,25 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
+  String msvcEnv, rmrf;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
-  CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+  msvcEnv := SimCodeUtil.msvcEnvironment();
+  if msvcEnv <> "" then
+    // cmake picks cl from the Visual Studio environment.
+    CC := "";
+    CMAKE_GENERATOR := "-G \"NMake Makefiles\" ";
+    rmrf := "rmdir /S /Q ";
+  else
+    CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+    if isWindows then
+      CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
+    end if;
+    rmrf := "rm -rf ";
+  end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3943,18 +3956,15 @@ algorithm
       list<String> locations;
     case {"dynamic"}
       algorithm
-        if isWindows then
-          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
-        end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -3962,18 +3972,15 @@ algorithm
         then();
     case {"static"}
       algorithm
-        if isWindows then
-          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
-        end if;
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -4664,7 +4671,7 @@ public function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean success;
-  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd, msvcEnv;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
@@ -4851,7 +4858,13 @@ algorithm
     end if;
   end if;
 
-  cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  msvcEnv := SimCodeUtil.msvcEnvironment();
+  if msvcEnv <> "" then
+    cmd := msvcEnv + Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && " +
+           Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
+  else
+    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  end if;
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");
