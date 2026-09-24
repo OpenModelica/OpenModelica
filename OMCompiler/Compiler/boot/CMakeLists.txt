@@ -6,6 +6,10 @@ project(bomc)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bomc/tarball-include/OpenModelicaBootstrappingHeader.h
                 ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h)
 
+if(OM_OMC_HOST_EXECUTABLE)
+  return()
+endif()
+
 file(GLOB BOOTSTRAP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/bomc/bootstrap-sources/build/*.c)
 
 add_executable(bomc)

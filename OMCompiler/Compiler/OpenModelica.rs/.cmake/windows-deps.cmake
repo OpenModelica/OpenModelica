@@ -1,9 +1,9 @@
 # Provision the Windows (x86_64-pc-windows-msvc) third-party libs the C/C++
-# runtime links, cross-built from Linux with the xwin toolchain: PThreads4W and
-# OpenBLAS (LAPACK/BLAS). Included from the top-level CMakeLists before
-# OMCPThreads.cmake (which find_package(pthreads CONFIG)); a no-op unless
-# cross-compiling to Windows. Only the downloaded artifacts are cached
-# (OM_DOWNLOADS_DIR); the build/install trees stay under the build dir.
+# runtime links, cross-built from Linux with the xwin toolchain: PThreads4W,
+# OpenBLAS (LAPACK/BLAS) and, for the C omc, curl. Included from the top-level
+# CMakeLists before OMCPThreads.cmake (which find_package(pthreads CONFIG)); a
+# no-op unless cross-compiling to Windows. Only the downloaded artifacts are
+# cached (OM_DOWNLOADS_DIR); the build/install trees stay under the build dir.
 # Boost is in cmake/OMCBoost.cmake instead, which covers every cross target.
 
 if(NOT (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows"))
@@ -131,6 +131,42 @@ if(_om_p4w_install_implib AND _om_p4w_install_hdr)
   set(OM_WINDOWS_PTHREADS_IMPLIB "${_om_p4w_install_implib}")
 endif()
 set(OM_WINDOWS_OPENBLAS_IMPLIB "${_om_openblas_prefix}/lib/libopenblas.lib")
+
+# --- curl (static, Schannel): only the C omc links it, so its runtime calls this ---
+set(OM_WINDOWS_CURL_VERSION "8.22.0" CACHE STRING "curl release to build.")
+set(_om_curl_sha256 "d54dd598bf05927a726deb38df31c6a255ba83ff1de57c5d1464dac3ed8f44a1")
+function(om_windows_fetch_curl)
+  set(_tgz "${OM_DOWNLOADS_DIR}/curl-${OM_WINDOWS_CURL_VERSION}.tar.gz")
+  set(_src "${_om_win_build}/curl-${OM_WINDOWS_CURL_VERSION}")
+  set(_prefix "${_om_win_build}/curl")
+  if(NOT EXISTS "${_prefix}/lib/cmake/CURL/CURLConfig.cmake")
+    if(NOT EXISTS "${_tgz}")
+      message(STATUS "Fetching curl ${OM_WINDOWS_CURL_VERSION}")
+      file(DOWNLOAD "https://curl.se/download/curl-${OM_WINDOWS_CURL_VERSION}.tar.gz" "${_tgz}"
+           EXPECTED_HASH SHA256=${_om_curl_sha256})
+    endif()
+    file(ARCHIVE_EXTRACT INPUT "${_tgz}" DESTINATION "${_om_win_build}")
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -S "${_src}" -B "${_om_win_build}/curl-build"
+              "-DCMAKE_TOOLCHAIN_FILE=${_om_xwin_toolchain}"
+              -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=${_prefix}"
+              -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DBUILD_CURL_EXE=OFF
+              -DBUILD_TESTING=OFF -DBUILD_LIBCURL_DOCS=OFF -DBUILD_MISC_DOCS=OFF
+              -DENABLE_CURL_MANUAL=OFF -DCURL_USE_SCHANNEL=ON -DCURL_USE_LIBPSL=OFF
+              -DCURL_USE_LIBSSH2=OFF -DCURL_ZLIB=OFF -DCURL_BROTLI=OFF -DCURL_ZSTD=OFF
+              -DUSE_NGHTTP2=OFF -DUSE_LIBIDN2=OFF -DCURL_DISABLE_LDAP=ON
+      RESULT_VARIABLE _rc)
+    if(_rc)
+      message(FATAL_ERROR "curl configure failed (${_rc}).")
+    endif()
+    execute_process(COMMAND ${CMAKE_COMMAND} --build "${_om_win_build}/curl-build" --target install --parallel
+                    RESULT_VARIABLE _rc)
+    if(_rc)
+      message(FATAL_ERROR "curl build/install failed (${_rc}).")
+    endif()
+  endif()
+  set(CURL_DIR "${_prefix}/lib/cmake/CURL" CACHE PATH "" FORCE)
+endfunction()
 
 function(om_windows_deps_install)
   if(NOT (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows"))

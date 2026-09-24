@@ -1562,6 +1562,13 @@ void buildGccOMC() {
       "-DOM_ENABLE_COVERAGE=ON"])
   }
 
+  // The compiler as translated to C, for crossBuildOMCWindows(). Autoconf is
+  // configured per target, so that stage translates its own.
+  stash name: 'omc-c-sources',
+        includes: 'build_cmake/OMCompiler/Compiler/c_files/*.c,' +
+                  'build_cmake/OMCompiler/Compiler/c_files/*.h',
+        excludes: 'build_cmake/OMCompiler/Compiler/c_files/Autoconf*'
+
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see ctestStashed).
   stash name: 'omc-gcc',
@@ -1836,6 +1843,35 @@ void testWindowsSmoke() {
     installWindowsSmokeLibrary('build')
     runWindowsTestsuite('build')
   }
+}
+
+// The C omc cross-compiled to Windows (MSVC) with the Rust nightly's win64
+// toolchain. A cross build cannot run bomc, so it compiles the C that
+// 'cmake-jammy-gcc' translated, and the Rust omc of 'cmake-rust-clang'
+// translates the one target-specific package, Autoconf.
+void crossBuildOMCWindows() {
+  Map t = nightlyTarget('win64')
+  standardSetup()
+  unstash 'omc-rust'
+  unstash 'omc-c-sources'
+  sh 'mv build_cmake/OMCompiler/Compiler/c_files omc-c-sources && rm -rf build_cmake'
+  List flags = ['-DCMAKE_BUILD_TYPE=Release',
+                "-DCMAKE_TOOLCHAIN_FILE=${t.toolchain}",
+                "-DRUST_OMC_TARGET=${t.triple}",
+                "-DOM_OMC_HOST_EXECUTABLE=${env.WORKSPACE}/build/bin/omc",
+                "-DOM_OMC_PREBUILT_C_SOURCES=${env.WORKSPACE}/omc-c-sources",
+                '-DOM_ENABLE_GUI_CLIENTS=OFF',
+                '-DOM_OMC_ENABLE_CPP_RUNTIME=OFF',
+                '-DOM_USE_CCACHE=OFF',
+                '-DCMAKE_C_COMPILER_LAUNCHER=sccache',
+                '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache',
+                '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
+                "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"] + t.configure
+  sh "cmake -S . -B build_cmake ${flags.join(' ')}"
+  withSccache {
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
+  }
+  nightlyCheckArtifacts(t)
 }
 
 void crossBuildFMU() {

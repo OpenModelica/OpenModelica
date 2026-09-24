@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 
 find_package(Java REQUIRED Runtime)
 # omc_add_to_report(Java_JAVA_EXECUTABLE)
-find_package(Intl REQUIRED)
+if(NOT MSVC)
+  find_package(Intl REQUIRED)
+endif()
 
 set(OM_PARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Parser_omc.c)
 
