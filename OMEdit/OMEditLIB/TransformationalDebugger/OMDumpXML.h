@@ -204,6 +204,7 @@ struct OMInfo {
 
 struct OMVariable {
   QString name;
+  QString alias;
   QString comment;
   OMInfo info;
   QStringList types;

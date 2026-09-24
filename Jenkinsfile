@@ -75,27 +75,7 @@ pipeline {
     stage('setup') {
       parallel {
         // Linux build stages
-        stage('gcc') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildGccOMC() }
-          }
-        }
-        stage('clang') {
+        stage('jammy-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -115,7 +95,7 @@ pipeline {
             script { common.buildClangOMC() }
           }
         }
-        stage('cmake-jammy-gcc') {
+        stage('jammy-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -132,10 +112,10 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildCMakeGccOMC() }
+            script { common.buildGccOMC() }
           }
         }
-        stage('cmake-alpine-clang') {
+        stage('alpine-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:alpine-3.24'
@@ -157,7 +137,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
@@ -166,7 +146,7 @@ pipeline {
             }
           }
         }
-        stage('cmake-enterprise-linux-gcc') {
+        stage('enterprise-linux-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:almalinux-10'
@@ -189,7 +169,7 @@ pipeline {
           steps {
             script {
               common.withSccache {
-                common.buildOMC_CMake([
+                common.buildOMC([
                   "-DCMAKE_BUILD_TYPE=Release",
                   "-DOM_COMPILER_CACHE=sccache",
                   "-DCMAKE_INSTALL_PREFIX=build",
@@ -200,7 +180,7 @@ pipeline {
             }
           }
         }
-        stage('cmake-fedora-gcc') {
+        stage('fedora-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:fedora-44'
@@ -223,7 +203,7 @@ pipeline {
           steps {
             script {
               common.withSccache {
-                common.buildOMC_CMake([
+                common.buildOMC([
                   "-DCMAKE_BUILD_TYPE=Release",
                   "-DOM_COMPILER_CACHE=sccache",
                   "-DCMAKE_INSTALL_PREFIX=build",
@@ -235,7 +215,7 @@ pipeline {
         }
 
         // macOS build stages
-        stage('cmake-macos-arm64-gcc') {
+        stage('macos-arm64-gcc') {
           agent {
             node {
               label 'M1'
@@ -251,7 +231,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
@@ -265,7 +245,7 @@ pipeline {
         }
 
         // Windows build stages
-        stage('cmake-OMDev-gcc') {
+        stage('OMDev-gcc') {
           agent {
             node {
               label 'windows-no-release'
@@ -281,7 +261,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 '-DCMAKE_BUILD_TYPE=Release',
                 '-DCMAKE_INSTALL_PREFIX=build',
                 '-G "MSYS Makefiles"'])
@@ -291,7 +271,7 @@ pipeline {
 
         // The Rust (mmtorust) omc port, GUI off; the GUI is built in parallel
         // with the tests by the 'build-gui-rust' stage. See common.buildRustOMC().
-        stage('cmake-rust-clang') {
+        stage('rust-clang') {
           agent {
             docker {
               alwaysPull true
@@ -419,8 +399,8 @@ pipeline {
 
         // The only shard that runs the coverage-instrumented CMake build: its
         // counters become the coverage report in 'check-and-upload'. The clang
-        // shard below runs the autotools build and records none.
-        stage('04 testsuite-cmake-gcc 1/2') {
+        // shard below runs an uninstrumented build and records none.
+        stage('04 testsuite-gcc 1/2') {
           agent {
             node {
               label 'linux'
@@ -442,7 +422,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.ctestCMakeStashed('omc-cmake-gcc', 1, 2)
+                common.ctestStashed('omc-gcc', 1, 2)
               }
             }
           }
@@ -477,7 +457,7 @@ pipeline {
         }
 
         // The WebAssembly/web bundle, embedding the wasm-jit runtime built by
-        // the cmake-rust-clang stage (OM_OMC_WASM forces the Rust port and a
+        // the rust-clang stage (OM_OMC_WASM forces the Rust port and a
         // wasm32 build of just the browser/Node deliverable).
         stage('10 web target') {
           agent {
@@ -669,7 +649,7 @@ pipeline {
           }
         }
 
-        stage('17 build-gui-clang-qt6') {
+        stage('17 build-gui-clang + omedit-testsuite') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -679,11 +659,18 @@ pipeline {
               customWorkspace 'ws/OpenModelica'
             }
           }
+          environment {
+            // makeLibsAndCache() only reads runtest.db from RUNTESTDB (and
+            // tolerates it being absent); the omlibrary cache is the one that
+            // matters here, so no runtest volume is mounted.
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'omedit-testsuite-clang-qt6') }
+            script { common.buildGUIAndRunOMEditTestsuite() }
           }
         }
 
@@ -762,7 +749,7 @@ pipeline {
 
         // The Windows smoke set (every test tagged '// win: yes', see
         // testsuite/runWindowsTests.sh), against the install tree
-        // 'cmake-OMDev-gcc' stashed as 'omc-cmake-windows'. Its own stage, not
+        // 'OMDev-gcc' stashed as 'omc-windows'. Its own stage, not
         // part of that build, so a test failure here reads as a testsuite
         // failure rather than a build failure.
         stage('20 testsuite-windows') {
@@ -786,7 +773,7 @@ pipeline {
         }
       }
     }
-    stage('FMPy + OMEdit testsuite') {
+    stage('FMPy') {
       parallel {
         // Merge stages 10 + 10b into the published web zip.
         stage('assemble-web') {
@@ -825,34 +812,11 @@ pipeline {
             script { common.fmpyLinux() }
           }
         }
-        stage('clang-qt6-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6')
-            }
-          }
-        }
       }
     }
     stage('check-and-upload') {
       parallel {
-        // Turns the coverage counters of the testsuite-cmake-gcc shard into a
+        // Turns the coverage counters of the testsuite-gcc shard into a
         // report. Unlike its neighbours it is not gated on !isPR: the point is
         // to get the number on every PR.
         stage('coverage-report') {
@@ -1013,5 +977,5 @@ pipeline {
 
 /* Note: If getting "Unexpected end of /proc/mounts line" , flatten the docker image:
  * https://stackoverflow.com/questions/46138549/docker-openmpi-and-unexpected-end-of-proc-mounts-line
- * Or use a newer OS image with fixed hwloc, or disable hwloc in the configure script
+ * Or use a newer OS image with fixed hwloc.
  */

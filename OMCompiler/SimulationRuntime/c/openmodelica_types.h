@@ -80,6 +80,20 @@ typedef int mmc_sint_t;
 
 #endif
 
+/* The count of an object that is never freed; read before any write, so a
+   const literal is never stored to. */
+#define OMC_RC_IMMORTAL ((mmc_uint_t)-1)
+
+/* Shared: a simulation generates match expressions too.
+   adrpo: circumvent MinGW GCC 4.4.0 bugs with optimization */
+#if defined(__MINGW32__) && (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) == 40400
+typedef float mmc_switch_type;
+#define MMC_SWITCH_CAST(X) ((int)X)
+#else
+typedef int mmc_switch_type;
+#define MMC_SWITCH_CAST(X) (X)
+#endif
+
 /* helpers for mmc_sint_t: printing / div */
 #if defined(_WIN64) || defined(__MINGW64__)
 #define modelica_div_integer lldiv
@@ -95,6 +109,8 @@ typedef int mmc_sint_t;
 
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
 typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
+/* A MetaModelica string as an opaque handle, for util/read_write.h. */
+typedef modelica_metatype metamodelica_string;
 /* MetaModelica extension.
 We actually store function-pointers in lists, etc...
 So it needs to be void*. If we use a platform with different sizes of function-
@@ -104,8 +120,15 @@ typedef void* modelica_fnptr;
 typedef double modelica_real;
 typedef mmc_sint_t modelica_integer;
 typedef int modelica_boolean;
-/* When MetaModelica grammar is enabled, all strings are boxed */
+/* The String of whichever runtime this is. A simulation's is its own pointer
+   type, so confusing it with modelica_metatype is a compile error; the
+   compiler's strings are MetaModelica values, so there the two are one. */
+#if defined(OMC_METAMODELICA_RUNTIME)
 typedef modelica_metatype modelica_string;
+#else
+struct omc_string_s;
+typedef struct omc_string_s *modelica_string;
+#endif
 typedef mmc_sint_t         _index_t;
 
 #ifndef FALSE
@@ -117,12 +140,21 @@ typedef mmc_sint_t         _index_t;
 #endif
 
 
+struct record_description {
+  const char* path; /* package_record__X */
+  const char* name; /* package.record_X */
+  const char** fieldNames;
+};
+
 struct base_array_s
 {
   int ndims;
   _index_t *dim_size;
   void *data;
   modelica_boolean flexible;
+  /* Whether `data` is this array's to free; zero for base_array_create(),
+     which borrows the caller's. Occupies padding, so sizeof is unchanged. */
+  modelica_boolean owns_data;
 };
 typedef struct base_array_s base_array_t;
 

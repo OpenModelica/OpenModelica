@@ -163,8 +163,9 @@ pub(crate) fn emit_nls_residual_body(
         }
     };
     lower_inner(ctx)?;
+    let all_scalar = nls_residuals_all_scalar(residuals);
     for i in 0..residuals.len() {
-        emit_nls_residual_store(ctx, residuals, i)?;
+        emit_nls_residual_store(ctx, residuals, all_scalar, i)?;
     }
     emit_nls_residual_epilogue(ctx, eq_index)
 }
@@ -205,16 +206,20 @@ pub(crate) fn emit_nls_residual_epilogue(ctx: &mut FnCtx, eq_index: i32) -> Resu
     Ok(())
 }
 
-/// Store the `i`-th residual into `r` (wasm local 2). All-scalar systems keep
-/// sequential `r[i]` addressing; a for- or generic residual forces
-/// `res_index`-based addressing throughout.
+pub(crate) fn nls_residuals_all_scalar(residuals: &[NlsResidual]) -> bool {
+    residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }))
+}
+
+/// Store the `i`-th residual into `r` (wasm local 2). All-scalar systems
+/// ([`nls_residuals_all_scalar`]) keep sequential `r[i]` addressing; a for- or
+/// generic residual forces `res_index`-based addressing throughout.
 pub(crate) fn emit_nls_residual_store(
     ctx: &mut FnCtx,
     residuals: &[NlsResidual],
+    all_scalar: bool,
     i: usize,
 ) -> Result<()> {
     use we::Instruction as I;
-    let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
     match &residuals[i] {
         NlsResidual::Scalar { exp, res_index } => {
             let dest = if all_scalar { i as u32 } else { *res_index as u32 };

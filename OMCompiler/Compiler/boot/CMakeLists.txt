@@ -104,9 +104,9 @@ if(WIN32)
   add_custom_command (
     TARGET bomc
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::simrt::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::mmc::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::3rd::omcgc> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
-    COMMENT "Copying libOpenModelicaRuntimeC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+    COMMENT "Copying libOpenModelicaRuntimeMMC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
 
   # omcruntime links libomc_result when the Rust result readers/writers are on.
   if(TARGET omc::result)

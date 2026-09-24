@@ -965,6 +965,7 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
   if (pFile == NULL) {
     throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
   }
+  omc_rc_release((void*) fullPath);
   return pFile;
 }
 
@@ -1249,10 +1250,11 @@ void freeSymbolicOdeJacobian(DATA* data)
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp)
 {
   if (nlp != NULL) {
-    free(nlp->indexVar); nlp->indexVar = NULL;
-    free(nlp->indexEqn); nlp->indexEqn = NULL;
-    free(nlp->columns);  nlp->columns = NULL;
-    free(nlp->rows);     nlp->rows = NULL;
+    free(nlp->indexVar);
+    free(nlp->indexEqn);
+    free(nlp->columns);
+    free(nlp->rows);
+    free(nlp);
   }
 }
 

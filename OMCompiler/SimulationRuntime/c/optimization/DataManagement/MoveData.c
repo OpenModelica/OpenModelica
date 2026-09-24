@@ -28,7 +28,6 @@
 /*! MoveData.c
  */
 
-#include "../../meta/meta_modelica.h"
 #include "../../openmodelica_types.h"
 #include "../../openmodelica.h"
 #include "../../simulation/arrayIndex.h"
@@ -775,7 +774,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
     /* try */
   optData->scc = 0;
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     data->callback->input_function(data, optData->threadData);
     updateDiscreteSystem(data, optData->threadData);
@@ -785,7 +784,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
     }
     optData->scc = 1;
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 }
 
@@ -851,6 +850,9 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   const int nJ1 = optData->dim.nJ + 1;
 
   modelica_real **sV = optData->s.seedVec[index];
+  /* The optimizer lends the Jacobian a seed vector of its own per colour. The
+     Jacobian owns seedVars and frees it, so give its own back. */
+  modelica_real * const ownSeedVars = jacobian->seedVars;
 
   /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
   setContext(data, data->localData[0]->timeValue, CONTEXT_SYM_JACOBIAN);
@@ -890,6 +892,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 
     }
   }
+  jacobian->seedVars = ownSeedVars;
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
 }
@@ -910,6 +913,8 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     const unsigned int * const sPindex = jacobian->sparsePattern->index;
 
     modelica_real **sV = optData->s.seedVec[index];
+    /* See diffSynColoredOptimizerSystem: seedVars is the Jacobian's to free. */
+    modelica_real * const ownSeedVars = jacobian->seedVars;
 
     /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
     setContext(data, data->localData[0]->timeValue, CONTEXT_SYM_JACOBIAN);
@@ -934,6 +939,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
         }
       }
     }
+    jacobian->seedVars = ownSeedVars;
     /* set context for the start values extrapolation of non-linear algebraic loops */
     unsetContext(data);
   }

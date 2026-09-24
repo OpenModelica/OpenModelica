@@ -462,7 +462,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     {
       if (strcmp(data->modelData->realVarsData[i].info.name, csvinputs.headers[r].c_str())==0)
       {
-        char *unitStr = MMC_STRINGDATA(data->modelData->realVarsData[i].attribute.displayUnit);
+        char *unitStr = omc_string_data(data->modelData->realVarsData[i].attribute.displayUnit);
         unitString.push_back(unitStr);
         description.push_back(data->modelData->realVarsData[i].info.comment);
       }
@@ -472,7 +472,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
         auto it = find(boundaryconditiondata.boundaryConditionVars.begin(), boundaryconditiondata.boundaryConditionVars.end(), data->modelData->realVarsData[i].info.name);
         if (it != boundaryconditiondata.boundaryConditionVars.end())
         {
-          char *unitStr = MMC_STRINGDATA(data->modelData->realVarsData[i].attribute.displayUnit);
+          char *unitStr = omc_string_data(data->modelData->realVarsData[i].attribute.displayUnit);
           unitStringUnMeasuredVariables.push_back(unitStr);
           descriptionUnMeasuredVariables.push_back(data->modelData->realVarsData[i].info.comment);
         }
@@ -954,8 +954,8 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, threadData_t *
   * check if filepath uses uri format and convert it to absolute path
   * eg: modelica://Modelica/Resources/Files/filename.csv => /absolute/path/to/filename.csv
   */
-  modelica_string uri = OpenModelica_uriToFilename(mmc_mk_scon(filename));
-  std::string filenameStr = MMC_STRINGDATA(uri);
+  modelica_string uri = OpenModelica_uriToFilename(omc_string_new(filename));
+  std::string filenameStr = omc_string_data(uri);
 
   ifstream ip(filenameStr.c_str());
   string line;
@@ -1892,8 +1892,8 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
   * check if filepath uses uri format and convert it to absolute path
   * eg: modelica://Modelica/Resources/Files/filename.csv => /absolute/path/to/filename.csv
   */
-  modelica_string uri = OpenModelica_uriToFilename(mmc_mk_scon(filename));
-  std::string filenameStr = MMC_STRINGDATA(uri);
+  modelica_string uri = OpenModelica_uriToFilename(omc_string_new(filename));
+  std::string filenameStr = omc_string_data(uri);
 
   // read the file
   ifstream ip(filenameStr.c_str());

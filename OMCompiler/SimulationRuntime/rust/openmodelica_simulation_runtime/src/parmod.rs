@@ -22,14 +22,6 @@ use crate::abi::{DATA, threadData_t};
 /// `FunctionType` (`om_pm_interface.hpp`): one ODE equation.
 type TaskFn = unsafe extern "C" fn(*mut DATA, *mut threadData_t);
 
-unsafe extern "C" {
-    fn GC_malloc_uncollectable(size: usize) -> *mut c_void;
-    fn GC_allow_register_threads();
-    fn GC_thread_is_registered() -> c_int;
-    fn GC_get_stack_base(sb: *mut c_void) -> c_int;
-    fn GC_register_my_thread(sb: *const c_void) -> c_int;
-}
-
 // `omc_init.c`, where `mmc_init` created it: the key external functions look
 // `threadData` up under when they were not passed it.
 #[cfg(unix)]
@@ -315,10 +307,6 @@ fn pool(main_td: *mut threadData_t) -> &'static Arc<Pool> {
             idle_spins: AtomicU32::new(SPINS_IDLE_TRIAL),
             running: AtomicU32::new(0),
         });
-        // The Boehm GC only scans threads that registered with it, and a task
-        // allocating on an unknown one corrupts its heap. Permission to register
-        // has to be given before the first worker starts.
-        unsafe { GC_allow_register_threads() };
         let main = main_td as usize;
         let flags = openmodelica_solvers::simflags::flags();
         for _ in 1..openmodelica_sim_meta::parmod::num_threads() {
@@ -337,9 +325,8 @@ fn pool(main_td: *mut threadData_t) -> &'static Arc<Pool> {
 /// external functions reach the run's data through it.
 fn thread_data_for(main: *mut threadData_t) -> *mut threadData_t {
     unsafe {
-        // `GC_malloc_uncollectable` memory is zeroed and scanned, the latter being
-        // what `localRoots` needs.
-        let td = GC_malloc_uncollectable(THREAD_DATA_BYTES) as *mut threadData_t;
+        // One per worker, alive until the process ends.
+        let td = libc::calloc(1, THREAD_DATA_BYTES) as *mut threadData_t;
         if !main.is_null() {
             (*td).localRoots = (*main).localRoots;
         }
@@ -351,21 +338,7 @@ fn thread_data_for(main: *mut threadData_t) -> *mut threadData_t {
     }
 }
 
-fn register_with_gc() {
-    unsafe {
-        if GC_thread_is_registered() != 0 {
-            return;
-        }
-        // `struct GC_stack_base` is one or two words; over-size it and let the GC
-        // fill what it has.
-        let mut sb = [ptr::null_mut::<c_void>(); 4];
-        GC_get_stack_base(sb.as_mut_ptr() as *mut c_void);
-        GC_register_my_thread(sb.as_ptr() as *const c_void);
-    }
-}
-
 fn worker(pool: Arc<Pool>, flags: openmodelica_solvers::simflags::SimFlags, main_td: *mut threadData_t) {
-    register_with_gc();
     // The run's simflags and `-lv` mask live in a thread-local under `std`, so a
     // worker that did not copy them would solve its tasks under the defaults.
     openmodelica_solvers::simflags::set_flags(flags);

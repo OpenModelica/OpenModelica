@@ -2514,6 +2514,7 @@ public
         local
           WhenEquationBody when_body;
           IfEquationBody if_body;
+          Equation body_eqn;
 
         case RECORD_EQUATION() then true;
         case ARRAY_EQUATION(recordSize = SOME(_)) then true;
@@ -2521,6 +2522,9 @@ public
           then WhenEquationBody.isRecordOrTupleEquation(when_body);
         case IF_EQUATION(body = if_body)
           then IfEquationBody.isRecordOrTupleEquation(if_body);
+        // a for-equation of a tuple, e.g. (a[i], b[i]) = f(x[i]), has all outputs of one call per iteration
+        case FOR_EQUATION(body = {body_eqn})
+          then isTupleEquation(Pointer.create(body_eqn));
         else false;
       end match;
     end isRecordOrTupleEquation;

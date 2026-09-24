@@ -2464,7 +2464,7 @@ algorithm
       BackendVariable.isVarKindVariable(kind) "cr1 not constant";
       false := BackendVariable.isVarOnTopLevelAndOutput(var);
       false := BackendVariable.isVarOnTopLevelAndInput(var);
-      false := BackendVariable.varHasUncertainValueRefine(var);
+      false := BackendVariable.varHasUncertainValueRefine(var) and BackendDAEUtil.isDataReconciliationEnabled();
       cr := ComponentReferenceBasics.crefStripLastSubs(cr);
       b := not BaseHashSet.has(cr, unReplaceable);
     then (true, b);

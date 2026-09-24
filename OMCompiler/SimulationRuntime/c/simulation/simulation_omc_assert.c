@@ -28,12 +28,12 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include "../util/utility.h"
-#include "../meta/meta_modelica.h"
 #include "simulation_omc_assert.h"
+#include "../util/omc_init.h"
 #include "simulation_runtime.h"
 
 
-void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...)  __attribute__ ((noreturn)) = omc_assert_simulation_withEquationIndexes;
+void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_simulation_withEquationIndexes;
 
 void (*omc_assert_warning_withEquationIndexes)(FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_warning_simulation_withEquationIndexes;
 
@@ -74,28 +74,26 @@ static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadDat
   case ERROR_EVENTSEARCH:
   case ERROR_SIMULATION:
     va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
-    longjmp(*threadData->simulationJumpBuffer,1);
-    break;
+    OMC_ERROR_RAISE();
+    return;
   case ERROR_NONLINEARSOLVER:
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS))
     {
       va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     }
-#ifndef OMC_EMCC
-    longjmp(*threadData->simulationJumpBuffer,1);
-#endif
-    break;
+    OMC_ERROR_RAISE();
+    return;
   case ERROR_INTEGRATOR:
     if(OMC_ACTIVE_STREAM(OMC_LOG_SOLVER))
     {
       va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     }
-    longjmp(*threadData->simulationJumpBuffer,1);
-    break;
+    OMC_ERROR_RAISE();
+    return;
   case ERROR_EVENTHANDLING:
     va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
-    longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
-    break;
+    OMC_ERROR_RAISE();
+    return;
   case ERROR_OPTIMIZE:
   default:
     va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
@@ -109,7 +107,6 @@ void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char 
   va_start(args, msg);
   va_omc_assert_simulation_withEquationIndexes(threadData, info, NULL, msg, args);
   va_end(args);
-  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...)
@@ -118,7 +115,6 @@ void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_IN
   va_start(args, msg);
   va_omc_assert_simulation_withEquationIndexes(threadData, info, indexes, msg, args);
   va_end(args);
-  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 
@@ -166,6 +162,8 @@ void setTermMsg_empty_va_list(const char *msg, ...) {
 
 void omc_throw_simulation(threadData_t* threadData)
 {
+  /* Ends the simulation: unlike a model's assert, it lands at the run's own
+     catch, not at a step that would retry it. */
   setTermMsg_empty_va_list("Assertion triggered by external C function");
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);

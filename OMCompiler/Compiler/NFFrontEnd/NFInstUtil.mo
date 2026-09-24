@@ -190,7 +190,7 @@ public
               ty := exp.ty;
             end if;
 
-            outExp := Expression.makeDefaultValue(ty);
+            outExp := Expression.makeEmptyArray(ty);
 
             if not listEmpty(subs) then
               outExp := Expression.SUBSCRIPTED_EXP(outExp, subs, exp.ty, false);

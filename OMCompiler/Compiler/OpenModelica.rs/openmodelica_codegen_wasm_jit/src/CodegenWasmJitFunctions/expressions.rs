@@ -55,7 +55,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 return compile_cref_read_qual(ctx, componentRef);
             }
             // A scalar/whole-value reference, or a subscripted array element.
-            let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
+            let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = &**componentRef else {
                 return Err("CodegenWasmJit: unsupported component reference");
             };
             let name = ident.to_string();
@@ -84,7 +84,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 // the element straight out of it; only a heap element is retained.
                 if is_scalar_index(subscriptLst, rank) {
                     let idx_exps = index_subscripts(subscriptLst, rank)?;
-                    emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+                    emit_elem_addr(ctx, idx, &elem, &idx_exps, static_dims(identType).as_deref())?;
                     elem_load(ctx, &elem);
                     retain_on_stack(ctx, &elem)?;
                     Ok(elem.wty())
@@ -599,10 +599,10 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
     let wty = sig.wty();
     // POW has no wasm instruction. Mirror the C target's scalar-power dispatch
     // exactly: a literal `0.5` exponent is `sqrt` (with a negative-base check),
-    // an integer-literal exponent is exponentiation by squaring
-    // (`rt_real_int_pow`), and everything else is the generic `rt_real_pow`
-    // (negative-base / odd-root / nan-inf handling). Keeping the same three-way
-    // choice as C keeps the output byte-identical.
+    // `^2`, `^3` and `^4` are multiplications, any other integer-literal exponent
+    // is exponentiation by squaring (`rt_real_int_pow`), and everything else is
+    // the generic `rt_real_pow` (negative-base / odd-root / nan-inf handling).
+    // Keeping the same choice as C keeps the output byte-identical.
     if matches!(op, O::POW { .. }) {
         if exp_is_half(e2) {
             // sqrt(base); a negative base is an invalid root. `rt_invalid_root`
@@ -624,6 +624,31 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
             ctx.emit(we::Instruction::End);
             ctx.emit(we::Instruction::LocalGet(bt));
             ctx.emit(we::Instruction::F64Sqrt);
+            return Ok(WTy::F64);
+        }
+        if let Some(n @ 2..=4) = real_exp_int_lit(e2) {
+            let a = compile_exp(ctx, e1)?;
+            coerce(ctx, a, WTy::F64);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Mul);
+            match n {
+                3 => {
+                    ctx.emit(we::Instruction::LocalGet(t));
+                    ctx.emit(we::Instruction::F64Mul);
+                }
+                4 => {
+                    ctx.emit(we::Instruction::LocalTee(t));
+                    ctx.emit(we::Instruction::LocalGet(t));
+                    ctx.emit(we::Instruction::F64Mul);
+                }
+                _ => {}
+            }
+            if wty == WTy::I32 {
+                ctx.emit(we::Instruction::I32TruncF64S);
+                return Ok(WTy::I32);
+            }
             return Ok(WTy::F64);
         }
         let rt = if let Some(n) = real_exp_int_lit(e2) {

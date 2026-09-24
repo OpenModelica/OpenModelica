@@ -1426,11 +1426,10 @@ function simplifyTupleElement
 protected
   Expression e;
   Integer index;
-  Type ty;
 algorithm
-  Expression.TUPLE_ELEMENT(e, index, ty) := tupleExp;
+  Expression.TUPLE_ELEMENT(tupleExp = e, index = index) := tupleExp;
   e := simplify(e);
-  tupleExp := Expression.tupleElement(e, ty, index);
+  tupleExp := Expression.tupleElement(e, index);
 end simplifyTupleElement;
 
 function simplifyRecordElement

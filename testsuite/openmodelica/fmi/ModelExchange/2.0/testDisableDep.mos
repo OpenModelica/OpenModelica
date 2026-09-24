@@ -93,8 +93,9 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
 //       <File name=\"fmi-export/fmu_read_flags.c\" />
-//       <File name=\"gc/memory_pool.c\" />
+//       <File name=\"gc/omc_alloc.c\" />
 //       <File name=\"gc/omc_gc.c\" />
+//       <File name=\"gc/omc_rc.c\" />
 //       <File name=\"math-support/pivot.c\" />
 //       <File name=\"meta/meta_modelica_catch.c\" />
 //       <File name=\"simulation/arrayIndex.c\" />
@@ -124,12 +125,15 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/modelica_string.c\" />
 //       <File name=\"util/modelica_string_lit.c\" />
 //       <File name=\"util/ModelicaUtilities.c\" />
+//       <File name=\"util/omc_box.c\" />
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
 //       <File name=\"util/omc_numbers.c\" />
+//       <File name=\"util/omc_str_utils.c\" />
+//       <File name=\"util/omc_string.c\" />
 //       <File name=\"util/rational.c\" />
 //       <File name=\"util/real_array.c\" />
 //       <File name=\"util/ringbuffer.c\" />

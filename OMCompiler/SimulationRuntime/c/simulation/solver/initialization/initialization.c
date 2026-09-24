@@ -43,7 +43,6 @@
 #endif
 #include "../events.h"
 #include "../stateset.h"
-#include "../../../meta/meta_modelica.h"
 
 #if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
 #define check_mixed_solutions(X,Y) 0
@@ -182,9 +181,9 @@ void dumpInitialSolution(DATA *simData)
     for(i=0; i<mData->nVariablesString; ++i)
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", i+1,
                                    mData->stringVarsData[i].info.name,
-                                   MMC_STRINGDATA(mData->stringVarsData[i].attribute.start),
-                                   MMC_STRINGDATA(simData->localData[0]->stringVars[i]),
-                                   MMC_STRINGDATA(sInfo->stringVarsPre[i]));
+                                   omc_string_data(mData->stringVarsData[i].attribute.start),
+                                   omc_string_data(simData->localData[0]->stringVars[i]),
+                                   omc_string_data(sInfo->stringVarsPre[i]));
     messageClose(OMC_LOG_SOTI);
   }
 
@@ -289,6 +288,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MODEL_DATA *mData = data->modelData;
   modelica_boolean homotopySupport = FALSE;
   int solveWithGlobalHomotopy;
+  int triedWithoutHomotopy = 0;
   int adaptiveGlobal;
   int kinsol = 0;
 
@@ -324,6 +324,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   if (!solveWithGlobalHomotopy){
     data->simulationInfo->lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
+    OMC_ERROR_CHECK_RETURN(-1);
 
   /* If there is homotopy in the model and global homotopy is activated
      and homotopy on first try is deactivated,
@@ -333,7 +334,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
     /* try */
 #ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal && kinsol) {
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
@@ -343,12 +344,13 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       data->simulationInfo->lambda = 1.0;
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Try to solve the initialization problem without homotopy first.");
       data->callback->functionInitialEquations(data, threadData);
-      solveWithGlobalHomotopy = 0;
+      triedWithoutHomotopy = 1;
     }
 
     /* catch */
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else if (triedWithoutHomotopy) { solveWithGlobalHomotopy = 0; }
 #ifndef OMC_EMCC
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal)
       data->callback->homotopyMethod = GLOBAL_ADAPTIVE_HOMOTOPY; /* new global homotopy approach (adaptive lambda) */
@@ -385,7 +387,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
     /* try */
 #ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     for(step=0; step<=init_lambda_steps; ++step)
     {
@@ -425,10 +427,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       }
 #endif
     }
-    success = 1;
     /* catch */
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #ifndef OMC_EMCC
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
@@ -463,10 +465,12 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       warningStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
       data->callback->functionInitialEquations(data, threadData);
     }
+    OMC_ERROR_CHECK_RETURN(-1);
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
     data->callback->functionInitialEquations(data, threadData);
+    OMC_ERROR_CHECK_RETURN(-1);
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
   }
@@ -798,6 +802,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
+    OMC_ERROR_CHECK_RETURN(1);
 
     if(importStartValues(data, threadData, pInitFile, initTime)) {
       return 1;
@@ -813,12 +818,14 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
   }
+  OMC_ERROR_CHECK_RETURN(1);
 
   data->callback->function_initSpatialDistribution(data, threadData);
 
   /* Update nominal, min and max values of linear/non-linear system solvers */
   updateStaticDataOfLinearSystems(data, threadData);
   updateStaticDataOfNonlinearSystems(data, threadData);
+  OMC_ERROR_CHECK_RETURN(1);
 
   /* if there are user-specified options, use them! */
   if (pInitMethod && (strcmp(pInitMethod, "") && !fmi_init_method)) {
@@ -870,6 +877,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     retVal = 0;
   } else if(IIM_SYMBOLIC == initMethod) {
     retVal = symbolic_initialization(data, threadData);
+    OMC_ERROR_CHECK_RETURN(retVal);
   } else {
     throwStreamPrint(threadData, "unsupported option -iim");
   }

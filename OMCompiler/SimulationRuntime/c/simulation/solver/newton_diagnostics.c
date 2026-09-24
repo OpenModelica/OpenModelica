@@ -1002,16 +1002,16 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 
   // Try
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   // Calculate residuals f_x1 for x1
   systemData->residualFunc(&resUserData, x1, f_x1, (int*)&systemData->size);
 
-  failed = FALSE;
   // Catch
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { failed = FALSE; }
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   // Lower the dampening factor until the function call succeeds
@@ -1028,14 +1028,14 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 
     // Retry the function call
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
     systemData->residualFunc(&resUserData, x1, f_x1, (int*)&systemData->size);
 
-    failed = FALSE;
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { failed = FALSE; }
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
   }
 

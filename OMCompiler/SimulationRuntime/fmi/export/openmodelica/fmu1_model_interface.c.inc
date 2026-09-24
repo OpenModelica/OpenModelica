@@ -143,12 +143,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
         "fmiInstantiateModel: Wrong GUID %s. Expected %s.", GUID, MODEL_GUID);
     return NULL;
   }
-  /* Use OpenModelica's memory pool allocator instead of the Boehm garbage collector.
-     The Boehm GC is not linked into the exported FMU, so leaving the default GC-based
-     allocator uninitialized crashes at the first runtime allocation (e.g. in
-     computeVarIndices/initializeDataStruc). This mirrors what fmu2_model_interface.c does.
-     See https://github.com/OpenModelica/OpenModelica/issues/15838 */
-  omc_alloc_interface = omc_alloc_interface_pooled;
   mmc_init_nogc();
   omc_alloc_interface.init();
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
@@ -420,7 +414,7 @@ static fmiStatus updateIfNeeded(ModelInstance* comp, const char* func)
   }
 
   /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 
     comp->fmuData->callback->functionODE(comp->fmuData, threadData);
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, threadData);
@@ -428,10 +422,11 @@ static fmiStatus updateIfNeeded(ModelInstance* comp, const char* func)
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, threadData);
     storePreValues(comp->fmuData);
     comp->_need_update = 0;
-    return fmiOK;
+    if (!OMC_ERROR_RAISED()) return fmiOK;
+    OMC_ERROR_CLEAR();
 
   /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
     comp->functions.logger(comp, comp->instanceName, fmiError, "error", "%s: terminated by an assertion.", func);
     return fmiError;
@@ -613,7 +608,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx)
     return fmiError;
 
   /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 
     comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
     /* the continuous system has just been evaluated; a following fmiGetReal need not redo it */
@@ -626,10 +621,11 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx)
           "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i]);
     }
   #endif
-    return fmiOK;
+    if (!OMC_ERROR_RAISED()) return fmiOK;
+    OMC_ERROR_CLEAR();
 
   /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
     comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiGetDerivatives: terminated by an assertion.");
     return fmiError;
@@ -647,7 +643,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
     return fmiError;
 
   /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 
 #if NUMBER_OF_EVENT_INDICATORS>0
     /* eval needed equations*/
@@ -663,10 +659,11 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
       }
     }
 #endif
-    return fmiOK;
+    if (!OMC_ERROR_RAISED()) return fmiOK;
+    OMC_ERROR_CLEAR();
 
   /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
     comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiGetEventIndicators: terminated by an assertion.");
     return fmiError;
@@ -699,7 +696,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   copyStartValuestoInitValues(comp->fmuData);
 
   /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 
     if(initialization(comp->fmuData, comp->threadData, "", "", 0.0))
     {
@@ -741,10 +738,11 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
       eventInfo->upcomingTimeEvent = fmiFalse;
     }
 
-    return fmiOK;
+    if (!OMC_ERROR_RAISED()) return fmiOK;
+    OMC_ERROR_CLEAR();
 
   /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
     comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiInitialize: terminated by an assertion.");
     return fmiError;
@@ -765,7 +763,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       "fmiEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime);
 
   /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 
 #if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, threadData, 1, 1))
@@ -871,10 +869,11 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     if (comp->loggingOn)
       comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime);
 
-    return fmiOK;
+    if (!OMC_ERROR_RAISED()) return fmiOK;
+    OMC_ERROR_CLEAR();
 
   /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
   comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiEventUpdate: terminated by an assertion.");
   return fmiError;
@@ -892,7 +891,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
       "fmiCompletedIntegratorStep");
 
   /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
@@ -916,9 +915,10 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     overwriteOldSimulationData(comp->fmuData);
     /* the model has just been re-evaluated for the completed step */
     comp->_need_update = 0;
-    return fmiOK;
+    if (!OMC_ERROR_RAISED()) return fmiOK;
+    OMC_ERROR_CLEAR();
   /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 
   comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiCompletedIntegratorStep: terminated by an assertion.");
   return fmiError;

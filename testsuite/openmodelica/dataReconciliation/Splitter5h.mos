@@ -14,6 +14,9 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.Splitter5h, simflags="-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Reconciled_Sx.csv -lv=LOG_JAC");
 getErrorString();
 
+readFile("NewDataReconciliationSimpleTests.Splitter5h_BoundaryConditions_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
@@ -766,5 +769,11 @@ getErrorString();
 // LOG_STDOUT        | info    | Reconcile Boundary Conditions Completed!
 // "
 // end SimulationResult;
+// ""
+// "Boundary conditions ,Values ,Reconciled Half-width Confidence Intervals,
+// h01,99997.7,517009,
+// Q03,0.996897,1.11199,
+// Q02,1.0769,1.11199,
+// "
 // ""
 // endResult

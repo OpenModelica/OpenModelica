@@ -70,6 +70,9 @@ pub(crate) struct FnCtx<'a> {
     /// skipped by `release_heap_locals` — currently the `for x in array` iterator,
     /// which aliases an element of the array that outlives the loop.
     pub(super) borrowed_locals: Vec<u32>,
+    /// Record locals still holding the null handle their first assignment
+    /// replaces, so that assignment has nothing to release.
+    pub(super) null_locals: Vec<u32>,
     /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
     /// straight-line, so one pair is enough.
     pub(super) elem_ptr_tmp: Option<(u32, u32)>,
@@ -127,7 +130,7 @@ pub(crate) struct SimCtx {
     /// wasm local index holding the `SimData` base pointer.
     pub(crate) data_local: u32,
     /// Canonical cref key (`super::sim_cref_key`) -> slot in `SimData`.
-    pub(crate) vars: Arc<HashMap<String, SimSlot>>,
+    pub(crate) vars: SlotMap,
     /// Canonical cref key -> its `start` value expression (for `$START.<cref>`),
     /// `None` when the variable has no explicit start (defaults to the type's
     /// zero). Stored separately from `vars` because `$START` reads the start
@@ -391,6 +394,32 @@ pub(crate) struct ConstGroup {
     pub(crate) values: Vec<metamodelica::Ref<DAE::Exp>>,
 }
 
+/// The model's cref key -> slot map, shadowed by the keys one Jacobian body binds
+/// to its own seed and column slots.
+#[derive(Clone)]
+pub(crate) struct SlotMap {
+    model: Arc<HashMap<String, SimSlot>>,
+    overlay: Option<Arc<HashMap<String, SimSlot>>>,
+}
+
+impl SlotMap {
+    pub(crate) fn new(model: Arc<HashMap<String, SimSlot>>) -> Self {
+        SlotMap { model, overlay: None }
+    }
+
+    pub(crate) fn with_overlay(&self, overlay: Arc<HashMap<String, SimSlot>>) -> Self {
+        SlotMap { model: self.model.clone(), overlay: Some(overlay) }
+    }
+
+    pub(crate) fn get(&self, key: &str) -> Option<&SimSlot> {
+        self.overlay.as_ref().and_then(|o| o.get(key)).or_else(|| self.model.get(key))
+    }
+
+    pub(crate) fn contains_key(&self, key: &str) -> bool {
+        self.get(key).is_some()
+    }
+}
+
 /// A scalar model variable's location within the `SimData` block.
 #[derive(Clone, Copy)]
 pub(crate) struct SimSlot {
@@ -525,6 +554,7 @@ impl<'a> FnCtx<'a> {
             ctrl_depth: 0,
             loops: Vec::new(),
             borrowed_locals: Vec::new(),
+            null_locals: Vec::new(),
             elem_ptr_tmp: None,
             src_loc: None,
             sim: Some(sim),

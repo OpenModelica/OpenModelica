@@ -3853,46 +3853,111 @@ algorithm
 end updateAdjacencyMatrix;
 
 protected function updateAdjacencyMatrix1
-  "Helper"
+  "Replaces the rows of the given equations, then rebuilds the transposed row of
+   every variable an equation gained or lost once, with the result the one-by-one
+   removals and prepends would give."
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray daeeqns;
   input BackendDAE.IndexType inIndxType;
   input Option<AvlTreePathFunction.Tree> functionTree;
-  input BackendDAE.AdjacencyMatrix m;
-  input BackendDAE.AdjacencyMatrixT mt;
+  input output BackendDAE.AdjacencyMatrix m;
+  input output BackendDAE.AdjacencyMatrixT mt;
   input list<Integer> inIntegerLst;
   input Boolean isInitial;
-  output BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
-  output BackendDAE.AdjacencyMatrixT outAdjacencyMatrixT;
+protected
+  Integer abse, size = 0;
+  list<Integer> row, oldvars;
+  AvlSetInt.Tree invars, outvars;
+  list<tuple<Integer, Integer>> removed = {}, added = {} "(variable, signed equation)";
+  array<list<Integer>> removedAt, addedAt;
+  array<Integer> markPos, markNeg;
 algorithm
-  (outAdjacencyMatrix,outAdjacencyMatrixT):=
-  match inIntegerLst
-    local
-      BackendDAE.AdjacencyMatrix m_1,m_2;
-      BackendDAE.AdjacencyMatrixT mt_1,mt_2,mt_3;
-      Integer e,abse;
-      BackendDAE.Equation eqn;
-      AvlSetInt.Tree invars,outvars;
-      list<Integer> row,eqns,oldvars;
+  for e in inIntegerLst loop
+    abse := intAbs(e);
+    (row, _) := adjacencyRow(BackendEquation.get(daeeqns, abse), vars, inIndxType, functionTree, {}, isInitial);
+    row := uniqueRow(row);
+    oldvars := getOldVars(m, abse);
+    m := Array.replaceAtWithFill(abse, row, {}, m);
+    (_, outvars, invars) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars), AvlSetInt.addList(AvlSetInt.EMPTY(), row));
+    for k in AvlSetInt.listKeys(outvars) loop
+      removed := (intAbs(k), if k > 0 then abse else -abse) :: removed;
+    end for;
+    for k in AvlSetInt.listKeys(invars) loop
+      added := (intAbs(k), if k > 0 then abse else -abse) :: added;
+      size := max(size, intAbs(k));
+    end for;
+  end for;
+  if listEmpty(removed) and listEmpty(added) then
+    return;
+  end if;
 
-    case {} then (m,mt);
+  mt := Array.expandToSize(size, mt, {});
+  removedAt := arrayCreate(arrayLength(mt), {});
+  addedAt := arrayCreate(arrayLength(mt), {});
+  for r in removed loop
+    arrayUpdate(removedAt, Util.tuple21(r), Util.tuple22(r) :: removedAt[Util.tuple21(r)]);
+  end for;
+  // consed from the last addition back, so each list is in processing order
+  for a in added loop
+    arrayUpdate(addedAt, Util.tuple21(a), Util.tuple22(a) :: addedAt[Util.tuple21(a)]);
+  end for;
 
-    case e::eqns
-      algorithm
-        abse := intAbs(e);
-        eqn := BackendEquation.get(daeeqns, abse);
-        (row,_) := adjacencyRow(eqn,vars,inIndxType,functionTree,{},isInitial);
-        row := uniqueRow(row);
-        oldvars := getOldVars(m,abse);
-        m_1 := Array.replaceAtWithFill(abse,row,{},m);
-        (_,outvars,invars) := AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars), AvlSetInt.addList(AvlSetInt.EMPTY(), row));
-        mt_1 := removeValuefromMatrix(abse,AvlSetInt.listKeys(outvars),mt);
-        mt_2 := addValuetoMatrix(abse,AvlSetInt.listKeys(invars),mt_1);
-        (m_2,mt_3) := updateAdjacencyMatrix1(vars,daeeqns,inIndxType,functionTree,m_1,mt_2,eqns,isInitial);
-      then (m_2,mt_3);
-
-  end match;
+  markPos := arrayCreate(arrayLength(m), 0);
+  markNeg := arrayCreate(arrayLength(m), 0);
+  for k in 1:arrayLength(mt) loop
+    if not (listEmpty(removedAt[k]) and listEmpty(addedAt[k])) then
+      row := mt[k];
+      if not listEmpty(removedAt[k]) then
+        for v in removedAt[k] loop
+          setSignedMark(v, k, markPos, markNeg);
+        end for;
+        row := list(v for v guard not hasSignedMark(v, k, markPos, markNeg) in row);
+      end if;
+      if not listEmpty(addedAt[k]) then
+        for v in row loop
+          setSignedMark(v, -k, markPos, markNeg);
+        end for;
+        for v in addedAt[k] loop
+          if not hasSignedMark(v, -k, markPos, markNeg) then
+            row := v :: row;
+          end if;
+        end for;
+      end if;
+      arrayUpdate(mt, k, row);
+    end if;
+  end for;
 end updateAdjacencyMatrix1;
+
+protected function setSignedMark
+  input Integer v;
+  input Integer stamp;
+  input array<Integer> markPos;
+  input array<Integer> markNeg;
+algorithm
+  if v > 0 and v <= arrayLength(markPos) then
+    arrayUpdate(markPos, v, stamp);
+  elseif v < 0 and -v <= arrayLength(markNeg) then
+    arrayUpdate(markNeg, -v, stamp);
+  end if;
+end setSignedMark;
+
+protected function hasSignedMark
+  input Integer v;
+  input Integer stamp;
+  input array<Integer> markPos;
+  input array<Integer> markNeg;
+  output Boolean marked = false;
+algorithm
+  if v > 0 then
+    if v <= arrayLength(markPos) then
+      marked := markPos[v] == stamp;
+    end if;
+  elseif v < 0 then
+    if -v <= arrayLength(markNeg) then
+      marked := markNeg[-v] == stamp;
+    end if;
+  end if;
+end hasSignedMark;
 
 public function updateAdjacencyMatrixScalar
 "author: PA
@@ -8528,6 +8593,28 @@ public function getPreOptModulesString
 algorithm
   strPreOptModules := Config.getPreOptModules();
 end getPreOptModulesString;
+
+public function isDataReconciliationEnabled
+  "Returns true if one of the data reconciliation pre-optimization modules is
+   enabled or the uncertainty extraction (modelEquationsUC) is running. The
+   uncertain attribute is only meaningful for these and must not influence a
+   plain simulation."
+  output Boolean enabled;
+protected
+  constant list<String> drModules = {"dataReconciliation", "dataReconciliationBoundaryConditions", "dataReconciliationStateEstimation"};
+algorithm
+  if isSome(getGlobalRoot(Global.uncertaintyExtraction)) then
+    enabled := true;
+    return;
+  end if;
+  for m in listAppend(Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), getPreOptModulesString()) loop
+    if listMember(m, drModules) then
+      enabled := true;
+      return;
+    end if;
+  end for;
+  enabled := false;
+end isDataReconciliationEnabled;
 
 protected function deprecatedDebugFlag
   input Flags.DebugFlag inFlag;

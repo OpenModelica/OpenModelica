@@ -20,11 +20,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 ## Disable colors if you do not want them.
 # set(CMAKE_COLOR_MAKEFILE OFF)
 
-# Variable for signifying that we are using the new CMake configuration.
-# We use this to selectively include some cmake source files
-# e.g. simulationRuntime/c/ has two cmake sources that are conditionally
-# included. The old (cmake 2.8) cmake source in there is used by the legacy
-# standalone Autoconf/Make build.
+# Tells subprojects that can also be configured on their own that they are part
+# of the OpenModelica build, so they reuse its targets (e.g. SUNDIALS) instead of
+# building their own. Read by the OMSimulator submodule.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.
@@ -40,6 +38,9 @@ include(cmake/omc_git_revision.cmake)
 # build tree to survive a wipe, or in-source to bundle for an offline tarball.
 set(OM_DOWNLOADS_DIR "${CMAKE_BINARY_DIR}/downloads" CACHE PATH
     "Cache for everything the configure step downloads.")
+
+## Source hygiene targets (bom-error, utf8-error, tab-error, spellcheck, ...).
+include(cmake/omc_source_checks.cmake)
 
 # Cross-compiling to Windows (xwin toolchain): fetch PThreads4W and OpenBLAS.
 # Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).

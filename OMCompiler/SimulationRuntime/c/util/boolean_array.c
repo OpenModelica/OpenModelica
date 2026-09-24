@@ -317,19 +317,19 @@ void indexed_assign_boolean_array(const boolean_array source, boolean_array* des
                                   const index_spec_t* dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         boolean_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  boolean_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_size);
 }
 
 /*
@@ -365,6 +365,9 @@ void index_boolean_array(const boolean_array* source,
         }
     }
     assert(j == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0) {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
@@ -374,7 +377,7 @@ void index_boolean_array(const boolean_array* source,
         idx_vec1[i] = 0;
     }
     for(i = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->index[i]) {
+        if(source_spec->index_type[i] != 'W') {
             idx_size[i] = imax(source_spec->dim_size[i],1);
         } else {
             idx_size[i] = source->dim_size[i];
@@ -397,6 +400,9 @@ void index_boolean_array(const boolean_array* source,
                                                      source, source_spec)));
 
     } while(0 == next_index(source->ndims, idx_vec1, idx_size));
+    omc_rc_release_inline(idx_vec1);
+    omc_rc_release_inline(idx_vec2);
+    omc_rc_release_inline(idx_size);
 }
 
 /*
@@ -428,6 +434,7 @@ void simple_index_alloc_boolean_array1(const boolean_array* source, int i1,
 
     dest->ndims = source->ndims - 1;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i+1];
@@ -660,6 +667,7 @@ void cat_alloc_boolean_array(int k, boolean_array* dest, int n,
     dest->data = boolean_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->owns_data = 1;
     for(j = 0; j < dest->ndims; j++) {
         dest->dim_size[j] = elts[0]->dim_size[j];
     }
@@ -687,9 +695,8 @@ void cat_alloc_boolean_array(int k, boolean_array* dest, int n,
 void promote_alloc_boolean_array(const boolean_array* a, int n,
                                  boolean_array* dest)
 {
-    clone_boolean_array_spec(a,dest);
-    alloc_boolean_array_data(dest);
-    promote_boolean_array(a,n,dest);
+    dest->flexible = a->flexible;
+    promote_boolean_array(a, n, dest);
 }
 
 /* function: promote_boolean_array.
@@ -706,6 +713,10 @@ void promote_boolean_array(const boolean_array* a, int n,boolean_array* dest)
 
     dest->dim_size = size_alloc(n+a->ndims);
     dest->data = a->data;
+    dest->owns_data = a->owns_data;
+    if (dest->owns_data) {
+        omc_rc_retain_inline(dest->data);
+    }
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
         dest->dim_size[i] = a->dim_size[i];
@@ -731,6 +742,7 @@ void promote_scalar_boolean_array(modelica_boolean s,int n,
 
     /* Alloc size */
     dest->dim_size = size_alloc(n);
+    dest->owns_data = 1;
 
     /* Alloc data */
     dest->data = boolean_alloc(1);

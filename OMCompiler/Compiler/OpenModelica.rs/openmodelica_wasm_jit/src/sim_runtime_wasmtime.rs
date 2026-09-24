@@ -234,6 +234,10 @@ fn build_engine_cfg(inlining: bool, extra: impl FnOnce(&mut wasmtime::Config)) -
     if inlining {
         cfg.compiler_inlining(wasmtime::Inlining::Yes);
     }
+    // `/tmp/perf-<pid>.map`, so `perf report` names the model's functions.
+    if std::env::var_os("OMC_WASM_PERFMAP").is_some() {
+        cfg.profiler(wasmtime::ProfilingStrategy::PerfMap);
+    }
     extra(&mut cfg);
     wasmtime::Engine::new(&cfg).expect("wasm-jit: failed to build wasmtime engine")
 }
@@ -537,6 +541,14 @@ fn wt<T>(r: std::result::Result<T, wasmtime::Error>) -> Result<T> {
 /// Setup path: keep the real wasmtime message as a `String` for the run log.
 fn wts<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> std::result::Result<T, String> {
     r.map_err(|e| format!("wasm engine error: {e:?}"))
+}
+
+/// Run a WASI reactor's `_initialize`, which the runtime exports on wasip1 only.
+fn initialize_reactor(store: &mut wasmtime::Store<HostState>, inst: &wasmtime::Instance) -> std::result::Result<(), String> {
+    match inst.get_typed_func::<(), ()>(&mut *store, "_initialize") {
+        Ok(f) => wts(f.call(&mut *store, ())),
+        Err(_) => Ok(()),
+    }
 }
 
 // External objects are native `void*` (e.g. a table `tableID`) that must survive
@@ -1602,6 +1614,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     };
     // `rt_row_asserts` is called by the model, which only imports `memory`.
     store.data_mut().memory = Some(memory);
+    initialize_reactor(&mut store, &rt_inst)?;
     let ext_rt = crate::dylink_engine::ExtRt {
         str_new: rt_str_new,
         str_data: rt_str_data,
@@ -2487,6 +2500,7 @@ impl DylinkFmu {
             .get_table(&mut store, "__indirect_function_table")
             .ok_or_else(|| "CodegenWasmJit: runtime has no table export".to_string())?;
         store.data_mut().memory = Some(memory);
+        initialize_reactor(&mut store, &rt_inst)?;
         // The model's equations call *this* instance's `rt_solve_nls`, not the copy
         // the adapter carries, so the run's flags have to reach it too.
         let rt_alloc_fn = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
@@ -2681,6 +2695,7 @@ impl DylinkFmu {
             .get_memory(&mut store, "memory")
             .ok_or_else(|| "CodegenWasmJit: the fused runtime has no `memory` export".to_string())?;
         store.data_mut().memory = Some(memory);
+        initialize_reactor(&mut store, &fused_inst)?;
         let alloc = wts(fused_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
         // The host's `rt` names first, so the loop below leaves them alone: the
         // fused module carries the runtime crate whole and so exports some of what

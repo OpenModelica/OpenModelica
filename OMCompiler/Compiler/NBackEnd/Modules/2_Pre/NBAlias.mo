@@ -532,7 +532,9 @@ protected
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
 
-      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+      // an array variable and a scalar are not aliases, even if the array has only one element:
+      // replacing the array by the scalar breaks the array expressions it is used in
+      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs) and sameArrayness(eq.lhs, eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
@@ -735,6 +737,13 @@ protected
                                   else false;
     end match;
   end findCrefsFail;
+
+  function sameArrayness
+    "true if both expressions are arrays or both are scalars"
+    input Expression exp1;
+    input Expression exp2;
+    output Boolean same = Type.isArray(Expression.typeOf(exp1)) == Type.isArray(Expression.typeOf(exp2));
+  end sameArrayness;
 
   function isSimpleExp
     "checks if an expression can be considered simple."

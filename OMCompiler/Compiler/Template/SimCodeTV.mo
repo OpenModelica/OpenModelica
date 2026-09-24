@@ -1279,6 +1279,8 @@ package SimCodeFunction
       String ctor_name;
       String name;
       list<Variable> variables;
+      Absyn.Path defPath;
+      Boolean usedExternally;
     end RECORD_DECL_ADD_CONSTRCTOR;
     record RECORD_DECL_DEF
       Absyn.Path path;
@@ -1690,14 +1692,24 @@ package SimCodeUtil
     output SimCode.SimCode code;
   end getSimCode;
 
+  function isSimulationCodegen
+    output Boolean simulation;
+  end isSimulationCodegen;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
     output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
 
+  function isJacobianColumnCref
+    input DAE.ComponentRef cr;
+    output Boolean b;
+  end isJacobianColumnCref;
+
   function isContiguousArrayCref
     input DAE.ComponentRef inCref;
+    input SimCodeFunction.Context context;
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
@@ -1736,6 +1748,11 @@ package SimCodeUtil
     input SimCodeFunction.Context context;
     output DAE.Exp outExp;
   end codegenExpSanityCheck;
+
+  function unboxFunctionReferenceCall
+    input DAE.Exp inExp;
+    output DAE.Exp outExp;
+  end unboxFunctionReferenceCall;
 
   function selectScalarLiteralAssignments
     input list<SimCode.SimEqSystem> inEqs;
@@ -1940,6 +1957,12 @@ package SimCodeFunctionUtil
     input list<DAE.Subscript> subs;
     output DAE.Exp cRefOut;
   end buildCrefExpFromSubs;
+
+  function padAsubSubscripts
+    input DAE.Exp exp;
+    input list<DAE.Subscript> subs;
+    output list<DAE.Subscript> outSubs;
+  end padAsubSubscripts;
 
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;

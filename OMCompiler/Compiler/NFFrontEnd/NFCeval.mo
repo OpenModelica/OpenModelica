@@ -247,7 +247,7 @@ algorithm
       algorithm
         exp1 := evalExp(exp.tupleExp, target);
       then
-        Expression.tupleElement(exp1, exp.ty, exp.index);
+        Expression.tupleElement(exp1, exp.index);
 
     case Expression.RECORD_ELEMENT()
       then evalRecordElement(exp, target);

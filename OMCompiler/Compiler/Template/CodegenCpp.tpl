@@ -4175,6 +4175,26 @@ template forIteratorBodyCpp(SimIterator iter, Context context, Text &preExp, Tex
     >>
 end forIteratorBodyCpp;
 
+template lhsCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                 Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates an assignable reference for the left hand side of an equation.
+  cref1 names the whole variable and, without NF_SCALARIZE, silently drops the subscripts of a
+  non-scalarized (array-typed) variable. For a cref that is fully subscripted down to a single
+  element that would name the whole array object, so index it instead, the same way daeExpCref
+  reads such a cref on the right hand side."
+::=
+  if boolAnd(boolNot(crefIsScalar(cr, context)),
+             boolAnd(intEq(listLength(crefSubs(cr)), listLength(crefDims(cr))), crefSubIsScalar(cr)))
+  then
+    let arrName = contextCref(crefStripLastSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let subsStr = (crefSubs(cr) |> INDEX(__) =>
+        daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      ;separator=",")
+    '<%arrName%>(<%subsStr%>)'
+  else
+    cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+end lhsCref;
+
 template subIteratorCpp(tuple<ComponentRef, array<Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, SimCode simCode,
                         Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Binds a dependent (sub_iter) iterator selected by the enclosing range/list iterator's current
@@ -6382,7 +6402,8 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
    <%nls.crefs |> name hasindex i0 =>
-     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+     let &preExpElem = buffer ""
+     let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      <<
      vars[<%i0%>] = <%namestr%>;
      >>
@@ -6403,12 +6424,12 @@ template initAlgloopVarAttributes(SimEqSystem eq, SimCode simCode, Text& extraFu
   let vars = match eq
     case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
       (nls.crefs |> cref hasindex i0 =>
-        let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+        let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), cref, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
         '_vars[<%i0%>] = <%initializer%>;'
       ;separator="\n")
     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-      (ls.vars |> var hasindex i0 =>
-        let initializer = createAlgloopVarAttributes(var, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+      (ls.vars |> var as SIMVAR(__) hasindex i0 =>
+        let initializer = createAlgloopVarAttributes(var, name, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
         '_vars[<%i0%>] = <%initializer%>;'
       ;separator="\n")
   <<
@@ -6418,7 +6439,23 @@ template initAlgloopVarAttributes(SimEqSystem eq, SimCode simCode, Text& extraFu
   >>
 end initAlgloopVarAttributes;
 
-template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template algloopVarAttrElem(Text expPart, Exp exp, ComponentRef elemCr, Context context, Text &preExp, Text &varDecls, SimCode simCode,
+                            Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Attribute (nominal/min/max) of one iteration variable. A non-scalarized array variable has a
+  single array-valued attribute, so pick the element the (fully subscripted) cref selects."
+::=
+  if boolAnd(isArrayType(typeof(exp)),
+             boolAnd(intEq(listLength(crefSubs(elemCr)), listLength(crefDims(elemCr))), crefSubIsScalar(elemCr)))
+  then
+    let subsStr = (crefSubs(elemCr) |> INDEX(__) =>
+        daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      ;separator=",")
+    '<%expPart%>(<%subsStr%>)'
+  else
+    expPart
+end algloopVarAttrElem;
+
+template createAlgloopVarAttributes(SimVar var, ComponentRef elemCr, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Returns the initializer for one AlgLoopVar."
 ::=
   let nameStr = match var case SIMVAR(name=cref) then
@@ -6427,7 +6464,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
   let nominalStr = match var
     case SIMVAR(nominalValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%expPart%>'
+      algloopVarAttrElem(expPart, exp, elemCr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     // fallback for state derivatives lacking nominal value: use nominal value of state
     case SIMVAR(varKind = STATE_DER(), name = CREF_QUAL(componentRef = stateCref)) then
       match cref2simvar(stateCref, simCode)
@@ -6445,7 +6482,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
       '-HUGE_VAL'
     case SIMVAR(minValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%expPart%>'
+      algloopVarAttrElem(expPart, exp, elemCr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
       '-HUGE_VAL'
 
@@ -6454,7 +6491,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
       'HUGE_VAL'
     case SIMVAR(maxValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%expPart%>'
+      algloopVarAttrElem(expPart, exp, elemCr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
       'HUGE_VAL'
 
@@ -6519,7 +6556,8 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
    <%nls.crefs |> name hasindex i0 =>
-    let namestr = cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
+    let &preExpElem = buffer ""
+    let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     match name
     case CREF_QUAL(ident = "$PRE") then
       let varname = '_system-><%cref(componentRef, useFlatArrayNotation)%>'
@@ -11408,7 +11446,7 @@ case SES_SIMPLE_ASSIGN(__) then
     >>
   else
     let startValueType = crefStartValueType(cref)
-    let lvalue = cref1(cref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+    let lvalue = lhsCref(cref, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let assignExp = if boolAnd(assignToStartValues, boolNot(stringEq(startValueType, "ExternalObject"))) then
       'SystemDefaultImplementation::set<%startValueType%>StartValue(<%lvalue%>, <%expPart%>, <%overwriteOldStartValue%>);' else
       '<%lvalue%> = <%expPart%>;'

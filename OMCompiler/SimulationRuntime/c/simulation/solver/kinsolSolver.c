@@ -314,15 +314,15 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   kinsolData->countResCalls++;
 
 #ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /* call residual function */
   nlsData->residualFunc(&resUserData, xdata, fdata, (const int *)&iflag);
-  iflag = 0 /* success */;
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { iflag = 0 /* success */; }
 
 #ifndef OMC_EMCC
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   return iflag;
@@ -1228,15 +1228,12 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     warningStreamPrint(OMC_LOG_NLS_V, 0,
                        "KINSOL: The kinls setup routine (lsetup) encountered an error. "
                        "Retry with numerical Jacobian.\n");
-    if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-      if (nlsData->sparsePattern && nlsData->analyticalJacobianColumn != NULL) {
-        flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
-        checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-        if (flag < 0) {
-          return FALSE;
-        }
-      } else {
-        errorStreamPrint(OMC_LOG_STDOUT, 0, "KINSOL: Trying to switch to numeric Jacobian for sparse solver KLU, but no sparsity pattern is available.");
+    /* KLU always has a sparsity pattern (initKinsolMemory), and without an
+     * analytic Jacobian it is numeric already */
+    if (kinsolData->linearSolverMethod == NLS_LS_KLU && nlsData->analyticalJacobianColumn != NULL) {
+      flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
+      if (flag < 0) {
         return FALSE;
       }
     }

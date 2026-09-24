@@ -797,6 +797,9 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;
   int lastStoredEventValue;
+
+  unsigned long nWarningsRemovedEvents;
+  unsigned long nWarningsOutputEvents;
 } SPATIAL_DISTRIBUTION_DATA;
 
 typedef struct SIMULATION_INFO

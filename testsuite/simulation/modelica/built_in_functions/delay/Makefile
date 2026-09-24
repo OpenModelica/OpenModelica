@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 	Delay.mos \
+	DelayBufferGrowth.mos \
 	DelayTooSmall.mos \
 
 # test that currently fail. Move up when fixed.

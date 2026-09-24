@@ -86,7 +86,7 @@ pub(super) fn der_cref(cr: &DAE::ComponentRef) -> metamodelica::Ref<DAE::Compone
 }
 
 pub(crate) fn sim_cref_key(cr: &DAE::ComponentRef) -> Result<String> {
-    let mut s = String::new();
+    let mut s = String::with_capacity(64);
     sim_cref_key_into(cr, &mut s)?;
     Ok(s)
 }
@@ -125,17 +125,68 @@ fn sim_subs_into(subs: &List<metamodelica::Ref<DAE::Subscript>>, s: &mut String)
     for sub in &**subs {
         match &**sub {
             DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
-                Some(ix) => {
-                    s.push('[');
-                    s.push_str(&ix.to_string());
-                    s.push(']');
-                }
+                Some(ix) => push_index(s, ix),
                 None => return Err("CodegenWasmJit: non-constant subscript in simulation cref"),
             },
             _ => return Err("CodegenWasmJit: unsupported subscript in simulation cref"),
         }
     }
     Ok(())
+}
+
+fn push_index(s: &mut String, ix: i32) {
+    let mut buf = [0u8; 13];
+    let mut i = buf.len() - 1;
+    buf[i] = b']';
+    let mut n = ix.unsigned_abs();
+    loop {
+        i -= 1;
+        buf[i] = b'0' + (n % 10) as u8;
+        n /= 10;
+        if n == 0 {
+            break;
+        }
+    }
+    if ix < 0 {
+        i -= 1;
+        buf[i] = b'-';
+    }
+    i -= 1;
+    buf[i] = b'[';
+    s.push_str(std::str::from_utf8(&buf[i..]).expect("ASCII digits"));
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub(super) enum CrefSubs {
+    None,
+    ConstIndices,
+    Other,
+}
+
+/// How `cr` is subscripted: [`array_ref_of`]'s dynamic element and
+/// [`sim_slice_of`]'s slice need a subscript that is not a constant index, and
+/// every array or slice form needs some subscript.
+pub(super) fn cref_subs(cr: &DAE::ComponentRef) -> CrefSubs {
+    use DAE::ComponentRef as C;
+    let mut out = CrefSubs::None;
+    let mut node = cr;
+    loop {
+        let (subscriptLst, next) = match node {
+            C::CREF_IDENT { subscriptLst, .. } => (subscriptLst, None),
+            C::CREF_QUAL { subscriptLst, componentRef, .. } => (subscriptLst, Some(componentRef)),
+            _ => return CrefSubs::Other,
+        };
+        for sub in &**subscriptLst {
+            match &**sub {
+                DAE::Subscript::INDEX { exp } if const_index_value(exp).is_some() => out = CrefSubs::ConstIndices,
+                _ => return CrefSubs::Other,
+            }
+        }
+        match next {
+            Some(n) => node = n,
+            None => return out,
+        }
+    }
 }
 
 /// Append an intermediate component's subscripts to an array base key, spelled as
@@ -145,11 +196,7 @@ pub(crate) fn push_qual_subs(subs: &List<metamodelica::Ref<DAE::Subscript>>, s: 
     for sub in &**subs {
         match &**sub {
             DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
-                Some(ix) => {
-                    s.push('[');
-                    s.push_str(&ix.to_string());
-                    s.push(']');
-                }
+                Some(ix) => push_index(s, ix),
                 None => return false,
             },
             _ => return false,

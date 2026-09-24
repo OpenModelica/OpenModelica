@@ -1378,11 +1378,26 @@ public
   end makeArrayCheckLiteral;
 
   function makeEmptyArray
+    "Creates an array from a type where at least one of the dimensions is zero."
     input Type ty;
     output Expression outExp;
+  protected
+    list<Dimension> dims, non_empty_dims = {};
+    Type arr_ty;
   algorithm
-    outExp := ARRAY(ty, listArray({}), true);
-    annotation(__OpenModelica_EarlyInline = true);
+    // Split the dimensions on the first zero dimension.
+    dims := Type.arrayDims(ty);
+
+    while not Dimension.isZero(listHead(dims)) loop
+      non_empty_dims := listHead(dims) :: non_empty_dims;
+      dims := listRest(dims);
+    end while;
+
+    // Create an empty array with the zero dimension and the dimensions after.
+    arr_ty := Type.ARRAY(Type.arrayElementType(ty), dims);
+    outExp := ARRAY(arr_ty, listArray({}), true);
+    // Lift the empty array with the dimensions preceeding the zero dimension.
+    outExp := liftArrayList(non_empty_dims, outExp);
   end makeEmptyArray;
 
   function makeIntegerArray
@@ -5933,27 +5948,22 @@ public
 
   function tupleElement
     input Expression exp;
-    input Type ty;
     input Integer index;
     output Expression tupleElem;
   algorithm
     tupleElem := match exp
-      local
-        Type ety;
-
       case TUPLE() then listGet(exp.elements, index);
 
       case ARRAY()
         algorithm
-          ety := Type.unliftArray(ty);
-          exp.elements := Array.map(exp.elements, function tupleElement(ty = ety, index = index));
+          exp.elements := Array.map(exp.elements, function tupleElement(index = index));
         then
           exp;
 
       case SUBSCRIPTED_EXP(split = true)
-        then mapSplitExpressions(exp, function tupleElement(ty = ty, index = index));
+        then mapSplitExpressions(exp, function tupleElement(index = index));
 
-      else TUPLE_ELEMENT(exp, index, ty);
+      else TUPLE_ELEMENT(exp, index, Type.nthTupleType(typeOf(exp), index));
     end match;
   end tupleElement;
 

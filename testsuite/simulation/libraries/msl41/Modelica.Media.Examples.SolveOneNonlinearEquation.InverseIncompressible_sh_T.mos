@@ -6,15 +6,17 @@
 // Modelica Standard Library
 //
 
-// MSL 4.1.0: the model compiles, but solveOneNonlinearEquation asserts at the very
-// end of the interval, where s1 reaches s_max and u_min/u_max no longer bracket
-// the root, so only test that it builds.
+// MSL 4.1.0: at the very end of the interval s1 reaches s_max, and whether
+// u_min/u_max still bracket the root of solveOneNonlinearEquation depends on the
+// last bits of the arithmetic, so it simulates on some machines and asserts on
+// others. Only test that it builds.
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+ignoreSimulation := true;
 modelName := $TypeName(Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T);
 compareVars :=
 {
@@ -34,6 +36,7 @@ runScript(modelTesting);getErrorString();
 // ""
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.Compilation
+// true
 // Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T
 // {"Ts", "s2", "s1", "Th", "h2", "h1"}
 // Compilation succeeded

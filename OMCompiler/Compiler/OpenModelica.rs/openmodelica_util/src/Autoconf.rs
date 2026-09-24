@@ -162,6 +162,21 @@ pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CO
     },
 };
 
+/// `@RT_LDFLAGS_GENERATED_CODE_MMC@`: a MetaModelica function library is
+/// dlopened into omc and shares its runtime.
+pub const ldflags_runtime_mmc: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_MMC") {
+    Some(s) => s,
+    None => if msvc_is_target {
+        const_str::concat!("OpenModelicaRuntimeMMC.lib omcgc.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
+        const_str::concat!(" -lOpenModelicaRuntimeMMC -lomcgc", win_ldflags_basic)
+    } else if cfg!(target_os = "macos") {
+        " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm"
+    } else {
+        " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm -lpthread -rdynamic"
+    },
+};
+
 /// `@RT_LDFLAGS_GENERATED_CODE_SIM@` (CMake-configured via OMC_RT_LDFLAGS_*; the
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM") {

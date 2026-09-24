@@ -110,9 +110,17 @@ void *getRingData(RINGBUFFER *rb, int i)
  */
 void expandRingBuffer(RINGBUFFER *rb)
 {
+  int oldSize = rb->bufferSize;
+  int wrapped = rb->firstElement + rb->nElements - oldSize;
+
   rb->bufferSize *= 2;
   rb->buffer = realloc(rb->buffer, rb->bufferSize*rb->itemSize);
   assertStreamPrint(NULL, 0 != rb->buffer, "out of memory");
+
+  /* The elements that wrapped around to the start continue after the old end */
+  if (wrapped > 0) {
+    memcpy(((char*)rb->buffer) + oldSize*rb->itemSize, rb->buffer, wrapped*rb->itemSize);
+  }
 }
 
 /**

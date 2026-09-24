@@ -362,7 +362,7 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::frontendcpp)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::mmc::runtime)
 
 # On Windows we need explicitly tell the dll to export all symbols. It is not so good
 # that we have to export all symbols. However, OMEdit uses some of the functions in the

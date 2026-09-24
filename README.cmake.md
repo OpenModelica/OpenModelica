@@ -77,14 +77,8 @@ an S3 server instead of on disk, so that several machines share it. Select it wi
   cmake -S . -B build_cmake -Wno-dev
   ```
 
-- Your build directory should NOT be a directory named `build` in the root OpenModelica
-  directory.
-
-  The reason for this suggestion is that the `autotools + Makefile` build system we have
-  now uses this `build` directory for _installation_. Therefore, if you plan to fallback
-  to the autotools build at some point or you want to switch back and forth between the
-  CMake and autotools build systems (perhaps to cross check something), then it is
-  probably a good idea to make sure that they do not overwrite eachother's outputs.
+- CMake is the only supported build system for OpenModelica. The `autotools + Makefile`
+  build (`configure`, `Makefile.in`, ...) has been removed.
 
 ### 3.2. Platform specific instructions
 
@@ -218,8 +212,8 @@ Note that this is different from the Qt based OMShell GUI application.
 
 #### 4.1.5. Other OpenModelica specific Options
 
-There are also some additional options that are kept as a migration step to maintain the
-similarity with the `autotools` build system.
+There are also some additional options that are left over from the removed `autotools`
+build system.
 
 ```cmake
 OM_OMC_USE_LAPACK=ON
@@ -596,10 +590,10 @@ where opening the file directly would not. Otherwise just open
   `ModelicaConfig_gcc.inc`). Simulations that link the runtime _dynamically_ would not need
   it - libgcov is inside the shared library - but source FMUs link the static runtime, and
   without it they fail with undefined references to `__gcov_*` / `llvm_gcda_*`.
-- Jenkins does all of this on every PR, from the `testsuite-cmake-gcc` shard; see
+- Jenkins does all of this on every PR, from the `testsuite-gcc` shard; see
   `coverageReportStage()` in [.CI/common.groovy](.CI/common.groovy). That shard runs half of
-  the testsuite - the other half runs in the clang shard, on the autotools build, which is
-  not instrumented - so CI's numbers cover roughly half the tests a full local run would.
+  the testsuite - the other half runs in the clang shard, which is not instrumented - so
+  CI's numbers cover roughly half the tests a full local run would.
 
 [gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 [gcovr]: https://gcovr.com/

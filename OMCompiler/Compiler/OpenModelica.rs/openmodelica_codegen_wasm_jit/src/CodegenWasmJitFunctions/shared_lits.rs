@@ -79,6 +79,11 @@ pub(crate) fn compile(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<Option<WTy>> {
     Ok(Some(WTy::I32))
 }
 
+/// Push the pool's own handle to `e`'s literal, without taking a reference.
+pub(crate) fn compile_borrowed(ctx: &mut FnCtx, e: &DAE::Exp) {
+    ctx.emit(we::Instruction::GlobalGet(intern(e)));
+}
+
 /// The body the module's `start` calls: build every literal into its global.
 pub(crate) fn build_init_fn(
     slots: &[Option<metamodelica::Ref<DAE::Exp>>],
@@ -98,6 +103,7 @@ pub(crate) fn build_init_fn(
         ctrl_depth: 0,
         loops: Vec::new(),
         borrowed_locals: Vec::new(),
+        null_locals: Vec::new(),
         elem_ptr_tmp: None,
         src_loc: None,
         sim: None,

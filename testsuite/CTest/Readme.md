@@ -50,7 +50,7 @@ cmake -DTESTSUITE_DIR="$PWD/testsuite" -DOUTPUT_DIR="$PWD/build-testsuite-ctest"
 ctest --test-dir build-testsuite-ctest --output-on-failure
 ```
 
-See `ctestCMakeStashed()` in `.CI/common.groovy` for how Jenkins' CMake
+See `ctestStashed()` in `.CI/common.groovy` for how Jenkins' CMake
 testsuite stages use this, and section 9 of
 [README.cmake.md](../../README.cmake.md) for measuring code coverage over a
 testsuite run.

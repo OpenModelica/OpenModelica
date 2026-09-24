@@ -44,7 +44,7 @@
 #endif
 
 #include "meta/meta_modelica.h"
-#include "util/modelica_string.h"
+#include "util/omc_str_utils.h"
 #include "util/omc_file.h"
 
 #include "settingsimpl.h"

@@ -180,11 +180,74 @@ use alloc::format;
 use alloc::string::String;
 use core::alloc::{GlobalAlloc, Layout};
 
-// dlmalloc is the global allocator on both targets so every allocation in the
+// dlmalloc is the heap on both targets so every allocation in the
 // merged module — runtime `rt_alloc`, and on wasip1 the driver's `Vec`s — shares
 // one heap. (It builds for wasip1 too.)
-#[global_allocator]
+#[cfg_attr(not(target_arch = "wasm32"), global_allocator)]
 static GLOBAL: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
+
+/// The Rust heap in wasm: `GLOBAL` behind size-class free lists, as `rt_alloc`
+/// has, for the solvers' per-call work vectors. Single-threaded, as `FREE`.
+#[cfg(target_arch = "wasm32")]
+mod rust_heap {
+    use super::{ALIGN, GLOBAL};
+    use core::alloc::{GlobalAlloc, Layout};
+
+    const CACHE_MAX: usize = 1024;
+    /// Class `c` holds blocks of `(c + 1) * ALIGN` bytes.
+    const CLASSES: usize = CACHE_MAX / ALIGN;
+
+    struct RustHeap(core::cell::UnsafeCell<[*mut u8; CLASSES]>);
+    unsafe impl Sync for RustHeap {}
+
+    #[global_allocator]
+    static RUST_HEAP: RustHeap = RustHeap(core::cell::UnsafeCell::new([core::ptr::null_mut(); CLASSES]));
+
+    #[inline]
+    fn class(l: Layout) -> Option<usize> {
+        (l.size() <= CACHE_MAX && l.align() <= ALIGN).then(|| (l.size().max(1) - 1) / ALIGN)
+    }
+
+    unsafe impl GlobalAlloc for RustHeap {
+        #[inline]
+        unsafe fn alloc(&self, l: Layout) -> *mut u8 {
+            let Some(c) = class(l) else { return unsafe { GLOBAL.alloc(l) } };
+            let lists = unsafe { &mut *self.0.get() };
+            let head = lists[c];
+            if head.is_null() {
+                return unsafe { GLOBAL.alloc(Layout::from_size_align_unchecked((c + 1) * ALIGN, ALIGN)) };
+            }
+            lists[c] = unsafe { *(head as *mut *mut u8) };
+            head
+        }
+
+        #[inline]
+        unsafe fn dealloc(&self, p: *mut u8, l: Layout) {
+            let Some(c) = class(l) else { return unsafe { GLOBAL.dealloc(p, l) } };
+            let lists = unsafe { &mut *self.0.get() };
+            unsafe { *(p as *mut *mut u8) = lists[c] };
+            lists[c] = p;
+        }
+
+        unsafe fn realloc(&self, p: *mut u8, l: Layout, new_size: usize) -> *mut u8 {
+            let new = unsafe { Layout::from_size_align_unchecked(new_size, l.align()) };
+            match (class(l), class(new)) {
+                (None, None) => unsafe { GLOBAL.realloc(p, l, new_size) },
+                (Some(a), Some(b)) if a == b => p,
+                _ => {
+                    let q = unsafe { self.alloc(new) };
+                    if !q.is_null() {
+                        unsafe {
+                            core::ptr::copy_nonoverlapping(p, q, l.size().min(new_size));
+                            self.dealloc(p, l);
+                        }
+                    }
+                    q
+                }
+            }
+        }
+    }
+}
 
 /// Abort into a wasm trap; on the host `cargo test` build (no wasm intrinsics)
 /// this is an ordinary unreachable — the numeric paths under test never hit it.
@@ -408,6 +471,24 @@ mod ext_report_hosted {
 // (wasm32-unknown-unknown) is unaffected.
 #[cfg(all(target_os = "wasi", feature = "standalone"))]
 mod standalone;
+
+/// The WASI reactor entry point, which a host calls once after instantiation.
+/// Without a use of `__wasm_call_ctors`, wasm-ld ends every export in
+/// `__wasm_call_dtors`, a full stdio flush; C `stdout` is line-buffered instead.
+#[cfg(all(target_os = "wasi", not(feature = "standalone")))]
+#[unsafe(no_mangle)]
+pub extern "C" fn _initialize() {
+    unsafe extern "C" {
+        fn __wasm_call_ctors();
+        static stdout: *mut core::ffi::c_void;
+        fn setvbuf(f: *mut core::ffi::c_void, buf: *mut u8, mode: i32, size: usize) -> i32;
+    }
+    const IOLBF: i32 = 1;
+    unsafe {
+        __wasm_call_ctors();
+        setvbuf(stdout, core::ptr::null_mut(), IOLBF, 0);
+    }
+}
 
 #[cfg(all(target_os = "wasi", any(feature = "standalone", feature = "session")))]
 
@@ -647,6 +728,12 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
             return head + HEADER as u32;
         }
     }
+    alloc_fresh(total, size)
+}
+
+/// Out of line so the recycling path above stays small enough to inline.
+#[inline(never)]
+fn alloc_fresh(total: usize, size: u32) -> u32 {
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     // Off the recycling path: the first allocation of a size class comes through
     // here, so the reserve is armed long before the heap can fill.
@@ -697,6 +784,11 @@ pub extern "C" fn rt_free(obj: u32) {
         lists[class] = raw;
         return;
     }
+    free_uncached(raw, total);
+}
+
+#[inline(never)]
+fn free_uncached(raw: u32, total: usize) {
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
 }

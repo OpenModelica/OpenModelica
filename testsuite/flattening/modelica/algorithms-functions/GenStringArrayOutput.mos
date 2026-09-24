@@ -1,0 +1,28 @@
+// name: GenStringArrayOutput
+// keywords: function, -d=gen, String
+// status: correct
+//
+// A compiled function with String and String[:] inputs and outputs.
+
+setCommandLineOptions("-d=noevalfunc,gen"); getErrorString();
+loadString("
+function GenStringArrayOutput
+  input String s;
+  input String a[2];
+  output String r;
+  output String b[2];
+algorithm
+  r := s + \"|\" + a[1] + a[2];
+  b := {a[2] + s, \"x\" + a[1]};
+end GenStringArrayOutput;
+"); getErrorString();
+GenStringArrayOutput("hello", {"A", "BC"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ("hello|ABC", {"BChello", "xA"})
+// ""
+// endResult

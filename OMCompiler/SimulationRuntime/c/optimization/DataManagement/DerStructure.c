@@ -252,7 +252,10 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
         }
       }
       /**********************/
+      /* The optimizer lends its own seed vectors from here on; clear this so
+         freeing the Jacobian does not free it a second time. */
       free(data->simulationInfo->analyticJacobians[h_index].seedVars);
+      data->simulationInfo->analyticJacobians[h_index].seedVars = NULL;
     }
   }
 

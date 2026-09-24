@@ -74,6 +74,7 @@ pub(super) fn build_sim_model(
     fmi_solver_flags: &str,
 ) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
+    let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
@@ -1898,7 +1899,7 @@ pub(super) fn lin_system_nnz(lsystem: &SimCode::LinearSystem) -> usize {
 pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
     SimCtx {
         data_local: 0,
-        vars: var_map.vars.clone(),
+        vars: SlotMap::new(var_map.vars.clone()),
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),

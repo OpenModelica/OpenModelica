@@ -1904,10 +1904,12 @@ fn hash_inputs(runtime_dir: &Path, extra_dirs: &[PathBuf]) -> (String, Vec<PathB
         println!("cargo:rerun-if-changed={}", dir.join("src").display());
         collect_files(&dir.join("src"), &mut files);
         let manifest = dir.join("Cargo.toml");
-        // `build.rs` too: it picks the archives and the cfgs, and is not in `src`.
-        for m in ["Cargo.toml", "Cargo.lock", "build.rs"] {
+        // `build.rs` too: it picks the archives and the cfgs, and is not in `src`;
+        // `.cargo/config.toml` holds the crate's rustflags.
+        for m in ["Cargo.toml", "Cargo.lock", "build.rs", ".cargo/config.toml"] {
             let p = dir.join(m);
             if p.exists() {
+                println!("cargo:rerun-if-changed={}", p.display());
                 files.push(p);
             }
         }

@@ -13,6 +13,9 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.FourFlows, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
+readFile("NewDataReconciliationSimpleTests.FourFlows_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
@@ -262,5 +265,12 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
+// ""
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// Q4,2,2.04897,1.91,1.22035,TRUE,0.03333,
+// Q3,0.95,1.02449,1.91,0.610173,TRUE,0.0411544,
+// Q2,1.1,1.02449,1.91,0.610173,TRUE,0.0417225,
+// Q1,2.1,2.04897,1.96,1.22035,TRUE,0.0332704,
+// "
 // ""
 // endResult

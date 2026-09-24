@@ -139,10 +139,10 @@ pub(crate) fn protected<F: FnMut()>(
     let rc = unsafe {
         omr_protected(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data, stage)
     };
-    rc != -1
+    rc != -1 && !error_raised(thread_data)
 }
 
-/// C's `MMC_TRY_INTERNAL(globalJumpBuffer)`: run `f` with `threadData`'s global
+/// C's `OMC_TRY_INTERNAL(globalJumpBuffer)`: run `f` with `threadData`'s global
 /// jump buffer pointed here. `false` when it was taken.
 pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f: F) -> bool {
     unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
@@ -151,7 +151,13 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
     let rc = unsafe {
         omr_protected_global(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data)
     };
-    rc != -1
+    rc != -1 && !error_raised(thread_data)
+}
+
+/// Generated code returns a raised error (`OMC_ERROR_RAISE`) rather than
+/// jumping, so a completed region may still have failed; consume it here.
+fn error_raised(thread_data: *mut threadData_t) -> bool {
+    !thread_data.is_null() && unsafe { omc_error_take(thread_data) } != 0
 }
 
 /// src/shim.c, which owns the two things Rust cannot express.
@@ -167,6 +173,9 @@ unsafe extern "C" {
         ctx: *mut c_void,
         thread_data: *mut threadData_t,
     ) -> c_int;
+    /// `util/omc_error.h`: whether an error was raised, clearing it. The mirror
+    /// stops at `parent`, so the field itself is out of reach here.
+    fn omc_error_take(threadData: *mut threadData_t) -> c_int;
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.

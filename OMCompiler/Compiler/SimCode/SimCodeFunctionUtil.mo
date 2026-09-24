@@ -205,6 +205,18 @@ algorithm
   end match;
 end buildCrefExpFromSubs;
 
+public function padAsubSubscripts
+"Used by templates: the subscripts of an ASUB of exp, with a whole-dimension
+ subscript for each trailing dimension they leave out."
+  input DAE.Exp exp;
+  input list<DAE.Subscript> subs;
+  output list<DAE.Subscript> outSubs;
+protected
+  Integer n = listLength(Expression.arrayDimension(Expression.typeof(exp))) - listLength(subs);
+algorithm
+  outSubs := if n > 0 then listAppend(subs, List.fill(DAE.WHOLEDIM(), n)) else subs;
+end padAsubSubscripts;
+
 public function incrementInt
 "Used by templates to create new integers that are increments of another."
   input Integer inInt;
@@ -527,6 +539,7 @@ algorithm
 
   collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);
   collectRecDeclsFromTypes(metarecordTypes, recDeclsMap);
+  addRecordDeclsForExtraConstructors(recDeclsMap);
 
   recordDecls := UnorderedMap.valueList(recDeclsMap);
   recordDecls := List.sort(recordDecls, orderRecordDecls);
@@ -537,6 +550,37 @@ algorithm
   g := Graph.buildGraph(recordDecls, getRecordDependencies, recordDecls);
   (recordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
 end elaborateFunctions;
+
+protected function addRecordDeclsForExtraConstructors
+  "An extra constructor builds a struct of its record type, which is otherwise
+   only declared where the record is used with its own defaults. Added after
+   collecting, so that such a use always provides the declaration."
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+algorithm
+  for decl in UnorderedMap.valueList(recDeclsMap) loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() guard not UnorderedMap.contains(decl.name, recDeclsMap)
+        algorithm
+          UnorderedMap.add(decl.name, SimCodeFunction.RECORD_DECL_FULL(decl.name, NONE(), decl.defPath,
+            list(variableWithoutBinding(v) for v in decl.variables), decl.usedExternally), recDeclsMap);
+        then ();
+      else ();
+    end match;
+  end for;
+end addRecordDeclsForExtraConstructors;
+
+protected function variableWithoutBinding
+  input output SimCodeFunction.Variable var;
+algorithm
+  () := match var
+    case SimCodeFunction.VARIABLE()
+      algorithm
+        var.value := NONE();
+        var.bind_from_outside := false;
+      then ();
+    else ();
+  end match;
+end variableWithoutBinding;
 
 protected function getRecordDependencies
   input SimCodeFunction.RecordDeclaration decl;
@@ -1620,7 +1664,7 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
-      Boolean is_default, usedExternally, bool1;
+      Boolean is_default, usedExternally, bool1, changed;
 
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, usedExternally = usedExternally)
       algorithm
@@ -1633,9 +1677,10 @@ algorithm
           // If it already exists check if we need to update it.
           if isSome(optRecDecl) then
             SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
+            (vars, changed) := addMissingDefaults(vars, varlst);
 
-            if usedExternally and not bool1 then
-              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, true);
+            if changed or (usedExternally and not bool1) then
+              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally or bool1);
               UnorderedMap.add(sname, recDecl, recDeclsMap);
             end if;
           // Add it if it does not exist.
@@ -1652,16 +1697,8 @@ algorithm
           // Add it if does not exist. Otherwise do nothing.
           if isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars, path, usedExternally);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
-          end if;
-          // Also ensure the struct type itself is declared. Without this, sizeof(name) and
-          // function return types using 'name' produce "unknown type name" C errors, because
-          // RECORD_DECL_ADD_CONSTRCTOR does not emit a typedef or struct for the base record.
-          if Flags.getConfigBool(Flags.NEW_BACKEND) and isNone(UnorderedMap.get(name, recDeclsMap)) then
-            vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars, usedExternally);
-            UnorderedMap.add(name, recDecl, recDeclsMap);
             collectRecDeclsFromTypesVars(varlst, recDeclsMap);
           end if;
         end if;
@@ -1683,6 +1720,40 @@ algorithm
 
   end match;
 end collectRecDeclsFromType;
+
+protected function addMissingDefaults
+  "Not every type of a record carries the defaults of its fields, so the
+   declaration takes each missing default from the next type that has it."
+  input list<SimCodeFunction.Variable> inVars;
+  input list<DAE.Var> typeVars;
+  output list<SimCodeFunction.Variable> vars = {};
+  output Boolean changed = false;
+protected
+  Option<DAE.Exp> value;
+  SimCodeFunction.Variable var;
+algorithm
+  for v in inVars loop
+    var := v;
+    () := match var
+      case SimCodeFunction.VARIABLE(value = NONE())
+        algorithm
+          for tv in typeVars loop
+            if stringEq(tv.name, ComponentReferenceBasics.crefFirstIdent(var.name)) then
+              value := checkSourceAndGetBindingExp(tv.binding);
+              if isSome(value) then
+                var.value := value;
+                changed := true;
+              end if;
+              break;
+            end if;
+          end for;
+        then ();
+      else ();
+    end match;
+    vars := var :: vars;
+  end for;
+  vars := listReverse(vars);
+end addMissingDefaults;
 
 protected function typesVarNoBinding
   input DAE.Var inTypesVar;
@@ -1825,9 +1896,11 @@ protected function collectRecDeclsFromTypesVars
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for recTyVar in inRecordTypeVars loop
-    () := match recTyVar
-      case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
-        collectRecDeclsFromType(recTyVar.ty, recDeclsMap);
+    () := match Types.arrayElementType(recTyVar.ty)
+      local
+        DAE.Type ty;
+      case ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) algorithm
+        collectRecDeclsFromType(ty, recDeclsMap);
       then ();
 
       else ();
@@ -2828,6 +2901,8 @@ algorithm
 end aliasRecordDeclarations2;
 
 protected function variableString
+  "The member as it is laid out in the struct: an array member is an array
+   descriptor whatever its dimension sizes."
   input SimCodeFunction.Variable var;
   output String str;
 algorithm
@@ -2836,7 +2911,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
+      then TypesDump.unparseType(Types.arrayElementType(ty)) + "[" + intString(Types.numberOfDimensions(ty)) + "] " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;
@@ -2869,7 +2944,9 @@ algorithm
   if Flags.getConfigBool(Flags.PARMODAUTO) and not Config.simCodeRustRuntime() then
     ldflags := " " + Autoconf.parModelicaAutoLibs + " " + ldflags;
   end if;
-  rtlibs := if isFunction then Autoconf.ldflags_runtime
+  // A MetaModelica function library is dlopened into omc and hands values back
+  // through omc's own vocabulary, so it links the runtime omc links.
+  rtlibs := if isFunction then (if Config.acceptMetaModelicaGrammar() then Autoconf.ldflags_runtime_mmc else Autoconf.ldflags_runtime)
             elseif isFMU then Autoconf.ldflags_runtime_fmu
             elseif Config.simCodeRustRuntime() then Autoconf.ldflags_runtime_sim_rust
             else Autoconf.ldflags_runtime_sim;

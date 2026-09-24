@@ -190,6 +190,10 @@ option(RUST_OMC_OMSHELL_CLIENTS
   "Build the desktop egui + dioxus/Blitz OMShell clients. Off by default: each is a separate cargo feature resolution and rebuilds every compiler crate."
   OFF)
 
+# The target always exists (`--target rust_omgendoc`); this adds it to ALL and
+# to install.
+option(RUST_OMC_OMGENDOC "Build and install omgendoc, the library-documentation generator." OFF)
+
 # cargo target/ lives in the build tree, not the source crate tree.
 set(RUST_OMC_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-target
     CACHE PATH "Directory for cargo's target/ output of the Rust omc build.")
@@ -800,6 +804,7 @@ set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
 file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_RUST}\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
+     "OMC_RT_LDFLAGS_GENERATED_CODE_MMC=${RT_LDFLAGS_GENERATED_CODE_MMC}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST=${RT_LDFLAGS_GENERATED_CODE_SIM_RUST}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
@@ -1238,9 +1243,9 @@ function(omc_rust_setup_codegen)
     # Strip unused `import X;` from the Susan-generated *.mo before transpiling:
     # mmtorust lowers every import to a `use crate::X`, so an unused import
     # becomes a `use` of a crate the target does not depend on (e.g.
-    # `openmodelica_backend::SimCodeUtil` in openmodelica_codegen_xml). The C
-    # build runs the same boot/find-unused-import.sh. It exits non-zero when it
-    # removes something, so `; true` keeps the build going.
+    # `openmodelica_backend::SimCodeUtil` in openmodelica_codegen_xml). CI runs
+    # the same boot/find-unused-import.sh over the hand-written sources. It exits
+    # non-zero when it removes something, so `; true` keeps the build going.
     COMMAND bash -c "\"$0\" \"$@\" ; true" ${CMAKE_CURRENT_SOURCE_DIR}/boot/find-unused-import.sh ${TPL_OUTPUT_MO_FILES}
     COMMAND ${CMAKE_COMMAND} -E env OMC_SCRIPTING_API_QT_OUT=${OMC_SCRIPTING_API_QT_DIR}
             ${MMTORUST_BIN} --sources ${RUST_SOURCES_FILE}
@@ -1538,15 +1543,22 @@ function(omc_rust_setup_codegen)
   # MAKEFLAGS is cleared because tikv-jemalloc-sys prepends its own flags to it
   # before running autotools make, which leaves make's dash-less leading option
   # word where the nested make reads it as a goal.
-  add_custom_target(rust_omgendoc ALL
+  if(RUST_OMC_OMGENDOC)
+    set(_omgendoc_all ALL)
+  else()
+    set(_omgendoc_all "")
+  endif()
+  add_custom_target(rust_omgendoc ${_omgendoc_all}
     WORKING_DIRECTORY ${RUST_OMC_DIR}
     COMMAND ${CMAKE_COMMAND} -E env --unset=MAKEFLAGS
             ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica_gendoc
     DEPENDS rust_codegen
     COMMENT "Rust: building omgendoc (${RUST_OMC_PROFILE})"
     VERBATIM)
-  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
-          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+  if(RUST_OMC_OMGENDOC)
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+  endif()
 
   set(_omc_builtin_mo
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
@@ -1558,11 +1570,13 @@ function(omc_rust_setup_codegen)
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/PDEModelicaBuiltin.mo)
   install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omc)
 
-  # omgendoc deduces OPENMODELICAHOME from its own path, so its component
-  # carries the builtins too and needs no omc built beside it.
-  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
-          DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omgendoc)
-  install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omgendoc)
+  if(RUST_OMC_OMGENDOC)
+    # omgendoc deduces OPENMODELICAHOME from its own path, so its component
+    # carries the builtins too and needs no omc built beside it.
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/omgendoc${RUST_OMC_EXE_SUFFIX}
+            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omgendoc)
+    install(FILES ${_omc_builtin_mo} DESTINATION lib/omc COMPONENT omgendoc)
+  endif()
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/ COMPONENT omc)
   endif() # NOT OM_OMC_WASM

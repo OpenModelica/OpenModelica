@@ -567,6 +567,12 @@ public
         (solved_eqn, status) := solveMultiRecordStrongComponent(eqn, var_slices, funcMap);
       then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), status);
 
+      // for-equation of a tuple, e.g. (a[i], b[i]) = f(x[i]), solved for all elements of the tuple
+      case Equation.FOR_EQUATION(body = {solved_eqn as Equation.RECORD_EQUATION()}) algorithm
+        (solved_eqn, status) := solveMultiRecordStrongComponent(solved_eqn, var_slices, funcMap, true);
+        eqn.body := {solved_eqn};
+      then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), status);
+
       // dummy equation implies removed equation (occurs only in simulation systems)
       case Equation.DUMMY_EQUATION() then (eqn_slice, Status.EXPLICIT);
 
@@ -582,6 +588,7 @@ public
     output Equation solved_eqn = eqn;
     input UnorderedMap<Path, Function> funcMap;
     output Status status = Status.UNPROCESSED;
+    input Boolean inFor = false "true if the equation is the body of a for-equation, its tuple elements are iterated slices of the vars";
   protected
     list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
     Expression lhs = Util.getOption(Equation.getLHS(eqn));
@@ -594,8 +601,8 @@ public
         Expression exp;
 
       // handle tuples
-      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (solved_eqn, Status.EXPLICIT);
-      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) algorithm
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars, inFor)) then (solved_eqn, Status.EXPLICIT);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars, inFor)) algorithm
         solved_eqn := Equation.setRHS(solved_eqn, lhs);
         solved_eqn := Equation.setLHS(solved_eqn, rhs);
       then (solved_eqn, Status.EXPLICIT);
@@ -1661,6 +1668,7 @@ protected
     "checks if the tuple expression exactly represents the variables we need to solve for"
     input list<Expression> tuple_exps;
     input list<Pointer<Variable>> vars;
+    input Boolean inFor = false "elements are one iteration of the (sliced) variables";
     output Boolean b = false;
   protected
     list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
@@ -1686,7 +1694,7 @@ protected
           // a subscripted element that covers the whole variable, e.g. x[1] for Real[1] x
           case Expression.CREF() algorithm
             stripped := ComponentRef.stripSubscriptsAll(exp.cref);
-            if UnorderedMap.contains(stripped, map) and UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp)) then
+            if UnorderedMap.contains(stripped, map) and (inFor or UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp))) then
               UnorderedMap.add(stripped, true, map);
             else
               return;

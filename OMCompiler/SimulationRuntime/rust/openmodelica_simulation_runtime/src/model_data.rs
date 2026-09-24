@@ -255,16 +255,15 @@ pub struct AliasMaps {
 }
 
 unsafe extern "C" {
-    // The interned MMC strings `libOpenModelicaRuntimeC` keeps for the empty string
-    // and every one-byte string, which C's own constructors return instead of
-    // allocating (`util/modelica_string_lit.h`).
-    static mmc_emptystring: *mut c_void;
-    static mmc_strings_len1: [*mut c_void; 256];
+    /// `util/omc_string.h`. Immortal, so the attribute slots this fills can be
+    /// released by the runtime like any other without freeing anything.
+    fn omc_string_new_persist(str: *const c_char) -> *mut c_void;
 }
 
-/// C's `mmc_mk_scon_persist` (`util/modelica_string.h`), a `static inline` with no
-/// symbol to call: an `mmc_string` -- header word then the bytes and their NUL --
-/// whose tagged pointer is a `modelica_string`. Never freed, as "persist" says.
+/// The byte offset of an `omc_string`'s data: it points at `struct omc_string_s`,
+/// whose `mmc_uint_t len` comes before the bytes (`util/omc_string.h`).
+const OMC_STRING_DATA: usize = core::mem::size_of::<usize>();
+
 /// A `const char*` the generated code owns, as a `String`.
 pub fn cstr(p: *const c_char) -> String {
     if p.is_null() {
@@ -273,37 +272,20 @@ pub fn cstr(p: *const c_char) -> String {
     unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
 }
 
-/// `MMC_STRINGDATA`, the inverse of [`mk_scon_persist`]: the bytes behind an
-/// `mmc_string`'s header word.
+/// The inverse of [`mk_scon_persist`]: the bytes of an `omc_string`.
 pub fn string_value(p: *mut c_void) -> String {
     if p.is_null() {
         return String::new();
     }
-    let data = unsafe { (p as *mut u8).sub(3).add(core::mem::size_of::<usize>()) };
+    let data = unsafe { (p as *mut u8).add(OMC_STRING_DATA) };
     unsafe { core::ffi::CStr::from_ptr(data as *const c_char) }.to_string_lossy().into_owned()
 }
 
 pub fn mk_scon_persist(s: &str) -> *mut c_void {
-    let n = s.len();
-    if n == 0 {
-        return unsafe { mmc_emptystring };
-    }
-    if n == 1 {
-        return unsafe { mmc_strings_len1[s.as_bytes()[0] as usize] };
-    }
-    const W: usize = core::mem::size_of::<usize>();
-    let log2_w = W.trailing_zeros() as usize;
-    let header = (n << 3) + ((1 << (3 + log2_w)) + 5);
-    let words = (header >> (3 + log2_w)) + 1;
-    let p = unsafe { libc::malloc(words * W) } as *mut u8;
-    assert!(!p.is_null(), "out of memory building a String start value");
-    unsafe {
-        *(p as *mut usize) = header;
-        core::ptr::copy_nonoverlapping(s.as_ptr(), p.add(W), n);
-        *p.add(W + n) = 0;
-        // `MMC_TAGPTR`: RML-style tagged pointers offset a heap object by 3.
-        p.add(3) as *mut c_void
-    }
+    // A NUL would end the string for every C reader of it anyway.
+    let bytes = &s.as_bytes()[..s.as_bytes().iter().position(|&b| b == 0).unwrap_or(s.len())];
+    let c = std::ffi::CString::new(bytes).expect("no interior NUL left");
+    unsafe { omc_string_new_persist(c.as_ptr()) }
 }
 
 /// C's `doOverride`: `-override` / `-overrideFile` rewrite the `start` attribute

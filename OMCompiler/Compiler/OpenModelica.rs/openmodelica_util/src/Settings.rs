@@ -205,8 +205,7 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     //   2. the prefix of the library this code is in, as C deduces it;
     //   3. the install root (the directory above the executable's `bin`/`lib`);
     //   4. `$OPENMODELICAHOME` — the dev-workflow fallback for running the
-    //      port straight out of `target/debug` (also what the C
-    //      OMC_BOOTSTRAPPING build reads);
+    //      port straight out of `target/debug`;
     //   5. the `strip_bin_path` prefix of the executable as a last resort.
     {
         let state = STATE.lock().unwrap();

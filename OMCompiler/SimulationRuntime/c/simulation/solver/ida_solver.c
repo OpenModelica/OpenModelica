@@ -896,7 +896,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
 
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
 
@@ -1041,10 +1041,11 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
       }
     }
 
-  } while(!finished);
+  } while(!finished && !OMC_ERROR_RAISED());
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
   threadData->currentErrorStage = saveJumpState;
 
@@ -1190,7 +1191,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /* if sensitivity mode update also bound parameters*/
@@ -1275,9 +1276,9 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   }
 
   printVector(OMC_LOG_DASSL_STATES, "delta", delta, idaData->N, time);
-  success = 1;
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   if (!success) {

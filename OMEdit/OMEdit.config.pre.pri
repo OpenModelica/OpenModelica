@@ -56,6 +56,9 @@ CONFIG += warn_on
 DEFINES += OM_HAVE_PTHREADS
 # The qmake build keeps the C result readers; the cmake build links libomc_result.
 DEFINES += OM_LEGACY_RESULT_READERS
+# OMEdit builds omc's values, so it links libOpenModelicaRuntimeMMC and has to
+# say so before any header picks the counted allocator instead.
+DEFINES += OMC_METAMODELICA_RUNTIME=1
 
 # Build OMEdit against the Rust omc port (libOpenModelicaCompiler.so) in-process.
 # Enable by either setting OMEDIT_RUST_OMC=1 in the environment, or passing

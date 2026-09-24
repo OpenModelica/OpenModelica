@@ -47,12 +47,13 @@ target_link_libraries(OMPlotLib PUBLIC Qt6::Svg)
 target_link_libraries(OMPlotLib PUBLIC Qt6::Core5Compat)
 
 target_link_libraries(OMPlotLib PUBLIC omqwt)
-target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
-# Result files: the Rust omc_result library (also opens .arrow), or the C readers.
+# Result files: the Rust omc_result library (also opens .arrow), or the C
+# readers from the MetaModelica runtime, the one omc brings into the process.
 # PUBLIC, so OMEdit (which links OMPlotLib) follows the same choice.
 if(OM_RUST_RESULT_READERS)
   target_link_libraries(OMPlotLib PUBLIC omc::result)
 else()
+  target_link_libraries(OMPlotLib PUBLIC omc::mmc::runtime)
   target_compile_definitions(OMPlotLib PUBLIC OM_LEGACY_RESULT_READERS)
 endif()
 

@@ -1449,6 +1449,7 @@ protected
   protected
     Equation eqn = Pointer.access(eqn_ptr);
     Equation body_eqn;
+    Algorithm alg;
   algorithm
     eqn := match eqn
       case Equation.WHEN_EQUATION() algorithm
@@ -1460,6 +1461,12 @@ protected
         eqn.body := {body_eqn};
       then eqn;
 
+      // when statements of algorithms need a plain condition variable for the edge detection
+      case Equation.ALGORITHM(alg = alg) algorithm
+        alg.statements := list(simplifyWhenConditionStmt(stmt, idx, cnt, vars_ptr, eqns_ptr) for stmt in alg.statements);
+        eqn.alg := Algorithm.setInputsOutputs(alg);
+      then eqn;
+
       else eqn;
     end match;
 
@@ -1467,6 +1474,43 @@ protected
       Pointer.update(eqn_ptr, eqn);
     end if;
   end simplifyWhenConditionEqn;
+
+  function simplifyWhenConditionStmt
+    "Replaces the non-CREF conditions of when statements, also the ones nested in if statements.
+    Loops are skipped, since the condition can depend on the iterator."
+    input output Statement stmt;
+    input Pointer<Integer> idx;
+    input Pointer<Integer> cnt;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+  algorithm
+    stmt := match stmt
+      local
+        list<tuple<Expression, list<Statement>>> branches = {};
+        Expression cond;
+        list<Statement> body;
+
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          (cond, body) := branch;
+          cond := simplifyWhenConditionExp(cond, idx, cnt, vars_ptr, eqns_ptr);
+          branches := (cond, body) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          (cond, body) := branch;
+          body := list(simplifyWhenConditionStmt(s, idx, cnt, vars_ptr, eqns_ptr) for s in body);
+          branches := (cond, body) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      else stmt;
+    end match;
+  end simplifyWhenConditionStmt;
 
   function simplifyWhenConditionBody
     "Recursively walks a WhenEquationBody chain and extracts any non-CREF condition."

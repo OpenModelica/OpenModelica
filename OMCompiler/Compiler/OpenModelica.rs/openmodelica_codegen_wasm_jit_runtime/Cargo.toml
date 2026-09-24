@@ -63,8 +63,10 @@ openmodelica_solvers = { path = "../../../SimulationRuntime/rust/openmodelica_so
 openmodelica_nls = { path = "../../../SimulationRuntime/rust/openmodelica_nls", default-features = false }
 dlmalloc = { version = "0.2.14", features = ["global"] }
 # Self-contained (in-wasm) `pow` for element-wise array power, so the JIT loop
-# never crosses the wasm↔host boundary per element.
-libm = "0.2"
+# never crosses the wasm↔host boundary per element. `unstable-intrinsics` makes
+# `sqrt`, `floor`, `ceil`, `trunc` and `fabs` the wasm instructions, for every
+# crate here that calls libm (minpack, openmodelica_nls, daskr).
+libm = { version = "0.2", features = ["unstable-intrinsics"] }
 # The dense LU/solve behind `SES_LINEAR`, in-wasm so a solve never crosses the
 # host boundary. The same crate omc itself calls, so a linear system gets
 # LAPACK's pivot order and `INFO` whichever side factors it.

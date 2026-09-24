@@ -15689,24 +15689,54 @@ algorithm
   end match;
 end getSimCode;
 
+public function isSimulationCodegen
+  "Whether the templates are running for a simulation or an FMU rather than for
+   functions on their own. Only those set the SimCode structure, and only those
+   compile against the counted runtime, so it also answers which of the two
+   vocabularies the generated C is written in."
+  output Boolean simulation;
+protected
+  Option<SimCode.SimCode> ocode;
+algorithm
+  ocode := getGlobalRoot(Global.optionSimCode);
+  simulation := match ocode case SOME(_) then true; else false; end match;
+end isSimulationCodegen;
+
 public function isContiguousArrayCref
   "Whether the scalarized elements of an array cref occupy consecutive slots of
-   one variable array, so the C target may address them through the first one."
+   one variable array, so the C target may address them through the first one.
+   A Jacobian's own variables only if its table has the array itself, as the
+   new backend's does."
   input DAE.ComponentRef inCref;
+  input SimCodeFunction.Context context;
   output Boolean outContiguous = true;
 protected
   SimCode.SimCode simCode = getSimCode();
   SimCodeVar.SimVar v;
   Integer next = -1;
-  Boolean param, firstParam = false;
+  Boolean param, firstParam = false, jacVar;
+  list<DAE.ComponentRef> crefs;
 algorithm
   if not simCode.scalarized then
     return;
   end if;
-  for cr in ComponentReference.expandCref(inCref, true) loop
+  crefs := ComponentReference.expandCref(inCref, true);
+  (jacVar, outContiguous) := match (context, crefs)
+    local
+      HashTableCrefSimVar.HashTable jacHT;
+      DAE.ComponentRef cr;
+    case (SimCodeFunction.JACOBIAN_CONTEXT(jacHT = SOME(jacHT)), cr :: _)
+      guard isJacobianColumnCref(cr) or List.any(crefs, function BaseHashTable.hasKey(hashTable = jacHT))
+      then (true, BaseHashTable.hasKey(ComponentReference.crefStripSubs(inCref), jacHT));
+    else (false, true);
+  end match;
+  if jacVar then
+    return;
+  end if;
+  for cr in crefs loop
     v := cref2simvar(cr, simCode);
-    // A cref the SimCode does not know is addressed through some other value
-    // array (a Jacobian's own), where the elements are consecutive again.
+    // A cref the SimCode does not know is a whole-array Jacobian seed,
+    // addressed through the seed's own value array.
     if v.index < 0 then
       return;
     end if;
@@ -15725,6 +15755,22 @@ algorithm
     next := v.index + 1;
   end for;
 end isContiguousArrayCref;
+
+public function isJacobianColumnCref
+  "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
+   Jacobian only has the elements that depend on the seeds; the others are zero."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    local
+      String id, last;
+    case DAE.CREF_QUAL(ident = id, componentRef = DAE.CREF_IDENT(ident = last))
+      then StringUtil.startsWith(id, DAE.partialDerivativeNamePrefix) and StringUtil.startsWith(last, "dummyVar");
+    case DAE.CREF_QUAL() then isJacobianColumnCref(cr.componentRef);
+    else false;
+  end match;
+end isJacobianColumnCref;
 
 public function cref2simvar
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
@@ -15866,10 +15912,12 @@ end localCref2Index;
 public function codegenExpSanityCheck "Handle some things that Susan cannot handle:
 * Expand simulation context arrays that contain variables stored in different locations...
 * We could move collapsing arrays here since it should be safer to do so when we can lookup which index a variable corresponds to...
+* Drop the boxing around calls through a function value (unboxFunctionReferenceCall).
 "
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
 algorithm
+  e := unboxFunctionReferenceCall(e);
   if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
   end if;
@@ -15900,6 +15948,108 @@ algorithm
     else e;
   end match;
 end codegenExpSanityCheck;
+
+public function unboxFunctionReferenceCall
+  "Drops the boxing around a call through a function value: C calls it with the
+   unboxed signature of the function it refers to. MetaModelica keeps it, since
+   a polymorphic function needs it and a closure there can outlive its frame."
+  input output DAE.Exp exp;
+protected
+  DAE.Exp e;
+  DAE.CallAttributes attr;
+algorithm
+  if Config.acceptMetaModelicaGrammar() then
+    return;
+  end if;
+
+  exp := match exp
+    case DAE.UNBOX(exp = e as DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true)))
+      then unboxFunctionReferenceCall(e);
+    case DAE.UNBOX(exp = e as DAE.TSUB(exp = DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true))))
+      then unboxFunctionReferenceCall(e);
+    case DAE.TSUB(exp = e as DAE.CALL(attr = DAE.CALL_ATTR(isFunctionPointerCall = true)))
+      algorithm
+        exp.exp := unboxFunctionReferenceCall(e);
+        exp.ty := Types.unboxedType(exp.ty);
+      then exp;
+    case DAE.CALL(attr = attr as DAE.CALL_ATTR(isFunctionPointerCall = true))
+      algorithm
+        exp.expLst := list(unboxArgument(a) for a in exp.expLst);
+        attr.ty := unboxResultType(attr.ty);
+        exp.attr := attr;
+      then exp;
+    case DAE.PARTEVALFUNCTION()
+      algorithm
+        exp.expList := list(unboxArgument(a) for a in exp.expList);
+        exp.ty := unboxFunctionReferenceType(exp.ty);
+        exp.origType := unboxFunctionReferenceType(exp.origType);
+      then exp;
+    else exp;
+  end match;
+end unboxFunctionReferenceCall;
+
+protected function unboxArgument
+  "A boxed record literal is a METARECORDCALL with boxed fields."
+  input output DAE.Exp exp;
+protected
+  DAE.Exp e;
+  list<DAE.Exp> args;
+algorithm
+  exp := match exp
+    case DAE.BOX() then unboxFunctionReferenceCall(exp.exp);
+    case DAE.METARECORDCALL(index = -1)
+      algorithm
+        args := list(unboxArgument(a) for a in exp.args);
+      then
+        DAE.RECORD(exp.path, args, exp.fieldNames,
+          DAE.T_COMPLEX(ClassInf.RECORD(exp.path),
+            list(DAE.TYPES_VAR(n, DAE.dummyAttrVar, Expression.typeof(a), DAE.UNBOUND(), false, NONE())
+              threaded for a in args, n in exp.fieldNames),
+            NONE(), false));
+    case DAE.SHARED_LITERAL(exp = e as DAE.BOX()) then unboxArgument(e);
+    case DAE.SHARED_LITERAL(exp = e as DAE.METARECORDCALL(index = -1)) then unboxArgument(e);
+    else unboxFunctionReferenceCall(exp);
+  end match;
+end unboxArgument;
+
+protected function unboxResultType
+  input output DAE.Type ty;
+algorithm
+  ty := match ty
+    case DAE.T_TUPLE()
+      algorithm
+        ty.types := list(Types.unboxedType(t) for t in ty.types);
+      then ty;
+    else Types.unboxedType(ty);
+  end match;
+end unboxResultType;
+
+protected function unboxFunctionReferenceType
+  input output DAE.Type ty;
+protected
+  DAE.Type fty;
+algorithm
+  ty := match ty
+    case DAE.T_FUNCTION_REFERENCE_VAR(functionType = fty as DAE.T_FUNCTION())
+      algorithm
+        fty.funcArg := list(unboxFuncArg(a) for a in fty.funcArg);
+        fty.funcResultType := unboxResultType(fty.funcResultType);
+        ty.functionType := fty;
+      then ty;
+    else ty;
+  end match;
+end unboxFunctionReferenceType;
+
+protected function unboxFuncArg
+  input output DAE.FuncArg arg;
+algorithm
+  arg := match arg
+    case DAE.FUNCARG()
+      algorithm
+        arg.ty := Types.unboxedType(arg.ty);
+      then arg;
+  end match;
+end unboxFuncArg;
 
 public function absoluteClockIdxForBaseClock
   input Integer baseClockIdx; // one-based
