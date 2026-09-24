@@ -1905,7 +1905,6 @@ void testMisc() {
   testUnitC()
   unstash 'omc-clang'
   partest(1, 1, false, '-j1 -parmodexp')
-  sh label: 'MetaModelicaDev error messages', script: 'make -C testsuite/metamodelica/MetaModelicaDev test-error'
   makeLibsAndCache()
   // The translator loads the compiler sources by path, Susan's *.mo included.
   withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {

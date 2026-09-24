@@ -18,9 +18,6 @@
 #
 # NOTE: This script has been tested on Linux, Windows and OSX so far, and will
 #       probably work on all other platforms.
-#
-# TODO: MetaModelicaDev in meta is not run yet, since those tests are organized
-#       a bit differently.
 
 use strict;
 use warnings;
