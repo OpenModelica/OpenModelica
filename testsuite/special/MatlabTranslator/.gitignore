@@ -1,0 +1,5 @@
+Main*.c
+Main*.o
+Main*.libs
+Main*.makefile
+Main*.h

@@ -450,13 +450,15 @@ the normal config: `cpack --config build_cmake/CPackConfig.cmake -G TXZ`.
 ## 9. Code Coverage
 
 `-DOM_ENABLE_COVERAGE=ON` builds OpenModelica with [gcov] instrumentation and adds targets
-that turn the collected counters into a report. Three things are covered:
+that turn the collected counters into a report. These are covered:
 
-| Component    | Sources reported                    |
-| ------------ | ----------------------------------- |
-| The compiler | `OMCompiler/Compiler/**.mo`         |
-| C runtime    | `OMCompiler/SimulationRuntime/c/`   |
-| C++ runtime  | `OMCompiler/SimulationRuntime/cpp/` |
+| Component           | Sources reported                                        |
+| ------------------- | ------------------------------------------------------- |
+| The compiler        | `OMCompiler/Compiler/**.mo`                             |
+| C runtime           | `OMCompiler/SimulationRuntime/c/`                       |
+| C++ runtime         | `OMCompiler/SimulationRuntime/cpp/`                     |
+| FMU export          | `OMCompiler/SimulationRuntime/fmi/export/openmodelica/` |
+| OMEdit              | `OMEdit/OMEditLIB/`                                     |
 
 You need GCC or Clang, and [gcovr] (`pip install gcovr`, or your package manager).
 
@@ -504,6 +506,27 @@ MetaModelica, which lives in the build tree: `-fprofile-abs-path` on GCC, and a
 `OM_COVERAGE_CLANG_COMPILATION_DIR`). Without it gcov cannot find the generated
 `.mo` from the object directory and the templates silently drop out.
 
+### FMU export sources
+
+`fmu2_model_interface.c`, `fmu_read_flags.c` and the other FMU export sources are not
+compiled by the OpenModelica build at all. omc copies them into every FMU it exports
+(`<model>.fmutmp/sources/fmi-export/`), and the FMU's own CMake project compiles them there.
+A coverage build installs that project's template (`CMakeLists.txt.in`) with
+`fmi/export/buildproject/Coverage.cmake.in` appended, which instruments them in every FMU.
+
+omc deletes the FMU's build directory once the FMU is packed, and the `.gcno` notes with it,
+so the notes and counters of each FMU build go to a directory of their own instead:
+`build_cmake/coverage-fmu/`, or `$OMC_COVERAGE_FMU_DIR` if that is set when the FMU is
+built. Only the build directory's own compiler is instrumented this way; a cross-compiled
+FMU, or one built with a different compiler, is left alone.
+
+The copies are gone by then too, so gcov could not read them back. Each is compiled
+with a `#line` naming its original in the source tree instead - the copies are the
+originals line for line (omc only swaps the header one `#include` pulls in) - so gcov
+reads and reports the originals, with the coverage of every exported FMU summed up. FMI
+1.0 is not covered: its interface (`fmu1_model_interface.c.inc`) is `#include`d into the
+generated model code.
+
 ### Running it
 
 Configure and build as usual, with coverage on:
@@ -541,6 +564,15 @@ cmake --build build_cmake --target coverage-report
 It prints a summary and writes `build_cmake/coverage/`: `index.html` (browsable, per-file
 and per-line) and `coverage.xml` (Cobertura, for tooling).
 
+`coverage-report` is `coverage-collect`, which gathers the counters into gcovr JSON
+tracefiles (`coverage.json`, `templates.json`), followed by the rendering `coverage-html`
+does. `coverage-html` renders the tracefiles listed in `OM_COVERAGE_TRACEFILES`, which is
+how coverage collected elsewhere - in another build, with another compiler - is merged
+into one report: collect in each build, copy the tracefiles into one place, and render
+with `-DOM_COVERAGE_TRACEFILES='/path/to/tracefiles/*.json'`. The paths in a tracefile
+are relative to the source tree, so the builds need not share a checkout, only the
+sources.
+
 ### Viewing the report
 
 ```sh
@@ -573,10 +605,14 @@ where opening the file directly would not. Otherwise just open
   `ModelicaConfig_gcc.inc`). Simulations that link the runtime _dynamically_ would not need
   it - libgcov is inside the shared library - but source FMUs link the static runtime, and
   without it they fail with undefined references to `__gcov_*` / `llvm_gcda_*`.
-- Jenkins does all of this on every PR, from the `testsuite-gcc` shard; see
-  `coverageReportStage()` in [.CI/common.groovy](.CI/common.groovy). That shard runs half of
-  the testsuite - the other half runs in the clang shard, which is not instrumented - so
-  CI's numbers cover roughly half the tests a full local run would.
+- Jenkins does all of this on every PR; see `coverageReportStage()` in
+  [.CI/common.groovy](.CI/common.groovy). Both the gcc and the clang build are
+  instrumented, so the report covers both testsuite shards (one per compiler), the
+  `testsuite-misc` stage (clang) and the OMEdit testsuite (clang). Each set of counters is
+  collected against the build that produced it, and the tracefiles are merged into one
+  report. Where gcc and clang disagree on which lines of a source are code at all, the
+  report holds the union of both, so such a line can show as uncovered although the other
+  compiler's tests ran it.
 
 [gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 [gcovr]: https://gcovr.com/

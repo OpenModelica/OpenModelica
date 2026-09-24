@@ -366,9 +366,8 @@ pipeline {
           }
         }
 
-        // The only shard that runs the coverage-instrumented CMake build: its
-        // counters become the coverage report in 'check-and-upload'. The clang
-        // shard below runs an uninstrumented build and records none.
+        // Both shards run coverage-instrumented builds, one gcc and one clang:
+        // their counters become the coverage report in 'check-and-upload'.
         stage('04 testsuite-gcc 1/2') {
           agent {
             node {
@@ -785,7 +784,8 @@ pipeline {
     }
     stage('check-and-upload') {
       parallel {
-        // Turns the coverage counters of the testsuite-gcc shard into a
+        // Turns the coverage counters of the testsuite-gcc and -clang shards,
+        // the testsuite-misc stage (clang) and the OMEdit testsuite into one
         // report. Unlike its neighbours it is not gated on !isPR: the point is
         // to get the number on every PR.
         stage('coverage-report') {
@@ -804,7 +804,9 @@ pipeline {
               // Enters the build image itself: which mounts it needs depends
               // on where the instrumented build ran, which it only learns
               // from the stash.
-              common.coverageReportStage(1)
+              common.coverageReportStage([
+                'gcc'  : ['omc-gcc-1'],
+                'clang': ['omc-clang-2', 'omc-clang-misc']])
             }
           }
         }
