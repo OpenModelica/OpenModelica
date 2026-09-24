@@ -44,7 +44,7 @@ pub(super) fn build_state_set_infos(
             .ok_or("CodegenWasmJit: state-set Jacobian seed columns are not a permutation")?;
 
         let mut result_offs = vec![u32::MAX; n_dummy as usize];
-        for sv in &jac_column_vars(jm) {
+        for sv in jac_column_vars(jm).iter() {
             let off = register(var_map, sv, &mut cursor)?;
             if matches!(sv.varKind, VarKind::JAC_VAR) {
                 let row = jac_result_row(sv)

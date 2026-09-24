@@ -74,6 +74,7 @@ pub(super) fn build_sim_model(
     fmi_solver_flags: &str,
 ) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
+    let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
