@@ -222,10 +222,9 @@ add_custom_command(
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
 
-# Autoconf holds the target's configuration, so it is always translated.
 foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES} ${OMC_MM_BACKEND_SOURCES})
     get_filename_component(file_name_no_ext ${OMC_MM_SOURCE} NAME_WLE)
-    if(OM_OMC_PREBUILT_C_SOURCES AND NOT file_name_no_ext STREQUAL "Autoconf")
+    if(OM_OMC_PREBUILT_C_SOURCES)
         list(APPEND OMC_C_SOURCE_FILES ${OM_OMC_PREBUILT_C_SOURCES}/${file_name_no_ext}.c
                                        ${OM_OMC_PREBUILT_C_SOURCES}/${file_name_no_ext}_records.c)
     else()
@@ -408,6 +407,12 @@ endif()
 # refresh the pre-translated C sources bomc is built from. Neither target is part
 # of 'all'. Needs the omc target above and the interfaces of this build.
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/bootstrap_sources.cmake)
+
+# Defines generate-msvc-c-sources, the compiler translated to C for a cross build
+# to MSVC. Not part of 'all' either.
+if(NOT OM_OMC_PREBUILT_C_SOURCES)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/msvc_sources.cmake)
+endif()
 
 
 ### INSTALLATION

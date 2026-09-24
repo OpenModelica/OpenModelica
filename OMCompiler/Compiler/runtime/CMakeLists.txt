@@ -248,4 +248,8 @@ if(NOT OMC_PARMODELICA_TBB_LINK_NAME)
 endif()
 set(PARMODELICAAUTO_LDFLAGS " -lParModelicaAuto -l${OMC_PARMODELICA_TBB_LINK_NAME} ")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+# Written into the source tree, which all build directories share. A build from
+# prebuilt sources does not read it, so it leaves the file alone.
+if(NOT OM_OMC_PREBUILT_C_SOURCES)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+endif()

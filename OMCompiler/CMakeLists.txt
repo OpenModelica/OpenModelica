@@ -77,12 +77,13 @@ omc_option(OM_OMC_ENABLE_RUST "Build the Rust (mmtorust) omc port instead of the
 # in place of bomc, which a cross build of the C omc cannot run.
 set(OM_OMC_HOST_EXECUTABLE "" CACHE FILEPATH "omc for the build host to translate the compiler sources with instead of bomc.")
 omc_add_to_report(OM_OMC_HOST_EXECUTABLE)
-# The compiler sources as translated to C by a native build of the same revision.
-# Only Autoconf, which is target-specific, is then translated here.
+# The compiler sources as translated to C for this target by a native build of
+# the same revision (for MSVC: its generate-msvc-c-sources target). Nothing is
+# then translated here.
 set(OM_OMC_PREBUILT_C_SOURCES "" CACHE PATH "Directory holding the translated compiler sources (*.c, *.h) to build instead.")
 omc_add_to_report(OM_OMC_PREBUILT_C_SOURCES)
-if(CMAKE_CROSSCOMPILING AND OM_OMC_ENABLE_COMPILER AND NOT OM_OMC_ENABLE_RUST AND NOT OM_OMC_HOST_EXECUTABLE)
-  message(FATAL_ERROR "Cross-compiling the C omc needs -DOM_OMC_HOST_EXECUTABLE=<native omc>.")
+if(CMAKE_CROSSCOMPILING AND OM_OMC_ENABLE_COMPILER AND NOT OM_OMC_ENABLE_RUST AND NOT OM_OMC_HOST_EXECUTABLE AND NOT OM_OMC_PREBUILT_C_SOURCES)
+  message(FATAL_ERROR "Cross-compiling the C omc needs -DOM_OMC_PREBUILT_C_SOURCES=<dir> or -DOM_OMC_HOST_EXECUTABLE=<native omc>.")
 endif()
 
 # libOMCDLL: the omc C-API wrapper library (Compiler/omcCAPI). Lets external
