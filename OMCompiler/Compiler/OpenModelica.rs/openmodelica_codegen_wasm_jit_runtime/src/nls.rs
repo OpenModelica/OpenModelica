@@ -982,16 +982,6 @@ impl MemBlock {
     fn extrap(&self) -> u32 {
         self.scale() + (self.n * 8) as u32
     }
-    fn read(&self, at: u32, out: &mut [f64]) {
-        for (i, v) in out.iter_mut().enumerate() {
-            *v = unsafe { load_f64(at + (i * 8) as u32) };
-        }
-    }
-    fn write(&self, at: u32, v: &[f64]) {
-        for (i, x) in v.iter().enumerate() {
-            unsafe { store_f64(at + (i * 8) as u32, *x) };
-        }
-    }
 }
 
 /// The `SES_NONLINEAR` entry point the emitted module calls: the wasm ABI --
@@ -1051,29 +1041,29 @@ pub extern "C" fn rt_solve_nls(
     let mut state =
         WasmState { nls_fail_addr, rel_fresh_addr, rel_addr, n_rel, lambda_addr };
 
-    let mut nominal = vec![0.0f64; size];
-    for (i, v) in nominal.iter_mut().enumerate() {
-        *v = unsafe { load_f64(nominal_addr + (i * 8) as u32) };
-    }
-    let mut bounds = vec![0.0f64; 2 * size];
-    for (i, v) in bounds.iter_mut().enumerate() {
-        *v = unsafe { load_f64(bounds_addr + (i * 8) as u32) };
-    }
+    // `rt_alloc`ed blocks of f64, so aligned; a system without unknowns has none.
+    let (nominal, bounds): (&[f64], &[f64]) = if size == 0 {
+        (&[], &[])
+    } else {
+        unsafe {
+            (
+                core::slice::from_raw_parts(nominal_addr as *const f64, size),
+                core::slice::from_raw_parts(bounds_addr as *const f64, 2 * size),
+            )
+        }
+    };
     // `colptr[size+1] ++ rowidx[nnz] ++ colorCols[size]`; C keeps `sparsePattern`
     // whether or not the model carries an analytic Jacobian, and so does this.
-    let pattern: alloc::vec::Vec<u32> = if nnz != 0 {
-        (0..2 * size + 1 + nnz as usize)
-            .map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) })
-            .collect()
+    let pattern: &[u32] = if nnz != 0 {
+        unsafe { core::slice::from_raw_parts(pat_addr as *const u32, 2 * size + 1 + nnz as usize) }
     } else {
-        alloc::vec::Vec::new()
+        &[]
     };
 
     let block = MemBlock { hist_addr, n: hist_n };
-    let mut res_scaling = vec![0.0f64; hist_n];
-    let mut extrapolation = vec![0.0f64; hist_n];
-    block.read(block.scale(), &mut res_scaling);
-    block.read(block.extrap(), &mut extrapolation);
+    // The history block is an `rt_alloc` object, so its f64 fields are aligned.
+    let res_scaling = unsafe { core::slice::from_raw_parts_mut(block.scale() as *mut f64, hist_n) };
+    let extrapolation = unsafe { core::slice::from_raw_parts_mut(block.extrap() as *mut f64, hist_n) };
     let mut last_solved = unsafe { load_f64(block.last_solved()) };
     let mut use_xscaling = unsafe { load_u32(block.xscaling_off()) } == 0;
     let mut hist =
@@ -1090,25 +1080,23 @@ pub extern "C" fn rt_solve_nls(
         nnz,
         jac_csc: sparse_default != 0,
         sys_num: nls_sys_number(hist_addr),
-        nominal: &nominal,
-        bounds: &bounds,
-        pattern: &pattern,
+        nominal,
+        bounds,
+        pattern,
         has_jacobian,
     };
     let mut backend =
-        WasmBackend { pattern: &pattern, nnz: nnz as usize, jac_csc: sparse_default != 0, handle: lss_handle };
+        WasmBackend { pattern, nnz: nnz as usize, jac_csc: sparse_default != 0, handle: lss_handle };
     let ret = {
         let mut mem = NlsPersistent {
             history: &mut hist,
-            res_scaling: &mut res_scaling,
-            extrapolation: &mut extrapolation,
+            res_scaling,
+            extrapolation,
             last_solved: &mut last_solved,
             use_xscaling: &mut use_xscaling,
         };
         solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };
-    block.write(block.scale(), &res_scaling);
-    block.write(block.extrap(), &extrapolation);
     unsafe { store_f64(block.last_solved(), last_solved) };
     unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
 
