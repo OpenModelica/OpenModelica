@@ -20,7 +20,7 @@ pub(super) fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) ->
     let DAE::Exp::CREF { componentRef, .. } = lhs else {
         crate::CodegenWasmJit::record_error(format!(
             "CodegenWasmJit: assignment to non-cref lhs `{}`",
-            dumped_exp(&metamodelica::Ref::new(lhs.clone()))?
+            dumped_exp(lhs)?
         ));
         return Err("CodegenWasmJit: assignment to non-cref lhs not supported");
     };

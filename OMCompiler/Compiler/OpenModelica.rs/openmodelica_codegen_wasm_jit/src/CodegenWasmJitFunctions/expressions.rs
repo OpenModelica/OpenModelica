@@ -779,7 +779,7 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     ctx.emit(I::If(we::BlockType::Result(we::ValType::F64)));
     ctx.emit(I::LocalGet(ta));
     ctx.emit(I::LocalGet(tb));
-    emit_shared_str(ctx, &dumped_exp(&metamodelica::Ref::new(e2.clone()))?);
+    emit_shared_str(ctx, &dumped_exp(e2)?);
     let data = ctx.sim()?.data_local;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
