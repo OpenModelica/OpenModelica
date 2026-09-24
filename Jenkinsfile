@@ -716,7 +716,7 @@ pipeline {
           }
         }
 
-        // The Windows smoke set (every test tagged '// win: yes', see
+        // The smoke set (every test in '// suite: smoke', see
         // testsuite/runWindowsTests.sh), against the install tree
         // 'OMDev-gcc' stashed as 'omc-windows'. Its own stage, not
         // part of that build, so a test failure here reads as a testsuite
@@ -742,7 +742,8 @@ pipeline {
         }
 
         // The C omc cross-compiled to Windows (MSVC) from the C sources
-        // 'cmake-jammy-gcc' translated. See common.crossBuildOMCWindows().
+        // 'cmake-jammy-gcc' translated, and the Windows smoke set run against
+        // it under wine. See common.crossBuildOMCWindows().
         stage('21 cross-build-omc-msvc') {
           agent {
             docker {

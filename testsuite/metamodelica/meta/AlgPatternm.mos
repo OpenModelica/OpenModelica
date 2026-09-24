@@ -2,7 +2,7 @@
 // status: correct
 // cflags: -d=-newInst
 // suite: metamodelica
-// win: yes
+// suite: smoke
 
 setCommandLineOptions("-g=MetaModelica -d=gen");
 loadFile("AlgPatternm.mo");
