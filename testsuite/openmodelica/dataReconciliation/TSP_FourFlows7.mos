@@ -1,8 +1,9 @@
 // name:     TSP_FourFlows7
 // keywords: extraction algorithm
 // status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv
-// suite: disabled
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");

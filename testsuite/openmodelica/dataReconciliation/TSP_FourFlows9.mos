@@ -1,8 +1,9 @@
 // name:     TSP_FourFlows9
 // keywords: extraction algorithm
 // status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows9_Inputs.csv
-// suite: disabled
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
@@ -3736,11 +3737,7 @@ getErrorString();
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_ASSERT        | debug   | Solving non-linear system 113 failed at time=0.
+// LOG_ASSERT        | debug   | Solving non-linear system 29 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // LOG_STDOUT        | info    | DataReconciliation Starting!

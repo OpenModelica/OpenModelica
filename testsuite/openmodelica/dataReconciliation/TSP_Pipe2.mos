@@ -1,8 +1,9 @@
 // name:     TSP_Pipe2
 // keywords: extraction algorithm
 // status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe2_Inputs.csv
-// suite: disabled
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
@@ -1982,6 +1983,7 @@ getErrorString();
 // LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.TSP_Pipe2
 // LOG_ASSERT        | error   | [ThermoSysPro 3.2.0/Properties/WaterSteam/BaseIF97.mo:4565:7-4566:123:writable]
 // |                 | |       | IF97 medium function g5: input temperature (= 3943.97 K) is higher than limit of 2273.15K in region 5
+// LOG_STDOUT        | error   | solveSystemFstar() Failed !, The solution could not be computed, The info satus is 1
 // "
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).

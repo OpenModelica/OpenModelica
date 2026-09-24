@@ -1,8 +1,9 @@
 // name:     TSP_Pipe3
 // keywords: extraction algorithm
 // status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv
-// suite: disabled
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
@@ -2255,8 +2256,6 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe3
 // LOG_NLS           | error   | residualFunc31: Iteration variable `singularPressureLoss2.pro_pT.cp` is inf or nan.
-// LOG_ASSERT        | debug   | residualFunc31 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
 // LOG_ASSERT        | debug   | Solving non-linear system 31 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
