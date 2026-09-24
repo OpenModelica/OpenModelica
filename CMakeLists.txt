@@ -479,6 +479,16 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
 set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_BINARY_DIR}/_packages")
 set(CPACK_VERBATIM_VARIABLES ON)
 
+# Strip the binaries as they are staged for packaging. A package that ships debugging symbols is
+# several times the size it needs to be, and lintian reports every such file as
+# unstripped-binary-or-object. This is the packaging step only: the build tree keeps its symbols,
+# so a developer's `cmake --install` is unaffected.
+set(CPACK_STRIP_FILES TRUE)
+
+# The component -> binary package name map, needed both by the configure_file below (which
+# substitutes it into the CPack options file) and by components.cmake further down.
+include(cmake/packaging/package_names.cmake)
+
 # OM_PACKAGE_VERSION is empty when the source tree has no version to derive one from; see
 # cmake/omc_git_revision.cmake. Leave CPack's defaults alone in that case rather than
 # writing an unusable version into the config -- the DEB and RPM generators refuse to run

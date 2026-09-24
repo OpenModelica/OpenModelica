@@ -415,15 +415,19 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # guards with if(NOT TARGET ZLIB::ZLIB)), so Qt6::Svg never gets linked
   # against the real system libz.so.1 it needs. Link it explicitly instead of
   # relying on ZLIB::ZLIB, which two different consumers need to mean two
-  # different things here.
-  find_library(OM_SYSTEM_ZLIB_LIB NAMES z)
-
-  if (OM_SYSTEM_ZLIB_LIB)
-    target_link_libraries(OMEditLib PUBLIC ${OM_SYSTEM_ZLIB_LIB})
+  # different things here. With OM_USE_SYSTEM_ZLIB, omc::3rd::zlib is that system zlib.
+  if (OM_USE_SYSTEM_ZLIB)
+    target_link_libraries(OMEditLib PUBLIC omc::3rd::zlib)
   else ()
-    message(WARNING
-      "Could not find the system zlib (libz.so.1). "
-      "Qt6::Svg may fail to link due to unresolved inflateEnd.")
+    find_library(OM_SYSTEM_ZLIB_LIB NAMES z)
+
+    if (OM_SYSTEM_ZLIB_LIB)
+      target_link_libraries(OMEditLib PUBLIC ${OM_SYSTEM_ZLIB_LIB})
+    else ()
+      message(WARNING
+        "Could not find the system zlib (libz.so.1). "
+        "Qt6::Svg may fail to link due to unresolved inflateEnd.")
+    endif ()
   endif ()
 endif ()
 
@@ -651,6 +655,19 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       install(FILES "${_ls_cache}/tree-sitter-modelica.wasm"
                     "${_ls_cache}/web-tree-sitter.wasm"
               DESTINATION ${MODELICA_LS_INSTALL_DIR})
+      # The Linux server is a Node.js single executable application, built on the official node
+      # binary: that links its own zlib and is not a PIE, and nothing short of building node from
+      # source changes either. So the omedit .deb carries lintian overrides for the two, limited
+      # to this file.
+      if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(_ls_overrides "${CMAKE_CURRENT_BINARY_DIR}/lintian-overrides/omedit")
+        file(WRITE "${_ls_overrides}"
+             "# The bundled modelica-language-server is a Node.js single executable application.\n"
+             "omedit: embedded-library zlib [*/${MODELICA_LS_EXE_NAME}]\n"
+             "omedit: hardening-no-pie [*/${MODELICA_LS_EXE_NAME}]\n")
+        install(FILES "${_ls_overrides}"
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/lintian/overrides)
+      endif()
       # Also handed to OMEditGUI, which puts them beside the built executable so
       # a build-tree OMEdit finds a server without being installed first. The
       # binary is renamed there too, so pass the name it must end up with.

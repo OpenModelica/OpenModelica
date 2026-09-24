@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # NgspicetoModelica.py is a python script to convert ngspice netlists to Modelica code. It is written by Rakhi R.
 # Copyright (C) 2014 Rakhi R Warriar, FOSSEE, IIT Bombay.
 # This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.

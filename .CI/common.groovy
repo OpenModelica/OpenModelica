@@ -707,6 +707,130 @@ void assembleWeb() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// CPack packages and their compliance checks. Gated on shouldWeCPack(), i.e.
+// the ENABLE_CPACK parameter or the "CI/CPack Package Checks" PR label, since
+// building the whole shipped tool chain costs far more than a PR normally
+// needs. See https://github.com/OpenModelica/OpenModelica/issues/16849.
+// ---------------------------------------------------------------------------
+
+// The CMake build the .deb and .rpm packages are cut from. It has to be the
+// full shipped tool chain rather than the omc-only build the other stages use:
+// a package set is only worth linting if it is the one users get, and a
+// component that was not built is silently left out of CPACK_COMPONENTS_ALL
+// (see cmake/packaging/components.cmake), so a leaner build would quietly
+// check fewer packages than it looks like it does.
+//
+// Release rather than Debug: the unstripped-binary-or-object tags the linters
+// raise are about what we ship, and a Debug build would bury the report in
+// them.
+void buildCPackPackages() {
+  standardSetup()
+
+  sh label: 'Configure', script: """
+    cmake -S . -B build_cmake \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOM_ENABLE_GUI_CLIENTS=ON \
+      -DOM_OMC_ENABLE_CPP_RUNTIME=ON \
+      -DOM_USE_CCACHE=OFF \
+      -DCMAKE_INSTALL_PREFIX=build_cpack_install
+  """
+  // install, not just build: the omlibrary target below runs
+  // ${CMAKE_INSTALL_PREFIX}/bin/omc, because omc refuses to start unless it
+  // sits in a **/bin directory next to the shared libraries it needs.
+  sh label: 'Build and install', script:
+     "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
+
+  // The Modelica library cache, i.e. the omlibrary package. A target of its
+  // own because it runs that installed omc to download the archives, so it
+  // cannot be part of the ordinary build. Skipping it would not fail anything:
+  // an unbuilt omlibrary installs an empty cache directory, which packages and
+  // lints perfectly happily, so nothing downstream would notice the package
+  // that is supposed to carry 50-odd MB of libraries being empty.
+  sh label: 'Download the Modelica library cache', script:
+     "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target omlibrary"
+
+  // Both generators from the one build tree, so the two package sets describe
+  // the same files and the two linters are looking at the same thing.
+  dir('build_cmake') {
+    sh label: 'Pack .deb', script: 'cpack -G DEB'
+    sh label: 'Pack .rpm', script: 'cpack -G RPM'
+    sh label: 'List the packages', script: 'ls -la _packages/'
+  }
+
+  archiveArtifacts artifacts: 'build_cmake/_packages/*.deb, build_cmake/_packages/*.rpm',
+                   allowEmptyArchive: false, fingerprint: true
+  stash name: 'cpack-deb', includes: 'build_cmake/_packages/*.deb'
+  stash name: 'cpack-rpm', includes: 'build_cmake/_packages/*.rpm'
+}
+
+// lintian and rpmlint exit non-zero for a warning as readily as for an error,
+// and the packages still carry plenty of warnings (#16849). So each run is
+// allowed to fail and the verdict is taken from the tags instead: an "E:" tag
+// fails the stage, a "W:" tag is reported and tolerated. The report is
+// archived either way, which is what makes the warning list shrinkable.
+//
+// The two spell a tag differently, so one pattern has to match both:
+//   lintian   E: omc: dir-in-usr-local [usr/local/bin/]      (line starts with the severity)
+//   rpmlint   omc.x86_64: E: no-signature                    (severity after the package)
+// hence the leading "(^|: )". Matching only ": E: " silently passes every
+// lintian run, which is the bug this comment exists to prevent.
+private void failOnLinterErrors(String reportFile, String tool) {
+  sh label: "Summarise ${tool}", script: """
+    echo '--- ${tool} errors ---'
+    grep -E '(^|: )E: ' '${reportFile}' || echo '(none)'
+    echo '--- ${tool} warning count ---'
+    grep -cE '(^|: )W: ' '${reportFile}' || true
+  """
+  def errors = sh(script: "grep -cE '(^|: )E: ' '${reportFile}' || true",
+                  returnStdout: true).trim()
+  if (errors && errors != '0') {
+    error("${tool} reported ${errors} error tag(s), see the archived ${reportFile}")
+  }
+}
+
+// Debian policy compliance of the .deb packages.
+void checkDeb() {
+  standardSetup()
+  unstash 'cpack-deb'
+  sh label: 'lintian version', script: 'lintian --version'
+  // --tag-display-limit 0 because lintian elides a tag after a few instances,
+  // and the elided ones are exactly what says how much is left to fix.
+  //
+  // initial-upload-closes-no-bugs is for a package entering the Debian archive,
+  // whose first changelog entry has to close its ITP bug. Ours are published in
+  // our own repository, and the changelog components.cmake generates always has
+  // exactly one entry, so every package would report it on every build.
+  sh label: 'Run lintian', script: '''
+    : > lintian.txt
+    for f in build_cmake/_packages/*.deb; do
+      echo "=== $f ===" >> lintian.txt
+      lintian --tag-display-limit 0 --suppress-tags initial-upload-closes-no-bugs \
+        -c "$f" >> lintian.txt 2>&1 || true
+    done
+    cat lintian.txt
+  '''
+  archiveArtifacts artifacts: 'lintian.txt', allowEmptyArchive: true, fingerprint: true
+  failOnLinterErrors('lintian.txt', 'lintian')
+}
+
+// Fedora/Enterprise Linux packaging-guideline compliance of the .rpm packages.
+void checkRpm() {
+  standardSetup()
+  unstash 'cpack-rpm'
+  sh label: 'rpmlint version', script: 'rpmlint --version'
+  sh label: 'Run rpmlint', script: '''
+    : > rpmlint.txt
+    for f in build_cmake/_packages/*.rpm; do
+      echo "=== $f ===" >> rpmlint.txt
+      rpmlint -c cmake/packaging/rpmlint.toml "$f" >> rpmlint.txt 2>&1 || true
+    done
+    cat rpmlint.txt
+  '''
+  archiveArtifacts artifacts: 'rpmlint.txt', allowEmptyArchive: true, fingerprint: true
+  failOnLinterErrors('rpmlint.txt', 'rpmlint')
+}
+
 void buildRustGUI() {
   standardSetup()
   unstash 'omc-rust-gui-inputs'
@@ -1480,6 +1604,16 @@ private def shouldWeRunRustTests() {
   return params.ENABLE_RUST_PARTEST
 }
 
+// Enable packing with CPack and check APT/RPM packages for complican with OS policy
+private def shouldWeCPack() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/CPack Package Checks")) {
+      return true
+    }
+  }
+  return params.ENABLE_CPACK
+}
+
 // wasm-opt -Oz on the web bundle is slow and only shrinks the shipped artifact;
 // skip it on PRs, keep it for the release build that publishes to the playground.
 def rustWasmOptCMakeFlag() {
@@ -1536,6 +1670,8 @@ Map evaluateBuildFlags() {
   print "shouldWeRunTests: ${flags.shouldWeRunTests}"
   flags.shouldWeRunRustTests = flags.shouldWeRunTests && shouldWeRunRustTests()
   print "shouldWeRunRustTests: ${flags.shouldWeRunRustTests}"
+  flags.shouldWeCPack = shouldWeCPack()
+  print "shouldWeCPack: ${flags.shouldWeCPack}"
   return flags
 }
 

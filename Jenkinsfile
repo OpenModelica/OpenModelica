@@ -7,6 +7,7 @@ def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
 def shouldWeRunTests
 def shouldWeRunRustTests
+def shouldWeCPack
 
 pipeline {
   agent none
@@ -30,6 +31,7 @@ pipeline {
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
     booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc with RUST_PARTEST_SIMCODETARGET (the wasm-jit partest always runs)')
+    booleanParam(name: 'ENABLE_CPACK', defaultValue: false, description: 'Enable DEB and RPM package generation with CPack and additional compliance checks for them')
     string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'C+Rust', description: 'simCodeTarget for the ENABLE_RUST_PARTEST run (empty = compiler default)')
     // Read at queue time, before common.groovy is loaded.
     string(name: 'BUILD_PRIORITY',
@@ -66,6 +68,7 @@ pipeline {
           shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
           shouldWeRunTests = buildFlags.shouldWeRunTests
           shouldWeRunRustTests = buildFlags.shouldWeRunRustTests
+          shouldWeCPack = buildFlags.shouldWeCPack
         }
       }
     }
@@ -286,6 +289,34 @@ pipeline {
             script {
               common.buildRustOMC()
             }
+          }
+        }
+
+        // The .deb and .rpm packages, and the whole tool chain they are cut
+        // from. Off by default (ENABLE_CPACK, or the "CI/CPack Package Checks"
+        // label on a PR): this builds the GUI clients and downloads the Modelica
+        // library cache, so it costs far more than a PR normally needs. The
+        // packages are stashed for 'check-packages', which lints them.
+        stage('cmake-cpack') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              label 'linux'
+              alwaysPull true
+              // No omlibrary-cache mount: the omlibrary target downloads into the
+              // CMake build tree, not into libraries/.openmodelica/cache where
+              // makeLibsAndCache() points that volume, so it would not be used.
+              // Wiring it up is worth doing if these downloads turn out flaky.
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeCPack }
+          }
+          steps {
+            script { common.buildCPackPackages() }
           }
         }
 
@@ -805,6 +836,30 @@ pipeline {
               // on where the instrumented build ran, which it only learns
               // from the stash.
               common.coverageReportStage(1)
+            }
+          }
+        }
+        // Lint DEB and RPM packages for compliance. Runs in the build image
+        // rather than on a bare node because that is where lintian and rpmlint
+        // are; it needs none of the build dependencies itself, only the two
+        // linters and the packages stashed by 'cmake-cpack'.
+        stage('check-packages') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              label 'linux'
+              alwaysPull true
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeCPack }
+          }
+          steps {
+            script {
+              common.checkDeb()
+              common.checkRpm()
             }
           }
         }

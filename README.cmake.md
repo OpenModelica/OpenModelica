@@ -355,18 +355,35 @@ in [cmake/packaging/components.cmake](cmake/packaging/components.cmake):
 
 | Component | Package | Contents |
 | --- | --- | --- |
-| `omc` | `openmodelica-omc` | The compiler: `omc`, its libraries, the builtin `.mo` files, the scripting API header |
-| `simrt` | `openmodelica-simrt` | The C simulation runtime and the libraries generated code links against |
-| `simrtcpp` | `openmodelica-simrtcpp` | The C++ simulation runtime |
-| `fmu` | `openmodelica-fmu` | The headers and libraries needed to build an FMU, including source-code FMUs |
-| `omsimulator` | `openmodelica-omsimulator` | `OMSimulator`, its library and the Python bindings |
-| `omlibrary` | `openmodelica-omlibrary` | The Modelica library cache, so `installPackage()` works offline |
-| `omplot` | `openmodelica-omplot` | `OMPlot`, which `plot()` needs |
-| `omedit` | `openmodelica-omedit` | The connection editor |
-| `omshell` / `omshellterminal` | `openmodelica-omshell…` | The Qt and the readline shell |
-| `omnotebook` | `openmodelica-omnotebook` | OMNotebook and DrModelica |
-| `omsens` | `openmodelica-omsens` | The OMSens sensitivity-analysis plugin for OMEdit |
-| `omoptim` | `openmodelica-omoptim` | The legacy optimization GUI (off by default) |
+| `omc` | `omc` | The compiler: `omc`, its libraries, the builtin `.mo` files, the scripting API header |
+| `simrt` | `simrt` | The C simulation runtime and the libraries generated code links against, and what building an FMU needs |
+| `simrtcpp` | `simrtcpp` | The C++ simulation runtime |
+| `omsimulator` | `omsimulator` | `OMSimulator`, its library and the Python bindings |
+| `omlibrary` | `omlibrary` | The Modelica library cache, so `installPackage()` works offline |
+| `omplot` | `omplot` | `OMPlot`, which `plot()` needs |
+| `omedit` | `omedit` | The connection editor |
+| `omshell` | `omshell` | The Qt shell |
+| `omshellterminal` | `omshell-terminal` | The readline shell |
+| `omnotebook` | `omnotebook` | OMNotebook |
+| `drmodelica` | `drmodelica` | The DrModelica tutorial notebooks |
+| `drcontrol` | `drcontrol` | The DrControl tutorial notebooks |
+| `omsens` | `omsens` | The OMSens sensitivity-analysis plugin for OMEdit |
+| `omoptim` | `omoptim` | The legacy optimization GUI (off by default) |
+| `meta` | `openmodelica` | The metapackage: depends on the tool chain, holds no program of its own |
+
+The packages carry the names the Autoconf packaging used — `omc`, `omedit`, … — rather than the
+`openmodelica-<component>` CPack derives from the project name, and both formats use the same
+ones. On Debian and Ubuntu this is an upgrade path rather than a preference: apt upgrades a
+package by name, so a system holding 1.27.1's `omc` has to be offered an `omc` or it stays on
+1.27.1 for ever.
+
+The old layout also had a package per library — `libomc`, `libomc-dev`, `omc-common`,
+`libomcsimulation`, `libomccpp`, `libomplot`, `libomplot-dev`, `libomsimulator`,
+`libomsensplugin` — which this packaging does not split out: what they held is inside `omc`,
+`simrt`, `omplot` and the rest. The package that absorbed each one `Provides`, `Replaces` and
+`Conflicts` with it, so upgrading removes them instead of leaving them behind. Those are Debian
+names and the fields are on the `.deb` packages only; the RPM side never had them, its spec
+having built one `openmodelica-<branch>` package under `/opt`.
 
 Only the components this build actually configured are packed, so a build with
 `-DOM_ENABLE_GUI_CLIENTS=OFF` produces no `omedit` package. Components belonging to the
@@ -378,10 +395,10 @@ hand-written list for what `omc` needs at _run_ time — a compiler, `make` and 
 it shells out to when it compiles a model.
 
 > **Note**
-> The packages are not yet a drop-in replacement for the ones on
-> [build.openmodelica.org](https://build.openmodelica.org/apt/): they install under
-> `/usr/local`, they are named `openmodelica-<component>` rather than `omc`, `omedit`, …,
-> and there is no `openmodelica` metapackage. See
+> The `.deb` packages are not quite a drop-in replacement for the ones on
+> [build.openmodelica.org](https://build.openmodelica.org/apt/). The names match, the
+> `openmodelica` metapackage is back and the old library packages are superseded, but these
+> still install under `/usr/local` rather than `/usr`. See
 > [#16377](https://github.com/OpenModelica/OpenModelica/issues/16377).
 
 ### Building the packages
@@ -419,7 +436,7 @@ mkdir /repo && cp /pkg/*.deb /repo/ && (cd /repo && dpkg-scanpackages . > Packag
 echo "deb [trusted=yes] file:/repo ./" > /etc/apt/sources.list.d/local.list
 apt-get update
 
-apt-get install -y openmodelica-omc     # pulls openmodelica-simrt with it
+apt-get install -y omc     # pulls simrt with it
 omc --version
 ```
 
@@ -428,8 +445,8 @@ Two ways to get this wrong:
 - `dpkg -i` does not resolve dependencies at all. It reports success and leaves you with an
   `omc` that cannot start, or that fails at the first `simulate()` with
   `fatal error: 'omc_simulation_settings.h' file not found`.
-- `apt-get install /pkg/openmodelica-omc_*.deb` installs a _file_. apt pulls the missing
-  system libraries, but it does not go looking for `openmodelica-simrt` in `/pkg` — it only
+- `apt-get install /pkg/omc_*.deb` installs a _file_. apt pulls the missing
+  system libraries, but it does not go looking for `simrt` in `/pkg` — it only
   knows about the file you named — so it stops with an unmet dependency. Either name every
   package you want on the command line, or use the local repository above.
 

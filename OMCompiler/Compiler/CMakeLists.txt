@@ -478,8 +478,15 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/c_files/OpenModelicaScriptingAPI.h
         COMPONENT omc)
 
 # Install the scripts to 'share' dir.
+# install(DIRECTORY) gives every file 644, so the shell scripts are made executable explicitly;
+# lintian reports script-not-executable otherwise. The Python and Julia scripts stay 644: made
+# executable, they would need their interpreter as a dependency of the package (lintian:
+# python3-script-but-no-python3-dep, missing-dep-for-interpreter), and rpmbuild would add one by
+# itself -- a Requires on julia that most systems cannot satisfy.
 install(DIRECTORY scripts
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/)
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/
+        PATTERN "*.sh" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                                   GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 
 # This is a convenience target to install omc. We are used to issuing 'make install' to install

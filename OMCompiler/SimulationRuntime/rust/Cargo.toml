@@ -58,3 +58,10 @@ exclude = [
   "openmodelica_simulation_runtime",
   "openmodelica_solvers",
 ]
+
+# libomc_result.so is built from this workspace and installed with install(PROGRAMS), which
+# CMake never strips, unlike install(TARGETS) under CPACK_STRIP_FILES. Cargo's own release
+# default only drops the debug info and keeps the symbol table, so lintian reported
+# unstripped-binary-or-object for it.
+[profile.release]
+strip = true
