@@ -728,6 +728,12 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
             return head + HEADER as u32;
         }
     }
+    alloc_fresh(total, size)
+}
+
+/// Out of line so the recycling path above stays small enough to inline.
+#[inline(never)]
+fn alloc_fresh(total: usize, size: u32) -> u32 {
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     // Off the recycling path: the first allocation of a size class comes through
     // here, so the reserve is armed long before the heap can fill.
@@ -778,6 +784,11 @@ pub extern "C" fn rt_free(obj: u32) {
         lists[class] = raw;
         return;
     }
+    free_uncached(raw, total);
+}
+
+#[inline(never)]
+fn free_uncached(raw: u32, total: usize) {
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
 }
