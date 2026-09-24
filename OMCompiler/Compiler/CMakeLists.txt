@@ -242,22 +242,19 @@ add_custom_target(INTERFACE_CHECK
 
 
 
-# Add a small dependency scanner program. This reads a list of list of dependencies and generates
-# a list of dependents for each entry.
-add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
-
-# Write out a new line separated list of all MM source files to a list so that it can be easily
-# parsed by the small MetaModelica dependency scanner we have now. (c++ code)
+# Write out a new line separated list of all MM source files. dep_scanner.cmake reads
+# <mm_source>.depends for each of them and generates the "reverse dependencies" (dependents)
+# of each source into <mm_source>.rev_depends: the files that need to be retranslated when
+# <mm_source>.mo is modified.
 # The quote "" on ${OMC_MM_SOURCE_FILE_NAMES} is needed to get the ";"s in the list
 string (REPLACE ";" "\n" OMC_MM_SOURCE_FILE_NAMES_NEW_LINES "${OMC_MM_SOURCE_FILE_NAMES}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt ${OMC_MM_SOURCE_FILE_NAMES_NEW_LINES})
 
-# Read the mm_source_filenames_list with the dep scanner. The dep scanner then reads <mm_source>.depends file for the
-# each mm_source in the list and generates the "reverse dependencies" (dependents) for each source in to <mm_source>.rev_deps.
-# This means all the files listed in .rev_deps need to be retranslated when <mm_source>.mo is modified.
 add_custom_command(
-                DEPENDS ${OMC_MM_INTERFACE_FILES}
-                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt ${CMAKE_CURRENT_BINARY_DIR}
+                DEPENDS ${OMC_MM_INTERFACE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cmake
+                COMMAND ${CMAKE_COMMAND} -DSOURCE_LIST=${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt
+                                         -DDEPENDS_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                                         -P ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cmake
                 COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 COMMENT "Scanning reverse dependencies for MetaModelica sources.")
