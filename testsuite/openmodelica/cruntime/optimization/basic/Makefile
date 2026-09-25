@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 
 TESTFILES = \
+arrayVariables.mos \
 BR.mos \
 BReqcon.mos \
 BRinitialGuess.mos\

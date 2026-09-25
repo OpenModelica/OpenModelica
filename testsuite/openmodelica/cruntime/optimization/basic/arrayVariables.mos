@@ -1,0 +1,43 @@
+// name: arrayVariables
+// keywords: optimization array NewBackend
+// status: correct
+// suite: cSources
+//
+// Checks the error of the C runtime optimizer.
+//
+// The optimizer doesn't support non-scalarized array variables. It has to stop
+// with an error before accessing the variables by scalar index.
+
+loadString("
+model arrayVariables
+  Real x[3](each start = 1, each fixed = true);
+  input Real u(min = -1, max = 1);
+  Real cost annotation(isLagrange = true);
+equation
+  der(x) = -x + fill(u, 3);
+  cost = x*x + u^2;
+end arrayVariables;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+simulate(arrayVariables, method="optimization", numberOfIntervals=5); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-6, method = 'optimization', fileNamePrefix = 'arrayVariables', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: arrayVariables
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | debug   | Optimization does not support array variables, but x is an array. Use --simCodeScalarize=true.
+// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
+// LOG_ASSERT        | debug   | Optimization does not support array variables, but x is an array. Use --simCodeScalarize=true.
+// LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 0
+// "
+// end SimulationResult;
+// ""
+// endResult

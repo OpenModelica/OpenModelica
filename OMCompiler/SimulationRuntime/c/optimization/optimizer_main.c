@@ -36,9 +36,18 @@
 
 static inline int optimizationWithIpopt(OptData*optData);
 static inline void freeOptimizerData(OptData*optData);
+static const char* firstArrayVariable(const MODEL_DATA *modelData);
 
 int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   OptData *optData, optData_;
+  const char *arrayVariable;
+
+  /* The optimizer maps variables to optimization variables by scalar index. */
+  arrayVariable = firstArrayVariable(data->modelData);
+  if (arrayVariable != NULL) {
+    throwStreamPrint(threadData, "Optimization does not support array variables, but %s is an array. "
+                                 "Use --simCodeScalarize=true.", arrayVariable);
+  }
 
   solverInfo->solverData = &optData_;
   data->simulationInfo->noThrowDivZero = 1;
@@ -55,6 +64,38 @@ int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   if(res == 0 /*Solve_Succeeded*/ || res == 1 /*Solved_To_Acceptable_Level*/)
     return 0;
   return -1;
+}
+
+/**
+ * @brief Find first array variable or parameter.
+ *
+ * @param modelData       Model data.
+ * @return const char*    Name of first array variable or parameter,
+ *                        NULL if all variables are scalars.
+ */
+static const char* firstArrayVariable(const MODEL_DATA *modelData)
+{
+  long i;
+
+#define FIND_ARRAY(VARS, N) \
+  for (i = 0; i < (N); ++i) { \
+    if ((VARS)[i].dimension.numberOfDimensions > 0) { \
+      return (VARS)[i].info.name; \
+    } \
+  }
+
+  FIND_ARRAY(modelData->realVarsData, modelData->nVariablesRealArray)
+  FIND_ARRAY(modelData->integerVarsData, modelData->nVariablesIntegerArray)
+  FIND_ARRAY(modelData->booleanVarsData, modelData->nVariablesBooleanArray)
+  FIND_ARRAY(modelData->stringVarsData, modelData->nVariablesStringArray)
+  FIND_ARRAY(modelData->realParameterData, modelData->nParametersRealArray)
+  FIND_ARRAY(modelData->integerParameterData, modelData->nParametersIntegerArray)
+  FIND_ARRAY(modelData->booleanParameterData, modelData->nParametersBooleanArray)
+  FIND_ARRAY(modelData->stringParameterData, modelData->nParametersStringArray)
+
+#undef FIND_ARRAY
+
+  return NULL;
 }
 
 /*!
