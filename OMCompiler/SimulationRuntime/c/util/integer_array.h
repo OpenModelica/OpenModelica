@@ -88,6 +88,8 @@ extern void put_integer_matrix_element(modelica_integer value, int r, int c,
 
 extern void print_integer_matrix(const integer_array * source);
 extern void print_integer_array(const integer_array * source);
+
+void integer_vector_to_string(const integer_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize);
 /*
 
  a[1:3] := b;

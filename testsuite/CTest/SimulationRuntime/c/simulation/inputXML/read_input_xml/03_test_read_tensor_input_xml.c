@@ -9,6 +9,7 @@
 #include "simulation_omc_assert.h"
 
 #include "simulation_input_xml.h"
+#include "util/integer_array.h"
 
 /**
  * @brief Test parsing of init XML
@@ -149,6 +150,43 @@ int main(int argc, char *argv[])
   if (test_success && modelData.integerParameterData[0].dimension.scalar_length != 24)
   {
     fprintf(stderr, "Test failed: Array length is wrong. Expected '24', got '%zu'\n", modelData.integerParameterData[0].dimension.scalar_length);
+    test_success = 0;
+  }
+
+  // Start attribute
+  if (test_success && base_array_nr_of_elements(modelData.integerParameterData[0].attribute.start) != 24)
+  {
+    fprintf(stderr, "Test failed: Int parameter start attribute wrong number of elements. Expected '24', got '%ld'\n", (long)base_array_nr_of_elements(modelData.integerParameterData[0].attribute.start));
+    test_success = 0;
+  }
+  for (long i = 0; test_success && i < 24; i++)
+  {
+    if (integer_get(modelData.integerParameterData[0].attribute.start, i) != i + 1)
+    {
+      fprintf(stderr, "Test failed: Int parameter start attribute mismatched at index %ld. Expected '%ld', got '%ld'\n", i, i + 1, (long)integer_get(modelData.integerParameterData[0].attribute.start, i));
+      test_success = 0;
+    }
+  }
+
+  // Min and max attributes not set, use single default value
+  if (test_success && (base_array_nr_of_elements(modelData.integerParameterData[0].attribute.min) != 1 ||
+                       base_array_nr_of_elements(modelData.integerParameterData[0].attribute.max) != 1))
+  {
+    fprintf(stderr, "Test failed: Int parameter min/max attribute expected to have exactly one default element.\n");
+    test_success = 0;
+  }
+  if (test_success && (integer_get(modelData.integerParameterData[0].attribute.min, 0) >= 0 ||
+                       integer_get(modelData.integerParameterData[0].attribute.max, 0) <= 0))
+  {
+    fprintf(stderr, "Test failed: Int parameter min/max attribute default values wrong.\n");
+    test_success = 0;
+  }
+
+  // Scalar parameter
+  if (test_success && (base_array_nr_of_elements(modelData.integerParameterData[1].attribute.start) != 1 ||
+                       integer_get(modelData.integerParameterData[1].attribute.start, 0) != 2))
+  {
+    fprintf(stderr, "Test failed: Int parameter dim1 start attribute mismatch. Expected '2'.\n");
     test_success = 0;
   }
 

@@ -620,12 +620,25 @@ algorithm
     case Exp.SCONST() then Util.escapeModelicaStringToXmlString(exp.string);
     case Exp.BCONST() then boolString(exp.bool);
     case Exp.ENUM_LITERAL() then intString(exp.index);
-    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(expString(e) for e in exp.array), " ");
+    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(arrayElementString(e) for e in exp.array), " ");
     case Exp.REDUCTION() then expString(exp.expr);
     else fail();
     //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
   end match;
 end expString;
+
+function arrayElementString
+  "Like expString, but String elements are enclosed in quotes, so the values
+   of a String array can be told apart."
+  input Exp exp;
+  output String str;
+algorithm
+  str := match exp
+    case Exp.SCONST() then "&quot;" + Util.escapeModelicaStringToXmlString(exp.string) + "&quot;";
+    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(arrayElementString(e) for e in exp.array), " ");
+    else expString(exp);
+  end match;
+end arrayElementString;
 
 annotation(__OpenModelica_Interface="backend_tools");
 end SerializeInitXML;

@@ -528,6 +528,11 @@ void print_real_array(const real_array *source)
     }
 }
 
+static int real_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    return snprintf(buffer, bufsize, "%g", ((const modelica_real *)data)[i]);
+}
+
 /**
  * @brief Write real vector into null-terminated string.
  *
@@ -538,69 +543,7 @@ void print_real_array(const real_array *source)
  */
 void real_vector_to_string(const real_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
 {
-    _index_t i;
-    modelica_real *data;
-    size_t pos = 0;
-
-    /* Validate input parameters */
-    if (buffer == NULL || bufsize == 0) {
-        return;
-    }
-    buffer[0] = '\0';
-
-    omc_assert_macro(base_array_ok(source));
-    assert(source->ndims == 1);
-
-    data = (modelica_real *)source->data;
-
-    if (isScalar && source->ndims == 1 && source->dim_size[0] == 1)
-    {
-        /* Write scalar into buffer */
-        snprintf(buffer + pos, bufsize - pos, "%g", data[0]);
-    }
-    else
-    {
-        /* Start brace */
-        int ret = snprintf(buffer + pos, (bufsize > pos) ? bufsize - pos : 0, "{");
-        if (ret < 0) ret = 0;
-        if ((size_t)ret >= bufsize - pos) {
-            return;
-        }
-        pos += (size_t)ret;
-
-        for (i = 0; i < source->dim_size[0]; i++)
-        {
-            size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
-
-            /* If not enough room to write an element, try to append "...}" and stop */
-            if (remaining <= 5) {
-                snprintf(buffer + pos, remaining, "...}");
-                return;
-            }
-
-            /* Format element: use comma+space for non-last elements */
-            if (i < source->dim_size[0] - 1) {
-                ret = snprintf(buffer + pos, remaining, "%g, ", data[i]);
-            } else {
-                ret = snprintf(buffer + pos, remaining, "%g", data[i]);
-            }
-
-            if (ret < 0) ret = 0;
-            if (ret >= remaining - 5) {
-                /* Not enough space for more elements; try to write "...}" instead */
-                remaining = (bufsize > pos) ? bufsize - pos : 0;
-                snprintf(buffer + pos, remaining, "...}");
-                return;
-            }
-            pos += (size_t)ret;
-        }
-
-        /* Append closing brace */
-        size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
-        if (remaining > 0) {
-            snprintf(buffer + pos, remaining, "}");
-        }
-    }
+    base_vector_to_string(source, isScalar, real_element_to_string, buffer, bufsize);
 }
 
 /**

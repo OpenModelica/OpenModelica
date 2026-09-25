@@ -84,8 +84,22 @@ pub struct base_array_t {
     pub flexible: modelica_boolean,
 }
 pub type real_array = base_array_t;
+pub type integer_array = base_array_t;
+pub type boolean_array = base_array_t;
+pub type string_array = base_array_t;
 
 impl base_array_t {
+    /// Element `i` of a one-dimensional attribute array. An attribute with a
+    /// single element (`each`) holds the value of every array element.
+    /// `fallback` if the array is unallocated or `i` out of range.
+    pub fn elem_at<T: Copy>(&self, i: usize, fallback: T) -> T {
+        if self.data.is_null() || self.dim_size.is_null() || self.ndims < 1 {
+            return fallback;
+        }
+        let n = unsafe { *self.dim_size }.max(0) as usize;
+        let j = if n == 1 { 0 } else { i };
+        if j >= n { fallback } else { unsafe { *(self.data as *const T).add(j) } }
+    }
     /// The scalar (or first) element of a real attribute array; C's attributes are
     /// `real_array` so an array variable can carry one value per element.
     pub fn first_real(&self, fallback: f64) -> f64 {
@@ -232,21 +246,21 @@ pub struct REAL_ATTRIBUTE {
 
 #[repr(C)]
 pub struct INTEGER_ATTRIBUTE {
-    pub min: modelica_integer,
-    pub max: modelica_integer,
+    pub min: integer_array,
+    pub max: integer_array,
     pub fixed: modelica_boolean,
-    pub start: modelica_integer,
+    pub start: integer_array,
 }
 
 #[repr(C)]
 pub struct BOOLEAN_ATTRIBUTE {
     pub fixed: modelica_boolean,
-    pub start: modelica_boolean,
+    pub start: boolean_array,
 }
 
 #[repr(C)]
 pub struct STRING_ATTRIBUTE {
-    pub start: modelica_string,
+    pub start: string_array,
 }
 
 #[repr(C)]
