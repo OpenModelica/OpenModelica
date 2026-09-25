@@ -124,12 +124,19 @@ set(OM_COVERAGE_TITLE
 
 # Source-tree paths: the generated C lives under the build directory and is
 # filtered out by not being listed here.
+#
+# Narrow it to what a run actually exercises when its tracefile is merged with
+# others (see OM_COVERAGE_TRACEFILES): a build instruments everything, so a
+# tracefile also lists every line of the sources its tests never ran. Where
+# the other builds' compilers or optimization levels record different lines
+# for the same source, those lines only add to the total, never to the hits -
+# the C runtime unit tests would otherwise add a hundred thousand uncovered
+# lines of compiler to the report.
+set(OM_COVERAGE_SOURCE_DIRS
+    "OMCompiler/Compiler/;OMCompiler/SimulationRuntime/c/;OMCompiler/SimulationRuntime/cpp/;OMCompiler/SimulationRuntime/fmi/export/openmodelica/;OMEdit/OMEditLIB/"
+    CACHE STRING "Source directories, relative to the source tree, whose coverage coverage-collect reports")
 set(_om_coverage_filter_args)
-foreach(_filter "OMCompiler/Compiler/"
-                "OMCompiler/SimulationRuntime/c/"
-                "OMCompiler/SimulationRuntime/cpp/"
-                "OMCompiler/SimulationRuntime/fmi/export/openmodelica/"
-                "OMEdit/OMEditLIB/")
+foreach(_filter IN LISTS OM_COVERAGE_SOURCE_DIRS)
   list(APPEND _om_coverage_filter_args --filter "${CMAKE_SOURCE_DIR}/${_filter}")
 endforeach()
 
@@ -144,8 +151,10 @@ set(OM_COVERAGE_FMU_DIR "${CMAKE_BINARY_DIR}/coverage-fmu")
 # *.tpl templates. Without it the code generator is missing from the report
 # entirely. OpenModelicaCoverageTemplates.py additionally maps this back onto
 # the *.tpl themselves, per template.
-list(APPEND _om_coverage_filter_args
-     --filter "${CMAKE_BINARY_DIR}/OMCompiler/Compiler/generated-mo/")
+if("OMCompiler/Compiler/" IN_LIST OM_COVERAGE_SOURCE_DIRS)
+  list(APPEND _om_coverage_filter_args
+       --filter "${CMAKE_BINARY_DIR}/OMCompiler/Compiler/generated-mo/")
+endif()
 
 set(OM_COVERAGE_TEMPLATE_DIR "${CMAKE_SOURCE_DIR}/OMCompiler/Compiler/Template")
 set(OM_COVERAGE_GENERATED_MO_DIR "${CMAKE_BINARY_DIR}/OMCompiler/Compiler/generated-mo/Template")

@@ -573,6 +573,13 @@ with `-DOM_COVERAGE_TRACEFILES='/path/to/tracefiles/*.json'`. The paths in a tra
 are relative to the source tree, so the builds need not share a checkout, only the
 sources.
 
+A tracefile lists every instrumented line, run or not. When merging, collect each build
+only over the sources its tests exercise, with `-DOM_COVERAGE_SOURCE_DIRS` (default: all
+of the table above), e.g. `-DOM_COVERAGE_SOURCE_DIRS=OMCompiler/SimulationRuntime/c/` for
+the C runtime unit tests. Otherwise, where builds record different lines for the same
+source (another compiler, another optimization level), the lines that no test ran lower
+the merged coverage.
+
 ### Viewing the report
 
 ```sh

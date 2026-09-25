@@ -2057,7 +2057,9 @@ void testUnitC() {
   // See buildGccOMC() on caching instrumented objects.
   withSccache {
     sh label: 'cmake version', script: "cmake --version"
-    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache -DOM_ENABLE_COVERAGE=ON"
+    // Only the C runtime is what the unit tests exercise; see
+    // OM_COVERAGE_SOURCE_DIRS on why the rest must stay out of the tracefile.
+    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache -DOM_ENABLE_COVERAGE=ON -DOM_COVERAGE_SOURCE_DIRS=OMCompiler/SimulationRuntime/c/"
     sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
     sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
   }
