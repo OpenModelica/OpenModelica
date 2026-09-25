@@ -308,3 +308,47 @@ pub(super) fn native_externals_table(sigs: &[ExtCallSig], libs: &[String], syste
     }
     out
 }
+
+/// Append a `metadata.code.branch_hint` section hinting every `if` that follows
+/// a `nop` (the codegen's cold-branch marker) as not taken, so the compiler moves
+/// its body out of the hot path. `n_imported` is the number of imported functions.
+pub(super) fn add_branch_hints(module: &[u8], n_imported: u32) -> Vec<u8> {
+    let mut content = Vec::new();
+    let mut n_funcs = 0u32;
+    let mut index = n_imported;
+    for payload in wasmparser::Parser::new(0).parse_all(module).flatten() {
+        let wasmparser::Payload::CodeSectionEntry(body) = payload else { continue };
+        let start = body.range().start;
+        let mut hints = Vec::new();
+        if let Ok(ops) = body.get_operators_reader() {
+            let mut prev_nop = false;
+            for (op, off) in ops.into_iter_with_offsets().flatten() {
+                if prev_nop && matches!(op, wasmparser::Operator::If { .. }) {
+                    hints.push((off - start) as u32);
+                }
+                prev_nop = matches!(op, wasmparser::Operator::Nop);
+            }
+        }
+        if !hints.is_empty() {
+            uleb(index, &mut content);
+            uleb(hints.len() as u32, &mut content);
+            for off in hints {
+                uleb(off, &mut content);
+                content.extend([1, 0]);
+            }
+            n_funcs += 1;
+        }
+        index += 1;
+    }
+    let name = b"metadata.code.branch_hint";
+    let mut section = Vec::new();
+    uleb(name.len() as u32, &mut section);
+    section.extend(name);
+    uleb(n_funcs, &mut section);
+    section.extend(content);
+    let mut out = module.to_vec();
+    out.push(0);
+    uleb(section.len() as u32, &mut out);
+    out.extend(section);
+    out
+}

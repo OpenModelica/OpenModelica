@@ -621,7 +621,7 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
             ctx.emit(we::Instruction::LocalTee(bt));
             ctx.emit(we::Instruction::F64Const(0.0f64.into()));
             ctx.emit(we::Instruction::F64Lt);
-            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            emit_unlikely_if(ctx, we::BlockType::Empty);
             ctx.emit(we::Instruction::LocalGet(bt));
             ctx.emit(we::Instruction::F64Const(0.5f64.into()));
             emit_src_loc(ctx);
@@ -747,7 +747,7 @@ fn emit_div_zero_guard(
         ctx.emit(I::I32Const(0));
         ctx.emit(I::I32Eq);
     }
-    ctx.emit(I::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     let exp = metamodelica::Ref::new(DAE::Exp::BINARY {
         exp1: metamodelica::Ref::new(e1.clone()),
         operator: op.clone(),
@@ -784,7 +784,7 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     ctx.emit(I::F64Const(0.0f64.into()));
     ctx.emit(I::F64Eq);
     ctx.emit(I::I32Or);
-    ctx.emit(I::If(we::BlockType::Result(we::ValType::F64)));
+    emit_unlikely_if(ctx, we::BlockType::Result(we::ValType::F64));
     ctx.emit(I::LocalGet(ta));
     ctx.emit(I::LocalGet(tb));
     emit_shared_str(ctx, &dumped_exp(e2)?);
