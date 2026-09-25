@@ -1,0 +1,48 @@
+// name: whenTimeEvents
+// keywords: NewBackend
+// status: correct
+// Two when equations with the same time event have to share one sample, and a
+// when on a discrete condition that depends on a time relation has to trigger.
+
+loadString("
+model WhenTimeEvents
+  Boolean a(start = true, fixed = true);
+  Boolean b(start = true, fixed = true);
+  Integer stage = if time > 0.5 then 1 else 0;
+  Boolean on = stage == 1;
+  Boolean c(start = true, fixed = true);
+equation
+  when time > 0.5 then
+    a = false;
+  end when;
+  when time > 0.5 then
+    b = false;
+  end when;
+  when on then
+    c = false;
+  end when;
+end WhenTimeEvents;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(WhenTimeEvents); getErrorString();
+val(a, 1);
+val(b, 1);
+val(c, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "WhenTimeEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'WhenTimeEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 0.0
+// endResult
