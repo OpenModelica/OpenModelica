@@ -1234,7 +1234,7 @@ public
             end for;
             res := makeShapedArray(exp.ty, listReverse(elem_exps));
           else
-            res := Expression.makeZero(exp.ty);
+            res := differentiateIteratorElement(exp, diffArguments, diff_map);
           end if;
         end if;
       then (res, diffArguments);
@@ -1317,7 +1317,7 @@ public
             // matrix cref like Rot_dq): keep the original whole-type zero, since
             // building it element-by-element would flatten its shape and break
             // codegen for multi-dimensional types.
-            res := Expression.makeZero(exp.ty);
+            res := differentiateIteratorElement(exp, diffArguments, diff_map);
           else
             elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             elem_exps := {};
@@ -1370,6 +1370,47 @@ public
       end if;
     end if;
   end makeShapedArray;
+
+  function differentiateIteratorElement
+    "An element of an array with iterator subscripts (e.g. x[i] in a reduction) whose
+    elements are seeds on their own: {der(x[1]), ..., der(x[n])}[i]. Zero otherwise."
+    input Expression exp;
+    input DifferentiationArguments diffArguments;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Expression res;
+  protected
+    ComponentRef base;
+    list<Subscript> subs;
+    list<ComponentRef> elem_crefs;
+    list<Expression> elem_exps = {};
+    Expression elem_res;
+    Type base_ty;
+    DifferentiationArguments args = diffArguments;
+    Boolean found;
+  algorithm
+    res := Expression.makeZero(Expression.typeOf(exp));
+    (base, subs) := match exp
+      case Expression.CREF() then ComponentRef.stripSubscripts(exp.cref);
+      else (ComponentRef.EMPTY(), {});
+    end match;
+    if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
+    base_ty := ComponentRef.getSubscriptedType(base);
+    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
+    elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
+    found := false;
+    for c in elem_crefs loop
+      if UnorderedMap.contains(c, diff_map) then
+        found := true;
+        break;
+      end if;
+    end for;
+    if not found then return; end if;
+    for c in elem_crefs loop
+      (elem_res, args) := differentiateComponentRef(Expression.fromCref(c), args);
+      elem_exps := elem_res :: elem_exps;
+    end for;
+    res := Expression.applySubscripts(subs, makeShapedArray(base_ty, listReverse(elem_exps)));
+  end differentiateIteratorElement;
 
   function differentiateComponentRefNoCollect
     input output Expression exp;
