@@ -1580,13 +1580,6 @@ template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraF
 
     let libFolder = simulationLibDir(simulationCodeTarget(), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
     let libPaths = makefileParams.libPaths |> path => path; separator=";"
-    let omPlatform = System.openModelicaPlatform()
-    let msysPath = if intEq(-1, stringFind(omPlatform, "msvc")) then
-      'if defined OMDEV set OMC_MSYS=%OMDEV%\\tools\\msys\\<%omPlatform%><%\n%>if not defined OMDEV set OMC_MSYS=<%home%>\\tools\\msys\\<%omPlatform%>'
-    else ""
-    let msysPathEntries = if intEq(-1, stringFind(omPlatform, "msvc")) then
-      ';%OMC_MSYS%\\bin;%OMC_MSYS%\\lib\\gcc\\<%System.gccDumpMachine()%>\\<%System.gccVersion()%>;%OMC_MSYS%\\..\\usr\\bin'
-    else ""
 
     match makefileParams.platform
       case  "linux32"
@@ -1598,6 +1591,14 @@ template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraF
         >>
       case  "win32"
       case  "win64" then
+        let omPlatform = System.openModelicaPlatform()
+        let msysPath = if intEq(-1, stringFind(omPlatform, "msvc")) then
+          'if defined OMDEV set OMC_MSYS=%OMDEV%\\tools\\msys\\<%omPlatform%><%\n%>if not defined OMDEV set OMC_MSYS=<%home%>\\tools\\msys\\<%omPlatform%>'
+        else ""
+        let msysPathEntries = if intEq(-1, stringFind(omPlatform, "msvc")) then
+          ';%OMC_MSYS%\\bin;%OMC_MSYS%\\lib\\gcc\\<%System.gccDumpMachine()%>\\<%System.gccVersion()%>;%OMC_MSYS%\\..\\usr\\bin'
+        else ""
+
         <<
         @echo off
         setlocal
