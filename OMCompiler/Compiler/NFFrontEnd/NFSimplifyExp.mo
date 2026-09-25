@@ -852,8 +852,8 @@ algorithm
       (arguments, inv_arguments, isNegative) := simplifyMultarySigns(arguments, inv_arguments, mcl);
 
       // split them into constant and non constant arguments
-      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isLiteral);
-      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral);
+      (const_args, arguments) := List.splitOnTrue(arguments, isEvaluableLiteral);
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, isEvaluableLiteral);
 
       // combine the constants
       if mcl == NFOperator.MathClassification.ADDITION then
@@ -1395,6 +1395,12 @@ algorithm
     else Expression.CAST(ty, exp);
   end match;
 end simplifyCast;
+
+function isEvaluableLiteral
+  "literals that can be combined by constant evaluation, records need their operator functions"
+  input Expression exp;
+  output Boolean b = Expression.isLiteral(exp) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)));
+end isEvaluableLiteral;
 
 function maxDimensionCount
   input Expression exp;
