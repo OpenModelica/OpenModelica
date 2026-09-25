@@ -466,6 +466,8 @@ struct GenCtx {
     /// (`tail`), which coincide with the match's assigned target. Paired with
     /// `mc_arm_writeback`; only meaningful when that is in effect.
     mc_arm_result_unit: bool,
+    /// Inside a matchcontinue arm's closure, where `return` leaves the closure.
+    in_mc_arm: bool,
     /// Set inside a checkpoint's closure, where `return;` cannot leave the
     /// function and instead reports that the body returned.
     checkpoint_closure: bool,
@@ -689,6 +691,10 @@ struct GenCtx {
     /// While set, a read of an owned plain local is emitted as `&*name` rather
     /// than `name.clone()`. Armed by [`emit_match`] for a `match_deref!` subject.
     borrow_reads: bool,
+    /// While set, a variable read is emitted as the place itself (`x`,
+    /// `var_field!(..)`), which may be `T` or `&T`. Only for consumers that
+    /// auto-ref: method receivers and `&` arguments. See [`emit_place_arg`].
+    place_reads: bool,
     /// Base names the enclosing assignment writes; a `match` in its RHS must not
     /// borrow a subject the statement is about to overwrite.
     assign_lhs_names: HashSet<String>,
@@ -773,6 +779,7 @@ impl GenCtx {
             fn_outputs: Vec::new(),
             fn_outputs_no_default: Vec::new(),
             mc_arm_writeback: Vec::new(),
+            in_mc_arm: false,
             mc_arm_result_unit: false,
             checkpoint_closure: false,
             variants: HashMap::new(),
@@ -804,6 +811,7 @@ impl GenCtx {
             pat_lit_counter: 0,
             place_mode: HashMap::new(),
             borrow_reads: false,
+            place_reads: false,
             assign_lhs_names: HashSet::new(),
             borrow_mask: Vec::new(),
             loop_label_stack: Vec::new(),
@@ -9069,6 +9077,7 @@ fn unescape_mm_string(s: &str) -> String {
 fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> String {
     // Borrow mode applies to this node only; the tuple arm re-arms it per element.
     let borrow_here = std::mem::take(&mut ctx.borrow_reads);
+    let place_here = std::mem::take(&mut ctx.place_reads);
     let borrow_mask = std::mem::take(&mut ctx.borrow_mask);
     match exp {
         TypedExp::Lit(Lit::Int(v))  => v.to_string(),
@@ -9654,6 +9663,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 // that `arcstr::literal!("foo")` produces from a literal.
                 Ty::Str if is_const_str_cref(name, segments, ctx, top_level) =>
                     format!("arcstr::literal!({var_str})"),
+                _ if place_here && !has_borrow_guard => var_str,
                 // A `Copy` value (`i32`/`f64`/`bool`/Modelica enumeration) read
                 // from an owned plain local: a bare read copies it and leaves the
                 // binding usable, so the `.clone()` is a pure no-op. Restricted to
@@ -9679,6 +9689,11 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 _ if borrow_here && is_plain_local && owned
                     && (is_arc_wrapped(effective_ty, ctx) || matches!(effective_ty, Ty::List(_))) =>
                     format!("&*{var_str}"),
+                // A by-value subject: `&x` is the `&T` the arm above yields.
+                _ if borrow_here && is_plain_local && owned
+                    && matches!(effective_ty, Ty::RustStruct(_) | Ty::RustEnum(_) | Ty::AliasTo(_) | Ty::Option(_) | Ty::Tuple(_))
+                    && !ty_contains_unknown(effective_ty) =>
+                    format!("&{var_str}"),
                 _ => format!("{var_str}.clone()"),
             };
             // `emit_var` reported an inline `RefCell::borrow()` guard (an
@@ -9722,6 +9737,14 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             }
         }
 
+        TypedExp::BinOp { op: op @ (BinOpKind::Eq | BinOpKind::NEq), lhs, rhs, .. }
+            if !is_const && lhs.ty() == Ty::Str && rhs.ty() == Ty::Str =>
+        {
+            let l = emit_place_arg("stringEq", 0, &[&**lhs, &**rhs], is_const, ctx, top_level);
+            let r = emit_place_arg("stringEq", 1, &[&**lhs, &**rhs], is_const, ctx, top_level);
+            let not = if matches!(op, BinOpKind::NEq) { "!" } else { "" };
+            format!("{not}metamodelica::stringEq(&{l}, &{r})")
+        }
         TypedExp::BinOp { op, lhs, rhs, ty, .. } => {
             let mut l = emit_exp(lhs, is_const, ctx, top_level);
             let mut r = emit_exp(rhs, is_const, ctx, top_level);
@@ -11680,6 +11703,36 @@ fn emit_builtin_call_arg_raw<'a>(
     raw
 }
 
+/// A read-only builtin argument: a variable yields its place (`T` or `&T`),
+/// for use as a method receiver or behind `&`. Not when another of `args`
+/// reads the variable, since that one may move it.
+fn emit_place_arg<'a>(
+    func: &str,
+    idx: usize,
+    args: &[&TypedExp],
+    is_const: bool,
+    ctx: &mut GenCtx,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> String {
+    let Some(&arg) = args.get(idx) else { return String::new() };
+    let read_elsewhere = |base: &str| args.iter().enumerate().any(|(j, a)| {
+        let mut names = HashSet::new();
+        collect_exp_names(a, &mut names);
+        j != idx && names.contains(base)
+    });
+    if !is_const
+        && matches!(arg, TypedExp::Var { name, segments, .. } if !read_elsewhere(&var_base_name(name, segments)))
+        && !matches!(arg.ty(), Ty::Tuple(_))
+    {
+        ctx.place_reads = true;
+        let s = emit_exp(arg, is_const, ctx, top_level);
+        ctx.place_reads = false;
+        s
+    } else {
+        format!("({})", emit_builtin_call_arg_raw(func, idx, arg, is_const, ctx, top_level))
+    }
+}
+
 fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Result<String> {
     // All argument emission below goes through `emit_builtin_call_arg{,_raw}`,
     // which consults `typedexp::builtin_function_ty` and applies MetaModelica's
@@ -11689,6 +11742,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
     // valid code at this site). Builtins without a registry entry — `SOME`,
     // `NONE`, `list`, `SOURCEINFO`, etc. — get `None` as the formal type and
     // fall back to the prior non-coercing behavior, which is fine for them.
+    let arg_refs: Vec<&TypedExp> = args.iter().collect();
     match func {
         "SOME" => {
             let a = args.first();
@@ -11954,9 +12008,23 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             Ok(format!("ArcStr::from(::std::format!(\"{spec}\", {arg}))"))
         },
         "stringGet" => {
-            let arg1 = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
+            let arg1 = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
             let arg2 = args.get(1).map(|a| emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(ctx.q(&format!("stringGet({},{})", arg1, arg2)))
+            Ok(ctx.q(&format!("stringGet(&{},{})", arg1, arg2)))
+        },
+        "stringEq" | "stringEqual" | "stringCompare" | "stringEmpty" | "stringHash" | "stringHashDjb2"
+        | "stringHashDjb2Continue" | "stringHashDjb2Mod" | "stringHashSdbm"
+            if resolve_call_qname(func, ctx, top_level).is_none() =>
+        {
+            let str_args = if matches!(func, "stringEq" | "stringEqual" | "stringCompare") { 2 } else { 1 };
+            let parts: Vec<String> = args.iter().enumerate().map(|(i, a)| {
+                if i < str_args {
+                    format!("&{}", emit_place_arg(func, i, &arg_refs, is_const, ctx, top_level))
+                } else {
+                    emit_builtin_call_arg_raw(func, i, a, is_const, ctx, top_level)
+                }
+            }).collect();
+            Ok(format!("{func}({})", parts.join(", ")))
         },
         // Real call into the runtime's unchecked variant (see the
         // `arrayGetNoBoundsChecking` arm). As the *dangerous*, no-bounds-checking
@@ -12072,8 +12140,8 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             Ok(format!("metamodelica::arrayLength({arg})"))
         },
         "listLength" | "stringLength" => {
-            let arg = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(format!("({}.len() as i32)", arg))
+            let arg = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
+            Ok(format!("(({arg}).len() as i32)"))
         },
         "floor" => {
             // floor/ceil are Real-only. `num_traits::Float` (re-exported by
@@ -12161,15 +12229,15 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             Ok(format!("sign({arg})"))
         },
         "listHead" => {
-            let arg = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(ctx.q(&format!("listHead({})", arg)))
+            let arg = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
+            Ok(ctx.q(&format!("({arg}).head().cloned()")))
         },
         "listRest" => {
-            let arg = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(ctx.q(&format!("listRest({})", arg)))
+            let arg = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
+            Ok(ctx.q(&format!("({arg}).rest()")))
         },
         "listGet" => {
-            let arg1 = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
+            let arg1 = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
             let arg2 = args.get(1).map(|a| emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)).unwrap_or_default();
             Ok(ctx.q(&format!("({arg1}).get({arg2})")))
         },
@@ -12377,9 +12445,13 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             let arg = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
             Ok(format!("{}.borrow().is_empty()", arg))
         },
+        "isSome" | "isNone" if args.len() == 1 && resolve_call_qname(func, ctx, top_level).is_none() => {
+            let arg = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
+            Ok(if func == "isSome" { format!("({arg}).is_some()") } else { format!("({arg}).is_none()") })
+        },
         "listEmpty" => {
-            let arg = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(format!("{}.is_empty()", arg))
+            let arg = emit_place_arg(func, 0, &arg_refs, is_const, ctx, top_level);
+            Ok(format!("({arg}).is_empty()"))
         },
         "SOURCEINFO" | "SourceInfo" => {
             let a0 = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_else(|| "Arc::new(\"\".to_string())".to_owned());
@@ -13264,7 +13336,9 @@ fn collect_string_concat_parts<'a>(exp: &TypedExp, is_const: bool, ctx: &mut Gen
         collect_string_concat_parts(lhs, is_const, ctx, top_level, parts);
         collect_string_concat_parts(rhs, is_const, ctx, top_level, parts);
     } else {
+        ctx.place_reads = !is_const && matches!(exp, TypedExp::Var { .. }) && !matches!(exp.ty(), Ty::Tuple(_));
         let mut s = emit_exp(exp, is_const, ctx, top_level);
+        ctx.place_reads = false;
         // MetaModelica implicitly takes the first output of a multi-output
         // call when it flows into a scalar (here: String) slot. A string-concat
         // operand whose static type is a tuple (e.g. `System.dladdr` returns
@@ -13279,8 +13353,10 @@ fn collect_string_concat_parts<'a>(exp: &TypedExp, is_const: bool, ctx: &mut Gen
     }
 }
 
-fn maybe_clone_string_value(expr: String, ty: &Ty) -> String {
-    if matches!(ty, Ty::Str) {
+/// `src` is the expression `expr` was emitted from: a variable read, literal
+/// or call already yields an owned `ArcStr`.
+fn maybe_clone_string_value(expr: String, ty: &Ty, src: &TypedExp) -> String {
+    if matches!(ty, Ty::Str) && !matches!(src, TypedExp::Var { .. } | TypedExp::Lit(_) | TypedExp::Call { .. }) {
         format!("({expr}).clone()")
     } else {
         expr
@@ -13292,7 +13368,7 @@ fn emit_cloned_call_arg<'a>(arg: &TypedExp, is_const: bool, ctx: &mut GenCtx, to
     // In const/static context the value is consumed by-value at compile time;
     // wrapping with `.clone()` would break const evaluation (e.g. `literal!("")`
     // is a const ArcStr but `literal!("").clone()` is not a const expression).
-    if is_const { arg_str } else { maybe_clone_string_value(arg_str, &arg.ty()) }
+    if is_const { arg_str } else { maybe_clone_string_value(arg_str, &arg.ty(), arg) }
 }
 
 /// True when `arg` is a bare reference to an INPUT parameter of the surrounding
@@ -13404,7 +13480,7 @@ fn emit_call_arg_with_formal<'a>(
             _ => Ty::Unknown,
         };
         let extracted = format!("({raw_exp}).0");
-        if is_const { extracted } else { maybe_clone_string_value(extracted, &first_ty) }
+        if is_const { extracted } else { maybe_clone_string_value(extracted, &first_ty, arg) }
     };
 
     // When the formal is an anonymous callback slot (`Arc<dyn Fn(...) + 'static>`)
@@ -16227,6 +16303,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     std::mem::replace(&mut ctx.mc_arm_writeback, arm_writeback.clone());
                 let saved_mc_arm_result_unit = std::mem::replace(
                     &mut ctx.mc_arm_result_unit, matches!(case.result.ty(), Ty::Unit));
+                let saved_in_mc_arm = std::mem::replace(&mut ctx.in_mc_arm, true);
                 let guard_check = {
                     let mut parts: Vec<String> = pat_extra_guards.clone();
                     if let Some(g) = case.guard.as_ref() {
@@ -16571,6 +16648,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 ctx.fn_initialized_vars = saved_fn_initialized_vars_mc;
                 ctx.mc_arm_writeback = saved_mc_arm_writeback;
                 ctx.mc_arm_result_unit = saved_mc_arm_result_unit;
+                ctx.in_mc_arm = saved_in_mc_arm;
                 ctx.match_refbound = saved_match_refbound_mc;
             }
             // Exhausting every arm raises a MetaModelica failure — exactly
@@ -21109,6 +21187,24 @@ fn outputs_tuple(env: &LocalEnv) -> String {
     }
 }
 
+/// The outputs for a `return` that leaves the function: an owned output is
+/// moved, a by-ref shadowing binding cloned. Inside a loop the iterated
+/// value may be an output, so everything is cloned there.
+fn returned_outputs_tuple(env: &LocalEnv, ctx: &GenCtx) -> String {
+    let read = |n: &String| {
+        let owned = ctx.loop_label_stack.is_empty()
+            && matches!(ctx.place_mode.get(n), Some(PlaceMode::Owned))
+            && !ctx.match_refbound.contains(n)
+            && !matches!(ctx.variant_shapes.get(n), Some(VarShape::RefArc));
+        if owned { escape_ident(n).to_string() } else { format!("{}.clone()", escape_ident(n)) }
+    };
+    match env.outputs.len() {
+        0 => "()".to_owned(),
+        1 => read(&env.outputs[0]),
+        _ => format!("({})", env.outputs.iter().map(read).collect::<Vec<_>>().join(", ")),
+    }
+}
+
 fn vars_needing_default(
     stmts: &[typedexp::TypedStmt],
     tracked: &HashSet<String>,
@@ -21471,7 +21567,7 @@ fn emit_stmt<'a>(
         {
             expr = format!("/* TODO: materialise Range into Array/List */ {expr}");
         }
-        maybe_clone_string_value(expr, scrut_ty)
+        maybe_clone_string_value(expr, scrut_ty, rhs)
     }
 
     fn lhs_assignment_ty(lhs: &TypedPat, env: &LocalEnv) -> Option<Ty> {
@@ -22203,12 +22299,15 @@ fn emit_stmt<'a>(
             // Expand `return;` into the same shape that emit_function produces
             // at the tail: `Ok(tuple)` when the enclosing function is fallible,
             // bare `tuple` otherwise.
-            // Clone each output: a `return;` may sit inside a match arm where an
-            // output name is shadowed by a by-ref pattern binding (e.g. the case
+            // A `return;` may sit inside a match arm where an output name is
+            // shadowed by a by-ref pattern binding (e.g. the case
             // `DAE.VAR(binding = obnd)` rebinds the output `obnd` to `&Option<…>`),
-            // so the bare name would be a reference. Outputs are always Clone, and
-            // cloning an owned local is harmless, so clone unconditionally.
-            let tail: String = outputs_tuple(env);
+            // so the bare name would be a reference; such outputs are cloned.
+            let tail: String = if !ctx.in_mc_arm && !ctx.checkpoint_closure {
+                returned_outputs_tuple(env, ctx)
+            } else {
+                outputs_tuple(env)
+            };
             // In a checkpoint closure `return;` cannot leave the function.
             if ctx.checkpoint_closure && ctx.mc_arm_writeback.is_empty() {
                 if ctx.current_fn_fallible {

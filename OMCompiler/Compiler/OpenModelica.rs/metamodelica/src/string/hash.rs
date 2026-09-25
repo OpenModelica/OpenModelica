@@ -1,14 +1,13 @@
 //! String hashing builtins (djb2 / sdbm).
 
-use arcstr::ArcStr;
 
 /// Returns a hash of the string using Rust's built-in hash.
-pub fn stringHash(str: ArcStr) -> i32 {
+pub fn stringHash(str: impl AsRef<str>) -> i32 {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::Hash;
     use std::hash::Hasher;
     let mut hasher = DefaultHasher::new();
-    str.hash(&mut hasher);
+    str.as_ref().hash(&mut hasher);
     hasher.finish() as i32
 }
 
@@ -39,13 +38,13 @@ fn djb2_wide(bytes: &[u8]) -> u64 {
 
 /// Returns a DJB2 hash of the string.
 /// DJB2 algorithm: hash = hash * 33 + byte
-pub fn stringHashDjb2(str: ArcStr) -> i32 {
-    (djb2(str.as_bytes(), 5381) & HASH_MASK) as i32
+pub fn stringHashDjb2(str: impl AsRef<str>) -> i32 {
+    (djb2(str.as_ref().as_bytes(), 5381) & HASH_MASK) as i32
 }
 
 /// Continues computing a DJB2 hash by adding another string to it.
-pub fn stringHashDjb2Continue(str: ArcStr, hash: i32) -> i32 {
-    (djb2(str.as_bytes(), hash as u32) & HASH_MASK) as i32
+pub fn stringHashDjb2Continue(str: impl AsRef<str>, hash: i32) -> i32 {
+    (djb2(str.as_ref().as_bytes(), hash as u32) & HASH_MASK) as i32
 }
 
 /// Same result as `stringHashDjb2Continue(intString(i), hash)`, without
@@ -72,18 +71,18 @@ pub fn intHashDjb2Continue(i: i32, hash: i32) -> i32 {
 }
 
 /// Computes a DJB2 hash and applies modulo, giving a result in `[0, mod_val)`.
-pub fn stringHashDjb2Mod(str: ArcStr, mod_val: i32) -> i32 {
+pub fn stringHashDjb2Mod(str: impl AsRef<str>, mod_val: i32) -> i32 {
     if mod_val == 0 {
         return 0;
     }
-    (djb2_wide(str.as_bytes()) % (mod_val as u32 as u64)) as i32
+    (djb2_wide(str.as_ref().as_bytes()) % (mod_val as u32 as u64)) as i32
 }
 
 /// Returns an SDBM hash of the string.
 /// SDBM algorithm: hash = byte + (hash << 6) + (hash << 16) - hash
-pub fn stringHashSdbm(str: ArcStr) -> i32 {
+pub fn stringHashSdbm(str: impl AsRef<str>) -> i32 {
     let mut hash: u32 = 0;
-    for &byte in str.as_bytes() {
+    for &byte in str.as_ref().as_bytes() {
         hash = (byte as u32)
             .wrapping_add(hash << 6)
             .wrapping_add(hash << 16)
