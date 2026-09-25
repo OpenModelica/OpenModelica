@@ -7067,25 +7067,25 @@ fn function_source_replacement(qname: &str) -> Option<&'static str> {
 }
 
 const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace>(inList: metamodelica::List<T>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<metamodelica::List<T>> {
-    fn sort_slice<T: Clone>(v: &[T], comp: &dyn Fn(T, T) -> Result<bool>) -> Result<Vec<T>> {
-        let n = v.len();
+    fn sort_slice<T: Clone>(v: &[T], ix: &[usize], comp: &dyn Fn(T, T) -> Result<bool>) -> Result<Vec<usize>> {
+        let n = ix.len();
         if n < 2 {
-            return Ok(v.to_vec());
+            return Ok(ix.to_vec());
         }
         if n == 2 {
-            return Ok(if comp(v[1].clone(), v[0].clone())? { v.to_vec() } else { vec![v[1].clone(), v[0].clone()] });
+            return Ok(if comp(v[ix[1]].clone(), v[ix[0]].clone())? { ix.to_vec() } else { vec![ix[1], ix[0]] });
         }
-        let (l, r) = v.split_at(n / 2);
-        let left = sort_slice(l, comp)?;
-        let right = sort_slice(r, comp)?;
+        let (l, r) = ix.split_at(n / 2);
+        let left = sort_slice(v, l, comp)?;
+        let right = sort_slice(v, r, comp)?;
         let mut res = Vec::with_capacity(n);
         let (mut i, mut j) = (0, 0);
         while i < left.len() && j < right.len() {
-            if comp(right[j].clone(), left[i].clone())? {
-                res.push(left[i].clone());
+            if comp(v[right[j]].clone(), v[left[i]].clone())? {
+                res.push(left[i]);
                 i += 1;
             } else {
-                res.push(right[j].clone());
+                res.push(right[j]);
                 j += 1;
             }
         }
@@ -7097,10 +7097,12 @@ const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc
     if v.len() < 2 || (v.len() == 2 && inCompFunc(v[1].clone(), v[0].clone())?) {
         return Ok(inList);
     }
-    let sorted = sort_slice(&v, &*inCompFunc)?;
+    let ix: Vec<usize> = (0..v.len()).collect();
+    let sorted = sort_slice(&v, &ix, &*inCompFunc)?;
+    let mut slots: Vec<Option<T>> = v.into_iter().map(Some).collect();
     let mut out = metamodelica::nil();
-    for e in sorted.into_iter().rev() {
-        out = metamodelica::cons(e, out);
+    for &k in sorted.iter().rev() {
+        out = metamodelica::cons(slots[k].take().unwrap(), out);
     }
     Ok(out)
 }"#;
