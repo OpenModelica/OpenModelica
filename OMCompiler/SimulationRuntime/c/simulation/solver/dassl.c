@@ -157,7 +157,7 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
     dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
     dasslData->rtol[i] = data->simulationInfo->tolerance;
     dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
-    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[data->simulationInfo->realVarsReverseIndex[i].array_idx].info.name, dasslData->atol[i]);
   }
   messageClose(OMC_LOG_SOLVER);
 }

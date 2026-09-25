@@ -56,6 +56,10 @@ _index_t base_array_nr_of_elements(const base_array_t a);
 /* Writes element `i` of `data` into `buffer`, returns like snprintf. */
 typedef int (*base_array_format_element_t)(char *buffer, size_t bufsize, const void *data, _index_t i);
 
+/* Make one-dimensional attribute array hold n elements, a single element is repeated. */
+void base_array_resize_attribute(base_array_t *attribute, size_t n, size_t element_size,
+                                 void (*alloc)(base_array_t*, int));
+
 /* Write vector into null-terminated string, e.g. "{1, 2, 3}". */
 void base_vector_to_string(const base_array_t *source, modelica_boolean isScalar,
                            base_array_format_element_t format_element,

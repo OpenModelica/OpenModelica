@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <string.h>
 
 
 /**
@@ -993,4 +994,38 @@ void base_vector_to_string(const base_array_t *source,
     if (remaining > 0) {
         snprintf(buffer + pos, remaining, "}");
     }
+}
+
+/**
+ * @brief Make one-dimensional attribute array hold `n` elements.
+ *
+ * An attribute with a single element holds the value of all elements of an
+ * array variable (`each`), it is repeated. Otherwise existing values are
+ * kept. Nothing is reallocated if `attribute` already has `n` elements.
+ *
+ * @param attribute     Attribute array to resize.
+ * @param n             Number of elements.
+ * @param element_size  Size of one element.
+ * @param alloc         Allocator, e.g. simple_alloc_1d_real_array.
+ */
+void base_array_resize_attribute(base_array_t *attribute, size_t n, size_t element_size,
+                                 void (*alloc)(base_array_t*, int))
+{
+    base_array_t resized = {0};
+    size_t old_n = (size_t) base_array_nr_of_elements(*attribute);
+    size_t k, from;
+
+    if (old_n == n) {
+        return;
+    }
+
+    alloc(&resized, (int) n);
+    for (k = 0; k < n; k++) {
+        from = (old_n == 1) ? 0 : k;
+        if (from < old_n) {
+            memcpy((char*) resized.data + k * element_size, (char*) attribute->data + from * element_size, element_size);
+        }
+    }
+    omc_array_release(attribute);
+    *attribute = resized;
 }

@@ -57,6 +57,12 @@ extern "C"
                            const char *name,
                            DIMENSION_INFO *dimension_info);
 
+  int printArrayElementName(char *buffer,
+                            size_t buffer_size,
+                            const char *name,
+                            const DIMENSION_INFO *dimension_info,
+                            size_t linear_address);
+
   size_t multiDimArrayToLinearIndex(DIMENSION_INFO *dimension,
                                     size_t *array_index);
 

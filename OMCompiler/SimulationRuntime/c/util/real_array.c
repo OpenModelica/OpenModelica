@@ -2616,3 +2616,11 @@ void create_real_array_from_range(real_array *dest, modelica_real start, modelic
         real_set(dest, i, start);
     }
 }
+
+/**
+ * @brief Make real attribute array hold `n` elements, see base_array_resize_attribute.
+ */
+void resizeRealAttribute(real_array *attribute, size_t n)
+{
+    base_array_resize_attribute(attribute, n, sizeof(modelica_real), simple_alloc_1d_real_array);
+}

@@ -93,7 +93,6 @@ void externalInputallocate2(DATA* data, const char *filename){
   char ** names;
   int * indx;
   const int nu = data->modelData->nInputVars;
-  const int nnu = modelica_integer_min(nu, res ? res->numvars - 1 : 0);
 
   if (NULL == res) {
     fprintf(stderr, "Failed to read CSV-file %s", filename);
@@ -108,8 +107,9 @@ void externalInputallocate2(DATA* data, const char *filename){
 
   names = (char**)malloc(nu * sizeof(char*));
 
+  /* One value per scalar input, inputs missing in the CSV file stay 0. */
   for(i = 0; i<data->simulationInfo->external_input.n; ++i){
-    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(nnu, sizeof(modelica_real));
+    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(nu, sizeof(modelica_real));
   }
 
   data->simulationInfo->external_input.t = (modelica_real*)calloc(data->simulationInfo->external_input.n+1, sizeof(modelica_real));

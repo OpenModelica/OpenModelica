@@ -967,3 +967,11 @@ void boolean_vector_to_string(const boolean_array *source, modelica_boolean isSc
 {
     base_vector_to_string(source, isScalar, boolean_element_to_string, buffer, bufsize);
 }
+
+/**
+ * @brief Make boolean attribute array hold `n` elements, see base_array_resize_attribute.
+ */
+void resizeBooleanAttribute(boolean_array *attribute, size_t n)
+{
+    base_array_resize_attribute(attribute, n, sizeof(modelica_boolean), simple_alloc_1d_boolean_array);
+}

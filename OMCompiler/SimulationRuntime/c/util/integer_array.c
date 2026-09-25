@@ -1704,3 +1704,11 @@ void integer_vector_to_string(const integer_array *source, modelica_boolean isSc
 {
     base_vector_to_string(source, isScalar, integer_element_to_string, buffer, bufsize);
 }
+
+/**
+ * @brief Make integer attribute array hold `n` elements, see base_array_resize_attribute.
+ */
+void resizeIntegerAttribute(integer_array *attribute, size_t n)
+{
+    base_array_resize_attribute(attribute, n, sizeof(modelica_integer), simple_alloc_1d_integer_array);
+}
