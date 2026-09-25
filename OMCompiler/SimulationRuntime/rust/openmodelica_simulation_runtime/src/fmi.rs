@@ -114,16 +114,12 @@ pub extern "C" fn allocModelDataVars(
 
 /// The one element `<Model>_read_input_fmu`'s `put_real_element` writes into.
 fn alloc_scalar_real_array(a: &mut real_array) {
-    alloc_scalar_array::<f64>(a);
+    unsafe { crate::model_data::simple_alloc_1d_real_array(a, 1) };
 }
 
 /// The one element `<Model>_read_input_fmu`'s `put_<type>_element` writes into.
-fn alloc_scalar_array<T>(a: &mut base_array_t) {
-    a.ndims = 1;
-    a.dim_size = alloc(1);
-    unsafe { *a.dim_size = 1 };
-    a.data = alloc::<T>(1).cast();
-    a.flexible = 0;
+fn alloc_scalar_array(a: &mut base_array_t, alloc: crate::model_data::AllocArray) {
+    unsafe { alloc(a, 1) };
 }
 
 #[unsafe(no_mangle)]
@@ -147,9 +143,9 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
     ] {
         for i in 0..count as usize {
             let a = unsafe { &mut (*base.add(i)).attribute };
-            alloc_scalar_array::<modelica_integer>(&mut a.start);
-            alloc_scalar_array::<modelica_integer>(&mut a.min);
-            alloc_scalar_array::<modelica_integer>(&mut a.max);
+            alloc_scalar_array(&mut a.start, crate::model_data::simple_alloc_1d_integer_array);
+            alloc_scalar_array(&mut a.min, crate::model_data::simple_alloc_1d_integer_array);
+            alloc_scalar_array(&mut a.max, crate::model_data::simple_alloc_1d_integer_array);
         }
     }
     for (base, count) in [
@@ -157,7 +153,7 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
         (md.booleanParameterData, md.nParametersBooleanArray),
     ] {
         for i in 0..count as usize {
-            alloc_scalar_array::<modelica_boolean>(unsafe { &mut (*base.add(i)).attribute.start });
+            alloc_scalar_array(unsafe { &mut (*base.add(i)).attribute.start }, crate::model_data::simple_alloc_1d_boolean_array);
         }
     }
     for (base, count) in [
@@ -165,7 +161,7 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
         (md.stringParameterData, md.nParametersStringArray),
     ] {
         for i in 0..count as usize {
-            alloc_scalar_array::<modelica_string>(unsafe { &mut (*base.add(i)).attribute.start });
+            alloc_scalar_array(unsafe { &mut (*base.add(i)).attribute.start }, crate::model_data::simple_alloc_1d_string_array);
         }
     }
 }

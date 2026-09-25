@@ -3829,16 +3829,26 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         >>
 
       let ty = crefShortType(cref)
+      // An array expression sets one value per array element, a scalar
+      // expression (e.g. `each min = p`) the value of all elements.
+      let attr = '<%crefAttributes(cref)%>.<%attribute%>'
+      let len = if isArrayType(typeof(exp)) then 'base_array_nr_of_elements(<%expPart%>)' else '1'
+      let setAttribute =
+        <<
+        if (base_array_nr_of_elements(<%attr%>) != <%len%>) {
+          omc_array_release(&<%attr%>);
+          simple_alloc_1d_<%ty%>_array(&<%attr%>, <%len%>);
+        }
+        <%if isArrayType(typeof(exp))
+          then 'copy_<%ty%>_array_data_mem(<%expPart%>, (modelica_<%ty%>*) <%attr%>.data);'
+          else 'put_<%ty%>_element(<%expPart%>, 0, &<%attr%>);'%>
+        >>
       let updateEqs = match attribute
         case "nominal"
         case "min"
         case "max" then
           <<
-          if (<%crefVarDimension(cref)%>.numberOfDimensions == 0) {
-            put_<%ty%>_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
-          } else {
-            throwStreamPrint(NULL, "Not yet implemented for array <%attribute%>.");
-          }
+          <%setAttribute%>
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char <%attribute%>_buffer[2048];
