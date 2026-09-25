@@ -10,6 +10,7 @@ Alias_test4.mos \
 Alias_test5.mos \
 ArrayAlias1.mos \
 ArrayAlias2.mos \
+ForEquationAlias.mos \
 Alias_pre.mos \
 AliasCyclic.mos \
 AliasCyclic1.mos \
