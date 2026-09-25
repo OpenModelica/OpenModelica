@@ -417,14 +417,11 @@ pub mod sun {
             let c = data(self.constraints, self.n);
             for i in 0..self.n {
                 let (lo, hi) = (min.get(i).copied().unwrap_or(f64::MIN), max.get(i).copied().unwrap_or(f64::MAX));
-                c[i] = if lo > 0.0 && x[i] > 0.0 {
-                    2.0
-                } else if lo >= 0.0 && x[i] >= 0.0 {
-                    1.0
-                } else if hi < 0.0 && x[i] < 0.0 {
-                    -2.0
-                } else if hi <= 0.0 && x[i] <= 0.0 {
-                    -1.0
+                // a variable on the bound would block every step that points outside
+                c[i] = if lo >= 0.0 && x[i] > 0.0 {
+                    if lo > 0.0 { 2.0 } else { 1.0 }
+                } else if hi <= 0.0 && x[i] < 0.0 {
+                    if hi < 0.0 { -2.0 } else { -1.0 }
                 } else {
                     0.0
                 };
@@ -466,12 +463,14 @@ pub mod sun {
                 // A Jacobian KLU cannot factorize (all-zero at the start point, say):
                 // difference it from here on, as C re-points `KINSetJacFn`.
                 KIN_LSETUP_FAIL => self.numeric_jac = true,
-                KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
+                // the step got too small but the residual is not (checked by the caller)
+                KIN_STEP_LT_STPTOL | KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
                 _ => return false,
             }
             let mut fnorm = 0.0;
             unsafe { KINGetFuncNorm(self.kin, &mut fnorm) };
-            if fnorm < FTOL_LESS_ACCURACY {
+            // a stalled step was checked already
+            if code != KIN_STEP_LT_STPTOL && fnorm < FTOL_LESS_ACCURACY {
                 // C's "move forward with a less accurate solution".
                 unsafe {
                     KINSetFuncNormTol(self.kin, FTOL_LESS_ACCURACY);
@@ -543,8 +542,19 @@ pub mod sun {
                 unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
                 crate::note_nls_iters((iters - self.iters_seen).max(0) as u64);
                 self.iters_seen = iters;
-                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
-                let retry = flag < 0 && self.handle_error(flag, &mut retries, &mut reset_tol);
+                // a step below the tolerance without any iteration only solves the system if the residual
+                // is small (KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual)
+                let mut stalled = false;
+                if flag == KIN_STEP_LT_STPTOL && iters == 0 {
+                    let x = data(self.u, self.n).to_vec();
+                    let mut f = vec![0.0f64; self.n];
+                    (ud.eval)(&x, &mut f);
+                    let fscale = data(self.fscale, self.n);
+                    let fnorm = fmath::sqrt(f.iter().zip(fscale.iter()).map(|(fi, si)| fi * si * fi * si).sum::<f64>());
+                    stalled = !(fnorm < FTOL_LESS_ACCURACY);
+                }
+                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK) || (flag == KIN_STEP_LT_STPTOL && !stalled);
+                let retry = (flag < 0 || stalled) && self.handle_error(flag, &mut retries, &mut reset_tol);
                 ud.numeric = self.numeric_jac;
                 retries += 1;
                 passes += 1;
