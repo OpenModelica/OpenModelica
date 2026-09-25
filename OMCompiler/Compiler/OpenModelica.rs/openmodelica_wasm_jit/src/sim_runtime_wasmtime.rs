@@ -77,6 +77,12 @@ fn host_libm() -> bool {
     !matches!(std::env::var("OMC_WASM_HOST_LIBM").as_deref(), Ok("0"))
 }
 
+/// `OMC_WASM_HOST_LIN_SOLVE=0`: solve the linear systems in-wasm, as the browser
+/// does, in a runtime that links both solvers.
+fn host_lin_solve() -> bool {
+    !matches!(std::env::var("OMC_WASM_HOST_LIN_SOLVE").as_deref(), Ok("0"))
+}
+
 fn shadow_math_with_host_libm(
     linker: &mut wasmtime::Linker<HostState>,
     store: &mut wasmtime::Store<HostState>,
@@ -2301,7 +2307,7 @@ fn push_runtime_flags(
     // solver on ScalableTestSuite's large sparse systems. A host without it (the
     // browser) leaves this unset and the module solves in-wasm.
     if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut *store, "rt_set_host_lin_solve") {
-        wts(set.call(&mut *store, 1))?;
+        wts(set.call(&mut *store, host_lin_solve() as u32))?;
     }
     // Same for `-lv`: the nonlinear solver logs from inside the module. The
     // effective mask, which `-lv_time` may hold shut until its window.

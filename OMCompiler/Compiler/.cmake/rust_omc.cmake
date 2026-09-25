@@ -1345,6 +1345,12 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_ENGINE_WASMER)
     list(APPEND _rust_omc_features engine-wasmer)
   endif()
+  # Link the web's in-wasm driver and solvers into the native runtime as well, so
+  # OMC_WASM_INWASM_DRIVER=1 and OMC_WASM_HOST_LIN_SOLVE=0 can run the web's path.
+  option(RUST_OMC_WASM_INWASM_DRIVER "Build the native wasm-jit runtime with the web's in-wasm driver and solvers." OFF)
+  if(RUST_OMC_WASM_INWASM_DRIVER)
+    list(APPEND _rust_omc_features openmodelica_wasm_jit/inwasm_driver)
+  endif()
   # --no-default-features makes sundials off by default; enable it only when
   # the wasm cross-compile is enabled.
   if(RUST_OMC_ENABLE_SUNDIALS)

@@ -169,6 +169,20 @@ pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
         Err(_) => {}
     }
     let missing = missing_ext_symbols(&model.ext_imports, &model.ext_libs);
+    if !missing.is_empty() && !native_externals_allowed() {
+        let names: Vec<&str> = missing.iter().map(|s| s.name.as_str()).collect();
+        let mut msg = format!(
+            "CodegenWasmJit: no wasm library defines the model's `external \"C\"` function(s) `{}`, \
+             and OMC_WASM_NATIVE_EXTERNALS=0 refuses the native ones",
+            names.join("`, `")
+        );
+        for note in &model.ext_lib_notes {
+            msg.push_str("\n  ");
+            msg.push_str(note);
+        }
+        record_error(msg);
+        return Err("CodegenWasmJit: external \"C\" implementation unavailable");
+    }
     if let Err(e) = sim_runtime::prepare_native_externals(&model, &missing) {
         record_error(format!("CodegenWasmJit: the model's `external \"C\"` implementations are unavailable:\n{e}"));
         return Err("CodegenWasmJit: external \"C\" implementation unavailable");
@@ -231,7 +245,7 @@ pub fn runSimulationWasmtime(fileNamePrefix: ArcStr, resultFile: ArcStr, simflag
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn run_wasmtime_inner(prefix: &str, result_file: &str, _simflags: &str) -> Result<()> {
+fn run_wasmtime_inner(prefix: &str, result_file: &str, simflags: &str) -> Result<()> {
     use std::process::Command;
     let module = format!("{prefix}.wasm");
     if !std::path::Path::new(&module).exists() {
@@ -251,6 +265,7 @@ fn run_wasmtime_inner(prefix: &str, result_file: &str, _simflags: &str) -> Resul
         .arg("--dir")
         .arg(".::.")
         .arg(&module)
+        .args(split_simflags(simflags))
         .status()
         .map_err(|e| "cannot run (is it on PATH? override with OMC_WASMTIME)")?;
     if !status.success() {

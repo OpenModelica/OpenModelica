@@ -3365,7 +3365,7 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
 
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
-    {
+    if inwasm_rsparse() {
         let a = rsparse::data::Sprs {
             nzmax: nnz,
             m: n,
@@ -3375,26 +3375,31 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
             x: vals.to_vec(),
         };
         // order 2 = AMD on A'A (CSparse's LU ordering); tol 1.0 = partial pivoting.
-        match rsparse::lusol(&a, b, 2, 1.0) {
+        return match rsparse::lusol(&a, b, 2, 1.0) {
             Ok(()) => 0,
             Err(_) => 1,
+        };
+    }
+    // Densify + dense LU.
+    let mut dense = alloc::vec![0.0f64; n * n];
+    for col in 0..n {
+        for k in colp[col] as usize..colp[col + 1] as usize {
+            dense[col * n + rowi[k] as usize] = vals[k];
         }
     }
-    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
-    {
-        // No in-wasm rsparse (native interactive / no_std): densify + dense LU.
-        let mut dense = alloc::vec![0.0f64; n * n];
-        for col in 0..n {
-            for k in colp[col] as usize..colp[col + 1] as usize {
-                dense[col * n + rowi[k] as usize] = vals[k];
-            }
-        }
-        if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
-            0
-        } else {
-            1
-        }
+    if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
+        0
+    } else {
+        1
     }
+}
+
+/// Whether the uncached solves use in-wasm rsparse. A runtime that also links the
+/// host solver follows `rt_set_host_lin_solve`, and while that picks the host they
+/// keep the lean build's dense LU.
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+fn inwasm_rsparse() -> bool {
+    !(cfg!(feature = "host_lin_solve") && openmodelica_solvers::solverflags::host_lin_solve())
 }
 
 /// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64) with the
@@ -3422,9 +3427,9 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
-    {
-        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    if inwasm_rsparse() {
         let mut p = alloc::vec![0isize; n + 1];
         let mut i = alloc::vec::Vec::new();
         let mut x = alloc::vec::Vec::new();
@@ -3439,20 +3444,16 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
             p[col + 1] = i.len() as isize;
         }
         let sp = rsparse::data::Sprs { nzmax: i.len(), m: n, n, p, i, x };
-        match rsparse::lusol(&sp, b, 2, 1.0) {
+        return match rsparse::lusol(&sp, b, 2, 1.0) {
             Ok(()) => 0,
             Err(_) => 1,
-        }
+        };
     }
-    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
-    {
-        // No in-wasm rsparse: A is already dense column-major, solve directly.
-        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
-        if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
-            0
-        } else {
-            1
-        }
+    // A is already dense column-major: solve directly.
+    if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+        0
+    } else {
+        1
     }
 }
 
