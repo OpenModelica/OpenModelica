@@ -49,6 +49,10 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             if let Some(wty) = compile_sim_cref_read(ctx, componentRef)? {
                 return Ok(wty);
             }
+            if let Some((v, i)) = flat_field_ref(ctx, componentRef) {
+                ctx.emit(we::Instruction::LocalGet(v.locals[i]));
+                return Ok(v.fields[i].1.wty());
+            }
             // A qualified cref `base[..].f1[..].….fn[..]`: descend through nested
             // records (and arrays of records) to the final field.
             if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
@@ -59,6 +63,10 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 return Err("CodegenWasmJit: unsupported component reference");
             };
             let name = ident.to_string();
+            if let Some(v) = flat_cref(ctx, componentRef).cloned() {
+                box_flat(ctx, &v.fields, &v.locals)?;
+                return Ok(WTy::I32);
+            }
             let (idx, sty) = ctx
                 .locals
                 .get(&name)
@@ -619,7 +627,7 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
             emit_src_loc(ctx);
             ctx.emit(we::Instruction::Call(rt_index("rt_invalid_root")?));
             release_heap_locals(ctx)?;
-            push_outputs(ctx);
+            push_outputs(ctx)?;
             ctx.emit(we::Instruction::Return);
             ctx.emit(we::Instruction::End);
             ctx.emit(we::Instruction::LocalGet(bt));
@@ -748,7 +756,7 @@ fn emit_div_zero_guard(
     emit_shared_str(ctx, &format!("Division by zero {} in function context", dumped_exp(&exp)?));
     ctx.emit(I::Call(rt_index("rt_throw_stream")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(I::Return);
     ctx.emit(I::End);
     ctx.emit(I::LocalGet(t));

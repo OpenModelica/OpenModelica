@@ -8,9 +8,82 @@ pub(crate) fn compile_function(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     CURRENT_FN.with(|c| *c.borrow_mut() = function_path(f));
-    let out = compile_function_body(f, by_name, literals);
+    let out = compile_boxed(f, by_name, literals);
     CURRENT_FN.with(|c| c.borrow_mut().clear());
     out
+}
+
+/// Compile a function that has a `$flat` variant: `(boxed body, flat body)`. The
+/// flat body is compiled once and the boxed one wraps it; if the flat body cannot
+/// be lowered, the boxed body is compiled as usual and the flat one wraps it.
+pub(crate) fn compile_function_variants(
+    f: &SimCodeFunction::Function::Function,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    boxed_index: u32,
+    flat_index: u32,
+) -> Result<(we::Function, we::Function)> {
+    CURRENT_FN.with(|c| *c.borrow_mut() = function_path(f));
+    let (_, sig) = function_signature(f)?;
+    openmodelica_error::ErrorExt::setCheckpoint(FLAT_VARIANT_CHECKPOINT);
+    let out = match compile_function_body(f, by_name, literals, FlatMode::Variant) {
+        Ok(flat) => {
+            openmodelica_error::ErrorExt::delCheckpoint(FLAT_VARIANT_CHECKPOINT);
+            variant_wrapper(&sig, true, flat_index, by_name, literals).map(|boxed| (boxed, flat))
+        }
+        Err(_) => {
+            openmodelica_error::ErrorExt::rollBack(FLAT_VARIANT_CHECKPOINT);
+            compile_boxed(f, by_name, literals).and_then(|boxed| {
+                variant_wrapper(&sig, false, boxed_index, by_name, literals).map(|flat| (boxed, flat))
+            })
+        }
+    };
+    CURRENT_FN.with(|c| c.borrow_mut().clear());
+    out
+}
+
+const FLAT_VARIANT_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit flat variant");
+const FLAT_LOCALS_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit flat locals");
+
+#[derive(Clone, Copy, PartialEq)]
+enum FlatMode {
+    Off,
+    /// Record outputs and locals of a flat type are held field by field.
+    Locals,
+    /// As `Locals`, and so are the record inputs: the `$flat` variant.
+    Variant,
+}
+
+/// The boxed body, holding flat record locals field by field unless that fails.
+fn compile_boxed(
+    f: &SimCodeFunction::Function::Function,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    if !has_flat_locals(f) {
+        return compile_function_body(f, by_name, literals, FlatMode::Off);
+    }
+    openmodelica_error::ErrorExt::setCheckpoint(FLAT_LOCALS_CHECKPOINT);
+    match compile_function_body(f, by_name, literals, FlatMode::Locals) {
+        Ok(func) => {
+            openmodelica_error::ErrorExt::delCheckpoint(FLAT_LOCALS_CHECKPOINT);
+            Ok(func)
+        }
+        Err(_) => {
+            openmodelica_error::ErrorExt::rollBack(FLAT_LOCALS_CHECKPOINT);
+            compile_function_body(f, by_name, literals, FlatMode::Off)
+        }
+    }
+}
+
+fn has_flat_locals(f: &SimCodeFunction::Function::Function) -> bool {
+    let SimCodeFunction::Function::Function::FUNCTION { outVars, variableDeclarations, .. } = f else {
+        return false;
+    };
+    (&**outVars)
+        .into_iter()
+        .chain(&**variableDeclarations)
+        .any(|v| var_name_ty(v).is_ok_and(|(_, t)| flat_fields(&t).is_some()))
 }
 
 fn function_path(f: &SimCodeFunction::Function::Function) -> String {
@@ -31,6 +104,7 @@ fn compile_function_body(
     f: &SimCodeFunction::Function::Function,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
+    mode: FlatMode,
 ) -> Result<we::Function> {
     if matches!(f, SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { .. }) {
         return compile_external_function(f, by_name, literals);
@@ -41,42 +115,88 @@ fn compile_function_body(
     };
 
     let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
+    let mut flat: HashMap<String, FlatVar> = HashMap::new();
     let mut idx: u32 = 0;
     // Parameters first (wasm locals 0..n_params).
     for v in &**functionArguments {
         let (name, sty) = var_name_ty(v)?;
-        locals.insert(name, (idx, sty));
-        idx += 1;
+        match flat_fields(&sty) {
+            Some(fields) if mode == FlatMode::Variant => {
+                let n = fields.len() as u32;
+                flat.insert(name, FlatVar { fields: fields.clone(), locals: (idx..idx + n).collect() });
+                idx += n;
+            }
+            _ => {
+                locals.insert(name, (idx, sty));
+                idx += 1;
+            }
+        }
     }
     let n_params = idx;
     let mut extra_locals: Vec<we::ValType> = Vec::new();
     let mut outputs: Vec<(u32, SigTy)> = Vec::new();
+    let mut flat_outs: Vec<Option<String>> = Vec::new();
     // Array locals/outputs to allocate at function entry (see `emit_array_alloc`):
     // (local index, element type, dimension specs). Inputs are excluded — they
     // are passed in already built.
     let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<metamodelica::Ref<DAE::Dimension>>)> = Vec::new();
+    // A flat output or local, unless the name is already taken.
+    let mut intern_flat = |v: &SimCodeFunction::Variable::Variable,
+                           idx: &mut u32,
+                           extra_locals: &mut Vec<we::ValType>,
+                           locals: &HashMap<String, (u32, SigTy)>|
+     -> Result<Option<String>> {
+        let (name, sty) = var_name_ty(v)?;
+        let Some(fields) = flat_fields(&sty).filter(|_| mode != FlatMode::Off) else { return Ok(None) };
+        if locals.contains_key(&name) {
+            return Ok(None);
+        }
+        if !flat.contains_key(&name) {
+            let vars = fields
+                .iter()
+                .map(|(_, t)| {
+                    extra_locals.push(t.wty().val());
+                    *idx += 1;
+                    *idx - 1
+                })
+                .collect();
+            flat.insert(name.clone(), FlatVar { fields: fields.clone(), locals: vars });
+        }
+        Ok(Some(name))
+    };
     // Outputs next, then local declarations. An output is often also listed in
     // `variableDeclarations` (the function body assigns to it through the same
     // name); it must map to a single local, so a name already allocated as an
     // input or output is reused rather than given a fresh slot.
     for v in &**outVars {
-        let slot = intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
-        outputs.push(slot);
+        match intern_flat(v, &mut idx, &mut extra_locals, &locals)? {
+            Some(name) => {
+                outputs.push((u32::MAX, var_name_ty(v)?.1));
+                flat_outs.push(Some(name));
+            }
+            None => {
+                outputs.push(intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?);
+                flat_outs.push(None);
+            }
+        }
     }
     for v in &**variableDeclarations {
-        intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+        if intern_flat(v, &mut idx, &mut extra_locals, &locals)?.is_none() {
+            intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+        }
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat, flat_outs, flat_results: mode == FlatMode::Variant };
     borrow_record_params(&mut ctx, functionArguments, Some(body))?;
     // In declaration order, like C's `varInit` loop: a declaration's dimensions
     // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
     // allocation and binding must interleave. `variableDeclarations` already
     // contains the outputs; one missing from it is initialized first.
-    let decl_slots: Vec<u32> = (&**variableDeclarations).into_iter().filter_map(|v| var_slot(&ctx, v)).collect();
+    let decl_names: HashSet<String> =
+        (&**variableDeclarations).into_iter().filter_map(|v| var_name_ty(v).ok().map(|(n, _)| n)).collect();
     let loose_outs: Vec<_> = (&**outVars)
         .into_iter()
-        .filter(|v| !var_slot(&ctx, v).is_some_and(|s| decl_slots.contains(&s)))
+        .filter(|v| !var_name_ty(v).is_ok_and(|(n, _)| decl_names.contains(&n)))
         .collect();
     let mut done: Vec<u32> = Vec::new();
     for v in loose_outs.into_iter().chain(&**variableDeclarations) {
@@ -85,7 +205,7 @@ fn compile_function_body(
     compile_stmts(&mut ctx, body)?;
     // Fall-through return: release heap locals, push the output locals and end.
     release_heap_locals(&mut ctx)?;
-    push_outputs(&mut ctx);
+    push_outputs(&mut ctx)?;
     ctx.emit(we::Instruction::End);
 
     let FnCtx { extra_locals, instrs, .. } = ctx;
@@ -135,7 +255,7 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat: HashMap::new(), flat_outs: Vec::new(), flat_results: false };
     borrow_record_params(&mut ctx, funArgs, None)?;
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
@@ -216,7 +336,7 @@ fn compile_external_function(
         if EXTERNALS_SHARED.with(|c| c.get()) {
             emit_shared_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
             release_heap_locals(&mut ctx)?;
-            push_outputs(&mut ctx);
+            push_outputs(&mut ctx)?;
             ctx.emit(we::Instruction::End);
             let FnCtx { extra_locals, instrs, .. } = ctx;
             let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
@@ -287,7 +407,7 @@ fn compile_external_function(
     // Release heap parameters (e.g. a String input consumed by the callee), as a
     // normal function body would; the outputs are excluded and moved out.
     release_heap_locals(&mut ctx)?;
-    push_outputs(&mut ctx);
+    push_outputs(&mut ctx)?;
     ctx.emit(we::Instruction::End);
 
     let FnCtx { extra_locals, instrs, .. } = ctx;
@@ -431,6 +551,26 @@ fn init_var(
         return Ok(());
     };
     let (vname, sty) = var_name_ty(v)?;
+    if let Some(fv) = flat_var(ctx, &vname).cloned() {
+        if fv.locals[0] < ctx.n_params || done.contains(&fv.locals[0]) {
+            return Ok(());
+        }
+        done.push(fv.locals[0]);
+        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        return match value {
+            _ if *bind_from_outside => Ok(()),
+            Some(val) => compile_assign(ctx, &lhs, val),
+            None if assigned_whole_first(body, &vname) => Ok(()),
+            None => {
+                let (_, vals) = record_default_values(ctx, ty)?;
+                for (v, l) in vals.iter().zip(&fv.locals) {
+                    ctx.emit(we::Instruction::LocalGet(*v));
+                    ctx.emit(we::Instruction::LocalSet(*l));
+                }
+                Ok(())
+            }
+        };
+    }
     let Some(slot) = var_slot(ctx, v) else { return Ok(()) };
     if done.contains(&slot) {
         return Ok(());
@@ -556,10 +696,20 @@ pub(super) fn emit_dim_value(ctx: &mut FnCtx, dim: &DAE::Dimension) -> Result<()
     Ok(())
 }
 
-pub(super) fn push_outputs(ctx: &mut FnCtx) {
-    for (idx, _) in ctx.outputs.clone() {
-        ctx.emit(we::Instruction::LocalGet(idx));
+pub(super) fn push_outputs(ctx: &mut FnCtx) -> Result<()> {
+    for (k, (idx, _)) in ctx.outputs.clone().into_iter().enumerate() {
+        let fv = ctx.flat_outs.get(k).cloned().flatten().and_then(|n| ctx.flat.get(&n).cloned());
+        match fv {
+            Some(v) if ctx.flat_results => {
+                for l in &v.locals {
+                    ctx.emit(we::Instruction::LocalGet(*l));
+                }
+            }
+            Some(v) => box_flat(ctx, &v.fields, &v.locals)?,
+            None => ctx.emit(we::Instruction::LocalGet(idx)),
+        }
     }
+    Ok(())
 }
 
 /// Reference-count cleanup before a return: release every heap local that is
