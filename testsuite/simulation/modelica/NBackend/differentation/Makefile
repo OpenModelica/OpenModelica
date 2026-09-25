@@ -18,6 +18,7 @@ derSeedJacobian.mos \
 tupleAssignmentDerivative.mos \
 functionInputDerivative.mos \
 iteratorElementDerivative.mos \
+recordArgumentDerivative.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
