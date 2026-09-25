@@ -139,6 +139,17 @@ pub(super) fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp
     ctx.emit(we::Instruction::LocalSet(st));
     ctx.emit(we::Instruction::LocalGet(at));
     ctx.emit(we::Instruction::LocalGet(st));
+    if op_code == OP_DIV && arr_first && elem_wty == WTy::F64 && ctx.sim.is_some() {
+        // an equation divides with the checks of C's DIVISION_SIM, as a scalar division does
+        emit_shared_str(ctx, &dumped_exp(scal_e)?);
+        let data = ctx.sim()?.data_local;
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+        emit_initial_flag(ctx);
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_div_sim_f64")?));
+        release_temp_array(ctx, at)?;
+        return Ok(WTy::I32);
+    }
     ctx.emit(we::Instruction::I32Const(op_code));
     ctx.emit(we::Instruction::I32Const(rev as i32));
     ctx.emit(we::Instruction::Call(rt_index(rt)?));

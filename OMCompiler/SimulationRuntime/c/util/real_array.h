@@ -166,6 +166,7 @@ extern real_array div_alloc_real_array_scalar(const real_array a, const modelica
 
 extern void division_real_array_scalar(threadData_t *, const real_array *a, modelica_real b, real_array *dest, const char *division_str);
 extern real_array division_alloc_real_array_scalar(threadData_t *, const real_array a, modelica_real b, const char *division_str);
+extern real_array division_alloc_real_array_scalar_sim(threadData_t *, const real_array a, modelica_real b, const char *division_str, const int *equationIndexes, modelica_boolean noThrowDivZero, modelica_real time, modelica_boolean initial);
 extern void div_scalar_real_array(modelica_real a, const real_array *b, real_array *dest);
 extern real_array div_alloc_scalar_real_array(modelica_real a, const real_array b);
 extern void pow_real_array_scalar(const real_array *a, modelica_real b, real_array *dest);

@@ -178,6 +178,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_array_ew_f64", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_scalar_i32", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_scalar_f64", &[WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_div_sim_f64", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
     ("rt_array_neg_i32", &[WTy::I32], &[WTy::I32]),
     ("rt_array_neg_f64", &[WTy::I32], &[WTy::I32]),
     ("rt_array_transpose", &[WTy::I32], &[WTy::I32]),

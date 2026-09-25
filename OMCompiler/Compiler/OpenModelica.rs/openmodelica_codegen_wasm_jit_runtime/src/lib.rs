@@ -2091,6 +2091,21 @@ pub extern "C" fn rt_array_scalar_f64(a: u32, s: f64, op: u32, rev: u32) -> u32 
     res
 }
 
+/// `a ./ s` in an equation: C's `division_alloc_real_array_scalar_sim`, the checks of
+/// `rt_div_sim` for every element (e.g. 0/0 is 0 during initialization).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_div_sim_f64(a: u32, s: f64, msg: u32, time: f64, initial: i32) -> u32 {
+    let res = array_like(a);
+    let (da, dr) = (arr_data(a), arr_data(res));
+    for i in 0..rt_array_total(a) {
+        let x = unsafe { load_f64(da + i * 8) };
+        let q = x / s;
+        let v = if s == 0.0 || !q.is_finite() { nls::rt_div_sim(x, s, msg, time, initial) } else { q };
+        unsafe { store_f64(dr + i * 8, v) };
+    }
+    res
+}
+
 /// Negate every element of an i32-element array.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_neg_i32(a: u32) -> u32 {

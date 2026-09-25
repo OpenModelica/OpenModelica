@@ -6669,6 +6669,12 @@ case BINARY(__) then
     (match context
       case FUNCTION_CONTEXT(__) then
         rcSpillArray(type, 'div_alloc_<%type%>_scalar(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
+      // same checks as DIVISION_SIM, e.g. 0/0 is 0 during initialization
+      case SIMULATION_CONTEXT() then
+        if stringEq(type, "real_array") then
+          rcSpillArray(type, 'division_alloc_real_array_scalar_sim(threadData,<%e1%>,<%e2%>,"<%e2str%>",equationIndexes,data->simulationInfo->noThrowDivZero,data->localData[0]->timeValue,initial())', &preExp, &varDecls, &varFrees)
+        else
+          rcSpillArray(type, 'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")', &preExp, &varDecls, &varFrees)
       else
         rcSpillArray(type, 'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")', &preExp, &varDecls, &varFrees)
     )
