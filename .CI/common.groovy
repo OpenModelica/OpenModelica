@@ -1566,7 +1566,8 @@ void buildGccOMC() {
      script: "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target generate-msvc-c-sources"
   stash name: 'omc-msvc-c-sources',
         includes: 'build_cmake/OMCompiler/Compiler/msvc-c-sources/*.c,' +
-                  'build_cmake/OMCompiler/Compiler/msvc-c-sources/*.h'
+                  'build_cmake/OMCompiler/Compiler/msvc-c-sources/*.h,' +
+                  'build_cmake/OMCompiler/Compiler/msvc-c-sources/*.cpp'
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see ctestStashed).
@@ -1856,13 +1857,13 @@ void crossBuildOMCWindows() {
                 "-DCMAKE_TOOLCHAIN_FILE=${t.toolchain}",
                 "-DRUST_OMC_TARGET=${t.triple}",
                 "-DOM_OMC_PREBUILT_C_SOURCES=${env.WORKSPACE}/omc-c-sources",
-                '-DOM_ENABLE_GUI_CLIENTS=OFF',
+                '-DOM_ENABLE_GUI_CLIENTS=ON',
                 '-DOM_OMC_ENABLE_CPP_RUNTIME=ON',
                 '-DOM_USE_CCACHE=OFF',
                 '-DCMAKE_C_COMPILER_LAUNCHER=sccache',
                 '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache',
                 '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
-                "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"] + t.configure
+                "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"] + t.configure + t.qt
   sh "cmake -S . -B build_cmake ${flags.join(' ')}"
   withSccache {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"

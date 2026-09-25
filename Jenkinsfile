@@ -748,7 +748,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-win-x86_64'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
