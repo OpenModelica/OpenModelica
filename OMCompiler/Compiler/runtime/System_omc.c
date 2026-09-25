@@ -349,17 +349,17 @@ extern int System_alarmExpired()
   return cancelledByAlarm;
 }
 
-extern void System_setPumpCallback(void (*cb)(void))
+DLLExport extern void System_setPumpCallback(void (*cb)(void))
 {
   pumpCallback = cb;
 }
 
-extern void System_requestCancel()
+DLLExport extern void System_requestCancel()
 {
   cancelRequested = 1;
 }
 
-extern void System_clearCancel()
+DLLExport extern void System_clearCancel()
 {
   cancelRequested = 0;
   progressPermille = -1;
@@ -382,17 +382,17 @@ extern void System_reportProgressMessage(const char *message)
   progressMessage = (message && *message) ? omc_alloc_interface.malloc_strdup(message) : NULL;
 }
 
-extern const char* System_progressMessage()
+DLLExport extern const char* System_progressMessage()
 {
   return progressMessage ? progressMessage : "";
 }
 
-extern int System_progressPermille()
+DLLExport extern int System_progressPermille()
 {
   return progressPermille;
 }
 
-extern int System_progressPhase()
+DLLExport extern int System_progressPhase()
 {
   return progressPhase;
 }
@@ -847,7 +847,7 @@ extern const char* System_modelicaPlatform()
  *
  * @return const char* platform specifier
  */
-extern const char* System_openModelicaPlatform()
+DLLExport extern const char* System_openModelicaPlatform()
 {
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }

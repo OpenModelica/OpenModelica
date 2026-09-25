@@ -371,19 +371,45 @@ endif()
 
 
 
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::frontendcpp)
+# PRIVATE: its users must get these objects' functions from the exports below.
+# Linked into them as well, a function missing from the exports would quietly
+# come with a second copy of the objects' globals.
+target_link_libraries(OpenModelicaCompiler PRIVATE omc::parser)
+target_link_libraries(OpenModelicaCompiler PRIVATE omc::compiler::backendruntime)
+target_link_libraries(OpenModelicaCompiler PRIVATE omc::compiler::runtime)
+target_link_libraries(OpenModelicaCompiler PRIVATE omc::compiler::frontendcpp)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::mmc::runtime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::config)
 
-# On Windows we need explicitly tell the dll to export all symbols. It is not so good
-# that we have to export all symbols. However, OMEdit uses some of the functions in the
-# lib directly and we have no way of marking specific MetaModelica functions for exporting.
-if(MINGW)
-  target_link_options(OpenModelicaCompiler PRIVATE  -Wl,--export-all-symbols)
-elseif(MSVC)
-  set_target_properties(OpenModelicaCompiler PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+# The library exports only what is marked DLLExport/DLLModelDirection: the public
+# MetaModelica functions (the code generator marks them) and the few C functions
+# its users call (__omc_main, ModelInstanceReference_*, the System_* cancel and
+# progress hooks, the ASSC test helpers). Exporting every symbol overflows the
+# 65535 export ordinals of a Windows DLL.
+#
+# Elsewhere the library and the static libraries linked into it are built with
+# hidden visibility and DLLExport means visibility("default"), so they export
+# the same set: OMEdit, OMShell, OMNotebook and omc fail to link on Linux and
+# macOS too when they use a symbol the DLL does not export.
+if(NOT WIN32)
+  foreach(_omc_compiler_part IN ITEMS OpenModelicaCompiler omparse omcruntime omcbackendruntime
+                                      omcfrontendcpp omcfrontendcppabsyn)
+    if(TARGET ${_omc_compiler_part})
+      set_target_properties(${_omc_compiler_part} PROPERTIES
+        C_VISIBILITY_PRESET hidden
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON)
+      target_compile_definitions(${_omc_compiler_part} PRIVATE OMC_EXPORT_BY_VISIBILITY)
+    endif()
+  endforeach()
+endif()
+
+# Fails once the library exports more symbols than a Windows DLL can, so this is
+# caught on Linux before it breaks the Windows build.
+if(BUILD_TESTING AND CMAKE_EXECUTABLE_FORMAT STREQUAL "ELF")
+  add_test(NAME OpenModelicaCompiler-export-count
+           COMMAND ${CMAKE_COMMAND} -DNM=${CMAKE_NM} -DLIBRARY=$<TARGET_FILE:OpenModelicaCompiler>
+                   -P ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/check_export_count.cmake)
 endif()
 
 # OMC Executable.
