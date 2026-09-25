@@ -1837,14 +1837,22 @@ pub fn openModelicaPlatformAlternative() -> ArcStr {
     ArcStr::from(OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE)
 }
 
+/// `CONFIG_GCC_DUMPMACHINE`: only MinGW builds set it.
+const GCC_DUMPMACHINE: &str = if !cfg!(all(windows, target_env = "gnu")) {
+    ""
+} else if Autoconf::is64Bit {
+    "x86_64-w64-mingw32"
+} else {
+    "i686-w64-mingw32"
+};
+
 pub fn gccDumpMachine() -> ArcStr {
-    // Output of `<CC> -dumpmachine`. Requires invoking the compiler;
-    // defer until a code path actually consumes it.
-    todo!("System.gccDumpMachine: needs to shell out to the configured CC")
+    ArcStr::from(GCC_DUMPMACHINE)
 }
 
 pub fn gccVersion() -> ArcStr {
-    todo!("System.gccVersion: needs to shell out to the configured CC")
+    let version = option_env!("OMC_GCC_VERSION").unwrap_or("");
+    ArcStr::from(if cfg!(all(windows, target_env = "gnu")) { version } else { "" })
 }
 
 // ───────────────────────────────── LAPACK / iconv / printf ───────────────────
