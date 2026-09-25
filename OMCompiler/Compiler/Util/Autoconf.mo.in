@@ -33,6 +33,9 @@ encapsulated package Autoconf
   constant String ldflags_runtime_fmu = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@";
   constant String ldflags_runtime_fmu_static = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC@";
   constant String hdf5Libs = "@OMC_HDF5_LDFLAGS@";
+  // What a link line naming fmilib needs besides it, space-separated: the system expat and
+  // minizip, which FMIL does not merge into libfmilib.a (OM_USE_SYSTEM_EXPAT/MINIZIP).
+  constant String fmilibLibs = "@OMC_FMILIB_LDFLAGS@";
 
   // Libraries linked into generated simulation code when --parmodauto (ParModelica auto) is enabled.
   constant String parModelicaAutoLibs = "@PARMODELICAAUTO_LDFLAGS@";

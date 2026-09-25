@@ -180,6 +180,41 @@ if(NOT OM_OMC_WASM)
   omc_add_subdirectory(3rdParty)
 endif()
 
+# What a link line naming libfmilib.a needs besides it (Autoconf.fmilibLibs), i.e. the code of an
+# imported FMU. FMIL merges only the expat and minizip it builds itself into the archive, so with
+# OM_USE_SYSTEM_EXPAT/OM_USE_SYSTEM_MINIZIP their XML_* and unz* functions are left undefined.
+# Full paths, as for HDF5, not -lexpat/-lminizip: those need the -dev packages' symlinks, which
+# an installed omc does not otherwise require. The soname link (libexpat.so.1) rather than the file
+# it points to, which a minor update of the library renames. A system minizip brings its zlib.
+function(om_fmilib_soname_path lib out)
+  file(REAL_PATH "${lib}" _real)
+  string(REGEX REPLACE "(\\.so\\.[0-9]+)\\..*$" "\\1" _soname "${_real}")
+  if(EXISTS "${_soname}")
+    set(${out} "${_soname}" PARENT_SCOPE)
+  else()
+    set(${out} "${_real}" PARENT_SCOPE)
+  endif()
+endfunction()
+set(_om_fmilib_libs "")
+if(OM_USE_SYSTEM_EXPAT AND TARGET EXPAT::EXPAT)
+  # FindEXPAT keeps the path in a per-configuration variable; the target has it either way.
+  get_target_property(_om_fmilib_expat EXPAT::EXPAT IMPORTED_LOCATION_RELEASE)
+  if(NOT _om_fmilib_expat)
+    get_target_property(_om_fmilib_expat EXPAT::EXPAT IMPORTED_LOCATION)
+  endif()
+  if(_om_fmilib_expat)
+    om_fmilib_soname_path("${_om_fmilib_expat}" _om_fmilib_expat)
+    list(APPEND _om_fmilib_libs "${_om_fmilib_expat}")
+  endif()
+endif()
+if(OM_USE_SYSTEM_MINIZIP AND OM_MINIZIP_LIBRARY)
+  om_fmilib_soname_path("${OM_MINIZIP_LIBRARY}" _om_fmilib_minizip)
+  list(APPEND _om_fmilib_libs "${_om_fmilib_minizip}")
+endif()
+string(REPLACE ";" " " _om_fmilib_libs "${_om_fmilib_libs}")
+set(OMC_FMILIB_LDFLAGS "${_om_fmilib_libs}" CACHE INTERNAL
+    "Libraries a link line naming fmilib needs besides it, space-separated.")
+
 
 # These flags are set after 3rdParty is added so they do not affect 3rdParty libraries.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")

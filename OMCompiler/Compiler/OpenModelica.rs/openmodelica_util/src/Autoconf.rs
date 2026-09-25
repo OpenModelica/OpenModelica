@@ -258,6 +258,13 @@ pub const hdf5Libs: &str = match option_env!("OMC_HDF5_LDFLAGS") {
     None => "",
 };
 
+/// `@OMC_FMILIB_LDFLAGS@`: what a link line naming fmilib needs besides it, space-separated --
+/// the system expat and minizip, empty unless OM_USE_SYSTEM_EXPAT/OM_USE_SYSTEM_MINIZIP.
+pub const fmilibLibs: &str = match option_env!("OMC_FMILIB_LDFLAGS") {
+    Some(s) => s,
+    None => "",
+};
+
 /// Libraries linked into generated simulation code when --parmodauto
 /// (ParModelica auto) is enabled. Mirrors `Util/Autoconf.mo`, which hardcodes
 /// the pair below: the ParModelica auto runtime (`libParModelicaAuto`) ships
