@@ -162,6 +162,37 @@ set(OM_COVERAGE_GENERATED_MO_DIR "${CMAKE_BINARY_DIR}/OMCompiler/Compiler/genera
 # Needed by coverage-report (the template mapping) and coverage-serve below.
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
+# Clang and the compiler's MetaModelica: LLVM's gcov instrumentation drops
+# every line whose #line names another file than its function's - all of the
+# MetaModelica in the generated C. So the compiler's generated C is compiled
+# without its #line directives (omc_coverage_line_directives_launcher() below)
+# and covered as C, and OpenModelicaCoverageLineDirectives.py moves that onto
+# the MetaModelica after gcovr has collected it, by replaying the directives.
+# The generated C has to be there for that; the entries for it are dropped
+# again.
+set(_OM_COVERAGE_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+function(omc_coverage_line_directives_launcher target c_files_dir)
+  if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    set_property(TARGET ${target} PROPERTY C_COMPILER_LAUNCHER
+                 "${Python3_EXECUTABLE}"
+                 "${_OM_COVERAGE_MODULE_DIR}/OpenModelicaCoverageClangLauncher.py"
+                 --c-files-dir "${c_files_dir}" -- ${CMAKE_C_COMPILER_LAUNCHER})
+  endif()
+endfunction()
+
+set(_om_coverage_line_directive_commands)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND "OMCompiler/Compiler/" IN_LIST OM_COVERAGE_SOURCE_DIRS)
+  set(OM_COVERAGE_C_FILES_DIR "${CMAKE_BINARY_DIR}/OMCompiler/Compiler/c_files")
+  list(APPEND _om_coverage_filter_args --filter "${OM_COVERAGE_C_FILES_DIR}/")
+  set(_om_coverage_line_directive_commands
+      COMMAND ${Python3_EXECUTABLE}
+              "${CMAKE_CURRENT_LIST_DIR}/OpenModelicaCoverageLineDirectives.py"
+              --gcovr-json "${OM_COVERAGE_DIR}/coverage.json"
+              --c-files-dir "${OM_COVERAGE_C_FILES_DIR}"
+              --root "${CMAKE_SOURCE_DIR}"
+              ${_om_coverage_filter_args})
+endif()
+
 file(RELATIVE_PATH _report_path "${CMAKE_BINARY_DIR}" "${OM_COVERAGE_DIR}/index.html")
 
 add_custom_target(coverage-reset
@@ -210,12 +241,13 @@ add_custom_target(coverage-collect
                           # The compiler's own view of a translation unit is
                           # the *generated* c_files/*.c, which gcov also wants
                           # to read. It is a build artifact that is filtered
-                          # out of the report anyway, and is not there at all
-                          # when the report is produced somewhere else than
-                          # the build (as in CI), so gcov has to be allowed to
-                          # not find it - otherwise it gives up on the .gcda
+                          # out of the report anyway, so gcov is allowed to not
+                          # find it - otherwise it gives up on the .gcda
                           # entirely and the .mo coverage inside it is lost
-                          # too. The .mo line data is identical either way.
+                          # too. Allowing it is not enough, though: GCC's gcov
+                          # still loses the .mo data of most modules then, so
+                          # where the report is produced somewhere else than
+                          # the build (as in CI), bring the generated C along.
                           # The same goes for the copies of the FMU export
                           # sources, deleted along with the FMU's build.
                           # Both categories show up for this: which one gcov
@@ -238,6 +270,8 @@ add_custom_target(coverage-collect
                           --print-summary
                           --json "${OM_COVERAGE_DIR}/coverage.json"
                           "${CMAKE_BINARY_DIR}"
+                  # Before the template mapping, which needs the .mo lines.
+                  ${_om_coverage_line_directive_commands}
                   COMMAND ${Python3_EXECUTABLE}
                           "${CMAKE_CURRENT_LIST_DIR}/OpenModelicaCoverageTemplates.py"
                           --gcovr-json "${OM_COVERAGE_DIR}/coverage.json"
