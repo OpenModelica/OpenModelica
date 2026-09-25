@@ -1225,6 +1225,9 @@ function(omc_rust_setup_codegen)
   file(GLOB_RECURSE MMTORUST_SOURCES CONFIGURE_DEPENDS
        ${RUST_OMC_DIR}/mmtorust/src/*.rs)
   list(APPEND MMTORUST_SOURCES ${RUST_OMC_DIR}/mmtorust/Cargo.toml)
+  # A `<Package>.handwritten.rs` decides which of its package's items are generated.
+  file(GLOB MMTORUST_HANDWRITTEN CONFIGURE_DEPENDS ${RUST_OMC_SRC_DIR}/*/src/*.handwritten.rs)
+  list(APPEND MMTORUST_SOURCES ${MMTORUST_HANDWRITTEN})
   if(RUST_OMC_PREBUILT_GENERATED_SRC)
     # Stamp completion with no dependency on the transpile chain, so mmtorust /
     # susan / the templates are never built; the .rs are already in the tree.
