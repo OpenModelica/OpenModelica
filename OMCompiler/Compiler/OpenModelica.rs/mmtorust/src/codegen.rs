@@ -6653,6 +6653,292 @@ fn match_drop_columns(
     Some((new_input, new_cases, prologue))
 }
 
+/// `match subj … case V() … subj.f …`: reads of `subj.f` that happen before
+/// the arm writes `subj` are taken from a pattern binding `V { f: __subj_f, .. }`
+/// instead of a `var_field!` destructure each. Runs before [`mark_last_uses`],
+/// so the reads it removes no longer keep `subj` alive.
+fn bind_match_subject_fields(e: &mut TypedExp, ctx: &GenCtx, top_level: &BTreeMap<String, NameNode<'_>>) {
+    let TypedExp::Match { kind: MatchKind::Match, input, cases, as_binding: None, .. } = e else { return };
+    if !is_arc_wrapped(&input.ty(), ctx) {
+        return;
+    }
+    let TypedExp::Var { name, segments, .. } = &**input else { return };
+    if name.contains('.') || segments.len() > 1 || segments.iter().any(|s| !s.subscripts.is_empty()) {
+        return;
+    }
+    let subj = var_base_name(name, segments);
+    let input_ty = input.ty();
+    for case in cases.iter_mut() {
+        if let Some(c) = bind_subject_fields(case, &subj, &input_ty, top_level) {
+            *case = c;
+        }
+    }
+}
+
+/// Preorder: `f` sees each expression before its (possibly rewritten) children.
+fn walk_exp_mut(e: &mut TypedExp, f: &mut dyn FnMut(&mut TypedExp)) {
+    f(e);
+    match e {
+        TypedExp::Var { segments, .. } => {
+            for seg in segments.iter_mut() {
+                seg.subscripts.iter_mut().for_each(|s| walk_exp_mut(s, f));
+            }
+        }
+        TypedExp::Lit(_) | TypedExp::Todo(_) => {}
+        TypedExp::BinOp { lhs, rhs, .. } => {
+            walk_exp_mut(lhs, f);
+            walk_exp_mut(rhs, f);
+        }
+        TypedExp::UnOp { operand, .. } => walk_exp_mut(operand, f),
+        TypedExp::Call { args, named_args, .. }
+        | TypedExp::Constructor { args, named_args, .. }
+        | TypedExp::PartEval { args, named_args, .. } => {
+            args.iter_mut().for_each(|a| walk_exp_mut(a, f));
+            named_args.iter_mut().for_each(|(_, a)| walk_exp_mut(a, f));
+        }
+        TypedExp::If { cond, then_, elseif, else_, .. } => {
+            walk_exp_mut(cond, f);
+            walk_exp_mut(then_, f);
+            for (c, e) in elseif.iter_mut() {
+                walk_exp_mut(c, f);
+                walk_exp_mut(e, f);
+            }
+            walk_exp_mut(else_, f);
+        }
+        TypedExp::Cons { head, tail, .. } => {
+            walk_exp_mut(head, f);
+            walk_exp_mut(tail, f);
+        }
+        TypedExp::Tuple(elems) | TypedExp::Array { elems, .. } => elems.iter_mut().for_each(|e| walk_exp_mut(e, f)),
+        TypedExp::Range { start, step, stop, .. } => {
+            walk_exp_mut(start, f);
+            if let Some(s) = step {
+                walk_exp_mut(s, f);
+            }
+            walk_exp_mut(stop, f);
+        }
+        TypedExp::Reduction { body, iterators, .. } => {
+            for it in iterators.iter_mut() {
+                walk_exp_mut(&mut it.range, f);
+                if let Some(g) = &mut it.guard {
+                    walk_exp_mut(g, f);
+                }
+            }
+            walk_exp_mut(body, f);
+        }
+        TypedExp::Match { input, cases, .. } => {
+            walk_exp_mut(input, f);
+            for c in cases.iter_mut() {
+                if let Some(g) = &mut c.guard {
+                    walk_exp_mut(g, f);
+                }
+                for (_, _, d, _) in c.locals.iter_mut() {
+                    if let Some(d) = d {
+                        walk_exp_mut(d, f);
+                    }
+                }
+                c.stmts.iter_mut().for_each(|st| walk_stmt_mut(st, f));
+                walk_exp_mut(&mut c.result, f);
+            }
+        }
+    }
+}
+
+fn walk_stmt_mut(st: &mut TypedStmt, f: &mut dyn FnMut(&mut TypedExp)) {
+    match st {
+        TypedStmt::Assign { rhs, .. } => walk_exp_mut(rhs, f),
+        TypedStmt::NoRetCall { call, .. } => walk_exp_mut(call, f),
+        TypedStmt::If { cond, then_, elseif, else_ } => {
+            walk_exp_mut(cond, f);
+            then_.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+            for (c, body) in elseif.iter_mut() {
+                walk_exp_mut(c, f);
+                body.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+            }
+            else_.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+        }
+        TypedStmt::For { range, body, .. } => {
+            walk_exp_mut(range, f);
+            body.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+        }
+        TypedStmt::While { cond, body } => {
+            walk_exp_mut(cond, f);
+            body.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+        }
+        TypedStmt::Try { body, else_body, .. } => {
+            body.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+            else_body.iter_mut().for_each(|s| walk_stmt_mut(s, f));
+        }
+        TypedStmt::Failure { body } => body.iter_mut().for_each(|s| walk_stmt_mut(s, f)),
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+    }
+}
+
+fn bind_subject_fields(
+    case: &TypedCase,
+    subj: &str,
+    input_ty: &Ty,
+    top_level: &BTreeMap<String, NameNode<'_>>,
+) -> Option<TypedCase> {
+    let (enum_q, variant) = variant_of_pat(&case.pattern, input_ty, top_level)?;
+    if !uniontype_is_enum(&enum_q, top_level) || case.locals.iter().any(|(n, ..)| n == subj) {
+        return None;
+    }
+    let field_tys = record_field_tys(&format!("{enum_q}.{variant}"), top_level)?;
+    let TypedPat::Constructor { fields, named_fields, .. } = &case.pattern else { return None };
+    let free = |i: usize, f: &str| match fields.get(i) {
+        Some(p) => matches!(p, TypedPat::Wildcard),
+        None => named_fields.iter().find(|(n, _)| n == f).is_none_or(|(_, p)| matches!(p, TypedPat::Wildcard)),
+    };
+    let allowed: HashSet<String> = field_tys.iter().enumerate()
+        .filter(|(i, (f, t))| free(*i, f) && !matches!(t, Ty::Array(_)))
+        .map(|(_, (f, _))| f.clone())
+        .collect();
+    if allowed.is_empty() {
+        return None;
+    }
+
+    let touches_exp = |e: &TypedExp| exp_writes_or_moves(e, subj);
+    let touches_stmt = |st: &TypedStmt| stmt_writes_or_moves(st, subj);
+    let mut case = case.clone();
+    let mut bound = BTreeMap::new();
+    let mut shadowed = false;
+    let mut visit = |e: &mut TypedExp| {
+        shadowed |= shadows_name(e, subj);
+        rewrite_subject_field_read(e, subj, &allowed, &mut bound);
+    };
+    match &mut case.guard {
+        Some(g) if touches_exp(g) => return None,
+        Some(g) => walk_exp_mut(g, &mut visit),
+        None => {}
+    }
+    let k = case.stmts.iter().position(|st| touches_stmt(st));
+    let end = k.unwrap_or(case.stmts.len());
+    let region = &mut case.stmts[..end];
+    if stmts_rebind_name(region, subj) {
+        return None;
+    }
+    region.iter_mut().for_each(|st| walk_stmt_mut(st, &mut visit));
+    match k {
+        // The right-hand side of a plain write is evaluated before it.
+        Some(k) => {
+            if let TypedStmt::Assign { rhs, .. } = &mut case.stmts[k]
+                && !touches_exp(rhs)
+            {
+                walk_exp_mut(rhs, &mut visit);
+            }
+        }
+        None => {
+            if !touches_exp(&case.result) {
+                walk_exp_mut(&mut case.result, &mut visit);
+            }
+        }
+    }
+    if shadowed || bound.is_empty() {
+        return None;
+    }
+    // The pattern emitter takes either positional or named fields, not both.
+    let TypedPat::Constructor { fields, named_fields, .. } = &mut case.pattern else { unreachable!() };
+    if fields.len() > field_tys.len() {
+        return None;
+    }
+    let positional = std::mem::take(fields).into_iter().enumerate()
+        .filter(|(_, p)| !matches!(p, TypedPat::Wildcard))
+        .map(|(i, p)| (field_tys[i].0.clone(), p));
+    named_fields.splice(0..0, positional);
+    named_fields.retain(|(f, p)| !(matches!(p, TypedPat::Wildcard) && bound.contains_key(f)));
+    named_fields.extend(bound.into_iter().map(|(f, b)| (f, TypedPat::Var(b))));
+    Some(case)
+}
+
+fn exp_writes_or_moves(e: &TypedExp, name: &str) -> bool {
+    let mut w = HashSet::new();
+    exp_assigned_var_names(e, &mut w);
+    collect_moved_names(e, &mut w);
+    w.contains(name)
+}
+
+fn stmt_writes_or_moves(st: &TypedStmt, name: &str) -> bool {
+    let mut w = HashSet::new();
+    stmts_assigned_var_names(std::slice::from_ref(st), &mut w);
+    collect_moved_names_stmt(st, &mut w);
+    w.contains(name)
+}
+
+/// The arm's by-reference pattern bindings are dead by the time it first writes
+/// or moves `subj`, so a borrowed `match &*subj` does not conflict with it.
+fn arm_bindings_dead_at_subject_write(case: &TypedCase, subj: &str) -> bool {
+    let mut assigned = HashSet::new();
+    stmts_assigned_var_names(&case.stmts, &mut assigned);
+    // Bindings the arm reassigns are rebound as owned copies at its start.
+    let binds: HashSet<String> = typedexp::pat_bindings(&case.pattern).into_iter()
+        .map(|(n, _)| n)
+        .filter(|n| !assigned.contains(n))
+        .collect();
+    if case.guard.as_ref().is_some_and(|g| exp_writes_or_moves(g, subj)) {
+        return false;
+    }
+    let reads_exp = |e: &TypedExp| {
+        let mut r = HashSet::new();
+        collect_exp_names(e, &mut r);
+        r.iter().any(|n| binds.contains(n))
+    };
+    let reads_stmt = |st: &TypedStmt| {
+        let mut r = HashSet::new();
+        collect_stmt_names(st, &mut r);
+        r.iter().any(|n| binds.contains(n))
+    };
+    match case.stmts.iter().position(|st| stmt_writes_or_moves(st, subj)) {
+        None => !exp_writes_or_moves(&case.result, subj) || !reads_exp(&case.result),
+        Some(k) => {
+            let at_k = match &case.stmts[k] {
+                TypedStmt::Assign { rhs, .. } if !exp_writes_or_moves(rhs, subj) => false,
+                st => reads_stmt(st),
+            };
+            !at_k && !case.stmts[k + 1..].iter().any(reads_stmt) && !reads_exp(&case.result)
+        }
+    }
+}
+
+fn shadows_name(e: &TypedExp, name: &str) -> bool {
+    match e {
+        TypedExp::Reduction { iterators, .. } => iterators.iter().any(|it| it.name == name),
+        TypedExp::Match { input, cases, as_binding, .. } => {
+            as_binding.as_deref() == Some(name)
+                // A nested match on the same subject may narrow it to another variant.
+                || matches!(&**input, TypedExp::Var { segments, .. } if segments.len() == 1 && segments[0].name == name)
+                || cases.iter().any(|c| {
+                    c.locals.iter().any(|(n, ..)| n == name)
+                        || typedexp::pat_bindings(&c.pattern).iter().any(|(n, _)| n == name)
+                        || stmts_rebind_name(&c.stmts, name)
+                })
+        }
+        _ => false,
+    }
+}
+
+/// Includes `for name in …` loops.
+fn stmts_rebind_name(stmts: &[TypedStmt], name: &str) -> bool {
+    let mut out = HashSet::new();
+    collect_reassigned_vars(stmts, &mut out);
+    out.contains(name)
+}
+
+/// Replaces a read of `subj.f` (`f` in `allowed`) with the binding `__subj_f`.
+fn rewrite_subject_field_read(e: &mut TypedExp, subj: &str, allowed: &HashSet<String>, bound: &mut BTreeMap<String, String>) {
+    let TypedExp::Var { name, segments, last_use, .. } = e else { return };
+    if segments.len() < 2 || segments[0].name != subj || !segments[0].subscripts.is_empty()
+        || !allowed.contains(&segments[1].name)
+    {
+        return;
+    }
+    let b = bound.entry(segments[1].name.clone()).or_insert_with_key(|f| format!("__{subj}_{f}")).clone();
+    let subscripts = std::mem::take(&mut segments[1].subscripts);
+    segments.splice(0..2, [CrefSegment { name: b, subscripts }]);
+    *name = segments.iter().map(|s| s.name.as_str()).collect::<Vec<_>>().join(".");
+    *last_use = false;
+}
+
 /// True when the pattern contains an `as` binding anywhere.
 fn pat_has_as_binding(pat: &TypedPat) -> bool {
     match pat {
@@ -7698,6 +7984,9 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     ctx.place_mode.clear();
     for k in env.vars.keys() {
         ctx.place_mode.insert(k.clone(), PlaceMode::Owned);
+    }
+    for st in typed_stmts.iter_mut() {
+        walk_stmt_mut(st, &mut |e| bind_match_subject_fields(e, ctx, top_level));
     }
     // Backward liveness: mark the final read of each variable so the `Var` arm
     // of `emit_exp` can move (not clone) an owned value there. The outputs are
@@ -12709,15 +12998,12 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // (see FrontEnd/BackendInterface.mo and its `__OpenModelica_Interface`).
         "backendInterface" => Some("openmodelica_frontend_dump"),
         // openmodelica_backend — symbolTable/rewriteRulesIndex hold SymbolTable
-        // types defined here. optionSimCode holds a SimCode value whose type now
-        // lives in openmodelica_simcode_types, but the root accessor stays in
-        // openmodelica_backend (which depends on simcode_types): the types crate
+        // and RewriteRules types defined here.
+        "symbolTable" | "rewriteRulesIndex" => Some("openmodelica_backend"),
+        // openmodelica_codegen_util — optionSimCode and fmi3VariableAliasCache
+        // hold SimCode values read by the codegen queries there. The types crate
         // is datatype-only and must not own mutable global state.
-        // fmi3VariableAliasCache holds SimCodeVar.SimVar lists; same reasoning as
-        // optionSimCode — the types crate must not own mutable global state.
-        "symbolTable" | "rewriteRulesIndex" | "optionSimCode" | "fmi3VariableAliasCache" => {
-            Some("openmodelica_backend")
-        }
+        "optionSimCode" | "fmi3VariableAliasCache" => Some("openmodelica_codegen_util"),
         // openmodelica_backend_main — the interactive cache holds a tuple
         // whose third element is `Interactive.GraphicEnvCache`, a uniontype
         // defined in Script/Interactive.mo (→ openmodelica_backend_main). The
@@ -14839,11 +15125,27 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     } else {
         (!cases.iter().any(|c| pat_binds_whole(&c.pattern)), Vec::new())
     };
+    let plain_ref_match = matches!(kind, MatchKind::Match)
+        && match_uses_match_deref(&deref_ty, cases, ctx, top_level)
+        && match_is_plain_ref(&deref_ty, cases, ctx, top_level);
+    // A plain match on a local may write the local once the arm is done with
+    // its pattern bindings (the borrow of `&*subj` ends at their last use).
+    let plain_subject = match input {
+        TypedExp::Var { name, segments, .. }
+            if plain_ref_match && !take_first && !name.contains('.') && segments.len() <= 1
+                && segments.iter().all(|s| s.subscripts.is_empty()) =>
+            Some(var_base_name(name, segments)),
+        _ => None,
+    };
+    let subject_writes_ok = match &plain_subject {
+        Some(s) => cases.iter().all(|c| arm_bindings_dead_at_subject_write(c, s)),
+        None => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
+    };
     let borrow_scrutinee = borrowable
         && matches!(kind, MatchKind::Match)
         && as_binding.is_none()
         && ctx.tail_lowering.is_none()
-        && !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n))
+        && subject_writes_ok
         && match_uses_match_deref(&deref_ty, cases, ctx, top_level);
     ctx.borrow_reads = borrow_scrutinee;
     ctx.borrow_mask = if borrow_scrutinee { borrow_mask } else { Vec::new() };
@@ -14920,6 +15222,9 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // per-element `tuple_arc_rewrite` path below carries that case instead.
     let use_match_deref = matches!(kind, MatchKind::Match)
         && match_uses_match_deref(&input_ty, cases, ctx, top_level);
+    // `plain_ref_match` keeps the by-reference regime of `use_match_deref`,
+    // minus the macro.
+    let md_macro = use_match_deref && !plain_ref_match;
     // Even when we're not opting into the full `match_deref!{…}` wrapping,
     // an `Arc<…>` scrutinee still needs `.as_ref()` to obtain a `&T`
     // reference that Rust can match against the inner enum patterns. Rust's
@@ -14976,6 +15281,14 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     };
     let match_subject = if let Some(s) = &tuple_arc_rewrite {
         s.clone()
+    } else if plain_ref_match {
+        if borrow_scrutinee && input_str.starts_with("&*") {
+            input_str.clone()
+        } else if is_simple_place(&input_str) {
+            format!("&*{input_str}")
+        } else {
+            format!("&*({input_str})")
+        }
     } else if use_match_deref {
         format!("&({input_str})")
     } else if input_is_arc_recursive {
@@ -15161,7 +15474,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 ctx.pat_extra_guards.clear();
                 // Install the output-binding renames for pattern emission only.
                 let saved_pat_bind_rename = std::mem::replace(&mut ctx.pat_bind_rename, esc_rename.clone());
-                let pat = emit_pat_with_implicit_bind_md(&case.pattern, /*allow_implicit_bind=*/true, /*mut_bindings=*/true, /*in_deref=*/false, /*implicit_ref=*/input_is_arc, /*in_match_deref=*/use_match_deref, Some(&input_ty), ctx, top_level);
+                let pat = emit_pat_with_implicit_bind_md(&case.pattern, /*allow_implicit_bind=*/true, /*mut_bindings=*/true, /*in_deref=*/false, /*implicit_ref=*/input_is_arc, /*in_match_deref=*/md_macro, Some(&input_ty), ctx, top_level);
                 ctx.pat_bind_rename = saved_pat_bind_rename;
                 let pat_extra_guards: Vec<String> = std::mem::take(&mut ctx.pat_extra_guards);
                 // Compute the variant narrowing established by this arm's pattern so
@@ -15650,7 +15963,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
             // catch-all fallback under match_deref. Outside match_deref we
             // keep the existing behaviour (no fallback for proven-exhaustive
             // matches, since Rust's own check handles it).
-            let force_fallback = use_match_deref;
+            let force_fallback = md_macro;
             let fallback = if exhaustive && !force_fallback {
                 String::new()
             } else if ctx.in_tail_lowered_fn {
@@ -15703,7 +16016,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     arms.join(",\n"),
                 )
             };
-            if use_match_deref {
+            if md_macro {
                 // The macro tokenises the entire `match { … }` block, so the
                 // surrounding parens (added when not in tail position) must be
                 // *outside* the macro invocation — otherwise the proc-macro
@@ -16385,6 +16698,66 @@ fn match_uses_match_deref(input_ty: &Ty, cases: &[TypedCase], ctx: &GenCtx, top_
     cases.iter().any(|c| pat_has_str_lit(&c.pattern) || pat_crosses_arc_edge(&c.pattern, input_ty, ctx, top_level))
 }
 
+/// `x`, `a.b` or `x.clone()`: `&*` applies to all of it.
+fn is_simple_place(s: &str) -> bool {
+    let path = s.strip_suffix(".clone()").unwrap_or(s);
+    !path.is_empty() && path.chars().all(|c| c.is_alphanumeric() || matches!(c, '_' | '.' | '#'))
+}
+
+/// A `Ref<Enum>` scrutinee whose only Arc edge is the scrutinee itself: it can
+/// be matched as a plain `match &*subj { V { .. } => … }`, with the same
+/// by-reference bindings as under `match_deref!` but no `Deref @`.
+fn match_is_plain_ref(input_ty: &Ty, cases: &[TypedCase], ctx: &GenCtx, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
+    is_arc_wrapped(input_ty, ctx)
+        && cases.iter().all(|c| match &c.pattern {
+            TypedPat::Wildcard => true,
+            TypedPat::Constructor { name, fields, named_fields, .. } => {
+                if pat_has_str_lit(&c.pattern) {
+                    return false;
+                }
+                // The same field lookup the pattern emitter uses.
+                let pkg_prefix = if ctx.current_path.is_empty() {
+                    ctx.top_name.clone()
+                } else {
+                    format!("{}.{}", ctx.top_name, ctx.current_path.join("."))
+                };
+                let Some(field_tys) = ctor_field_tys(name, Some(input_ty), &pkg_prefix, top_level) else {
+                    return fields.iter().chain(named_fields.iter().map(|(_, p)| p)).all(|p| !pat_sub_destructures(p));
+                };
+                let plain = |p: &TypedPat, fty: Option<&Ty>| {
+                    !pat_sub_destructures(p) || fty.is_some_and(|t| {
+                        !matches!(t, Ty::Unknown)
+                            && !type_destructure_needs_borrow(t, ctx)
+                            && !pat_crosses_arc_edge(p, t, ctx, top_level)
+                            && !pat_has_arc_node(p, ctx)
+                    })
+                };
+                fields.iter().enumerate().all(|(i, p)| plain(p, field_tys.get(i).map(|(_, t)| t)))
+                    && named_fields.iter().all(|(f, p)| plain(p, field_tys.iter().find(|(n, _)| n == f).map(|(_, t)| t)))
+            }
+            _ => false,
+        })
+}
+
+/// `p` contains a sub-pattern the emitter peels with `Deref @` by its own shape.
+fn pat_has_arc_node(p: &TypedPat, ctx: &GenCtx) -> bool {
+    match p {
+        TypedPat::Cons { .. } | TypedPat::EmptyList => true,
+        TypedPat::Constructor { ty, fields, named_fields, .. } => {
+            is_arc_wrapped(ty, ctx)
+                || constructor_needs_arc(ty, ctx)
+                || fields.iter().chain(named_fields.iter().map(|(_, p)| p)).any(|p| pat_has_arc_node(p, ctx))
+        }
+        TypedPat::Some_(inner) | TypedPat::As { pat: inner, .. } => pat_has_arc_node(inner, ctx),
+        TypedPat::Tuple(ps) => ps.iter().any(|p| pat_has_arc_node(p, ctx)),
+        _ => false,
+    }
+}
+
+fn pat_sub_destructures(p: &TypedPat) -> bool {
+    !matches!(p, TypedPat::Wildcard | TypedPat::Var(_))
+}
+
 /// True when destructuring `pat` against a scrutinee of type `scrut_ty`
 /// would require descending through an `Arc<…>` edge — e.g. a constructor
 /// pattern whose field type is `List<…>` and whose sub-pattern is
@@ -16394,9 +16767,6 @@ fn match_uses_match_deref(input_ty: &Ty, cases: &[TypedCase], ctx: &GenCtx, top_
 /// through the Arc, even when the outer scrutinee type itself does not need
 /// a borrow.
 fn pat_crosses_arc_edge(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
-    fn sub_destructures(p: &TypedPat) -> bool {
-        !matches!(p, TypedPat::Wildcard | TypedPat::Var(_))
-    }
     // A Constructor / Cons / EmptyList pattern matched against an Arc-wrapped
     // (or List, which is itself List<...>) scrutinee must peel the smart
     // pointer with `Deref @ ...`. This applies whether the Arc edge is the
@@ -16426,7 +16796,7 @@ fn pat_crosses_arc_edge(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: 
             };
             for (i, fp) in fields.iter().enumerate() {
                 let fty = by_idx(i).unwrap_or(Ty::Unknown);
-                if sub_destructures(fp) && type_destructure_needs_borrow(&fty, ctx) {
+                if pat_sub_destructures(fp) && type_destructure_needs_borrow(&fty, ctx) {
                     return true;
                 }
                 if pat_crosses_arc_edge(fp, &fty, ctx, top_level) {
@@ -16435,7 +16805,7 @@ fn pat_crosses_arc_edge(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: 
             }
             for (fname, fp) in named_fields {
                 let fty = by_name(fname).unwrap_or(Ty::Unknown);
-                if sub_destructures(fp) && type_destructure_needs_borrow(&fty, ctx) {
+                if pat_sub_destructures(fp) && type_destructure_needs_borrow(&fty, ctx) {
                     return true;
                 }
                 if pat_crosses_arc_edge(fp, &fty, ctx, top_level) {
@@ -16446,7 +16816,7 @@ fn pat_crosses_arc_edge(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: 
         }
         TypedPat::Cons { head, tail } => {
             let elem_ty = match scrut_ty { Ty::List(t) => (**t).clone(), _ => Ty::Unknown };
-            if sub_destructures(tail) { return true; }
+            if pat_sub_destructures(tail) { return true; }
             pat_crosses_arc_edge(head, &elem_ty, ctx, top_level)
                 || pat_crosses_arc_edge(tail, &Ty::List(Box::new(elem_ty)), ctx, top_level)
         }
@@ -19375,8 +19745,7 @@ fn emit_stmts<'a>(
         // record-update macro (`assign_field!` for Arc<Struct> or
         // `assign_variant_field!` for a Ref<Enum> with a known matched
         // variant). A run of length ≥ 2 is emitted as a single macro call:
-        // one line per field, but only one `(*base).clone()` and one
-        // `Arc::new(..)` at runtime.
+        // one line per field, but only one `Arc::make_mut` at runtime.
         //
         // We pre-screen without rendering expressions (which would mutate
         // `ctx` state and double-emit `use` markers): only render rhs values
@@ -19580,7 +19949,7 @@ impl<'s> FieldAssignPlan<'s> {
             let variant_path = build_variant_path(&enum_qname, &variant_name, ctx);
             // Multi-record uniontypes that aren't recursive are stored by
             // value, not behind an `Arc`. The `assign_variant_field!` macro
-            // unconditionally rewraps via `Arc::new`, so for owned values we
+            // goes through `Arc::make_mut`, so for owned values we
             // emit an explicit `if let` destructure instead. `is_arc_wrapped`
             // returns true only for recursive types, so this also covers
             // mutable-locals of non-recursive enums like `IOStreamData`.
@@ -19590,7 +19959,7 @@ impl<'s> FieldAssignPlan<'s> {
                 FieldAssignKind::OwnedVariant { base: base_safe, variant_path, field: field_safe, value }
             }
         } else if is_arc_wrapped(&base_ty, ctx) {
-            // `assign_field!` does `(*base).clone()` then `base = Arc::new(..)`,
+            // `assign_field!` goes through `Arc::make_mut(&mut base)`,
             // so it is valid only when `base` is *stored* behind an `Arc<T>`.
             // Key on the storage shape (`is_arc_wrapped`), mirroring the variant
             // branch above — NOT on `constructor_needs_arc`, whose
@@ -19780,7 +20149,7 @@ enum FieldAssignKind {
     /// `if let <variant_path> { <field>, .. } = &mut <base> { *<field> = <value>; }`
     /// — used for non-recursive uniontypes (e.g. `IOStreamData`) where the
     /// variable is stored by value rather than behind an `Arc`. The
-    /// `assign_variant_field!` macro is hard-coded to call `Arc::new` and
+    /// `assign_variant_field!` macro goes through `Arc::make_mut` and
     /// cannot lower these owned cases.
     OwnedVariant { base: String, variant_path: String, field: String, value: String },
     /// `<base>.<field> = <value>;` — plain owned struct, no macro needed.

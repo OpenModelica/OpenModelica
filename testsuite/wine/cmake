@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# cmake for the FMU builds of an msvc omc under wine: the NMake Makefiles
+# generator becomes Unix Makefiles with the xwin toolchain.
+here=$(dirname "$(readlink -f "$0")")
+source "$here/unix-path.sh"
+args=()
+for a; do
+  if [ "$a" = "NMake Makefiles" ]; then
+    args+=("Unix Makefiles"
+           "-DCMAKE_TOOLCHAIN_FILE=$here/../../OMCompiler/Compiler/OpenModelica.rs/.cmake/xwin-toolchain.cmake")
+  else
+    args+=("$(unix_path "$a")")
+  fi
+done
+PATH=${PATH//"$here:"/} exec cmake "${args[@]}"

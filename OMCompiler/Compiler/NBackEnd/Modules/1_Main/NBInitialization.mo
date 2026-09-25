@@ -243,6 +243,7 @@ public
           Pointer<Equation> start_eq;
           EquationKind kind;
           Expression start_exp;
+          Pointer<Boolean> start_ok;
 
         // if it is an array create for-equation (fixed or unfixed)
         case Variable.VARIABLE() guard BVariable.isArray(var) algorithm
@@ -281,13 +282,18 @@ public
               Expression e;
             // only create if there is a start attribute that is not literal
             case SOME(e) guard not Expression.isLiteralXML(e) algorithm
-              (_, _, start_var, start_name) := createStartVar(var, BVariable.getVarName(var), {});
-              // make the new start equation
-              kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-              start_eq := Equation.makeAssignment(Expression.fromCref(start_name), e, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
-              Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
-              // add the new variable to initial unknowns
-              Pointer.update(ptr_start_vars_init, start_var :: Pointer.access(ptr_start_vars_init));
+              // the start value can only depend on the start values of other variables
+              start_ok := Pointer.create(true);
+              e := resolveStartCrefs(e, ptr_start_vars, start_ok, 0);
+              if Pointer.access(start_ok) then
+                (_, _, start_var, start_name) := createStartVar(var, BVariable.getVarName(var), {});
+                // make the new start equation
+                kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+                start_eq := Equation.makeAssignment(Expression.fromCref(start_name), e, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+                Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+                // add the new variable to initial unknowns
+                Pointer.update(ptr_start_vars_init, start_var :: Pointer.access(ptr_start_vars_init));
+              end if;
             then ();
 
             else ();
@@ -736,6 +742,77 @@ public
       end if;
     end if;
   end createParameterEquation;
+
+  function resolveStartCrefs
+    "Replaces the variables in a start expression by their start values, e.g. the start value of a function output
+    is the function call at the start values of its arguments. Since start values can be changed after the
+    compilation, the start variables ($START.x) are used and not the values.
+    Sets ok to false if the expression can not be resolved."
+    input Expression exp;
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
+    input Pointer<Boolean> ok;
+    input Integer depth;
+    output Expression res;
+  algorithm
+    res := Expression.map(exp, function resolveStartCref(ptr_start_vars = ptr_start_vars, ok = ok, depth = depth));
+  end resolveStartCrefs;
+
+  function resolveStartCref
+    input Expression exp;
+    output Expression res = exp;
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
+    input Pointer<Boolean> ok;
+    input Integer depth;
+  protected
+    Pointer<Variable> var_ptr;
+    Variable var;
+    ComponentRef start_name;
+    Pointer<Variable> start_var;
+    Boolean existed;
+    Option<Expression> start_opt;
+    list<Pointer<Variable>> children;
+  algorithm
+    res := match exp
+      case Expression.CREF(cref = ComponentRef.CREF()) guard(not ComponentRef.isTime(exp.cref)) algorithm
+        var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+        var     := Pointer.access(var_ptr);
+        if ComponentRef.isEmpty(var.name) or BVariable.isParamOrConst(var_ptr) or BVariable.isStart(var_ptr)
+           or BVariable.isIterator(var_ptr) or BVariable.isExtObj(var_ptr) then
+          // already known
+        elseif BVariable.isRecord(var_ptr) and not Type.isArray(Expression.typeOf(exp)) then
+          children := BVariable.getRecordChildren(var_ptr);
+          if listEmpty(children) then
+            Pointer.update(ok, false);
+          else
+            res := Expression.makeRecord(InstNode.scopePath(Type.complexNode(Expression.typeOf(exp))), Expression.typeOf(exp),
+              list(resolveStartCref(Expression.fromCref(BVariable.getVarName(child)), ptr_start_vars, ok, depth) for child in children));
+          end if;
+        elseif Type.isReal(Variable.typeOf(var)) and not Type.isArray(Expression.typeOf(exp)) and BVariable.isContinuous(var_ptr, true) then
+          start_opt := BVariable.getStartAttribute(var_ptr);
+          existed   := isSome(BVariable.getVarStart(var_ptr));
+          if BVariable.isFixed(var_ptr) and isSome(start_opt) and not Expression.isLiteralXML(Util.getOption(start_opt)) then
+            // fixed variables use their start expression directly
+            if depth < 10 then
+              res := resolveStartCrefs(Util.getOption(start_opt), ptr_start_vars, ok, depth + 1);
+            else
+              Pointer.update(ok, false);
+            end if;
+          else
+            (start_name, start_var) := BVariable.makeStartVar(exp.cref);
+            res := Expression.fromCref(start_name);
+            // literal start values of unfixed variables have to be initialized by the init xml
+            if not existed and not BVariable.isFixed(var_ptr) and (isNone(start_opt) or Expression.isLiteralXML(Util.getOption(start_opt))) then
+              Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+            end if;
+          end if;
+        else
+          Pointer.update(ok, false);
+        end if;
+      then res;
+
+      else exp;
+    end match;
+  end resolveStartCref;
 
   function createStartEquationSlice
     "creates a start equation for a sliced variable.

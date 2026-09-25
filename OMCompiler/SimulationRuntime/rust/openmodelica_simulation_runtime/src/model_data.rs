@@ -164,11 +164,9 @@ pub(crate) fn strdup(s: &str) -> *const c_char {
     unsafe { libc::strdup(c.as_ptr()) }
 }
 
-/// `read_array_var_real`: a whitespace-separated value list, or one default.
-fn read_array_real(out: &mut real_array, s: &str, default: f64) {
-    let values: Vec<f64> = s.split_whitespace().map(|t| read_real(t, default)).collect();
-    let values = if values.is_empty() { vec![default] } else { values };
-    let data: *mut f64 = calloc(values.len());
+/// A one-dimensional attribute array holding `values`.
+fn fill_array<T: Copy>(out: &mut base_array_t, values: &[T]) {
+    let data: *mut T = calloc(values.len());
     for (i, v) in values.iter().enumerate() {
         unsafe { *data.add(i) = *v };
     }
@@ -178,6 +176,64 @@ fn read_array_real(out: &mut real_array, s: &str, default: f64) {
     out.dim_size = dim;
     out.data = data as *mut c_void;
     out.flexible = 0;
+}
+
+/// `read_array_var_real`: a whitespace-separated value list, or one default.
+fn read_array_real(out: &mut real_array, s: &str, default: f64) {
+    let values: Vec<f64> = s.split_whitespace().map(|t| read_real(t, default)).collect();
+    let values = if values.is_empty() { vec![default] } else { values };
+    fill_array(out, &values);
+}
+
+/// `read_array_var_integer`: a whitespace-separated value list, or one default.
+fn read_array_integer(out: &mut integer_array, s: &str, default: modelica_integer) {
+    let values: Vec<modelica_integer> = s.split_whitespace().map(|t| read_long(t, default)).collect();
+    let values = if values.is_empty() { vec![default] } else { values };
+    fill_array(out, &values);
+}
+
+/// `read_array_var_boolean`: a whitespace-separated value list, or `false`.
+fn read_array_boolean(out: &mut boolean_array, s: &str) {
+    let values: Vec<modelica_boolean> = s.split_whitespace().map(read_bool).collect();
+    let values = if values.is_empty() { vec![0] } else { values };
+    fill_array(out, &values);
+}
+
+/// `read_quoted_str`: the values of `"a" "b c"`, `None` unless `s` is such a
+/// list. A quote only closes a value at the end of `s` or before the next
+/// opening quote, as quotes inside a value aren't escaped.
+fn read_quoted(s: &str) -> Option<Vec<&str>> {
+    let b = s.as_bytes();
+    let skip = |mut i: usize| {
+        while i < b.len() && b[i] == b' ' {
+            i += 1;
+        }
+        i
+    };
+    let mut values = Vec::new();
+    let mut pos = skip(0);
+    while pos < b.len() {
+        if b[pos] != b'"' {
+            return None;
+        }
+        let begin = pos + 1;
+        let end = (begin..b.len()).find(|&j| {
+            let after = skip(j + 1);
+            b[j] == b'"' && (after == b.len() || (b[after] == b'"' && after > j + 1))
+        })?;
+        values.push(&s[begin..end]);
+        pos = skip(end + 1);
+    }
+    Some(values)
+}
+
+/// `read_array_var_string`: a scalar's value is `s` itself, an array's a list
+/// of quoted values or one unquoted value for all elements.
+fn read_array_string(out: &mut string_array, s: &str, is_scalar: bool) {
+    let values = if is_scalar { None } else { read_quoted(s).filter(|v| !v.is_empty()) };
+    let values: Vec<modelica_string> =
+        values.unwrap_or_else(|| vec![s]).into_iter().map(mk_scon_persist).collect();
+    fill_array(out, &values);
 }
 
 fn read_var_info(v: &XmlVar, info: &mut VAR_INFO) {
@@ -473,17 +529,18 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
         slot.attribute.displayUnit = mk_scon_persist(v.get("displayUnit"));
     };
     let int_attr = |v: &XmlVar, slot: &mut STATIC_INTEGER_DATA| {
-        slot.attribute.start = read_long(v.get("start"), 0);
+        read_array_integer(&mut slot.attribute.start, v.get("start"), 0);
         slot.attribute.fixed = read_bool(v.get("fixed"));
-        slot.attribute.min = read_long(v.get("min"), INTEGER_MIN);
-        slot.attribute.max = read_long(v.get("max"), INTEGER_MAX);
+        read_array_integer(&mut slot.attribute.min, v.get("min"), INTEGER_MIN);
+        read_array_integer(&mut slot.attribute.max, v.get("max"), INTEGER_MAX);
     };
     let bool_attr = |v: &XmlVar, slot: &mut STATIC_BOOLEAN_DATA| {
-        slot.attribute.start = read_bool(v.get("start"));
+        read_array_boolean(&mut slot.attribute.start, v.get("start"));
         slot.attribute.fixed = read_bool(v.get("fixed"));
     };
     let str_attr = |v: &XmlVar, slot: &mut STATIC_STRING_DATA| {
-        slot.attribute.start = mk_scon_persist(v.get("start"));
+        let is_scalar = slot.dimension.numberOfDimensions == 0;
+        read_array_string(&mut slot.attribute.start, v.get("start"), is_scalar);
     };
 
     let n_states = md.nStatesArray as usize;

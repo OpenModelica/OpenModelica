@@ -1,6 +1,12 @@
+if(COMMAND om_windows_fetch_curl)
+  om_windows_fetch_curl()
+endif()
 find_package(CURL REQUIRED)
-find_package(Intl REQUIRED)
-find_package(Iconv REQUIRED)
+# MSVC builds go without gettext and iconv, see systemimpl.h and systemimpl.c.
+if(NOT MSVC)
+  find_package(Intl REQUIRED)
+  find_package(Iconv REQUIRED)
+endif()
 
 if(OM_OMC_USE_LAPACK)
   message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
@@ -78,7 +84,9 @@ target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
+if(NOT MSVC)
+  target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
+endif()
 target_link_libraries(omcruntime PUBLIC omc::mmc::runtime)
 # The scripting API reads and converts .arrow result files through libomc_result.
 if(TARGET omc::result)
@@ -89,6 +97,7 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
+target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip)
 
 if(OM_OMC_ENABLE_COLPACK)
   target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)
@@ -125,6 +134,11 @@ endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+if(MSVC)
+  target_compile_definitions(omcruntime PRIVATE NOMINMAX)
+  # dirent.h for MSVC.
+  target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/simdjson/windows)
+endif()
 
 # uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
 # explicitly use it.
@@ -235,4 +249,8 @@ if(NOT OMC_PARMODELICA_TBB_LINK_NAME)
 endif()
 set(PARMODELICAAUTO_LDFLAGS " -lParModelicaAuto -l${OMC_PARMODELICA_TBB_LINK_NAME} ")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+# Written into the source tree, which all build directories share. A build from
+# prebuilt sources does not read it, so it leaves the file alone.
+if(NOT OM_OMC_PREBUILT_C_SOURCES)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+endif()

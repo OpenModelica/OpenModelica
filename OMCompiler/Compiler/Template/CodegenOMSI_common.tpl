@@ -47,7 +47,7 @@ import CodegenOMSIC_Equations;
 import CodegenUtil;
 import CodegenUtilSimulation;
 import CodegenCFunctions;
-import CodegenFMU;
+import CodegenFMUModelDescription;
 
 
 /* public */
@@ -55,7 +55,7 @@ template generateFMUModelDescriptionFile(SimCode simCode, String guid, String FM
 "Generate modelDescription.xml.
  ToDo: Workaround since runTplWriteFile from .mo file loses some spaces."
 ::=
-  let content = CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)
+  let content = CodegenFMUModelDescription.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)
   let () = textFile(content, fileName)
   <<>>
 end generateFMUModelDescriptionFile;

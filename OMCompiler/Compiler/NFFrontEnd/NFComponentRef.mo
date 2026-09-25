@@ -2071,10 +2071,13 @@ public
   algorithm
     s_lst := match cref
       case CREF() algorithm
-        complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.sizeExp(dim) for dim in Type.arrayDims(cref.ty));
-        if withComplex and isSome(complex_size) then
-          s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
+        // the size of a record can not be determined if it has members with unknown dimensions
+        if withComplex then
+          complex_size := Type.complexSize(cref.ty);
+          if isSome(complex_size) then
+            s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
+          end if;
         end if;
         s_lst := if listEmpty(s_lst) then {Expression.INTEGER(1)} else s_lst;
       then s_lst;
@@ -2110,18 +2113,45 @@ public
   function subscriptsToExpression
     input ComponentRef cref;
     input Boolean addScalar;
-    output list<Expression> e_lst = {};
-  algorithm
-    for subs_tmp in subscriptsAllReverse(cref) loop
-      if addScalar and listEmpty(subs_tmp) then
-        e_lst := Expression.INTEGER(1) :: e_lst;
-      else
-        for sub in subs_tmp loop
-          e_lst := Subscript.toExp(sub) :: e_lst;
-        end for;
-      end if;
-    end for;
+    // reversed, matching the order of sizes()
+    output list<Expression> e_lst = listReverse(subscriptsToExpression2(cref, addScalar, {}));
   end subscriptsToExpression;
+
+  function subscriptsToExpression2
+    input ComponentRef cref;
+    input Boolean addScalar;
+    input list<Expression> accum;
+    output list<Expression> e_lst;
+  protected
+    list<Dimension> dims;
+    list<Expression> local_lst;
+    Expression exp;
+    Dimension whole_dim;
+  algorithm
+    e_lst := match cref
+      case CREF() algorithm
+        if addScalar and listEmpty(cref.subscripts) then
+          local_lst := {Expression.INTEGER(1)};
+        else
+          // a whole subscript is the range over the corresponding dimension of the node
+          dims := Type.arrayDims(cref.ty);
+          local_lst := {};
+          for sub in cref.subscripts loop
+            exp := match (sub, dims)
+              case (Subscript.WHOLE(), whole_dim :: _)
+                then Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(whole_dim));
+              else Subscript.toExp(sub);
+            end match;
+            local_lst := exp :: local_lst;
+            dims := if listEmpty(dims) then dims else listRest(dims);
+          end for;
+          local_lst := listReverse(local_lst);
+        end if;
+      then subscriptsToExpression2(cref.restCref, addScalar, listAppend(local_lst, accum));
+
+      else accum;
+    end match;
+  end subscriptsToExpression2;
 
   function isEmptyArray
     "Returns whether any node in the cref has a dimension that's 0."

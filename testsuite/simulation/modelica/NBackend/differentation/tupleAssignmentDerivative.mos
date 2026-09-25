@@ -1,0 +1,86 @@
+// name: tupleAssignmentDerivative
+// keywords: NewBackend
+// status: correct
+// Tuple assignments inside functions have to be differentiated, otherwise the
+// derivatives of their outputs are used before they are assigned.
+
+loadString("
+package TupleAssignmentDerivative
+  function g
+    input Real x;
+    output Real a;
+    output Real b;
+  algorithm
+    a := x^3;
+    b := 2*x;
+  end g;
+  function f
+    input Real x;
+    output Real y;
+  protected
+    Real a, b;
+  algorithm
+    (a, b) := g(x);
+    y := a + b + x;
+  end f;
+  model M
+    Real y(start = 1);
+  equation
+    f(y) = 4 + time;
+  end M;
+  function g2 \"with a discrete output\"
+    input Real x;
+    output Real a;
+    output Integer err;
+  algorithm
+    a := x^3;
+    err := if x > 100 then 1 else 0;
+  end g2;
+  function f2
+    input Real x;
+    output Real y;
+  protected
+    Real a;
+    Integer e;
+  algorithm
+    (a, e) := g2(x);
+    y := a + x;
+  end f2;
+  model M2
+    Real y(start = 1);
+  equation
+    f2(y) = 2 + time;
+  end M2;
+end TupleAssignmentDerivative;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(TupleAssignmentDerivative.M); getErrorString();
+val(y, 1);
+simulate(TupleAssignmentDerivative.M2); getErrorString();
+val(y, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleAssignmentDerivative.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TupleAssignmentDerivative.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.1541714951814412
+// record SimulationResult
+//     resultFile = "TupleAssignmentDerivative.M2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TupleAssignmentDerivative.M2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:28:5-28:23:writable] Warning: Variable $fDER_err of the generated function $fDER0.TupleAssignmentDerivative.g2 will be initialized to 0 because it could not be proven that it is always assigned before it is used.
+// "
+// 1.2134116627622296
+// endResult

@@ -119,6 +119,7 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
+import NFUsedElements;
 import Obfuscate;
 import OMGraphics;
 import PackageManagement;
@@ -135,6 +136,7 @@ import Settings;
 import SimCodeMain;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
+import SimCodeUtil;
 import StateMachineFlatten;
 import SimpleModelicaParser;
 import SimulationResults;
@@ -150,6 +152,7 @@ import Types;
 import Uncertainties;
 import UnitAbsynBuilder;
 import UnitParserExt;
+import UnorderedSet;
 import Util;
 import ValuesDump;
 import ValuesMake;
@@ -2038,6 +2041,24 @@ algorithm
                             Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
       then Values.BOOL(false);
 
+    case ("previous_saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
+                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then
+          saveTotalModel(filename, classpath, b1, b2, b3, previous = true);
+          b := true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b := false;
+        end if;
+      then
+        Values.BOOL(b);
+
+    case ("previous_saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
+                                     Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+      then Values.BOOL(false);
+
     case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                  Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       algorithm
@@ -3883,12 +3904,25 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
+  String msvcEnv, rmrf;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
-  CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+  msvcEnv := SimCodeUtil.msvcEnvironment();
+  if msvcEnv <> "" then
+    // cmake picks cl from the Visual Studio environment.
+    CC := "";
+    CMAKE_GENERATOR := "-G \"NMake Makefiles\" ";
+    rmrf := "rmdir /S /Q ";
+  else
+    CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+    if isWindows then
+      CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
+    end if;
+    rmrf := "rm -rf ";
+  end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3923,18 +3957,15 @@ algorithm
       list<String> locations;
     case {"dynamic"}
       algorithm
-        if isWindows then
-          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
-        end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -3942,18 +3973,15 @@ algorithm
         then();
     case {"static"}
       algorithm
-        if isWindows then
-          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
-        end if;
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -4644,7 +4672,7 @@ public function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean success;
-  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd, msvcEnv;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
@@ -4831,7 +4859,13 @@ algorithm
     end if;
   end if;
 
-  cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  msvcEnv := SimCodeUtil.msvcEnvironment();
+  if msvcEnv <> "" then
+    cmd := msvcEnv + Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && " +
+           Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
+  else
+    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  end if;
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");
@@ -8045,10 +8079,15 @@ protected function saveTotalModel
   input Boolean stripAnnotations;
   input Boolean stripComments;
   input Boolean obfuscate;
+  input Boolean previous = false "Use previousGetTotalModel.";
 protected
   String result, obfuscate_map;
 algorithm
-  (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  if previous then
+    (result, obfuscate_map) := previousGetTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  else
+    (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  end if;
   if obfuscate then
     System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
   end if;
@@ -8056,6 +8095,50 @@ algorithm
 end saveTotalModel;
 
 protected function getTotalModel
+  input Absyn.Path classpath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
+  output String result;
+  output String obfuscate_map = "";
+protected
+  SCode.Program scodeP;
+  String str1,str2,str3;
+  SCode.Element cls;
+  SCode.Comment cmt;
+  Absyn.Path cls_path = classpath;
+  Boolean extendable;
+algorithm
+  loadProgram(cls_path);
+  (scodeP, cls) := getTotalProgramNF(cls_path);
+  SCode.CLASS(cmt = cmt) := cls;
+  // A model can't extend a package or a function, those get no _total model.
+  extendable := not (SCodeUtil.isPackage(cls) or SCodeUtil.isFunction(cls));
+  scodeP := SCodeUtil.removeBuiltinsFromTopScope(scodeP);
+
+  if stripAnnotations or stripComments then
+    scodeP := SCodeUtil.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
+  end if;
+
+  if obfuscate then
+    (scodeP, cls_path, cmt, obfuscate_map) := Obfuscate.obfuscateProgram(scodeP, cls_path, cmt);
+  end if;
+
+  result := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
+
+  if extendable then
+    str1 := AbsynUtil.pathLastIdent(cls_path) + "_total";
+    str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
+    str2 := if stringEq(str2,"") then "" else (" " + str2);
+    str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+    str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
+    result := result + "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
+  end if;
+end getTotalModel;
+
+protected function previousGetTotalModel
+  "The previous implementation of getTotalModel, which finds the used classes
+   with NFSCodeFlatten. Kept for comparison by previous_saveTotalModel."
   input Absyn.Path classpath;
   input Boolean stripAnnotations;
   input Boolean stripComments;
@@ -8091,7 +8174,181 @@ algorithm
   str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
   str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
   result := str + str1;
-end getTotalModel;
+end previousGetTotalModel;
+
+protected function getTotalProgramNF
+  "Returns the loaded program reduced to the given class and what it uses. The
+   class is kept whole, and the names in it, in every class declared in it and
+   in everything they use are looked up with the new frontend to find what they
+   use, without instantiating them. That also works for packages and for
+   classes that can't be instantiated."
+  input Absyn.Path classPath;
+  output SCode.Program program;
+  output SCode.Element cls "The class as saved.";
+protected
+  UnorderedSet<String> used;
+  Boolean nf_inst;
+  SCode.Program builtin_p, annotation_p;
+algorithm
+  cls := InteractiveUtil.getPathedSCodeElementInProgram(classPath, SymbolTable.getSCode());
+
+  // Only the used elements are wanted from the lookups, not their messages.
+  ErrorExt.setCheckpoint(getInstanceName());
+  // The new frontend needs its own builtin classes, also with -d=nonewInst.
+  nf_inst := FlagsUtil.set(Flags.SCODE_INST, true);
+
+  try
+    (_, builtin_p) := FBuiltin.getInitialFunctions();
+    annotation_p := AbsynToSCode.translateAbsyn2SCode(
+      InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    used := NFUsedElements.collect(classPath :: getNestedClassPaths(cls, classPath),
+      listAppend(builtin_p, SymbolTable.getSCode()), annotation_p);
+  else
+    used := UnorderedSet.new<String>(stringHashDjb2, stringEq);
+  end try;
+
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst);
+  ErrorExt.rollBack(getInstanceName());
+  markElementUsed(cls, used);
+
+  // Lookups may have loaded libraries, so fetch the program afterwards.
+  program := SymbolTable.getSCode();
+  program := filterUsedClasses(program, used, program);
+  cls := InteractiveUtil.getPathedSCodeElementInProgram(classPath, program);
+end getTotalProgramNF;
+
+protected function getNestedClassPaths
+  "Returns the paths of all classes declared in a class, at any depth."
+  input SCode.Element cls;
+  input Absyn.Path clsPath;
+  input output list<Absyn.Path> paths = {};
+protected
+  Absyn.Path path;
+algorithm
+  for e in SCodeUtil.getClassElements(cls) loop
+    if SCodeUtil.elementIsClass(e) then
+      path := AbsynUtil.suffixPath(clsPath, SCodeUtil.elementName(e));
+      paths := getNestedClassPaths(e, path, path :: paths);
+    end if;
+  end for;
+end getNestedClassPaths;
+
+protected function markElementUsed
+  "Adds an element and everything declared in it to the used set."
+  input SCode.Element element;
+  input UnorderedSet<String> used;
+algorithm
+  UnorderedSet.add(NFUsedElements.elementKey(element), used);
+
+  if SCodeUtil.elementIsClass(element) then
+    for e in SCodeUtil.getClassElements(element) loop
+      if SCodeUtil.elementIsClass(e) or SCodeUtil.isComponent(e) then
+        markElementUsed(e, used);
+      end if;
+    end for;
+  end if;
+end markElementUsed;
+
+protected function filterUsedClasses
+  "Removes the classes that aren't in the used set from a list of elements,
+   also from the classes that are kept. Components are only removed from
+   packages, where they are constants that may or may not be used."
+  input list<SCode.Element> elements;
+  input UnorderedSet<String> used;
+  input SCode.Program program "The whole program, to resolve imports in.";
+  input Boolean inPackage = false;
+  output list<SCode.Element> outElements = {};
+algorithm
+  for e in elements loop
+    if SCodeUtil.elementIsClass(e) then
+      if UnorderedSet.contains(NFUsedElements.elementKey(e), used) then
+        outElements := filterUsedNestedClasses(e, used, program) :: outElements;
+      end if;
+    elseif inPackage and SCodeUtil.isComponent(e) then
+      if UnorderedSet.contains(NFUsedElements.elementKey(e), used) then
+        outElements := e :: outElements;
+      end if;
+    elseif not isUnusedImport(e, used, program) then
+      outElements := e :: outElements;
+    end if;
+  end for;
+
+  outElements := listReverse(outElements);
+end filterUsedClasses;
+
+protected function filterUsedNestedClasses
+  input output SCode.Element cls;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+algorithm
+  () := match cls
+    case SCode.CLASS()
+      algorithm
+        cls.classDef := filterUsedClassDef(cls.classDef, used, program, SCodeUtil.isPackage(cls));
+      then
+        ();
+
+    else ();
+  end match;
+end filterUsedNestedClasses;
+
+protected function filterUsedClassDef
+  input output SCode.ClassDef classDef;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+  input Boolean inPackage;
+algorithm
+  () := match classDef
+    case SCode.PARTS()
+      algorithm
+        classDef.elementLst := filterUsedClasses(classDef.elementLst, used, program, inPackage);
+      then
+        ();
+
+    case SCode.CLASS_EXTENDS()
+      algorithm
+        classDef.composition := filterUsedClassDef(classDef.composition, used, program, inPackage);
+      then
+        ();
+
+    else ();
+  end match;
+end filterUsedClassDef;
+
+protected function isUnusedImport
+  "Returns true for an import of a single element that is declared in the
+   program but wasn't used. Imports are only resolved when a name is looked up
+   through them, so the import of a used element has recorded it."
+  input SCode.Element element;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+  output Boolean unused;
+protected
+  Absyn.Path path;
+algorithm
+  unused := match element
+    case SCode.IMPORT(imp = Absyn.Import.NAMED_IMPORT(path = path))
+      then isUnusedElementPath(path, used, program);
+    case SCode.IMPORT(imp = Absyn.Import.QUAL_IMPORT(path = path))
+      then isUnusedElementPath(path, used, program);
+    else false;
+  end match;
+end isUnusedImport;
+
+protected function isUnusedElementPath
+  input Absyn.Path path;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+  output Boolean unused;
+algorithm
+  try
+    unused := not UnorderedSet.contains(NFUsedElements.elementKey(
+      InteractiveUtil.getPathedSCodeElementInProgram(path, program)), used);
+  else
+    // Not declared where the path points, e.g. inherited. Keep the import.
+    unused := false;
+  end try;
+end isUnusedElementPath;
 
 protected function saveTotalModelDebug
   input String filename;

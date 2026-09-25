@@ -67,7 +67,8 @@ fn compile_function_body(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    borrow_record_params(&mut ctx, functionArguments, Some(body))?;
     // In declaration order, like C's `varInit` loop: a declaration's dimensions
     // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
     // allocation and binding must interleave. `variableDeclarations` already
@@ -79,7 +80,7 @@ fn compile_function_body(
         .collect();
     let mut done: Vec<u32> = Vec::new();
     for v in loose_outs.into_iter().chain(&**variableDeclarations) {
-        init_var(&mut ctx, v, &mut array_allocs, &mut done)?;
+        init_var(&mut ctx, v, &mut array_allocs, &mut done, body)?;
     }
     compile_stmts(&mut ctx, body)?;
     // Fall-through return: release heap locals, push the output locals and end.
@@ -134,7 +135,8 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    borrow_record_params(&mut ctx, funArgs, None)?;
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
     // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
@@ -296,6 +298,117 @@ fn compile_external_function(
     Ok(func)
 }
 
+/// Record parameters are borrowed from the caller. One the body assigns to is
+/// copied on entry instead, so the caller's value stays untouched.
+fn borrow_record_params(
+    ctx: &mut FnCtx,
+    params: &List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>,
+    body: Option<&List<metamodelica::Ref<DAE::Statement>>>,
+) -> Result<()> {
+    for v in &**params {
+        let (name, sty) = var_name_ty(v)?;
+        if !matches!(sty, SigTy::Record { .. }) {
+            continue;
+        }
+        let Some(slot) = var_slot(ctx, v) else { continue };
+        if body.is_some_and(|b| stmts_assign_to(b, &name)) {
+            ctx.emit(we::Instruction::LocalGet(slot));
+            ctx.emit(we::Instruction::Call(rt_index("rt_record_copy")?));
+            ctx.emit(we::Instruction::LocalSet(slot));
+        } else {
+            ctx.borrowed_locals.push(slot);
+        }
+    }
+    Ok(())
+}
+
+fn stmts_assign_to(stmts: &List<metamodelica::Ref<DAE::Statement>>, name: &str) -> bool {
+    (&**stmts).into_iter().any(|s| stmt_assigns_to(s, name))
+}
+
+fn stmt_assigns_to(s: &DAE::Statement, name: &str) -> bool {
+    use DAE::Statement as S;
+    let lhs_is = |e: &DAE::Exp| match e {
+        DAE::Exp::CREF { componentRef, .. } => match &**componentRef {
+            DAE::ComponentRef::CREF_IDENT { ident, .. } | DAE::ComponentRef::CREF_QUAL { ident, .. } => ident.as_str() == name,
+            _ => true,
+        },
+        _ => true,
+    };
+    let else_assigns = |mut e: &DAE::Else| loop {
+        match e {
+            DAE::Else::NOELSE => return false,
+            DAE::Else::ELSE { statementLst } => return stmts_assign_to(statementLst, name),
+            DAE::Else::ELSEIF { statementLst, else_, .. } => {
+                if stmts_assign_to(statementLst, name) {
+                    return true;
+                }
+                e = else_;
+            }
+        }
+    };
+    match s {
+        S::STMT_ASSIGN { exp1, .. } => lhs_is(exp1),
+        S::STMT_ASSIGN_ARR { lhs, .. } => lhs_is(lhs),
+        S::STMT_TUPLE_ASSIGN { expExpLst, .. } => (&**expExpLst).into_iter().any(|e| lhs_is(e)),
+        S::STMT_IF { statementLst, else_, .. } => stmts_assign_to(statementLst, name) || else_assigns(else_),
+        S::STMT_FOR { statementLst, .. }
+        | S::STMT_PARFOR { statementLst, .. }
+        | S::STMT_WHILE { statementLst, .. } => stmts_assign_to(statementLst, name),
+        S::STMT_WHEN { statementLst, elseWhen, .. } => {
+            stmts_assign_to(statementLst, name) || elseWhen.as_ref().is_some_and(|w| stmt_assigns_to(w, name))
+        }
+        S::STMT_FAILURE { body, .. } => stmts_assign_to(body, name),
+        S::STMT_ASSERT { .. }
+        | S::STMT_TERMINATE { .. }
+        | S::STMT_REINIT { .. }
+        | S::STMT_NORETCALL { .. }
+        | S::STMT_RETURN { .. }
+        | S::STMT_BREAK { .. }
+        | S::STMT_CONTINUE { .. } => false,
+        _ => true,
+    }
+}
+
+/// Whether the first top-level statement that mentions `name` assigns it as a
+/// whole without reading it, so nothing can see it before that.
+fn assigned_whole_first(stmts: &List<metamodelica::Ref<DAE::Statement>>, name: &str) -> bool {
+    for s in &**stmts {
+        let (lhs, rhs) = match &**s {
+            DAE::Statement::STMT_ASSIGN { exp1, exp, .. } | DAE::Statement::STMT_ASSIGN_ARR { lhs: exp1, exp, .. } => (exp1, exp),
+            _ => return false,
+        };
+        if exp_mentions(rhs, name) {
+            return false;
+        }
+        if let DAE::Exp::CREF { componentRef, .. } = &**lhs
+            && let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef
+            && ident.as_str() == name
+        {
+            return subscriptLst.is_empty();
+        }
+        if exp_mentions(lhs, name) {
+            return false;
+        }
+    }
+    false
+}
+
+fn exp_mentions(e: &metamodelica::Ref<DAE::Exp>, name: &str) -> bool {
+    let name = name.to_string();
+    let visit = move |e: metamodelica::Ref<DAE::Exp>, found: i32| -> Result<(metamodelica::Ref<DAE::Exp>, i32)> {
+        let hit = match &*e {
+            DAE::Exp::CREF { componentRef, .. } => match &**componentRef {
+                DAE::ComponentRef::CREF_IDENT { ident, .. } | DAE::ComponentRef::CREF_QUAL { ident, .. } => ident.as_str() == name,
+                _ => false,
+            },
+            _ => false,
+        };
+        Ok((e, found | hit as i32))
+    };
+    Expression::traverseExpBottomUp(e.clone(), Arc::new(visit), 0).map_or(true, |(_, found)| found != 0)
+}
+
 /// The wasm local a `VARIABLE` was interned into, if any.
 fn var_slot(ctx: &FnCtx, v: &SimCodeFunction::Variable::Variable) -> Option<u32> {
     let (name, _) = var_name_ty(v).ok()?;
@@ -312,6 +425,7 @@ fn init_var(
     v: &SimCodeFunction::Variable::Variable,
     array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<metamodelica::Ref<DAE::Dimension>>)>,
     done: &mut Vec<u32>,
+    body: &List<metamodelica::Ref<DAE::Statement>>,
 ) -> Result<()> {
     let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, kind, bind_from_outside, .. } = v else {
         return Ok(());
@@ -345,6 +459,8 @@ fn init_var(
         return Ok(());
     }
     match &sty {
+        // The null handle until a whole-record assignment replaces it.
+        SigTy::Record { .. } if value.is_some() || assigned_whole_first(body, &vname) => ctx.null_locals.push(slot),
         SigTy::Record { .. } => {
             emit_record_default(ctx, ty)?;
             ctx.emit(we::Instruction::LocalSet(slot));

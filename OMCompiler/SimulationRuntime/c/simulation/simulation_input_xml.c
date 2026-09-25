@@ -248,9 +248,8 @@ static omc_CommandLineOverrides *gCommandLineOverrides = NULL;
 
 static const double REAL_MIN = -DBL_MAX;
 static const double REAL_MAX = DBL_MAX;
-static const double INTEGER_MIN = (double)MODELICA_INT_MIN;
-/* Avoid integer overflow */
-static const double INTEGER_MAX = (double)MODELICA_INT_MAX;
+static const modelica_integer INTEGER_MIN = MODELICA_INT_MIN;
+static const modelica_integer INTEGER_MAX = MODELICA_INT_MAX;
 
 /* Private function prototypes */
 static modelica_real read_value_real_default(const char *s, modelica_real default_value);
@@ -512,9 +511,30 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
 }
 
 /**
- * @brief Read string with multiple real values into `array`.
+ * @brief Write `token` as element `i` of `array`.
+ */
+typedef void (*put_token_t)(const char *token, size_t i, base_array_t *array);
+
+static void put_real_token(const char *token, size_t i, base_array_t *array)
+{
+  put_real_element(read_value_real(token), i, array);
+}
+
+static void put_integer_token(const char *token, size_t i, base_array_t *array)
+{
+  put_integer_element(read_value_long(token, 0), i, array);
+}
+
+static void put_boolean_token(const char *token, size_t i, base_array_t *array)
+{
+  put_boolean_element(read_value_bool(token), i, array);
+}
+
+/**
+ * @brief Read string with multiple space separated values into `array`.
  *
  * @param str           String to read values from.
+ * @param put           Converts a single token and stores it in `array`.
  * @param array         Array to fill. Needs enough memory to store
  *                      `num_elements` elements.
  *                      If `NULL` only counts number of elements, but doesn't
@@ -522,7 +542,7 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
  * @param num_elements  Number of elements to read from `str`.
  * @return size_t       Returns number of elements read.
  */
-size_t read_str(const char* str,  real_array* array, size_t num_elements) {
+static size_t read_tokens(const char* str, put_token_t put, base_array_t* array, size_t num_elements) {
   const char* delimeter = " ";
   size_t count = 0;
 
@@ -534,7 +554,7 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
   while (token != NULL) {
       count++;
       if (count <= num_elements && array != NULL) {
-        put_real_element(read_value_real(token), count-1, array);
+        put(token, count-1, array);
       }
       token = strtok_r(rest, delimeter, &rest);
   }
@@ -542,6 +562,21 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
   free(copy);
 
   return count;
+}
+
+/**
+ * @brief Read string with multiple real values into `array`.
+ *
+ * @param str           String to read values from.
+ * @param array         Array to fill. Needs enough memory to store
+ *                      `num_elements` elements.
+ *                      If `NULL` only counts number of elements, but doesn't
+ *                      write into `array`.
+ * @param num_elements  Number of elements to read from `str`.
+ * @return size_t       Returns number of elements read.
+ */
+size_t read_str(const char* str,  real_array* array, size_t num_elements) {
+  return read_tokens(str, put_real_token, array, num_elements);
 }
 
 /**
@@ -563,6 +598,139 @@ void read_array_var_real(real_array* array, const char* str, modelica_real defau
   } else {
     simple_alloc_1d_real_array(array, length);
     read_str(str, array, length);
+  }
+}
+
+/**
+ * @brief Read string into integer array variable.
+ *
+ * @param array           Array variable to populate.
+ * @param str             String with integers to be read into integer array.
+ *                        Values delimited by space `" "`.
+ * @param default_value   Value to use if `str` is empty.
+ */
+void read_array_var_integer(integer_array* array, const char* str, modelica_integer default_value) {
+  size_t length;
+
+  length = read_tokens(str, put_integer_token, NULL, 0);
+  if (length == 0) {
+    simple_alloc_1d_integer_array(array, 1);
+    put_integer_element(default_value, 0, array);
+  } else {
+    simple_alloc_1d_integer_array(array, length);
+    read_tokens(str, put_integer_token, array, length);
+  }
+}
+
+/**
+ * @brief Read string into boolean array variable.
+ *
+ * @param array           Array variable to populate.
+ * @param str             String with `true`/`false` values to be read into
+ *                        boolean array. Values delimited by space `" "`.
+ * @param default_value   Value to use if `str` is empty.
+ */
+void read_array_var_boolean(boolean_array* array, const char* str, modelica_boolean default_value) {
+  size_t length;
+
+  length = read_tokens(str, put_boolean_token, NULL, 0);
+  if (length == 0) {
+    simple_alloc_1d_boolean_array(array, 1);
+    put_boolean_element(default_value, 0, array);
+  } else {
+    simple_alloc_1d_boolean_array(array, length);
+    read_tokens(str, put_boolean_token, array, length);
+  }
+}
+
+/**
+ * @brief Read string with multiple quoted string values into `array`.
+ *
+ * Values are enclosed in double quotes and delimited by space, e.g.
+ * `"a" "b c" ""`. Inside a value `"` is not escaped, so a quote only closes
+ * the value if it is followed by the end of `str` or by spaces and the next
+ * opening quote.
+ *
+ * @param str           String to read values from.
+ * @param array         Array to fill. Needs enough memory to store
+ *                      `num_elements` elements.
+ *                      If `NULL` only counts number of elements, but doesn't
+ *                      write into `array`.
+ * @param num_elements  Number of elements to read from `str`.
+ * @return size_t       Returns number of elements read or 0 if `str` isn't a
+ *                      list of quoted values.
+ */
+size_t read_quoted_str(const char* str, string_array* array, size_t num_elements) {
+  const char *pos = str;
+  const char *begin;
+  const char *end;
+  const char *next;
+  size_t count = 0;
+
+  while (*pos == ' ') pos++;
+  while (*pos != '\0') {
+    if (*pos != '"') {
+      return 0;
+    }
+    begin = pos + 1;
+
+    /* find closing quote */
+    end = NULL;
+    for (next = begin; *next != '\0'; next++) {
+      if (*next == '"') {
+        const char *after = next + 1;
+        while (*after == ' ') after++;
+        if (*after == '\0' || (*after == '"' && after > next + 1)) {
+          end = next;
+          break;
+        }
+      }
+    }
+    if (end == NULL) {
+      return 0;
+    }
+
+    count++;
+    if (count <= num_elements && array != NULL) {
+      modelica_string value = omc_string_new_len(begin, (mmc_uint_t)(end - begin));
+      put_string_element(value, count-1, array);
+      omc_string_release(value);
+    }
+
+    pos = end + 1;
+    while (*pos == ' ') pos++;
+  }
+
+  return count;
+}
+
+/**
+ * @brief Read string into string array variable.
+ *
+ * For scalar variables `str` is the value itself. For array variables `str`
+ * is a list of quoted values, see `read_quoted_str`. If it doesn't start with a
+ * quote it is a single value that is used for all array elements.
+ *
+ * @param array     Array variable to populate.
+ * @param str       String to read.
+ * @param isScalar  If true `str` belongs to a scalar variable.
+ */
+void read_array_var_string(string_array* array, const char* str, modelica_boolean isScalar) {
+  size_t length = 0;
+  modelica_string value;
+
+  if (!isScalar) {
+    length = read_quoted_str(str, NULL, 0);
+  }
+
+  if (length == 0) {
+    simple_alloc_1d_string_array(array, 1);
+    value = omc_string_new(str);
+    put_string_element(value, 0, array);
+    omc_string_release(value);
+  } else {
+    simple_alloc_1d_string_array(array, length);
+    read_quoted_str(str, array, length);
   }
 }
 
@@ -624,30 +792,112 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   }
 }
 
-static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
+/**
+ * @brief Read attributes of integer variable.
+ *
+ * @param var_map   Hash map for variable with attributes as keys.
+ * @param attribute Attributes to write values into.
+ * @param isScalar  If true integer variable represents a scalar, otherwise an array.
+ */
+static void read_var_attribute_int(omc_ModelVariable *var_map, INTEGER_ATTRIBUTE *attribute, modelica_boolean isScalar)
 {
-  attribute->start = read_value_long(findHashStringStringEmpty(v,"start"), 0);
-  attribute->fixed = read_value_bool(findHashStringString(v,"fixed"));
-  attribute->min = read_value_long(findHashStringStringEmpty(v,"min"), INTEGER_MIN);
-  attribute->max = read_value_long(findHashStringStringEmpty(v,"max"), INTEGER_MAX);
+  const size_t buff_size = 2048;
+  char *start_buffer;
+  char *min_buffer;
+  char *max_buffer;
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=" OMC_INT_FORMAT ", fixed=%s, min=" OMC_INT_FORMAT ", max=" OMC_INT_FORMAT ")",
-    findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
+  read_array_var_integer(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0);
+  attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
+  read_array_var_integer(&attribute->min, findHashStringStringEmpty(var_map, "min"), INTEGER_MIN);
+  read_array_var_integer(&attribute->max, findHashStringStringEmpty(var_map, "max"), INTEGER_MAX);
+
+  if (omc_useStream[OMC_LOG_DEBUG])
+  {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+    min_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, min_buffer != NULL, "Out of memory.");
+    max_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, max_buffer != NULL, "Out of memory.");
+
+    integer_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
+    integer_vector_to_string(&attribute->min, isScalar, min_buffer, buff_size);
+    integer_vector_to_string(&attribute->max, isScalar, max_buffer, buff_size);
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0,
+                    "Integer %s(start=%s, fixed=%s, min=%s, max=%s)",
+                    findHashStringString(var_map, "name"),
+                    start_buffer,
+                    attribute->fixed ? "true" : "false",
+                    min_buffer,
+                    max_buffer);
+
+    free(start_buffer);
+    free(min_buffer);
+    free(max_buffer);
+  }
 }
 
-static void read_var_attribute_bool(omc_ModelVariable *v, BOOLEAN_ATTRIBUTE *attribute)
+/**
+ * @brief Read attributes of boolean variable.
+ *
+ * @param var_map   Hash map for variable with attributes as keys.
+ * @param attribute Attributes to write values into.
+ * @param isScalar  If true boolean variable represents a scalar, otherwise an array.
+ */
+static void read_var_attribute_bool(omc_ModelVariable *var_map, BOOLEAN_ATTRIBUTE *attribute, modelica_boolean isScalar)
 {
-  attribute->start = read_value_bool(findHashStringStringEmpty(v,"start"));
-  attribute->fixed = read_value_bool(findHashStringString(v,"fixed"));
+  const size_t buff_size = 2048;
+  char *start_buffer;
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "Boolean %s(start=%s, fixed=%s)", findHashStringString(v,"name"), attribute->start?"true":"false", attribute->fixed?"true":"false");
+  read_array_var_boolean(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0);
+  attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
+
+  if (omc_useStream[OMC_LOG_DEBUG])
+  {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+
+    boolean_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0,
+                    "Boolean %s(start=%s, fixed=%s)",
+                    findHashStringString(var_map, "name"),
+                    start_buffer,
+                    attribute->fixed ? "true" : "false");
+
+    free(start_buffer);
+  }
 }
 
-static void read_var_attribute_string(omc_ModelVariable *v, STRING_ATTRIBUTE *attribute)
+/**
+ * @brief Read attributes of string variable.
+ *
+ * @param var_map   Hash map for variable with attributes as keys.
+ * @param attribute Attributes to write values into.
+ * @param isScalar  If true string variable represents a scalar, otherwise an array.
+ */
+static void read_var_attribute_string(omc_ModelVariable *var_map, STRING_ATTRIBUTE *attribute, modelica_boolean isScalar)
 {
-  attribute->start = read_value_string(findHashStringStringEmpty(v,"start"));
+  const size_t buff_size = 2048;
+  char *start_buffer;
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), omc_string_data(attribute->start));
+  read_array_var_string(&attribute->start, findHashStringStringEmpty(var_map, "start"), isScalar);
+
+  if (omc_useStream[OMC_LOG_DEBUG])
+  {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+
+    string_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0,
+                    "String %s(start=%s)",
+                    findHashStringString(var_map, "name"),
+                    start_buffer);
+
+    free(start_buffer);
+  }
 }
 
 /**
@@ -759,7 +1009,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           info = &intVarsData[j].info;
           filterOutput = &intVarsData[j].filterOutput;
           read_var_dimension(v, dimension);
-          read_var_attribute_int(v, attribute);
+          read_var_attribute_int(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
         }
@@ -772,7 +1022,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           info = &boolVarsData[j].info;
           filterOutput = &boolVarsData[j].filterOutput;
           read_var_dimension(v, dimension);
-          read_var_attribute_bool(v, attribute);
+          read_var_attribute_bool(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
         }
@@ -785,7 +1035,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           info = &stringVarsData[j].info;
           filterOutput = &stringVarsData[j].filterOutput;
           read_var_dimension(v, dimension);
-          read_var_attribute_string(v, attribute);
+          read_var_attribute_string(v, attribute, dimension->numberOfDimensions == 0);
           read_var_info(v, info);
           *filterOutput = shouldFilterOutput(v, info->name);
         }

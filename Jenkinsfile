@@ -642,8 +642,8 @@ pipeline {
           }
         }
 
-        // parmod, MetaModelica, the Matlab translator, the icon generator and the
-        // C unit tests. Short runs sharing one image, so one node: split up, the
+        // parmod, the Matlab translator, the icon generator and the C unit tests.
+        // Short runs sharing one image, so one node: split up, the
         // image pull and the git checkout cost more than the tests.
         stage('18 testsuite-misc') {
           agent {
@@ -715,7 +715,7 @@ pipeline {
           }
         }
 
-        // The Windows smoke set (every test tagged '// win: yes', see
+        // The smoke set (every test in '// suite: smoke', see
         // testsuite/runWindowsTests.sh), against the install tree
         // 'OMDev-gcc' stashed as 'omc-windows'. Its own stage, not
         // part of that build, so a test failure here reads as a testsuite
@@ -736,6 +736,32 @@ pipeline {
           steps {
             script {
               common.testWindowsSmoke()
+            }
+          }
+        }
+
+        // The C omc cross-compiled to Windows (MSVC) from the C sources
+        // 'cmake-jammy-gcc' translated, and the Windows smoke set run against
+        // it under wine. See common.crossBuildOMCWindows().
+        stage('21 cross-build-omc-msvc') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.crossBuildOMCWindows()
             }
           }
         }

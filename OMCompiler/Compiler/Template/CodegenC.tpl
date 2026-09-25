@@ -1182,7 +1182,7 @@ template simulationFile_dae(SimCode simCode)
       let initDAEmode =
         match sparsityPattern
         case SOME(JAC_MATRIX(sparsityMatrix=sparsityMatrix as SPARSITY(), matrixName=matrixName, seedVars=seedVars, crefsHT=crefsHT)) then
-          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
+          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
         case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
           '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
         case NONE() then
@@ -1761,7 +1761,7 @@ end fmiAliasIndexTables;
    this replaces did. */
 template fmiAliasIndexTable(SimCode simCode, Text modelNamePrefixStr, String ty, Integer n, list<SimVar> aliasVars)
 ::=
-  if boolAnd(SimCodeUtil.isFMUSimCode(simCode), intGt(n, 0)) then
+  if boolAnd(SimCodeCodegenUtil.isFMUSimCode(simCode), intGt(n, 0)) then
   <<
   static const int <%symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes')%>[<%n%>] = {
     <%aliasVars |> v as SIMVAR(__) => fmiAliasIndex(simCode, aliasvar) ; separator=", " %>
@@ -1773,9 +1773,9 @@ template fmiAliasIndex(SimCode simCode, AliasVariable v)
 ::=
   match v
   case NOALIAS(__) then error(sourceInfo(), "fmiAliasIndex expected an alias")
-  case ALIAS(__) then SimCodeUtil.lookupVR(varName,simCode)
+  case ALIAS(__) then SimCodeCodegenUtil.lookupVR(varName,simCode)
   /* -1 - vr, so that a negated alias of vr=0 is still negative */
-  case NEGATEDALIAS(__) then intSub(-1, SimCodeUtil.lookupVR(varName,simCode))
+  case NEGATEDALIAS(__) then intSub(-1, SimCodeCodegenUtil.lookupVR(varName,simCode))
 end fmiAliasIndex;
 
 template fmiAliasIndexTableRefs(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
@@ -1792,7 +1792,7 @@ end fmiAliasIndexTableRefs;
 
 template fmiAliasIndexTableRef(SimCode simCode, Text modelNamePrefixStr, String ty, Integer n)
 ::=
-  if boolAnd(SimCodeUtil.isFMUSimCode(simCode), intGt(n, 0)) then symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes') else "NULL"
+  if boolAnd(SimCodeCodegenUtil.isFMUSimCode(simCode), intGt(n, 0)) then symbolName(modelNamePrefixStr,'fmi<%ty%>AliasIndexes') else "NULL"
 end fmiAliasIndexTableRef;
 
 template functionSimProfDef(SimEqSystem eq, Integer value, Text &reverseProf)
@@ -2086,7 +2086,8 @@ let &sub = buffer ""
           >>
         case SIMVAR(aliasvar=NOALIAS()) then
           <<
-          data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;
+          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
+          data->simulationInfo->inputVars[<%i0%>] = <%expTypeShort(type_)%>_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
           >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
@@ -2107,7 +2108,8 @@ let &sub = buffer ""
           >>
         case SIMVAR(aliasvar=NOALIAS()) then
           <<
-          data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];
+          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
+          put_<%expTypeShort(type_)%>_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
           >>
         else
           error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
@@ -3057,7 +3059,7 @@ end createLocalConstraints;
 template functionNonLinearResidualsMultiFile(list<SimEqSystem> nonlinearSystems, Integer equationsPerFile, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
-  functionNonLinearResidualsMultiFile2(SimCodeUtil.unbalancedEqSystemPartition(selectNLEqSys(nonlinearSystems), equationsPerFile), fullPathPrefix, fileNamePrefix, partName, modelNamePrefix)
+  functionNonLinearResidualsMultiFile2(SimCodeCodegenUtil.unbalancedEqSystemPartition(selectNLEqSys(nonlinearSystems), equationsPerFile), fullPathPrefix, fileNamePrefix, partName, modelNamePrefix)
 end functionNonLinearResidualsMultiFile;
 
 template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearSystems, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
@@ -3120,7 +3122,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
-      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, useResizable)
@@ -3160,7 +3162,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
-      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
@@ -3616,8 +3618,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
         <<
         <%cComment%>
         sysData->nominal[i] = 1.0;
-        sysData->min[i]     = <%crefAttributes(cr)%>.min;
-        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        sysData->min[i]     = integer_get(<%crefAttributes(cr)%>.min, 0);
+        sysData->max[i++]   = integer_get(<%crefAttributes(cr)%>.max, 0);
         >>
       else
         <<
@@ -3826,20 +3828,21 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         %>
         >>
 
+      let ty = crefShortType(cref)
       let updateEqs = match attribute
         case "nominal"
         case "min"
         case "max" then
           <<
           if (<%crefVarDimension(cref)%>.numberOfDimensions == 0) {
-            put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
+            put_<%ty%>_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
           } else {
             throwStreamPrint(NULL, "Not yet implemented for array <%attribute%>.");
           }
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char <%attribute%>_buffer[2048];
-            real_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
+            <%ty%>_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
             infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=%s)",
               <%crefVarInfo(cref)%>.name,
               <%attribute%>_buffer);
@@ -5367,7 +5370,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   // printing the cref's bare (often source-level, e.g. "i") name, which doesn't compile
   // (see PNlib.Test2.mos and friends). Strip it in that case; rel.index alone matches the
   // pre-existing (working) behavior for a scalar occurrence.
-  match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
+  match SimCodeCodegenUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
@@ -5557,7 +5560,7 @@ template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> ite
     case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
   // See zeroCrossingTpl above for why this strip is needed.
-  match SimCodeUtil.stripAsubIfNoIter(relation, isSome(iter))
+  match SimCodeCodegenUtil.stripAsubIfNoIter(relation, isSome(iter))
   case exp as RELATION(__) then
     let res = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
@@ -6044,7 +6047,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
-    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
@@ -6093,7 +6096,7 @@ match sparsity
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let isRowEval = if isAdjoint then "1" else "0"
-    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
+    let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
@@ -7067,7 +7070,7 @@ match sparsepattern
   case _ then
     let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
-    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
+    let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => listLength(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
@@ -8864,7 +8867,7 @@ template functionXXX_systemPartial(list<SimEqSystem> derivativEquations, String 
 ::=
     let code =  match modelInfo
     case MODELINFO(vars=SIMVARS(derivativeVars=ders)) then
-    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
+    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeCodegenUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
 <<
 static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_t *threadData, int i)
 {

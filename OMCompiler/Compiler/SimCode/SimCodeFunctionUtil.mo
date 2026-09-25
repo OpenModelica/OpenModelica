@@ -2390,10 +2390,11 @@ algorithm
     case Absyn.STRING("fmilib")
       then ({"fmilib.lib","shlwapi.lib"},{});
 
-    // If the string starts with a -, it's probably -l or -L gcc flags
+    // A file is passed as it is, and if the string starts with a -, it's
+    // probably a linker flag
     case Absyn.STRING(str)
       algorithm
-        true := "-" == stringGetStringChar(str, 1);
+        true := System.regularFileExists(str) or "-" == stringGetStringChar(str, 1);
       then ({str},{});
 
     case Absyn.STRING(str)
@@ -2479,8 +2480,11 @@ algorithm
         end if;
       then  (strs,{});
 
+    // One element per library, which the wasm-jit loads one by one.
     case Absyn.STRING("fmilib")
-      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});
+      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"}
+            elseif Autoconf.fmilibLibs == "" then {"-lfmilib"}
+            else "-lfmilib" :: Util.stringSplitAtChar(Autoconf.fmilibLibs, " "),{});
 
     case Absyn.STRING(str)
       algorithm

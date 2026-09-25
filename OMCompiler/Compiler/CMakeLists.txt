@@ -71,8 +71,11 @@ omc_add_subdirectory(boot)
 omc_add_subdirectory(FrontEndCpp)
 
 
-# set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
-set(OMC_EXE $<TARGET_FILE:bomc>)
+if(OM_OMC_HOST_EXECUTABLE)
+  set(OMC_EXE ${OM_OMC_HOST_EXECUTABLE})
+else()
+  set(OMC_EXE $<TARGET_FILE:bomc>)
+endif()
 
 # Enable MetaModelica debug symbols when doing a debug build, which is needed
 # for the debugger to work.
@@ -219,14 +222,15 @@ add_custom_command(
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
 
-foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES})
-    add_interface_check_step(${OMC_MM_SOURCE})
-    add_compile_step(${OMC_MM_SOURCE})
-endforeach()
-
-foreach(OMC_MM_SOURCE ${OMC_MM_BACKEND_SOURCES})
-    add_interface_check_step(${OMC_MM_SOURCE})
-    add_compile_step(${OMC_MM_SOURCE})
+foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES} ${OMC_MM_BACKEND_SOURCES})
+    get_filename_component(file_name_no_ext ${OMC_MM_SOURCE} NAME_WLE)
+    if(OM_OMC_PREBUILT_C_SOURCES)
+        list(APPEND OMC_C_SOURCE_FILES ${OM_OMC_PREBUILT_C_SOURCES}/${file_name_no_ext}.c
+                                       ${OM_OMC_PREBUILT_C_SOURCES}/${file_name_no_ext}_records.c)
+    else()
+        add_interface_check_step(${OMC_MM_SOURCE})
+        add_compile_step(${OMC_MM_SOURCE})
+    endif()
 endforeach()
 
 
@@ -242,22 +246,19 @@ add_custom_target(INTERFACE_CHECK
 
 
 
-# Add a small dependency scanner program. This reads a list of list of dependencies and generates
-# a list of dependents for each entry.
-add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
-
-# Write out a new line separated list of all MM source files to a list so that it can be easily
-# parsed by the small MetaModelica dependency scanner we have now. (c++ code)
+# Write out a new line separated list of all MM source files. dep_scanner.cmake reads
+# <mm_source>.depends for each of them and generates the "reverse dependencies" (dependents)
+# of each source into <mm_source>.rev_depends: the files that need to be retranslated when
+# <mm_source>.mo is modified.
 # The quote "" on ${OMC_MM_SOURCE_FILE_NAMES} is needed to get the ";"s in the list
 string (REPLACE ";" "\n" OMC_MM_SOURCE_FILE_NAMES_NEW_LINES "${OMC_MM_SOURCE_FILE_NAMES}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt ${OMC_MM_SOURCE_FILE_NAMES_NEW_LINES})
 
-# Read the mm_source_filenames_list with the dep scanner. The dep scanner then reads <mm_source>.depends file for the
-# each mm_source in the list and generates the "reverse dependencies" (dependents) for each source in to <mm_source>.rev_deps.
-# This means all the files listed in .rev_deps need to be retranslated when <mm_source>.mo is modified.
 add_custom_command(
-                DEPENDS ${OMC_MM_INTERFACE_FILES}
-                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt ${CMAKE_CURRENT_BINARY_DIR}
+                DEPENDS ${OMC_MM_INTERFACE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cmake
+                COMMAND ${CMAKE_COMMAND} -DSOURCE_LIST=${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt
+                                         -DDEPENDS_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                                         -P ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cmake
                 COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 COMMENT "Scanning reverse dependencies for MetaModelica sources.")
@@ -281,6 +282,9 @@ add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
 
 add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
+if(MSVC)
+  target_sources(OpenModelicaCompiler PRIVATE .cmake/omc_sourceinfo_desc_msvc.c)
+endif()
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
 # Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON) for the whole compiler.
@@ -338,6 +342,10 @@ target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_D
 # translation of OpenModelicaScriptingAPI.mo. So this interface include dir is needed.
 # We can maybe copy these headers to some specific location after generation and avoid this.
 target_include_directories(OpenModelicaCompiler INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/c_files)
+if(OM_OMC_PREBUILT_C_SOURCES)
+  target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/c_files)
+  target_include_directories(OpenModelicaCompiler INTERFACE ${OM_OMC_PREBUILT_C_SOURCES})
+endif()
 
 # OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
@@ -400,6 +408,12 @@ endif()
 # of 'all'. Needs the omc target above and the interfaces of this build.
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/bootstrap_sources.cmake)
 
+# Defines generate-msvc-c-sources, the compiler translated to C for a cross build
+# to MSVC. Not part of 'all' either.
+if(NOT OM_OMC_PREBUILT_C_SOURCES)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/msvc_sources.cmake)
+endif()
+
 
 ### INSTALLATION
 
@@ -407,11 +421,11 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/bootstrap_sources.cmake)
 # Install omc to the directory for RUNTIME (default=bin)
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
-if(WIN32)
+if(MINGW)
   omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
 
   set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
-  set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
+  set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c/meta)
   set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
   # OMC_RESULT_LIB_DIR is empty unless the Rust result readers/writers are on.
   set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR} ${OMC_RESULT_LIB_DIR})
@@ -439,10 +453,10 @@ if(WIN32)
           DESTINATION ${CMAKE_INSTALL_BINDIR}
           COMPONENT omc
           OPTIONAL)
-else(WIN32)
+else()
   install(TARGETS omc OpenModelicaCompiler
           COMPONENT omc)
-endif(WIN32)
+endif()
 
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.
@@ -473,7 +487,12 @@ install(FILES FrontEnd/PDEModelicaBuiltin.mo
 # against the installed tree. Generated at build time by the compile step for
 # Script/OpenModelicaScriptingAPI.mo; layout matches the old Makefile build
 # (<prefix>/include/omc/scripting-API/).
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/c_files/OpenModelicaScriptingAPI.h
+if(OM_OMC_PREBUILT_C_SOURCES)
+  set(OMC_SCRIPTING_API_H ${OM_OMC_PREBUILT_C_SOURCES}/OpenModelicaScriptingAPI.h)
+else()
+  set(OMC_SCRIPTING_API_H ${CMAKE_CURRENT_BINARY_DIR}/c_files/OpenModelicaScriptingAPI.h)
+endif()
+install(FILES ${OMC_SCRIPTING_API_H}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/scripting-API
         COMPONENT omc)
 

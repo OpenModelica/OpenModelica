@@ -193,17 +193,32 @@ public
       then jacobianSymbolic
       else jacobianNumeric;
   algorithm
-    jacobian := func(
-        name                = name,
-        jacType             = JacobianType.NLS,
-        seedCandidates      = seedCandidates,
-        partialCandidates   = partialCandidates,
-        equations           = equations,
-        strongComponents    = SOME(comps),
-        full                = full,
-        funcMap             = funcMap,
-        staticAsContinuous  = staticAsContinuous
-      );
+    try
+      jacobian := func(
+          name                = name,
+          jacType             = JacobianType.NLS,
+          seedCandidates      = seedCandidates,
+          partialCandidates   = partialCandidates,
+          equations           = equations,
+          strongComponents    = SOME(comps),
+          full                = full,
+          funcMap             = funcMap,
+          staticAsContinuous  = staticAsContinuous
+        );
+    else
+      // not everything can be differentiated symbolically, e.g. functions with function inputs
+      jacobian := jacobianNumeric(
+          name                = name,
+          jacType             = JacobianType.NLS,
+          seedCandidates      = seedCandidates,
+          partialCandidates   = partialCandidates,
+          equations           = equations,
+          strongComponents    = SOME(comps),
+          full                = full,
+          funcMap             = funcMap,
+          staticAsContinuous  = staticAsContinuous
+        );
+    end try;
   end nonlinear;
 
   function combine

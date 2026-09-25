@@ -63,6 +63,8 @@ import List;
 import SimCodeUtil;
 import System;
 import Util;
+import SimCodeCodegenUtil;
+import HpcOmCodegenUtil;
 
 public type TaskAssignment = array<Integer>; //the information which node <idx> is assigned to which processor <value>
 
@@ -3245,7 +3247,7 @@ algorithm
         compIdx := arrayLength(iSccSimEqMapping)+1;  // the next available component index
         taskIdx := arrayLength(iTaskGraph)+1;
         simVarIdx := max(v.index for v in algVars)+1;// the next available simVar index
-        simEqSysIdx := SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
+        simEqSysIdx := SimCodeCodegenUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
         lsIdx := List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
         nlsIdx := List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index
         mIdx := List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;// the next available mixed system  index
@@ -3268,7 +3270,7 @@ algorithm
         nodeMark := arrayAppend(nodeMark,arrayCreate(numDupl,-1));
         meta := HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
         //assign new simEqSysIndexes
-        newIdxAss := arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);
+        newIdxAss := arrayCreate(SimCodeCodegenUtil.getMaxSimEqSystemIndex(simCode),-1);
         (simCode,newIdxAss) := TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);
 
         // insert Locks
@@ -3413,7 +3415,7 @@ algorithm
     case simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem as SimCode.NONLINEARSYSTEM(eqs=eqs,jacobianMatrix=jacobianMatrix))
       algorithm
         eqs := List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
-        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        oldIdx := SimCodeCodegenUtil.simEqSystemIndex(simEqIn);
         newIdx := arrayGet(assIn,oldIdx);
         jacobianMatrix := TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
         nlSystem.jacobianMatrix := jacobianMatrix;
@@ -3424,7 +3426,7 @@ algorithm
     case simEqSys as SimCode.SES_LINEAR(lSystem=lSystem as SimCode.LINEARSYSTEM(residual=eqs,jacobianMatrix=jacobianMatrix))
       algorithm
         eqs := List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
-        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        oldIdx := SimCodeCodegenUtil.simEqSystemIndex(simEqIn);
         newIdx := arrayGet(assIn,oldIdx);
         jacobianMatrix := TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
         lSystem.jacobianMatrix := jacobianMatrix;
@@ -3434,7 +3436,7 @@ algorithm
    then simEqSys;
     case _
       algorithm
-        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        oldIdx := SimCodeCodegenUtil.simEqSystemIndex(simEqIn);
         newIdx := arrayGet(assIn,oldIdx);
         simEqSys := SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then simEqSys;
@@ -3484,7 +3486,7 @@ algorithm
    then (simEqSys,(newIdx+1,ass));
     case(_,(newIdx,ass))
       algorithm
-        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        oldIdx := SimCodeCodegenUtil.simEqSystemIndex(simEqIn);
         ass := arrayUpdate(ass,oldIdx,newIdx);
         simEqSys := SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then (simEqSys,(newIdx+1,ass));
@@ -3733,7 +3735,7 @@ algorithm
 
         //change the simEqSystems in odes and allEqs if there is a duplicated predecessor
         SimCode.SIMCODE(odeEquations=odes, allEquations=allEqs) := simCodeIn;
-        simEqSysts := List.map1(simEqs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
+        simEqSysts := List.map1(simEqs,SimCodeCodegenUtil.getSimEqSysForIndex,List.flatten(odes));
         (simEqSysts,_) := replaceInSimEqSystemLst(simEqSysts,replIn);
         allEqs := replaceSimEqSystemLstWithSameIndex(simEqSysts,allEqs);
         odes := List.map1r(odes,replaceSimEqSystemLstWithSameIndex,simEqSysts);
@@ -3846,7 +3848,7 @@ algorithm
   ht := List.fold(simVarDupl,HashTableCrefSimVar.addSimVarToHashTable,ht);
   repl := BackendVarTransform.addReplacements(replIn,crefs,crefsDuplExp,NONE());
   //BackendVarTransform.dumpReplacements(repl);
-  simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
+  simEqSysts := List.map1(simEqSysIdcs,SimCodeCodegenUtil.getSimEqSysForIndex,List.flatten(odes));
   //print("the simEqSysts to be duplicated "+SimCodeUtil.dumpSimEqSystemLst(simEqSysts)+"\n");
 
   numEqs := listLength(simEqSysts);
@@ -5746,7 +5748,7 @@ protected
   array<Real> workload;
   list<HpcOmSimCode.Task> levelTasks;
 algorithm
-  levelTasks := getTasksOfTaskList(iLevelTaskList);
+  levelTasks := HpcOmCodegenUtil.getTasksOfTaskList(iLevelTaskList);
   workload := arrayCreate(iNumProc,0.0);
   workload := List.fold(levelTasks,function getLevelParallelTime1(iTaskGraphMeta=iTaskGraphMeta),workload);
   oLevelCost := Array.fold(workload,realMax,0.0);
@@ -5780,24 +5782,6 @@ algorithm
   end match;
 end getLevelParallelTime1;
 
-protected function getTasksOfTaskList
-  input HpcOmSimCode.TaskList iTaskList;
-  output list<HpcOmSimCode.Task> oTasks;
-protected
-  list<HpcOmSimCode.Task> tasks;
-algorithm
-  oTasks := match iTaskList
-    case HpcOmSimCode.PARALLELTASKLIST(tasks=tasks)
-      then tasks;
-    case HpcOmSimCode.SERIALTASKLIST(tasks=tasks)
-      then tasks;
-    else
-      algorithm
-        print("getTasksOfTaskList failed! Unsupported task list.\n");
-      then {};
-  end match;
-end getTasksOfTaskList;
-
 protected function getLevelListTaskCosts
   input HpcOmSimCode.TaskList iTaskList;
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
@@ -5805,7 +5789,7 @@ protected function getLevelListTaskCosts
 protected
   list<HpcOmSimCode.Task> tasks;
 algorithm
-  tasks := getTasksOfTaskList(iTaskList);
+  tasks := HpcOmCodegenUtil.getTasksOfTaskList(iTaskList);
   costsOut := List.map1(tasks,getLevelTaskCosts,iMeta);
 end getLevelListTaskCosts;
 
@@ -6345,157 +6329,6 @@ algorithm
   end match;
 end isEmptyTask;
 
-public function convertFixedLevelScheduleToLevelThreadLists
-  "Convert the given LevelSchedule to an array of thread-tasks for each level.
-  author:marcusw"
-  input HpcOmSimCode.Schedule iSchedule;
-  input Integer iNumOfThreads;
-  output list<array<list<HpcOmSimCode.Task>>> oLevelThreadLists;
-protected
-  list<HpcOmSimCode.TaskList> tasksOfLevels;
-  list<array<list<HpcOmSimCode.Task>>> tmpLevelThreadLists;
-algorithm
-  oLevelThreadLists := match iSchedule
-    case HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels,useFixedAssignments=true)
-      algorithm
-        tmpLevelThreadLists := List.map(tasksOfLevels, function convertFixedLevelScheduleToLevelThreadLists0(iNumOfThreads=iNumOfThreads));
-      then tmpLevelThreadLists;
-    else
-      then {};
-  end match;
-end convertFixedLevelScheduleToLevelThreadLists;
-
-protected function convertFixedLevelScheduleToLevelThreadLists0
-  input HpcOmSimCode.TaskList iTasksOfLevel;
-  input Integer iNumOfThreads;
-  output array<list<HpcOmSimCode.Task>> oLevelThreadLists;
-protected
-  list<HpcOmSimCode.Task> tasks;
-  HpcOmSimCode.Task task;
-  Integer threadIdx;
-  array<list<HpcOmSimCode.Task>> tmpLevelThreadLists;
-algorithm
-  tasks := getTasksOfTaskList(iTasksOfLevel);
-  tmpLevelThreadLists := arrayCreate(iNumOfThreads, {});
-  for task in listReverse(tasks) loop
-    HpcOmSimCode.CALCTASK_LEVEL(threadIdx=SOME(threadIdx)) := task;
-    tmpLevelThreadLists := arrayUpdate(tmpLevelThreadLists, threadIdx, task::arrayGet(tmpLevelThreadLists, threadIdx));
-  end for;
-  oLevelThreadLists := tmpLevelThreadLists;
-end convertFixedLevelScheduleToLevelThreadLists0;
-
-public function convertFixedLevelScheduleToTaskLists
-  "Convert the given LevelSchedule to an list of task for each level and each thread.
-  author:marcusw"
-  input HpcOmSimCode.Schedule iOdeSchedule; //mapping level -> tasks
-  input HpcOmSimCode.Schedule iDaeSchedule;
-  input HpcOmSimCode.Schedule iZeroFuncSchedule;
-  input Integer iNumOfThreads;
-  output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks; //mapping thread -> (level -> tasks ODE, level -> tasks DAE, level -> tasks ZeroFunc)
-protected
-  list<HpcOmSimCode.TaskList> tasksOfLevelsOde, tasksOfLevelsDae, tasksOfLevelsZeroFunc;
-  list<array<list<HpcOmSimCode.Task>>> tmpThreadLevelTasksDae, tmpThreadLevelTasksOde, tmpThreadLevelTasksZeroFunc; //level -> thread -> tasklist
-  array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> tmpResultLists;
-algorithm
-  oThreadLevelTasks := match(iOdeSchedule, iDaeSchedule, iZeroFuncSchedule)
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsOde,useFixedAssignments=true), HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsDae,useFixedAssignments=true), HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsZeroFunc,useFixedAssignments=true))
-      algorithm
-        tmpResultLists := arrayCreate(iNumOfThreads, ({},{},{}));
-        tmpThreadLevelTasksOde := List.map1(tasksOfLevelsOde, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
-        tmpThreadLevelTasksDae := List.map1(tasksOfLevelsDae, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
-        tmpThreadLevelTasksZeroFunc := List.map1(tasksOfLevelsZeroFunc, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
-        //print("convertFixedLevelScheduleToTaskLists: len of tmpThreadLevelTasksOde=" + intString(listLength(tmpThreadLevelTasksOde)) + "\n");
-        tmpResultLists := List.fold(tmpThreadLevelTasksOde, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=0), tmpResultLists);
-        tmpResultLists := List.fold(tmpThreadLevelTasksDae, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=1), tmpResultLists);
-        tmpResultLists := List.fold(tmpThreadLevelTasksZeroFunc, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=2), tmpResultLists);
-        //print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
-        tmpResultLists := revertTaskLists(1, tmpResultLists);
-        //print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
-      then tmpResultLists;
-    else
-      algorithm
-        tmpResultLists := arrayCreate(iNumOfThreads, ({},{},{}));
-      then tmpResultLists;
-  end match;
-end convertFixedLevelScheduleToTaskLists;
-
-protected function convertFixedLevelScheduleToTaskLists1
-  "Add the task list of the given array-index to the result list.
-  author:marcusw"
-  input array<list<HpcOmSimCode.Task>> iLevelTasks;
-  input Integer iCurrentThreadIdx;
-  input Integer iModifiedSystemIdx; //0 = ODE, 1 = DAE, 2 = ZeroFunc
-  input array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> iResultList;
-  output array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> oResultList;
-protected
-  array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> tmpResultList;
-  list<list<HpcOmSimCode.Task>> entryOde, entryDae, entryZeroFunc;
-algorithm
-  oResultList := matchcontinue iResultList
-    case _
-      algorithm
-        true := intLe(iCurrentThreadIdx, arrayLength(iLevelTasks));
-        (entryOde, entryDae, entryZeroFunc) := arrayGet(iResultList, iCurrentThreadIdx);
-        if(intEq(iModifiedSystemIdx,0)) then
-          entryOde := arrayGet(iLevelTasks, iCurrentThreadIdx)::entryOde;
-        else
-          if(intEq(iModifiedSystemIdx, 1)) then
-            entryDae := arrayGet(iLevelTasks, iCurrentThreadIdx)::entryDae;
-          else
-            entryZeroFunc := arrayGet(iLevelTasks, iCurrentThreadIdx)::entryZeroFunc;
-          end if;
-        end if;
-        tmpResultList := arrayUpdate(iResultList, iCurrentThreadIdx, (entryOde, entryDae, entryZeroFunc));
-        tmpResultList := convertFixedLevelScheduleToTaskLists1(iLevelTasks, iCurrentThreadIdx+1, iModifiedSystemIdx, tmpResultList);
-      then tmpResultList;
-    else iResultList;
-  end matchcontinue;
-end convertFixedLevelScheduleToTaskLists1;
-
-protected function revertTaskLists
-  input Integer iCurrentArrayIdx;
-  input array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> iResultList;
-  output array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> oResultList;
-protected
-  list<list<HpcOmSimCode.Task>> entryOde, entryDae, entryZeroFunc;
-  array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> tmpResultList;
-algorithm
-  oResultList := matchcontinue iResultList
-    case _
-      algorithm
-        true := intLe(iCurrentArrayIdx, arrayLength(iResultList));
-        (entryOde,entryDae,entryZeroFunc) := arrayGet(iResultList, iCurrentArrayIdx);
-        entryOde := listReverse(entryOde);
-        entryDae := listReverse(entryDae);
-        entryZeroFunc := listReverse(entryZeroFunc);
-        tmpResultList := arrayUpdate(iResultList, iCurrentArrayIdx, (entryOde,entryDae,entryZeroFunc));
-        tmpResultList := revertTaskLists(iCurrentArrayIdx+1, tmpResultList);
-      then tmpResultList;
-    else iResultList;
-  end matchcontinue;
-end revertTaskLists;
-
-protected function revertTaskList
-  input Integer iCurrentArrayIdx;
-  input array<list<HpcOmSimCode.Task>> iResultList;
-  output array<list<HpcOmSimCode.Task>> oResultList;
-protected
-  list<HpcOmSimCode.Task> entry;
-  array<list<HpcOmSimCode.Task>> tmpResultList;
-algorithm
-  oResultList := matchcontinue iResultList
-    case _
-      algorithm
-        true := intLe(iCurrentArrayIdx, arrayLength(iResultList));
-        entry := arrayGet(iResultList, iCurrentArrayIdx);
-        entry := listReverse(entry);
-        tmpResultList := arrayUpdate(iResultList, iCurrentArrayIdx, entry);
-        //tmpResultList = revertTaskList(iCurrentArrayIdx+1, tmpResultList);
-      then tmpResultList;
-    else iResultList;
-  end matchcontinue;
-end revertTaskList;
-
 //----------------
 //  LockIdSetter
 //----------------
@@ -6621,55 +6454,6 @@ algorithm
   fail();
 end findInIntTuple1;
 
-
-protected function convertFixedLevelScheduleToTaskListsForLevel
-  "Convert a level task list into a task list for each thread.
-  author:marcusw"
-  input HpcOmSimCode.TaskList iTasksOfLevel;
-  input Integer iThreadCount;
-  output array<list<HpcOmSimCode.Task>> oThreadTasks; //mapping thread -> task list
-protected
-  array<list<HpcOmSimCode.Task>> tmpTaskLists;
-  list<HpcOmSimCode.Task> tasks;
-algorithm
-  oThreadTasks := match iTasksOfLevel
-    case HpcOmSimCode.PARALLELTASKLIST(tasks=tasks)
-      algorithm
-        tmpTaskLists := arrayCreate(iThreadCount, {});
-        tmpTaskLists := List.fold(tasks, convertFixedLevelScheduleToTaskListsForTask, tmpTaskLists);
-        tmpTaskLists := revertTaskList(1, tmpTaskLists);
-      then tmpTaskLists;
-    case HpcOmSimCode.SERIALTASKLIST(tasks=tasks)
-      algorithm
-        tmpTaskLists := arrayCreate(iThreadCount, {});
-        tmpTaskLists := arrayUpdate(tmpTaskLists, 1, tasks);
-      then tmpTaskLists;
-  end match;
-end convertFixedLevelScheduleToTaskListsForLevel;
-
-protected function convertFixedLevelScheduleToTaskListsForTask
-  "Insert the given Task into the task list of the given thread advice (threadIdx).
-  author:marcusw"
-  input HpcOmSimCode.Task iTask;
-  input array<list<HpcOmSimCode.Task>> iThreadTasks;
-  output array<list<HpcOmSimCode.Task>> oThreadTasks;
-protected
-  array<list<HpcOmSimCode.Task>> tmpTaskLists;
-  Integer threadIdx;
-  list<HpcOmSimCode.Task> oldTaskList;
-algorithm
-  oThreadTasks := match iTask
-    case HpcOmSimCode.CALCTASK_LEVEL(threadIdx=SOME(threadIdx))
-      algorithm
-        oldTaskList := arrayGet(iThreadTasks, threadIdx);
-        tmpTaskLists := arrayUpdate(iThreadTasks, threadIdx, iTask::oldTaskList);
-      then tmpTaskLists;
-    case _
-      algorithm
-        print("ConvertFixedLevelScheduleToTaskListsForTask can just handle CALCTASK_LEVEL with defined thread idx!\n");
-      then iThreadTasks;
-  end match;
-end convertFixedLevelScheduleToTaskListsForTask;
 
 protected function printRealArray "author:Waurich TUD 2013-11
   prints the information of the ALAP array"

@@ -1686,3 +1686,21 @@ void sizes_of_dimensions_base_array(const base_array_t *a, integer_array *dest)
     integer_set(dest, i, a->dim_size[i]);
   }
 }
+
+static int integer_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    return snprintf(buffer, bufsize, OMC_INT_FORMAT, ((const modelica_integer *)data)[i]);
+}
+
+/**
+ * @brief Write integer vector into null-terminated string.
+ *
+ * @param source    Integer vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
+ */
+void integer_vector_to_string(const integer_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
+{
+    base_vector_to_string(source, isScalar, integer_element_to_string, buffer, bufsize);
+}

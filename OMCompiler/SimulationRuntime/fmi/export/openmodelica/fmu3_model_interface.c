@@ -1552,8 +1552,7 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
   internal_state->realParameter = (modelica_real*)calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
   for (int i = 0; i < fmudata->modelData->nParametersReal; ++i)
   {
-    modelica_real *start = (modelica_real *) &fmudata->modelData->realParameterData[i].attribute.start.data;
-    internal_state->realParameter[i] = start[0];
+    internal_state->realParameter[i] = fmudata->simulationInfo->realParameter[i];
     // infoStreamPrint(LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameters[i]);
   }
 
@@ -1561,7 +1560,7 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
   internal_state->integerParameter = (modelica_integer*)calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
   for (int i = 0; i < fmudata->modelData->nParametersInteger; ++i)
   {
-    internal_state->integerParameter[i] = fmudata->modelData->integerParameterData[i].attribute.start;
+    internal_state->integerParameter[i] = fmudata->simulationInfo->integerParameter[i];
     // infoStreamPrint(LOG_STDOUT, 0, "Copy Integer parameter %s = %ld", fmudata->modelData->integerParameterData[i].info.name, internal_state->integerParameters[i]);
   }
 
@@ -1569,7 +1568,7 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
   internal_state->booleanParameter = (modelica_boolean*)calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
   for (int i = 0; i < fmudata->modelData->nParametersBoolean; ++i)
   {
-    internal_state->booleanParameter[i] = fmudata->modelData->booleanParameterData[i].attribute.start;
+    internal_state->booleanParameter[i] = fmudata->simulationInfo->booleanParameter[i];
     //infoStreamPrint(LOG_STDOUT, 0, "copy Boolean parameter %s = %s", fmudata->modelData->booleanParameterData[i].info.name, internal_state->booleanParameters[i] ? "true" : "false");
   }
 
@@ -1577,7 +1576,7 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
   internal_state->stringParameter = (modelica_string*) omc_alloc_interface.malloc_uncollectable(fmudata->modelData->nParametersString * sizeof(modelica_string));
   for (int i = 0; i < fmudata->modelData->nParametersString; ++i)
   {
-    omc_string_store(&internal_state->stringParameter[i], fmudata->modelData->stringParameterData[i].attribute.start);
+    omc_string_store(&internal_state->stringParameter[i], fmudata->simulationInfo->stringParameter[i]);
     //infoStreamPrint(LOG_STDOUT, 0, "copy String parameter %s = %s", fmudata->modelData->stringParameterData[i].info.name, MMC_STRINGDATA(internal_state->stringParameters[i]));
   }
 

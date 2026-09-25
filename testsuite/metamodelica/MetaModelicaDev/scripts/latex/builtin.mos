@@ -1,2 +1,0 @@
-loadFile("../../../../../Compiler/FrontEnd/MetaModelicaBuiltin.mo");
-list();getErrorString();

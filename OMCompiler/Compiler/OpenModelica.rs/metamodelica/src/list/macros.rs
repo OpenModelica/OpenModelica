@@ -20,80 +20,48 @@ macro_rules! list {
     };
 }
 
-/// Functionally update a single field of a record value stored behind a
-/// shared handle (`Arc<T>` or `metamodelica::Ref<T>`).
+/// Functionally update fields of a record value stored behind a
+/// `metamodelica::Ref<T>`.
 ///
-/// MetaModelica record update (`var.field := value`) has value semantics: a new
-/// record is produced and rebound. The record lives behind a shared handle for
-/// cheap sharing, so direct field mutation through it is impossible. This macro
-/// clones the underlying record (a shallow copy — the contained fields are
-/// themselves cheap handles or scalars), overwrites the targeted field on the
-/// owned copy, and rebinds `$base` to a fresh handle of the same kind.
+/// MetaModelica record update (`var.field := value`) has value semantics. All
+/// values are evaluated first (they may read `$base`), then `Arc::make_mut`
+/// updates the record in place when `$base` is its only owner and copies it
+/// otherwise.
 ///
-/// For multi-record uniontypes (Rust enums), use `assign_variant_field!` instead:
-/// the matched variant must be named explicitly because the enum tag is not
-/// inferable from the macro's input position. With a single-record uniontype
-/// (or any plain struct), this macro suffices.
+/// For multi-record uniontypes (Rust enums), use `assign_variant_field!`.
 #[macro_export]
 macro_rules! assign_field {
-    // One or more field assignments against the same base. The clone and the
-    // reallocation happen once for the whole batch, no matter how many
-    // fields are updated. All assignments must target the same identifier; the
-    // macro reuses `$base` as the storage and only matches the trailing entries
-    // to keep the parser happy.
+    (@eval $base:ident [$(($field:ident $v:ident))*]) => {{
+        let __owned = ::std::sync::Arc::make_mut(&mut $base);
+        $( __owned.$field = $v; )*
+    }};
+    // Each recursion level's `__v` is a distinct hygienic binding.
+    (@eval $base:ident [$($done:tt)*] $field:ident = $value:expr $(, $rest_field:ident = $rest_value:expr)*) => {{
+        let __v = $value;
+        $crate::assign_field!(@eval $base [$($done)* ($field __v)] $($rest_field = $rest_value),*)
+    }};
     (
         $base:ident . $first_field:ident = $first_value:expr
         $(, $_base:ident . $field:ident = $value:expr)*
         $(,)?
-    ) => {{
-        let mut __owned = (*$base).clone();
-        __owned.$first_field = $first_value;
-        $( __owned.$field = $value; )*
-        $base = __owned.into();
-    }};
+    ) => {
+        $crate::assign_field!(@eval $base [] $first_field = $first_value $(, $field = $value)*)
+    };
 }
 
 /// Like `assign_field!`, but for a uniontype-enum value whose currently matched
 /// variant is known statically (e.g. inside a `match` arm or after a refutable
-/// `let`-pattern). The variant path must be supplied so the destructure picks
-/// the right arm; a runtime mismatch panics, which would indicate a codegen bug.
+/// `let`-pattern). A runtime variant mismatch panics — that would indicate a
+/// codegen bug.
 ///
 /// Example: `assign_variant_field!(node => NFInstNode::CLASS_NODE; ty = newTy);`
 #[macro_export]
 macro_rules! assign_variant_field {
-    // One or more field assignments to a value already known to be a specific
-    // variant (`$($variant)::+`). The destructure happens once; the field
-    // bindings are then assigned in sequence on the owned copy. A runtime
-    // variant mismatch panics — that would indicate a codegen bug.
-    (
-        $base:ident => $variant:path ;
-        $first_field:ident = $first_value:expr
-        $(, $field:ident = $value:expr)*
-        $(,)?
-    ) => {{
-        let mut __owned = (*$base).clone();
-        // Evaluate every value expression BEFORE entering an `if let` that
-        // would introduce field-shorthand pattern bindings with the same name
-        // as the field. Otherwise a call site like
-        //   `assign_variant_field!(t => T::N; value = value.clone())`
-        // would have `value.clone()` resolve to the &mut FieldType binding
-        // produced by the destructure, not the outer local — silently turning
-        // the assignment into a self-copy. We capture each value into `__v`
-        // immediately before its assignment; `__v` is shadowed each iteration,
-        // which is fine because it's consumed before the next `let __v = ...`.
-        let __v = $first_value;
-        if let $variant { $first_field, .. } = &mut __owned {
-            *$first_field = __v;
-        } else {
-            panic!(
-                "assign_variant_field!: expected variant {} but value held a different variant",
-                stringify!($variant),
-            );
-        }
+    (@eval $base:ident => $variant:path ; [$(($field:ident $v:ident))*]) => {{
+        let __owned = ::std::sync::Arc::make_mut(&mut $base);
         $(
-            let __v = $value;
-            if let $variant { $field, .. } = &mut __owned {
-                *$field = __v;
+            if let $variant { $field: __dst, .. } = &mut *__owned {
+                *__dst = $v;
             } else {
                 panic!(
                     "assign_variant_field!: expected variant {} but value held a different variant",
@@ -101,8 +69,18 @@ macro_rules! assign_variant_field {
                 );
             }
         )*
-        $base = __owned.into();
     }};
+    (@eval $base:ident => $variant:path ; [$($done:tt)*] $field:ident = $value:expr $(, $rest_field:ident = $rest_value:expr)*) => {{
+        let __v = $value;
+        $crate::assign_variant_field!(@eval $base => $variant ; [$($done)* ($field __v)] $($rest_field = $rest_value),*)
+    }};
+    (
+        $base:ident => $variant:path ;
+        $($field:ident = $value:expr),+
+        $(,)?
+    ) => {
+        $crate::assign_variant_field!(@eval $base => $variant ; [] $($field = $value),+)
+    };
 }
 
 /// Read a single field from a uniontype-enum value whose currently matched

@@ -498,14 +498,14 @@ template FmiUnknownDependencies(list<Integer> dependencies)
   // Note: dependencies="" means no dependencies;
   // missing dependencies means dependent on all knowns (see FMI 2.0 spec).
   <<
-   dependencies="<%SimCodeUtil.fmiDependenciesString(dependencies)%>"
+   dependencies="<%SimCodeCodegenUtil.fmiDependenciesString(dependencies)%>"
   >>
 end FmiUnknownDependencies;
 
 template FmiUnknownDependenciesKind(list<String> dependenciesKind)
 ::=
   <<
-   dependenciesKind="<%SimCodeUtil.fmiDependenciesKindString(dependenciesKind)%>"
+   dependenciesKind="<%SimCodeCodegenUtil.fmiDependenciesKindString(dependenciesKind)%>"
   >>
 end FmiUnknownDependenciesKind;
 
@@ -879,7 +879,7 @@ case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  <%TypeDefinitionsHelper(simCode, SimCodeUtil.getEnumerationTypes(vars), FMUVersion)%>
+  <%TypeDefinitionsHelper(simCode, SimCodeCodegenUtil.getEnumerationTypes(vars), FMUVersion)%>
   >>
 end fmiTypeDefinitions;
 
@@ -969,6 +969,242 @@ template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
     }
     >>
 end fmuSimulationFlagsFile;
+
+template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
+ "returns compilation commands for the platform. "
+::=
+let fmudirname = '<%Util.hashFileNamePrefix(fileNamePrefix)%>.fmutmp'
+match platform
+  case "win32"
+  case "win64" then
+  <<
+  <%fileNamePrefix%>_FMU: nozip
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
+  <%\t%>mkdir.exe -p ../binaries/<%platform%>
+  <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
+  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+
+  >>
+  else
+  <<
+  <%fileNamePrefix%>_FMU: nozip
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
+  ifeq (@LIBTYPE_DYNAMIC@,1)
+  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
+  endif
+  <%if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), 4) then
+  '<%\t%>head -n20 Makefile > ../resources/$(FMIPLATFORM).summary'
+   %>
+  ifeq (@LIBTYPE_STATIC@,1)
+  <%\t%>rm -f <%modelNamePrefix%>.a
+  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
+  endif
+  <% if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "\t$(MAKE) distclean" %>
+  distclean: clean
+  <%\t%>rm -f Makefile config.status config.log
+  clean:
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  >>
+end getPlatformString2;
+
+template fmudeffile(SimCode simCode, String FMUVersion)
+ "Generates the def file of the fmu."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  if isFMIVersion30(FMUVersion) then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3GetVersion
+    <%fileNamePrefix%>_fmi3SetDebugLogging
+    <%fileNamePrefix%>_fmi3InstantiateModelExchange
+    <%fileNamePrefix%>_fmi3InstantiateCoSimulation
+    <%fileNamePrefix%>_fmi3InstantiateScheduledExecution
+    <%fileNamePrefix%>_fmi3FreeInstance
+    <%fileNamePrefix%>_fmi3EnterInitializationMode
+    <%fileNamePrefix%>_fmi3ExitInitializationMode
+    <%fileNamePrefix%>_fmi3EnterEventMode
+    <%fileNamePrefix%>_fmi3Terminate
+    <%fileNamePrefix%>_fmi3Reset
+    <%fileNamePrefix%>_fmi3GetFloat32
+    <%fileNamePrefix%>_fmi3GetFloat64
+    <%fileNamePrefix%>_fmi3GetInt8
+    <%fileNamePrefix%>_fmi3GetUInt8
+    <%fileNamePrefix%>_fmi3GetInt16
+    <%fileNamePrefix%>_fmi3GetUInt16
+    <%fileNamePrefix%>_fmi3GetInt32
+    <%fileNamePrefix%>_fmi3GetUInt32
+    <%fileNamePrefix%>_fmi3GetInt64
+    <%fileNamePrefix%>_fmi3GetUInt64
+    <%fileNamePrefix%>_fmi3GetBoolean
+    <%fileNamePrefix%>_fmi3GetString
+    <%fileNamePrefix%>_fmi3GetBinary
+    <%fileNamePrefix%>_fmi3GetClock
+    <%fileNamePrefix%>_fmi3SetFloat32
+    <%fileNamePrefix%>_fmi3SetFloat64
+    <%fileNamePrefix%>_fmi3SetInt8
+    <%fileNamePrefix%>_fmi3SetUInt8
+    <%fileNamePrefix%>_fmi3SetInt16
+    <%fileNamePrefix%>_fmi3SetUInt16
+    <%fileNamePrefix%>_fmi3SetInt32
+    <%fileNamePrefix%>_fmi3SetUInt32
+    <%fileNamePrefix%>_fmi3SetInt64
+    <%fileNamePrefix%>_fmi3SetUInt64
+    <%fileNamePrefix%>_fmi3SetBoolean
+    <%fileNamePrefix%>_fmi3SetString
+    <%fileNamePrefix%>_fmi3SetBinary
+    <%fileNamePrefix%>_fmi3SetClock
+    <%fileNamePrefix%>_fmi3GetNumberOfVariableDependencies
+    <%fileNamePrefix%>_fmi3GetVariableDependencies
+    <%fileNamePrefix%>_fmi3GetFMUState
+    <%fileNamePrefix%>_fmi3SetFMUState
+    <%fileNamePrefix%>_fmi3FreeFMUState
+    <%fileNamePrefix%>_fmi3SerializedFMUStateSize
+    <%fileNamePrefix%>_fmi3SerializeFMUState
+    <%fileNamePrefix%>_fmi3DeserializeFMUState
+    <%fileNamePrefix%>_fmi3GetDirectionalDerivative
+    <%fileNamePrefix%>_fmi3GetAdjointDerivative
+    <%fileNamePrefix%>_fmi3EnterConfigurationMode
+    <%fileNamePrefix%>_fmi3ExitConfigurationMode
+    <%fileNamePrefix%>_fmi3GetIntervalDecimal
+    <%fileNamePrefix%>_fmi3GetIntervalFraction
+    <%fileNamePrefix%>_fmi3GetShiftDecimal
+    <%fileNamePrefix%>_fmi3GetShiftFraction
+    <%fileNamePrefix%>_fmi3SetIntervalDecimal
+    <%fileNamePrefix%>_fmi3SetIntervalFraction
+    <%fileNamePrefix%>_fmi3SetShiftDecimal
+    <%fileNamePrefix%>_fmi3SetShiftFraction
+    <%fileNamePrefix%>_fmi3EvaluateDiscreteStates
+    <%fileNamePrefix%>_fmi3UpdateDiscreteStates
+    ;***************************************************
+    ;Functions for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterContinuousTimeMode
+    <%fileNamePrefix%>_fmi3CompletedIntegratorStep
+    <%fileNamePrefix%>_fmi3SetTime
+    <%fileNamePrefix%>_fmi3SetContinuousStates
+    <%fileNamePrefix%>_fmi3GetContinuousStateDerivatives
+    <%fileNamePrefix%>_fmi3GetEventIndicators
+    <%fileNamePrefix%>_fmi3GetContinuousStates
+    <%fileNamePrefix%>_fmi3GetNominalsOfContinuousStates
+    <%fileNamePrefix%>_fmi3GetNumberOfEventIndicators
+    <%fileNamePrefix%>_fmi3GetNumberOfContinuousStates
+    ;***************************************************
+    ;Functions for Co-Simulation
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterStepMode
+    <%fileNamePrefix%>_fmi3GetOutputDerivatives
+    <%fileNamePrefix%>_fmi3DoStep
+    ;***************************************************
+    ;Functions for Scheduled Execution
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3ActivateModelPartition
+  >>
+  else if isFMIVersion20(FMUVersion) then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmiGetTypesPlatform @1
+    <%fileNamePrefix%>_fmiGetVersion @2
+    <%fileNamePrefix%>_fmiSetDebugLogging @3
+    <%fileNamePrefix%>_fmiInstantiate @4
+    <%fileNamePrefix%>_fmiFreeInstance @5
+    <%fileNamePrefix%>_fmiSetupExperiment @6
+    <%fileNamePrefix%>_fmiEnterInitializationMode @7
+    <%fileNamePrefix%>_fmiExitInitializationMode @8
+    <%fileNamePrefix%>_fmiTerminate @9
+    <%fileNamePrefix%>_fmiReset @10
+    <%fileNamePrefix%>_fmiGetReal @11
+    <%fileNamePrefix%>_fmiGetInteger @12
+    <%fileNamePrefix%>_fmiGetBoolean @13
+    <%fileNamePrefix%>_fmiGetString @14
+    <%fileNamePrefix%>_fmiSetReal @15
+    <%fileNamePrefix%>_fmiSetInteger @16
+    <%fileNamePrefix%>_fmiSetBoolean @17
+    <%fileNamePrefix%>_fmiSetString @18
+    <%fileNamePrefix%>_fmiGetFMUstate @19
+    <%fileNamePrefix%>_fmiSetFMUstate @20
+    <%fileNamePrefix%>_fmiFreeFMUstate @21
+    <%fileNamePrefix%>_fmiSerializedFMUstateSize @22
+    <%fileNamePrefix%>_fmiSerializeFMUstate @23
+    <%fileNamePrefix%>_fmiDeSerializeFMUstate @24
+    <%fileNamePrefix%>_fmiGetDirectionalDerivative @25
+    ;***************************************************
+    ;Functions for FMI for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmiEnterEventMode @26
+    <%fileNamePrefix%>_fmiNewDiscreteStates @27
+    <%fileNamePrefix%>_fmiEnterContinuousTimeMode @28
+    <%fileNamePrefix%>_fmiCompletedIntegratorStep @29
+    <%fileNamePrefix%>_fmiSetTime @30
+    <%fileNamePrefix%>_fmiSetContinuousStates @31
+    <%fileNamePrefix%>_fmiGetDerivatives @32
+    <%fileNamePrefix%>_fmiGetEventIndicators @33
+    <%fileNamePrefix%>_fmiGetContinuousStates @34
+    <%fileNamePrefix%>_fmiGetNominalsOfContinuousStates @35
+    ;***************************************************
+    ;Functions for FMI for Co-Simulation
+    ;****************************************************
+    <%fileNamePrefix%>_fmiSetRealInputDerivatives @36
+    <%fileNamePrefix%>_fmiGetRealOutputDerivatives @37
+    <%fileNamePrefix%>_fmiDoStep @38
+    <%fileNamePrefix%>_fmiCancelStep @39
+    <%fileNamePrefix%>_fmiGetStatus @40
+    <%fileNamePrefix%>_fmiGetRealStatus @41
+    <%fileNamePrefix%>_fmiGetIntegerStatus @42
+    <%fileNamePrefix%>_fmiGetBooleanStatus @43
+    <%fileNamePrefix%>_fmiGetStringStatus @44
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+    <<
+    ;***************************************************
+    ; Experimetnal function for FMI for ModelExchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmiGetSpecificDerivatives @45
+    >> %>
+  >>
+  else
+  <<
+  EXPORTS
+    <%fileNamePrefix%>_fmiCompletedIntegratorStep @1
+    <%fileNamePrefix%>_fmiEventUpdate @2
+    <%fileNamePrefix%>_fmiFreeModelInstance @3
+    <%fileNamePrefix%>_fmiGetBoolean @4
+    <%fileNamePrefix%>_fmiGetContinuousStates @5
+    <%fileNamePrefix%>_fmiGetDerivatives @6
+    <%fileNamePrefix%>_fmiGetEventIndicators @7
+    <%fileNamePrefix%>_fmiGetInteger @8
+    <%fileNamePrefix%>_fmiGetModelTypesPlatform @9
+    <%fileNamePrefix%>_fmiGetNominalContinuousStates @10
+    <%fileNamePrefix%>_fmiGetReal @11
+    <%fileNamePrefix%>_fmiGetStateValueReferences @12
+    <%fileNamePrefix%>_fmiGetString @13
+    <%fileNamePrefix%>_fmiGetVersion @14
+    <%fileNamePrefix%>_fmiInitialize @15
+    <%fileNamePrefix%>_fmiInstantiateModel @16
+    <%fileNamePrefix%>_fmiSetBoolean @17
+    <%fileNamePrefix%>_fmiSetContinuousStates @18
+    <%fileNamePrefix%>_fmiSetDebugLogging @19
+    <%fileNamePrefix%>_fmiSetExternalFunction @20
+    <%fileNamePrefix%>_fmiSetInteger @21
+    <%fileNamePrefix%>_fmiSetReal @22
+    <%fileNamePrefix%>_fmiSetString @23
+    <%fileNamePrefix%>_fmiSetTime @24
+    <%fileNamePrefix%>_fmiTerminate @25
+  >>
+end fmudeffile;
 
 annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMUCommon;

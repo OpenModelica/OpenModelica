@@ -34,7 +34,7 @@ pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVa
         }
         // v_display = factor * v_unit + offset, FMI's own <DisplayUnit>.
         let (converts, factor, offset) =
-            openmodelica_backend::SimCodeUtil::unitConversion(ArcStr::from(v.display_unit.as_str()), ArcStr::from(v.unit.as_str()));
+            openmodelica_codegen_util::SimCodeCodegenUtil::unitConversion(ArcStr::from(v.display_unit.as_str()), ArcStr::from(v.unit.as_str()));
         if converts {
             units[at].display_units.push(DisplayUnit::new(&v.display_unit, factor.into_inner(), offset.into_inner()));
         }

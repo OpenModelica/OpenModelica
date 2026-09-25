@@ -70,6 +70,9 @@ pub(crate) struct FnCtx<'a> {
     /// skipped by `release_heap_locals` — currently the `for x in array` iterator,
     /// which aliases an element of the array that outlives the loop.
     pub(super) borrowed_locals: Vec<u32>,
+    /// Record locals still holding the null handle their first assignment
+    /// replaces, so that assignment has nothing to release.
+    pub(super) null_locals: Vec<u32>,
     /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
     /// straight-line, so one pair is enough.
     pub(super) elem_ptr_tmp: Option<(u32, u32)>,
@@ -136,6 +139,8 @@ pub(crate) struct SimCtx {
     /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
     /// present, else the inline expression. Empty while building the fill function.
     pub(crate) start_slots: Arc<HashMap<String, u32>>,
+    /// Alias cref key -> (target cref key, negation) for `$START.<alias>`.
+    pub(crate) start_aliases: Arc<HashMap<String, (String, Neg)>>,
     /// Canonical cref key of an *array-valued* model variable (the base name with
     /// no final subscript, e.g. `body.R_start.T`) -> the contiguous slot range its
     /// scalarized elements occupy. A whole-array reference reads/writes the range
@@ -551,6 +556,7 @@ impl<'a> FnCtx<'a> {
             ctrl_depth: 0,
             loops: Vec::new(),
             borrowed_locals: Vec::new(),
+            null_locals: Vec::new(),
             elem_ptr_tmp: None,
             src_loc: None,
             sim: Some(sim),

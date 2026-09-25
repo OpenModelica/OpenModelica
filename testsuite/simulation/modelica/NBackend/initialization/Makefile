@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 experimental_initialSimplified.mos \
+functionOutputStart.mos \
 primaryParameterFor.mos \
 primaryParameterRecord.mos \
 resizableParameterBinding.mos \

@@ -439,7 +439,7 @@ public
         // if the argument is a cref, get its children
         case Expression.CREF() algorithm
           tmp := BVariable.getRecordChildrenCref(arg.cref);
-        then list(Expression.fromCref(child) for child in tmp);
+        then list(recordChildArg(child) for child in tmp);
 
         // if it is a basic record, take its elements
         case Expression.RECORD()  then arg.elements;
@@ -470,6 +470,28 @@ public
       end if;
     end if;
   end addInputArgTpl;
+
+  function recordChildArg
+    "constant record children are replaced by their literal binding, since constants
+    are not assigned at runtime and are only referenced after inlining."
+    input ComponentRef child;
+    output Expression exp = Expression.fromCref(child);
+  protected
+    Pointer<Variable> var_ptr;
+    Variable var;
+    Option<Expression> binding;
+  algorithm
+    if listEmpty(ComponentRef.subscriptsAllFlat(child)) then
+      var_ptr := BVariable.getVarPointer(child, sourceInfo());
+      if BVariable.isConst(var_ptr) then
+        var := Pointer.access(var_ptr);
+        binding := Binding.typedExp(var.binding);
+        if isSome(binding) and Expression.isLiteral(Util.getOption(binding)) then
+          exp := Util.getOption(binding);
+        end if;
+      end if;
+    end if;
+  end recordChildArg;
 
   function wrapEvents
     input output Expression exp;

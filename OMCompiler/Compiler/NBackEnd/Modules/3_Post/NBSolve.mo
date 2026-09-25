@@ -781,8 +781,13 @@ public
         invertRelation := RelationInversion.UNKNOWN; // TODO: make me depend on the derivative
       else
         diffArgs := Differentiate.DifferentiationArguments.simpleCref(fixed_cref, funcMap);
-        (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-        derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
+        try
+          (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+          derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
+        else
+          // not everything can be differentiated, e.g. functions with function inputs
+          derivative := Expression.fromCref(fixed_cref);
+        end try;
 
         if Expression.isZero(derivative) then
           invertRelation := RelationInversion.FALSE;

@@ -73,6 +73,19 @@ omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 # compiled from C. The simulation/function runtime C libraries are still built.
 omc_option(OM_OMC_ENABLE_RUST "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." OFF)
 
+# A native omc (C or Rust) that runs Susan and translates the MetaModelica sources
+# in place of bomc, which a cross build of the C omc cannot run.
+set(OM_OMC_HOST_EXECUTABLE "" CACHE FILEPATH "omc for the build host to translate the compiler sources with instead of bomc.")
+omc_add_to_report(OM_OMC_HOST_EXECUTABLE)
+# The compiler sources as translated to C for this target by a native build of
+# the same revision (for MSVC: its generate-msvc-c-sources target). Nothing is
+# then translated here.
+set(OM_OMC_PREBUILT_C_SOURCES "" CACHE PATH "Directory holding the translated compiler sources (*.c, *.h) to build instead.")
+omc_add_to_report(OM_OMC_PREBUILT_C_SOURCES)
+if(CMAKE_CROSSCOMPILING AND OM_OMC_ENABLE_COMPILER AND NOT OM_OMC_ENABLE_RUST AND NOT OM_OMC_HOST_EXECUTABLE AND NOT OM_OMC_PREBUILT_C_SOURCES)
+  message(FATAL_ERROR "Cross-compiling the C omc needs -DOM_OMC_PREBUILT_C_SOURCES=<dir> or -DOM_OMC_HOST_EXECUTABLE=<native omc>.")
+endif()
+
 # libOMCDLL: the omc C-API wrapper library (Compiler/omcCAPI). Lets external
 # programs drive omc in-process (InitOMC/SendCommand/...). Windows releases used
 # to ship it; keep that the default there, opt-in elsewhere. Not built by the
@@ -167,6 +180,41 @@ set(FMILIB_FMI3_PLATFORM "${_fmi3_arch}-${_fmi3_os}" CACHE STRING "FMI 3.0 platf
 if(NOT OM_OMC_WASM)
   omc_add_subdirectory(3rdParty)
 endif()
+
+# What a link line naming libfmilib.a needs besides it (Autoconf.fmilibLibs), i.e. the code of an
+# imported FMU. FMIL merges only the expat and minizip it builds itself into the archive, so with
+# OM_USE_SYSTEM_EXPAT/OM_USE_SYSTEM_MINIZIP their XML_* and unz* functions are left undefined.
+# Full paths, as for HDF5, not -lexpat/-lminizip: those need the -dev packages' symlinks, which
+# an installed omc does not otherwise require. The soname link (libexpat.so.1) rather than the file
+# it points to, which a minor update of the library renames. A system minizip brings its zlib.
+function(om_fmilib_soname_path lib out)
+  file(REAL_PATH "${lib}" _real)
+  string(REGEX REPLACE "(\\.so\\.[0-9]+)\\..*$" "\\1" _soname "${_real}")
+  if(EXISTS "${_soname}")
+    set(${out} "${_soname}" PARENT_SCOPE)
+  else()
+    set(${out} "${_real}" PARENT_SCOPE)
+  endif()
+endfunction()
+set(_om_fmilib_libs "")
+if(OM_USE_SYSTEM_EXPAT AND TARGET EXPAT::EXPAT)
+  # FindEXPAT keeps the path in a per-configuration variable; the target has it either way.
+  get_target_property(_om_fmilib_expat EXPAT::EXPAT IMPORTED_LOCATION_RELEASE)
+  if(NOT _om_fmilib_expat)
+    get_target_property(_om_fmilib_expat EXPAT::EXPAT IMPORTED_LOCATION)
+  endif()
+  if(_om_fmilib_expat)
+    om_fmilib_soname_path("${_om_fmilib_expat}" _om_fmilib_expat)
+    list(APPEND _om_fmilib_libs "${_om_fmilib_expat}")
+  endif()
+endif()
+if(OM_USE_SYSTEM_MINIZIP AND OM_MINIZIP_LIBRARY)
+  om_fmilib_soname_path("${OM_MINIZIP_LIBRARY}" _om_fmilib_minizip)
+  list(APPEND _om_fmilib_libs "${_om_fmilib_minizip}")
+endif()
+string(REPLACE ";" " " _om_fmilib_libs "${_om_fmilib_libs}")
+set(OMC_FMILIB_LDFLAGS "${_om_fmilib_libs}" CACHE INTERNAL
+    "Libraries a link line naming fmilib needs besides it, space-separated.")
 
 
 # These flags are set after 3rdParty is added so they do not affect 3rdParty libraries.

@@ -164,7 +164,6 @@ parser.log \
 meta.log \
 biochem.log \
 flatteningmodelicamsl.log \
-mmdev.log \
 flatteningmosfiles.log \
 interactive-API.log \
 instance-API.log \
@@ -494,9 +493,6 @@ flatteningmosfiles.log: omc-diff
 	@echo $@ done
 meta.log: omc-diff
 	$(MAKE) -C metamodelica/meta -f Makefile test > $@
-	@echo $@ done
-mmdev.log: omc-diff
-	$(MAKE) -C metamodelica/MetaModelicaDev -f Makefile test > $@
 	@echo $@ done
 records.log: omc-diff
 	$(MAKE) -C flattening/modelica/records -f Makefile test > $@

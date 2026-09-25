@@ -916,3 +916,81 @@ void omc_string_array_release(base_array_t *a)
     omc_array_release(a);
 }
 
+/**
+ * @brief Write vector into null-terminated string.
+ *
+ * Scalars are written as `v`, vectors as `{v1, v2, ...}`. If `buffer` is too
+ * small the output is truncated with `"...}"`.
+ *
+ * @param source          Vector to write to `buffer`.
+ * @param isScalar        Treat vector of length one as scalar.
+ * @param format_element  Writes element `i` of `data` into a buffer, like `snprintf`.
+ * @param buffer          Buffer to write into.
+ * @param bufsize         Length of `buffer`.
+ */
+void base_vector_to_string(const base_array_t *source,
+                           modelica_boolean isScalar,
+                           base_array_format_element_t format_element,
+                           char *buffer,
+                           size_t bufsize)
+{
+    _index_t i;
+    size_t pos = 0;
+    int ret;
+    size_t remaining;
+
+    /* Validate input parameters */
+    if (buffer == NULL || bufsize == 0) {
+        return;
+    }
+    buffer[0] = '\0';
+
+    omc_assert_macro(base_array_ok(source));
+    assert(source->ndims == 1);
+
+    if (isScalar && source->ndims == 1 && source->dim_size[0] == 1)
+    {
+        /* Write scalar into buffer */
+        format_element(buffer + pos, bufsize - pos, source->data, 0);
+        return;
+    }
+
+    /* Start brace */
+    ret = snprintf(buffer + pos, (bufsize > pos) ? bufsize - pos : 0, "{");
+    if (ret < 0) ret = 0;
+    if ((size_t)ret >= bufsize - pos) {
+        return;
+    }
+    pos += (size_t)ret;
+
+    for (i = 0; i < source->dim_size[0]; i++)
+    {
+        remaining = (bufsize > pos) ? bufsize - pos : 0;
+
+        /* If not enough room to write an element, try to append "...}" and stop */
+        if (remaining <= 5) {
+            snprintf(buffer + pos, remaining, "...}");
+            return;
+        }
+
+        /* Format element, use comma+space for non-last elements */
+        ret = format_element(buffer + pos, remaining, source->data, i);
+        if (ret >= 0 && (size_t)ret < remaining && i < source->dim_size[0] - 1) {
+            ret += snprintf(buffer + pos + ret, remaining - ret, ", ");
+        }
+
+        if (ret < 0) ret = 0;
+        if (ret >= remaining - 5) {
+            /* Not enough space for more elements; try to write "...}" instead */
+            snprintf(buffer + pos, remaining, "...}");
+            return;
+        }
+        pos += (size_t)ret;
+    }
+
+    /* Append closing brace */
+    remaining = (bufsize > pos) ? bufsize - pos : 0;
+    if (remaining > 0) {
+        snprintf(buffer + pos, remaining, "}");
+    }
+}

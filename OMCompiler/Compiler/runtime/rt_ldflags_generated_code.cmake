@@ -12,8 +12,9 @@ if(MSVC)
   # OpenModelicaRuntimeC is static and already inside SimulationRuntimeC.dll.
   set(RT_LDFLAGS_GENERATED_CODE "OpenModelicaRuntimeC.lib libopenblas.lib pthreadVC3.lib")
   set(RT_LDFLAGS_GENERATED_CODE_MMC "OpenModelicaRuntimeMMC.lib omcgc.lib libopenblas.lib pthreadVC3.lib")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM "SimulationRuntimeC.lib libopenblas.lib pthreadVC3.lib")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM_RUST "SimulationRuntimeRust.lib libopenblas.lib pthreadVC3.lib")
+  # zlib for the minizip in fmilib, which FMU import links.
+  set(RT_LDFLAGS_GENERATED_CODE_SIM "SimulationRuntimeC.lib zlib.lib libopenblas.lib pthreadVC3.lib")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM_RUST "SimulationRuntimeRust.lib zlib.lib libopenblas.lib pthreadVC3.lib")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU "libopenblas.lib pthreadVC3.lib")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "SimulationRuntimeFMI.lib libopenblas.lib pthreadVC3.lib")
 elseif(MINGW)

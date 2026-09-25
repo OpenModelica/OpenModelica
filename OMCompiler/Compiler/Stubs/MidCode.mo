@@ -44,5 +44,5 @@ end Program;
 
 type Function = Integer;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_util");
 end MidCode;
