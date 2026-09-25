@@ -5807,12 +5807,10 @@ fn collect_type_vars_in_typed_stmts(stmts: &[typedexp::TypedStmt], out: &mut Vec
 // clone, and moving a value that is in fact dead is observably identical to
 // cloning it (clone has no side effects in the generated runtime). The only way
 // an over-eager move can go wrong is a use-after-move, which is a *compile*
-// error in the generated crate, never silent misbehaviour. Constructs with
-// non-linear control flow — loops (`for`/`while`), `try`/`failure`, reductions,
-// and `matchcontinue` (which retries arms on failure) — are handled
-// conservatively: every variable they read is kept live and no move is marked
-// inside them. (Copy-typed clones are elided independently of liveness, so loops
-// still lose their `i.clone()` noise.)
+// error in the generated crate, never silent misbehaviour. Loops iterate to a
+// fixpoint over their back-edge. `try`/`failure`, reductions and
+// `matchcontinue` (which retries arms on failure) are handled conservatively:
+// every variable they read is kept live and no move is marked inside them.
 
 /// The base variable name a `Var` reference reads — its first dotted/segment
 /// component. Liveness and the move decision operate on this enclosing binding
@@ -5824,29 +5822,37 @@ fn var_base_name(name: &str, segments: &[CrefSegment]) -> String {
     }
 }
 
+/// `outputs` are read at every exit; `loops` holds, per enclosing loop, the
+/// live sets a `break` and a `continue` jump to.
+struct LiveCx {
+    outputs: HashSet<String>,
+    loops: Vec<(HashSet<String>, HashSet<String>)>,
+}
+
 /// Entry point: mark the last-use occurrences in a function body. `outputs` are
 /// the function's output components — they are read by the implicit tail return,
 /// so they are live when the body finishes.
 pub(crate) fn mark_last_uses(stmts: &mut [TypedStmt], outputs: &HashSet<String>) {
     let mut live = outputs.clone();
-    live_stmts(stmts, &mut live, outputs);
+    let mut cx = LiveCx { outputs: outputs.clone(), loops: Vec::new() };
+    live_stmts(stmts, &mut live, &mut cx);
 }
 
-fn live_stmts(stmts: &mut [TypedStmt], live: &mut HashSet<String>, outputs: &HashSet<String>) {
+fn live_stmts(stmts: &mut [TypedStmt], live: &mut HashSet<String>, cx: &mut LiveCx) {
     for s in stmts.iter_mut().rev() {
-        live_stmt(s, live, outputs);
+        live_stmt(s, live, cx);
     }
 }
 
-fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, outputs: &HashSet<String>) {
+fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, cx: &mut LiveCx) {
     match stmt {
         TypedStmt::Assign { lhs, rhs, .. } => {
             // The LHS pattern (re)defines the bound names — they are dead before
             // the RHS runs — and reads any subscript/field base it targets.
-            pat_kill_and_gen(lhs, live, outputs);
-            live_exp(rhs, live, outputs);
+            pat_kill_and_gen(lhs, live, cx);
+            live_exp(rhs, live, cx);
         }
-        TypedStmt::NoRetCall { call, .. } => live_exp(call, live, outputs),
+        TypedStmt::NoRetCall { call, .. } => live_exp(call, live, cx),
         TypedStmt::If { cond, then_, elseif, else_ } => {
             // Branches are mutually exclusive: analyse each from the same
             // post-`if` live set, then union their live-ins for the enclosing
@@ -5854,37 +5860,63 @@ fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, outputs: &HashSet
             let live_out = live.clone();
             let mut acc = HashSet::new();
             let mut b = live_out.clone();
-            live_stmts(else_, &mut b, outputs);
+            live_stmts(else_, &mut b, cx);
             acc.extend(b);
             for (_, body) in elseif.iter_mut() {
                 let mut b = live_out.clone();
-                live_stmts(body, &mut b, outputs);
+                live_stmts(body, &mut b, cx);
                 acc.extend(b);
             }
             let mut b = live_out.clone();
-            live_stmts(then_, &mut b, outputs);
+            live_stmts(then_, &mut b, cx);
             acc.extend(b);
             *live = acc;
             for (c, _) in elseif.iter_mut().rev() {
-                live_exp(c, live, outputs);
+                live_exp(c, live, cx);
             }
-            live_exp(cond, live, outputs);
+            live_exp(cond, live, cx);
         }
         TypedStmt::For { var, range, body } => {
-            // Loop: a value read in the body is live across the back-edge.
-            // Conservative — keep every body read live and mark no moves inside.
-            // The range is evaluated once in the enclosing scope.
-            let mut reads = HashSet::new();
-            collect_stmts_names(body, &mut reads);
-            reads.remove(var);
-            live.extend(reads);
-            live_exp(range, live, outputs);
+            // Fixpoint of the live set at the end of the body (next iteration
+            // or exit); the last pass leaves the marks. The iterator may borrow
+            // what the range reads, so that stays live in the body.
+            let after = live.clone();
+            let mut exit = after.clone();
+            collect_exp_names(range, &mut exit);
+            let mut end = exit.clone();
+            loop {
+                let mut b = end.clone();
+                cx.loops.push((exit.clone(), end.clone()));
+                live_stmts(body, &mut b, cx);
+                cx.loops.pop();
+                b.remove(var);
+                b.extend(exit.iter().cloned());
+                if b == end { break; }
+                end = b;
+            }
+            let mut body_reads = HashSet::new();
+            collect_stmts_names(body, &mut body_reads);
+            for n in exit.difference(&after) {
+                if !body_reads.contains(n) { end.remove(n); }
+            }
+            *live = end;
+            live_exp(range, live, cx);
         }
         TypedStmt::While { cond, body } => {
-            let mut reads = HashSet::new();
-            collect_stmts_names(body, &mut reads);
-            collect_exp_names(cond, &mut reads);
-            live.extend(reads);
+            // Same fixpoint, over the live set before the condition.
+            let exit = live.clone();
+            let mut head = exit.clone();
+            loop {
+                let mut b = head.clone();
+                cx.loops.push((exit.clone(), head.clone()));
+                live_stmts(body, &mut b, cx);
+                cx.loops.pop();
+                b.extend(exit.iter().cloned());
+                live_exp(cond, &mut b, cx);
+                if b == head { break; }
+                head = b;
+            }
+            *live = head;
         }
         TypedStmt::Try { body, else_body, .. } => {
             // A failure mid-`body` transfers to `else_body`; treat both
@@ -5904,13 +5936,19 @@ fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, outputs: &HashSet
             // `return;` diverges to the function tail, which reads every output
             // (`return Ok((outputs…))`). The textual successors do not execute,
             // so the live set at this point is exactly the outputs.
-            *live = outputs.clone();
+            *live = cx.outputs.clone();
         }
-        TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+        TypedStmt::Break => {
+            if let Some((exit, _)) = cx.loops.last() { *live = exit.clone(); }
+        }
+        TypedStmt::Continue => {
+            if let Some((_, next)) = cx.loops.last() { *live = next.clone(); }
+        }
+        TypedStmt::Todo(_) => {}
     }
 }
 
-fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<String>) {
+fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, cx: &mut LiveCx) {
     match exp {
         TypedExp::Lit(_) | TypedExp::Todo(_) => {}
         TypedExp::Var { name, segments, last_use, .. } => {
@@ -5918,7 +5956,7 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
             // before deciding the base's last-use status.
             for seg in segments.iter_mut().rev() {
                 for sub in seg.subscripts.iter_mut().rev() {
-                    live_exp(sub, live, outputs);
+                    live_exp(sub, live, cx);
                 }
             }
             let base = var_base_name(name, segments);
@@ -5926,25 +5964,25 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
             live.insert(base);
         }
         TypedExp::BinOp { lhs, rhs, .. } => {
-            live_exp(rhs, live, outputs);
-            live_exp(lhs, live, outputs);
+            live_exp(rhs, live, cx);
+            live_exp(lhs, live, cx);
         }
-        TypedExp::UnOp { operand, .. } => live_exp(operand, live, outputs),
+        TypedExp::UnOp { operand, .. } => live_exp(operand, live, cx),
         TypedExp::Call { args, named_args, .. }
         | TypedExp::Constructor { args, named_args, .. } => {
             for (_, a) in named_args.iter_mut().rev() {
-                live_exp(a, live, outputs);
+                live_exp(a, live, cx);
             }
             for a in args.iter_mut().rev() {
-                live_exp(a, live, outputs);
+                live_exp(a, live, cx);
             }
         }
         TypedExp::PartEval { func, args, named_args, callee_is_local, .. } => {
             for (_, a) in named_args.iter_mut().rev() {
-                live_exp(a, live, outputs);
+                live_exp(a, live, cx);
             }
             for a in args.iter_mut().rev() {
-                live_exp(a, live, outputs);
+                live_exp(a, live, cx);
             }
             // A `callee_is_local` partial application closes over the local
             // function-typed binding; count it as a read so it is not moved.
@@ -5956,37 +5994,37 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
             let live_out = live.clone();
             let mut acc = HashSet::new();
             let mut b = live_out.clone();
-            live_exp(else_, &mut b, outputs);
+            live_exp(else_, &mut b, cx);
             acc.extend(b);
             for (_, e) in elseif.iter_mut() {
                 let mut b = live_out.clone();
-                live_exp(e, &mut b, outputs);
+                live_exp(e, &mut b, cx);
                 acc.extend(b);
             }
             let mut b = live_out.clone();
-            live_exp(then_, &mut b, outputs);
+            live_exp(then_, &mut b, cx);
             acc.extend(b);
             *live = acc;
             for (c, _) in elseif.iter_mut().rev() {
-                live_exp(c, live, outputs);
+                live_exp(c, live, cx);
             }
-            live_exp(cond, live, outputs);
+            live_exp(cond, live, cx);
         }
         TypedExp::Cons { head, tail, .. } => {
-            live_exp(tail, live, outputs);
-            live_exp(head, live, outputs);
+            live_exp(tail, live, cx);
+            live_exp(head, live, cx);
         }
         TypedExp::Tuple(elems) | TypedExp::Array { elems, .. } => {
             for e in elems.iter_mut().rev() {
-                live_exp(e, live, outputs);
+                live_exp(e, live, cx);
             }
         }
         TypedExp::Range { start, step, stop, .. } => {
-            live_exp(stop, live, outputs);
+            live_exp(stop, live, cx);
             if let Some(s) = step {
-                live_exp(s, live, outputs);
+                live_exp(s, live, cx);
             }
-            live_exp(start, live, outputs);
+            live_exp(start, live, cx);
         }
         TypedExp::Reduction { body, iterators, .. } => {
             // The body and per-iterator guards run once per element (loop
@@ -6004,7 +6042,7 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
             }
             live.extend(reads);
             for it in iterators.iter_mut().rev() {
-                live_exp(&mut it.range, live, outputs);
+                live_exp(&mut it.range, live, cx);
             }
         }
         TypedExp::Match { kind, input, cases, as_binding, .. } => {
@@ -6016,7 +6054,7 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
                     collect_case_names(case, &mut reads);
                 }
                 live.extend(reads);
-                live_exp(input, live, outputs);
+                live_exp(input, live, cx);
             } else {
                 // Arm *bodies* are mutually exclusive, but the patterns and
                 // guards are tried *sequentially* during arm selection: arm i's
@@ -6049,12 +6087,12 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
                 for case in cases.iter_mut() {
                     let mut clive = live_out.clone();
                     clive.extend(decision.iter().cloned());
-                    live_exp(&mut case.result, &mut clive, outputs);
-                    live_stmts(&mut case.stmts, &mut clive, outputs);
+                    live_exp(&mut case.result, &mut clive, cx);
+                    live_stmts(&mut case.stmts, &mut clive, cx);
                     for (lname, _, default, _) in case.locals.iter_mut().rev() {
                         clive.remove(lname);
                         if let Some(d) = default {
-                            live_exp(d, &mut clive, outputs);
+                            live_exp(d, &mut clive, cx);
                         }
                     }
                     // Pattern-bound names are arm-local: kill them (without
@@ -6072,7 +6110,7 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
                 if let Some(b) = as_binding {
                     live.remove(b);
                 }
-                live_exp(input, live, outputs);
+                live_exp(input, live, cx);
             }
         }
     }
@@ -6306,7 +6344,7 @@ fn clear_last_use_stmt(stmt: &mut TypedStmt) {
 /// fresh bindings kill the name (it is redefined here, so dead above this point);
 /// `Index`/`FieldAccess` targets instead *read* their base (the array/record must
 /// already exist) and are never killed.
-fn pat_kill_and_gen(pat: &mut TypedPat, live: &mut HashSet<String>, outputs: &HashSet<String>) {
+fn pat_kill_and_gen(pat: &mut TypedPat, live: &mut HashSet<String>, cx: &mut LiveCx) {
     match pat {
         TypedPat::Wildcard
         | TypedPat::Lit(_)
@@ -6316,47 +6354,47 @@ fn pat_kill_and_gen(pat: &mut TypedPat, live: &mut HashSet<String>, outputs: &Ha
         TypedPat::Var(n) => {
             live.remove(n);
         }
-        TypedPat::Some_(p) => pat_kill_and_gen(p, live, outputs),
+        TypedPat::Some_(p) => pat_kill_and_gen(p, live, cx),
         TypedPat::Cons { head, tail } => {
-            pat_kill_and_gen(head, live, outputs);
-            pat_kill_and_gen(tail, live, outputs);
+            pat_kill_and_gen(head, live, cx);
+            pat_kill_and_gen(tail, live, cx);
         }
         TypedPat::Tuple(ps) => {
             for p in ps.iter_mut() {
-                pat_kill_and_gen(p, live, outputs);
+                pat_kill_and_gen(p, live, cx);
             }
         }
         TypedPat::Constructor { fields, named_fields, .. } => {
             for p in fields.iter_mut() {
-                pat_kill_and_gen(p, live, outputs);
+                pat_kill_and_gen(p, live, cx);
             }
             for (_, p) in named_fields.iter_mut() {
-                pat_kill_and_gen(p, live, outputs);
+                pat_kill_and_gen(p, live, cx);
             }
         }
         TypedPat::As { var, pat } => {
             live.remove(var);
-            pat_kill_and_gen(pat, live, outputs);
+            pat_kill_and_gen(pat, live, cx);
         }
         TypedPat::Index { base, index } => {
-            live_exp(base, live, outputs);
-            live_exp(index, live, outputs);
+            live_exp(base, live, cx);
+            live_exp(index, live, cx);
         }
-        TypedPat::FieldAccess { base, .. } => pat_base_reads(base, live, outputs),
+        TypedPat::FieldAccess { base, .. } => pat_base_reads(base, live, cx),
     }
 }
 
 /// A `FieldAccess` LHS base (`x.field := …`) reads `x`; recurse through nested
 /// field chains. Other shapes carry no read here.
-fn pat_base_reads(pat: &mut TypedPat, live: &mut HashSet<String>, outputs: &HashSet<String>) {
+fn pat_base_reads(pat: &mut TypedPat, live: &mut HashSet<String>, cx: &mut LiveCx) {
     match pat {
         TypedPat::Var(n) => {
             live.insert(n.clone());
         }
-        TypedPat::FieldAccess { base, .. } => pat_base_reads(base, live, outputs),
+        TypedPat::FieldAccess { base, .. } => pat_base_reads(base, live, cx),
         TypedPat::Index { base, index } => {
-            live_exp(base, live, outputs);
-            live_exp(index, live, outputs);
+            live_exp(base, live, cx);
+            live_exp(index, live, cx);
         }
         _ => {}
     }
