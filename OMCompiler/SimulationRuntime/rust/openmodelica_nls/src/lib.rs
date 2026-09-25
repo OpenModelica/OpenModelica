@@ -2874,8 +2874,8 @@ fn newton_c(
     // C's `xStart`: the retries below vary off this, not off the last varied point.
     // Taken at the first retry; `x` is unchanged until then.
     let mut x_start: Option<alloc::vec::Vec<f64>> = None;
-    let mut work = vec![0.0f64; 5 * n + n * n + n * (n + 1)];
-    let mut rest = work.as_mut_slice();
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 640]>::uninit(), alloc::vec::Vec::new());
+    let mut rest = zeroed(&mut stack, &mut heap, 5 * n + n * n + n * (n + 1));
     let xscaling = carve(&mut rest, n);
     let mut fvec = carve(&mut rest, n);
     let mut rp = carve(&mut rest, n);
@@ -3629,6 +3629,22 @@ fn solve_newton_c(
 }
 
 /// The next `k` values of `rest`.
+/// `len` zeroed f64s, in `stack` when they fit: a system solve is too small and
+/// too frequent for its scratch to go through the allocator.
+fn zeroed<'a, const N: usize>(
+    stack: &'a mut core::mem::MaybeUninit<[f64; N]>,
+    heap: &'a mut alloc::vec::Vec<f64>,
+    len: usize,
+) -> &'a mut [f64] {
+    if len > N {
+        *heap = vec![0.0f64; len];
+        return heap;
+    }
+    let s = unsafe { core::slice::from_raw_parts_mut(stack.as_mut_ptr() as *mut f64, len) };
+    s.fill(0.0);
+    s
+}
+
 fn carve<'a>(rest: &mut &'a mut [f64], k: usize) -> &'a mut [f64] {
     let (head, tail) = core::mem::take(rest).split_at_mut(k);
     *rest = tail;
@@ -3707,8 +3723,8 @@ pub fn solve_nls(
     // Warm start: the current slot values (the fallback guess, and what is
     // restored on failure).
     // The solve's vectors, carved out of one allocation.
-    let mut work = vec![0.0f64; 10 * n + m + mem.res_scaling.len()];
-    let mut rest = work.as_mut_slice();
+    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 192]>::uninit(), alloc::vec::Vec::new());
+    let mut rest = zeroed(&mut work_stack, &mut work_heap, 10 * n + m + mem.res_scaling.len());
     let mut warm = carve(&mut rest, n);
     let mut xbuf = carve(&mut rest, m);
     let mut rbuf = carve(&mut rest, n);
@@ -3779,7 +3795,8 @@ pub fn solve_nls(
     // chose to solve sparsely, a dense column-major `n×m` for the rest.
     let jac_csc = has_jac && spec.jac_csc;
     let jac_len = if jac_csc { nnz as usize } else { n * m };
-    let mut jacbuf = vec![0.0f64; if has_jac || has_hom_jac { jac_len } else { 0 }];
+    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 256]>::uninit(), alloc::vec::Vec::new());
+    let mut jacbuf = zeroed(&mut jac_stack, &mut jac_heap, if has_jac || has_hom_jac { jac_len } else { 0 });
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.
     let pick = solverflags::nls();
