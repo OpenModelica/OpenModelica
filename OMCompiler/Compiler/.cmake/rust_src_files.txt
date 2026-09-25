@@ -440,6 +440,7 @@ openmodelica_util/build.rs
 openmodelica_util/src/Autoconf.rs
 openmodelica_util/src/FMIExt.rs
 openmodelica_util/src/File.rs
+openmodelica_util/src/Flags.handwritten.rs
 openmodelica_util/src/Global.rs
 openmodelica_util/src/Globals.rs
 openmodelica_util/src/IOStreamExt.rs
