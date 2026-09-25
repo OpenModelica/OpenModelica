@@ -34,6 +34,8 @@
 #include "arrayIndex.h"
 #include "../util/omc_error.h"
 
+#include <string.h>
+
 /**
  * @brief Allocate memory for index maps.
  *
@@ -432,6 +434,56 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
 
   free(array_index);
   return;
+}
+
+/**
+ * @brief Write name of an element of an array variable.
+ *
+ * Uses the Modelica structured naming `"<name>[i,j,...]"` with 1-based
+ * indices, like the result files, and `"der(<name>[i,j,...])"` for state
+ * derivatives named `"der(<name>)"`. For scalar variables `name` is written.
+ *
+ * @param buffer          Buffer to write into.
+ * @param buffer_size     Size of `buffer`.
+ * @param name            Name of array variable.
+ * @param dimension_info  Dimensions of array variable, may be NULL for scalars.
+ * @param linear_address  Flattened (row-major) index of element.
+ * @return int            Number of characters written, like snprintf.
+ */
+int printArrayElementName(char *buffer,
+                          size_t buffer_size,
+                          const char *name,
+                          const DIMENSION_INFO *dimension_info,
+                          size_t linear_address)
+{
+  int written;
+  size_t k, rem, stride, j;
+  size_t name_length = strlen(name);
+  /* state derivative "der(x)" has elements "der(x[i])" */
+  const int isDerivative = name_length > 5 && strncmp(name, "der(", 4) == 0 && name[name_length - 1] == ')';
+
+  if (dimension_info == NULL || dimension_info->numberOfDimensions == 0)
+  {
+    return snprintf(buffer, buffer_size, "%s", name);
+  }
+
+  written = snprintf(buffer, buffer_size, "%.*s", (int)(isDerivative ? name_length - 1 : name_length), name);
+
+  rem = linear_address;
+  for (k = 0; k < dimension_info->numberOfDimensions; k++)
+  {
+    stride = 1;
+    for (j = k + 1; j < dimension_info->numberOfDimensions; j++)
+    {
+      stride *= (size_t)dimension_info->dimensions[j].start;
+    }
+    written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0,
+                        (k == 0) ? "[%zu" : ",%zu", rem / stride + 1);
+    rem = rem % stride;
+  }
+  written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0, isDerivative ? "])" : "]");
+
+  return written;
 }
 
 /**

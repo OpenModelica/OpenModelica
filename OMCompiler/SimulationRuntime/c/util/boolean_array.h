@@ -88,6 +88,7 @@ extern void print_boolean_matrix(const boolean_array* source);
 extern void print_boolean_array(const boolean_array* source);
 
 void boolean_vector_to_string(const boolean_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize);
+void resizeBooleanAttribute(boolean_array *attribute, size_t n);
 extern char print_boolean(modelica_boolean value);
 /*
 

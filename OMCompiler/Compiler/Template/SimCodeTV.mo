@@ -1532,6 +1532,22 @@ package SimCodeCodegenUtil
     output Integer n;
   end numScalarElems;
 
+  function numScalarElemsBefore
+    input list<SimCodeVar.SimVar> vars;
+    input Integer n;
+    output Integer numScalars;
+  end numScalarElemsBefore;
+
+  function numScalarElemsVar
+    input SimCodeVar.SimVar var;
+    output Integer n;
+  end numScalarElemsVar;
+
+  function arrayElementSubscripts
+    input SimCodeVar.SimVar var;
+    output list<String> subscripts;
+  end arrayElementSubscripts;
+
   function getFMIScalarVRs
     input SimCodeVar.SimVar var;
     input SimCode.SimCode simCode;

@@ -82,6 +82,7 @@ extern void print_real_matrix(const real_array *source);
 extern void print_real_array(const real_array *source);
 
 void real_vector_to_string(const real_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize);
+void resizeRealAttribute(real_array *attribute, size_t n);
 
 extern void indexed_assign_real_array(const real_array source,
                                       real_array *dest,

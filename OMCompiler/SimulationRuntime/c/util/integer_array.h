@@ -90,6 +90,7 @@ extern void print_integer_matrix(const integer_array * source);
 extern void print_integer_array(const integer_array * source);
 
 void integer_vector_to_string(const integer_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize);
+void resizeIntegerAttribute(integer_array *attribute, size_t n);
 /*
 
  a[1:3] := b;
