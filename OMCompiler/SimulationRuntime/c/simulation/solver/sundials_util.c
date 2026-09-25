@@ -42,10 +42,11 @@
 /**
  * @brief Set element of sparse Sundials matrix.
  *
- * Jac(row, column) = val.
+ * Jac(row, column) = val. The column pointers are not touched, set them with
+ * setSundialsSparseColPtrs.
  *
  * @param row       Row of matrix element.
- * @param column    Column of matrix element.
+ * @param column    Column of matrix element, unused.
  * @param nth       Sparsity pattern lead index.
  * @param value     Value to set in position (i,j).
  * @param Jac       Pointer to double array storing matrix.
@@ -53,6 +54,7 @@
  */
 void setJacElementSundialsSparse(int row, int column, int nth, double value, void* Jac, int nRows)
 {
+  UNUSED(column);
   UNUSED(nRows);   /* Disables compiler warning */
 
   SUNMatrix A = (SUNMatrix) Jac;
@@ -63,19 +65,30 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
                      "of SUNMatrix A.");
   }
 
-  if (column > 0 && SM_INDEXPTRS_S(A)[column] == 0) {
-    SM_INDEXPTRS_S(A)[column] = nth;
-  }
   SM_INDEXVALS_S(A)[nth] = row;
   SM_DATA_S(A)[nth] = value;
 }
 
 /**
- * @brief Set Sundials sparse pattern from SimRuntime SPARSE_PATTERN
+ * @brief Set the column pointers of a CSC Sundials matrix from a sparsity pattern.
  *
  * @param sp        Column oriented (CSC) sparsity pattern of the matrix.
- *                  Use getJacobianCscPattern() to obtain it from a JACOBIAN.
- * @param nCols     Number of columns of the matrix.
+ * @param Jac       Sundials Matrix with the same number of columns as sp.
+ */
+void setSundialsSparseColPtrs(const SPARSE_PATTERN* sp, SUNMatrix Jac)
+{
+  sunindextype column;
+
+  for (column = 0; column <= SM_COLUMNS_S(Jac); column++) {
+    SM_INDEXPTRS_S(Jac)[column] = sp->leadindex[column];
+  }
+}
+
+/**
+ * @brief Set Sundials sparse pattern from SimRuntime SPARSE_PATTERN
+ *
+ * @param jacobian  Jacobian whose column oriented (CSC) pattern is used, see
+ *                  getJacobianCscPattern().
  * @param Jac       Sundials Matrix
  */
 void setSundialsSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
@@ -84,14 +97,11 @@ void setSundialsSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
 
   for (column = 0; column < jacobian->sizeCols; column++) {
     for (nz = sp->leadindex[column]; nz < sp->leadindex[column + 1]; nz++) {
-      /* set row, col */
       row = sp->index[nz];
-      if (column > 0 && SM_INDEXPTRS_S(Jac)[column] == 0) {
-        SM_INDEXPTRS_S(Jac)[column] = nz;
-      }
       SM_INDEXVALS_S(Jac)[nz] = row;
     }
   }
+  setSundialsSparseColPtrs(sp, Jac);
 }
 
 /**

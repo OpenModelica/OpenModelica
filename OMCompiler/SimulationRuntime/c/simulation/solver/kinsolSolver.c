@@ -790,6 +790,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     }
   }
   /* Finish sparse matrix */
+  setSundialsSparseColPtrs(sparsePattern, Jac);
   finishSparseColPtr(Jac, sparsePattern->nnz);
 
   /* Debug print */
