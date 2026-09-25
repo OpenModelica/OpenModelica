@@ -155,8 +155,8 @@ struct JacArraySlots {
 
 impl JacArraySlots {
     fn of(jm: &SimCode::JacobianMatrix) -> Option<JacArraySlots> {
-        let mut base = HashMap::new();
-        let mut exact = HashMap::new();
+        let mut base = HashMap::default();
+        let mut exact = HashMap::default();
         for sv in lst(&jm.seedVars).cloned().chain(jac_listed_vars(jm)) {
             let Ok(index) = usize::try_from(sv.index) else { continue };
             let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(sv.name.clone()).ok()?;
@@ -460,8 +460,8 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
 /// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
 /// the derivative var's unit), for a host to label plotted signals. Empty units
 /// are skipped. Names match [`build_var_map`]'s result-variable names.
-pub(super) fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<HashMap<String, String>> {
-    let mut units = HashMap::new();
+pub(super) fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<std::collections::HashMap<String, String>> {
+    let mut units = std::collections::HashMap::new();
     let mut add = |name: String, sv: &SimCodeVar::SimVar| {
         if !sv.unit.is_empty() {
             units.insert(name, sv.unit.to_string());

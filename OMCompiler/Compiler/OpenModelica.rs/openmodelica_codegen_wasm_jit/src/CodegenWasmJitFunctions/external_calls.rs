@@ -454,7 +454,7 @@ pub(crate) fn with_shared_externals<T>(f: impl FnOnce() -> T) -> T {
 thread_local! {
     /// The shared-memory externals a host serves (`om:ext/native`); their stub
     /// marshals from runtime handles, so a String or array passes as the handle.
-    static NATIVE_EXTERNALS: std::cell::RefCell<HashSet<String>> = std::cell::RefCell::new(HashSet::new());
+    static NATIVE_EXTERNALS: std::cell::RefCell<HashSet<String>> = std::cell::RefCell::new(HashSet::default());
 }
 
 pub(crate) fn set_native_externals(names: impl IntoIterator<Item = String>) {

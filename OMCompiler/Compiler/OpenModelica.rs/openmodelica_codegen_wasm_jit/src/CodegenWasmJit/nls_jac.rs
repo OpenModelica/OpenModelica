@@ -19,7 +19,7 @@ struct JacFacts {
 
 thread_local! {
     static JAC_FACTS: std::cell::RefCell<HashMap<*const SimCode::JacobianMatrix, (Arc<SimCode::JacobianMatrix>, JacFacts)>> =
-        std::cell::RefCell::new(HashMap::new());
+        std::cell::RefCell::new(HashMap::default());
 }
 
 /// Drops the [`JacFacts`] of a translation when it goes out of scope.
@@ -60,7 +60,7 @@ pub(crate) fn jac_column_vars(jm: &Arc<SimCode::JacobianMatrix>) -> Arc<Vec<meta
 
 fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
     use openmodelica_backend_types::BackendDAE::VarKind;
-    let mut seen: HashSet<String> = HashSet::new();
+    let mut seen: HashSet<String> = HashSet::default();
     let mut out: Vec<metamodelica::Ref<SimCodeVar::SimVar>> = Vec::new();
     let mut push = |sv: &metamodelica::Ref<SimCodeVar::SimVar>| {
         if matches!(sv.varKind, VarKind::SEED_VAR) {
@@ -399,7 +399,7 @@ pub(super) fn lin_jac_usable(lsystem: &SimCode::LinearSystem, n_res: Option<usiz
 /// [`collect_nls_jobs`] registers, so the region is always large enough.
 pub(super) fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     use SimCode::SimEqSystem as E;
-    let mut seen: HashSet<i32> = HashSet::new();
+    let mut seen: HashSet<i32> = HashSet::default();
     let mut total = 0u32;
     let mut scan = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
@@ -452,7 +452,7 @@ pub(super) fn build_nls_jac_infos(
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<HashMap<i32, NlsJacInfo>> {
-    let mut infos = HashMap::new();
+    let mut infos = HashMap::default();
     let mut cursor = layout.nls_jac_off;
     for sys in nls_systems {
         if !nls_jac_usable(sys) {

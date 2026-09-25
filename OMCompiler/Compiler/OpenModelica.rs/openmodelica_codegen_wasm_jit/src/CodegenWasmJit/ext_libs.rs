@@ -49,10 +49,10 @@ pub(crate) fn resolve_ext_libraries(
         dirs.push(format!("{d}/"));
     }
     let mut out = ExtLibraries::default();
-    let mut seen: HashSet<String> = HashSet::new();
+    let mut seen: HashSet<String> = HashSet::default();
     // A `Library` yields `<name>.wasm` and the `-l<name>` a native host falls back
     // to, both naming the same file. Placing one twice re-runs its `_initialize`.
-    let mut placed: HashSet<String> = HashSet::new();
+    let mut placed: HashSet<String> = HashSet::default();
     for lib in lst(&mp.libs) {
         let lib = lib.to_string();
         if !seen.insert(lib.clone()) {
@@ -282,7 +282,7 @@ pub(crate) fn include_overrides_builtin(sources: &[String]) -> bool {
 /// load (libc, ModelicaExternalC, LAPACK) export — what an `Include` still has to
 /// provide.
 pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<ExtCallSig> {
-    let mut defined: HashSet<&str> = HashSet::new();
+    let mut defined: HashSet<&str> = HashSet::default();
     for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC()]) {
         defined.extend(wasm_exports(bytes));
     }
@@ -338,7 +338,7 @@ pub(super) fn unresolved_dylink_needs(
     others: &[ExtLibrary],
     carried: &[&str],
 ) -> Vec<String> {
-    let mut defined: HashSet<&str> = HashSet::new();
+    let mut defined: HashSet<&str> = HashSet::default();
     for bytes in others
         .iter()
         .map(|l| &l.bytes[..])

@@ -44,7 +44,7 @@ pub(super) fn prof_plan(
         col_end: i.columnNumberEnd,
         read_only: i.isReadOnly,
     };
-    let mut fn_index = HashMap::new();
+    let mut fn_index = HashMap::default();
     let mut functions = Vec::new();
     for (i, f) in lst(&mi.functions).enumerate() {
         use SimCodeFunction::Function::Function as F;
@@ -68,7 +68,7 @@ pub(super) fn prof_plan(
     // 1000 over `SerializeInitXML.modelVariables`' lists, the alias and sensitivity
     // variables included. The report lists `modelData`'s arrays instead, so an id is
     // not a position in it.
-    let mut vr_of: HashMap<String, u32> = HashMap::new();
+    let mut vr_of: HashMap<String, u32> = HashMap::default();
     let mut vr = 1000u32;
     for list in [
         &mi.vars.stateVars, &mi.vars.derivativeVars, &mi.vars.algVars, &mi.vars.discreteAlgVars,
@@ -103,7 +103,7 @@ pub(super) fn prof_plan(
     }
     // Every equation the `_info.json` lists, by index; a system's defines are its
     // unknowns, an assignment's its left-hand side.
-    let mut table: HashMap<i32, (bool, Vec<String>)> = HashMap::new();
+    let mut table: HashMap<i32, (bool, Vec<String>)> = HashMap::default();
     let mut err = None;
     let mut note = |e: &metamodelica::Ref<SimCode::SimEqSystem>| {
         use SimCode::SimEqSystem as E;
@@ -146,7 +146,7 @@ pub(super) fn prof_plan(
     }
     let n = table.keys().max().map_or(1, |m| (*m).max(0) + 1) as usize;
     let mut equations = Vec::with_capacity(n);
-    let mut blocks = HashMap::new();
+    let mut blocks = HashMap::default();
     // Under `all` C's block 0 exists but belongs to no equation.
     let all = level & 2 != 0;
     let mut block_eqs: Vec<u32> = if all { vec![0] } else { Vec::new() };
@@ -180,7 +180,7 @@ pub(super) fn eqs_with_nested(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
 /// parameter `SimVar`s that have a binding, in declaration order.
 pub(super) fn collect_param_bindings(
     vars: &SimCodeVar::SimVars,
-    computed: &std::collections::HashSet<String>,
+    computed: &HashSet<String>,
 ) -> Vec<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Ref<DAE::Exp>)> {
     let mut out = Vec::new();
     for p in lst(&vars.paramVars)
@@ -218,7 +218,7 @@ fn is_const_exp(e: &DAE::Exp) -> bool {
 /// the `SimVar`s are scalarized (`ts[1]`, `layer[1][1][1][1]`), an array assign names
 /// the whole `ts`. `sim_cref_key` spells one bracket pair per subscript, so strip
 /// every rank, not just the last.
-fn is_computed(key: &str, computed: &std::collections::HashSet<String>) -> bool {
+fn is_computed(key: &str, computed: &HashSet<String>) -> bool {
     let mut key = key;
     loop {
         if computed.contains(key) {
@@ -231,9 +231,9 @@ fn is_computed(key: &str, computed: &std::collections::HashSet<String>) -> bool 
 
 /// Keys of the crefs a `SimEqSystem` list assigns, a system's iteration
 /// variables included.
-pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> std::collections::HashSet<String> {
+pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> HashSet<String> {
     use SimCode::SimEqSystem as E;
-    let mut set = std::collections::HashSet::new();
+    let mut set = HashSet::default();
     let mut add = |cr: &DAE::ComponentRef| {
         if let Ok(k) = sim_cref_key(cr) {
             set.insert(k);
@@ -548,8 +548,8 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
     let mut nodes: Vec<(i32, HashSet<String>, HashSet<String>)> = Vec::new();
     for eq in ode_eqs {
         let index = eq_index_of(eq);
-        let mut lhs = HashSet::new();
-        let mut rhs = HashSet::new();
+        let mut lhs = HashSet::default();
+        let mut rhs = HashSet::default();
         match &**eq {
             E::SES_RESIDUAL { exp, .. } => rhs.extend(uses(exp)?),
             E::SES_SIMPLE_ASSIGN { cref, exp, .. }

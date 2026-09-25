@@ -91,7 +91,7 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
 
     // The `external "C"` functions reached from here, as `ext.<extName>` imports.
     let mut ext_imports: Vec<ExtCallSig> = Vec::new();
-    let mut ext_seen: HashSet<String> = HashSet::new();
+    let mut ext_seen: HashSet<String> = HashSet::default();
     for f in &funcs {
         if external_general_why(f).is_ok() {
             let sig = external_import_sig(f)?;
@@ -107,7 +107,7 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     let ext_base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
     let base = ext_base + ext_imports.len() as u32;
     // Map mangled function name -> (local id, signature) so CALLs can resolve.
-    let mut by_name: HashMap<String, FnInfo> = HashMap::new();
+    let mut by_name: HashMap<String, FnInfo> = HashMap::default();
     for (i, sig) in ext_imports.iter().enumerate() {
         by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: sig.wasm_sig() });
     }

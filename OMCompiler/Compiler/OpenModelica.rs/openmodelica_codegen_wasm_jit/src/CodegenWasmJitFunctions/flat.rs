@@ -278,7 +278,7 @@ pub(crate) fn variant_wrapper(
 ) -> Result<we::Function> {
     let n_params = if to_flat { boxed.params.len() } else { expand(&boxed.params).len() } as u32;
     let mut ctx = FnCtx {
-        locals: HashMap::new(),
+        locals: HashMap::default(),
         extra_locals: Vec::new(),
         n_params,
         outputs: Vec::new(),
@@ -294,7 +294,7 @@ pub(crate) fn variant_wrapper(
         sim: None,
         dt_local_cons: false,
         dt_fallback: None,
-        flat: HashMap::new(),
+        flat: HashMap::default(),
         flat_outs: Vec::new(),
         flat_results: false,
     };

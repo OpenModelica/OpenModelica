@@ -32,14 +32,14 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
         .chain(lst(&vars.boolParamVars))
         .chain(lst(&vars.boolAliasVars));
     // C's `mapOutputReference2RealOutputDerivatives`.
-    let mut out_der: HashMap<String, u32> = HashMap::new();
+    let mut out_der: HashMap<String, u32> = HashMap::default();
     for sv in lst(&vars.outputVars) {
         let key = sim_cref_key(&sv.name)?;
         if let Some(slot) = map.vars.get(&format!("${key}_der")) {
             out_der.insert(key, slot.off);
         }
     }
-    let mut lens: HashMap<String, u32> = HashMap::new();
+    let mut lens: HashMap<String, u32> = HashMap::default();
     if let Some(ms) = &sim_code.modelStructure {
         for a in lst(&ms.fmiArrays) {
             lens.insert(sim_cref_key(&a.first)?, u32::try_from(a.numElements).unwrap_or(1));

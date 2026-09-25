@@ -114,8 +114,8 @@ fn compile_function_body(
         return Err("CodegenWasmJit: only plain FUNCTIONs are supported");
     };
 
-    let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
-    let mut flat: HashMap<String, FlatVar> = HashMap::new();
+    let mut locals: HashMap<String, (u32, SigTy)> = HashMap::default();
+    let mut flat: HashMap<String, FlatVar> = HashMap::default();
     let mut idx: u32 = 0;
     // Parameters first (wasm locals 0..n_params).
     for v in &**functionArguments {
@@ -234,7 +234,7 @@ fn compile_external_function(
         AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false).unwrap_or_default()
     };
 
-    let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
+    let mut locals: HashMap<String, (u32, SigTy)> = HashMap::default();
     let mut idx: u32 = 0;
     for v in &**funArgs {
         let (name, sty) = var_name_ty(v)?;
@@ -255,7 +255,7 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat: HashMap::new(), flat_outs: Vec::new(), flat_results: false };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat: HashMap::default(), flat_outs: Vec::new(), flat_results: false };
     borrow_record_params(&mut ctx, funArgs, None)?;
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
@@ -718,7 +718,7 @@ pub(super) fn push_outputs(ctx: &mut FnCtx) -> Result<()> {
 /// reference and does not release it after the call), so they are released here
 /// too. Releasing the null handle (an unassigned heap local) is a no-op.
 pub(super) fn release_heap_locals(ctx: &mut FnCtx) -> Result<()> {
-    let output_idxs: std::collections::HashSet<u32> = ctx.outputs.iter().map(|(i, _)| *i).collect();
+    let output_idxs: HashSet<u32> = ctx.outputs.iter().map(|(i, _)| *i).collect();
     // (local index, release entry point) for each owned heap local that is not
     // an output. The entry point depends on the type (string vs array vs …).
     let mut to_release: Vec<(u32, &'static str)> = ctx

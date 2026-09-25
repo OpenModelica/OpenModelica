@@ -39,7 +39,8 @@
 
 #![allow(non_snake_case)]
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
+use crate::CodegenWasmJitFunctions::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 use std::sync::Arc;
 
