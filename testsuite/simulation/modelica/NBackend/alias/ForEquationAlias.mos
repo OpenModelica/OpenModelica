@@ -1,0 +1,86 @@
+// name: ForEquationAlias
+// keywords: NewBackend
+// status: correct
+//
+// A for equation that equates two full arrays is an alias (the kept variable has the
+// start value, rates.pX would start at zero). A for equation over a part of an array is not.
+
+loadString("
+package ForEquationAlias
+  model Rates
+    input Real pX[3];
+    Real r;
+  equation
+    r = 1/pX[1] + 1/pX[2] + 1/pX[3];
+  end Rates;
+  model Channel
+    Real pX[3](each start = 1);
+    Rates rates(pX = pX);
+    Real y[3];
+  equation
+    for j in 1:3 loop
+      pX[j] = j + time + 0.1 * rates.r;
+    end for;
+    for j in 1:2 loop
+      y[j] = pX[j];
+    end for;
+    y[3] = 2 * pX[3];
+  end Channel;
+  model Top
+    Channel c[2];
+  end Top;
+end ForEquationAlias;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl"); getErrorString();
+simulate(ForEquationAlias.Top, simflags = "-lv=-LOG_STDOUT"); getErrorString();
+val(c[2].pX[3], 1);
+val(c[2].y[2], 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[ARRY] (6) c.rates.pX = c.pX; ($RES_BND_8)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	c.rates.pX	 ==> 	c.pX
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "ForEquationAlias.Top_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ForEquationAlias.Top', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_STDOUT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 4.104107308921889
+// 3.104107308921888
+// endResult
