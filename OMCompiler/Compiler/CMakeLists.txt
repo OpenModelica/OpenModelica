@@ -218,6 +218,11 @@ add_custom_command(
            ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
     COMMENT "Generating OpenModelicaScriptingAPI.mo + Qt API"
 )
+# A cross build cannot run omc: generate-msvc-c-sources ships them instead.
+if(OM_OMC_PREBUILT_C_SOURCES)
+  set(OMC_SCRIPTING_API_QT_DIR ${OM_OMC_PREBUILT_C_SOURCES}
+      CACHE INTERNAL "Generated OpenModelicaScriptingAPIQt C++ sources (prebuilt)")
+endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)

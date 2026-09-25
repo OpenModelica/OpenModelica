@@ -3,7 +3,8 @@
 #
 #   cmake --build <build_dir> --target generate-msvc-c-sources
 #
-# writes them to <build_dir>/OMCompiler/Compiler/msvc-c-sources.
+# writes them to <build_dir>/OMCompiler/Compiler/msvc-c-sources, with the Qt
+# scripting API OMEdit compiles.
 #
 # The C of this build cannot be used for that: MetaModelica inlines the
 # constants of Autoconf into every package using them, so each carries the
@@ -88,7 +89,20 @@ foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES} ${OMC_MM_BACKEND_SOURCES})
     list(APPEND OMC_MSVC_C_FILES ${OMC_MSVC_C_DIR}/${file_name_no_ext}.c)
 endforeach()
 
+add_custom_command(
+    DEPENDS ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+            ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${OMC_MSVC_C_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+            ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+            ${OMC_MSVC_C_DIR}
+    OUTPUT ${OMC_MSVC_C_DIR}/OpenModelicaScriptingAPIQt.cpp
+           ${OMC_MSVC_C_DIR}/OpenModelicaScriptingAPIQt.h
+)
+
 add_custom_target(generate-msvc-c-sources
                   DEPENDS ${OMC_MSVC_C_FILES}
+                          ${OMC_MSVC_C_DIR}/OpenModelicaScriptingAPIQt.cpp
                   COMMENT "Generated the MSVC sources in ${OMC_MSVC_C_DIR}.")
 add_dependencies(generate-msvc-c-sources DEPENDENCY_UPDATE)
