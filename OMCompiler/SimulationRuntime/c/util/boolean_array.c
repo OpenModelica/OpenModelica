@@ -990,3 +990,11 @@ void boolean_array_ensure_size(boolean_array *a, int n)
     omc_array_release(a);
     *a = tmp;
 }
+
+/**
+ * @brief Make boolean attribute array hold `n` elements, see base_array_resize_attribute.
+ */
+void resizeBooleanAttribute(boolean_array *attribute, size_t n)
+{
+    base_array_resize_attribute(attribute, n, sizeof(modelica_boolean), simple_alloc_1d_boolean_array);
+}

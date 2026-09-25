@@ -2056,16 +2056,27 @@ let &sub = buffer ""
 end functionCallExternalObjectDestructors;
 
 template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
-  "Generates function in simulation file."
+  "Generates function in simulation file.
+  data->simulationInfo->inputVars holds one value per scalar input, the
+  elements of an array input are stored consecutively."
 ::=
 let &sub = buffer ""
   match modelInfo
-  case MODELINFO(vars=SIMVARS(__)) then
+  case MODELINFO(vars=SIMVARS(inputVars=inputVars)) then
     <<
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
-        '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
+      <%inputVars |> var as SIMVAR(name=name) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
+        match cref2simvar(name, simCode)
+        case v as SIMVAR(type_=T_ARRAY()) then
+          <<
+          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+            <%inputValue(v, 'k')%> = data->simulationInfo->inputVars[<%offset%> + k];
+          }
+          >>
+        else
+          '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%offset%>];'
         ;separator="\n"
       %>
 
@@ -2074,20 +2085,16 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
+      <%inputVars |> SIMVAR(name=name) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
         match cref2simvar(name, simCode)
-        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
-          let kind = match varKind
-            case PARAM() then 'VAR_KIND_PARAMETER'
-            else 'VAR_KIND_VARIABLE'
-          end match
+        case v as SIMVAR(aliasvar=NOALIAS()) then
+          let ty = expTypeShort(type_)
+          let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          data->simulationInfo->inputVars[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%index%>);
-          >>
-        case SIMVAR(aliasvar=NOALIAS()) then
-          <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
-          data->simulationInfo->inputVars[<%i0%>] = <%expTypeShort(type_)%>_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
+          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+            data->simulationInfo->inputVars[<%offset%> + k] = <%ty%>_get(<%start%>, base_array_nr_of_elements(<%start%>) == 1 ? 0 : k);
+          }
           >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
@@ -2098,18 +2105,17 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
+      <%inputVars |> SIMVAR(name=name) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
         match cref2simvar(name, simCode)
-
-        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
+        case v as SIMVAR(aliasvar=NOALIAS()) then
+          let ty = expTypeShort(type_)
+          let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
-          put_real_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
-          >>
-        case SIMVAR(aliasvar=NOALIAS()) then
-          <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
-          put_<%expTypeShort(type_)%>_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
+          resize<%resizeTypeName(ty)%>Attribute(&<%start%>, <%numScalarElemsVar(v)%>);
+          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+            put_<%ty%>_element(data->simulationInfo->inputVars[<%offset%> + k], k, &<%start%>);
+          }
           >>
         else
           error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
@@ -2120,10 +2126,15 @@ let &sub = buffer ""
     }
 
     int <%symbolName(modelNamePrefix,"inputNames")%>(DATA *data, char ** names){
-      <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+      <%inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
         match cref2simvar(name, simCode)
+        case v as SIMVAR(aliasvar=NOALIAS(), type_=T_ARRAY()) then
+          (arrayElementSubscripts(v) |> subscript hasindex k =>
+            'names[<%intAdd(numScalarElemsBefore(inputVars, i0), k)%>] = (char *) "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>[<%subscript%>]";'
+          ;separator="\n")
         case SIMVAR(aliasvar=NOALIAS()) then
-        'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
+        'names[<%offset%>] = (char *) <%inputData(simVar)%>[<%index%>].info.name;'
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
@@ -2133,6 +2144,35 @@ let &sub = buffer ""
     >>
   end match
 end functionInput;
+
+template inputData(SimVar var)
+  "Static data array of an input variable."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then 'data->modelData-><%expTypeShort(type_)%>ParameterData'
+    case SIMVAR(__) then 'data->modelData-><%expTypeShort(type_)%>VarsData'
+end inputData;
+
+template inputValue(SimVar var, String k)
+  "Value of element k of an array input variable."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then
+      let ty = expTypeShort(type_)
+      'data->simulationInfo-><%ty%>Parameter[data->simulationInfo-><%ty%>ParamsIndex[<%index%>] + <%k%>]'
+    case SIMVAR(__) then
+      let ty = expTypeShort(type_)
+      'data->localData[0]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>] + <%k%>]'
+end inputValue;
+
+template resizeTypeName(String ty)
+::=
+  match ty
+    case "real" then "Real"
+    case "integer" then "Integer"
+    case "boolean" then "Boolean"
+    else error(sourceInfo(), 'Inputs of type <%ty%> are not supported.')
+end resizeTypeName;
 
 template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."

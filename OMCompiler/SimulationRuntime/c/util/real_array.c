@@ -2655,3 +2655,11 @@ void real_array_ensure_size(real_array *a, int n)
     omc_array_release(a);
     *a = tmp;
 }
+
+/**
+ * @brief Make real attribute array hold `n` elements, see base_array_resize_attribute.
+ */
+void resizeRealAttribute(real_array *attribute, size_t n)
+{
+    base_array_resize_attribute(attribute, n, sizeof(modelica_real), simple_alloc_1d_real_array);
+}

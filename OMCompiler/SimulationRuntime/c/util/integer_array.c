@@ -1727,3 +1727,11 @@ void integer_array_ensure_size(integer_array *a, int n)
     omc_array_release(a);
     *a = tmp;
 }
+
+/**
+ * @brief Make integer attribute array hold `n` elements, see base_array_resize_attribute.
+ */
+void resizeIntegerAttribute(integer_array *attribute, size_t n)
+{
+    base_array_resize_attribute(attribute, n, sizeof(modelica_integer), simple_alloc_1d_integer_array);
+}

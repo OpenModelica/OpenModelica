@@ -5,6 +5,8 @@ arrayZeroDivisionInitial.mos \
 resizableConnectFor.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
+array_inputs.mos\
+array_init_file.mos\
 array_each_attribute_ida.mos\
 array_bound_attributes.mos\
 array_bound_attributes_alias.mos\
