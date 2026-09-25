@@ -231,6 +231,7 @@ do_collect() {
   (cd "$ws" && { find build_cmake/OMCompiler/Compiler/generated-mo -name '*.mo' -print0
                  printf '%s\0' OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo \
                                 OMCompiler/Compiler/Util/Autoconf.mo
+                 find build_cmake/OMCompiler/Compiler/c_files -name '*.c' -print0
                } | tar --null -T - -cf -) | tar -C "$REPORT" -xf -
   mkdir -p "$REPORT/counters"
   (cd "$ws" && { find gcda-out -name '*.gcda' -print0

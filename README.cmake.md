@@ -617,12 +617,18 @@ where opening the file directly would not. Otherwise just open
   instrumented, so the report covers both testsuite shards (one per compiler), the
   `testsuite-misc` stage (clang), the C runtime unit tests (gcc) and the OMEdit testsuite
   (clang). Each set of counters is collected against the build that produced it, and the
-  tracefiles are merged into one report. The compiler's MetaModelica coverage comes from
-  the gcc shard alone: clang files every line of a function under the file the function
-  starts in, ignoring the `#line` directives inside it, so its counters for the compiler
-  land on the generated C, which the report leaves out. Where gcc and clang disagree on which lines of a source are code at all, the
-  report holds the union of both, so such a line can show as uncovered although the other
-  compiler's tests ran it.
+  tracefiles are merged into one report. The report stage needs the compiler's generated C
+  for that (`c_files/*.c`, stashed with the notes): without it gcc's gcov loses the
+  MetaModelica coverage of most modules. Where gcc and clang disagree on which lines of a
+  source are code at all, the report holds the union of both, so such a line can show as
+  uncovered although the other compiler's tests ran it.
+- Clang drops every line whose `#line` names another file than the one its function starts
+  in, which is all of the MetaModelica in the compiler's generated C. So a clang coverage
+  build compiles that C through a launcher (`OpenModelicaCoverageClangLauncher.py`) that
+  comments the `#line` directives out, and `coverage-collect` moves the coverage of the C
+  back onto the `.mo` by replaying them (`OpenModelicaCoverageLineDirectives.py`). Turning
+  coverage on does not recompile what an existing clang build tree already compiled
+  without the launcher, so start from a fresh one.
 
 [gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 [gcovr]: https://gcovr.com/

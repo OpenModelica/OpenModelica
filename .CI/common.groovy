@@ -1616,10 +1616,16 @@ void stashCoverageNotes(String compiler) {
   // it, failing the whole report otherwise. They are also what lets the
   // template mapping (OpenModelicaCoverageTemplates.py) find the generated
   // functions to attribute back to *.tpl.
+  //
+  // And the compiler's generated C: without it gcc's gcov loses the
+  // MetaModelica coverage of most modules, and clang's coverage is filed
+  // under it, to be moved onto the MetaModelica by replaying the C's #line
+  // directives (see OpenModelicaCoverageLineDirectives.py).
   stash name: "coverage-${compiler}-sources",
         includes: 'build_cmake/OMCompiler/Compiler/generated-mo/**/*.mo,' +
                   'OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo,' +
-                  'OMCompiler/Compiler/Util/Autoconf.mo'
+                  'OMCompiler/Compiler/Util/Autoconf.mo,' +
+                  'build_cmake/OMCompiler/Compiler/c_files/*.c'
 }
 
 // The jammy clang build of omc, tested by the testsuite-clang and testsuite-misc
