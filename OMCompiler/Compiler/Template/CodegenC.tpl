@@ -3360,9 +3360,9 @@ match system
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
       /* iteration variables */
       for (i=0; i<<%listLength(nls.crefs)%>; i++) {
-        if (isinf(xloc[i]) || isnan(xloc[i])) {
-          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
-            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i]);
+        if (!isfinite(xloc[i])) {
+          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is %g.",
+            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i], xloc[i]);
           for (j=0; j<<%listLength(nls.crefs)%>; j++) {
             res[j] = NAN;
           }
