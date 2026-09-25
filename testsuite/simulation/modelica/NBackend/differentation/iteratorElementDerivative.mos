@@ -1,0 +1,37 @@
+// name: iteratorElementDerivative
+// keywords: NewBackend
+// status: correct
+//
+// Only some elements of x are seeds of the Jacobian, x[i] in the reduction has to be
+// differentiated to the seed of the element selected by the iterator.
+
+loadString("
+model IteratorElementDerivative
+  Real x[3](each start = 1);
+  Real y(start = 1);
+equation
+  y = sum(x[i] ^ 2 for i in 1:3) / 10 + time;
+  x[1] = cos(y);
+  x[2] = 2;
+  x[3] = sin(y) + 1;
+end IteratorElementDerivative;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+echo(false);
+res := simulate(IteratorElementDerivative, stopTime = 0.1, simflags = "-nls=kinsol -lv=LOG_NLS_DERIVATIVE_TEST");
+msg := res.messages;
+echo(true);
+getErrorString();
+regexBool(msg, "Derivative test failed");
+val(y, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// 0.7339635911298462
+// endResult

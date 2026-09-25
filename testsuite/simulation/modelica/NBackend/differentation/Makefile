@@ -16,6 +16,7 @@ numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
 tupleAssignmentDerivative.mos \
 functionInputDerivative.mos \
+iteratorElementDerivative.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
