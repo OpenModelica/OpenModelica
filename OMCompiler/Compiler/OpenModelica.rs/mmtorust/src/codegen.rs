@@ -15655,27 +15655,27 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // Pin each pattern binding's mode rather than letting it inherit
                 // the enclosing scope's: the pattern shadows the name, and the
                 // shadow is what the arm's reads see. Only a whole-value or
-                // tuple-column binding under a by-value scrutinee is `Owned` —
-                // below the top level `emit_pat` decides per sub-pattern, and a
-                // field whose type crosses an Arc edge is bound `ref` even in a
-                // by-value match (`connections: ref cl`).
+                // tuple-column binding (or `SOME` of one) under a by-value
+                // scrutinee is `Owned` — below that `emit_pat` decides per
+                // sub-pattern, and a field whose type crosses an Arc edge is
+                // bound `ref` even in a by-value match (`connections: ref cl`).
                 {
                     let mut owned_binds: HashSet<&str> = HashSet::new();
+                    fn owned_leaf<'p>(p: &'p TypedPat, t: &Ty, ctx: &GenCtx, out: &mut HashSet<&'p str>) {
+                        match (p, t) {
+                            (TypedPat::Var(n), t) if !ty_needs_arc_match_deref(t, ctx) => { out.insert(n); }
+                            (TypedPat::Some_(inner), Ty::Option(it)) => owned_leaf(inner, it, ctx, out),
+                            _ => {}
+                        }
+                    }
                     if !input_is_arc && !pat_has_as_binding(&case.pattern) {
                         match (&case.pattern, &input_ty) {
-                            (TypedPat::Var(n), t) if !ty_needs_arc_match_deref(t, ctx) => {
-                                owned_binds.insert(n);
-                            }
                             (TypedPat::Tuple(ps), Ty::Tuple(ts)) if ps.len() == ts.len() => {
                                 for (p, t) in ps.iter().zip(ts.iter()) {
-                                    if let TypedPat::Var(n) = p
-                                        && !ty_needs_arc_match_deref(t, ctx)
-                                    {
-                                        owned_binds.insert(n);
-                                    }
+                                    owned_leaf(p, t, ctx, &mut owned_binds);
                                 }
                             }
-                            _ => {}
+                            (p, t) => owned_leaf(p, t, ctx, &mut owned_binds),
                         }
                     }
                     for (n, _) in &typed_pat_bindings {
