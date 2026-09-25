@@ -322,7 +322,7 @@ public
       slices := {eqn};
     else
       base_cref := Equation.getEqnName(eqn_ptr);
-      is_for    := Equation.isArrayBodyFor(e);
+      is_for    := Equation.isSingleBodyFor(e);
       residual  := if is_for then Expression.EMPTY(Type.UNKNOWN()) else Equation.getResidualExp(e);
       elem_ty   := Type.arrayElementType(Expression.typeOf(residual));
       attr      := Equation.getAttributes(e);
@@ -542,15 +542,21 @@ protected
     end match;
   end initialize;
 
+  function isPartialVarSlice
+    input Slice<VariablePointer> var;
+    output Boolean b = not listEmpty(var.indices) and BVariable.size(Slice.getT(var)) > listLength(var.indices);
+  end isPartialVarSlice;
+
   function isPartialArraySlice
     input Slice<EquationPointer> eqn;
-    output Boolean b = not listEmpty(eqn.indices) and (Equation.isArrayEquation(Slice.getT(eqn)) or Equation.isArrayBodyFor(Pointer.access(Slice.getT(eqn))))
+    output Boolean b = not listEmpty(eqn.indices) and (Equation.isArrayEquation(Slice.getT(eqn)) or Equation.isSingleBodyFor(Pointer.access(Slice.getT(eqn))))
                        and Equation.size(Slice.getT(eqn)) > listLength(eqn.indices);
   end isPartialArraySlice;
 
   function finalize extends Module.tearingInterface;
   protected
     Tearing strict;
+    Boolean partial_vars;
     list<list<Slice<EquationPointer>>> acc;
     UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
@@ -559,9 +565,13 @@ protected
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
-        // create residual equations, a part of an array equation needs residual variables for its rows only
+        // create residual equations, a part of an array equation needs residual variables for its rows only.
+        // for equations are also split into rows if an iteration variable is only partially part of the loop,
+        // otherwise the jacobian can not differentiate them w.r.t. single elements of that variable.
+        partial_vars := List.any(strict.iteration_vars, isPartialVarSlice);
         strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false))
-          for eqn in List.flatten(list(if isPartialArraySlice(eqn) then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
+          for eqn in List.flatten(list(if isPartialArraySlice(eqn) or (partial_vars and Equation.isSingleBodyFor(Pointer.access(Slice.getT(eqn))))
+            then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
