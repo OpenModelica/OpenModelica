@@ -1213,8 +1213,29 @@ public
             UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
         else
-          // Everything that is not in diff_map gets differentiated to zero
-          res := Expression.makeZero(exp.ty);
+          // an array whose elements are in diff_map (e.g. a partially torn array) is differentiated
+          // elementwise, everything else that is not in diff_map gets differentiated to zero
+          hasSetSub := false;
+          elem_crefs := {};
+          if Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+            elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
+            for c in elem_crefs loop
+              if UnorderedMap.contains(c, diff_map) then
+                hasSetSub := true;
+                break;
+              end if;
+            end for;
+          end if;
+          if hasSetSub then
+            elem_exps := {};
+            for c in elem_crefs loop
+              (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
+              elem_exps := elem_res :: elem_exps;
+            end for;
+            res := makeShapedArray(exp.ty, listReverse(elem_exps));
+          else
+            res := Expression.makeZero(exp.ty);
+          end if;
         end if;
       then (res, diffArguments);
 
@@ -1284,7 +1305,7 @@ public
           end for;
           // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
           if not hasSetSub and Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
-            for c in ComponentRef.scalarize(exp.cref, false) loop
+            for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
               if UnorderedMap.contains(c, diff_map) then
                 hasSetSub := true;
                 break;
@@ -1298,7 +1319,7 @@ public
             // codegen for multi-dimensional types.
             res := Expression.makeZero(exp.ty);
           else
-            elem_crefs := ComponentRef.scalarize(exp.cref, false);
+            elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             elem_exps := {};
             for c in elem_crefs loop
               (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);

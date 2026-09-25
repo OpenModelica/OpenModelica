@@ -894,7 +894,7 @@ public
         if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
           ty := ComponentRef.getSubscriptedType(cref);
           if Type.isArray(ty) and Type.sizeOf(ty) <= 256 then
-            crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarize(cref, false));
+            crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarizeAll(cref, false));
             if listEmpty(crefs) then
               crefs := {cref};
             end if;
@@ -962,7 +962,8 @@ public
                     if not filterSet(dep_cref, seed_set) then
                       inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
                       if isSome(inner_opt) then
-                        inner_deps := Util.getOption(inner_opt);
+                        // keep the cref itself, other elements of the same array might be seeds
+                        inner_deps := dep_cref :: Util.getOption(inner_opt);
                         changed := true;
                       end if;
                     end if;

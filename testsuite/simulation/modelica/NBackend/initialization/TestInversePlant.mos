@@ -191,26 +191,26 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // Residual Variables (28)
 // *************************
-//   (0)[RES-] (1) Real $RES_SIM_10[1]
-//   (1)[RES-] (1) Real $RES_SIM_10[2]
-//   (2)[RES-] (1) Real $RES_SIM_10[3]
-//   (3)[RES-] (1) Real $RES_SIM_10[4]
-//   (4)[RES-] (1) Real $RES_SIM_10[5]
-//   (5)[RES-] (1) Real $RES_SIM_12[1]
-//   (6)[RES-] (1) Real $RES_SIM_12[2]
-//   (7)[RES-] (1) Real $RES_SIM_12[3]
-//   (8)[RES-] (1) Real $RES_SIM_12[4]
-//   (9)[RES-] (1) Real $RES_SIM_12[5]
-//   (10)[RES-] (1) Real $RES_SIM_14[1]
-//   (11)[RES-] (1) Real $RES_SIM_14[2]
-//   (12)[RES-] (1) Real $RES_SIM_14[3]
-//   (13)[RES-] (1) Real $RES_SIM_14[4]
-//   (14)[RES-] (1) Real $RES_SIM_14[5]
-//   (15)[RES-] (1) Real $RES_SIM_8[1]
-//   (16)[RES-] (1) Real $RES_SIM_8[2]
-//   (17)[RES-] (1) Real $RES_SIM_8[3]
-//   (18)[RES-] (1) Real $RES_SIM_8[4]
-//   (19)[RES-] (1) Real $RES_SIM_8[5]
+//   (0)[RES-] (1) Real $RES_SIM_10_0
+//   (1)[RES-] (1) Real $RES_SIM_10_1
+//   (2)[RES-] (1) Real $RES_SIM_10_2
+//   (3)[RES-] (1) Real $RES_SIM_10_3
+//   (4)[RES-] (1) Real $RES_SIM_10_4
+//   (5)[RES-] (1) Real $RES_SIM_12_0
+//   (6)[RES-] (1) Real $RES_SIM_12_1
+//   (7)[RES-] (1) Real $RES_SIM_12_2
+//   (8)[RES-] (1) Real $RES_SIM_12_3
+//   (9)[RES-] (1) Real $RES_SIM_12_4
+//   (10)[RES-] (1) Real $RES_SIM_14_0
+//   (11)[RES-] (1) Real $RES_SIM_14_1
+//   (12)[RES-] (1) Real $RES_SIM_14_2
+//   (13)[RES-] (1) Real $RES_SIM_14_3
+//   (14)[RES-] (1) Real $RES_SIM_14_4
+//   (15)[RES-] (1) Real $RES_SIM_8_0
+//   (16)[RES-] (1) Real $RES_SIM_8_1
+//   (17)[RES-] (1) Real $RES_SIM_8_2
+//   (18)[RES-] (1) Real $RES_SIM_8_3
+//   (19)[RES-] (1) Real $RES_SIM_8_4
 //   (20)[RES-] (1) Real $RES_BND_20
 //   (21)[RES-] (1) Real $RES_SIM_6
 //   (22)[RES-] (1) Real $RES_BND_22
@@ -222,99 +222,109 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // Initial Partition (Lambda = 0)
 // --------------------------------
-//   (46) plant.w := 1.0
-//   (45) plant.wfg := 1.0
-//   (44) Alias of 26
-//   (43) Alias of 25
-//   (42) resizable call [index  1]
-//   (41) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{plant.Tfg[2], plant.Tfg[3], plant.Tfg[4], plant.Tfg[5], plant.Tfg[6], plant.Q[1], plant.Q[2], plant.Q[3], plant.Q[4], plant.Q[5], ...}
-//   --(35) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
-//   --end for;
-//   --(36) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
-//   --end for;
-//   --(37) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
-//   --end for;
-//   (34) plant.TIT := plant.T[6]
-//   (33) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
-//   (32) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
-//   (31) plant.TIP := plant.p[6]
-//   (30) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
-//   (29) plant.Ts := plant.Tfg[6]
-//   (28) Alias of 2
-//   (27) Alias of 1
+//   (102) plant.w := 1.0
+//   (101) plant.wfg := 1.0
+//   (100) Alias of 58
+//   (99) Alias of 57
+//   (98) resizable call [index  1]
+//   (97) Linear System (size = 15, jacobian = false, mixed = false, torn = true)
+//   --(67) 0 = (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1]
+//   --(68) 0 = (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2]
+//   --(69) 0 = (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3]
+//   --(70) 0 = (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4]
+//   --(71) 0 = (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5]
+//   --(72) 0 = plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1]
+//   --(73) 0 = plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2]
+//   --(74) 0 = plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3]
+//   --(75) 0 = plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4]
+//   --(76) 0 = plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5]
+//   --(77) 0 = plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1]
+//   --(78) 0 = plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2]
+//   --(79) 0 = plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3]
+//   --(80) 0 = plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4]
+//   --(81) 0 = plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5]
+//   (66) plant.TIT := plant.T[6]
+//   (65) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
+//   (64) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
+//   (63) plant.TIP := plant.p[6]
+//   (62) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
+//   (61) plant.Ts := plant.Tfg[6]
+//   (60) Alias of 2
+//   (59) Alias of 1
 //
 // Initial Partition
 // -------------------
-//   (26) plant.T[1] := 300.0
-//   (25) plant.Tfg[1] := 800.0
-//   (24) plant.Ts := plant.Tsnom
-//   (23) plant.Tfg[6] := plant.Ts
-//   (22) plant.P := homotopy(plant.Pnom * load, plant.Pnom)
-//   (21) Nonlinear System (size = 25, homotopy = true, mixed = false, torn = true)
+//   (58) plant.T[1] := 300.0
+//   (57) plant.Tfg[1] := 800.0
+//   (56) plant.Ts := plant.Tsnom
+//   (55) plant.Tfg[6] := plant.Ts
+//   (54) plant.P := homotopy(plant.Pnom * load, plant.Pnom)
+//   (53) Nonlinear System (size = 25, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{plant.w, plant.wfg, plant.Tfg[2], plant.Tfg[3], plant.Tfg[4], plant.Tfg[5], plant.G[1], plant.G[2], plant.G[3], plant.G[4], ...}
-//   --(3) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
-//   --end for;
-//   --(4) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
-//   --end for;
-//   --(5) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[$i1];
-//   --end for;
-//   --(6) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
-//   --end for;
-//   --(7) 0 = plant.T[6] - plant.TIT
-//   --(8) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
-//   --(9) 0 = plant.p[6] - plant.TIP
-//   --(10) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
-//   --(11) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
+//   --(3) 0 = plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1]
+//   --(4) 0 = plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2]
+//   --(5) 0 = plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3]
+//   --(6) 0 = plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4]
+//   --(7) 0 = plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5]
+//   --(8) 0 = (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1]
+//   --(9) 0 = (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2]
+//   --(10) 0 = (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3]
+//   --(11) 0 = (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4]
+//   --(12) 0 = (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5]
+//   --(13) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[1]
+//   --(14) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[2]
+//   --(15) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[3]
+//   --(16) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[4]
+//   --(17) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[5]
+//   --(18) 0 = plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1]
+//   --(19) 0 = plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2]
+//   --(20) 0 = plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3]
+//   --(21) 0 = plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4]
+//   --(22) 0 = plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5]
+//   --(23) 0 = plant.T[6] - plant.TIT
+//   --(24) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
+//   --(25) 0 = plant.p[6] - plant.TIP
+//   --(26) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
+//   --(27) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
 //   (2) resizable call [index  0]
 //   (1) plant.pin := plant.p[1]
 //
 // Algebraic Partition 1
 // -----------------------
-//   (75) Alias of 26
-//   (74) Alias of 25
-//   (73) Nonlinear System (size = 28, homotopy = true, mixed = false, torn = true)
+//   (163) Alias of 58
+//   (162) Alias of 57
+//   (161) Nonlinear System (size = 28, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{plant.w, plant.Ts, plant.wfg, plant.Tfg[2], plant.Tfg[3], plant.Tfg[4], plant.Tfg[5], plant.Tfg[6], plant.Q[1], plant.Q[2], ...}
-//   --(49) 0 = plant.Tfg[6] - plant.Ts
-//   --(50) 0 = plant.Tsnom - plant.Ts
-//   --(51) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
-//   --end for;
-//   --(52) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
-//   --end for;
-//   --(53) 0 = plant.T[6] - plant.TIT
-//   --(54) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
-//   --(55) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
-//   --(56) 0 = plant.p[6] - plant.TIP
-//   --(57) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
-//   --(58) 0 = plant.Pnom * load - plant.P
-//   --(59) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
-//   --end for;
-//   --(60) For-Loop-Residual:
-//   --for {{$i1 | start:1, step:1, stop:5, size: 5}} loop
-//   --  0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[$i1];
-//   --end for;
-//   (48) Alias of 2
-//   (47) Alias of 1
+//   --(105) 0 = plant.Tfg[6] - plant.Ts
+//   --(106) 0 = plant.Tsnom - plant.Ts
+//   --(107) 0 = (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1]
+//   --(108) 0 = (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2]
+//   --(109) 0 = (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3]
+//   --(110) 0 = (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4]
+//   --(111) 0 = (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5]
+//   --(112) 0 = plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1]
+//   --(113) 0 = plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2]
+//   --(114) 0 = plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3]
+//   --(115) 0 = plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4]
+//   --(116) 0 = plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5]
+//   --(117) 0 = plant.T[6] - plant.TIT
+//   --(118) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
+//   --(119) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
+//   --(120) 0 = plant.p[6] - plant.TIP
+//   --(121) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
+//   --(122) 0 = plant.Pnom * load - plant.P
+//   --(123) 0 = plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1]
+//   --(124) 0 = plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2]
+//   --(125) 0 = plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3]
+//   --(126) 0 = plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4]
+//   --(127) 0 = plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5]
+//   --(128) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[1]
+//   --(129) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[2]
+//   --(130) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[3]
+//   --(131) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[4]
+//   --(132) 0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[5]
+//   (104) Alias of 2
+//   (103) Alias of 1
 //
 // Event Partition
 // -----------------
@@ -330,41 +340,33 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //   SimCode Jacobian INI_NLS_JAC_1(idx = 0, partition = 0)
 // ==========================================================
 //
-// SeedVars (size = 33)
+// SeedVars (size = 25)
 // **********************
 //   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.w
 //   (1)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.wfg
-//   (2)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[1]
-//   (3)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[2]
-//   (4)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[3]
-//   (5)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[4]
-//   (6)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[5]
-//   (7)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[6]
-//   (8)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[1]
-//   (9)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[2]
-//   (10)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[3]
-//   (11)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[4]
-//   (12)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[5]
-//   (13)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[1]
-//   (14)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[2]
-//   (15)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[3]
-//   (16)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[4]
-//   (17)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[5]
-//   (18)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[1]
-//   (19)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[2]
-//   (20)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[3]
-//   (21)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[4]
-//   (22)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[5]
-//   (23)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[6]
-//   (24)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.TIT
-//   (25)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.TIP
-//   (26)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[1]
-//   (27)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[2]
-//   (28)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[3]
-//   (29)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[4]
-//   (30)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[5]
-//   (31)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[6]
-//   (32)[SEED] (1) Real $SEED_INI_NLS_JAC_1.$FUN_1
+//   (2)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[2]
+//   (3)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[3]
+//   (4)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[4]
+//   (5)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Tfg[5]
+//   (6)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[1]
+//   (7)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[2]
+//   (8)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[3]
+//   (9)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[4]
+//   (10)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.G[5]
+//   (11)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[1]
+//   (12)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[2]
+//   (13)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[3]
+//   (14)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[4]
+//   (15)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.Q[5]
+//   (16)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[2]
+//   (17)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[3]
+//   (18)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[4]
+//   (19)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[5]
+//   (20)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.T[6]
+//   (21)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.TIT
+//   (22)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.TIP
+//   (23)[SEED] (1) Real $SEED_INI_NLS_JAC_1.plant.p[6]
+//   (24)[SEED] (1) Real $SEED_INI_NLS_JAC_1.$FUN_1
 //
 // TmpVars (size = 0)
 // ********************
@@ -372,36 +374,56 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // ResultVars (size = 25)
 // ************************
 //
-// Column Equations (size = 9)
-// -----------------------------
-//   (20) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_10[$i1] := (plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1])) - $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (19) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_12[$i1] := ((0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[1 + $i1] + $SEED_INI_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_INI_NLS_JAC_1.plant.G[$i1]) - $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (18) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_14[$i1] := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w) - $SEED_INI_NLS_JAC_1.plant.G[$i1];
-//   end for;
-//   (17) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_8[$i1] := (plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[$i1] - $SEED_INI_NLS_JAC_1.plant.T[1 + $i1])) + $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (16) $pDER_INI_NLS_JAC_1.$RES_BND_20 := $SEED_INI_NLS_JAC_1.plant.T[6] - $SEED_INI_NLS_JAC_1.plant.TIT
-//   (15) $pDER_INI_NLS_JAC_1.$RES_SIM_6 := $SEED_INI_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (((plant.gamma - 1.0) / plant.gamma) * (plant.TOP / plant.TIP) ^ ((-1.0) + (plant.gamma - 1.0) / plant.gamma) * ((plant.TOP * $SEED_INI_NLS_JAC_1.plant.TIP) / plant.TIP ^ 2.0))
-//   (14) $pDER_INI_NLS_JAC_1.$RES_BND_22 := $SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP
-//   (13) $pDER_INI_NLS_JAC_1.$RES_SIM_7 := (($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt) * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w
-//   (12) $pDER_INI_NLS_JAC_1.$RES_AUX_24 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0) - $SEED_INI_NLS_JAC_1.$FUN_1
+// Column Equations (size = 25)
+// ------------------------------
+//   (52) $pDER_INI_NLS_JAC_1.$RES_SIM_10_0 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * $SEED_INI_NLS_JAC_1.plant.Tfg[5]) - $SEED_INI_NLS_JAC_1.plant.Q[1]
+//   (51) $pDER_INI_NLS_JAC_1.$RES_SIM_10_1 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[4] - $SEED_INI_NLS_JAC_1.plant.Tfg[5])) - $SEED_INI_NLS_JAC_1.plant.Q[2]
+//   (50) $pDER_INI_NLS_JAC_1.$RES_SIM_10_2 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[3] - $SEED_INI_NLS_JAC_1.plant.Tfg[4])) - $SEED_INI_NLS_JAC_1.plant.Q[3]
+//   (49) $pDER_INI_NLS_JAC_1.$RES_SIM_10_3 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[2] - $SEED_INI_NLS_JAC_1.plant.Tfg[3])) - $SEED_INI_NLS_JAC_1.plant.Q[4]
+//   (48) $pDER_INI_NLS_JAC_1.$RES_SIM_10_4 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_INI_NLS_JAC_1.plant.Tfg[2]) - $SEED_INI_NLS_JAC_1.plant.Q[5]
+//   (47) $pDER_INI_NLS_JAC_1.$RES_SIM_12_0 := ((0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - 0.5 * $SEED_INI_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_INI_NLS_JAC_1.plant.G[1]) - $SEED_INI_NLS_JAC_1.plant.Q[1]
+//   (46) $pDER_INI_NLS_JAC_1.$RES_SIM_12_1 := ((0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[5] + $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[3] + $SEED_INI_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_INI_NLS_JAC_1.plant.G[2]) - $SEED_INI_NLS_JAC_1.plant.Q[2]
+//   (45) $pDER_INI_NLS_JAC_1.$RES_SIM_12_2 := ((0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[4] + $SEED_INI_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[4] + $SEED_INI_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_INI_NLS_JAC_1.plant.G[3]) - $SEED_INI_NLS_JAC_1.plant.Q[3]
+//   (44) $pDER_INI_NLS_JAC_1.$RES_SIM_12_3 := ((0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[3] + $SEED_INI_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[5] + $SEED_INI_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_INI_NLS_JAC_1.plant.G[4]) - $SEED_INI_NLS_JAC_1.plant.Q[4]
+//   (43) $pDER_INI_NLS_JAC_1.$RES_SIM_12_4 := ((0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[6] + $SEED_INI_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_INI_NLS_JAC_1.plant.G[5]) - $SEED_INI_NLS_JAC_1.plant.Q[5]
+//   (42) $pDER_INI_NLS_JAC_1.$RES_SIM_14_0 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w) - $SEED_INI_NLS_JAC_1.plant.G[1]
+//   (41) $pDER_INI_NLS_JAC_1.$RES_SIM_14_1 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w) - $SEED_INI_NLS_JAC_1.plant.G[2]
+//   (40) $pDER_INI_NLS_JAC_1.$RES_SIM_14_2 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w) - $SEED_INI_NLS_JAC_1.plant.G[3]
+//   (39) $pDER_INI_NLS_JAC_1.$RES_SIM_14_3 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w) - $SEED_INI_NLS_JAC_1.plant.G[4]
+//   (38) $pDER_INI_NLS_JAC_1.$RES_SIM_14_4 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w) - $SEED_INI_NLS_JAC_1.plant.G[5]
+//   (37) $pDER_INI_NLS_JAC_1.$RES_SIM_8_0 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_INI_NLS_JAC_1.plant.T[2]) + $SEED_INI_NLS_JAC_1.plant.Q[1]
+//   (36) $pDER_INI_NLS_JAC_1.$RES_SIM_8_1 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[2] - $SEED_INI_NLS_JAC_1.plant.T[3])) + $SEED_INI_NLS_JAC_1.plant.Q[2]
+//   (35) $pDER_INI_NLS_JAC_1.$RES_SIM_8_2 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[3] - $SEED_INI_NLS_JAC_1.plant.T[4])) + $SEED_INI_NLS_JAC_1.plant.Q[3]
+//   (34) $pDER_INI_NLS_JAC_1.$RES_SIM_8_3 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[4] - $SEED_INI_NLS_JAC_1.plant.T[5])) + $SEED_INI_NLS_JAC_1.plant.Q[4]
+//   (33) $pDER_INI_NLS_JAC_1.$RES_SIM_8_4 := (plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[5] - $SEED_INI_NLS_JAC_1.plant.T[6])) + $SEED_INI_NLS_JAC_1.plant.Q[5]
+//   (32) $pDER_INI_NLS_JAC_1.$RES_BND_20 := $SEED_INI_NLS_JAC_1.plant.T[6] - $SEED_INI_NLS_JAC_1.plant.TIT
+//   (31) $pDER_INI_NLS_JAC_1.$RES_SIM_6 := $SEED_INI_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (((plant.gamma - 1.0) / plant.gamma) * (plant.TOP / plant.TIP) ^ ((-1.0) + (plant.gamma - 1.0) / plant.gamma) * ((plant.TOP * $SEED_INI_NLS_JAC_1.plant.TIP) / plant.TIP ^ 2.0))
+//   (30) $pDER_INI_NLS_JAC_1.$RES_BND_22 := $SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP
+//   (29) $pDER_INI_NLS_JAC_1.$RES_SIM_7 := (($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt) * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w
+//   (28) $pDER_INI_NLS_JAC_1.$RES_AUX_24 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0) - $SEED_INI_NLS_JAC_1.$FUN_1
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_10 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_10[:]} ... {($SEED_INI_NLS_JAC_1.plant.Q[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.wfg, {}, false)}
-// $RES_SIM_12 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_12[:]} ... {($SEED_INI_NLS_JAC_1.plant.Q[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.G[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1], {}, false)}
-// $RES_SIM_14 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_14[:]} ... {($SEED_INI_NLS_JAC_1.plant.G[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
-// $RES_SIM_8 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_8[:]} ... {($SEED_INI_NLS_JAC_1.plant.Q[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[$i1], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_10_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_10_0} ... {($SEED_INI_NLS_JAC_1.plant.Q[1], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_10_1} ... {($SEED_INI_NLS_JAC_1.plant.Q[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_2 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_10_2} ... {($SEED_INI_NLS_JAC_1.plant.Q[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_3 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_10_3} ... {($SEED_INI_NLS_JAC_1.plant.Q[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_4 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_10_4} ... {($SEED_INI_NLS_JAC_1.plant.Q[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_12_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_12_0} ... {($SEED_INI_NLS_JAC_1.plant.Q[1], {}, false), ($SEED_INI_NLS_JAC_1.plant.G[1], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[5], {}, false)}
+// $RES_SIM_12_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_12_1} ... {($SEED_INI_NLS_JAC_1.plant.Q[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.G[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[5], {}, false)}
+// $RES_SIM_12_2 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_12_2} ... {($SEED_INI_NLS_JAC_1.plant.Q[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.G[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[4], {}, false)}
+// $RES_SIM_12_3 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_12_3} ... {($SEED_INI_NLS_JAC_1.plant.Q[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.G[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[3], {}, false)}
+// $RES_SIM_12_4 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_12_4} ... {($SEED_INI_NLS_JAC_1.plant.Q[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.G[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[6], {}, false), ($SEED_INI_NLS_JAC_1.plant.Tfg[2], {}, false)}
+// $RES_SIM_14_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_14_0} ... {($SEED_INI_NLS_JAC_1.plant.G[1], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_14_1} ... {($SEED_INI_NLS_JAC_1.plant.G[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_2 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_14_2} ... {($SEED_INI_NLS_JAC_1.plant.G[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_3 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_14_3} ... {($SEED_INI_NLS_JAC_1.plant.G[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_4 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_14_4} ... {($SEED_INI_NLS_JAC_1.plant.G[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_8_0} ... {($SEED_INI_NLS_JAC_1.plant.Q[1], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_8_1} ... {($SEED_INI_NLS_JAC_1.plant.Q[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[2], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_2 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_8_2} ... {($SEED_INI_NLS_JAC_1.plant.Q[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[3], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_3 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_8_3} ... {($SEED_INI_NLS_JAC_1.plant.Q[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[4], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_4 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_8_4} ... {($SEED_INI_NLS_JAC_1.plant.Q[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[6], {}, false), ($SEED_INI_NLS_JAC_1.plant.T[5], {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false)}
 // $RES_BND_20 ... {$pDER_INI_NLS_JAC_1.$RES_BND_20} ... {($SEED_INI_NLS_JAC_1.plant.TIT, {}, false), ($SEED_INI_NLS_JAC_1.plant.T[6], {}, false)}
 // $RES_SIM_6 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_6} ... {($SEED_INI_NLS_JAC_1.plant.TIP, {}, false), ($SEED_INI_NLS_JAC_1.plant.w, {}, false), ($SEED_INI_NLS_JAC_1.plant.TIT, {}, false)}
 // $RES_BND_22 ... {$pDER_INI_NLS_JAC_1.$RES_BND_22} ... {($SEED_INI_NLS_JAC_1.plant.TIP, {}, false), ($SEED_INI_NLS_JAC_1.plant.p[6], {}, false)}
@@ -412,25 +434,23 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //   SimCode Jacobian INI_0_LS_JAC_1(idx = 1, partition = 1)
 // ===========================================================
 //
-// SeedVars (size = 17)
+// SeedVars (size = 15)
 // **********************
-//   (0)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[1]
-//   (1)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[2]
-//   (2)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[3]
-//   (3)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[4]
-//   (4)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[5]
-//   (5)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[6]
-//   (6)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[1]
-//   (7)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[2]
-//   (8)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[3]
-//   (9)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[4]
-//   (10)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[5]
-//   (11)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[1]
-//   (12)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[2]
-//   (13)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[3]
-//   (14)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[4]
-//   (15)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[5]
-//   (16)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[6]
+//   (0)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[2]
+//   (1)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[3]
+//   (2)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[4]
+//   (3)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[5]
+//   (4)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Tfg[6]
+//   (5)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[1]
+//   (6)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[2]
+//   (7)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[3]
+//   (8)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[4]
+//   (9)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.Q[5]
+//   (10)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[2]
+//   (11)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[3]
+//   (12)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[4]
+//   (13)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[5]
+//   (14)[SEED] (1) Real $SEED_INI_0_LS_JAC_1.plant.T[6]
 //
 // TmpVars (size = 0)
 // ********************
@@ -438,68 +458,76 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // ResultVars (size = 15)
 // ************************
 //
-// Column Equations (size = 3)
-// -----------------------------
-//   (40) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[1 + $i1] + $SEED_INI_0_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (39) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (38) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[$i1] - $SEED_INI_0_LS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
+// Column Equations (size = 15)
+// ------------------------------
+//   (96) $pDER_INI_0_LS_JAC_1.$RES_SIM_12_0 := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[6] + $SEED_INI_0_LS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_INI_0_LS_JAC_1.plant.T[2]) * plant.G[1] - $SEED_INI_0_LS_JAC_1.plant.Q[1]
+//   (95) $pDER_INI_0_LS_JAC_1.$RES_SIM_12_1 := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[5] + $SEED_INI_0_LS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[3] + $SEED_INI_0_LS_JAC_1.plant.T[2])) * plant.G[2] - $SEED_INI_0_LS_JAC_1.plant.Q[2]
+//   (94) $pDER_INI_0_LS_JAC_1.$RES_SIM_12_2 := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[4] + $SEED_INI_0_LS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[4] + $SEED_INI_0_LS_JAC_1.plant.T[3])) * plant.G[3] - $SEED_INI_0_LS_JAC_1.plant.Q[3]
+//   (93) $pDER_INI_0_LS_JAC_1.$RES_SIM_12_3 := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[3] + $SEED_INI_0_LS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[5] + $SEED_INI_0_LS_JAC_1.plant.T[4])) * plant.G[4] - $SEED_INI_0_LS_JAC_1.plant.Q[4]
+//   (92) $pDER_INI_0_LS_JAC_1.$RES_SIM_12_4 := (0.5 * $SEED_INI_0_LS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[6] + $SEED_INI_0_LS_JAC_1.plant.T[5])) * plant.G[5] - $SEED_INI_0_LS_JAC_1.plant.Q[5]
+//   (91) $pDER_INI_0_LS_JAC_1.$RES_SIM_10_0 := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[5] - $SEED_INI_0_LS_JAC_1.plant.Tfg[6]) - $SEED_INI_0_LS_JAC_1.plant.Q[1]
+//   (90) $pDER_INI_0_LS_JAC_1.$RES_SIM_10_1 := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[4] - $SEED_INI_0_LS_JAC_1.plant.Tfg[5]) - $SEED_INI_0_LS_JAC_1.plant.Q[2]
+//   (89) $pDER_INI_0_LS_JAC_1.$RES_SIM_10_2 := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[3] - $SEED_INI_0_LS_JAC_1.plant.Tfg[4]) - $SEED_INI_0_LS_JAC_1.plant.Q[3]
+//   (88) $pDER_INI_0_LS_JAC_1.$RES_SIM_10_3 := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[2] - $SEED_INI_0_LS_JAC_1.plant.Tfg[3]) - $SEED_INI_0_LS_JAC_1.plant.Q[4]
+//   (87) $pDER_INI_0_LS_JAC_1.$RES_SIM_10_4 := -($SEED_INI_0_LS_JAC_1.plant.Q[5] + plant.cp * plant.wfg * $SEED_INI_0_LS_JAC_1.plant.Tfg[2])
+//   (86) $pDER_INI_0_LS_JAC_1.$RES_SIM_8_0 := $SEED_INI_0_LS_JAC_1.plant.Q[1] - plant.cp * plant.w * $SEED_INI_0_LS_JAC_1.plant.T[2]
+//   (85) $pDER_INI_0_LS_JAC_1.$RES_SIM_8_1 := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[2] - $SEED_INI_0_LS_JAC_1.plant.T[3]) + $SEED_INI_0_LS_JAC_1.plant.Q[2]
+//   (84) $pDER_INI_0_LS_JAC_1.$RES_SIM_8_2 := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[3] - $SEED_INI_0_LS_JAC_1.plant.T[4]) + $SEED_INI_0_LS_JAC_1.plant.Q[3]
+//   (83) $pDER_INI_0_LS_JAC_1.$RES_SIM_8_3 := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[4] - $SEED_INI_0_LS_JAC_1.plant.T[5]) + $SEED_INI_0_LS_JAC_1.plant.Q[4]
+//   (82) $pDER_INI_0_LS_JAC_1.$RES_SIM_8_4 := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[5] - $SEED_INI_0_LS_JAC_1.plant.T[6]) + $SEED_INI_0_LS_JAC_1.plant.Q[5]
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_12 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_12[:]} ... {($SEED_INI_0_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[$i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1], {}, false)}
-// $RES_SIM_10 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_10[:]} ... {($SEED_INI_0_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1], {}, false)}
-// $RES_SIM_8 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_8[:]} ... {($SEED_INI_0_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[$i1], {}, false)}
+// $RES_SIM_12_0 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_12_0} ... {($SEED_INI_0_LS_JAC_1.plant.Q[1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[2], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[6], {}, false)}
+// $RES_SIM_12_1 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_12_1} ... {($SEED_INI_0_LS_JAC_1.plant.Q[2], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[2], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[5], {}, false)}
+// $RES_SIM_12_2 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_12_2} ... {($SEED_INI_0_LS_JAC_1.plant.Q[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[4], {}, false)}
+// $RES_SIM_12_3 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_12_3} ... {($SEED_INI_0_LS_JAC_1.plant.Q[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[2], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[3], {}, false)}
+// $RES_SIM_12_4 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_12_4} ... {($SEED_INI_0_LS_JAC_1.plant.Q[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[6], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[2], {}, false)}
+// $RES_SIM_10_0 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_10_0} ... {($SEED_INI_0_LS_JAC_1.plant.Q[1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[6], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[5], {}, false)}
+// $RES_SIM_10_1 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_10_1} ... {($SEED_INI_0_LS_JAC_1.plant.Q[2], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[4], {}, false)}
+// $RES_SIM_10_2 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_10_2} ... {($SEED_INI_0_LS_JAC_1.plant.Q[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[3], {}, false)}
+// $RES_SIM_10_3 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_10_3} ... {($SEED_INI_0_LS_JAC_1.plant.Q[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[2], {}, false)}
+// $RES_SIM_10_4 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_10_4} ... {($SEED_INI_0_LS_JAC_1.plant.Q[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.Tfg[2], {}, false)}
+// $RES_SIM_8_0 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_8_0} ... {($SEED_INI_0_LS_JAC_1.plant.Q[1], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[2], {}, false)}
+// $RES_SIM_8_1 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_8_1} ... {($SEED_INI_0_LS_JAC_1.plant.Q[2], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[2], {}, false)}
+// $RES_SIM_8_2 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_8_2} ... {($SEED_INI_0_LS_JAC_1.plant.Q[3], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[3], {}, false)}
+// $RES_SIM_8_3 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_8_3} ... {($SEED_INI_0_LS_JAC_1.plant.Q[4], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[4], {}, false)}
+// $RES_SIM_8_4 ... {$pDER_INI_0_LS_JAC_1.$RES_SIM_8_4} ... {($SEED_INI_0_LS_JAC_1.plant.Q[5], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[6], {}, false), ($SEED_INI_0_LS_JAC_1.plant.T[5], {}, false)}
 //
 // ==========================================================
 //   SimCode Jacobian ALG_NLS_JAC_1(idx = 2, partition = 2)
 // ==========================================================
 //
-// SeedVars (size = 35)
+// SeedVars (size = 28)
 // **********************
 //   (0)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.w
 //   (1)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Ts
 //   (2)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.wfg
-//   (3)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[1]
-//   (4)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[2]
-//   (5)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[3]
-//   (6)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[4]
-//   (7)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[5]
-//   (8)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[6]
-//   (9)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[1]
-//   (10)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[2]
-//   (11)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[3]
-//   (12)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[4]
-//   (13)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[5]
-//   (14)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.TIT
-//   (15)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.$FUN_1
-//   (16)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[1]
-//   (17)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[2]
-//   (18)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[3]
-//   (19)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[4]
-//   (20)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[5]
-//   (21)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[6]
-//   (22)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.TIP
-//   (23)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.P
-//   (24)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[1]
-//   (25)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[2]
-//   (26)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[3]
-//   (27)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[4]
-//   (28)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[5]
-//   (29)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[6]
-//   (30)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[1]
-//   (31)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[2]
-//   (32)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[3]
-//   (33)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[4]
-//   (34)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[5]
+//   (3)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[2]
+//   (4)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[3]
+//   (5)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[4]
+//   (6)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[5]
+//   (7)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Tfg[6]
+//   (8)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[1]
+//   (9)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[2]
+//   (10)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[3]
+//   (11)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[4]
+//   (12)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.Q[5]
+//   (13)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.TIT
+//   (14)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.$FUN_1
+//   (15)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.p[6]
+//   (16)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.TIP
+//   (17)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.P
+//   (18)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[2]
+//   (19)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[3]
+//   (20)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[4]
+//   (21)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[5]
+//   (22)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.T[6]
+//   (23)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[1]
+//   (24)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[2]
+//   (25)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[3]
+//   (26)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[4]
+//   (27)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.plant.G[5]
 //
 // TmpVars (size = 0)
 // ********************
@@ -507,47 +535,67 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // ResultVars (size = 28)
 // ************************
 //
-// Column Equations (size = 12)
+// Column Equations (size = 28)
 // ------------------------------
-//   (72) $pDER_ALG_NLS_JAC_1.$RES_BND_21 := $SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts
-//   (71) $pDER_ALG_NLS_JAC_1.$RES_SIM_2 := -$SEED_ALG_NLS_JAC_1.plant.Ts
-//   (70) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_12[$i1] := ((0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_NLS_JAC_1.plant.G[$i1]) - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (69) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_10[$i1] := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1])) - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (68) $pDER_ALG_NLS_JAC_1.$RES_BND_20 := $SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT
-//   (67) $pDER_ALG_NLS_JAC_1.$RES_AUX_24 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0) - $SEED_ALG_NLS_JAC_1.$FUN_1
-//   (66) $pDER_ALG_NLS_JAC_1.$RES_SIM_7 := (($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt) * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w
-//   (65) $pDER_ALG_NLS_JAC_1.$RES_BND_22 := $SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP
-//   (64) $pDER_ALG_NLS_JAC_1.$RES_SIM_6 := ($SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (((plant.gamma - 1.0) / plant.gamma) * (plant.TOP / plant.TIP) ^ ((-1.0) + (plant.gamma - 1.0) / plant.gamma) * ((plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP) / plant.TIP ^ 2.0))) - $SEED_ALG_NLS_JAC_1.plant.P
-//   (63) $pDER_ALG_NLS_JAC_1.$RES_SIM_5 := -$SEED_ALG_NLS_JAC_1.plant.P
-//   (62) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_8[$i1] := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[$i1] - $SEED_ALG_NLS_JAC_1.plant.T[1 + $i1])) + $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//   (61) Algorithm
-//   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w) - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
-//   end for;
+//   (160) $pDER_ALG_NLS_JAC_1.$RES_BND_21 := $SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts
+//   (159) $pDER_ALG_NLS_JAC_1.$RES_SIM_2 := -$SEED_ALG_NLS_JAC_1.plant.Ts
+//   (158) $pDER_ALG_NLS_JAC_1.$RES_SIM_12_0 := ((0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6] + $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_ALG_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_ALG_NLS_JAC_1.plant.G[1]) - $SEED_ALG_NLS_JAC_1.plant.Q[1]
+//   (157) $pDER_ALG_NLS_JAC_1.$RES_SIM_12_1 := ((0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] + $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[3] + $SEED_ALG_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_ALG_NLS_JAC_1.plant.G[2]) - $SEED_ALG_NLS_JAC_1.plant.Q[2]
+//   (156) $pDER_ALG_NLS_JAC_1.$RES_SIM_12_2 := ((0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] + $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[4] + $SEED_ALG_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_ALG_NLS_JAC_1.plant.G[3]) - $SEED_ALG_NLS_JAC_1.plant.Q[3]
+//   (155) $pDER_ALG_NLS_JAC_1.$RES_SIM_12_3 := ((0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] + $SEED_ALG_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[5] + $SEED_ALG_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_ALG_NLS_JAC_1.plant.G[4]) - $SEED_ALG_NLS_JAC_1.plant.Q[4]
+//   (154) $pDER_ALG_NLS_JAC_1.$RES_SIM_12_4 := ((0.5 * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[6] + $SEED_ALG_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_ALG_NLS_JAC_1.plant.G[5]) - $SEED_ALG_NLS_JAC_1.plant.Q[5]
+//   (153) $pDER_ALG_NLS_JAC_1.$RES_SIM_10_0 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] - $SEED_ALG_NLS_JAC_1.plant.Tfg[6])) - $SEED_ALG_NLS_JAC_1.plant.Q[1]
+//   (152) $pDER_ALG_NLS_JAC_1.$RES_SIM_10_1 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] - $SEED_ALG_NLS_JAC_1.plant.Tfg[5])) - $SEED_ALG_NLS_JAC_1.plant.Q[2]
+//   (151) $pDER_ALG_NLS_JAC_1.$RES_SIM_10_2 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] - $SEED_ALG_NLS_JAC_1.plant.Tfg[4])) - $SEED_ALG_NLS_JAC_1.plant.Q[3]
+//   (150) $pDER_ALG_NLS_JAC_1.$RES_SIM_10_3 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Tfg[3])) - $SEED_ALG_NLS_JAC_1.plant.Q[4]
+//   (149) $pDER_ALG_NLS_JAC_1.$RES_SIM_10_4 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_ALG_NLS_JAC_1.plant.Tfg[2]) - $SEED_ALG_NLS_JAC_1.plant.Q[5]
+//   (148) $pDER_ALG_NLS_JAC_1.$RES_BND_20 := $SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT
+//   (147) $pDER_ALG_NLS_JAC_1.$RES_AUX_24 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0) - $SEED_ALG_NLS_JAC_1.$FUN_1
+//   (146) $pDER_ALG_NLS_JAC_1.$RES_SIM_7 := (($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt) * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w
+//   (145) $pDER_ALG_NLS_JAC_1.$RES_BND_22 := $SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP
+//   (144) $pDER_ALG_NLS_JAC_1.$RES_SIM_6 := ($SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (((plant.gamma - 1.0) / plant.gamma) * (plant.TOP / plant.TIP) ^ ((-1.0) + (plant.gamma - 1.0) / plant.gamma) * ((plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP) / plant.TIP ^ 2.0))) - $SEED_ALG_NLS_JAC_1.plant.P
+//   (143) $pDER_ALG_NLS_JAC_1.$RES_SIM_5 := -$SEED_ALG_NLS_JAC_1.plant.P
+//   (142) $pDER_ALG_NLS_JAC_1.$RES_SIM_8_0 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_ALG_NLS_JAC_1.plant.T[2]) + $SEED_ALG_NLS_JAC_1.plant.Q[1]
+//   (141) $pDER_ALG_NLS_JAC_1.$RES_SIM_8_1 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[2] - $SEED_ALG_NLS_JAC_1.plant.T[3])) + $SEED_ALG_NLS_JAC_1.plant.Q[2]
+//   (140) $pDER_ALG_NLS_JAC_1.$RES_SIM_8_2 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[3] - $SEED_ALG_NLS_JAC_1.plant.T[4])) + $SEED_ALG_NLS_JAC_1.plant.Q[3]
+//   (139) $pDER_ALG_NLS_JAC_1.$RES_SIM_8_3 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[4] - $SEED_ALG_NLS_JAC_1.plant.T[5])) + $SEED_ALG_NLS_JAC_1.plant.Q[4]
+//   (138) $pDER_ALG_NLS_JAC_1.$RES_SIM_8_4 := (plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[5] - $SEED_ALG_NLS_JAC_1.plant.T[6])) + $SEED_ALG_NLS_JAC_1.plant.Q[5]
+//   (137) $pDER_ALG_NLS_JAC_1.$RES_SIM_14_0 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w) - $SEED_ALG_NLS_JAC_1.plant.G[1]
+//   (136) $pDER_ALG_NLS_JAC_1.$RES_SIM_14_1 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w) - $SEED_ALG_NLS_JAC_1.plant.G[2]
+//   (135) $pDER_ALG_NLS_JAC_1.$RES_SIM_14_2 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w) - $SEED_ALG_NLS_JAC_1.plant.G[3]
+//   (134) $pDER_ALG_NLS_JAC_1.$RES_SIM_14_3 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w) - $SEED_ALG_NLS_JAC_1.plant.G[4]
+//   (133) $pDER_ALG_NLS_JAC_1.$RES_SIM_14_4 := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w) - $SEED_ALG_NLS_JAC_1.plant.G[5]
 //
 // Resizable Sparsity Pattern
 // ----------------------------
 // $RES_BND_21 ... {$pDER_ALG_NLS_JAC_1.$RES_BND_21} ... {($SEED_ALG_NLS_JAC_1.plant.Ts, {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[6], {}, false)}
 // $RES_SIM_2 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_2} ... {($SEED_ALG_NLS_JAC_1.plant.Ts, {}, false)}
-// $RES_SIM_12 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_12[:]} ... {($SEED_ALG_NLS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.G[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1], {}, false)}
-// $RES_SIM_10 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_10[:]} ... {($SEED_ALG_NLS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_12_0 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_12_0} ... {($SEED_ALG_NLS_JAC_1.plant.Q[1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.G[1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[6], {}, false)}
+// $RES_SIM_12_1 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_12_1} ... {($SEED_ALG_NLS_JAC_1.plant.Q[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.G[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[5], {}, false)}
+// $RES_SIM_12_2 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_12_2} ... {($SEED_ALG_NLS_JAC_1.plant.Q[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.G[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[4], {}, false)}
+// $RES_SIM_12_3 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_12_3} ... {($SEED_ALG_NLS_JAC_1.plant.Q[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.G[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[3], {}, false)}
+// $RES_SIM_12_4 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_12_4} ... {($SEED_ALG_NLS_JAC_1.plant.Q[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.G[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[6], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[2], {}, false)}
+// $RES_SIM_10_0 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_10_0} ... {($SEED_ALG_NLS_JAC_1.plant.Q[1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[6], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_1 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_10_1} ... {($SEED_ALG_NLS_JAC_1.plant.Q[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_2 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_10_2} ... {($SEED_ALG_NLS_JAC_1.plant.Q[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_3 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_10_3} ... {($SEED_ALG_NLS_JAC_1.plant.Q[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.wfg, {}, false)}
+// $RES_SIM_10_4 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_10_4} ... {($SEED_ALG_NLS_JAC_1.plant.Q[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.Tfg[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.wfg, {}, false)}
 // $RES_BND_20 ... {$pDER_ALG_NLS_JAC_1.$RES_BND_20} ... {($SEED_ALG_NLS_JAC_1.plant.TIT, {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[6], {}, false)}
 // $RES_AUX_24 ... {$pDER_ALG_NLS_JAC_1.$RES_AUX_24} ... {($SEED_ALG_NLS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_NLS_JAC_1.plant.TIT, {}, true)}
 // $RES_SIM_7 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_7} ... {($SEED_ALG_NLS_JAC_1.plant.w, {}, false), ($SEED_ALG_NLS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_NLS_JAC_1.plant.p[6], {}, false)}
 // $RES_BND_22 ... {$pDER_ALG_NLS_JAC_1.$RES_BND_22} ... {($SEED_ALG_NLS_JAC_1.plant.TIP, {}, false), ($SEED_ALG_NLS_JAC_1.plant.p[6], {}, false)}
 // $RES_SIM_6 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_6} ... {($SEED_ALG_NLS_JAC_1.plant.P, {}, false), ($SEED_ALG_NLS_JAC_1.plant.TIP, {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false), ($SEED_ALG_NLS_JAC_1.plant.TIT, {}, false)}
 // $RES_SIM_5 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_5} ... {($SEED_ALG_NLS_JAC_1.plant.P, {}, false)}
-// $RES_SIM_8 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_8[:]} ... {($SEED_ALG_NLS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
-// $RES_SIM_14 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_14[:]} ... {($SEED_ALG_NLS_JAC_1.plant.G[$i1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_0 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_8_0} ... {($SEED_ALG_NLS_JAC_1.plant.Q[1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_1 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_8_1} ... {($SEED_ALG_NLS_JAC_1.plant.Q[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_2 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_8_2} ... {($SEED_ALG_NLS_JAC_1.plant.Q[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_3 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_8_3} ... {($SEED_ALG_NLS_JAC_1.plant.Q[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8_4 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_8_4} ... {($SEED_ALG_NLS_JAC_1.plant.Q[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[6], {}, false), ($SEED_ALG_NLS_JAC_1.plant.T[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_0 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_14_0} ... {($SEED_ALG_NLS_JAC_1.plant.G[1], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_1 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_14_1} ... {($SEED_ALG_NLS_JAC_1.plant.G[2], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_2 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_14_2} ... {($SEED_ALG_NLS_JAC_1.plant.G[3], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_3 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_14_3} ... {($SEED_ALG_NLS_JAC_1.plant.G[4], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_14_4 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_14_4} ... {($SEED_ALG_NLS_JAC_1.plant.G[5], {}, false), ($SEED_ALG_NLS_JAC_1.plant.w, {}, false)}
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 3, partition = 0)
@@ -599,51 +647,71 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // allEquations:
 // ========================================
 //
-// 75: alias of 26
-// 74: alias of 25
-// 73:  (NONLINEAR) index:2 jacobian: true
+// 163: alias of 58
+// 162: alias of 57
+// 161:  (NONLINEAR) index:1 jacobian: true
 // crefs: plant.w , plant.Ts , plant.wfg , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.TIT , $FUN_1 , plant.p[6] , plant.TIP , plant.P , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5]
-// 	49: plant.Tfg[6] - plant.Ts (RESIDUAL)
-// 	50: plant.Tsnom - plant.Ts (RESIDUAL)
-// 	51: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	52: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
-// 	53: plant.T[6] - plant.TIT (RESIDUAL)
-// 	54: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
-// 	55: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
-// 	56: plant.p[6] - plant.TIP (RESIDUAL)
-// 	57: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
-// 	58: plant.Pnom * load - plant.P (RESIDUAL)
-// 	59: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
-// 	60: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
+// 	105: plant.Tfg[6] - plant.Ts (RESIDUAL)
+// 	106: plant.Tsnom - plant.Ts (RESIDUAL)
+// 	107: (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1] (RESIDUAL)
+// 	108: (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2] (RESIDUAL)
+// 	109: (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3] (RESIDUAL)
+// 	110: (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4] (RESIDUAL)
+// 	111: (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5] (RESIDUAL)
+// 	112: plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1] (RESIDUAL)
+// 	113: plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2] (RESIDUAL)
+// 	114: plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3] (RESIDUAL)
+// 	115: plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4] (RESIDUAL)
+// 	116: plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5] (RESIDUAL)
+// 	117: plant.T[6] - plant.TIT (RESIDUAL)
+// 	118: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
+// 	119: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
+// 	120: plant.p[6] - plant.TIP (RESIDUAL)
+// 	121: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
+// 	122: plant.Pnom * load - plant.P (RESIDUAL)
+// 	123: plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1] (RESIDUAL)
+// 	124: plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2] (RESIDUAL)
+// 	125: plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3] (RESIDUAL)
+// 	126: plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4] (RESIDUAL)
+// 	127: plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5] (RESIDUAL)
+// 	128: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[1] (RESIDUAL)
+// 	129: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[2] (RESIDUAL)
+// 	130: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[3] (RESIDUAL)
+// 	131: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[4] (RESIDUAL)
+// 	132: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[5] (RESIDUAL)
 // 	Jacobian idx: 2
-// 	72: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
-// 	71: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
-// 	70:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_NLS_JAC_1.plant.G[$i1] - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
+// 	160: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
+// 	159: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
+// 	158: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_0=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6] + $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_ALG_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_ALG_NLS_JAC_1.plant.G[1] - $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	157: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] + $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[3] + $SEED_ALG_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_ALG_NLS_JAC_1.plant.G[2] - $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	156: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] + $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[4] + $SEED_ALG_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_ALG_NLS_JAC_1.plant.G[3] - $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	155: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] + $SEED_ALG_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[5] + $SEED_ALG_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_ALG_NLS_JAC_1.plant.G[4] - $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	154: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[6] + $SEED_ALG_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_ALG_NLS_JAC_1.plant.G[5] - $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	153: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_0=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] - $SEED_ALG_NLS_JAC_1.plant.Tfg[6]) - $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	152: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_1=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] - $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	151: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_2=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] - $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	150: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_3=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	149: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_4=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	148: $pDER_ALG_NLS_JAC_1.$RES_BND_20=$SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT [Real]
+// 	147: $pDER_ALG_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
+// 	146: $pDER_ALG_NLS_JAC_1.$RES_SIM_7=($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w [Real]
+// 	145: $pDER_ALG_NLS_JAC_1.$RES_BND_22=$SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP [Real]
+// 	144: $pDER_ALG_NLS_JAC_1.$RES_SIM_6=$SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.P [Real]
+// 	143: $pDER_ALG_NLS_JAC_1.$RES_SIM_5=-$SEED_ALG_NLS_JAC_1.plant.P [Real]
+// 	142: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_0=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_ALG_NLS_JAC_1.plant.T[2] + $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	141: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_1=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[2] - $SEED_ALG_NLS_JAC_1.plant.T[3]) + $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	140: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_2=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[3] - $SEED_ALG_NLS_JAC_1.plant.T[4]) + $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	139: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_3=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[4] - $SEED_ALG_NLS_JAC_1.plant.T[5]) + $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	138: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_4=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[5] - $SEED_ALG_NLS_JAC_1.plant.T[6]) + $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	137: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_0=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[1] [Real]
+// 	136: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_1=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[2] [Real]
+// 	135: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_2=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[3] [Real]
+// 	134: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_3=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[4] [Real]
+// 	133: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_4=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[5] [Real]
 //
-// 	69:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
 //
-// 	68: $pDER_ALG_NLS_JAC_1.$RES_BND_20=$SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT [Real]
-// 	67: $pDER_ALG_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
-// 	66: $pDER_ALG_NLS_JAC_1.$RES_SIM_7=($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w [Real]
-// 	65: $pDER_ALG_NLS_JAC_1.$RES_BND_22=$SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP [Real]
-// 	64: $pDER_ALG_NLS_JAC_1.$RES_SIM_6=$SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.P [Real]
-// 	63: $pDER_ALG_NLS_JAC_1.$RES_SIM_5=-$SEED_ALG_NLS_JAC_1.plant.P [Real]
-// 	62:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[$i1] - $SEED_ALG_NLS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	61:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
-//   end for;
-//
-//
-//
-// 48: alias of 2
-// 47: alias of 1
+// 104: alias of 2
+// 103: alias of 1
 // ========================================
 //
 //
@@ -656,51 +724,71 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 75: alias of 26
-// 74: alias of 25
-// 73:  (NONLINEAR) index:2 jacobian: true
+// 163: alias of 58
+// 162: alias of 57
+// 161:  (NONLINEAR) index:1 jacobian: true
 // crefs: plant.w , plant.Ts , plant.wfg , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.TIT , $FUN_1 , plant.p[6] , plant.TIP , plant.P , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5]
-// 	49: plant.Tfg[6] - plant.Ts (RESIDUAL)
-// 	50: plant.Tsnom - plant.Ts (RESIDUAL)
-// 	51: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	52: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
-// 	53: plant.T[6] - plant.TIT (RESIDUAL)
-// 	54: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
-// 	55: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
-// 	56: plant.p[6] - plant.TIP (RESIDUAL)
-// 	57: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
-// 	58: plant.Pnom * load - plant.P (RESIDUAL)
-// 	59: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
-// 	60: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
+// 	105: plant.Tfg[6] - plant.Ts (RESIDUAL)
+// 	106: plant.Tsnom - plant.Ts (RESIDUAL)
+// 	107: (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1] (RESIDUAL)
+// 	108: (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2] (RESIDUAL)
+// 	109: (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3] (RESIDUAL)
+// 	110: (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4] (RESIDUAL)
+// 	111: (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5] (RESIDUAL)
+// 	112: plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1] (RESIDUAL)
+// 	113: plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2] (RESIDUAL)
+// 	114: plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3] (RESIDUAL)
+// 	115: plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4] (RESIDUAL)
+// 	116: plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5] (RESIDUAL)
+// 	117: plant.T[6] - plant.TIT (RESIDUAL)
+// 	118: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
+// 	119: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
+// 	120: plant.p[6] - plant.TIP (RESIDUAL)
+// 	121: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
+// 	122: plant.Pnom * load - plant.P (RESIDUAL)
+// 	123: plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1] (RESIDUAL)
+// 	124: plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2] (RESIDUAL)
+// 	125: plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3] (RESIDUAL)
+// 	126: plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4] (RESIDUAL)
+// 	127: plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5] (RESIDUAL)
+// 	128: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[1] (RESIDUAL)
+// 	129: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[2] (RESIDUAL)
+// 	130: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[3] (RESIDUAL)
+// 	131: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[4] (RESIDUAL)
+// 	132: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[5] (RESIDUAL)
 // 	Jacobian idx: 2
-// 	72: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
-// 	71: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
-// 	70:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_NLS_JAC_1.plant.G[$i1] - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
+// 	160: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
+// 	159: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
+// 	158: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_0=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6] + $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_ALG_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_ALG_NLS_JAC_1.plant.G[1] - $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	157: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] + $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[3] + $SEED_ALG_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_ALG_NLS_JAC_1.plant.G[2] - $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	156: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] + $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[4] + $SEED_ALG_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_ALG_NLS_JAC_1.plant.G[3] - $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	155: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] + $SEED_ALG_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[5] + $SEED_ALG_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_ALG_NLS_JAC_1.plant.G[4] - $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	154: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[6] + $SEED_ALG_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_ALG_NLS_JAC_1.plant.G[5] - $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	153: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_0=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] - $SEED_ALG_NLS_JAC_1.plant.Tfg[6]) - $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	152: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_1=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] - $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	151: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_2=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] - $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	150: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_3=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	149: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_4=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	148: $pDER_ALG_NLS_JAC_1.$RES_BND_20=$SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT [Real]
+// 	147: $pDER_ALG_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
+// 	146: $pDER_ALG_NLS_JAC_1.$RES_SIM_7=($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w [Real]
+// 	145: $pDER_ALG_NLS_JAC_1.$RES_BND_22=$SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP [Real]
+// 	144: $pDER_ALG_NLS_JAC_1.$RES_SIM_6=$SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.P [Real]
+// 	143: $pDER_ALG_NLS_JAC_1.$RES_SIM_5=-$SEED_ALG_NLS_JAC_1.plant.P [Real]
+// 	142: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_0=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_ALG_NLS_JAC_1.plant.T[2] + $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	141: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_1=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[2] - $SEED_ALG_NLS_JAC_1.plant.T[3]) + $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	140: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_2=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[3] - $SEED_ALG_NLS_JAC_1.plant.T[4]) + $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	139: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_3=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[4] - $SEED_ALG_NLS_JAC_1.plant.T[5]) + $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	138: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_4=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[5] - $SEED_ALG_NLS_JAC_1.plant.T[6]) + $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	137: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_0=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[1] [Real]
+// 	136: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_1=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[2] [Real]
+// 	135: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_2=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[3] [Real]
+// 	134: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_3=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[4] [Real]
+// 	133: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_4=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[5] [Real]
 //
-// 	69:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
 //
-// 	68: $pDER_ALG_NLS_JAC_1.$RES_BND_20=$SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT [Real]
-// 	67: $pDER_ALG_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
-// 	66: $pDER_ALG_NLS_JAC_1.$RES_SIM_7=($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w [Real]
-// 	65: $pDER_ALG_NLS_JAC_1.$RES_BND_22=$SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP [Real]
-// 	64: $pDER_ALG_NLS_JAC_1.$RES_SIM_6=$SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.P [Real]
-// 	63: $pDER_ALG_NLS_JAC_1.$RES_SIM_5=-$SEED_ALG_NLS_JAC_1.plant.P [Real]
-// 	62:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[$i1] - $SEED_ALG_NLS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	61:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
-//   end for;
-//
-//
-//
-// 48: alias of 2
-// 47: alias of 1
+// 104: alias of 2
+// 103: alias of 1
 // ========================================
 //
 //
@@ -712,44 +800,64 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // initialEquations: (8)
 // ========================================
-// 26: plant.T[1]=300.0 [Real]
-// 25: plant.Tfg[1]=800.0 [Real]
-// 24: plant.Ts=plant.Tsnom [Real]
-// 23: plant.Tfg[6]=plant.Ts [Real]
-// 22: plant.P=homotopy(plant.Pnom * load, plant.Pnom) [Real]
-// 21:  (NONLINEAR) index:0 jacobian: true
+// 58: plant.T[1]=300.0 [Real]
+// 57: plant.Tfg[1]=800.0 [Real]
+// 56: plant.Ts=plant.Tsnom [Real]
+// 55: plant.Tfg[6]=plant.Ts [Real]
+// 54: plant.P=homotopy(plant.Pnom * load, plant.Pnom) [Real]
+// 53:  (NONLINEAR) index:0 jacobian: true
 // crefs: plant.w , plant.wfg , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.TIT , plant.TIP , plant.p[6] , $FUN_1
-// 	3: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
-// 	4: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	5: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
-// 	6: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
-// 	7: plant.T[6] - plant.TIT (RESIDUAL)
-// 	8: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
-// 	9: plant.p[6] - plant.TIP (RESIDUAL)
-// 	10: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
-// 	11: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
+// 	3: plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1] (RESIDUAL)
+// 	4: plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2] (RESIDUAL)
+// 	5: plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3] (RESIDUAL)
+// 	6: plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4] (RESIDUAL)
+// 	7: plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5] (RESIDUAL)
+// 	8: (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1] (RESIDUAL)
+// 	9: (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2] (RESIDUAL)
+// 	10: (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3] (RESIDUAL)
+// 	11: (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4] (RESIDUAL)
+// 	12: (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5] (RESIDUAL)
+// 	13: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[1] (RESIDUAL)
+// 	14: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[2] (RESIDUAL)
+// 	15: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[3] (RESIDUAL)
+// 	16: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[4] (RESIDUAL)
+// 	17: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[5] (RESIDUAL)
+// 	18: plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1] (RESIDUAL)
+// 	19: plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2] (RESIDUAL)
+// 	20: plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3] (RESIDUAL)
+// 	21: plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4] (RESIDUAL)
+// 	22: plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5] (RESIDUAL)
+// 	23: plant.T[6] - plant.TIT (RESIDUAL)
+// 	24: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
+// 	25: plant.p[6] - plant.TIP (RESIDUAL)
+// 	26: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
+// 	27: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
 // 	Jacobian idx: 0
-// 	20:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	19:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[1 + $i1] + $SEED_INI_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_INI_NLS_JAC_1.plant.G[$i1] - $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	18:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[$i1];
-//   end for;
-//
-// 	17:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[$i1] - $SEED_INI_NLS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	16: $pDER_INI_NLS_JAC_1.$RES_BND_20=$SEED_INI_NLS_JAC_1.plant.T[6] - $SEED_INI_NLS_JAC_1.plant.TIT [Real]
-// 	15: $pDER_INI_NLS_JAC_1.$RES_SIM_6=$SEED_INI_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_INI_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 [Real]
-// 	14: $pDER_INI_NLS_JAC_1.$RES_BND_22=$SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP [Real]
-// 	13: $pDER_INI_NLS_JAC_1.$RES_SIM_7=($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w [Real]
-// 	12: $pDER_INI_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
+// 	52: $pDER_INI_NLS_JAC_1.$RES_SIM_10_0=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - $SEED_INI_NLS_JAC_1.plant.Q[1] [Real]
+// 	51: $pDER_INI_NLS_JAC_1.$RES_SIM_10_1=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[4] - $SEED_INI_NLS_JAC_1.plant.Tfg[5]) - $SEED_INI_NLS_JAC_1.plant.Q[2] [Real]
+// 	50: $pDER_INI_NLS_JAC_1.$RES_SIM_10_2=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[3] - $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - $SEED_INI_NLS_JAC_1.plant.Q[3] [Real]
+// 	49: $pDER_INI_NLS_JAC_1.$RES_SIM_10_3=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[2] - $SEED_INI_NLS_JAC_1.plant.Tfg[3]) - $SEED_INI_NLS_JAC_1.plant.Q[4] [Real]
+// 	48: $pDER_INI_NLS_JAC_1.$RES_SIM_10_4=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_INI_NLS_JAC_1.plant.Tfg[2] - $SEED_INI_NLS_JAC_1.plant.Q[5] [Real]
+// 	47: $pDER_INI_NLS_JAC_1.$RES_SIM_12_0=(0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - 0.5 * $SEED_INI_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_INI_NLS_JAC_1.plant.G[1] - $SEED_INI_NLS_JAC_1.plant.Q[1] [Real]
+// 	46: $pDER_INI_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[5] + $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[3] + $SEED_INI_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_INI_NLS_JAC_1.plant.G[2] - $SEED_INI_NLS_JAC_1.plant.Q[2] [Real]
+// 	45: $pDER_INI_NLS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[4] + $SEED_INI_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[4] + $SEED_INI_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_INI_NLS_JAC_1.plant.G[3] - $SEED_INI_NLS_JAC_1.plant.Q[3] [Real]
+// 	44: $pDER_INI_NLS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[3] + $SEED_INI_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[5] + $SEED_INI_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_INI_NLS_JAC_1.plant.G[4] - $SEED_INI_NLS_JAC_1.plant.Q[4] [Real]
+// 	43: $pDER_INI_NLS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[6] + $SEED_INI_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_INI_NLS_JAC_1.plant.G[5] - $SEED_INI_NLS_JAC_1.plant.Q[5] [Real]
+// 	42: $pDER_INI_NLS_JAC_1.$RES_SIM_14_0=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[1] [Real]
+// 	41: $pDER_INI_NLS_JAC_1.$RES_SIM_14_1=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[2] [Real]
+// 	40: $pDER_INI_NLS_JAC_1.$RES_SIM_14_2=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[3] [Real]
+// 	39: $pDER_INI_NLS_JAC_1.$RES_SIM_14_3=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[4] [Real]
+// 	38: $pDER_INI_NLS_JAC_1.$RES_SIM_14_4=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[5] [Real]
+// 	37: $pDER_INI_NLS_JAC_1.$RES_SIM_8_0=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_INI_NLS_JAC_1.plant.T[2] + $SEED_INI_NLS_JAC_1.plant.Q[1] [Real]
+// 	36: $pDER_INI_NLS_JAC_1.$RES_SIM_8_1=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[2] - $SEED_INI_NLS_JAC_1.plant.T[3]) + $SEED_INI_NLS_JAC_1.plant.Q[2] [Real]
+// 	35: $pDER_INI_NLS_JAC_1.$RES_SIM_8_2=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[3] - $SEED_INI_NLS_JAC_1.plant.T[4]) + $SEED_INI_NLS_JAC_1.plant.Q[3] [Real]
+// 	34: $pDER_INI_NLS_JAC_1.$RES_SIM_8_3=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[4] - $SEED_INI_NLS_JAC_1.plant.T[5]) + $SEED_INI_NLS_JAC_1.plant.Q[4] [Real]
+// 	33: $pDER_INI_NLS_JAC_1.$RES_SIM_8_4=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[5] - $SEED_INI_NLS_JAC_1.plant.T[6]) + $SEED_INI_NLS_JAC_1.plant.Q[5] [Real]
+// 	32: $pDER_INI_NLS_JAC_1.$RES_BND_20=$SEED_INI_NLS_JAC_1.plant.T[6] - $SEED_INI_NLS_JAC_1.plant.TIT [Real]
+// 	31: $pDER_INI_NLS_JAC_1.$RES_SIM_6=$SEED_INI_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_INI_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 [Real]
+// 	30: $pDER_INI_NLS_JAC_1.$RES_BND_22=$SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP [Real]
+// 	29: $pDER_INI_NLS_JAC_1.$RES_SIM_7=($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w [Real]
+// 	28: $pDER_INI_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
 //
 //
 // 2:  (SES_RESIZABLE_ASSIGN)  call index: 0
@@ -761,40 +869,73 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // initialEquations_lambda0: (14)
 // ========================================
-// 46: plant.w=1.0 [Real]
-// 45: plant.wfg=1.0 [Real]
-// 44: alias of 26
-// 43: alias of 25
-// 42:  (SES_RESIZABLE_ASSIGN)  call index: 1
+// 102: plant.w=1.0 [Real]
+// 101: plant.wfg=1.0 [Real]
+// 100: alias of 58
+// 99: alias of 57
+// 98:  (SES_RESIZABLE_ASSIGN)  call index: 1
 //
-// 41:  (NONLINEAR) index:1 jacobian: true
-// crefs: plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6]
-// 	35: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	36: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
-// 	37: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 97:  (LINEAR) index:0 jacobian: true
+// 	variables:
+// index:15: plant.Tfg[2] (no alias)  initial: 	no arrCref index:(16) []
+// index:16: plant.Tfg[3] (no alias)  initial: 	no arrCref index:(17) []
+// index:17: plant.Tfg[4] (no alias)  initial: 	no arrCref index:(18) []
+// index:18: plant.Tfg[5] (no alias)  initial: 	no arrCref index:(19) []
+// index:19: plant.Tfg[6] (no alias)  initial: 	no arrCref index:(20) []
+// index:25: plant.Q[1] (no alias)  initial: 	arrCref:plant.Q index:(26) []
+// index:26: plant.Q[2] (no alias)  initial: 	no arrCref index:(27) []
+// index:27: plant.Q[3] (no alias)  initial: 	no arrCref index:(28) []
+// index:28: plant.Q[4] (no alias)  initial: 	no arrCref index:(29) []
+// index:29: plant.Q[5] (no alias)  initial: 	no arrCref index:(30) []
+// index:3: plant.T[2] (no alias)  initial: 	no arrCref index:(4) []
+// index:4: plant.T[3] (no alias)  initial: 	no arrCref index:(5) []
+// index:5: plant.T[4] (no alias)  initial: 	no arrCref index:(6) []
+// index:6: plant.T[5] (no alias)  initial: 	no arrCref index:(7) []
+// index:7: plant.T[6] (no alias)  initial: 	no arrCref index:(8) []
+// 	b-vector:
+// 	67: (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1] (RESIDUAL)
+// 	68: (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2] (RESIDUAL)
+// 	69: (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * plant.G[3] - plant.Q[3] (RESIDUAL)
+// 	70: (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * plant.G[4] - plant.Q[4] (RESIDUAL)
+// 	71: (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * plant.G[5] - plant.Q[5] (RESIDUAL)
+// 	72: plant.cp * plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) - plant.Q[1] (RESIDUAL)
+// 	73: plant.cp * plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) - plant.Q[2] (RESIDUAL)
+// 	74: plant.cp * plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) - plant.Q[3] (RESIDUAL)
+// 	75: plant.cp * plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) - plant.Q[4] (RESIDUAL)
+// 	76: plant.cp * plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.Q[5] (RESIDUAL)
+// 	77: plant.cp * plant.w * (plant.T[1] - plant.T[2]) + plant.Q[1] (RESIDUAL)
+// 	78: plant.cp * plant.w * (plant.T[2] - plant.T[3]) + plant.Q[2] (RESIDUAL)
+// 	79: plant.cp * plant.w * (plant.T[3] - plant.T[4]) + plant.Q[3] (RESIDUAL)
+// 	80: plant.cp * plant.w * (plant.T[4] - plant.T[5]) + plant.Q[4] (RESIDUAL)
+// 	81: plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5] (RESIDUAL)
 // 	Jacobian idx: 1
-// 	40:   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[1 + $i1] + $SEED_INI_0_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
+// 	96: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_0=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[6] + $SEED_INI_0_LS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_INI_0_LS_JAC_1.plant.T[2]) * plant.G[1] - $SEED_INI_0_LS_JAC_1.plant.Q[1] [Real]
+// 	95: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[5] + $SEED_INI_0_LS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[3] + $SEED_INI_0_LS_JAC_1.plant.T[2])) * plant.G[2] - $SEED_INI_0_LS_JAC_1.plant.Q[2] [Real]
+// 	94: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[4] + $SEED_INI_0_LS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[4] + $SEED_INI_0_LS_JAC_1.plant.T[3])) * plant.G[3] - $SEED_INI_0_LS_JAC_1.plant.Q[3] [Real]
+// 	93: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[3] + $SEED_INI_0_LS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[5] + $SEED_INI_0_LS_JAC_1.plant.T[4])) * plant.G[4] - $SEED_INI_0_LS_JAC_1.plant.Q[4] [Real]
+// 	92: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_INI_0_LS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[6] + $SEED_INI_0_LS_JAC_1.plant.T[5])) * plant.G[5] - $SEED_INI_0_LS_JAC_1.plant.Q[5] [Real]
+// 	91: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_0=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[5] - $SEED_INI_0_LS_JAC_1.plant.Tfg[6]) - $SEED_INI_0_LS_JAC_1.plant.Q[1] [Real]
+// 	90: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_1=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[4] - $SEED_INI_0_LS_JAC_1.plant.Tfg[5]) - $SEED_INI_0_LS_JAC_1.plant.Q[2] [Real]
+// 	89: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_2=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[3] - $SEED_INI_0_LS_JAC_1.plant.Tfg[4]) - $SEED_INI_0_LS_JAC_1.plant.Q[3] [Real]
+// 	88: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_3=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[2] - $SEED_INI_0_LS_JAC_1.plant.Tfg[3]) - $SEED_INI_0_LS_JAC_1.plant.Q[4] [Real]
+// 	87: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_4=-($SEED_INI_0_LS_JAC_1.plant.Q[5] + plant.cp * plant.wfg * $SEED_INI_0_LS_JAC_1.plant.Tfg[2]) [Real]
+// 	86: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_0=$SEED_INI_0_LS_JAC_1.plant.Q[1] - plant.cp * plant.w * $SEED_INI_0_LS_JAC_1.plant.T[2] [Real]
+// 	85: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_1=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[2] - $SEED_INI_0_LS_JAC_1.plant.T[3]) + $SEED_INI_0_LS_JAC_1.plant.Q[2] [Real]
+// 	84: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_2=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[3] - $SEED_INI_0_LS_JAC_1.plant.T[4]) + $SEED_INI_0_LS_JAC_1.plant.Q[3] [Real]
+// 	83: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_3=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[4] - $SEED_INI_0_LS_JAC_1.plant.T[5]) + $SEED_INI_0_LS_JAC_1.plant.Q[4] [Real]
+// 	82: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_4=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[5] - $SEED_INI_0_LS_JAC_1.plant.T[6]) + $SEED_INI_0_LS_JAC_1.plant.Q[5] [Real]
 //
-// 	39:   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	38:   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[$i1] - $SEED_INI_0_LS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
+// 	simJac:
 //
 //
-//
-// 34: plant.TIT=plant.T[6] [Real]
-// 33: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
-// 32: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
-// 31: plant.TIP=plant.p[6] [Real]
-// 30: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
-// 29: plant.Ts=plant.Tfg[6] [Real]
-// 28: alias of 2
-// 27: alias of 1
+// 66: plant.TIT=plant.T[6] [Real]
+// 65: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
+// 64: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
+// 63: plant.TIP=plant.p[6] [Real]
+// 62: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
+// 61: plant.Ts=plant.Tfg[6] [Real]
+// 60: alias of 2
+// 59: alias of 1
 //
 // removedInitialEquations:
 // ========================================
@@ -813,7 +954,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // parameterEquations:
 // ========================================
-// 76: plant.Gtot=plant.NTU [Real]
+// 164: plant.Gtot=plant.NTU [Real]
 //
 // removedEquations:
 // ========================================
@@ -836,67 +977,78 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	20:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	19:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[1 + $i1] + $SEED_INI_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_INI_NLS_JAC_1.plant.G[$i1] - $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	18:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[$i1];
-//   end for;
-//
-// 	17:   for $i1 in 1:5 loop
-//     $pDER_INI_NLS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[$i1] - $SEED_INI_NLS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	16: $pDER_INI_NLS_JAC_1.$RES_BND_20=$SEED_INI_NLS_JAC_1.plant.T[6] - $SEED_INI_NLS_JAC_1.plant.TIT [Real]
-// 	15: $pDER_INI_NLS_JAC_1.$RES_SIM_6=$SEED_INI_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_INI_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 [Real]
-// 	14: $pDER_INI_NLS_JAC_1.$RES_BND_22=$SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP [Real]
-// 	13: $pDER_INI_NLS_JAC_1.$RES_SIM_7=($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w [Real]
-// 	12: $pDER_INI_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
+// 	52: $pDER_INI_NLS_JAC_1.$RES_SIM_10_0=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - $SEED_INI_NLS_JAC_1.plant.Q[1] [Real]
+// 	51: $pDER_INI_NLS_JAC_1.$RES_SIM_10_1=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[4] - $SEED_INI_NLS_JAC_1.plant.Tfg[5]) - $SEED_INI_NLS_JAC_1.plant.Q[2] [Real]
+// 	50: $pDER_INI_NLS_JAC_1.$RES_SIM_10_2=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[3] - $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - $SEED_INI_NLS_JAC_1.plant.Q[3] [Real]
+// 	49: $pDER_INI_NLS_JAC_1.$RES_SIM_10_3=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_INI_NLS_JAC_1.plant.Tfg[2] - $SEED_INI_NLS_JAC_1.plant.Tfg[3]) - $SEED_INI_NLS_JAC_1.plant.Q[4] [Real]
+// 	48: $pDER_INI_NLS_JAC_1.$RES_SIM_10_4=plant.cp * $SEED_INI_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_INI_NLS_JAC_1.plant.Tfg[2] - $SEED_INI_NLS_JAC_1.plant.Q[5] [Real]
+// 	47: $pDER_INI_NLS_JAC_1.$RES_SIM_12_0=(0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - 0.5 * $SEED_INI_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_INI_NLS_JAC_1.plant.G[1] - $SEED_INI_NLS_JAC_1.plant.Q[1] [Real]
+// 	46: $pDER_INI_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[5] + $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[3] + $SEED_INI_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_INI_NLS_JAC_1.plant.G[2] - $SEED_INI_NLS_JAC_1.plant.Q[2] [Real]
+// 	45: $pDER_INI_NLS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[4] + $SEED_INI_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[4] + $SEED_INI_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_INI_NLS_JAC_1.plant.G[3] - $SEED_INI_NLS_JAC_1.plant.Q[3] [Real]
+// 	44: $pDER_INI_NLS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[3] + $SEED_INI_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[5] + $SEED_INI_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_INI_NLS_JAC_1.plant.G[4] - $SEED_INI_NLS_JAC_1.plant.Q[4] [Real]
+// 	43: $pDER_INI_NLS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[6] + $SEED_INI_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_INI_NLS_JAC_1.plant.G[5] - $SEED_INI_NLS_JAC_1.plant.Q[5] [Real]
+// 	42: $pDER_INI_NLS_JAC_1.$RES_SIM_14_0=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[1] [Real]
+// 	41: $pDER_INI_NLS_JAC_1.$RES_SIM_14_1=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[2] [Real]
+// 	40: $pDER_INI_NLS_JAC_1.$RES_SIM_14_2=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[3] [Real]
+// 	39: $pDER_INI_NLS_JAC_1.$RES_SIM_14_3=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[4] [Real]
+// 	38: $pDER_INI_NLS_JAC_1.$RES_SIM_14_4=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_INI_NLS_JAC_1.plant.w - $SEED_INI_NLS_JAC_1.plant.G[5] [Real]
+// 	37: $pDER_INI_NLS_JAC_1.$RES_SIM_8_0=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_INI_NLS_JAC_1.plant.T[2] + $SEED_INI_NLS_JAC_1.plant.Q[1] [Real]
+// 	36: $pDER_INI_NLS_JAC_1.$RES_SIM_8_1=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[2] - $SEED_INI_NLS_JAC_1.plant.T[3]) + $SEED_INI_NLS_JAC_1.plant.Q[2] [Real]
+// 	35: $pDER_INI_NLS_JAC_1.$RES_SIM_8_2=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[3] - $SEED_INI_NLS_JAC_1.plant.T[4]) + $SEED_INI_NLS_JAC_1.plant.Q[3] [Real]
+// 	34: $pDER_INI_NLS_JAC_1.$RES_SIM_8_3=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[4] - $SEED_INI_NLS_JAC_1.plant.T[5]) + $SEED_INI_NLS_JAC_1.plant.Q[4] [Real]
+// 	33: $pDER_INI_NLS_JAC_1.$RES_SIM_8_4=plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_INI_NLS_JAC_1.plant.T[5] - $SEED_INI_NLS_JAC_1.plant.T[6]) + $SEED_INI_NLS_JAC_1.plant.Q[5] [Real]
+// 	32: $pDER_INI_NLS_JAC_1.$RES_BND_20=$SEED_INI_NLS_JAC_1.plant.T[6] - $SEED_INI_NLS_JAC_1.plant.TIT [Real]
+// 	31: $pDER_INI_NLS_JAC_1.$RES_SIM_6=$SEED_INI_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_INI_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_INI_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 [Real]
+// 	30: $pDER_INI_NLS_JAC_1.$RES_BND_22=$SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP [Real]
+// 	29: $pDER_INI_NLS_JAC_1.$RES_SIM_7=($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w [Real]
+// 	28: $pDER_INI_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
 //
 // 	Jacobian idx: 1
-// 	40:   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[1 + $i1] + $SEED_INI_0_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	39:   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	38:   for $i1 in 1:5 loop
-//     $pDER_INI_0_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[$i1] - $SEED_INI_0_LS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
-//   end for;
-//
+// 	96: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_0=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[6] + $SEED_INI_0_LS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_INI_0_LS_JAC_1.plant.T[2]) * plant.G[1] - $SEED_INI_0_LS_JAC_1.plant.Q[1] [Real]
+// 	95: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[5] + $SEED_INI_0_LS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[3] + $SEED_INI_0_LS_JAC_1.plant.T[2])) * plant.G[2] - $SEED_INI_0_LS_JAC_1.plant.Q[2] [Real]
+// 	94: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[4] + $SEED_INI_0_LS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[4] + $SEED_INI_0_LS_JAC_1.plant.T[3])) * plant.G[3] - $SEED_INI_0_LS_JAC_1.plant.Q[3] [Real]
+// 	93: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[3] + $SEED_INI_0_LS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[5] + $SEED_INI_0_LS_JAC_1.plant.T[4])) * plant.G[4] - $SEED_INI_0_LS_JAC_1.plant.Q[4] [Real]
+// 	92: $pDER_INI_0_LS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_INI_0_LS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[6] + $SEED_INI_0_LS_JAC_1.plant.T[5])) * plant.G[5] - $SEED_INI_0_LS_JAC_1.plant.Q[5] [Real]
+// 	91: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_0=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[5] - $SEED_INI_0_LS_JAC_1.plant.Tfg[6]) - $SEED_INI_0_LS_JAC_1.plant.Q[1] [Real]
+// 	90: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_1=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[4] - $SEED_INI_0_LS_JAC_1.plant.Tfg[5]) - $SEED_INI_0_LS_JAC_1.plant.Q[2] [Real]
+// 	89: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_2=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[3] - $SEED_INI_0_LS_JAC_1.plant.Tfg[4]) - $SEED_INI_0_LS_JAC_1.plant.Q[3] [Real]
+// 	88: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_3=plant.cp * plant.wfg * ($SEED_INI_0_LS_JAC_1.plant.Tfg[2] - $SEED_INI_0_LS_JAC_1.plant.Tfg[3]) - $SEED_INI_0_LS_JAC_1.plant.Q[4] [Real]
+// 	87: $pDER_INI_0_LS_JAC_1.$RES_SIM_10_4=-($SEED_INI_0_LS_JAC_1.plant.Q[5] + plant.cp * plant.wfg * $SEED_INI_0_LS_JAC_1.plant.Tfg[2]) [Real]
+// 	86: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_0=$SEED_INI_0_LS_JAC_1.plant.Q[1] - plant.cp * plant.w * $SEED_INI_0_LS_JAC_1.plant.T[2] [Real]
+// 	85: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_1=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[2] - $SEED_INI_0_LS_JAC_1.plant.T[3]) + $SEED_INI_0_LS_JAC_1.plant.Q[2] [Real]
+// 	84: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_2=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[3] - $SEED_INI_0_LS_JAC_1.plant.T[4]) + $SEED_INI_0_LS_JAC_1.plant.Q[3] [Real]
+// 	83: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_3=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[4] - $SEED_INI_0_LS_JAC_1.plant.T[5]) + $SEED_INI_0_LS_JAC_1.plant.Q[4] [Real]
+// 	82: $pDER_INI_0_LS_JAC_1.$RES_SIM_8_4=plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[5] - $SEED_INI_0_LS_JAC_1.plant.T[6]) + $SEED_INI_0_LS_JAC_1.plant.Q[5] [Real]
 //
 // 	Jacobian idx: 2
-// 	72: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
-// 	71: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
-// 	70:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_NLS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_NLS_JAC_1.plant.G[$i1] - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	69:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_NLS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	68: $pDER_ALG_NLS_JAC_1.$RES_BND_20=$SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT [Real]
-// 	67: $pDER_ALG_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
-// 	66: $pDER_ALG_NLS_JAC_1.$RES_SIM_7=($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w [Real]
-// 	65: $pDER_ALG_NLS_JAC_1.$RES_BND_22=$SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP [Real]
-// 	64: $pDER_ALG_NLS_JAC_1.$RES_SIM_6=$SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.P [Real]
-// 	63: $pDER_ALG_NLS_JAC_1.$RES_SIM_5=-$SEED_ALG_NLS_JAC_1.plant.P [Real]
-// 	62:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[$i1] - $SEED_ALG_NLS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_NLS_JAC_1.plant.Q[$i1];
-//   end for;
-//
-// 	61:   for $i1 in 1:5 loop
-//     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
-//   end for;
-//
+// 	160: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
+// 	159: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
+// 	158: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_0=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[6] + $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - 0.5 * $SEED_ALG_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $SEED_ALG_NLS_JAC_1.plant.G[1] - $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	157: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] + $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[3] + $SEED_ALG_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $SEED_ALG_NLS_JAC_1.plant.G[2] - $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	156: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_2=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] + $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[4] + $SEED_ALG_NLS_JAC_1.plant.T[3])) * plant.G[3] + (0.5 * (plant.Tfg[4] + plant.Tfg[3]) - 0.5 * (plant.T[4] + plant.T[3])) * $SEED_ALG_NLS_JAC_1.plant.G[3] - $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	155: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_3=(0.5 * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] + $SEED_ALG_NLS_JAC_1.plant.Tfg[2]) - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[5] + $SEED_ALG_NLS_JAC_1.plant.T[4])) * plant.G[4] + (0.5 * (plant.Tfg[3] + plant.Tfg[2]) - 0.5 * (plant.T[5] + plant.T[4])) * $SEED_ALG_NLS_JAC_1.plant.G[4] - $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	154: $pDER_ALG_NLS_JAC_1.$RES_SIM_12_4=(0.5 * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - 0.5 * ($SEED_ALG_NLS_JAC_1.plant.T[6] + $SEED_ALG_NLS_JAC_1.plant.T[5])) * plant.G[5] + (0.5 * (plant.Tfg[2] + plant.Tfg[1]) - 0.5 * (plant.T[6] + plant.T[5])) * $SEED_ALG_NLS_JAC_1.plant.G[5] - $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	153: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_0=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[5] - plant.Tfg[6]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[5] - $SEED_ALG_NLS_JAC_1.plant.Tfg[6]) - $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	152: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_1=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[4] - plant.Tfg[5]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[4] - $SEED_ALG_NLS_JAC_1.plant.Tfg[5]) - $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	151: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_2=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[3] - plant.Tfg[4]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[3] - $SEED_ALG_NLS_JAC_1.plant.Tfg[4]) - $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	150: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_3=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[2] - plant.Tfg[3]) + plant.cp * plant.wfg * ($SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Tfg[3]) - $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	149: $pDER_ALG_NLS_JAC_1.$RES_SIM_10_4=plant.cp * $SEED_ALG_NLS_JAC_1.plant.wfg * (plant.Tfg[1] - plant.Tfg[2]) - plant.cp * plant.wfg * $SEED_ALG_NLS_JAC_1.plant.Tfg[2] - $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	148: $pDER_ALG_NLS_JAC_1.$RES_BND_20=$SEED_ALG_NLS_JAC_1.plant.T[6] - $SEED_ALG_NLS_JAC_1.plant.TIT [Real]
+// 	147: $pDER_ALG_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
+// 	146: $pDER_ALG_NLS_JAC_1.$RES_SIM_7=($SEED_ALG_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.w [Real]
+// 	145: $pDER_ALG_NLS_JAC_1.$RES_BND_22=$SEED_ALG_NLS_JAC_1.plant.p[6] - $SEED_ALG_NLS_JAC_1.plant.TIP [Real]
+// 	144: $pDER_ALG_NLS_JAC_1.$RES_SIM_6=$SEED_ALG_NLS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_NLS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_NLS_JAC_1.plant.P [Real]
+// 	143: $pDER_ALG_NLS_JAC_1.$RES_SIM_5=-$SEED_ALG_NLS_JAC_1.plant.P [Real]
+// 	142: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_0=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[1] - plant.T[2]) - plant.cp * plant.w * $SEED_ALG_NLS_JAC_1.plant.T[2] + $SEED_ALG_NLS_JAC_1.plant.Q[1] [Real]
+// 	141: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_1=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[2] - plant.T[3]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[2] - $SEED_ALG_NLS_JAC_1.plant.T[3]) + $SEED_ALG_NLS_JAC_1.plant.Q[2] [Real]
+// 	140: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_2=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[3] - plant.T[4]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[3] - $SEED_ALG_NLS_JAC_1.plant.T[4]) + $SEED_ALG_NLS_JAC_1.plant.Q[3] [Real]
+// 	139: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_3=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[4] - plant.T[5]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[4] - $SEED_ALG_NLS_JAC_1.plant.T[5]) + $SEED_ALG_NLS_JAC_1.plant.Q[4] [Real]
+// 	138: $pDER_ALG_NLS_JAC_1.$RES_SIM_8_4=plant.cp * $SEED_ALG_NLS_JAC_1.plant.w * (plant.T[5] - plant.T[6]) + plant.cp * plant.w * ($SEED_ALG_NLS_JAC_1.plant.T[5] - $SEED_ALG_NLS_JAC_1.plant.T[6]) + $SEED_ALG_NLS_JAC_1.plant.Q[5] [Real]
+// 	137: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_0=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[1] [Real]
+// 	136: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_1=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[2] [Real]
+// 	135: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_2=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[3] [Real]
+// 	134: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_3=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[4] [Real]
+// 	133: $pDER_ALG_NLS_JAC_1.$RES_SIM_14_4=0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[5] [Real]
 //
 // 	Jacobian idx: 3
 //
@@ -985,8 +1137,8 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // 	variableDeclarations: isInitialLambda0 (Boolean, )  ,
 // true
 // ""
-// true
-// true
-// true
-// true
+// false
+// false
+// false
+// false
 // endResult

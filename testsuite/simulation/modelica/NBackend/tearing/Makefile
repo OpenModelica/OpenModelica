@@ -5,6 +5,7 @@ slicedLinearSystem.mos \
 minimalTearing.mos \
 partialForArrayBody.mos \
 partialForArrayBodyLinear.mos \
+partialNestedFor.mos \
 minimalTearing_simple.mos \
 loopSizeOne.mos \
 guruTearing1.mos \

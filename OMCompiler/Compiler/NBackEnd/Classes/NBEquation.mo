@@ -531,14 +531,14 @@ public
         case SINGLE() guard(arrayLength(location) == 1) algorithm
           (start, step, _) := Expression.getIntegerRange(iter.range, true);
           UnorderedMap.add(iter.name, Expression.INTEGER(start + location[1]*step), replacements);
-          createMappedLocationReplacement(iter.map, location[1], replacements);
+          createMappedLocationReplacement(iter.map, location[1] + 1, replacements);
         then ();
 
         case NESTED() guard(arrayLength(location) == arrayLength(iter.ranges)) algorithm
           for i in 1:arrayLength(location) loop
             (start, step, _) := Expression.getIntegerRange(iter.ranges[i], true);
             UnorderedMap.add(iter.names[i], Expression.INTEGER(start + location[i]*step), replacements);
-            createMappedLocationReplacement(iter.maps[i], location[i], replacements);
+            createMappedLocationReplacement(iter.maps[i], location[i] + 1, replacements);
           end for;
         then ();
 
@@ -2957,6 +2957,17 @@ public
       end match;
     end isArrayBodyFor;
 
+    function isSingleBodyFor
+      "a for equation with a single (scalar or array) body equation"
+      input Equation eqn;
+      output Boolean b;
+    algorithm
+      b := match eqn
+        case FOR_EQUATION(body = {_}) then true;
+        else false;
+      end match;
+    end isSingleBodyFor;
+
     function scalarizeElement
       "picks one element of an array valued expression by pushing the subscripts to the operands"
       input Expression exp;
@@ -2988,7 +2999,7 @@ public
     end scalarizeElement;
 
     function forArrayBodyRowResidual
-      "the scalar residual of a single row (zero based index) of a for equation with an array valued body"
+      "the scalar residual of a single row (zero based index) of a for equation with a single (scalar or array) body"
       input Equation eqn;
       input Integer idx;
       output Expression residual;
@@ -3002,11 +3013,11 @@ public
       FOR_EQUATION(iter = iter, body = {body}) := eqn;
       sizes     := list(Dimension.size(dim) for dim in Type.arrayDims(Equation.getType(eqn)));
       n_body    := listLength(Type.arrayDims(Equation.getType(body)));
-      // the location consists of the iterator frames followed by the body dimensions
-      location  := Slice.indexToLocation(idx, sizes);
-      Iterator.createLocationReplacements(iter, listArray(List.firstN(location, listLength(location) - n_body)), replacements);
+      // the rows are row major w.r.t. the body dimensions followed by the iterator frames
+      location  := listReverse(Slice.indexToLocation(idx, sizes));
+      Iterator.createLocationReplacements(iter, listArray(List.lastN(location, listLength(location) - n_body)), replacements);
       residual  := Expression.map(Equation.getResidualExp(body), function Replacements.applySimpleExp(replacements = replacements));
-      residual  := scalarizeElement(residual, list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in List.lastN(location, n_body)));
+      residual  := scalarizeElement(residual, list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in List.firstN(location, n_body)));
       residual  := SimplifyExp.simplifyDump(residual, true, getInstanceName());
     end forArrayBodyRowResidual;
 
