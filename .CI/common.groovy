@@ -1813,8 +1813,24 @@ void coverageReportStage(Map countersByCompiler) {
   // Not iterating the Map itself: its iterator can't be serialized when the
   // pipeline checkpoints at a step inside the loop.
   List compilers = new ArrayList(countersByCompiler.keySet())
-  for (int i = 0; i < compilers.size(); i++) {
-    collectCoverage(compilers[i], countersByCompiler[compilers[i]], i == compilers.size() - 1)
+  try {
+    for (int i = 0; i < compilers.size(); i++) {
+      collectCoverage(compilers[i], countersByCompiler[compilers[i]], i == compilers.size() - 1)
+    }
+  } finally {
+    // Every tracefile the report is rendered from, one per stage, so that
+    // the merge can be redone (or each stage's part inspected) locally with
+    // gcovr --add-tracefile. Compressed: each is tens of MB of JSON. Also
+    // when collecting or rendering failed, which is when they are most
+    // needed.
+    sh label: 'Compress the coverage tracefiles', script: '''#!/bin/bash -e
+    rm -rf coverage-tracefiles-archive && mkdir coverage-tracefiles-archive
+    for f in coverage-tracefiles/*.json; do
+      [ -e "$f" ] || continue
+      gzip -c "$f" > "coverage-tracefiles-archive/$(basename "$f").gz"
+    done
+    '''
+    archiveArtifacts artifacts: 'coverage-tracefiles-archive/*.json.gz', allowEmptyArchive: true
   }
 
   // The browsable HTML, kept per build.
