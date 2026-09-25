@@ -1,0 +1,224 @@
+// name: getDependencyGraph1
+// keywords: def-use, dependency graph, #16931
+// status: correct
+//
+// Tests getDependencyGraph: the uses of a class are the classes it extends,
+// the classes of its components, the classes that declare the constants and
+// components it uses and the candidates of replaceable classes. The hash of a
+// class leaves out its nested classes, comments and whitespace.
+
+writeFile("getDependencyGraph1.mo", "package G
+  constant Real k = 2;
+  package I
+    model Base
+      parameter Real p = k;
+    end Base;
+  end I;
+  partial package PM
+    replaceable function f
+      input Real x;
+      output Real y = x;
+    end f;
+  end PM;
+  package M
+    extends PM;
+    redeclare function extends f
+    algorithm
+      y := 2*x;
+    end f;
+  end M;
+  model Top
+    extends I.Base;
+    replaceable package Medium = PM;
+    Real z = Medium.f(p);
+  end Top;
+  model Use
+    Top t(redeclare package Medium = M);
+  end Use;
+end G;
+");
+loadFile("getDependencyGraph1.mo"); getErrorString();
+stringReplace(getDependencyGraph(G, prettyPrint = true), cd() + "/", ""); getErrorString();
+
+// Only whitespace and comments change in G, and the binding of p in G.I.Base:
+// only the hash of G.I.Base changes.
+writeFile("getDependencyGraph1.mo", "package G  // the package
+  constant Real k=2;
+  package I
+    model Base
+      parameter Real p = 2*k;
+    end Base;
+  end I;
+  partial package PM
+    replaceable function f
+      input Real x;
+      output Real y = x;
+    end f;
+  end PM;
+  package M
+    extends PM;
+    redeclare function extends f
+    algorithm
+      y := 2*x;
+    end f;
+  end M;
+  model Top
+    extends I.Base;
+    replaceable package Medium = PM;
+    Real z = Medium.f(p);
+  end Top;
+  model Use
+    Top t(redeclare package Medium = M);
+  end Use;
+end G;
+");
+clear(); loadFile("getDependencyGraph1.mo"); getErrorString();
+getDependencyGraph(G, fileName = "getDependencyGraph1.json");
+stringReplace(readFile("getDependencyGraph1.json"), cd() + "/", ""); getErrorString();
+
+deleteFile("getDependencyGraph1.mo"); deleteFile("getDependencyGraph1.json");
+
+// Result:
+// true
+// true
+// ""
+// "{
+//   \"scope\": \"G\",
+//   \"classes\": {
+//     \"G\": {
+//       \"restriction\": \"package\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 1,
+//       \"columnStart\": 1,
+//       \"lineEnd\": 29,
+//       \"columnEnd\": 6,
+//       \"hash\": \"34-2486253-689355\",
+//       \"uses\": [
+//
+//       ]
+//     },
+//     \"G.I\": {
+//       \"restriction\": \"package\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 3,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 7,
+//       \"columnEnd\": 8,
+//       \"hash\": \"16-3175168-3273418\",
+//       \"uses\": [
+//
+//       ]
+//     },
+//     \"G.I.Base\": {
+//       \"restriction\": \"model\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 4,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 6,
+//       \"columnEnd\": 13,
+//       \"hash\": \"39-214777-1387442\",
+//       \"uses\": [
+//         \"G\"
+//       ]
+//     },
+//     \"G.M\": {
+//       \"restriction\": \"package\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 14,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 20,
+//       \"columnEnd\": 8,
+//       \"hash\": \"37-2731348-2010133\",
+//       \"uses\": [
+//         \"G.PM\"
+//       ]
+//     },
+//     \"G.M.f\": {
+//       \"restriction\": \"function\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 16,
+//       \"columnStart\": 15,
+//       \"lineEnd\": 19,
+//       \"columnEnd\": 10,
+//       \"hash\": \"42-1584725-1058408\",
+//       \"uses\": [
+//         \"G.PM.f\"
+//       ]
+//     },
+//     \"G.PM\": {
+//       \"restriction\": \"package\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 8,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 13,
+//       \"columnEnd\": 9,
+//       \"hash\": \"38-1268090-745081\",
+//       \"uses\": [
+//
+//       ]
+//     },
+//     \"G.PM.f\": {
+//       \"restriction\": \"function\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 9,
+//       \"columnStart\": 17,
+//       \"lineEnd\": 12,
+//       \"columnEnd\": 10,
+//       \"hash\": \"46-552153-790162\",
+//       \"uses\": [
+//
+//       ]
+//     },
+//     \"G.Top\": {
+//       \"restriction\": \"model\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 21,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 25,
+//       \"columnEnd\": 10,
+//       \"hash\": \"64-3143343-215625\",
+//       \"uses\": [
+//         \"G.I.Base\",
+//         \"G.M.f\",
+//         \"G.PM.f\"
+//       ]
+//     },
+//     \"G.Top.Medium\": {
+//       \"restriction\": \"package\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 23,
+//       \"columnStart\": 17,
+//       \"lineEnd\": 23,
+//       \"columnEnd\": 36,
+//       \"hash\": \"18-123178-3685365\",
+//       \"uses\": [
+//         \"G.PM\"
+//       ]
+//     },
+//     \"G.Use\": {
+//       \"restriction\": \"model\",
+//       \"file\": \"getDependencyGraph1.mo\",
+//       \"lineStart\": 26,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 28,
+//       \"columnEnd\": 10,
+//       \"hash\": \"52-598589-205783\",
+//       \"uses\": [
+//         \"G.M\",
+//         \"G.Top\",
+//         \"G.Top.Medium\"
+//       ]
+//     }
+//   }
+// }"
+// ""
+// true
+// true
+// true
+// ""
+// "getDependencyGraph1.json"
+// "{\"scope\":\"G\", \"classes\":{\"G\":{\"restriction\":\"package\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":1, \"columnStart\":1, \"lineEnd\":29, \"columnEnd\":6, \"hash\":\"34-2486253-689355\", \"uses\":[]}, \"G.I\":{\"restriction\":\"package\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":3, \"columnStart\":3, \"lineEnd\":7, \"columnEnd\":8, \"hash\":\"16-3175168-3273418\", \"uses\":[]}, \"G.I.Base\":{\"restriction\":\"model\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":4, \"columnStart\":5, \"lineEnd\":6, \"columnEnd\":13, \"hash\":\"41-4053044-1493641\", \"uses\":[\"G\"]}, \"G.M\":{\"restriction\":\"package\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":14, \"columnStart\":3, \"lineEnd\":20, \"columnEnd\":8, \"hash\":\"37-2731348-2010133\", \"uses\":[\"G.PM\"]}, \"G.M.f\":{\"restriction\":\"function\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":16, \"columnStart\":15, \"lineEnd\":19, \"columnEnd\":10, \"hash\":\"42-1584725-1058408\", \"uses\":[\"G.PM.f\"]}, \"G.PM\":{\"restriction\":\"package\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":8, \"columnStart\":3, \"lineEnd\":13, \"columnEnd\":9, \"hash\":\"38-1268090-745081\", \"uses\":[]}, \"G.PM.f\":{\"restriction\":\"function\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":9, \"columnStart\":17, \"lineEnd\":12, \"columnEnd\":10, \"hash\":\"46-552153-790162\", \"uses\":[]}, \"G.Top\":{\"restriction\":\"model\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":21, \"columnStart\":3, \"lineEnd\":25, \"columnEnd\":10, \"hash\":\"64-3143343-215625\", \"uses\":[\"G.I.Base\", \"G.M.f\", \"G.PM.f\"]}, \"G.Top.Medium\":{\"restriction\":\"package\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":23, \"columnStart\":17, \"lineEnd\":23, \"columnEnd\":36, \"hash\":\"18-123178-3685365\", \"uses\":[\"G.PM\"]}, \"G.Use\":{\"restriction\":\"model\", \"file\":\"getDependencyGraph1.mo\", \"lineStart\":26, \"columnStart\":3, \"lineEnd\":28, \"columnEnd\":10, \"hash\":\"52-598589-205783\", \"uses\":[\"G.M\", \"G.Top\", \"G.Top.Medium\"]}}}"
+// ""
+// true
+// true
+// endResult

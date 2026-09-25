@@ -353,6 +353,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDefUseChains.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDimension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEquation.mo
