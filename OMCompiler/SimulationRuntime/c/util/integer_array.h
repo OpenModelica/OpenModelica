@@ -48,6 +48,7 @@ extern void integer_array_create(integer_array *dest, modelica_integer *data,
 
 /* Allocation of a vector */
 extern void simple_alloc_1d_integer_array(integer_array* dest, int n);
+extern void integer_array_ensure_size(integer_array *a, int n);
 
 /* Allocation of a matrix */
 extern void simple_alloc_2d_integer_array(integer_array* dest, int r, int c);

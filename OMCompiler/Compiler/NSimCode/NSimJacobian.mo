@@ -789,15 +789,23 @@ public
         Type node_ty;
         ComponentRef rest;
         list<tuple<Integer, Integer>> rest_pairs, node_pairs;
+        list<Dimension> dims;
+        Integer own;
       case ComponentRef.CREF(subscripts = subs, restCref = rest)
         algorithm
           rest_pairs := crefSubDimPairsLeafToRoot(rest);
           // Use the node's own declared type (before applying these subscripts)
           // so record-valued fields also expose their array dimensions.
           node_ty := InstNode.getType(ComponentRef.node(cref));
+          // the type of a record field can have the dimensions of its parents lifted in front
+          dims := Type.arrayDims(node_ty);
+          own := listLength(dims) - listLength(ComponentRef.subscriptsAllFlat(rest));
+          if own >= listLength(subs) and own < listLength(dims) then
+            dims := List.lastN(dims, own);
+          end if;
           // Collect this node's pairs outer-first, then reverse to get inner-first.
           // Append rest_pairs (which are from the outer/restCref direction) after.
-          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, Type.arrayDims(node_ty)));
+          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, dims));
         then
           listAppend(node_pairs, rest_pairs);
       else {};

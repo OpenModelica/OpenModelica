@@ -47,6 +47,7 @@ extern void real_array_create(real_array *dest, modelica_real *data, int ndims, 
 
 /* Allocation of a vector */
 extern void simple_alloc_1d_real_array(real_array *dest, int n);
+extern void real_array_ensure_size(real_array *a, int n);
 
 /* Allocation of a matrix */
 extern void simple_alloc_2d_real_array(real_array *dest, int r, int c);

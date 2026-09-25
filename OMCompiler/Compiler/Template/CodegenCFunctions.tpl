@@ -8912,6 +8912,27 @@ template startArrayScatter(ComponentRef cr, Text type, Text arr, Text &varDecls,
   >>
 end startArrayScatter;
 
+template startArrayEnsureSize(ComponentRef cr)
+ "The start attribute of an array variable might only hold a broadcast value or
+  the values of an inner dimension. Before start values of the whole array are
+  written into it, it has to hold one element per array element."
+::=
+  match getDimensionSizes(crefTypeFull(crefStripSubs(popCref(cr))))
+  case sizes as _::_ then
+    match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+    case var as SIMVAR(__) then
+      let ty = crefShortType(name)
+      match ty
+        case "real"
+        case "integer"
+        case "boolean" then
+          let &nosub = buffer ""
+          '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%sizes ; separator="*"%>);'
+        else ""
+    else ""
+  else ""
+end startArrayEnsureSize;
+
 template startArrayElement(ComponentRef cr, Text type, Text idx)
  "Element `idx`'s start attribute. With --simCodeScalarize the array's elements
   are consecutive VarsData entries, each holding its own."
