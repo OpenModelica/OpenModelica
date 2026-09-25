@@ -79,7 +79,7 @@ pub(super) fn build_sim_model(
     let vi = &mi.varInfo;
     let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
     let vars = &scalarized_vars;
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
+    let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
     let n_states = count(&vars.stateVars) as u32;
     let n_real_alg = real_alg_vars(vars).len() as u32;
@@ -98,11 +98,11 @@ pub(super) fn build_sim_model(
     let dae_eqs: Vec<(metamodelica::Ref<SimCode::SimEqSystem>, u32)> =
         dae_mode.map(|d| dae_residual_equations(d)).unwrap_or_default();
     let dae_res_vars: Vec<&SimCodeVar::SimVar> =
-        dae_mode.map(|d| lst(&d.residualVars).collect()).unwrap_or_default();
+        dae_mode.map(|d| svs(&d.residualVars).collect()).unwrap_or_default();
     let dae_aux_vars: Vec<&SimCodeVar::SimVar> =
-        dae_mode.map(|d| lst(&d.auxiliaryVars).collect()).unwrap_or_default();
+        dae_mode.map(|d| svs(&d.auxiliaryVars).collect()).unwrap_or_default();
     let dae_alg_vars: Vec<&SimCodeVar::SimVar> =
-        dae_mode.map(|d| lst(&d.algebraicVars).collect()).unwrap_or_default();
+        dae_mode.map(|d| svs(&d.algebraicVars).collect()).unwrap_or_default();
     if dae_mode.is_some() && dae_res_vars.len() != (n_states as usize + dae_alg_vars.len()) {
         return Err("CodegenWasmJit: DAE mode residual count does not match states + algebraic unknowns");
     }
@@ -123,7 +123,7 @@ pub(super) fn build_sim_model(
     // parameters followed by the `Ns * nStates` `$Sensitivities.<par>.<state>`
     // signals (C's `rSen` init-XML category, split by `numSensitivityParameters`).
     let n_sens_par = vi.numSensitivityParameters.max(0) as usize;
-    let sens_vars: Vec<&SimCodeVar::SimVar> = lst(&mi.vars.sensitivityVars).collect();
+    let sens_vars: Vec<&SimCodeVar::SimVar> = svs(&mi.vars.sensitivityVars).collect();
     let n_sens = sens_vars.len().saturating_sub(n_sens_par) as u32;
     let clocks = collect_clocks(&sim_code.clockedPartitions)?;
     let n_sub_clocks: u32 = clocks.iter().map(|c| c.meta.sub.len() as u32).sum();
@@ -479,11 +479,11 @@ pub(super) fn build_sim_model(
     // The integrator's per-unknown atol and the Jacobian's FD step floor: the states,
     // then in DAE mode the algebraic unknowns (C's `getAlgebraicDAEVarNominals`).
     let mut nominal_defaults: Vec<(u32, f64)> = Vec::new();
-    for (svs, base) in [
-        (lst(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(), layout.state_nom_off),
+    for (list, base) in [
+        (svs(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(), layout.state_nom_off),
         (dae_alg_vars.clone(), layout.dae_alg_nom_off),
     ] {
-        for (i, sv) in svs.iter().enumerate() {
+        for (i, sv) in list.iter().enumerate() {
             let off = base + (i as u32) * 8;
             nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
             if let Ok(k) = sim_cref_key(&sv.name) {
@@ -737,7 +737,7 @@ pub(super) fn build_sim_model(
     let all_reals: Vec<&SimCodeVar::SimVar> = states
         .iter()
         .copied()
-        .chain(lst(&vars.derivativeVars))
+        .chain(svs(&vars.derivativeVars))
         .chain(real_alg_vars(vars))
         .collect();
     bodies.push(build_init_start_values_fn(&all_reals, &layout, &var_map, &by_name, &mut literals)?);
@@ -906,7 +906,7 @@ pub(super) fn build_sim_model(
         let reals: Vec<&SimCodeVar::SimVar> = states
             .iter()
             .copied()
-            .chain(lst(&vars.derivativeVars))
+            .chain(svs(&vars.derivativeVars))
             .chain(real_alg_vars(vars))
             .collect();
         optimization::build_opt_info(sim_code, vars, &reals, jacs, &var_map)?
@@ -985,13 +985,13 @@ pub(super) fn build_sim_model(
     // slot, in `listReverse(extObjInfo.vars)` order as CodegenC's
     // `callExternalObjectDestructors` does — the causalized construction order,
     // a different permutation from the `extObjVars` slot order. ---
-    let extobj_vars: Vec<&SimCodeVar::SimVar> = lst(&vars.extObjVars).collect();
+    let extobj_vars: Vec<&SimCodeVar::SimVar> = svs(&vars.extObjVars).collect();
     let extobj_slot: HashMap<String, u32> = extobj_vars
         .iter()
         .enumerate()
         .map(|(i, sv)| Ok((sim_cref_key(&sv.name)?, layout.eobj_off + (i as u32) * 4)))
         .collect::<Result<_>>()?;
-    let mut destruct_order: Vec<&SimCodeVar::SimVar> = lst(&sim_code.extObjInfo.vars).collect();
+    let mut destruct_order: Vec<&SimCodeVar::SimVar> = svs(&sim_code.extObjInfo.vars).collect();
     if destruct_order.len() != extobj_vars.len()
         || destruct_order.iter().any(|sv| {
             sim_cref_key(&sv.name).is_ok_and(|k| !extobj_slot.contains_key(&k))
@@ -1230,7 +1230,7 @@ pub(super) fn build_sim_model(
             let reals: Vec<&SimCodeVar::SimVar> = states
                 .iter()
                 .copied()
-                .chain(lst(&vars.derivativeVars))
+                .chain(svs(&vars.derivativeVars))
                 .chain(real_alg_vars(vars))
                 .collect();
             optimization::attr_defaults(&reals, &layout, &mut attr_targets)

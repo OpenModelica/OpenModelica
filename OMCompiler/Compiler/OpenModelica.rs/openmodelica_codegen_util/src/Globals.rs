@@ -21,6 +21,6 @@ thread_local! {
     // with that value reference. Live only while one modelDescription.xml is
     // being written; source: SimCodeCodegenUtil.cacheFMI3VariableAliases.
     pub static fmi3VariableAliasCache: RefCell<
-        Option<metamodelica::Array<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>,
+        Option<metamodelica::Array<metamodelica::List<metamodelica::Ref<openmodelica_simcode_types::SimCodeVar::SimVar>>>>,
     > = const { RefCell::new(None) };
 }

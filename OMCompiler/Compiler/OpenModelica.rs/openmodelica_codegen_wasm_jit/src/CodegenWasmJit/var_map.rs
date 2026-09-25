@@ -369,8 +369,8 @@ pub(super) fn scalarize_sim_vars(vars: &SimCodeVar::SimVars) -> Result<SimCodeVa
     Ok(out)
 }
 
-fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar::SimVar>> {
-    let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
+fn scalarize_var_list(list: &List<metamodelica::Ref<SimCodeVar::SimVar>>) -> Result<List<metamodelica::Ref<SimCodeVar::SimVar>>> {
+    let mut out: Vec<metamodelica::Ref<SimCodeVar::SimVar>> = Vec::new();
     for sv in &**list {
         let dims = array_dims_of(&sv.numArrayElement)?;
         if dims.is_empty() {
@@ -378,7 +378,7 @@ fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar
             continue;
         }
         for idx in row_major_indices(&dims) {
-            let mut e = sv.clone();
+            let mut e = (**sv).clone();
             e.name = cref_with_indices(&sv.name, &idx);
             e.numArrayElement = metamodelica::nil();
             e.arrayCref = None;
@@ -387,10 +387,10 @@ fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar
             e.nominalValue = index_attr(&sv.nominalValue, &idx);
             e.minValue = index_attr(&sv.minValue, &idx);
             e.maxValue = index_attr(&sv.maxValue, &idx);
-            out.push(e);
+            out.push(metamodelica::Ref::new(e));
         }
     }
-    Ok(out.into_iter().collect::<List<SimCodeVar::SimVar>>())
+    Ok(out.into_iter().collect::<List<metamodelica::Ref<SimCodeVar::SimVar>>>())
 }
 
 /// Parse `numArrayElement` (dimension sizes) to integers; empty for a scalar.
@@ -626,8 +626,8 @@ pub(super) fn build_var_map(
         enumeration: None,
     });
 
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
-    let ders: Vec<&SimCodeVar::SimVar> = lst(&vars.derivativeVars).collect();
+    let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
+    let ders: Vec<&SimCodeVar::SimVar> = svs(&vars.derivativeVars).collect();
 
     // Push a primary (non-alias) variable: register its slot (equations reference
     // even protected ones) and list it as a result signal carrying why a run would

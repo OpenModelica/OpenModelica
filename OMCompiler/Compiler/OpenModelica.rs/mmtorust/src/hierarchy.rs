@@ -2226,7 +2226,7 @@ fn collect_type_graph(
 /// Large records copied far more often than they are updated. Putting them
 /// behind `Ref` makes a copy a refcount bump; an update copies only when the
 /// value is shared (`Arc::make_mut`).
-const SHARED_RECORDS: &[&str] = &["BackendDAE.Var"];
+const SHARED_RECORDS: &[&str] = &["BackendDAE.Var", "SimCodeVar.SimVar"];
 
 /// Detect which named types form size-recursive cycles (directly or mutually).
 /// Populates `hier.recursive_types` with the fully-qualified names of all such types.

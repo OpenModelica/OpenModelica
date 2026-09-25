@@ -129,7 +129,7 @@ pub(super) fn build_sim_meta(
 pub(super) fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVars> {
     let named = |sv: &SimCodeVar::SimVar| cref_display(&sv.name);
     let mut reals = Vec::new();
-    for sv in lst(&vars.stateVars).chain(lst(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
+    for sv in svs(&vars.stateVars).chain(svs(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
         reals.push(named(sv)?);
     }
     let mut ints = Vec::new();

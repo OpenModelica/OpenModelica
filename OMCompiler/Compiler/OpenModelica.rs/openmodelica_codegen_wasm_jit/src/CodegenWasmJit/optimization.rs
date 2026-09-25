@@ -13,7 +13,7 @@ use openmodelica_backend_types::BackendDAE;
 use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::{OptInfo, OptJac, OptTerm};
 
-use crate::CodegenWasmJit::{count, lst};
+use crate::CodegenWasmJit::{count, lst, svs};
 
 /// C's `BackendDAE.optimizationMayerTermName` / `optimizationLagrangeTermName`.
 const MAYER_TERM: &str = "$OMC$objectMayerTerm";
@@ -31,8 +31,8 @@ pub(crate) fn is_optimization(sim_code: &SimCode::SimCode) -> bool {
 pub(crate) fn constraint_vars(
     vars: &SimCodeVar::SimVars,
 ) -> Vec<&SimCodeVar::SimVar> {
-    lst(&vars.realOptimizeConstraintsVars)
-        .chain(lst(&vars.realOptimizeFinalConstraintsVars))
+    svs(&vars.realOptimizeConstraintsVars)
+        .chain(svs(&vars.realOptimizeFinalConstraintsVars))
         .collect()
 }
 
@@ -183,7 +183,7 @@ fn term_row(sim_code: &SimCode::SimCode, matrix: &str, term: &str) -> Option<u32
         .find(|v| {
             crate::CodegenWasmJit::sim_cref_key(&v.name).is_ok_and(|k| k.starts_with(&prefix))
         })
-        .and_then(crate::CodegenWasmJit::jac_result_row)
+        .and_then(|v| crate::CodegenWasmJit::jac_result_row(v))
         .map(|r| r as u32)
 }
 
