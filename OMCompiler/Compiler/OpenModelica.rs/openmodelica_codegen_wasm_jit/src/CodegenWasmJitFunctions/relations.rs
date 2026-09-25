@@ -340,6 +340,16 @@ pub(super) fn compile_call(
         return closures::compile_fnptr_call(ctx, name, args);
     }
     let mangled = mangle(path)?;
+    if let Some(outs) = compile_flat_call(ctx, &mangled, args)? {
+        let results = ctx.by_name[&mangled].sig.results.clone();
+        for (vals, r) in outs.iter().zip(&results) {
+            match flat_fields(r) {
+                Some(fields) => box_flat(ctx, &fields.clone(), vals)?,
+                None => ctx.emit(we::Instruction::LocalGet(vals[0])),
+            }
+        }
+        return Ok(results);
+    }
     // A call to another generated function. String and array arguments are
     // passed as owned (+1) references, which the callee releases at its scope
     // exit; record arguments are borrowed (see `compile_call_args`).
@@ -435,7 +445,7 @@ pub(super) fn release_record_temps(ctx: &mut FnCtx, temps: &[u32]) -> Result<()>
 
 /// The wasm local holding `e` when it is a plain reference to a record local of
 /// a function body (sim-mode crefs may name model variables instead).
-fn record_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<u32> {
+pub(super) fn record_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<u32> {
     if ctx.sim.is_some() {
         return None;
     }

@@ -132,6 +132,11 @@ pub(crate) use externals::*;
 mod records;
 pub(crate) use records::*;
 
+// Records held as one wasm local per field, and the `$flat` function variants.
+#[path = "CodegenWasmJitFunctions/flat.rs"]
+mod flat;
+pub(crate) use flat::*;
+
 // Codegen contexts and descriptors: `FnCtx`, `SimCtx`, `Literals`,
 // `ProfPlan`, `NlsJob`, attribute targets, array/scatter/const groups, slots.
 #[path = "CodegenWasmJitFunctions/ctx.rs"]

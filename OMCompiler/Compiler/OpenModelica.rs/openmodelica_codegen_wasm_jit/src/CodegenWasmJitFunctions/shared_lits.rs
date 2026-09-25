@@ -109,6 +109,9 @@ pub(crate) fn build_init_fn(
         sim: None,
         dt_local_cons: false,
         dt_fallback: None,
+        flat: HashMap::new(),
+        flat_outs: Vec::new(),
+        flat_results: false,
     };
     for (i, e) in slots.iter().enumerate() {
         let Some(e) = e else { continue };

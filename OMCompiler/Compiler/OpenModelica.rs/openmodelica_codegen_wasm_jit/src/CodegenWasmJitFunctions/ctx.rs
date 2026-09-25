@@ -93,6 +93,18 @@ pub(crate) struct FnCtx<'a> {
     /// [`ctrl_depth`](Self::ctrl_depth) of the block a failed solve branches out of,
     /// to hand the component to the strict set instead of reporting it unsolved.
     pub(super) dt_fallback: Option<u32>,
+    /// Record variables held as one wasm local per field (see `flat`).
+    pub(super) flat: HashMap<String, FlatVar>,
+    /// Per output: the name of its [`FlatVar`], if it is one.
+    pub(super) flat_outs: Vec<Option<String>>,
+    /// Flat outputs are returned field by field (a `$flat` variant), not boxed.
+    pub(super) flat_results: bool,
+}
+
+#[derive(Clone)]
+pub(crate) struct FlatVar {
+    pub(super) fields: FlatFields,
+    pub(super) locals: Vec<u32>,
 }
 
 /// Resolver for model variables when lowering simulation equations. Component
@@ -562,6 +574,9 @@ impl<'a> FnCtx<'a> {
             sim: Some(sim),
             dt_local_cons: false,
             dt_fallback: None,
+            flat: HashMap::new(),
+            flat_outs: Vec::new(),
+            flat_results: false,
         }
     }
 

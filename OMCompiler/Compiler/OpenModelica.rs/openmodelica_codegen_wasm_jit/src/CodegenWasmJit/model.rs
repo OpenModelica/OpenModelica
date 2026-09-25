@@ -389,7 +389,12 @@ pub(super) fn build_sim_model(
         let (name, sig) = function_signature(f)?;
         by_name.insert(name, FnInfo { index: import_base + id as u32, sig });
     }
-    let eq_base = import_base + model_fns.len() as u32;
+    let flat_base = import_base + model_fns.len() as u32;
+    let flats = crate::CodegenWasmJitFunctions::flat_variants(&model_fns)?;
+    for (k, (_, key, sig)) in flats.iter().enumerate() {
+        by_name.insert(key.clone(), FnInfo { index: flat_base + k as u32, sig: sig.clone() });
+    }
+    let eq_base = flat_base + flats.len() as u32;
     let eqfn = EqFnIdx {
         parameters: eq_base,
         initial: eq_base + 1,
@@ -558,6 +563,14 @@ pub(super) fn build_sim_model(
         );
         model_fn_type.push(ti);
     }
+    for (_, _, sig) in &flats {
+        let ti = types.len();
+        types.ty().function(
+            sig.params.iter().map(|s| s.wty().val()),
+            sig.results.iter().map(|s| s.wty().val()),
+        );
+        model_fn_type.push(ti);
+    }
     // Equation function type: (i32) -> ().
     let eqfn_type = types.len();
     types.ty().function([we::ValType::I32], []);
@@ -643,10 +656,25 @@ pub(super) fn build_sim_model(
     crate::CodegenWasmJitFunctions::set_assert_throw_tag(host_free.then_some(0));
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
-    for f in &model_fns {
+    let mut flat_bodies = Vec::with_capacity(flats.len());
+    for (id, f) in model_fns.iter().enumerate() {
         metamodelica::cancel::bail_if_cancelled()?;
-        bodies.push(compile_function(f, &by_name, &mut literals)?);
+        match flats.iter().position(|(i, ..)| *i == id) {
+            Some(k) => {
+                let (boxed, flat) = crate::CodegenWasmJitFunctions::compile_function_variants(
+                    f,
+                    &by_name,
+                    &mut literals,
+                    import_base + id as u32,
+                    flat_base + k as u32,
+                )?;
+                bodies.push(boxed);
+                flat_bodies.push(flat);
+            }
+            None => bodies.push(compile_function(f, &by_name, &mut literals)?),
+        }
     }
+    bodies.extend(flat_bodies);
     // C's `setAllParamsToStart`: every parameter from its binding, in declaration
     // order (the backend sorts dependent parameters so a binding only references
     // earlier ones). `parameterEquations` belongs to `functionUpdateBoundParameters`
@@ -1624,6 +1652,9 @@ pub(super) fn build_sim_model(
     }
     for (id, f) in model_fns.iter().enumerate() {
         names.push((import_base + id as u32, function_signature(f)?.0));
+    }
+    for (k, (_, key, _)) in flats.iter().enumerate() {
+        names.push((flat_base + k as u32, key.clone()));
     }
     for (name, idx) in [
         ("functionParameters", eqfn.parameters),

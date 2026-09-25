@@ -40,7 +40,7 @@ pub(super) fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()>
         }
         S::STMT_RETURN { .. } => {
             release_heap_locals(ctx)?;
-            push_outputs(ctx);
+            push_outputs(ctx)?;
             ctx.emit(we::Instruction::Return);
             Ok(())
         }

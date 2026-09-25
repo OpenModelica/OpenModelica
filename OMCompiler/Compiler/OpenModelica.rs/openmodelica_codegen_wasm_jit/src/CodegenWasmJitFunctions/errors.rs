@@ -131,7 +131,7 @@ pub(super) fn emit_assert(
     emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(we::Instruction::Return);
     ctx.emit(we::Instruction::End);
     report_args(ctx)?;
@@ -162,7 +162,7 @@ pub(super) fn emit_nls_recoverable_return(ctx: &mut FnCtx) -> Result<()> {
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(we::Instruction::Return);
     ctx.emit(we::Instruction::End);
     Ok(())
@@ -194,7 +194,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
         report_args(ctx)?;
         ctx.emit(I::Call(rt_index("rt_nls_assert_failed")?));
         release_heap_locals(ctx)?;
-        push_outputs(ctx);
+        push_outputs(ctx)?;
         ctx.emit(I::Return);
         ctx.emit(I::End);
         report_args(ctx)?;
@@ -213,7 +213,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     ctx.emit(I::I32Eq);
     ctx.emit(I::If(we::BlockType::Empty));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(I::Return);
     ctx.emit(I::End);
     // 2 is C's `noThrowAsserts`: fall through and use the out-of-domain value.
