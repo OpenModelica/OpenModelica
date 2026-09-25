@@ -1174,6 +1174,7 @@ protected
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
+    Pointer<Integer> wc_cnt = Pointer.create(0);
     list<Pointer<Variable>> wc_vars;
     list<Pointer<Equation>> wc_eqns;
     Pointer<list<SpatialDistribution>> spatial_lst = Pointer.create({});
@@ -1195,14 +1196,14 @@ protected
         // into plain discrete CREFs so that getBodyAttributes can process them.
         // This handles boolean expressions like (not x.u) that were not turned into
         // zero-crossings (e.g. purely discrete conditions).
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
         // also for the removed equations, e.g. when equations that only have reinit
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.removed, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.removed, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
 
@@ -1430,10 +1431,10 @@ protected
     involved zero-crossings or was a purely discrete boolean like (not x.u)."
     input EquationPointers equations;
     input Pointer<Integer> idx;
+    input Pointer<Integer> cnt "shared by all calls, the names of the auxiliary variables have to be unique";
     output list<Pointer<Variable>> new_vars = {};
     output list<Pointer<Equation>> new_eqns = {};
   protected
-    Pointer<Integer> cnt = Pointer.create(0);
     Pointer<list<Pointer<Variable>>> vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Equation>>> eqns_ptr = Pointer.create({});
   algorithm
