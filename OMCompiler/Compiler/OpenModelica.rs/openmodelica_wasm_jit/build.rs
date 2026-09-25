@@ -1774,14 +1774,15 @@ fn build_wasip1_interactive_runtime(
     // Native wasmtime: lean host-delegating blob (`host_lin_solve`), no in-wasm
     // driver/solver linked in. Web (wasm32) and native-wasmer solve in-wasm
     // (`session,inwasm_solve`) — the wasmer host has no native solver. `inwasm_driver`
-    // opts the native build into the in-wasm variant for OMC_WASM_INWASM_DRIVER=1.
+    // adds the in-wasm driver and solver to the native wasmtime blob, keeping the
+    // host solver too, for OMC_WASM_INWASM_DRIVER=1 / OMC_WASM_HOST_LIN_SOLVE=0.
     let native = std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() != Ok("wasm32");
     let wasmer = std::env::var("CARGO_FEATURE_ENGINE_WASMER").is_ok();
     let inwasm_driver = std::env::var("CARGO_FEATURE_INWASM_DRIVER").is_ok();
-    let mut features = if native && !wasmer && !inwasm_driver {
-        "host_lin_solve,host_log".to_string()
-    } else {
-        "session,inwasm_solve,host_log".to_string()
+    let mut features = match (native && !wasmer, inwasm_driver) {
+        (true, false) => "host_lin_solve,host_log".to_string(),
+        (true, true) => "session,inwasm_solve,host_lin_solve,host_log".to_string(),
+        (false, _) => "session,inwasm_solve,host_log".to_string(),
     };
     if has_primme(sundials_dir) {
         features.push_str(",primme");

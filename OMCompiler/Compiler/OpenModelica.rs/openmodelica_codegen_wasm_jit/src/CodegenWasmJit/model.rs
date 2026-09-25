@@ -347,7 +347,7 @@ pub(super) fn build_sim_model(
             ext_native = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
         }
         crate::CodegenWasmJitFunctions::set_native_externals(ext_native.iter().map(|s| s.name.clone()));
-        let want_native = ext_host == ExtHost::Native || !ext_native.is_empty();
+        let want_native = (ext_host == ExtHost::Native || !ext_native.is_empty()) && native_externals_allowed();
         let symbols: Vec<String> = ext_imports.iter().map(|s| s.name.clone()).collect();
         // Built on demand, for a symbol the loaded libraries turn out not to define.
         // The archives are on this link too, not only on their own: a member only

@@ -118,6 +118,21 @@ pub(crate) fn resolve_ext_libraries(
     Ok(out)
 }
 
+/// Whether `external "C"` may be served from anything but a prebuilt wasm library:
+/// platform libraries, archives and compiled `Include` sources. Never in the browser
+/// omc; `OMC_WASM_NATIVE_EXTERNALS=0` makes a native omc refuse them the same way.
+pub(crate) fn native_externals_allowed() -> bool {
+    cfg!(not(target_arch = "wasm32"))
+        && !matches!(std::env::var("OMC_WASM_NATIVE_EXTERNALS").as_deref(), Ok("0"))
+}
+
+fn no_compiler_note() -> String {
+    "the implementation comes from an `Include` annotation with C source, which has to be \
+     compiled — the browser omc has no compiler. Provide it as a `Library` built with \
+     `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
+        .to_string()
+}
+
 /// Compile the model's `Include` annotations into a wasm library: C *source* has no
 /// `Library` to load. Native only; the browser omc has no compiler. A failure is a
 /// note, not an error: only a symbol nothing defines is fatal.
@@ -131,6 +146,10 @@ pub(crate) fn compile_include_library(
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
     if includes.is_empty() {
+        return Ok(None);
+    }
+    if !native_externals_allowed() {
+        notes.push(no_compiler_note());
         return Ok(None);
     }
     let wrappers = openmodelica_wasm_jit::model::ext_wrappers(missing);
@@ -214,12 +233,7 @@ pub(crate) fn compile_include_library(
     if includes.is_empty() {
         return Ok(None);
     }
-    notes.push(
-        "the implementation comes from an `Include` annotation with C source, which has to be \
-         compiled — the browser omc has no compiler. Provide it as a `Library` built with \
-         `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
-            .to_string(),
-    );
+    notes.push(no_compiler_note());
     Ok(None)
 }
 
