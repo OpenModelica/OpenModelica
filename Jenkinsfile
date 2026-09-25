@@ -811,9 +811,9 @@ pipeline {
     stage('check-and-upload') {
       parallel {
         // Turns the coverage counters of the testsuite-gcc and -clang shards,
-        // the testsuite-misc stage (clang) and the OMEdit testsuite into one
-        // report. Unlike its neighbours it is not gated on !isPR: the point is
-        // to get the number on every PR.
+        // the testsuite-misc stage (clang), the C runtime unit tests (gcc) and
+        // the OMEdit testsuite into one report. Unlike its neighbours it is not
+        // gated on !isPR: the point is to get the number on every PR.
         stage('coverage-report') {
           agent {
             node {

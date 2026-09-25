@@ -608,9 +608,9 @@ where opening the file directly would not. Otherwise just open
 - Jenkins does all of this on every PR; see `coverageReportStage()` in
   [.CI/common.groovy](.CI/common.groovy). Both the gcc and the clang build are
   instrumented, so the report covers both testsuite shards (one per compiler), the
-  `testsuite-misc` stage (clang) and the OMEdit testsuite (clang). Each set of counters is
-  collected against the build that produced it, and the tracefiles are merged into one
-  report. Where gcc and clang disagree on which lines of a source are code at all, the
+  `testsuite-misc` stage (clang), the C runtime unit tests (gcc) and the OMEdit testsuite
+  (clang). Each set of counters is collected against the build that produced it, and the
+  tracefiles are merged into one report. Where gcc and clang disagree on which lines of a source are code at all, the
   report holds the union of both, so such a line can show as uncovered although the other
   compiler's tests ran it.
 

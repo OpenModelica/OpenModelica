@@ -1789,7 +1789,7 @@ void ctestStashed(stashName, partition, partitionmodulo) {
 
 // Turns the coverage counters the testsuite stages left (withCoverageCounters)
 // into one report, merged with the tracefiles of the OMEdit stage
-// (buildGUIAndRunOMEditTestsuite). countersByCompiler maps each instrumented
+// (buildGUIAndRunOMEditTestsuite) and of the C runtime unit tests (testUnitC). countersByCompiler maps each instrumented
 // build, by the name it passed to stashCoverageNotes(), to the names of the
 // counter stashes of the stages that tested it.
 //
@@ -1808,6 +1808,7 @@ void coverageReportStage(Map countersByCompiler) {
   standardSetup()
   sh 'rm -rf coverage-tracefiles && mkdir coverage-tracefiles'
   unstash 'coverage-tracefiles-omedit'
+  unstash 'coverage-tracefiles-unit-c'
 
   // Not iterating the Map itself: its iterator can't be serialized when the
   // pipeline checkpoints at a step inside the loop.
@@ -2030,20 +2031,37 @@ void buildUsersGuide() {
   stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${tagName()}*.*"
 }
 
+// The C runtime unit tests, against a C runtime built right here.
+//
+// Instrumented for coverage. Like buildGUIAndRunOMEditTestsuite(), the counters
+// land in the build tree right here, so this collects them itself and hands
+// coverageReportStage() the finished tracefiles, as stash
+// 'coverage-tracefiles-unit-c'.
 void testUnitC() {
+  // See buildGccOMC() on caching instrumented objects.
   withSccache {
     sh label: 'cmake version', script: "cmake --version"
-    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache"
+    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache -DOM_ENABLE_COVERAGE=ON"
     sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
     sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
   }
   sh label: 'Check that the C unit tests wrote junit.xml', script: "test -f ./build_cmake/junit.xml"
+
+  // The paths in the tracefiles are relative to this checkout, so they merge
+  // with the ones coverageReportStage() collects in its own.
+  sh label: 'Collect the coverage of the C unit tests', script: """#!/bin/bash -xe
+  cmake --build build_cmake --target coverage-collect
+  mkdir -p coverage-tracefiles
+  cp build_cmake/coverage/coverage.json coverage-tracefiles/unit-c-coverage.json
+  """
+  stash name: 'coverage-tracefiles-unit-c', includes: 'coverage-tracefiles/unit-c-*.json'
 }
 
 // The short test suites, run back to back in one node. testUnitC() goes first
-// so CMake configures a tree that only git clean has touched. The omc they run
-// is the coverage-instrumented one of buildClangOMC(), so they leave coverage
-// counters behind, as stash 'coverage-counters-omc-clang-misc'.
+// so CMake configures a tree that only git clean has touched; it collects its
+// own coverage. The omc the others run is the coverage-instrumented one of
+// buildClangOMC(), so they leave coverage counters behind, as stash
+// 'coverage-counters-omc-clang-misc'.
 void testMisc() {
   echo "Running on: ${env.NODE_NAME}"
   standardSetup()
