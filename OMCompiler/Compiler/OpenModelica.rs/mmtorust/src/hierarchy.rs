@@ -2223,10 +2223,16 @@ fn collect_type_graph(
     }
 }
 
+/// Large records copied far more often than they are updated. Putting them
+/// behind `Ref` makes a copy a refcount bump; an update copies only when the
+/// value is shared (`Arc::make_mut`).
+const SHARED_RECORDS: &[&str] = &["BackendDAE.Var"];
+
 /// Detect which named types form size-recursive cycles (directly or mutually).
 /// Populates `hier.recursive_types` with the fully-qualified names of all such types.
 /// Must be called after `resolve_pass` has converged.
 pub fn detect_recursive_types(hier: &mut InstanceHierarchy<'_>) {
+    hier.recursive_types.extend(SHARED_RECORDS.iter().map(|s| s.to_string()));
     let mut graph: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     collect_type_graph(&hier.top_level, "", &mut graph);
 
