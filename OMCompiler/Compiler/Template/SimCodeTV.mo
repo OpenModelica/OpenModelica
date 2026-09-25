@@ -2285,6 +2285,17 @@ package System
     output Boolean success;
   end covertTextFileToCLiteral;
 
+  function openModelicaPlatform
+    output String platform;
+  end openModelicaPlatform;
+
+  function gccDumpMachine
+    output String machine;
+  end gccDumpMachine;
+
+  function gccVersion
+    output String version;
+  end gccVersion;
 end System;
 
 package Autoconf

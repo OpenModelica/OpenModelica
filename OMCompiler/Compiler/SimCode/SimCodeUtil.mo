@@ -14795,30 +14795,46 @@ protected
 algorithm
   fileName := matchcontinue code
     local
-      String str, locations;
+      String str, omdevPath, msysPath, mingwDir, installDir;
+      Boolean isMSVC;
       list<String> locations_lst;
     case SimCode.SIMCODE()
       algorithm
         fileName := code.fileNamePrefix + ".bat";
-        File.open(file,fileName,File.Mode.Write);
+        File.open(file, fileName, File.Mode.Write);
 
         (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
-        locations := stringDelimitList(locations_lst, ";");
-        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/"
-                               + ";" + Settings.getInstallationDirectoryPath() + "/lib/" + Config.targetTriple() + "/omc";
+
+        installDir := Settings.getInstallationDirectoryPath();
+        locations_lst := (installDir + "/bin") :: locations_lst;
+        locations_lst := (installDir + "/lib/" + Config.targetTriple() + "/omc") :: locations_lst;
+
+        omdevPath := Util.makeValueOrDefault(System.readEnv, "OMDEV", Settings.getInstallationDirectoryPath());
+        msysPath := omdevPath + "/tools/msys";
+        mingwDir := System.openModelicaPlatform();
+        isMSVC := 0 == System.stringFind(mingwDir, "msvc");
+        if not isMSVC then
+          locations_lst := (msysPath + "/" + mingwDir + "/bin") :: locations_lst;
+          locations_lst := (msysPath + "/" + mingwDir + "/lib/gcc/" + System.gccDumpMachine() + "/" + System.gccVersion()) :: locations_lst;
+          locations_lst := msysPath + "/usr/bin" :: locations_lst;
+        end if;
+
+        locations_lst := listReverse(locations_lst);
+
         str := "@echo off\n"
-                + "SET PATH=" + locations + ";%PATH%;\n"
-                + "SET ERRORLEVEL=\n"
-                + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
-                + "SET RESULT=%ERRORLEVEL%\n"
-                + "\n"
-                + "EXIT /b %RESULT%\n";
+             + "setlocal\n"
+             + "SET PATH=" + stringDelimitList(locations_lst, ";") + ";%PATH%\n"
+             + "SET ERRORLEVEL=\n"
+             + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
+             + "SET RESULT=%ERRORLEVEL%\n"
+             + "endlocal\n"
+             + "EXIT /b %RESULT%\n";
         File.write(file, str);
-      then (fileName);
+      then fileName;
     else
       algorithm
         Error.addInternalError("SimCodeMain.generateRunnerBatScript failed", sourceInfo());
-      then ("");
+      then "";
   end matchcontinue;
 end generateRunnerBatScript;
 
