@@ -36,6 +36,7 @@ Issue16354.mos \
 fmi_import_boolean.mos \
 fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
+fmi2_clockToBoolean_structure.mos \
 fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \
 fmi_export_derivative_annotation_buildings.mos \
