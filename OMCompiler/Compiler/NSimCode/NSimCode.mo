@@ -432,6 +432,10 @@ public
             // equations and before the Jacobians in the info file, so they need indices in that order
             (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
 
+            // min, max and nominal attributes that have to be evaluated after the parameters
+            (min, max, nominal, simCodeIndices) := SimStrongComponent.Block.createAttributeBlocks(
+              {varData.states, varData.algebraics, varData.discretes, varData.discrete_states}, simCodeIndices, simcode_map);
+
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then

@@ -165,38 +165,35 @@ pub(crate) fn strdup(s: &str) -> *const c_char {
 }
 
 /// A one-dimensional attribute array holding `values`.
-fn fill_array<T: Copy>(out: &mut base_array_t, values: &[T]) {
-    let data: *mut T = calloc(values.len());
+/// Allocated by C's `simple_alloc_1d_<type>_array`, so that the generated code
+/// can release and reallocate it, e.g. when it evaluates a bound attribute.
+pub(crate) fn fill_array<T: Copy>(out: &mut base_array_t, values: &[T], alloc: AllocArray) {
+    unsafe { alloc(out, values.len() as c_int) };
+    let data = out.data as *mut T;
     for (i, v) in values.iter().enumerate() {
         unsafe { *data.add(i) = *v };
     }
-    let dim: *mut _index_t = calloc(1);
-    unsafe { *dim = values.len() as _index_t };
-    out.ndims = 1;
-    out.dim_size = dim;
-    out.data = data as *mut c_void;
-    out.flexible = 0;
 }
 
 /// `read_array_var_real`: a whitespace-separated value list, or one default.
 fn read_array_real(out: &mut real_array, s: &str, default: f64) {
     let values: Vec<f64> = s.split_whitespace().map(|t| read_real(t, default)).collect();
     let values = if values.is_empty() { vec![default] } else { values };
-    fill_array(out, &values);
+    fill_array(out, &values, simple_alloc_1d_real_array);
 }
 
 /// `read_array_var_integer`: a whitespace-separated value list, or one default.
 fn read_array_integer(out: &mut integer_array, s: &str, default: modelica_integer) {
     let values: Vec<modelica_integer> = s.split_whitespace().map(|t| read_long(t, default)).collect();
     let values = if values.is_empty() { vec![default] } else { values };
-    fill_array(out, &values);
+    fill_array(out, &values, simple_alloc_1d_integer_array);
 }
 
 /// `read_array_var_boolean`: a whitespace-separated value list, or `false`.
 fn read_array_boolean(out: &mut boolean_array, s: &str) {
     let values: Vec<modelica_boolean> = s.split_whitespace().map(read_bool).collect();
     let values = if values.is_empty() { vec![0] } else { values };
-    fill_array(out, &values);
+    fill_array(out, &values, simple_alloc_1d_boolean_array);
 }
 
 /// `read_quoted_str`: the values of `"a" "b c"`, `None` unless `s` is such a
@@ -233,7 +230,7 @@ fn read_array_string(out: &mut string_array, s: &str, is_scalar: bool) {
     let values = if is_scalar { None } else { read_quoted(s).filter(|v| !v.is_empty()) };
     let values: Vec<modelica_string> =
         values.unwrap_or_else(|| vec![s]).into_iter().map(mk_scon_persist).collect();
-    fill_array(out, &values);
+    fill_array(out, &values, simple_alloc_1d_string_array);
 }
 
 fn read_var_info(v: &XmlVar, info: &mut VAR_INFO) {
@@ -308,6 +305,16 @@ macro_rules! read_group {
 pub struct AliasMaps {
     pub vars: HashMap<String, i64>,
     pub params: HashMap<String, i64>,
+}
+
+/// C's `simple_alloc_1d_<type>_array`.
+pub(crate) type AllocArray = unsafe extern "C" fn(*mut base_array_t, c_int);
+
+unsafe extern "C" {
+    pub(crate) fn simple_alloc_1d_real_array(dest: *mut base_array_t, n: c_int);
+    pub(crate) fn simple_alloc_1d_integer_array(dest: *mut base_array_t, n: c_int);
+    pub(crate) fn simple_alloc_1d_boolean_array(dest: *mut base_array_t, n: c_int);
+    pub(crate) fn simple_alloc_1d_string_array(dest: *mut base_array_t, n: c_int);
 }
 
 unsafe extern "C" {

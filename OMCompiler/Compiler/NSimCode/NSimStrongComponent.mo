@@ -43,6 +43,7 @@ encapsulated package NSimStrongComponent
 protected
   // OF imports
   import AbsynUtil;
+  import BackendExtension = NFBackendExtension;
   import DAE;
 
   // NF imports
@@ -496,6 +497,57 @@ public
       end for;
       blcks := listReverse(blcks);
     end createParameterBlocks;
+
+    function createAttributeBlocks
+      "Creates the assignments of min, max and nominal attributes that are not
+      literals and therefore not part of the init XML, e.g. `Real x(min = p)`.
+      The attributes are evaluated in updateBoundVariableAttributes. Only
+      creates blocks for variables that are SimVars themselves, i.e. array
+      variables if they are not scalarized."
+      input list<VariablePointers> vars;
+      output list<Block> min_blcks = {};
+      output list<Block> max_blcks = {};
+      output list<Block> nominal_blcks = {};
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    protected
+      Variable var;
+      BackendExtension.VariableAttributes attributes;
+    algorithm
+      for var_ptrs in vars loop
+        for var_ptr in VariablePointers.toList(var_ptrs) loop
+          var := Pointer.access(var_ptr);
+          if not UnorderedMap.contains(var.name, simcode_map) then
+            continue;
+          end if;
+          attributes := var.backendinfo.attributes;
+          (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(attributes), min_blcks, simCodeIndices);
+          (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(attributes), max_blcks, simCodeIndices);
+          (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(attributes), nominal_blcks, simCodeIndices);
+        end for;
+      end for;
+      min_blcks := listReverse(min_blcks);
+      max_blcks := listReverse(max_blcks);
+      nominal_blcks := listReverse(nominal_blcks);
+    end createAttributeBlocks;
+
+    function createAttributeBlock
+      input Variable var;
+      input Option<Expression> attribute;
+      input output list<Block> blcks;
+      input output SimCodeIndices simCodeIndices;
+    algorithm
+      _ := match attribute
+        local
+          Expression exp;
+        case SOME(exp) guard not Expression.isLiteralXML(exp) algorithm
+          blcks := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, exp, DAE.emptyElementSource,
+            EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: blcks;
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then ();
+        else ();
+      end match;
+    end createAttributeBlock;
 
     function createDAEModeBlocks
       input list<Partition.Partition> partitions;
