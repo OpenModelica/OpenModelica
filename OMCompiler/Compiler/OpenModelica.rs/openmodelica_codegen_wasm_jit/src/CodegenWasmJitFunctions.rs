@@ -42,7 +42,9 @@
 // `CevalScript` caller resolves them; the rest of the module is idiomatic Rust.
 #![allow(non_snake_case)]
 
-use std::collections::{HashMap, HashSet};
+/// std's maps with foldhash, still seeded per process.
+pub(crate) type HashMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::RandomState>;
+pub(crate) type HashSet<K> = std::collections::HashSet<K, foldhash::fast::RandomState>;
 // The record layout is shared with the host, which reads records this code built.
 use openmodelica_wasm_jit::sig::{record_layout, RecordLayout};
 use std::sync::Arc;

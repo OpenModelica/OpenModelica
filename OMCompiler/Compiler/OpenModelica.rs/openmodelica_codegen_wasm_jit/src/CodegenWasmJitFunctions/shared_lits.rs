@@ -10,7 +10,8 @@
 // copies it (`value_rhs_is_fresh`).
 
 use std::cell::{Cell, RefCell};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 
 use metamodelica::Result;
 use openmodelica_frontend_types::DAE;
@@ -93,7 +94,7 @@ pub(crate) fn build_init_fn(
 ) -> Result<we::Function> {
     HOISTING.with(|h| h.set(false));
     let mut ctx = FnCtx {
-        locals: HashMap::new(),
+        locals: HashMap::default(),
         extra_locals: Vec::new(),
         n_params: 0,
         outputs: Vec::new(),
@@ -109,7 +110,7 @@ pub(crate) fn build_init_fn(
         sim: None,
         dt_local_cons: false,
         dt_fallback: None,
-        flat: HashMap::new(),
+        flat: HashMap::default(),
         flat_outs: Vec::new(),
         flat_results: false,
     };

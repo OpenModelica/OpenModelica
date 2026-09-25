@@ -6,7 +6,7 @@
 //! the slots directly, so only the two symbolic Jacobians (`F` and `H`) need code
 //! — built exactly like `-l`'s `linearJac*`, each filling one column-major matrix.
 
-use std::collections::HashMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::sync::Arc;
 
 use metamodelica::{List, Result};

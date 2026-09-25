@@ -21,14 +21,14 @@ std::thread_local! {
     /// its consumer's about a field type, which would give the two ends different
     /// field offsets; the declaration decides for both.
     static RECORD_DECLS: std::cell::RefCell<HashMap<String, Arc<Vec<RecDeclField>>>> =
-        std::cell::RefCell::new(HashMap::new());
+        std::cell::RefCell::new(HashMap::default());
 }
 
 /// Install the module's record declarations (see [`RECORD_DECLS`]).
 pub(crate) fn set_record_decls(
     decls: &List<SimCodeFunction::RecordDeclaration>,
 ) -> Result<()> {
-    let mut map = HashMap::new();
+    let mut map = HashMap::default();
     for d in decls {
         // Only `RECORD_DECL_FULL` declares a layout.
         let SimCodeFunction::RecordDeclaration::RECORD_DECL_FULL { defPath, variables, .. } = d else {

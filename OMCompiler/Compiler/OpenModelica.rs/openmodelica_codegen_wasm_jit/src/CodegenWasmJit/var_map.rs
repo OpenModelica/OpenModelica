@@ -236,7 +236,7 @@ fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
 /// computed once at initialization, so the `.mat` stores it with the parameters
 /// (`CodegenC.functionUpdateBoundParameters`, `Expression.isSimpleLiteralValue`).
 pub(super) fn mark_unvarying(result_vars: &mut [ResultVar], param_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Result<()> {
-    let mut literal: HashSet<String> = HashSet::new();
+    let mut literal: HashSet<String> = HashSet::default();
     for eq in param_eqs {
         if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq
             && matches!(
@@ -556,16 +556,16 @@ pub(super) fn build_var_map(
         scatter_groups: Arc::default(),
         consts: Arc::default(),
         const_groups: Arc::default(),
-        const_acc: HashMap::new(),
+        const_acc: HashMap::default(),
         extobj_dtors: Arc::default(),
-        array_acc: HashMap::new(),
+        array_acc: HashMap::default(),
         terminate_off: layout.terminate_off,
         terminal_off: layout.terminal_off,
         initial_off: layout.initial_off,
         term_info_off: layout.term_info_off,
         nls_fail_off: layout.nls_fail_off,
-        nls_jobs: Arc::new(HashMap::new()),
-        generic_calls: Arc::new(HashMap::new()),
+        nls_jobs: Arc::new(HashMap::default()),
+        generic_calls: Arc::new(HashMap::default()),
         n_samples: 0,
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
@@ -766,7 +766,7 @@ pub(super) fn build_var_map(
     // value is the binding literal. Emit each to data_1 (the C runtime keeps them
     // in the result too, e.g. visualization colors). Record their values so a
     // constant's aliases resolve below.
-    let mut const_of: HashMap<String, f64> = HashMap::new();
+    let mut const_of: HashMap<String, f64> = HashMap::default();
     let const_lists = [
         (&vars.constVars, Some(WTy::F64)),
         (&vars.intConstVars, Some(WTy::I32)),

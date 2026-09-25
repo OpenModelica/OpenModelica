@@ -6,7 +6,7 @@
 //! uses (`LinzPlan`); this module adds the per-column entry point the optimizer
 //! drives them through, and assembles [`OptInfo`].
 
-use std::collections::HashMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::string::String;
 
 use openmodelica_backend_types::BackendDAE;

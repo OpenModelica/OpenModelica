@@ -579,7 +579,7 @@ impl<'a> FnCtx<'a> {
         n_params: u32,
     ) -> Self {
         FnCtx {
-            locals: HashMap::new(),
+            locals: HashMap::default(),
             extra_locals: Vec::new(),
             n_params, // local 0 = SimData pointer
             outputs: Vec::new(),
@@ -595,7 +595,7 @@ impl<'a> FnCtx<'a> {
             sim: Some(sim),
             dt_local_cons: false,
             dt_fallback: None,
-            flat: HashMap::new(),
+            flat: HashMap::default(),
             flat_outs: Vec::new(),
             flat_results: false,
         }

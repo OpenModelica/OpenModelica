@@ -50,7 +50,7 @@ thread_local! {
     /// to one reports that instead of failing as an unknown builtin — the name
     /// reaching [`compile_math_builtin`] looks the same either way.
     static DECLINED_EXTERNALS: std::cell::RefCell<HashMap<String, String>> =
-        std::cell::RefCell::new(HashMap::new());
+        std::cell::RefCell::new(HashMap::default());
 }
 
 pub(crate) fn reset_declined_externals() {

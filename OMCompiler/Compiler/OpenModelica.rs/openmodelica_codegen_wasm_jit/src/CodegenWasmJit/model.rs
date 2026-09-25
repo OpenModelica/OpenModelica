@@ -233,7 +233,7 @@ pub(super) fn build_sim_model(
     // initial equation), or at an equation nested inside a torn linear/nonlinear
     // (or mixed / if-) system, so index every list recursively. `eqFunction_<n>`
     // is emitted once in the C target and shared; here the target is inlined.
-    let mut eq_index: HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>> = HashMap::new();
+    let mut eq_index: HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>> = HashMap::default();
     let index_list = |eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>, idx: &mut HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in lst(eqs) {
             index_eq_recursive(e, idx);
@@ -282,7 +282,7 @@ pub(super) fn build_sim_model(
     // functions, resolved by the host at instantiation (dlopen-self native; a
     // side module on wasm). Models without such externals emit none.
     let mut ext_imports: Vec<ExtCallSig> = Vec::new();
-    let mut ext_seen: HashSet<String> = HashSet::new();
+    let mut ext_seen: HashSet<String> = HashSet::default();
     for f in &model_fns {
         if external_general_why(f).is_ok() {
             let sig = external_import_sig(f)?;
@@ -381,7 +381,7 @@ pub(super) fn build_sim_model(
     // generated equation functions.
     let ext_base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
     let import_base = ext_base + ext_imports.len() as u32;
-    let mut by_name: HashMap<String, FnInfo> = HashMap::new();
+    let mut by_name: HashMap<String, FnInfo> = HashMap::default();
     for (i, sig) in ext_imports.iter().enumerate() {
         by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: ext_import_sig(sig) });
     }
@@ -458,7 +458,7 @@ pub(super) fn build_sim_model(
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
-    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
+    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::default();
     let dae_only_eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let removed_init_eqs = flatten_eqs(&sim_code.removedInitialEquations);
     let clocked = clocked_eqs(sim_code);
