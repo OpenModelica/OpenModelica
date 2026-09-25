@@ -1,0 +1,38 @@
+// name: derSeedJacobian
+// keywords: NewBackend
+// status: correct
+//
+// A known derivative ($DER.x) in the Jacobian of an initial algebraic loop must not be
+// replaced by the seed of x (fallback lookup for seeds of other Jacobians).
+
+loadString("
+model DerSeedJacobian
+  Real x(start = 1, fixed = false);
+  Real y(start = 1);
+initial equation
+  der(x) = 0;
+equation
+  der(x) = 2 - x - y;
+  x * y + der(x) * x ^ 2 = 0.9 + 0.1 * sin(y);
+end DerSeedJacobian;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+echo(false);
+res := simulate(DerSeedJacobian, stopTime = 0.1, simflags = "-nls=kinsol -lv=LOG_NLS_DERIVATIVE_TEST");
+msg := res.messages;
+echo(true);
+getErrorString();
+regexBool(msg, "Derivative test failed");
+val(x, 0); val(y, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// 1.159745811419277
+// 0.840254188580297
+// endResult
