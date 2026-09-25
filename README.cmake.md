@@ -617,7 +617,10 @@ where opening the file directly would not. Otherwise just open
   instrumented, so the report covers both testsuite shards (one per compiler), the
   `testsuite-misc` stage (clang), the C runtime unit tests (gcc) and the OMEdit testsuite
   (clang). Each set of counters is collected against the build that produced it, and the
-  tracefiles are merged into one report. Where gcc and clang disagree on which lines of a source are code at all, the
+  tracefiles are merged into one report. The compiler's MetaModelica coverage comes from
+  the gcc shard alone: clang files every line of a function under the file the function
+  starts in, ignoring the `#line` directives inside it, so its counters for the compiler
+  land on the generated C, which the report leaves out. Where gcc and clang disagree on which lines of a source are code at all, the
   report holds the union of both, so such a line can show as uncovered although the other
   compiler's tests ran it.
 
