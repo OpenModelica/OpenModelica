@@ -750,6 +750,12 @@ public
     end if;
   end createParameterEquation;
 
+  function isAliasVar
+    input Pointer<Variable> var_ptr;
+    input VariablePointers aliasVars;
+    output Boolean b = VariablePointers.containsCref(BVariable.getVarName(var_ptr), aliasVars);
+  end isAliasVar;
+
   function resolveStartCrefs
     "Replaces the variables in a start expression by their start values, e.g. the start value of a function output
     is the function call at the start values of its arguments. Since start values can be changed after the
@@ -779,7 +785,6 @@ public
     Pointer<Variable> start_var;
     Boolean existed;
     Option<Expression> start_opt;
-    list<Pointer<Variable>> children;
   algorithm
     res := match exp
       // internal helper functions (e.g. of stream connectors) have no code outside of equations
@@ -800,17 +805,16 @@ public
           else
             Pointer.update(ok, false);
           end if;
+        elseif List.any(BVariable.getRecordChildren(var_ptr), function isAliasVar(aliasVars = aliasVars)) then
+          // alias records are marked as parameters after alias removal, but their elements are aliases
+          Pointer.update(ok, false);
         elseif BVariable.isParamOrConst(var_ptr) or BVariable.isStart(var_ptr)
            or BVariable.isIterator(var_ptr) or BVariable.isExtObj(var_ptr) then
           // already known
-        elseif BVariable.isRecord(var_ptr) and not Type.isArray(Expression.typeOf(exp)) then
-          children := BVariable.getRecordChildren(var_ptr);
-          if listEmpty(children) then
-            Pointer.update(ok, false);
-          else
-            res := Expression.makeRecord(InstNode.scopePath(Type.complexNode(Expression.typeOf(exp))), Expression.typeOf(exp),
-              list(resolveStartCref(Expression.fromCref(BVariable.getVarName(child)), ptr_start_vars, aliasVars, ok, depth) for child in children));
-          end if;
+        elseif BVariable.isRecord(var_ptr) or isSome(BVariable.getParent(var_ptr)) then
+          // records (and their elements) can be removed as aliases from the system, referencing
+          // them would bring back their record equations and unbalance the initialization
+          Pointer.update(ok, false);
         elseif Type.isReal(Variable.typeOf(var)) and not Type.isArray(Expression.typeOf(exp)) and BVariable.isContinuous(var_ptr, true) then
           start_opt := BVariable.getStartAttribute(var_ptr);
           existed   := isSome(BVariable.getVarStart(var_ptr));
