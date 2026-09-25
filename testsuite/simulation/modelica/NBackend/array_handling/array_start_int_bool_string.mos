@@ -23,7 +23,7 @@ end array_start_int_bool_string;
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
-simulate(array_start_int_bool_string, stopTime=1.0, simflags="-lv=LOG_INIT_V"); getErrorString();
+simulate(array_start_int_bool_string, stopTime=1.0); getErrorString();
 
 val(k[1], 0.0);
 val(k[2], 0.0);
@@ -43,29 +43,8 @@ val(c[2], 1.0);
 // ""
 // record SimulationResult
 //     resultFile = "array_start_int_bool_string_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'array_start_int_bool_string', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
-//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
-// LOG_INIT          | info    | updating min-values
-// LOG_INIT          | info    | updating max-values
-// LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating primary start-values
-// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_V        | info    | parameter values
-// |                 | |       | | integer parameters
-// |                 | |       | | | [1] parameter Integer p(start={10, 20, 30}, fixed=true) = 10
-// |                 | |       | | boolean parameters
-// |                 | |       | | | [1] parameter Boolean q(start={true, false}, fixed=true) = true
-// |                 | |       | | string parameters
-// |                 | |       | | | [1] parameter String s(start={\"a\", \"b c\"}) = \"a\"
-// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
-// |                 | |       | | integer variables
-// |                 | |       | | | [1] Integer k(start={1, 2, 3}) = 1 (pre: 1)
-// |                 | |       | | boolean variables
-// |                 | |       | | | [1] Boolean $TEV_1(start=false) = false (pre: false)
-// |                 | |       | | | [2] Boolean $TEV_0(start=false) = false (pre: false)
-// |                 | |       | | | [3] Boolean c(start={false, true}) = false (pre: false)
-// LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'array_start_int_bool_string', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
