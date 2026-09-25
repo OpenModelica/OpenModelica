@@ -810,6 +810,7 @@ list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
      "OMC_HDF5_LDFLAGS=${OMC_HDF5_LDFLAGS}"
+     "OMC_FMILIB_LDFLAGS=${OMC_FMILIB_LDFLAGS}"
      # The runtime headers openmodelica_simulation_runtime's ABI test compiles;
      # `|`-separated, since a `;` would split the assignment into arguments.
      "OMC_SIMRT_INCLUDE_DIRS=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c|${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/gc/include"

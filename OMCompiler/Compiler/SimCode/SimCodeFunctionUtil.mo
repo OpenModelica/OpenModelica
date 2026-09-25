@@ -2480,8 +2480,11 @@ algorithm
         end if;
       then  (strs,{});
 
+    // One element per library, which the wasm-jit loads one by one.
     case Absyn.STRING("fmilib")
-      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});
+      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"}
+            elseif Autoconf.fmilibLibs == "" then {"-lfmilib"}
+            else "-lfmilib" :: Util.stringSplitAtChar(Autoconf.fmilibLibs, " "),{});
 
     case Absyn.STRING(str)
       algorithm

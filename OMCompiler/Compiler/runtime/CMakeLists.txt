@@ -97,6 +97,7 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
+target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip)
 
 if(OM_OMC_ENABLE_COLPACK)
   target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)
