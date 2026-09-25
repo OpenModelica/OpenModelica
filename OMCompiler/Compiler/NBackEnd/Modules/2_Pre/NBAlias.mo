@@ -1587,6 +1587,8 @@ protected
       case Expression.CALL()            then true;
       case Expression.RECORD_ELEMENT()  then Expression.isCall(exp.recordExp);
       case Expression.TUPLE_ELEMENT()   then Expression.isCall(exp.tupleExp);
+      // the start value of a call in a for equation with an array result
+      case Expression.ARRAY()           then Array.all(exp.elements, isAuxStart);
       else false;
     end match;
   end isAuxStart;

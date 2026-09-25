@@ -553,6 +553,19 @@ protected
                        and Equation.size(Slice.getT(eqn)) > listLength(eqn.indices);
   end isPartialArraySlice;
 
+  function isArrayBodyFor
+    "a for equation with an array body, its residual rows are split (codegen writes them per iteration)"
+    input Slice<EquationPointer> eqn;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(Slice.getT(eqn))
+      local
+        Equation body;
+      case Equation.FOR_EQUATION(body = {body}) then Type.isArray(Equation.getType(body));
+      else false;
+    end match;
+  end isArrayBodyFor;
+
   function finalize extends Module.tearingInterface;
   protected
     Tearing strict;
@@ -570,7 +583,7 @@ protected
         // otherwise the jacobian can not differentiate them w.r.t. single elements of that variable.
         partial_vars := List.any(strict.iteration_vars, isPartialVarSlice);
         strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false))
-          for eqn in List.flatten(list(if isPartialArraySlice(eqn) or (partial_vars and Equation.isSingleBodyFor(Pointer.access(Slice.getT(eqn))))
+          for eqn in List.flatten(list(if isPartialArraySlice(eqn) or isArrayBodyFor(eqn) or (partial_vars and Equation.isSingleBodyFor(Pointer.access(Slice.getT(eqn))))
             then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
         comp.strict := strict;
 
