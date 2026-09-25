@@ -23,6 +23,8 @@ pub struct Pattern<'a> {
     pub colors: &'a [u32],
     /// C's `nlsData->max`; empty leaves the columns unbounded.
     pub max: &'a [f64],
+    /// C's `nlsData->min`; empty sets no sign constraints.
+    pub min: &'a [f64],
 }
 
 /// The SUNDIALS-facing half: KINSOL over the sparse Jacobian with KLU as its
@@ -69,6 +71,7 @@ pub mod sun {
         fn KINSetNoInitSetup(kinmem: *mut c_void, no_init_setup: c_int) -> c_int;
         fn KINSetMaxSetupCalls(kinmem: *mut c_void, msbset: c_long) -> c_int;
         fn KINSetMaxNewtonStep(kinmem: *mut c_void, mxnewtstep: f64) -> c_int;
+        fn KINSetConstraints(kinmem: *mut c_void, constraints: NVector) -> c_int;
         fn KINSetLinearSolver(kinmem: *mut c_void, ls: SunLinSol, a: SunMatrix) -> c_int;
         fn KINSetJacFn(kinmem: *mut c_void, jac: JacFn) -> c_int;
         fn KINGetFuncNorm(kinmem: *mut c_void, fnorm: *mut f64) -> c_int;
@@ -286,6 +289,8 @@ pub mod sun {
         xscale: NVector,
         fscale: NVector,
         ftmp: NVector,
+        /// C's `kinsolData->constraints`, the signs kept from min/max.
+        constraints: NVector,
         j: SunMatrix,
         ls: SunLinSol,
         n: usize,
@@ -317,6 +322,7 @@ pub mod sun {
                 xscale: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
                 fscale: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
                 ftmp: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
+                constraints: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
                 j: unsafe { SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx) },
                 ls: core::ptr::null_mut(),
                 n,
@@ -330,7 +336,7 @@ pub mod sun {
             };
             if s.kin.is_null()
                 || s.j.is_null()
-                || [s.u, s.xscale, s.fscale, s.ftmp].iter().any(|v| v.is_null())
+                || [s.u, s.xscale, s.fscale, s.ftmp, s.constraints].iter().any(|v| v.is_null())
             {
                 return None;
             }
@@ -402,6 +408,28 @@ pub mod sun {
             for s in fscale.iter_mut() {
                 *s = 1.0 / *s;
             }
+        }
+
+        /// C's `nlsKinsolSetConstraints`: keep the sign of a variable with a
+        /// non-negative min or non-positive max, if the start point has it.
+        fn set_constraints(&mut self, min: &[f64], max: &[f64]) {
+            let x = data(self.u, self.n);
+            let c = data(self.constraints, self.n);
+            for i in 0..self.n {
+                let (lo, hi) = (min.get(i).copied().unwrap_or(f64::MIN), max.get(i).copied().unwrap_or(f64::MAX));
+                c[i] = if lo > 0.0 && x[i] > 0.0 {
+                    2.0
+                } else if lo >= 0.0 && x[i] >= 0.0 {
+                    1.0
+                } else if hi < 0.0 && x[i] < 0.0 {
+                    -2.0
+                } else if hi <= 0.0 && x[i] <= 0.0 {
+                    -1.0
+                } else {
+                    0.0
+                };
+            }
+            unsafe { KINSetConstraints(self.kin, self.constraints) };
         }
 
         /// `mxnewtstep = maxstepfactor * ‖xScale‖₂` (C's `nlsKinsolSetMaxNewtonStep`).
@@ -509,6 +537,7 @@ pub mod sun {
                 self.x_scaling(nominal);
                 self.f_scaling(&mut ud);
                 self.max_newton_step();
+                self.set_constraints(pat.min, pat.max);
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 let mut iters: c_long = 0;
                 unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
@@ -550,7 +579,7 @@ pub mod sun {
                 if !self.j.is_null() {
                     SUNMatDestroy(self.j);
                 }
-                for v in [self.u, self.xscale, self.fscale, self.ftmp] {
+                for v in [self.u, self.xscale, self.fscale, self.ftmp, self.constraints] {
                     if !v.is_null() {
                         N_VDestroy(v);
                     }

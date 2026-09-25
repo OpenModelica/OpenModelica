@@ -88,6 +88,7 @@ typedef struct NLS_KINSOL_DATA {
   N_Vector initialGuess;
   N_Vector xScale;                      /* x scaling vector */
   N_Vector fScale;                      /* f(x) scaling vector */
+  N_Vector constraints;                 /* sign constraints from min/max attributes */
   N_Vector fRes;
   N_Vector fTmp;
 
