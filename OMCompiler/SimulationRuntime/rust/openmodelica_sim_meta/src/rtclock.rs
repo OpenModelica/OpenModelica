@@ -44,10 +44,20 @@ struct Clocks {
     total: [f64; N],
     max: [f64; N],
     ncall_total: [u64; N],
+    /// Whether a [`Span`] runs the clock.
+    open: [bool; N],
 }
 
-const EMPTY: Clocks =
-    Clocks { on: false, tick: [0.0; N], acc: [0.0; N], ncall: [0; N], total: [0.0; N], max: [0.0; N], ncall_total: [0; N] };
+const EMPTY: Clocks = Clocks {
+    on: false,
+    tick: [0.0; N],
+    acc: [0.0; N],
+    ncall: [0; N],
+    total: [0.0; N],
+    max: [0.0; N],
+    ncall_total: [0; N],
+    open: [false; N],
+};
 
 // The driver is single-threaded per run (as is the in-wasm session), so a plain
 // cell is enough and keeps `tick` off the atomics.
@@ -227,5 +237,53 @@ impl Drop for Handover {
     fn drop(&mut self) {
         accumulate(self.1);
         tick(self.0);
+    }
+}
+
+/// Run clock `ix` for the guard's lifetime, unless an enclosing `Span` already does.
+pub struct Span(Option<usize>);
+
+impl Span {
+    pub fn new(ix: usize) -> Self {
+        let c = clocks();
+        if c.open[ix] {
+            return Span(None);
+        }
+        c.open[ix] = true;
+        tick(ix);
+        Span(Some(ix))
+    }
+}
+
+impl Drop for Span {
+    fn drop(&mut self) {
+        if let Some(ix) = self.0 {
+            accumulate(ix);
+            clocks().open[ix] = false;
+        }
+    }
+}
+
+/// Stop the clock a [`Span`] runs for the guard's lifetime; a no-op outside one.
+pub struct Pause(Option<usize>);
+
+impl Pause {
+    pub fn new(ix: usize) -> Self {
+        let c = clocks();
+        if !c.open[ix] {
+            return Pause(None);
+        }
+        accumulate(ix);
+        c.open[ix] = false;
+        Pause(Some(ix))
+    }
+}
+
+impl Drop for Pause {
+    fn drop(&mut self) {
+        if let Some(ix) = self.0 {
+            clocks().open[ix] = true;
+            tick(ix);
+        }
     }
 }
