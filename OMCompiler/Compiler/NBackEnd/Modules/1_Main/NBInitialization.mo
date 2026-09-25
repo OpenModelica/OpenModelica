@@ -289,7 +289,7 @@ public
             case SOME(e) guard not Expression.isLiteralXML(e) algorithm
               // the start value of a function output is the call at the start values of its arguments
               start_ok := Pointer.create(true);
-              if BVariable.isFunctionAlias(var) then
+              if isFunctionAliasOrElement(var) then
                 e := resolveStartCrefs(e, ptr_start_vars, aliasVars, start_ok, 0);
               end if;
               if Pointer.access(start_ok) then
@@ -755,6 +755,19 @@ public
     input VariablePointers aliasVars;
     output Boolean b = VariablePointers.containsCref(BVariable.getVarName(var_ptr), aliasVars);
   end isAliasVar;
+
+  function isFunctionAliasOrElement
+    "true for function alias variables and the elements of function alias records"
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match BVariable.getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isFunctionAliasOrElement(parent);
+      else BVariable.isFunctionAlias(var_ptr);
+    end match;
+  end isFunctionAliasOrElement;
 
   function resolveStartCrefs
     "Replaces the variables in a start expression by their start values, e.g. the start value of a function output
