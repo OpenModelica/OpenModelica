@@ -350,6 +350,7 @@ impl nls::NlsBackend for CBackend<'_> {
             rowidx: self.rowidx,
             colors: req.colors,
             max: req.max,
+            min: req.min,
         };
         nls::kinsol::solve_selected(
             self.handle, req.n, &pat, req.nominal, req.guess, req.old_values, req.x, req.eq_index,

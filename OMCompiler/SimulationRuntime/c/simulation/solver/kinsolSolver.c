@@ -228,6 +228,7 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   kinsolData->initialGuess = N_VNew_Serial(size, kinsolData->sunctx);
   kinsolData->xScale = N_VNew_Serial(size, kinsolData->sunctx);
   kinsolData->fScale = N_VNew_Serial(size, kinsolData->sunctx);
+  kinsolData->constraints = N_VNew_Serial(size, kinsolData->sunctx);
   kinsolData->fRes = N_VNew_Serial(size, kinsolData->sunctx);
   kinsolData->fTmp = N_VNew_Serial(size, kinsolData->sunctx);
 
@@ -268,6 +269,7 @@ void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
   N_VDestroy_Serial(kinsolData->initialGuess);
   N_VDestroy_Serial(kinsolData->xScale);
   N_VDestroy_Serial(kinsolData->fScale);
+  N_VDestroy_Serial(kinsolData->constraints);
   N_VDestroy_Serial(kinsolData->fRes);
   N_VDestroy_Serial(kinsolData->fTmp);
 
@@ -1315,6 +1317,40 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
  * @param nlsData             Pointer to non-linear system data.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
+/**
+ * @brief Set sign constraints from the min and max attributes of the iteration variables.
+ *
+ * Only for variables whose initial guess already fulfills the constraint,
+ * otherwise KINSol() rejects the initial guess.
+ *
+ * @param kinsolData  Kinsol data with the initial guess.
+ * @param nlsData     Nonlinear system data with min and max values.
+ */
+static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nlsData) {
+  int i, flag;
+  double *x = NV_DATA_S(kinsolData->initialGuess);
+  double *c = NV_DATA_S(kinsolData->constraints);
+
+  if (nlsData->min == NULL || nlsData->max == NULL) {
+    return;
+  }
+
+  for (i = 0; i < kinsolData->size; i++) {
+    c[i] = 0.0;
+    if (nlsData->min[i] > 0.0 && x[i] > 0.0) {
+      c[i] = 2.0;   /* x > 0 */
+    } else if (nlsData->min[i] >= 0.0 && x[i] >= 0.0) {
+      c[i] = 1.0;   /* x >= 0 */
+    } else if (nlsData->max[i] < 0.0 && x[i] < 0.0) {
+      c[i] = -2.0;  /* x < 0 */
+    } else if (nlsData->max[i] <= 0.0 && x[i] <= 0.0) {
+      c[i] = -1.0;  /* x <= 0 */
+    }
+  }
+  flag = KINSetConstraints(kinsolData->kinsolMemory, kinsolData->constraints);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetConstraints");
+}
+
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
@@ -1346,6 +1382,9 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
     /* Set maximum step size */
     nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
+
+    /* Keep the sign of variables with a non-negative min or non-positive max attribute */
+    nlsKinsolSetConstraints(kinsolData, nlsData);
 
     /* Dump configuration */
     nlsKinsolConfigPrint(kinsolData, nlsData);

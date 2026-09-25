@@ -299,6 +299,8 @@ pub struct NlsRequest<'a> {
     pub colors: &'a [u32],
     /// C's `nlsData->max`.
     pub max: &'a [f64],
+    /// C's `nlsData->min`.
+    pub min: &'a [f64],
 }
 
 /// The nonlinear solvers a runtime supplies beyond the core's own dense ladder:
@@ -3799,6 +3801,7 @@ pub fn solve_nls(
     let pat: &[u32] = if scatter { spec.pattern } else { &[] };
     let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
     let max = || bounds.chunks_exact(2).map(|b| b[1]).collect::<alloc::vec::Vec<f64>>();
+    let min = || bounds.chunks_exact(2).map(|b| b[0]).collect::<alloc::vec::Vec<f64>>();
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
@@ -4023,7 +4026,7 @@ pub fn solve_nls(
                 backend.solve_kinsol_dense(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max(),
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(), min: &min(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4033,7 +4036,7 @@ pub fn solve_nls(
                 backend.solve_sparse(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max(),
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(), min: &min(),
                     },
                     &mut load_guess,
                     &mut eval,

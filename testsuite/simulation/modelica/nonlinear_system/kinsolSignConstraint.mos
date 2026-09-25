@@ -1,0 +1,36 @@
+// name: kinsolSignConstraint
+// keywords: kinsol, min, max
+// status: correct
+//
+// The min attribute keeps KINSOL from stepping to negative densities, the full
+// Newton step through v = 1/rho would end at the non-physical root rho = -28000.
+
+loadString("
+model KinsolSignConstraint
+  Real rho(start = 0.17, min = 0);
+  Real v(start = 5.88);
+equation
+  v = 1 / rho;
+  v = 28 + 0.001 * rho * cos(time);
+end KinsolSignConstraint;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(KinsolSignConstraint, stopTime = 1, simflags = "-nls=kinsol"); getErrorString();
+val(rho, 0); val(rho, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "KinsolSignConstraint_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'KinsolSignConstraint', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.03571424016046412
+// 0.035714261101423055
+// endResult

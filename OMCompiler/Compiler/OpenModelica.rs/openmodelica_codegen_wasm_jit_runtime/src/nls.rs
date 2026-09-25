@@ -573,6 +573,7 @@ fn kinsol_sparse_solve(
     has_jacobian: bool,
     colors: &[u32],
     max: &[f64],
+    min: &[f64],
     old_values: &[f64],
     load_guess: &mut dyn FnMut(&mut [f64]),
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -591,14 +592,14 @@ fn kinsol_sparse_solve(
         // `make_assemble`'s dense gather buffer is never needed.
         let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
-        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max };
+        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max, min };
         return crate::sundials::kinsol_solve_selected(
             handle, n, &pat, nominal, guess, old_values, x, eq_index, time, has_jacobian,
             load_guess, eval, &mut assemble,
         );
     }
     // only the KINSOL path names the system it dumps
-    let _ = (eq_index, time, old_values);
+    let _ = (eq_index, time, old_values, min);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
     newton_sparse_solve(
         n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, has_jacobian, colors, max,
@@ -941,7 +942,7 @@ impl NlsBackend for WasmBackend<'_> {
         kinsol_sparse_solve(
             req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
             self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.colors,
-            req.max, req.old_values, load_guess, eval,
+            req.max, req.min, req.old_values, load_guess, eval,
         )
     }
 
