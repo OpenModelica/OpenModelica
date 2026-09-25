@@ -1100,10 +1100,22 @@ public
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
+        elseif not Type.isDiscrete(Type.arrayElementType(exp.ty)) and isSome(derivativeOfPrefix(strippedCref, diff_map)) then
+          // a field of a record input, e.g. s.T -> $Ds.T
+          SOME(derCref) := derivativeOfPrefix(strippedCref, diff_map);
+          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
+          res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
         end if;
       then (res, diffArguments);
+
+      // Types: (SIMPLE)
+      // a record variable is differentiated fieldwise, D(r)/dr.x => R(1, 0, ...)
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
+        guard(Type.isRecord(exp.ty) and not ComponentRef.isEqual(exp.cref, diffArguments.diffCref)
+          and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo()))
+      then differentiateRecordCref(exp, diffArguments);
 
       // -------------------------------------
       //    Generic Rules
@@ -1233,6 +1245,8 @@ public
               elem_exps := elem_res :: elem_exps;
             end for;
             res := makeShapedArray(exp.ty, listReverse(elem_exps));
+          elseif Type.isRecord(exp.ty) then
+            (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
           else
             res := differentiateIteratorElement(exp, diffArguments, diff_map);
           end if;
@@ -1317,7 +1331,11 @@ public
             // matrix cref like Rot_dq): keep the original whole-type zero, since
             // building it element-by-element would flatten its shape and break
             // codegen for multi-dimensional types.
-            res := differentiateIteratorElement(exp, diffArguments, diff_map);
+            if Type.isRecord(exp.ty) then
+              (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+            else
+              res := differentiateIteratorElement(exp, diffArguments, diff_map);
+            end if;
           else
             elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             elem_exps := {};
@@ -1370,6 +1388,60 @@ public
       end if;
     end if;
   end makeShapedArray;
+
+  function derivativeOfPrefix
+    "The derivative of a cref whose prefix has a derivative, e.g. s.T -> $Ds.T if s -> $Ds."
+    input ComponentRef cref "without subscripts";
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Option<ComponentRef> derCref;
+  algorithm
+    derCref := match cref
+      local
+        ComponentRef rest, der_rest;
+      case ComponentRef.CREF(restCref = rest as ComponentRef.CREF()) algorithm
+        if UnorderedMap.contains(rest, diff_map) then
+          derCref := SOME(ComponentRef.prepend(UnorderedMap.getOrFail(rest, diff_map), cref));
+        else
+          derCref := match derivativeOfPrefix(rest, diff_map)
+            case SOME(der_rest) then SOME(ComponentRef.prepend(der_rest, cref));
+            else NONE();
+          end match;
+        end if;
+      then derCref;
+      else NONE();
+    end match;
+  end derivativeOfPrefix;
+
+  function differentiateRecordCref
+    "A record variable whose fields are differentiated on their own: Record(der(field1), ...)."
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  protected
+    list<ComponentRef> children;
+    list<Expression> elements = {};
+    Expression elem;
+    ComponentRef cref;
+    Type ty;
+  algorithm
+    (cref, ty) := match exp
+      case Expression.CREF() then (exp.cref, exp.ty);
+      else (ComponentRef.EMPTY(), Type.UNKNOWN());
+    end match;
+    if Type.isRecord(ty) and BVariable.checkCref(cref, BVariable.isRecord, sourceInfo()) then
+      children := BVariable.getRecordChildrenCref(cref);
+      if List.compareLength(children, Type.recordFields(ty)) == 0 then
+        for child in children loop
+          (elem, diffArguments) := differentiateComponentRef(Expression.fromCref(child), diffArguments);
+          elements := elem :: elements;
+        end for;
+      end if;
+    end if;
+    if listEmpty(elements) then
+      exp := Expression.makeZero(Expression.typeOf(exp));
+    else
+      exp := Expression.makeRecord(InstNode.fullPath(Type.complexNode(ty)), ty, listReverse(elements));
+    end if;
+  end differentiateRecordCref;
 
   function differentiateIteratorElement
     "An element of an array with iterator subscripts (e.g. x[i] in a reduction) whose
@@ -1524,7 +1596,8 @@ public
             isCont := ((diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.containsContinuousVar(arg));
 
             // input type has to be real value or a function pointer, skip if its in the interface diff info
-            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg)));
+            // records are differentiated fieldwise
+            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))) or Type.isRecord(Type.arrayElementType(Expression.typeOf(arg)));
             isFunc    := InstNode.isFunction(inp);
             isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
             if isSkipped or not (isFunc or (isCont and isReal)) then

@@ -1,0 +1,55 @@
+// name: recordArgumentDerivative
+// keywords: NewBackend
+// status: correct
+//
+// A record argument of a function is differentiated fieldwise, the derivative
+// function gets the seed of the record (it was treated as constant).
+
+loadString("
+package RecordArgumentDerivative
+  record State
+    Real T;
+    Real p;
+  end State;
+  function f
+    input State s;
+    input Integer i;
+    output Real y;
+  protected
+    Real a = 0;
+  algorithm
+    for k in 1:i loop
+      a := a + s.T ^ 2 / 10;
+    end for;
+    y := a + i * sin(s.p);
+    annotation(Inline = false);
+  end f;
+  model M
+    State st;
+    Real y(start = 1);
+  equation
+    st.T = y + 1 + time;
+    st.p = 2 * y;
+    y = 0.1 * f(st, 1);
+  end M;
+end RecordArgumentDerivative;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+echo(false);
+res := simulate(RecordArgumentDerivative.M, stopTime = 0.1, simflags = "-nls=kinsol -lv=LOG_NLS_DERIVATIVE_TEST");
+msg := res.messages;
+echo(true);
+getErrorString();
+regexBool(msg, "Derivative test failed");
+val(y, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// 0.012822260296381408
+// endResult
