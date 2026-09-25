@@ -26,6 +26,37 @@
  */
 
 #include "../openmodelica.h"
+#include "meta_modelica_string.h"
+
+void* stringAppend(void *s1, void *s2)
+{
+  unsigned len1, len2, nbytes;
+  void *res;
+  MMC_CHECK_STRING(s1);
+  MMC_CHECK_STRING(s2);
+  len1 = MMC_STRLEN(s1);
+  len2 = MMC_STRLEN(s2);
+  if (len1 == 0) return s2;
+  if (len2 == 0) return s1;
+  nbytes = len1 + len2;
+  res = mmc_mk_scon_len(nbytes);
+  memcpy(MMC_STRINGDATA(res), MMC_STRINGDATA(s1), len1);
+  memcpy(MMC_STRINGDATA(res) + len1, MMC_STRINGDATA(s2), len2 + 1);
+  MMC_CHECK_STRING(res);
+  return res;
+}
+
+modelica_integer mmc_stringCompare(const void *str1, const void *str2)
+{
+  int res;
+  MMC_CHECK_STRING(str1);
+  MMC_CHECK_STRING(str2);
+  res = strcmp(MMC_STRINGDATA(str1), MMC_STRINGDATA(str2));
+  if (res < 0) return -1;
+  if (res > 0) return 1;
+  return 0;
+}
+
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
 #include "../util/base_array.h"

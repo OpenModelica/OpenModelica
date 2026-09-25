@@ -34,22 +34,6 @@ thread_local! {
     pub static rewriteRulesIndex: RefCell<Option<metamodelica::List<crate::RewriteRules::Rule>>> =
         const { RefCell::new(None) };
 
-    // Index 25 — optionSimCode
-    //
-    // The current SimCode structure, set during SimCode generation.
-    // None when not in a SimCode generation pass.
-    pub static optionSimCode: RefCell<Option<openmodelica_simcode_types::SimCode::SimCode>> =
-        const { RefCell::new(None) };
-
-    // Index 34 — fmi3VariableAliasCache
-    //
-    // Value reference -> the FMI 3.0 <Alias> members nested under the variable
-    // with that value reference. Live only while one modelDescription.xml is
-    // being written; source: SimCodeUtil.cacheFMI3VariableAliases.
-    pub static fmi3VariableAliasCache: RefCell<
-        Option<metamodelica::Array<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>,
-    > = const { RefCell::new(None) };
-
     // Index 26 — interactiveCache
     //
     // Declared in `openmodelica_backend_main/src/Globals.rs`: its value type

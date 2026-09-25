@@ -300,7 +300,7 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   rt_tick(SIM_TIMER_JACOBIAN);
@@ -325,10 +325,10 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
     gbInternal_evalNumericalJacobian(data, threadData, gbData, nls);
   }
 
-  ret = 0;
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { ret = 0; }
 
   #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
   #endif
 
   if (nls->multirate)

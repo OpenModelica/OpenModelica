@@ -553,6 +553,11 @@ end crefST;
 template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
 ::=
+  match cr
+  // No separate variable is generated for a start value, so refer to the variable itself,
+  // the same way cref1 resolves a scalar $START cref.
+  case CREF_QUAL(ident = "$START") then contextArrayCref(componentRef, context)
+  else
   match context
   case FUNCTION_CONTEXT(__) then arrayCrefStr(cr)
   else arrayCrefCStr(cr,context)

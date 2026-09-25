@@ -11,6 +11,12 @@ use super::*;
 /// cross-module call dominated the per-evaluation cost. The stride follows the
 /// element's wasm type, which the load/store that follows already assumes.
 pub(super) fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
+    emit_elem_ptr_ranked(ctx, elem, None)
+}
+
+/// [`emit_elem_ptr`] for an array whose rank the caller knows, which fixes where
+/// its elements start.
+pub(super) fn emit_elem_ptr_ranked(ctx: &mut FnCtx, elem: &SigTy, rank: Option<u32>) -> Result<()> {
     use we::Instruction as I;
     let (ot, it) = ctx.elem_ptr_temps();
     let shift = match elem.wty() {
@@ -37,14 +43,19 @@ pub(super) fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
     ctx.emit(I::End);
     // obj + align8(ARR_DIMS_OFF + ndims*4) + (index - 1) * stride
     ctx.emit(I::LocalGet(ot));
-    ctx.emit(I::LocalGet(ot));
-    ctx.emit(I::I32Load(mem_arg(ARR_NDIMS_OFF, 2)));
-    ctx.emit(I::I32Const(2));
-    ctx.emit(I::I32Shl);
-    ctx.emit(I::I32Const(ARR_DIMS_OFF as i32 + 7));
-    ctx.emit(I::I32Add);
-    ctx.emit(I::I32Const(-8));
-    ctx.emit(I::I32And);
+    match rank {
+        Some(r) => ctx.emit(I::I32Const(arr_data_off(r) as i32)),
+        None => {
+            ctx.emit(I::LocalGet(ot));
+            ctx.emit(I::I32Load(mem_arg(ARR_NDIMS_OFF, 2)));
+            ctx.emit(I::I32Const(2));
+            ctx.emit(I::I32Shl);
+            ctx.emit(I::I32Const(ARR_DIMS_OFF as i32 + 7));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::I32Const(-8));
+            ctx.emit(I::I32And);
+        }
+    }
     ctx.emit(I::I32Add);
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::I32Const(1));
@@ -93,12 +104,12 @@ fn elem_store_off(ctx: &mut FnCtx, elem: &SigTy, offset: u32) {
 /// runtime's `arr_data_off`. Constant here, so a construction's element address
 /// is a plain offset off the object rather than the descriptor arithmetic (and
 /// bounds check) [`emit_elem_ptr`] needs for a run-time index.
-fn arr_data_off(rank: u32) -> u32 {
+pub(super) fn arr_data_off(rank: u32) -> u32 {
     (ARR_DIMS_OFF + rank * 4).next_multiple_of(8)
 }
 
 /// Byte size of one array element.
-fn elem_stride(elem: &SigTy) -> u32 {
+pub(super) fn elem_stride(elem: &SigTy) -> u32 {
     match elem.wty() {
         WTy::F64 => 8,
         WTy::I32 => 4,

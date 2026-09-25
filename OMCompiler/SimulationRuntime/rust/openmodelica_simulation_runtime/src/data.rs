@@ -1029,7 +1029,7 @@ fn calculate_length(dim: &mut DIMENSION_INFO, md: &MODEL_DATA) -> usize {
             for i in 0..md.nParametersIntegerArray as usize {
                 let p = unsafe { &*md.integerParameterData.add(i) };
                 if p.info.id as modelica_integer == d.valueReference {
-                    found = Some(p.attribute.start);
+                    found = Some(p.attribute.start.elem_at(0, 0));
                     break;
                 }
             }

@@ -13,7 +13,21 @@ fn main() {
     // (see src/runtime_error_shim.c and the rebinding in dynload::ensure_runtime).
     // The `va_list` formatting it performs cannot be written in stable Rust.
     println!("cargo:rerun-if-changed=src/runtime_error_shim.c");
-    cc::Build::new()
-        .file("src/runtime_error_shim.c")
-        .compile("omrs_runtime_error_shim");
+    let mut build = cc::Build::new();
+    build.file("src/runtime_error_shim.c");
+
+    // System.gccVersion: omc_config.h's `__VERSION__` for MinGW builds.
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
+        && std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu")
+    {
+        let cc = build.get_compiler();
+        let version = ["-dumpfullversion", "-dumpversion"].iter().find_map(|flag| {
+            let out = cc.to_command().arg(flag).output().ok()?;
+            let v = String::from_utf8(out.stdout).ok()?.trim().to_string();
+            (out.status.success() && !v.is_empty()).then_some(v)
+        });
+        println!("cargo:rustc-env=OMC_GCC_VERSION={}", version.unwrap_or_default());
+    }
+
+    build.compile("omrs_runtime_error_shim");
 }

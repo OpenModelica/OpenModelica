@@ -110,7 +110,32 @@ void mmc_do_out_of_memory(void)
   abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
-#if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
+#if !defined(OMC_NO_BOEHM_GC)
+/* The MetaModelica runtime's allocator: Boehm. The counted one a simulation
+   gets instead is in gc/omc_rc.c. */
+static int GC_collect_a_little_or_not(void)
+{
+  return 0;
+}
+
+static void nofree(void *ptr)
+{
+  (void) ptr;
+}
+
+omc_alloc_interface_t omc_alloc_interface = {
+  GC_init,
+  GC_malloc,
+  GC_malloc_atomic,
+  (char*(*)(size_t)) GC_malloc_atomic,
+  GC_strdup,
+  GC_collect_a_little_or_not,
+  GC_malloc_uncollectable,
+  GC_free,
+  GC_malloc_atomic,
+  nofree
+};
+
 /* Work-around for Boehm GC not exposing the maximum heap size */
 static size_t max_heap_size = 0;
 void omc_GC_set_max_heap_size(size_t sz)

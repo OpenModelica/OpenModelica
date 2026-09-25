@@ -529,6 +529,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
     const char *jsonFile;
     GC_asprintf(&jsonFile, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName);
     fileExists = omc_file_exists(jsonFile);
+    omc_rc_release((void*) jsonFile);
   }
   else
   {
@@ -537,6 +538,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 
   if (!fileExists)
   {
+    omc_rc_release((void*) xml->fileName);
     xml->fileName = NULL;
     return;
   }
@@ -553,6 +555,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
         throwStreamPrint(NULL, "simulation_info_json.c: Error: can not allocate memory.");
       }
       mmap_reader = omc_mmap_open_read(filename);
+      omc_rc_release((void*) filename);
     } else {
       mmap_reader = omc_mmap_open_read(xml->fileName);
     }
@@ -615,6 +618,9 @@ void modelInfoDeinit(MODEL_DATA_XML* xml)
     }
     free(xml->equationInfo); xml->equationInfo = NULL;
   }
+
+  /* Built by the generated setupDataStruc. */
+  omc_rc_release((void*) xml->fileName); xml->fileName = NULL;
 }
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)

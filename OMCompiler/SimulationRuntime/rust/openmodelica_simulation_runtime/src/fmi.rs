@@ -114,10 +114,15 @@ pub extern "C" fn allocModelDataVars(
 
 /// The one element `<Model>_read_input_fmu`'s `put_real_element` writes into.
 fn alloc_scalar_real_array(a: &mut real_array) {
+    alloc_scalar_array::<f64>(a);
+}
+
+/// The one element `<Model>_read_input_fmu`'s `put_<type>_element` writes into.
+fn alloc_scalar_array<T>(a: &mut base_array_t) {
     a.ndims = 1;
     a.dim_size = alloc(1);
     unsafe { *a.dim_size = 1 };
-    a.data = alloc::<f64>(1).cast();
+    a.data = alloc::<T>(1).cast();
     a.flexible = 0;
 }
 
@@ -134,6 +139,33 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
             alloc_scalar_real_array(&mut a.nominal);
             alloc_scalar_real_array(&mut a.min);
             alloc_scalar_real_array(&mut a.max);
+        }
+    }
+    for (base, count) in [
+        (md.integerVarsData, md.nVariablesIntegerArray),
+        (md.integerParameterData, md.nParametersIntegerArray),
+    ] {
+        for i in 0..count as usize {
+            let a = unsafe { &mut (*base.add(i)).attribute };
+            alloc_scalar_array::<modelica_integer>(&mut a.start);
+            alloc_scalar_array::<modelica_integer>(&mut a.min);
+            alloc_scalar_array::<modelica_integer>(&mut a.max);
+        }
+    }
+    for (base, count) in [
+        (md.booleanVarsData, md.nVariablesBooleanArray),
+        (md.booleanParameterData, md.nParametersBooleanArray),
+    ] {
+        for i in 0..count as usize {
+            alloc_scalar_array::<modelica_boolean>(unsafe { &mut (*base.add(i)).attribute.start });
+        }
+    }
+    for (base, count) in [
+        (md.stringVarsData, md.nVariablesStringArray),
+        (md.stringParameterData, md.nParametersStringArray),
+    ] {
+        for i in 0..count as usize {
+            alloc_scalar_array::<modelica_string>(unsafe { &mut (*base.add(i)).attribute.start });
         }
     }
 }
@@ -181,15 +213,27 @@ pub extern "C" fn setAllVarsToStart(
             unsafe { *sd.realVars.add(base + k) = attr.start.real_at(k, 0.0) };
         }
     }
-    for a in 0..md.nVariablesInteger as usize {
-        unsafe { *sd.integerVars.add(a) = (*md.integerVarsData.add(a)).attribute.start };
+    for a in 0..md.nVariablesIntegerArray as usize {
+        let v = unsafe { &*md.integerVarsData.add(a) };
+        let base = unsafe { *si.integerVarsIndex.add(a) };
+        for k in 0..v.dimension.scalar_length {
+            unsafe { *sd.integerVars.add(base + k) = v.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nVariablesBoolean as usize {
-        unsafe { *sd.booleanVars.add(a) = (*md.booleanVarsData.add(a)).attribute.start };
+    for a in 0..md.nVariablesBooleanArray as usize {
+        let v = unsafe { &*md.booleanVarsData.add(a) };
+        let base = unsafe { *si.booleanVarsIndex.add(a) };
+        for k in 0..v.dimension.scalar_length {
+            unsafe { *sd.booleanVars.add(base + k) = v.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nVariablesString as usize {
-        let start = unsafe { (*md.stringVarsData.add(a)).attribute.start };
-        unsafe { *sd.stringVars.add(a) = persist_string(start) };
+    for a in 0..md.nVariablesStringArray as usize {
+        let v = unsafe { &*md.stringVarsData.add(a) };
+        let base = unsafe { *si.stringVarsIndex.add(a) };
+        for k in 0..v.dimension.scalar_length {
+            let start = v.attribute.start.elem_at(k, core::ptr::null_mut());
+            unsafe { *sd.stringVars.add(base + k) = persist_string(start) };
+        }
     }
 }
 
@@ -207,14 +251,26 @@ pub extern "C" fn setAllParamsToStart(
             unsafe { *si.realParameter.add(base + k) = attr.start.real_at(k, 0.0) };
         }
     }
-    for a in 0..md.nParametersInteger as usize {
-        unsafe { *si.integerParameter.add(a) = (*md.integerParameterData.add(a)).attribute.start };
+    for a in 0..md.nParametersIntegerArray as usize {
+        let p = unsafe { &*md.integerParameterData.add(a) };
+        let base = unsafe { *si.integerParamsIndex.add(a) };
+        for k in 0..p.dimension.scalar_length {
+            unsafe { *si.integerParameter.add(base + k) = p.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nParametersBoolean as usize {
-        unsafe { *si.booleanParameter.add(a) = (*md.booleanParameterData.add(a)).attribute.start };
+    for a in 0..md.nParametersBooleanArray as usize {
+        let p = unsafe { &*md.booleanParameterData.add(a) };
+        let base = unsafe { *si.booleanParamsIndex.add(a) };
+        for k in 0..p.dimension.scalar_length {
+            unsafe { *si.booleanParameter.add(base + k) = p.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nParametersString as usize {
-        unsafe { *si.stringParameter.add(a) = (*md.stringParameterData.add(a)).attribute.start };
+    for a in 0..md.nParametersStringArray as usize {
+        let p = unsafe { &*md.stringParameterData.add(a) };
+        let base = unsafe { *si.stringParamsIndex.add(a) };
+        for k in 0..p.dimension.scalar_length {
+            unsafe { *si.stringParameter.add(base + k) = p.attribute.start.elem_at(k, core::ptr::null_mut()) };
+        }
     }
 }
 

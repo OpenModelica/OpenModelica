@@ -33,7 +33,6 @@
  Mahder.Gebremedhin@liu.se  2014-03-13
 */
 
-#include "gc.h"
 
 #include <cmath>
 

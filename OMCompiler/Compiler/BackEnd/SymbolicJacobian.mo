@@ -185,7 +185,7 @@ algorithm
     // prepare a DAE
     DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
     if debug then execStat("detectSparsePatternODE -> copy dae "); end if;
-    DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
+    DAE := BackendDAEOptimize.collapseIndependentContinuousBlocks(DAE);
     if debug then execStat("detectSparsePatternODE -> collapse blocks "); end if;
     DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
     if debug then execStat("detectSparsePatternODE -> transform backend dae "); end if;
@@ -335,7 +335,7 @@ algorithm
     print("analytical Jacobians -> start generate system for matrix A time : " + realString(clock()) + "\n");
   end if;
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-  backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+  backendDAE2 := BackendDAEOptimize.collapseIndependentContinuousBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
   BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
 
@@ -404,7 +404,7 @@ algorithm
   end if;
 
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-  backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+  backendDAE2 := BackendDAEOptimize.collapseIndependentContinuousBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
   BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
 

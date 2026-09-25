@@ -1598,14 +1598,24 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         >>
       case  "win32"
       case  "win64" then
+        let omPlatform = System.openModelicaPlatform()
+        let msysPath = if intEq(-1, stringFind(omPlatform, "msvc")) then
+          'if defined OMDEV set OMC_MSYS=%OMDEV%\\tools\\msys\\<%omPlatform%><%\n%>if not defined OMDEV set OMC_MSYS=<%home%>\\tools\\msys\\<%omPlatform%>'
+        else ""
+        let msysPathEntries = if intEq(-1, stringFind(omPlatform, "msvc")) then
+          ';%OMC_MSYS%\\bin;%OMC_MSYS%\\lib\\gcc\\<%System.gccDumpMachine()%>\\<%System.gccVersion()%>;%OMC_MSYS%\\..\\usr\\bin'
+        else ""
+
         <<
         @echo off
-        SET PATH=<%binFolder%>;<%libFolder%>;<%libPaths%>;%PATH%
+        setlocal
+        <%msysPath%>
+        SET PATH=<%binFolder%>;<%libFolder%>;<%libPaths%><%msysPathEntries%>;%PATH%
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         <%preRunCommandWindows%>
 
         <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%> <%zermMQParams%>  <%outputParameter%>
-
+        endlocal
         >>
     end match
   end match
@@ -3350,7 +3360,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       deleteObjects();
       <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-        let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
+        let numOfEqs = SimCodeCodegenUtil.getMaxSimEqSystemIndex(simCode)
         <<
         #ifdef MEASURETIME_PROFILEBLOCKS
         delete measuredProfileBlockStartValues;
@@ -3468,7 +3478,7 @@ match simCode
       //Number of residues
        _event_handling= shared_ptr<EventHandling>(new EventHandling());
       <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-            let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
+            let numOfEqs = SimCodeCodegenUtil.getMaxSimEqSystemIndex(simCode)
             <<
             #ifdef MEASURETIME_PROFILEBLOCKS
             measureTimeProfileBlocksArray = new std::vector<MeasureTimeData*>(size_t(<%numOfEqs%>), NULL);
@@ -7755,7 +7765,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=name) then
       match(createDebugCode)
         case true then
-          let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+          let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
           let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(getSimVars()->init<%type%>Var(<%index%>))<%\n%>'
           ""
         else ""
@@ -7773,19 +7783,19 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
           case "0" then
             match(createDebugCode)
               case true then
-                let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+                let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
                 let& additionalConstructorVariables += ',<%arrayName%>(getSimVars()->init<%type%>Var(<%index%>))'
                 ""
               else ""
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
-            if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
-              let arrayHeadIdx = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+            if SimCodeCodegenUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+              let arrayHeadIdx = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               <<
               <%arrayName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
             else
-              let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences) |> idx => '<%idx%>'; separator=" LIST_SEP "
+              let arrayIndices = SimCodeCodegenUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences) |> idx => '<%idx%>'; separator=" LIST_SEP "
               <<
               <%typeString%>* <%arrayName%>_ref_data[<%size%>];
               getSimVars()->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
@@ -7796,7 +7806,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name, dims)
       let typeString = expTypeShort(type_)
-      let arrayHeadIdx = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+      let arrayHeadIdx = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
        <<
        <%varName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
        >>
@@ -7810,7 +7820,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
         case "0" then
           match createDebugCode
             case true then
-              let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+              let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               let& additionalConstructorVariables += ',<%varName%>(getSimVars()->init<%type%>Var(<%index%>))'
               ""
             else ""
@@ -8021,7 +8031,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           >>
         else
           if createRefVar then
-            let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+            let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
             <<
             #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%index%>]
             >>
@@ -8043,14 +8053,14 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
             >>
           else
             if createRefVar then
-              let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+              let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               <<
               #define <%arrayName%> _pointerTo<%type%>Vars[<%index%>]
               >>
             else
               '<%typeString%> <%arrayName%>;'
       else
-        if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+        if SimCodeCodegenUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
           <<
           StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, <%createRefVar%>> <%arrayName%>;
           >>
@@ -8078,7 +8088,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
               '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
             else
               if createRefVar then
-                let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+                let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
                 '#define <%varName%> _pointerTo<%type%>Vars[<%index%>]'
               else
                 '<%varType%> <%varName%>;'
@@ -12429,7 +12439,7 @@ end createEvaluate;
 template createEvaluatePartitions(Integer partIdx, Context context, list<SimEqSystem> odeEquations, list<Integer> partition, list<Integer> activators, String className, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   let condition = partitionCondition(activators)
-  let equation_func_calls = (SimCodeUtil.getSimEqSystemsByIndexLst(partition,odeEquations) |> eq  =>
+  let equation_func_calls = (SimCodeCodegenUtil.getSimEqSystemsByIndexLst(partition,odeEquations) |> eq  =>
                     equation_function_call(eq, context, simCode, "evaluate")
                     ;separator="\n")
 <<

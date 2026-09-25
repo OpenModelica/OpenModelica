@@ -3037,6 +3037,8 @@ protected
     input Option<String> generatedName = NONE() "name of the generated function if checking generated code, where use before assign is an error";
   protected
     SourceInfo info;
+    Option<InstNode> shadowed;
+    Integer index;
   algorithm
     for stmt in statements loop
       info := Statement.info(stmt);
@@ -3055,7 +3057,21 @@ protected
               checkUseBeforeAssignExp(unassigned, Util.getOption(stmt.range), info, generatedName);
             end if;
 
+            // generated functions are checked by name, so a local with the name of the
+            // iterator is shadowed inside the loop and must not be matched
+            shadowed := NONE();
+            if isSome(generatedName) then
+              (shadowed, index) := Vector.find(unassigned, function InstNode.nameEqual(node1 = stmt.iterator));
+              if index > 0 then
+                Vector.remove(unassigned, index);
+              end if;
+            end if;
+
             checkUseBeforeAssign2(unassigned, stmt.body, generatedName);
+
+            if isSome(shadowed) then
+              Vector.push(unassigned, Util.getOption(shadowed));
+            end if;
           then
             ();
 
@@ -3261,8 +3277,13 @@ protected
 
     for var in Vector.toList(unassigned) loop
       if InstNode.isOutput(var) then
-        Error.addSourceMessage(Error.GENERATED_FUNCTION_UNASSIGNED_OUTPUT,
-          {InstNode.name(var), fn_name}, InstNode.info(var));
+        if Type.isDiscrete(InstNode.getType(var)) then
+          // the derivative of a discrete output (e.g. an Integer error code) is zero
+          uninitialized := var :: uninitialized;
+        else
+          Error.addSourceMessage(Error.GENERATED_FUNCTION_UNASSIGNED_OUTPUT,
+            {InstNode.name(var), fn_name}, InstNode.info(var));
+        end if;
       end if;
     end for;
 

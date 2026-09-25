@@ -77,6 +77,10 @@ set(OMEDIT_TEST_LANGUAGESERVER_SOURCES LanguageServer/LanguageServerTest.cpp
                                        LanguageServer/LanguageServerTest.h)
 add_omedit_test(LanguageServer "${OMEDIT_TEST_LANGUAGESERVER_SOURCES}")
 
+set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
+                                              MergeExtendsModifiers/MergeExtendsModifiersTest.h)
+add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")
+
 set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")

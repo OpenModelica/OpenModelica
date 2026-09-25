@@ -245,7 +245,7 @@ fn emit_relation_nominal(ctx: &mut FnCtx, e1: &metamodelica::Ref<DAE::Exp>, e2: 
 }
 
 fn nominal_exp(e: &metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
-    openmodelica_backend::SimCodeUtil::getExpNominal(e.clone())
+    openmodelica_codegen_util::SimCodeCodegenUtil::getExpNominal(e.clone())
         .unwrap_or_else(|_| metamodelica::Ref::new(DAE::Exp::RCONST { real: 1.0.into() }))
 }
 
@@ -340,10 +340,9 @@ pub(super) fn compile_call(
         return closures::compile_fnptr_call(ctx, name, args);
     }
     let mangled = mangle(path)?;
-    // A call to another generated function. Heap arguments are passed as owned
-    // (+1) references — a generated function *consumes* its heap parameters
-    // (they are released at its scope exit), so the caller does not release them
-    // after the call.
+    // A call to another generated function. String and array arguments are
+    // passed as owned (+1) references, which the callee releases at its scope
+    // exit; record arguments are borrowed (see `compile_call_args`).
     if let Some(info) = ctx.by_name.get(&mangled) {
         let params = info.sig.params.clone();
         let results = info.sig.results.clone();
@@ -352,15 +351,13 @@ pub(super) fn compile_call(
         if argv.len() != params.len() {
             return Err("CodegenWasmJit: call argument count mismatch");
         }
-        for (a, p) in argv.iter().zip(params.iter()) {
-            let w = compile_exp(ctx, a)?;
-            coerce(ctx, w, p.wty());
-        }
+        let temps = compile_call_args(ctx, &argv, &params)?;
         // C's `SIM_PROF_TICK_FN` / `SIM_PROF_ACC_FN` around a profiled call.
         let clock = prof_fn_clock(ctx, &mangled);
         emit_prof(ctx, clock, "rt_prof_tick")?;
         ctx.emit(we::Instruction::Call(index));
         emit_prof(ctx, clock, "rt_prof_acc")?;
+        release_record_temps(ctx, &temps)?;
         return Ok(results);
     }
     // A call whose result is a record and which is not a generated function is a
@@ -399,4 +396,56 @@ pub(super) fn compile_call(
         return compile_spatial_distribution(ctx, args).map(|_| vec![SigTy::Real, SigTy::Real]);
     }
     compile_math_builtin(ctx, &name, args, attr).map(|s| vec![s])
+}
+
+/// Push the arguments of a call to a generated function. A record parameter is
+/// borrowed: a record local is passed as is, and any other record value goes
+/// through a temp the caller releases after the call (returned here).
+pub(super) fn compile_call_args(
+    ctx: &mut FnCtx,
+    argv: &[&metamodelica::Ref<DAE::Exp>],
+    params: &[SigTy],
+) -> Result<Vec<u32>> {
+    let mut temps = Vec::new();
+    for (a, p) in argv.iter().zip(params.iter()) {
+        if matches!(p, SigTy::Record { .. }) {
+            if let Some(idx) = record_local(ctx, a) {
+                ctx.emit(we::Instruction::LocalGet(idx));
+                continue;
+            }
+            compile_exp(ctx, a)?;
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalTee(t));
+            temps.push(t);
+            continue;
+        }
+        let w = compile_exp(ctx, a)?;
+        coerce(ctx, w, p.wty());
+    }
+    Ok(temps)
+}
+
+pub(super) fn release_record_temps(ctx: &mut FnCtx, temps: &[u32]) -> Result<()> {
+    for t in temps {
+        ctx.emit(we::Instruction::LocalGet(*t));
+        ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+    }
+    Ok(())
+}
+
+/// The wasm local holding `e` when it is a plain reference to a record local of
+/// a function body (sim-mode crefs may name model variables instead).
+fn record_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<u32> {
+    if ctx.sim.is_some() {
+        return None;
+    }
+    let DAE::Exp::CREF { componentRef, .. } = e else { return None };
+    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else { return None };
+    if !subscriptLst.is_empty() {
+        return None;
+    }
+    match ctx.locals.get(ident.as_str()) {
+        Some((idx, SigTy::Record { .. })) => Some(*idx),
+        _ => None,
+    }
 }

@@ -77,6 +77,7 @@ private:
   bool mIsRootItem;
   QString mVariableName;
   QString mDisplayVariableName;
+  QString mAlias;
   QString mComment;
   QString mFilePath;
   QString mLineNumber;

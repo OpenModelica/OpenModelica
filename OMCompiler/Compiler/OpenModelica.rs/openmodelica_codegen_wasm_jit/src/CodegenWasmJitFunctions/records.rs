@@ -134,22 +134,8 @@ pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy
     let layout = record_layout(fields);
     let obj = emit_record_alloc(ctx, &layout)?;
     for (i, (_, fty)) in fields.iter().enumerate() {
-        let w = compile_exp(ctx, field_exps[i])?;
+        let w = compile_private_value(ctx, field_exps[i], fty)?;
         coerce(ctx, w, fty.wty());
-        // Value semantics: a record/array field built from a non-fresh source
-        // (a variable, a field read) aliases that source's mutable object — copy
-        // it so the record owns a private value. Fresh constructors/calls/ranges
-        // are already privately owned and move in. (Strings are immutable.)
-        if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
-            if !value_rhs_is_fresh(field_exps[i]) {
-                let t = ctx.alloc_temp(WTy::I32);
-                ctx.emit(we::Instruction::LocalSet(t));
-                ctx.emit(we::Instruction::LocalGet(t));
-                ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-                ctx.emit(we::Instruction::LocalGet(t));
-                ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-            }
-        }
         // Store the owned (private) value into the field: address then value.
         let vt = ctx.alloc_temp(fty.wty());
         ctx.emit(we::Instruction::LocalSet(vt));
@@ -288,18 +274,8 @@ pub(super) fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()>
 
 /// One record-field binding, copied if it came from an alias (value semantics).
 fn emit_field_value(ctx: &mut FnCtx, fty: &SigTy, exp: &DAE::Exp) -> Result<()> {
-    let w = compile_exp(ctx, exp)?;
+    let w = compile_private_value(ctx, exp, fty)?;
     coerce(ctx, w, fty.wty());
-    if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
-        if !value_rhs_is_fresh(exp) {
-            let t = ctx.alloc_temp(WTy::I32);
-            ctx.emit(we::Instruction::LocalSet(t));
-            ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-            ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-        }
-    }
     Ok(())
 }
 
@@ -484,20 +460,10 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
         return Ok(());
     };
     // Heap field: compute the new owned value into a temp.
-    let w = compile_exp(ctx, rhs)?;
+    let w = compile_private_value(ctx, rhs, &fty)?;
     coerce(ctx, w, fty.wty());
     let val_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(val_t));
-    // Value semantics: a mutable array/record from a non-fresh source aliases it.
-    if let Some((copy_fn, rel_fn)) = value_copy_fns(&fty) {
-        if !value_rhs_is_fresh(rhs) {
-            ctx.emit(we::Instruction::LocalGet(val_t));
-            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-            ctx.emit(we::Instruction::LocalGet(val_t));
-            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-            ctx.emit(we::Instruction::LocalSet(val_t));
-        }
-    }
     // Release the previous field value (now that the new one is computed).
     ctx.emit(we::Instruction::LocalGet(rec_idx));
     field_load(ctx, fty.wty(), off);
@@ -540,7 +506,7 @@ fn push_record_base(
             return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
         let idx_exps = index_subscripts(subs, rank)?;
-        emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+        emit_elem_addr(ctx, idx, &elem, &idx_exps, None)?;
         elem_load(ctx, &elem);
         let t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(t));
@@ -606,7 +572,7 @@ fn step_into_record(
             return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
         let idx_exps = index_subscripts(fsubs, rank)?;
-        emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+        emit_elem_addr(ctx, vt, &elem, &idx_exps, None)?;
         elem_load(ctx, &elem);
         let t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(t));
@@ -638,7 +604,7 @@ pub(super) fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) 
                 };
                 return if is_scalar_index(fsubs, rank) {
                     let idx_exps = index_subscripts(fsubs, rank)?;
-                    emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+                    emit_elem_addr(ctx, vt, &elem, &idx_exps, None)?;
                     elem_load(ctx, &elem);
                     retain_on_stack(ctx, &elem)?;
                     Ok(elem.wty())
@@ -711,7 +677,7 @@ pub(super) fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef
             return compile_slice_assign(ctx, arr_t, lsubs, RhsSource::Exp(rhs));
         }
         let idx_exps = index_subscripts(lsubs, rank)?;
-        compile_elem_assign(ctx, arr_t, &elem, &idx_exps, rhs)?;
+        compile_elem_assign(ctx, arr_t, &elem, &idx_exps, None, rhs)?;
     }
     Ok(())
 }
@@ -720,8 +686,15 @@ pub(super) fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef
 /// (which privately owns its buffer). For a heap element the previous handle in
 /// the slot is released and the new owned value moved in; the old value is
 /// released only *after* the rhs is computed, in case the rhs reads it.
-pub(super) fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>], rhs: &DAE::Exp) -> Result<()> {
-    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
+pub(super) fn compile_elem_assign(
+    ctx: &mut FnCtx,
+    arr_idx: u32,
+    elem: &SigTy,
+    idx_exps: &[metamodelica::Ref<DAE::Exp>],
+    dims: Option<&[i32]>,
+    rhs: &DAE::Exp,
+) -> Result<()> {
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps, dims)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
     if let Some(release_fn) = elem.release_fn() {
@@ -746,10 +719,57 @@ pub(super) fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, i
     Ok(())
 }
 
+/// The sizes of an array type when every one is a literal, i.e. its layout is
+/// known at compile time.
+pub(super) fn static_dims(ty: &DAE::Type) -> Option<Vec<i32>> {
+    let dims = type_array_dims(ty);
+    if dims.is_empty() {
+        return None;
+    }
+    dims.iter()
+        .map(|d| match &**d {
+            DAE::Dimension::DIM_INTEGER { integer } => Some(*integer),
+            DAE::Dimension::DIM_BOOLEAN => Some(2),
+            DAE::Dimension::DIM_ENUM { size, .. } => Some(*size),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The byte offset of `a[idx_exps...]` from the array handle, when the indices are
+/// constants inside `dims` (which the frontend has then already checked).
+fn const_elem_offset(dims: &[i32], elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>]) -> Option<u32> {
+    if dims.len() != idx_exps.len() {
+        return None;
+    }
+    let mut flat: u32 = 0;
+    for (d, e) in dims.iter().zip(idx_exps) {
+        let k = const_index_value(e)?;
+        if k < 1 || k > *d {
+            return None;
+        }
+        flat = flat * *d as u32 + (k - 1) as u32;
+    }
+    Some(arr_data_off(dims.len() as u32) + flat * elem_stride(elem))
+}
+
 /// Emit the byte address of array element `a[idx_exps...]`, reading the array
 /// handle from local `arr_idx` (the local owns it — no retain/release). Leaves
 /// the address on the stack. Same row-major linear index as [`index_loaded`].
-pub(super) fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+/// `dims` are the array's [`static_dims`], when the caller knows them.
+pub(super) fn emit_elem_addr(
+    ctx: &mut FnCtx,
+    arr_idx: u32,
+    elem: &SigTy,
+    idx_exps: &[metamodelica::Ref<DAE::Exp>],
+    dims: Option<&[i32]>,
+) -> Result<()> {
+    if let Some(off) = dims.and_then(|d| const_elem_offset(d, elem, idx_exps)) {
+        ctx.emit(we::Instruction::LocalGet(arr_idx));
+        ctx.emit(we::Instruction::I32Const(off as i32));
+        ctx.emit(we::Instruction::I32Add);
+        return Ok(());
+    }
     let acc = ctx.alloc_temp(WTy::I32);
     emit_subscript_index(ctx, &idx_exps[0])?;
     ctx.emit(we::Instruction::I32Const(1));
@@ -770,7 +790,7 @@ pub(super) fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_ex
     ctx.emit(we::Instruction::LocalGet(acc));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    emit_elem_ptr(ctx, elem)
+    emit_elem_ptr_ranked(ctx, elem, Some(idx_exps.len() as u32))
 }
 
 /// Evaluate a call for its side effects and discard any results. A discarded

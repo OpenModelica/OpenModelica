@@ -3817,7 +3817,7 @@ algorithm
       algorithm
         false := BackendVariable.isVarOnTopLevelAndOutput(var);
         false := BackendVariable.isVarOnTopLevelAndInput(var);
-        false := BackendVariable.varHasUncertainValueRefine(var);
+        false := BackendVariable.varHasUncertainValueRefine(var) and BackendDAEUtil.isDataReconciliationEnabled();
       then
         ();
   end match;

@@ -47,7 +47,7 @@ import CodegenOMSIC_Equations;
 import CodegenUtil;
 import CodegenUtilSimulation;
 import CodegenCFunctions;
-import CodegenFMU;
+import CodegenFMUModelDescription;
 
 
 /* public */
@@ -55,7 +55,7 @@ template generateFMUModelDescriptionFile(SimCode simCode, String guid, String FM
 "Generate modelDescription.xml.
  ToDo: Workaround since runTplWriteFile from .mo file loses some spaces."
 ::=
-  let content = CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)
+  let content = CodegenFMUModelDescription.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)
   let () = textFile(content, fileName)
   <<>>
 end generateFMUModelDescriptionFile;
@@ -719,13 +719,14 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String fileNa
   "Generates function initSample() in simulation file."
 ::=
   let &varDecls = buffer ""
+  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let body = (timeEvents |> timeEvent hasindex i0 =>
       match timeEvent
         case SAMPLE_TIME_EVENT(__) then
           let &preExp = buffer ""
-          let e1 = CodegenCFunctions.daeExp(startExp, contextOther, &preExp, &varDecls, &auxFunction)
-          let e2 = CodegenCFunctions.daeExp(intervalExp, contextOther, &preExp, &varDecls, &auxFunction)
+          let e1 = CodegenCFunctions.daeExp(startExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+          let e2 = CodegenCFunctions.daeExp(intervalExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
           <%preExp%>
           /* sample <%index%> */

@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf binaries/ sources/ resources/ modelDescription.xml HelloFMI20World.fmu HelloFMI20World* HelloFMI20World/* output.log
 // cflags: -d=-newInst
-// win: yes
+// suite: smoke
 
 loadString("
 model HelloFMI20World

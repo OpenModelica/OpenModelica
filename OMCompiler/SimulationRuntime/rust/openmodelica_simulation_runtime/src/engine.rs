@@ -690,21 +690,21 @@ impl CEngine {
                 let p = &*md.integerParameterData.add(a);
                 let base = *si.integerParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.integerParameter.add(base + k) = p.attribute.start;
+                    *si.integerParameter.add(base + k) = p.attribute.start.elem_at(k, 0);
                 }
             }
             for a in 0..md.nParametersBooleanArray as usize {
                 let p = &*md.booleanParameterData.add(a);
                 let base = *si.booleanParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.booleanParameter.add(base + k) = p.attribute.start;
+                    *si.booleanParameter.add(base + k) = p.attribute.start.elem_at(k, 0);
                 }
             }
             for a in 0..md.nParametersStringArray as usize {
                 let p = &*md.stringParameterData.add(a);
                 let base = *si.stringParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.stringParameter.add(base + k) = p.attribute.start;
+                    *si.stringParameter.add(base + k) = p.attribute.start.elem_at(k, core::ptr::null_mut());
                 }
             }
         }
@@ -722,7 +722,7 @@ impl CEngine {
                 let v = &*md.stringVarsData.add(a);
                 let base = *si.stringVarsIndex.add(a);
                 for k in 0..v.dimension.scalar_length {
-                    *sd.stringVars.add(base + k) = v.attribute.start;
+                    *sd.stringVars.add(base + k) = v.attribute.start.elem_at(k, core::ptr::null_mut());
                 }
             }
         }

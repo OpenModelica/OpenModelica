@@ -1023,6 +1023,10 @@ public
           (tmp, simCodeIndices) := createAlgorithm(eqn, simCodeIndices, equation_map);
         then tmp;
 
+        case (BEquation.FOR_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          (tmp, simCodeIndices) := createAlgorithm(eqn, simCodeIndices, equation_map);
+        then tmp;
+
         case (BEquation.WHEN_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           (tmp, simCodeIndices) := createWhenBody(eqn.body, eqn.source, eqn.attr, simCodeIndices);
         then tmp;

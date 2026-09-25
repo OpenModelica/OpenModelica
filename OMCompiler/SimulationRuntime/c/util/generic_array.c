@@ -101,6 +101,7 @@ void generic_array_create_flexible(base_array_t* dst, int ndims)
 {
     dst->ndims = ndims;
     dst->dim_size = size_alloc(ndims);
+    dst->owns_data = 1;
 
     dst->flexible = 1;
 

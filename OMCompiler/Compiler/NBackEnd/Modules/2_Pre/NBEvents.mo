@@ -1174,6 +1174,7 @@ protected
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
+    Pointer<Integer> wc_cnt = Pointer.create(0);
     list<Pointer<Variable>> wc_vars;
     list<Pointer<Equation>> wc_eqns;
     Pointer<list<SpatialDistribution>> spatial_lst = Pointer.create({});
@@ -1195,10 +1196,14 @@ protected
         // into plain discrete CREFs so that getBodyAttributes can process them.
         // This handles boolean expressions like (not x.u) that were not turned into
         // zero-crossings (e.g. purely discrete conditions).
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex, wc_cnt);
+        auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
+        auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
+        // also for the removed equations, e.g. when equations that only have reinit
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.removed, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
 
@@ -1426,10 +1431,10 @@ protected
     involved zero-crossings or was a purely discrete boolean like (not x.u)."
     input EquationPointers equations;
     input Pointer<Integer> idx;
+    input Pointer<Integer> cnt "shared by all calls, the names of the auxiliary variables have to be unique";
     output list<Pointer<Variable>> new_vars = {};
     output list<Pointer<Equation>> new_eqns = {};
   protected
-    Pointer<Integer> cnt = Pointer.create(0);
     Pointer<list<Pointer<Variable>>> vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Equation>>> eqns_ptr = Pointer.create({});
   algorithm
@@ -1449,6 +1454,7 @@ protected
   protected
     Equation eqn = Pointer.access(eqn_ptr);
     Equation body_eqn;
+    Algorithm alg;
   algorithm
     eqn := match eqn
       case Equation.WHEN_EQUATION() algorithm
@@ -1460,6 +1466,12 @@ protected
         eqn.body := {body_eqn};
       then eqn;
 
+      // when statements of algorithms need a plain condition variable for the edge detection
+      case Equation.ALGORITHM(alg = alg) algorithm
+        alg.statements := list(simplifyWhenConditionStmt(stmt, idx, cnt, vars_ptr, eqns_ptr) for stmt in alg.statements);
+        eqn.alg := Algorithm.setInputsOutputs(alg);
+      then eqn;
+
       else eqn;
     end match;
 
@@ -1467,6 +1479,43 @@ protected
       Pointer.update(eqn_ptr, eqn);
     end if;
   end simplifyWhenConditionEqn;
+
+  function simplifyWhenConditionStmt
+    "Replaces the non-CREF conditions of when statements, also the ones nested in if statements.
+    Loops are skipped, since the condition can depend on the iterator."
+    input output Statement stmt;
+    input Pointer<Integer> idx;
+    input Pointer<Integer> cnt;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+  algorithm
+    stmt := match stmt
+      local
+        list<tuple<Expression, list<Statement>>> branches = {};
+        Expression cond;
+        list<Statement> body;
+
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          (cond, body) := branch;
+          cond := simplifyWhenConditionExp(cond, idx, cnt, vars_ptr, eqns_ptr);
+          branches := (cond, body) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          (cond, body) := branch;
+          body := list(simplifyWhenConditionStmt(s, idx, cnt, vars_ptr, eqns_ptr) for s in body);
+          branches := (cond, body) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      else stmt;
+    end match;
+  end simplifyWhenConditionStmt;
 
   function simplifyWhenConditionBody
     "Recursively walks a WhenEquationBody chain and extracts any non-CREF condition."

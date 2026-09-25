@@ -74,9 +74,10 @@ TVariablesTreeItem::TVariablesTreeItem(const QVector<QVariant> &tVariableItemDat
   mIsRootItem = isRootItem;
   mVariableName = tVariableItemData[0].toString();
   mDisplayVariableName = tVariableItemData[1].toString();
-  mComment = tVariableItemData[2].toString();
-  mLineNumber = tVariableItemData[3].toString();
-  mFilePath = tVariableItemData[4].toString();
+  mAlias = tVariableItemData[2].toString();
+  mComment = tVariableItemData[3].toString();
+  mLineNumber = tVariableItemData[4].toString();
+  mFilePath = tVariableItemData[5].toString();
 }
 
 TVariablesTreeItem::~TVariablesTreeItem()
@@ -102,7 +103,7 @@ void TVariablesTreeItem::removeChildren()
 
 int TVariablesTreeItem::columnCount() const
 {
-  return 4;
+  return 5;
 }
 
 QVariant TVariablesTreeItem::data(int column, int role) const
@@ -123,13 +124,22 @@ QVariant TVariablesTreeItem::data(int column, int role) const
       switch (role)
       {
         case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+          return mAlias;
+        default:
+          return QVariant();
+      }
+    case 2:
+      switch (role)
+      {
+        case Qt::DisplayRole:
           return mComment;
         case Qt::ToolTipRole:
           return mComment;
         default:
           return QVariant();
       }
-    case 2:
+    case 3:
       switch (role)
       {
         case Qt::DisplayRole:
@@ -139,7 +149,7 @@ QVariant TVariablesTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 3:
+    case 4:
       switch (role)
       {
         case Qt::DisplayRole:
@@ -172,7 +182,7 @@ TVariablesTreeModel::TVariablesTreeModel(TVariablesTreeView *pTVariablesTreeView
 {
   mpTVariablesTreeView = pTVariablesTreeView;
   QVector<QVariant> headers;
-  headers << "" << Helper::variables << tr("Comment") << tr("Line") << Helper::fileLocation;
+  headers << "" << Helper::variables << tr("Alias") << tr("Comment") << tr("Line") << Helper::fileLocation;
   mpRootTVariablesTreeItem = new TVariablesTreeItem(headers, 0, true);
 }
 
@@ -312,6 +322,7 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
       QVector<QVariant> data;
       data << fullName
            << displayName
+           << variable.alias
            << variable.comment
            << variable.info.lineStart
            << variable.info.file;
@@ -1514,6 +1525,9 @@ void TransformationsWidget::loadTransformations()
           if (!valueObject["comment"].get(sv)) {
             var.comment = QString::fromUtf8(sv.data(), sv.size());
           }
+          if (!valueObject["alias"].get(sv)) {
+            var.alias = QString::fromUtf8(sv.data(), sv.size());
+          }
 
           simdjson::ondemand::object sourceObject;
           if (!valueObject["source"].get(sourceObject)) {
@@ -1886,6 +1900,17 @@ void TransformationsWidget::fetchVariableData(const QString &variableName)
   }
 
   const OMVariable &variable = variableIterator.value();
+  const OMVariable *pRepresentativeVariable = &variable;
+  if (!variable.alias.isEmpty()) {
+    QString representativeName = variable.alias;
+    if (representativeName.startsWith("-")) {
+      representativeName.remove(0, 1);
+    }
+    QHash<QString, OMVariable>::const_iterator representativeIterator = mVariables.constFind(representativeName);
+    if (representativeIterator != mVariables.constEnd()) {
+      pRepresentativeVariable = &representativeIterator.value();
+    }
+  }
   TVariablesTreeItem *pTVariableTreeItem = mpTVariablesTreeModel->findTVariablesTreeItem(variableName, mpTVariablesTreeModel->getRootTVariablesTreeItem());
   if (pTVariableTreeItem) {
     QModelIndex sourceIndex = mpTVariablesTreeModel->tVariablesTreeItemIndex(pTVariableTreeItem);
@@ -1898,9 +1923,9 @@ void TransformationsWidget::fetchVariableData(const QString &variableName)
   }
 
   /* fetch defined in equations */
-  fetchDefinedInEquations(variable);
+  fetchDefinedInEquations(*pRepresentativeVariable);
   /* fetch used in equations */
-  fetchUsedInEquations(variable);
+  fetchUsedInEquations(*pRepresentativeVariable);
   /* fetch operations */
   fetchOperations(variable);
 

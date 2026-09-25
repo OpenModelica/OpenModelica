@@ -11,14 +11,6 @@
 ./flattening/modelica/mosfiles/TestLibrary/Resources/SpecialSources/ext4.c
 ./flattening/modelica/records/External_C_RecordTest.c
 ./invalid-files.log
-./metamodelica/MetaModelicaDev/09_pamdecl/ScanParseRML.c
-./metamodelica/MetaModelicaDev/11_petrol/lexerPetrol.c
-./metamodelica/MetaModelicaDev/11_petrol/lexerPetrol.h
-./metamodelica/MetaModelicaDev/11_petrol/parsutil.h
-./metamodelica/MetaModelicaDev/11_petrol/parsutil_omc.c
-./metamodelica/MetaModelicaDev/11_petrol/petrol.h
-./metamodelica/MetaModelicaDev/scripts/createbuilders.sh
-./metamodelica/MetaModelicaDev/scripts/make-package.sh
 ./metamodelica/meta/PartialFn6.ext_f.c
 ./openmodelica/cppruntime/modelDescription.xml
 ./openmodelica/cppruntime/ReferenceFiles/BouncingBall.csv

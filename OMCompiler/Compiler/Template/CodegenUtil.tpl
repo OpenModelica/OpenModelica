@@ -380,7 +380,7 @@ end errorMsg;
   else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extFunctionName;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_util");
 end CodegenUtil;
 
 // vim: filetype=susan sw=2 sts=2

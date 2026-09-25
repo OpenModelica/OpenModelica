@@ -48,9 +48,9 @@ fn run() -> i32 {
     match TplMain::main(file, out_dir) {
         Ok(()) => 0,
         Err(_) => {
-            // `TplMain`/`translateFile` already printed the error buffer and the
-            // "translation failed" banner before failing; just flush and report
-            // a non-zero status so the build stops (and the `*.mo` is not used).
+            // `translateFile` prints the Print-module buffer, which Susan's own
+            // diagnostics do not use: they go to the Error module.
+            print!("{}", openmodelica_error::ErrorExt::printMessagesStr(false));
             let _ = std::io::stdout().flush();
             eprintln!("susan: template translation failed");
             1

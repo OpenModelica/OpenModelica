@@ -594,6 +594,13 @@ public function copyFile
   external "C" outBool=SystemImpl__copyFile(source, destination) annotation(Library = "omcruntime");
 end copyFile;
 
+public function copyPath "Copies a file, or a directory with everything in it, to destination, the path of the copy. An existing directory there is merged into."
+  input String source;
+  input String destination;
+  output Boolean success;
+  external "C" success=SystemImpl__copyPath(source, destination) annotation(Library = "omcruntime");
+end copyPath;
+
 
 public function removeDirectory
   input String inString;

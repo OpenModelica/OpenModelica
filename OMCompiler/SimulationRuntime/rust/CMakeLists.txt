@@ -135,16 +135,11 @@ endif()
 # generated code (see build.rs). libSimulationRuntimeC links it too.
 if(TARGET OpenModelicaRuntimeC)
   list(APPEND _simrt_env "OMC_RUNTIME_C_DIR=$<TARGET_FILE_DIR:OpenModelicaRuntimeC>")
-  # The Boehm GC, which `--parmodauto`'s worker threads register with; the C
-  # runtime reaches it through the same library.
-  if(TARGET omcgc)
-    list(APPEND _simrt_env "OMC_GC_DIR=$<TARGET_FILE_DIR:omcgc>")
-  endif()
   # A static archive (MSVC) carries none of its own dependencies, so name them
   # too. `|`-separated: a `;` would split the env assignment into arguments.
   get_target_property(_simrt_rtc_type OpenModelicaRuntimeC TYPE)
   if(_simrt_rtc_type STREQUAL "STATIC_LIBRARY")
-    set(_simrt_rtc_link "$<TARGET_LINKER_FILE:OpenModelicaRuntimeC>|$<TARGET_LINKER_FILE:omcgc>")
+    set(_simrt_rtc_link "$<TARGET_LINKER_FILE:OpenModelicaRuntimeC>")
     if(TARGET PThreads4W::PThreads4W)
       string(APPEND _simrt_rtc_link "|$<TARGET_LINKER_FILE:PThreads4W::PThreads4W>")
     endif()

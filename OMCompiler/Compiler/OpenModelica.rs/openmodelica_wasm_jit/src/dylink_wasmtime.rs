@@ -795,12 +795,21 @@ pub fn load_ext_libraries(
     model: &SimModel,
     rt: &ExtRt,
 ) -> std::result::Result<Loaded, String> {
-    use Library;
     let table = rt_inst
         .get_table(&mut *store, "__indirect_function_table")
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export".to_string())?;
+    let libs = ext_libraries(model)?;
+    let host = match libs.is_empty() {
+        true => HashMap::new(),
+        false => modelica_utilities_imports(store, rt),
+    };
+    load(store, engine, memory, table, &rt.alloc, &libs, &host)
+}
+
+/// What [`load_ext_libraries`] loads for `model`, in resolution order.
+pub fn ext_libraries(model: &SimModel) -> std::result::Result<Vec<Library>, String> {
     if model.ext_libs.is_empty() && !model.ext_builtin {
-        return load(store, engine, memory, table, &rt.alloc, &[], &HashMap::new());
+        return Ok(Vec::new());
     }
     let libc = crate::LIBC_PIC();
     if libc.is_empty() {
@@ -832,8 +841,7 @@ pub fn load_ext_libraries(
             libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
         }
     }
-    let host = modelica_utilities_imports(store, rt);
-    load(store, engine, memory, table, &rt.alloc, &libs, &host)
+    Ok(libs)
 }
 
 fn shared_cstr(caller: &mut wasmtime::Caller<'_, HostState>, ptr: i32) -> String {

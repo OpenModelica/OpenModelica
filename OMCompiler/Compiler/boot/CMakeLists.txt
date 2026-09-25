@@ -6,6 +6,10 @@ project(bomc)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bomc/tarball-include/OpenModelicaBootstrappingHeader.h
                 ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h)
 
+if(OM_OMC_HOST_EXECUTABLE OR OM_OMC_PREBUILT_C_SOURCES)
+  return()
+endif()
+
 file(GLOB BOOTSTRAP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/bomc/bootstrap-sources/build/*.c)
 
 add_executable(bomc)
@@ -49,7 +53,6 @@ target_include_directories(bomc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Util)
 
 target_link_libraries(bomc PRIVATE omc::parser)
 target_link_libraries(bomc PRIVATE omc::compiler::runtime)
-target_link_libraries(bomc PRIVATE minizip)
 
 
 # Set up for proper usage of the bootstrap omc (bomc).
@@ -105,9 +108,9 @@ if(WIN32)
   add_custom_command (
     TARGET bomc
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::simrt::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::mmc::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::3rd::omcgc> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
-    COMMENT "Copying libOpenModelicaRuntimeC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+    COMMENT "Copying libOpenModelicaRuntimeMMC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
 
   # omcruntime links libomc_result when the Rust result readers/writers are on.
   if(TARGET omc::result)

@@ -1,0 +1,55 @@
+// name:     UncertainAliasSimulation
+// keywords: data reconciliation, uncertain, alias, #14866
+// status:   correct
+//
+// The uncertain attribute is only meant for data reconciliation. Without it
+// enabled, uncertain=Uncertainty.refine must not change which alias variable
+// is kept, so both models must iterate on a with start = 1.
+
+loadString("
+package UncertainAliasSimulation
+  model Plain
+    Real a(start = 1);
+    Real b(start = 2);
+  equation
+    a = b;
+    a^3 + b = 3 + time;
+  end Plain;
+  model Refine
+    Real a(start = 1);
+    Real b(start = 2, uncertain = Uncertainty.refine);
+  equation
+    a = b;
+    a^3 + b = 3 + time;
+  end Refine;
+end UncertainAliasSimulation;
+"); getErrorString();
+
+setCommandLineOptions("-d=iterationVars"); getErrorString();
+translateModel(UncertainAliasSimulation.Plain); getErrorString();
+translateModel(UncertainAliasSimulation.Refine); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Notification: List of all iteration variables (DAE kind: initialization)
+// Iteration variables of equation system with analytic Jacobian:
+//   a:VARIABLE(start = 1.0 )  type: Real
+// Notification: List of all iteration variables (DAE kind: simulation)
+// Iteration variables of equation system with analytic Jacobian:
+//   a:VARIABLE(start = 1.0 )  type: Real
+// "
+// true
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Notification: List of all iteration variables (DAE kind: initialization)
+// Iteration variables of equation system with analytic Jacobian:
+//   a:VARIABLE(start = 1.0 )  type: Real
+// Notification: List of all iteration variables (DAE kind: simulation)
+// Iteration variables of equation system with analytic Jacobian:
+//   a:VARIABLE(start = 1.0 )  type: Real
+// "
+// endResult

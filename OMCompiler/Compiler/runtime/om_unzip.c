@@ -36,8 +36,10 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "../../3rdParty/FMIL/ThirdParty/Zlib/zlib-1.3.1/contrib/minizip/unzip.h"
-#include "util/modelica_string.h"
+/* minizip-ng's compat unzip.h does not include zlib.h, which provides uLong. */
+#include <zlib.h>
+#include <unzip.h>
+#include "util/omc_str_utils.h"
 #include "util/omc_file.h"
 #include "errorext.h"
 #include "systemimpl.h"

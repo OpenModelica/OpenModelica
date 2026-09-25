@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 #include "omc_init.h"
-#include "../meta/meta_modelica_segv.h"
+#include "omc_stackoverflow.h"
 
 #if defined(OM_HAVE_PTHREADS)
 pthread_key_t mmc_thread_data_key = 0;

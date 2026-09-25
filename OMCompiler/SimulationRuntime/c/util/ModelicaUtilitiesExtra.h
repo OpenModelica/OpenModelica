@@ -27,9 +27,19 @@
 
 #ifndef MODELICAUTILITITES_EXTRA_H
 #define MODELICAUTILITITES_EXTRA_H
+#include <stdarg.h>
+#include <stddef.h>
 #include "../omc_dll.h"
 
 DLLDataDirection extern void (*OpenModelica_ModelicaError)(const char*);
 DLLDataDirection extern void (*OpenModelica_ModelicaVFormatError)(const char*,va_list);
+
+void omc_set_modelica_error_handlers(void (*err)(const char*), void (*verr)(const char*,va_list));
+
+/* ModelicaAllocateString memory is freed once the external function returns.
+   The generated wrapper marks before the call and releases to the mark after
+   it, also when a ModelicaError jumped out of the call. */
+size_t omc_external_strings_mark(void);
+void omc_external_strings_release(size_t mark);
 
 #endif

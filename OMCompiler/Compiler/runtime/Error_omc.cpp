@@ -38,14 +38,9 @@ extern "C" {
 
 #include "openmodelica.h"
 #include "meta/meta_modelica.h"
-#include "util/modelica_string.h"
 
 #define ADD_METARECORD_DEFINITIONS static
-#if defined(OMC_BOOTSTRAPPING)
-  #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
-#else
-  #include "../OpenModelicaBootstrappingHeader.h"
-#endif
+#include "../OpenModelicaBootstrappingHeader.h"
 
 #include "util/ModelicaUtilitiesExtra.h"
 
@@ -131,6 +126,18 @@ static void omc_assert_compiler_warning(FILE_INFO info, const char *msg, ...)
   va_start(args, msg);
   omc_assert_compiler_common(NULL, ErrorLevel_warning, info, msg, args);
   va_end(args);
+}
+
+/* Installed into a dlopened function library's own runtime; see
+   omc_set_assert_reporters. */
+void Error_assertReport(threadData_t *threadData, FILE_INFO info, const char *msg, va_list args)
+{
+  omc_assert_compiler_common(threadData, ErrorLevel_error, info, msg, args);
+}
+
+void Error_assertWarningReport(FILE_INFO info, const char *msg, va_list args)
+{
+  omc_assert_compiler_common(NULL, ErrorLevel_warning, info, msg, args);
 }
 
 void Error_initAssertionFunctions()

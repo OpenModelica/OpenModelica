@@ -7,19 +7,17 @@
 # toolchain, a missing DLL or a path handling bug, not to check compiler
 # semantics, which the Linux runs already cover.
 #
-# There is no separate list of Windows tests to maintain: a test opts in by
-# tagging its own header '// win: yes', the same convention OMSimulator's
-# testsuite/runtest.py uses for '## win: yes'. This script greps for that tag
-# to build the candidate list (grepping thousands of .mos files just to launch
-# rtest on ones it would skip anyway is wasted process-spawns); rtest itself
-# (--platform=win, see testsuite/rtest) is what actually decides whether a
-# matched file runs, so the grep only has to be a fast, cheap superset.
+# A test is in the smoke set when its header says '// suite: smoke'. The suite is
+# enabled by default, so these tests also run as part of the whole testsuite.
 #
 # It only needs an installed omc: rtest finds it in build/ or
 # build_cmake/install_cmake/ beside the testsuite.
 #
 # Also runnable by hand, on Windows and on Linux:
 #   bash testsuite/runWindowsTests.sh
+#
+# --wine runs the set on Linux against an omc cross-compiled for MSVC, under
+# wine, with the tools in testsuite/wine standing in for nmake, cl and cmake.
 
 set -uo pipefail
 
@@ -28,55 +26,125 @@ MAKE="${MAKE:-make}"
 
 usage() {
   cat <<USAGE
-Usage: $0 [--help]
+Usage: $0 [--wine] [-jN] [--help]
 
-Runs every *.mos test under testsuite/ tagged '// win: yes' in its header.
+Runs every *.mos test under testsuite/ tagged '// suite: smoke' in its header.
+
+  --wine  run an MSVC omc (bin/omc.exe) under wine
+  -jN     run N tests at a time (default 1)
 USAGE
 }
 
+wine=
+jobs=1
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --wine) wine=1;;
+    -j[0-9]*) jobs=${1#-j};;
     -h|--help) usage; exit 0;;
     *) echo "Error: unknown argument '$1'" >&2; usage >&2; exit 1;;
   esac
+  shift
 done
 
+# The install tree rtest picks, a wine prefix whose system32 has the Windows
+# side of testsuite/wine, and FFITestLib as a DLL.
+setup_wine() {
+  local wine_dir="${TESTSUITE_DIR}/wine" omhome= d t
+  for d in build/install_cmake build_cmake/install_cmake build; do
+    if [ -e "${TESTSUITE_DIR}/../${d}/bin/omc.exe" ]; then
+      omhome="${TESTSUITE_DIR}/../${d}"
+      break
+    fi
+  done
+  if [ -z "${omhome}" ]; then
+    echo "Error: found no bin/omc.exe to run under wine" >&2
+    return 1
+  fi
+  if [ ! -x "${omhome}/bin/omc-diff" ]; then
+    echo "Error: rtest needs a Linux ${omhome}/bin/omc-diff" >&2
+    return 1
+  fi
+  cp "${wine_dir}/omc" "${omhome}/bin/omc" || return 1
+
+  export WINEPREFIX="${WINEPREFIX:-${wine_dir}/prefix}"
+  export WINEDEBUG="${WINEDEBUG:--all}"
+  export OMC_TOOLCHAIN=clang-cl
+  # rtest points HOME elsewhere, so settle the xwin sysroot now.
+  for d in "${XWIN_CACHE_DIR:-}" "${XWIN_CACHE_DIR:-}/xwin" "${CARGO_HOME:-}/xwin" \
+           "${HOME}/.cache/cargo-xwin/xwin"; do
+    if [ -d "${d}/crt/include" ]; then
+      export XWIN_CACHE_DIR="${d}"
+      break
+    fi
+  done
+  # Otherwise wine complains on stderr, which ends up in every test's output.
+  if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
+    export XDG_RUNTIME_DIR="${WINEPREFIX}/xdg-runtime"
+    mkdir -p -m 700 "${XDG_RUNTIME_DIR}"
+  fi
+  echo "== Setting up the wine prefix ${WINEPREFIX}"
+  wineboot -i || return 1
+
+  # What a setup_command compiles for the platform of omc with, against the
+  # same C runtime as the generated code.
+  export OMC_NATIVE_CC="${wine_dir}/xwin-clang-cl"
+  export OMC_NATIVE_CFLAGS="/MD"
+
+  # unzip and sed are what a test's system() finds in MSYS on Windows.
+  local system32="${WINEPREFIX}/drive_c/windows/system32"
+  for t in "nmake:${wine_dir}/nmake" "cl:${wine_dir}/xwin-clang-cl" "cmake:${wine_dir}/cmake" \
+           "unzip:$(command -v unzip)" "sed:$(command -v sed)"; do
+    "${wine_dir}/xwin-clang-cl" /nologo /O2 "/DUNIX_PROGRAM=\"${t#*:}\"" \
+      "${wine_dir}/unix-shim.c" "/Fo${system32}/" "/Fe${system32}/${t%%:*}.exe" \
+      /link shell32.lib || return 1
+  done
+  rm -f "${system32}/unix-shim.obj"
+
+  echo "== Building FFITestLib"
+  local ffi="${TESTSUITE_DIR}/flattening/modelica/ffi/FFITest/Resources"
+  mkdir -p "${ffi}/Library/win64" || return 1
+  ( cd "${ffi}/Library/win64" &&
+    "${wine_dir}/xwin-clang-cl" /nologo /O2 /MD /EHs /LD ../../C-Sources/FFITestLib.c \
+      ../../C-Sources/FFITestLibCpp.cpp /FeFFITestLib.dll /link \
+      $(grep -ohE '\b[A-Za-z0-9_]+_ext\(' ../../C-Sources/* | sort -u | sed 's/^/\/EXPORT:/; s/($//') &&
+    rm -f ./*.obj ) ||
+    { echo "Error: could not build FFITestLib" >&2; return 1; }
+}
+
 # FFITestLib is a build artifact of the testsuite, not of omc, and the FFI tests
-# tagged below look for it by the name the loader uses. It is what the CMake
+# in the smoke set look for it by the name the loader uses. It is what the CMake
 # 'ffi-test-lib' target builds; the Windows job does not build testsuite-depends,
 # so build it here.
-echo "== Building FFITestLib"
-"${MAKE}" -C "${TESTSUITE_DIR}/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc" ||
-  { echo "Error: could not build FFITestLib" >&2; exit 1; }
+if [ "${wine}" ]; then
+  setup_wine || exit 1
+else
+  echo "== Building FFITestLib"
+  "${MAKE}" -C "${TESTSUITE_DIR}/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc" ||
+    { echo "Error: could not build FFITestLib" >&2; exit 1; }
+fi
 
-echo "== Finding tests tagged 'win: yes'"
-mapfile -t candidates < <(
-  grep -rlE '^//[ \\|]*win:[ \\|]*yes\b' --include='*.mos' "${TESTSUITE_DIR}" |
-    sed "s#^${TESTSUITE_DIR}/##" | sort
-)
-
-if [ "${#candidates[@]}" -eq 0 ]; then
-  echo "Error: no test is tagged 'win: yes'" >&2
+echo "== Finding the tests in suite smoke"
+list=$(mktemp)
+trap 'rm -f "${list}"' EXIT
+grep -rlE '^//[ \\|]*suite:.*\bsmoke\b' --include='*.mos' "${TESTSUITE_DIR}" |
+  sed "s#^${TESTSUITE_DIR}/#./#" | sort > "${list}"
+if [ ! -s "${list}" ]; then
+  echo "Error: no test is in suite smoke" >&2
   exit 1
 fi
 
-failed=()
-total=0
-
-for test_path in "${candidates[@]}"; do
-  total=$((total + 1))
-  echo "== ${test_path}"
-  ( cd "${TESTSUITE_DIR}/$(dirname "${test_path}")" &&
-    RTEST_PLATFORM=win "${TESTSUITE_DIR}/rtest" --return-with-error-code "$(basename "${test_path}")" ) ||
-    failed+=("${test_path}")
-done
-
-echo
-if [ ${#failed[@]} -eq 0 ]; then
-  echo "== ${total} out of ${total} tests passed"
-  exit 0
+cd "${TESTSUITE_DIR}/partest" &&
+  perl ./runtests.pl -nocolour -j"${jobs}" -file="${list}"
+status=$?
+if [ "${status}" -ne 0 ]; then
+  while read -r test_path; do
+    log="${TESTSUITE_DIR}/${test_path}.fail_log"
+    if [ -f "${log}" ]; then
+      echo
+      echo "== ${test_path}"
+      cat "${log}"
+    fi
+  done < "${list}"
 fi
-
-echo "== ${#failed[@]} out of ${total} tests failed:"
-printf '  %s\n' "${failed[@]}"
-exit 1
+exit "${status}"

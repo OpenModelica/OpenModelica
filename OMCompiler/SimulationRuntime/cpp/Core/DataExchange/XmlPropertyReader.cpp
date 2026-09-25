@@ -39,14 +39,26 @@
 #include <sstream>
 #include <vector>
 
-// Build the Modelica name of a scalar element of a row-major array,
-// e.g. arrayElementName("a", {2,3}, 4) -> "a[2,2]". Used to expose the
+// Offset in column-major storage of the element at the given row-major offset.
+static int rowMajorToColumnMajor(const std::vector<int>& dims, int rowMajorOffset)
+{
+  std::vector<int> idx(dims.size());
+  int rem = rowMajorOffset;
+  for (int k = (int)dims.size() - 1; k >= 0; k--) { idx[k] = rem % dims[k]; rem /= dims[k]; }
+  int off = 0, stride = 1;
+  for (size_t k = 0; k < dims.size(); k++) { off += idx[k] * stride; stride *= dims[k]; }
+  return off;
+}
+
+// Build the Modelica name of a scalar element of a column-major array, the
+// storage order of the arrays of this runtime (StatArrayDimN/DynArrayDimN),
+// e.g. arrayElementName("a", {2,3}, 4) -> "a[1,3]". Used to expose the
 // elements of a non-scalarized array variable as individual result signals.
 static std::string arrayElementName(const std::string& base, const std::vector<int>& dims, int linearOffset)
 {
   std::vector<int> idx(dims.size());
   int rem = linearOffset;
-  for (int k = (int)dims.size() - 1; k >= 0; k--) { idx[k] = rem % dims[k]; rem /= dims[k]; }
+  for (size_t k = 0; k < dims.size(); k++) { idx[k] = rem % dims[k]; rem /= dims[k]; }
   std::stringstream ss;
   ss << base << "[";
   for (size_t k = 0; k < idx.size(); k++) { if (k) ss << ","; ss << (idx[k] + 1); }
@@ -161,6 +173,21 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
                   LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
                   for (int off = 0; off < (isArray ? arraySize : 1); off++)
                     system.setRealStartValue(realVars[refIdx + off], value);
+                }
+                else if (isArray)
+                {
+                  // an array start value with one entry per element, in row-major order
+                  boost::optional<string> startStr = var.second.get_optional<string>("<xmlattr>.start");
+                  if (startStr) {
+                    std::vector<double> values;
+                    std::istringstream is(*startStr);
+                    double d;
+                    while (is >> d) values.push_back(d);
+                    if ((int)values.size() == arraySize) {
+                      for (int pos = 0; pos < arraySize; pos++)
+                        system.setRealStartValue(realVars[refIdx + rowMajorToColumnMajor(arrayDims, pos)], values[pos]);
+                    }
+                  }
                 }
               }
               if (emitResult)

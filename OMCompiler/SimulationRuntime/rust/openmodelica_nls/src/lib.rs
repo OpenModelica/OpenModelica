@@ -849,6 +849,14 @@ pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
 /// index of the first zero pivot, straight from `dgetrf`. `A` is copied because
 /// `dgetrf` factors in place and the caller keeps it for the total-pivot fallback.
 pub fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
+    // What `dgetrf`/`dgetrs` compute for 1×1, without the triangular-solve dispatch.
+    if n == 1 {
+        if a[0] == 0.0 {
+            return Some(0);
+        }
+        b[0] /= a[0];
+        return None;
+    }
     let mut lu = a[..n * n].to_vec();
     let mut ipiv = alloc::vec![0i32; n];
     let info = dense_lu::getrf(n, &mut lu, &mut ipiv);
@@ -2864,8 +2872,17 @@ fn newton_c(
     };
 
     // C's `xStart`: the retries below vary off this, not off the last varied point.
-    let x_start = x.to_vec();
-    let mut xscaling = vec![1.0f64; n];
+    // Taken at the first retry; `x` is unchanged until then.
+    let mut x_start: Option<alloc::vec::Vec<f64>> = None;
+    let mut work = vec![0.0f64; 5 * n + n * n + n * (n + 1)];
+    let mut rest = work.as_mut_slice();
+    let xscaling = carve(&mut rest, n);
+    let mut fvec = carve(&mut rest, n);
+    let mut rp = carve(&mut rest, n);
+    let mut step = carve(&mut rest, n); // C's dy0 (the full Newton step −J⁻¹f)
+    let mut x1 = carve(&mut rest, n);
+    let mut jac = carve(&mut rest, n * n);
+    let mut aug = carve(&mut rest, n * (n + 1)); // C's `fJac`, whose last column is `fvec`
     for i in 0..n {
         xscaling[i] = nominal[i].abs().max(x[i].abs());
         if xscaling[i] <= 0.0 {
@@ -2877,12 +2894,6 @@ fn newton_c(
         log_homotopy_enter(t, n, x, nominal, &xscaling);
     }
 
-    let mut fvec = vec![0.0f64; n];
-    let mut x1 = vec![0.0f64; n];
-    let mut rp = vec![0.0f64; n];
-    let mut step = vec![0.0f64; n]; // C's dy0 (the full Newton step −J⁻¹f)
-    let mut jac = vec![0.0f64; n * n];
-    let mut aug = vec![0.0f64; n * (n + 1)]; // C's `fJac`, whose last column is `fvec`
 
     // The Jacobian is w.r.t. *scaled* unknowns: both of C's paths scale column `j` by
     // `xScaling[j]`, and the step is unscaled after the solve. `resScaling` is a row
@@ -2982,6 +2993,7 @@ fn newton_c(
                 &alloc::format!("assert handling:\t vary initial guess by +{pct}%."),
             );
         }
+        let x_start = x_start.get_or_insert_with(|| x.to_vec());
         for i in 0..n {
             x[i] = x_start[i] + xscaling[i] * (i as f64) / (n as f64) * vary;
         }
@@ -3616,6 +3628,13 @@ fn solve_newton_c(
     }
 }
 
+/// The next `k` values of `rest`.
+fn carve<'a>(rest: &mut &'a mut [f64], k: usize) -> &'a mut [f64] {
+    let (head, tail) = core::mem::take(rest).split_at_mut(k);
+    *rest = tail;
+    head
+}
+
 /// C's `solve_nonlinear_system`: solve one `SES_NONLINEAR` system in place.
 ///
 /// On convergence the unknown slots (and the torn variables) are left at the
@@ -3687,12 +3706,24 @@ pub fn solve_nls(
 
     // Warm start: the current slot values (the fallback guess, and what is
     // restored on failure).
-    let mut warm = vec![0.0f64; n];
+    // The solve's vectors, carved out of one allocation.
+    let mut work = vec![0.0f64; 10 * n + m + mem.res_scaling.len()];
+    let mut rest = work.as_mut_slice();
+    let mut warm = carve(&mut rest, n);
+    let mut xbuf = carve(&mut rest, m);
+    let mut rbuf = carve(&mut rest, n);
+    let mut res_scaling = carve(&mut rest, mem.res_scaling.len());
+    let mut guess = carve(&mut rest, n);
+    let mut nlsx_old = carve(&mut rest, n);
+    let mut scratch = carve(&mut rest, n);
+    let mut x = carve(&mut rest, n);
+    let mut start_point = carve(&mut rest, n);
+    let mut start = carve(&mut rest, n);
+    let mut nlsx = carve(&mut rest, n);
+    let mut best = carve(&mut rest, n);
     load_guess(&mut warm);
 
     stat_inc(STAT_NLS_SOLVE);
-    let mut xbuf = vec![0.0f64; m];
-    let mut rbuf = vec![0.0f64; n];
     let n_feval = core::cell::Cell::new(0u64);
     let iter0 = flags().iters.load(Ordering::Relaxed);
     let jac0 = flags().jac_evals.load(Ordering::Relaxed);
@@ -3767,7 +3798,7 @@ pub fn solve_nls(
     let scatter = !sparse && jac_csc;
     let pat: &[u32] = if scatter { spec.pattern } else { &[] };
     let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
-    let max: alloc::vec::Vec<f64> = bounds.chunks_exact(2).map(|b| b[1]).collect();
+    let max = || bounds.chunks_exact(2).map(|b| b[1]).collect::<alloc::vec::Vec<f64>>();
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
@@ -3798,12 +3829,12 @@ pub fn solve_nls(
     // list gives the same count.
     let hist = &mut *mem.history;
     let use_xscaling = &mut *mem.use_xscaling;
-    let mut res_scaling: alloc::vec::Vec<f64> = mem.res_scaling.to_vec();
+    res_scaling.copy_from_slice(mem.res_scaling);
 
     // C's `getInitialGuess`: the extrapolation to `time`, and `nlsxOld` = the newest
     // stored solution at or before it.
-    let mut guess = warm.clone();
-    let mut nlsx_old = warm.clone();
+    guess.copy_from_slice(&warm);
+    nlsx_old.copy_from_slice(&warm);
     // C's "if last solving is too long ago use just old values": past five output
     // intervals neither is consulted and the current variable values stand in — a
     // casual tearing set always consults them.
@@ -3824,7 +3855,6 @@ pub fn solve_nls(
         guess.copy_from_slice(mem.extrapolation);
     }
 
-    let mut scratch = vec![0.0f64; n];
     // C's start-point rule, shared by `solveHomotopy` and `solveHybrd`:
     // `discreteCall ? nlsx : nlsxExtrapolation`. Extrapolating past a just-switched
     // branch would re-flip the relation the event set. Newton holds relations
@@ -3834,7 +3864,7 @@ pub fn solve_nls(
     // `functionInitialEquations` sets `discreteCall` too, so an initial system starts
     // from `nlsx`: its extrapolation is still zeroes, and the equidistant homotopy
     // hands each lambda step the previous one's solution through the unknowns.
-    let mut x = if saved_rel_fresh != 0 { nlsx_old.clone() } else { guess.clone() };
+    x.copy_from_slice(if saved_rel_fresh != 0 { &nlsx_old } else { &guess });
     // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`. C gates it on
     // `discreteCall`, which `functionInitialEquations` also sets, so an initial system
     // gets it too — with relations already fresh there, only an event moves the flag.
@@ -3898,7 +3928,6 @@ pub fn solve_nls(
             }
         }
     }
-    let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
     // Last residual eval was at the returned `x`, so the epilogue need not repeat
     // it to leave the slots and torn variables set.
@@ -3906,7 +3935,6 @@ pub fn solve_nls(
     // C's `alreadyTested`: the mixed re-check below fires at most once.
     let mut retried = false;
     // C's `x0`, which the mixed retry restarts from; re-taken per homotopy attempt.
-    let mut start_point;
     // C's `solve_nonlinear_system` homotopy dispatch: only a *local* equidistant
     // approach sweeps here.
     let equidistant_homotopy = saved_rel_fresh == 2
@@ -3981,7 +4009,7 @@ pub fn solve_nls(
         }
         settled = false;
         retried = false;
-        start_point = x.clone();
+        start_point.copy_from_slice(&x);
         let attempt_converged = loop {
             // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
             // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
@@ -3995,7 +4023,7 @@ pub fn solve_nls(
                 backend.solve_kinsol_dense(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max,
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4005,7 +4033,7 @@ pub fn solve_nls(
                 backend.solve_sparse(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max,
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4025,7 +4053,7 @@ pub fn solve_nls(
                 // Both start directions, as C's runHomotopy.
                 let mut ok = false;
                 for &dir in &[1.0f64, -1.0] {
-                    let mut hx = start_point.clone();
+                    let mut hx = start_point.to_vec();
                     if homotopy_solve(n, &mut hx, &nominal, dir, HomVariant::Newton, &mut eval) {
                         x.copy_from_slice(&hx);
                         ok = true;
@@ -4038,12 +4066,12 @@ pub fn solve_nls(
                 // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
                 // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
                 // Both share the retry/homotopy tail below.
-                let start = x.clone();
+                start.copy_from_slice(&x);
                 // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
                 // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
-                let mut nlsx = start.clone();
+                nlsx.copy_from_slice(&start);
                 // The approximation a failed `solveHybrd` leaves in `nlsx` for the next one.
-                let mut best = start.clone();
+                best.copy_from_slice(&start);
                 let mut converged = false;
                 // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
                 // its homotopy runs.
@@ -4105,7 +4133,7 @@ pub fn solve_nls(
                             2 => (HomVariant::Newton, -1.0),
                             _ => (HomVariant::Fixpoint, 1.0),
                         };
-                        let mut hx = start.clone();
+                        let mut hx = start.to_vec();
                         skip_newton = !homotopy_solve(n, &mut hx, &nominal, dir, variant, &mut eval);
                         if skip_newton {
                             if run_homotopy >= 3 {
@@ -4155,11 +4183,11 @@ pub fn solve_nls(
                     }
                     if !converged {
                         stat_inc(STAT_NLS_RETRY);
-                        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                        converged = hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &nominal, maxfev, &mut eval);
                     }
                     if !converged {
                         x.copy_from_slice(&guess);
-                        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                        converged = hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &nominal, maxfev, &mut eval);
                     }
                     if !converged {
                         x.copy_from_slice(&guess);
@@ -4250,7 +4278,7 @@ pub fn solve_nls(
         );
         if let Some((_, csv)) = hom_csv.as_mut() {
             csv.push_str(&omclog::g((attempt as f64 / hom_steps as f64).min(1.0), 0, 16));
-            for v in &x {
+            for v in x.iter() {
                 csv.push(',');
                 csv.push_str(&omclog::g(*v, 0, 16));
             }
@@ -4277,7 +4305,7 @@ pub fn solve_nls(
             "run along the homotopy path and solve the actual system",
         );
         state.borrow_mut().set_lambda(0.0);
-        let mut y = x.clone();
+        let mut y = x.to_vec();
         y.push(0.0);
         let mut hom_jac = |ys: &[f64], out: &mut [f64]| {
             stat_inc(STAT_NLS_JAC);

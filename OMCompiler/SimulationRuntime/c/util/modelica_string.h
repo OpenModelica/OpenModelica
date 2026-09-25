@@ -32,14 +32,19 @@
 #include <stdarg.h>
 
 #include "../openmodelica.h"
-#include "../meta/meta_modelica_data.h"
+#include "omc_string.h"
 #include "modelica_string_lit.h"
+#include "omc_str_utils.h"
+
+/* The simulation's string builtins; meta/meta_modelica_string.h defines the
+   same names for MetaModelica. */
+#if !defined(OMC_METAMODELICA_RUNTIME)
 
 extern modelica_string stringAppend(modelica_string s1, modelica_string s2);
-#define stringCompare(x,y) mmc_stringCompare(x,y)
-#define stringEqual(x,y) (MMC_STRLEN(x) == MMC_STRLEN(y) && !stringCompare(x,y))
+extern modelica_integer stringCompare(modelica_string str1, modelica_string str2);
+#define stringEqual(x,y) (omc_string_len(x) == omc_string_len(y) && !stringCompare(x,y))
 
-#define modelica_string_length(STR) MMC_STRLEN(STR)
+#define modelica_string_length(STR) omc_string_len(STR)
 
 extern modelica_string alloc_modelica_string(int length);
 
@@ -61,109 +66,5 @@ extern modelica_string modelica_boolean_to_modelica_string(modelica_boolean b,
 extern modelica_string enum_to_modelica_string(modelica_integer nr, const char *e[],
                                    modelica_integer minLen, modelica_boolean leftJustified);
 
-/* Escape string */
-int omc__escapedStringLength(const char* str, int nl, int *hasEscape);
-extern char* omc__escapedString(const char* str, int nl);
-
-int GC_vasprintf(const char **strp, const char *fmt, va_list ap);
-int GC_asprintf(const char **strp, const char *fmt, ...);
-
-static inline void* mmc_alloc_scon(size_t nbytes)
-{
-    mmc_uint_t header = MMC_STRINGHDR(nbytes);
-    mmc_uint_t nwords = MMC_HDRSLOTS(header) + 1;
-    struct mmc_string *p;
-    void *res;
-    if (nbytes == 0) return mmc_emptystring;
-    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
-    p->header = header;
-    p->data[0] = 0;
-    res = MMC_TAGPTR(p);
-#ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), nbytes, s); fflush(NULL);
-#endif
-    return res;
-}
-
-static inline void* mmc_mk_scon_len(mmc_uint_t nbytes)
-{
-    mmc_uint_t header = MMC_STRINGHDR(nbytes);
-    mmc_uint_t nwords = MMC_HDRSLOTS(header) + 1;
-    struct mmc_string *p;
-    void *res;
-    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
-    p->header = header;
-    res = MMC_TAGPTR(p);
-    return res;
-}
-
-static inline void* mmc_mk_scon_n(const char *s, int length)
-{
-    size_t header = MMC_STRINGHDR(length);
-    size_t nwords = MMC_HDRSLOTS(header) + 1;
-    struct mmc_string *p;
-    void *res;
-    if (length == 0) return mmc_emptystring;
-    if (length == 1) {
-      unsigned char c = *s;
-      return mmc_strings_len1[(unsigned int)c];
-    }
-    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
-    p->header = header;
-    memcpy(p->data, s, length);
-    p->data[length] = '\0';
-    res = MMC_TAGPTR(p);
-    MMC_CHECK_STRING(res);
-#ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), length, s); fflush(NULL);
-#endif
-    return res;
-}
-
-static inline void* mmc_mk_scon(const char *s)
-{
-    size_t nbytes = strlen(s);
-    size_t header = MMC_STRINGHDR(nbytes);
-    size_t nwords = MMC_HDRSLOTS(header) + 1;
-    struct mmc_string *p;
-    void *res;
-    if (nbytes == 0) return mmc_emptystring;
-    if (nbytes == 1) {
-      unsigned char c = *s;
-      return mmc_strings_len1[(unsigned int)c];
-    }
-    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
-    p->header = header;
-    memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
-    res = MMC_TAGPTR(p);
-    MMC_CHECK_STRING(res);
-#ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), nbytes, s); fflush(NULL);
-#endif
-    return res;
-}
-
-static inline void* mmc_mk_scon_persist(const char *s)
-{
-    size_t nbytes = strlen(s);
-    size_t header = MMC_STRINGHDR(nbytes);
-    size_t nwords = MMC_HDRSLOTS(header) + 1;
-    struct mmc_string *p;
-    void *res;
-    if (nbytes == 0) return mmc_emptystring;
-    if (nbytes == 1) {
-      unsigned char c = *s;
-      return mmc_strings_len1[(unsigned int)c];
-    }
-    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_string_persist(nwords*sizeof(void*)));
-    p->header = header;
-    memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
-    res = MMC_TAGPTR(p);
-    MMC_CHECK_STRING(res);
-#ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), nbytes, s); fflush(NULL);
-#endif
-    return res;
-}
-
+#endif /* !OMC_METAMODELICA_RUNTIME */
 #endif

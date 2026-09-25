@@ -4,7 +4,7 @@
 #
 # This is kept out of the normal CMake configure on purpose: the CI stages
 # that use this only unstash an installed omc, not a configured build tree
-# (see ctestCMakeStashed() in .CI/common.groovy), and reconfiguring the whole
+# (see ctestStashed() in .CI/common.groovy), and reconfiguring the whole
 # OpenModelica project just to register tests would dwarf the cost of this
 # Perl-only discovery step. It is also why this only picks up tests from
 # testsuite/: discovery is delegated entirely to runtests.pl, which never
@@ -87,7 +87,7 @@ foreach(test_path IN LISTS test_list)
   string(REGEX MATCH "^[^/]+" label "${rel_path}")
 
   file(APPEND "${out_file}"
-    "add_test(\"${test_name}\" \"${PERL_EXECUTABLE}\" \"${TESTSUITE_DIR}/partest/runtest.pl\" \"${test_path}\" \"--no-colour\")\n"
+    "add_test(\"${test_name}\" \"${PERL_EXECUTABLE}\" \"${TESTSUITE_DIR}/partest/runtest.pl\" \"${test_path}\" \"--no-colour\" \"--print-fail-log\")\n"
     "set_tests_properties(\"${test_name}\" PROPERTIES\n"
     "  WORKING_DIRECTORY \"${TESTSUITE_DIR}\"\n"
     "  WILL_FAIL TRUE\n"

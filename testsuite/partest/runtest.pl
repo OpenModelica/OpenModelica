@@ -17,6 +17,7 @@ my $no_colour = 0;
 my $withxml = 0;
 my $rtest_extra_args = "";
 my $test_baseline = 0;
+my $print_fail_log = 0;
 my $isWSL = (defined $ENV{'WSLENV'} && rindex(Cwd::abs_path(),"/mnt/",0)==0);
 my $osname = $^O;
 
@@ -29,6 +30,11 @@ for(@ARGV){
   }
   elsif(/-have-dwdiff/) {
     $rtest_extra_args = $rtest_extra_args . " -c";
+  }
+  elsif(/^--print-fail-log$/) {
+    # ctest keeps only what a test prints, so print the rtest log (with the
+    # diff) of a failing test instead of leaving it in a .fail_log file only.
+    $print_fail_log = 1;
   }
   elsif(/^--with-omc=(.*)$/) {
     $rtest_extra_args = $rtest_extra_args . " --with-omc=$1";
@@ -408,6 +414,16 @@ if ($no_colour) {
 }
 
 close( $test_log );
+
+# Only the end of the log: the diff is there, and the whole output of a large
+# model would be cut off by ctest before it.
+if ($print_fail_log and !$disabled and $nfailed !~ /0/ and open(my $fh, '<', $fail_log)) {
+  my @lines = <$fh>;
+  close $fh;
+  my $skip = @lines > 300 ? @lines - 300 : 0;
+  print "[... $skip lines of the test log skipped ...]\n" if $skip;
+  print @lines[$skip .. $#lines];
+}
 
 if ($withxml) {
   my $XMLOUT;

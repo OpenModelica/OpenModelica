@@ -1764,7 +1764,7 @@ algorithm
     // not alone on the rhs of an equation is "tuple subscripted" by Typing.typeExp.
     case (Type.TUPLE(types = compatibleType :: _), _)
       algorithm
-        exp1 := Expression.tupleElement(exp1, compatibleType, 1);
+        exp1 := Expression.tupleElement(exp1, 1);
         (exp1, compatibleType, matchKind) :=
           matchTypes(compatibleType, type2, exp1, options);
 

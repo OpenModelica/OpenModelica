@@ -57,14 +57,14 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, Attr, AttrTargets, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
-    ProfPlan, ScatterGroup, SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
+    ProfPlan, ScatterGroup, SimCtx, SimSlot, SlotMap, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
     IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
     emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
     emit_nls_residual_body, emit_nls_residual_prologue, emit_nls_residual_epilogue,
-    emit_nls_residual_store, emit_solve_nls_call, external_import_sig, external_known,
+    emit_nls_residual_store, nls_residuals_all_scalar, emit_solve_nls_call, external_import_sig, external_known,
     external_general_why, note_declined_external, reset_declined_externals,
     function_signature, rt_index, sim_cref_key, sim_const_store,
     emit_sim_const_stores,

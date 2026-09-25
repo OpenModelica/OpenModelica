@@ -45,33 +45,10 @@ add_library(${OMSICName}
 target_include_directories(${OMSICName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(${OMSICName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/omsu")
 
-# Fallback for "standalone" makefile build: OMSIBaseSimulationRuntime INTERFACE
-# target is not available, so add OMSI includes explicitly.
-# TODO: Remove when switching to CMake build
-if(NOT TARGET OMSIBaseSimulationRuntime)
-  set(OMSI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../OMSI")
-  target_include_directories(${OMSICName} PRIVATE
-    "${OMSI_SOURCE_DIR}/include"
-    "${OMSI_SOURCE_DIR}/include/fmi2"
-    "${OMSI_SOURCE_DIR}/base/include"
-    "${OMSI_SOURCE_DIR}/solver/include")
-endif()
-
-if(TARGET OMSIBaseSimulationRuntime)
-  target_link_libraries(${OMSICName}
-    PRIVATE ${CMAKE_DL_LIBS}
-    PUBLIC ${OSUBaseName})
-else()
-  # Standalone makefile build: OSUBaseName is not a CMake target, so find by path
-  find_library(OSUBaseLib
-    NAMES ${OSUBaseName}
-    PATHS "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}"
-    NO_DEFAULT_PATH)
-  if(NOT OSUBaseLib)
-    message(FATAL_ERROR "Could not find ${OSUBaseName} in ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}")
-  endif()
-  target_link_libraries(${OMSICName} PRIVATE ${CMAKE_DL_LIBS} PUBLIC ${OSUBaseLib})
-endif()
+# OMSIBaseSimulationRuntime carries the OMSI include directories transitively.
+target_link_libraries(${OMSICName}
+  PRIVATE ${CMAKE_DL_LIBS}
+  PUBLIC ${OSUBaseName})
 
 install(TARGETS ${OMSICName}
   RUNTIME DESTINATION bin
@@ -90,15 +67,3 @@ install(FILES
   include/omsu/omsu_helper.h
   include/omsu/omsu_initialization.h
   DESTINATION include/omc/omsic/omsu)
-
-# uninstall target for makefile build
-# TODO: Remove when switching to CMake build
-if(NOT TARGET uninstall)
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
-
-  add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif()

@@ -1,0 +1,47 @@
+// name: array_each_attribute_ida
+// keywords: NewBackend array start nominal each ida
+// status: correct
+//
+// Non-scalarized array states whose start and nominal attributes are given
+// with `each` (or not at all) hold a single value for all array elements.
+// IDA reads the nominal of every state element and the start value has to be
+// used for every array element.
+
+loadString("
+model array_each_attribute_ida
+  parameter Integer N = 20;
+  Real x[N](each start = 2, each fixed = true, each nominal = 10);
+equation
+  for i in 1:N loop
+    der(x[i]) = -i*x[i];
+  end for;
+end array_each_attribute_ida;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+simulate(array_each_attribute_ida, stopTime=1.0, method="ida"); getErrorString();
+
+val(x[1], 0.0);
+val(x[20], 0.0);
+val(x[1], 1.0);
+val(x[2], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "array_each_attribute_ida_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'array_each_attribute_ida', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 2.0
+// 0.7357588819965079
+// 0.2706706898071619
+// endResult

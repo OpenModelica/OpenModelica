@@ -118,7 +118,7 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
 
   /* try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /*
@@ -176,11 +176,10 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
 
   /* TODO: Scale result */
 
-  success = 1;
-
   /* catch */
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   if (!success)
@@ -930,7 +929,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   /* Try */
 #if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /* Check current step size */
@@ -1001,11 +1000,12 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;
-  } while (!finished);
+  } while (!finished && !OMC_ERROR_RAISED());
 
   /* Catch */
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 #if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
   threadData->currentErrorStage = saveJumpState;
 

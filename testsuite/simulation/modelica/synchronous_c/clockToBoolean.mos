@@ -1,0 +1,56 @@
+// name:     clockToBoolean.mos
+// keywords: synchronous features, sample, hold, event clock, jacobian, sparsity pattern, c
+// status: correct
+//
+// ClockToBoolean closes a loop over a sample/hold pair. The Jacobian of the
+// ODE must leave the clocked partitions out, merged with the continuous ones
+// the loop looks like a discrete algebraic loop and the sort fails, #16877.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model clockToBoolean
+  Modelica.Clocked.ClockSignals.Clocks.EventClock ec;
+  Modelica.Clocked.BooleanSignals.NonPeriodic.ClockToBoolean c2b;
+  Integer n(start=0, fixed=true);
+equation
+  ec.u = time > 4.5 and time < 6 or time > 8;
+  connect(ec.y, c2b.u);
+  when c2b.y then
+    n = pre(n) + 1;
+  end when;
+end clockToBoolean;
+"); getErrorString();
+
+simulate(clockToBoolean, stopTime=10); getErrorString();
+val(n, 10);
+
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
+simulate(clockToBoolean, stopTime=10); getErrorString();
+val(n, 10);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "clockToBoolean_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'clockToBoolean', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "clockToBoolean_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'clockToBoolean', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// endResult

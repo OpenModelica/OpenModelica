@@ -634,6 +634,8 @@ FuncBuiltinSqrt.mo \
 FuncBuiltinSubSample1.mo \
 FuncBuiltinSubSample2.mo \
 FuncBuiltinSum.mo \
+FuncBuiltinSum2.mo \
+FuncBuiltinSum3.mo \
 FuncBuiltinSuperSample1.mo \
 FuncBuiltinSuperSample2.mo \
 FuncBuiltinSymmetric.mo \

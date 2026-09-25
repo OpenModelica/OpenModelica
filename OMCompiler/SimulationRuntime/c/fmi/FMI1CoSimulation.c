@@ -108,6 +108,7 @@ void FMI1CoSimulationDestructor_OMC(void* in_fmi1cs)
   free(FMI1CS->FMIInstanceName);
   free(FMI1CS->FMIFmuLocation);
   free(FMI1CS->FMIMimeType);
+  free(FMI1CS);
 }
 
 /*

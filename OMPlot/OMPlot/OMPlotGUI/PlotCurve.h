@@ -99,10 +99,10 @@ public:
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
   QPair<QVector<double>*, QVector<double>*> getAxisVectors();
-  void clearXAxisVector() {mXAxisVector.clear();}
+  void clearXAxisVector();
   void addYAxisValue(double value);
   void updateYAxisValue(int index, double value);
-  void clearYAxisVector() {mYAxisVector.clear();}
+  void clearYAxisVector();
   void setYAxisRight(bool right);
   bool isYAxisRight() const {return QwtPlotCurve::yAxis() == QwtAxis::Position::YRight;}
   int getXAxisSize() const;

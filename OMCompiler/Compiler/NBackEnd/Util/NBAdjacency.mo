@@ -1528,7 +1528,7 @@ public
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
-          Boolean eqnIsDiscrete, eqnIsIf, eqnHasNoResidual;
+          Boolean eqnIsDiscrete, eqnIsIf, eqnHasNoResidual, diffOk;
           Option<Expression> residual_opt;
 
         case FULL() algorithm
@@ -1569,9 +1569,18 @@ public
                   else
                     // get the residual expression, differentiate and simplify it
                     diffArgs.diffCref := var;
-                    (exp, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-                    exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
-                    if Expression.isZero(exp) then
+                    try
+                      (exp, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+                      exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
+                      diffOk          := true;
+                    else
+                      // not everything can be differentiated, e.g. functions with function inputs
+                      exp             := residual;
+                      diffOk          := false;
+                    end try;
+                    if not diffOk then
+                      sol := Solvability.IMPLICIT();
+                    elseif Expression.isZero(exp) then
                       sol := Solvability.UNSOLVABLE();
                     elseif containsLoopCref(exp, vars_set) then
                       // nonlinear -> unique solution if does not contain the variable itself

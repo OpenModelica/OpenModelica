@@ -44,7 +44,7 @@ void simple_array_copy_data(const base_array_t src, base_array_t* dst, size_t sz
 
 #define real_array_copy_data(src,dst)               simple_array_copy_data(src, &dst, sizeof(modelica_real));
 #define integer_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_integer));
-#define string_array_copy_data(src,dst)             simple_array_copy_data(src, &dst, sizeof(modelica_string));
+#define string_array_copy_data(src,dst)             omc_string_array_copy_data(src, &dst);
 #define boolean_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_boolean));
 
 void generic_array_alloc_copy(const base_array_t src, base_array_t* dst, copy_func cper, size_t sze);
@@ -52,7 +52,7 @@ void simple_array_alloc_copy(const base_array_t src, base_array_t* dst, size_t s
 
 #define real_array_alloc_copy(src,dst)              simple_array_alloc_copy(src, &dst, sizeof(modelica_real));
 #define integer_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst, sizeof(modelica_integer));
-#define string_array_alloc_copy(src,dst)            simple_array_alloc_copy(src, &dst, sizeof(modelica_string));
+#define string_array_alloc_copy(src,dst)            omc_string_array_alloc_copy(src, &dst);
 #define boolean_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst, sizeof(modelica_boolean));
 
 

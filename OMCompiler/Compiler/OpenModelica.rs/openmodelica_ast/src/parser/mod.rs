@@ -3752,8 +3752,8 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                 for s in &*(subs.reverse()) { rc_subs = cons(s.clone(), rc_subs); }
                 return Ok(Absyn::Exp::SUBSCRIPTED_EXP { exp, subscripts: rc_subs });
             }
-            // Parentheses are preserved in the AST: like the regular (non-
-            // OMC_BOOTSTRAPPING) C parser in `Modelica.g` `primary`, `(e)`
+            // Parentheses are preserved in the AST: like the C parser in
+            // `Modelica.g` `primary`, `(e)`
             // becomes a single-element TUPLE. The dumps rely on this instead
             // of re-deriving operator precedence (AbsynDumpTpl.dumpOperand
             // has shouldParenthesize commented out), and the semantic phases
@@ -4414,7 +4414,7 @@ end P;\n\
     #[test]
     fn parens_preserved_as_single_element_tuple() {
         // `(e)` is kept in the AST as a single-element TUPLE, mirroring the
-        // regular (non-OMC_BOOTSTRAPPING) ANTLR3 parser in `Modelica.g`
+        // ANTLR3 parser in `Modelica.g`
         // `primary`. The Absyn dumps print parentheses from this node —
         // AbsynDumpTpl.dumpOperand no longer re-derives operator precedence
         // (shouldParenthesize is commented out upstream) — so dropping the

@@ -224,21 +224,21 @@ int main(int argc, char *argv[])
 
   initDumpSystem();
 
-  MMC_INIT(0);
+  OMC_INIT(0);
   {
-    MMC_TRY_TOP()
-    MMC_TRY_STACK()
+    OMC_TRY_TOP()
+    OMC_TRY_STACK()
 
     threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = &data;
 
     // Call the function under test
     read_input_xml(&modelData, &simulationInfo, threadData);
 
-    MMC_ELSE()
+    OMC_ELSE()
     fprintf(stderr, "Stack overflow!\n");
     test_success = 0;
-    MMC_CATCH_STACK()
-    MMC_CATCH_TOP(fprintf(stderr, "Test throw!\n"); test_success = 0);
+    OMC_CATCH_STACK()
+    OMC_CATCH_TOP(fprintf(stderr, "Test throw!\n"); test_success = 0);
   }
 
   // Validate

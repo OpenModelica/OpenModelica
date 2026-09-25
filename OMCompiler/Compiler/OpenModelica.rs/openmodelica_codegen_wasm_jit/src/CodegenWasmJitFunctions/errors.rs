@@ -237,8 +237,62 @@ pub(super) fn emit_initial_flag(ctx: &mut FnCtx) {
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.
-pub(crate) fn dumped_exp(e: &metamodelica::Ref<DAE::Exp>) -> Result<String> {
-    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
+pub(crate) fn dumped_exp(e: &DAE::Exp) -> Result<String> {
+    if let DAE::Exp::CREF { componentRef, .. } = e
+        && !openmodelica_util::Config::typeinfo()?
+    {
+        let mut s = String::new();
+        if push_dumped_cref(componentRef, openmodelica_util::Config::modelicaOutput()?, &mut s) {
+            return Ok(s);
+        }
+    }
+    let e = metamodelica::Ref::new(e.clone());
+    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e, arcstr::literal!("\""))?)?.to_string())
+}
+
+/// `ExpressionDumpTpl.dumpCref` for crefs whose subscripts are all `:` or
+/// integer literals; false for anything else.
+fn push_dumped_cref(cr: &DAE::ComponentRef, modelica_output: bool, s: &mut String) -> bool {
+    use std::fmt::Write;
+    use DAE::ComponentRef as C;
+    let (ident, subs, rest) = match cr {
+        C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => (ident, subscriptLst, Some(componentRef)),
+        C::WILD => {
+            s.push('_');
+            return true;
+        }
+        _ => return false,
+    };
+    s.push_str(ident);
+    if !subs.is_empty() {
+        s.push_str(if modelica_output { "_" } else { "[" });
+        for (i, sub) in subs.iter().enumerate() {
+            if i > 0 {
+                s.push(if modelica_output { '_' } else { ',' });
+            }
+            match &**sub {
+                DAE::Subscript::WHOLEDIM => s.push(':'),
+                DAE::Subscript::INDEX { exp } => match &**exp {
+                    DAE::Exp::ICONST { integer } => {
+                        let _ = write!(s, "{integer}");
+                    }
+                    _ => return false,
+                },
+                _ => return false,
+            }
+        }
+        if !modelica_output {
+            s.push(']');
+        }
+    }
+    match rest {
+        Some(rest) => {
+            s.push_str(if modelica_output { "__" } else { "." });
+            push_dumped_cref(rest, modelica_output, s)
+        }
+        None => true,
+    }
 }
 
 /// A math builtin's accepted interval and the message text around the `%g`.

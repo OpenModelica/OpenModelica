@@ -139,6 +139,8 @@ SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistrib
     spatialDistributionData[i].transportedQuantity = allocDoubleEndedList(sizeof(TRANSPORTED_QUANTITY_DATA)); /* empty double ended list */
     spatialDistributionData[i].storedEvents = allocDoubleEndedList(sizeof(TRANSPORTED_EVENT_DATA));           /* empty double ended list */
     spatialDistributionData[i].lastStoredEventValue = 0;
+    spatialDistributionData[i].nWarningsRemovedEvents = 0;
+    spatialDistributionData[i].nWarningsOutputEvents = 0;
   }
 
   return spatialDistributionData;
@@ -287,6 +289,20 @@ static double shiftToStartPosX(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, d
   return posX - spatialDistribution->startPosX;
 }
 
+static void warnStepSizeTooBig(DATA* data, unsigned long* nDisplayed, const char* what, unsigned int index, int nEvents) {
+  unsigned long maxWarnDisplays = data->simulationInfo->maxWarnDisplays;
+
+  if (++*nDisplayed > maxWarnDisplays || !OMC_ACTIVE_WARNING_STREAM(OMC_LOG_STDOUT)) {
+    return;
+  }
+  warningStreamPrint(OMC_LOG_STDOUT, 1, "%s more then one event from spatialDistribution. Step size to big!", what);
+  warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, nEvents);
+  messageCloseWarning(OMC_LOG_STDOUT);
+  if (*nDisplayed == maxWarnDisplays) {
+    warningStreamPrintLimitReached(OMC_LOG_STDOUT, 0, maxWarnDisplays);
+  }
+}
+
 
 /**
  * @brief Store spatial distribution data for an accepted step.
@@ -370,9 +386,7 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   /* Remove nodes that droppen of spatial distribution */
   walkedOverEvents = pruneSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity);
   if (walkedOverEvents > 1) {
-    warningStreamPrint(OMC_LOG_STDOUT, 1, "Removed more then one event from spatialDistribution. Step size to big!");
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageCloseWarning(OMC_LOG_STDOUT);
+    warnStepSizeTooBig(data, &spatialDistribution->nWarningsRemovedEvents, "Removed", index, walkedOverEvents);
   }
 
   /* Update oldPosX */
@@ -473,9 +487,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
 
   /* Handle events that would come out of spatialDistribution */
   if (walkedOverEvents > 1) {
-    warningStreamPrint(OMC_LOG_STDOUT, 1, "Need to output more then one event from spatialDistribution. Step size to big!");
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageCloseWarning(OMC_LOG_STDOUT);
+    warnStepSizeTooBig(data, &spatialDistribution->nWarningsOutputEvents, "Need to output", index, walkedOverEvents);
   }
   if (walkedOverEvents>0 && !data->simulationInfo->discreteCall && !isnan(eventPreValue)) {
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);

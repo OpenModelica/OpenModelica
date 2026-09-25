@@ -66,6 +66,7 @@ import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
 import FlagsUtil;
+import Global;
 import HashSet;
 import HashTable2;
 import InnerOuter;
@@ -152,11 +153,13 @@ algorithm
         (dae,cache,graph) := flattenModel(className,p,cache);
         description := DAEUtil.daeDescription(dae);
         //print("- Flatten ok\n");
+        setGlobalRoot(Global.uncertaintyExtraction, SOME(true));
         dlow := BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile,NONE()));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualRHS", "expandDerOperator"}), NONE(), NONE(),NONE());
         FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
         dlow_1 := BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualRHS","expandDerOperator"}), NONE(), NONE(), SOME({}));
         FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, forceOrdering);
+        setGlobalRoot(Global.uncertaintyExtraction, NONE());
         //print("* Lowered Ok \n");
 
         dlow_1 := removeSimpleEquationsUC(dlow_1);
@@ -296,6 +299,7 @@ algorithm
         (cache,Values.STRING(resstr));
     case (_, _, outputFile)
       algorithm
+        setGlobalRoot(Global.uncertaintyExtraction, NONE());
         Print.printBuf("{"+getMathematicaText("Extraction failed")+"}");
         outStringA := "Grid[{"+Print.getString()+"}]";
         writeFileIfNonEmpty(outputFile,outStringA);

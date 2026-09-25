@@ -837,7 +837,8 @@ protected
       // array; convert it back to a per-dimension, one-based subscript.
       loc  := Slice.indexToLocation(idx, sizes);
       subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in loc);
-      elem_cref := ComponentRef.setSubscripts(subs, orig_cref);
+      // the subscripts belong to the array of records if the variable is a member of one
+      elem_cref := ComponentRef.mergeSubscripts(subs, orig_cref, true, true, true);
       elems := Expression.fromCref(elem_cref) :: elems;
 
       alias_elem_cref := if n == 1 then alias_cref else ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(i))}, alias_cref);

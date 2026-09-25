@@ -569,15 +569,15 @@ fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
         }
         for a in 0..md.nVariablesIntegerArray as usize {
             let d = &*md.integerVarsData.add(a);
-            v.ints.push((cstr(d.info.name), d.attribute.start as i32));
+            v.ints.push((cstr(d.info.name), d.attribute.start.elem_at::<modelica_integer>(0, 0) as i32));
         }
         for a in 0..md.nVariablesBooleanArray as usize {
             let d = &*md.booleanVarsData.add(a);
-            v.bools.push((cstr(d.info.name), d.attribute.start));
+            v.bools.push((cstr(d.info.name), d.attribute.start.elem_at(0, 0)));
         }
         for a in 0..md.nVariablesStringArray as usize {
             let d = &*md.stringVarsData.add(a);
-            v.strings.push((cstr(d.info.name), crate::model_data::string_value(d.attribute.start)));
+            v.strings.push((cstr(d.info.name), crate::model_data::string_value(d.attribute.start.elem_at(0, core::ptr::null_mut()))));
         }
     }
     v.n_discrete_real = md.nDiscreteRealArray as u32;
@@ -596,15 +596,15 @@ fn param_vars(md: &MODEL_DATA, _si: &SIMULATION_INFO) -> ParamVars {
         }
         for a in 0..md.nParametersIntegerArray as usize {
             let d = &*md.integerParameterData.add(a);
-            p.ints.push((cstr(d.info.name), d.attribute.start as i32, d.attribute.fixed != 0));
+            p.ints.push((cstr(d.info.name), d.attribute.start.elem_at::<modelica_integer>(0, 0) as i32, d.attribute.fixed != 0));
         }
         for a in 0..md.nParametersBooleanArray as usize {
             let d = &*md.booleanParameterData.add(a);
-            p.bools.push((cstr(d.info.name), d.attribute.start, d.attribute.fixed != 0));
+            p.bools.push((cstr(d.info.name), d.attribute.start.elem_at(0, 0), d.attribute.fixed != 0));
         }
         for a in 0..md.nParametersStringArray as usize {
             let d = &*md.stringParameterData.add(a);
-            p.strings.push((cstr(d.info.name), crate::model_data::string_value(d.attribute.start)));
+            p.strings.push((cstr(d.info.name), crate::model_data::string_value(d.attribute.start.elem_at(0, core::ptr::null_mut()))));
         }
     }
     p

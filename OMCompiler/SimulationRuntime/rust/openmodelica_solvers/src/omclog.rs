@@ -426,16 +426,21 @@ pub fn warning_with_limit(stream: Stream, n_displayed: u64, max_displayed: u64, 
         message_text(WARNING, stream, false, msg);
     }
     if n_displayed == max_displayed {
-        message_text(
-            INFO,
-            stream,
-            false,
-            &format!(
-                "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
-            ),
-        );
-        message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
+        warning_limit_reached(stream, max_displayed);
     }
+}
+
+/// C's `warningStreamPrintLimitReached`.
+pub fn warning_limit_reached(stream: Stream, max_displayed: u64) {
+    message_text(
+        INFO,
+        stream,
+        false,
+        &format!(
+            "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
+        ),
+    );
+    message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
 }
 
 /// C's `va_throwStreamPrint`: unlike [`error`], gated on `-lv`.

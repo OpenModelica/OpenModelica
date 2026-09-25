@@ -557,6 +557,7 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
       Option<OMSIData> omsiData;
+      list<FmiFigure> fmiFigures;
     end SIMCODE;
   end SimCode;
 
@@ -1279,6 +1280,8 @@ package SimCodeFunction
       String ctor_name;
       String name;
       list<Variable> variables;
+      Absyn.Path defPath;
+      Boolean usedExternally;
     end RECORD_DECL_ADD_CONSTRCTOR;
     record RECORD_DECL_DEF
       Absyn.Path path;
@@ -1359,7 +1362,7 @@ package SimCodeFunction
   constant list<SimCodeFunction.Variable> boxedRecordOutVars;
 end SimCodeFunction;
 
-package SimCodeUtil
+package SimCodeCodegenUtil
 
   function linearSystemMatrixFormat
     input SimCode.LinearSystem ls;
@@ -1545,11 +1548,6 @@ package SimCodeUtil
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
 
-  function getFMI3Figures
-    input SimCode.SimCode simCode;
-    output list<SimCode.FmiFigure> figures;
-  end getFMI3Figures;
-
   function getFMI3VisualizationResource
     input SimCode.SimCode simCode;
     output String resource;
@@ -1690,14 +1688,24 @@ package SimCodeUtil
     output SimCode.SimCode code;
   end getSimCode;
 
+  function isSimulationCodegen
+    output Boolean simulation;
+  end isSimulationCodegen;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
     output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
 
+  function isJacobianColumnCref
+    input DAE.ComponentRef cr;
+    output Boolean b;
+  end isJacobianColumnCref;
+
   function isContiguousArrayCref
     input DAE.ComponentRef inCref;
+    input SimCodeFunction.Context context;
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
@@ -1736,6 +1744,11 @@ package SimCodeUtil
     input SimCodeFunction.Context context;
     output DAE.Exp outExp;
   end codegenExpSanityCheck;
+
+  function unboxFunctionReferenceCall
+    input DAE.Exp inExp;
+    output DAE.Exp outExp;
+  end unboxFunctionReferenceCall;
 
   function selectScalarLiteralAssignments
     input list<SimCode.SimEqSystem> inEqs;
@@ -1812,7 +1825,7 @@ package SimCodeUtil
     input SimCode.SimGenericCall call;
     output String str;
   end simGenericCallString;
-end SimCodeUtil;
+end SimCodeCodegenUtil;
 
 package SimCodeFunctionUtil
   function varName
@@ -1940,6 +1953,12 @@ package SimCodeFunctionUtil
     input list<DAE.Subscript> subs;
     output DAE.Exp cRefOut;
   end buildCrefExpFromSubs;
+
+  function padAsubSubscripts
+    input DAE.Exp exp;
+    input list<DAE.Subscript> subs;
+    output list<DAE.Subscript> outSubs;
+  end padAsubSubscripts;
 
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
@@ -2266,6 +2285,17 @@ package System
     output Boolean success;
   end covertTextFileToCLiteral;
 
+  function openModelicaPlatform
+    output String platform;
+  end openModelicaPlatform;
+
+  function gccDumpMachine
+    output String machine;
+  end gccDumpMachine;
+
+  function gccVersion
+    output String version;
+  end gccVersion;
 end System;
 
 package Autoconf

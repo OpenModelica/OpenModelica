@@ -1,0 +1,75 @@
+// name: functionOutputStart
+// keywords: NewBackend initialization function start value
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -f FunctionOutputStart.Product*
+//
+// The outputs of a function call are iteration variables of the initialization, which would start at
+// zero. That makes products of them singular. They start at the function call evaluated at the start
+// values ($START) of its arguments instead, so a changed start value is used as well.
+
+loadString("
+package FunctionOutputStart
+  function twice
+    input Real u;
+    output Real y;
+  algorithm
+    y := 2 * u;
+    annotation(Inline = false);
+  end twice;
+
+  model Product
+    Real x(start = 2);
+    Real y(start = 3);
+  equation
+    twice(x) * twice(y) = 24;
+    x = y - 1;
+  end Product;
+end FunctionOutputStart;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=initialization"); getErrorString();
+simulate(FunctionOutputStart.Product, stopTime = 1); getErrorString();
+val(x, 1);
+val(y, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// Created Algebraic Start Equations (2):
+// ****************************************
+// 	[SCAL] (1) $START.$FUN_2 = FunctionOutputStart.twice($START.y); ($RES_SRT_7)
+// 	[SCAL] (1) $START.$FUN_1 = FunctionOutputStart.twice($START.x); ($RES_SRT_6)
+//
+// Created Secondary Parameter Binding Equations (0):
+// ****************************************************
+//
+//
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
+//
+//
+// ##############################
+//
+//     Balance Initialization
+//
+// ##############################
+//
+// Not underdetermined.
+// **********************
+// Not overdetermined.
+// *********************
+//
+// record SimulationResult
+//     resultFile = "FunctionOutputStart.Product_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionOutputStart.Product', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// endResult

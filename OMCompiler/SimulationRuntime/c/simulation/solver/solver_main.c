@@ -44,7 +44,6 @@
 #include "util/varinfo.h"
 #include "util/omc_strdup.h"
 #include "model_help.h"
-#include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 #include "simulation/solver/external_input.h"
 #include "synchronous.h"
@@ -421,15 +420,16 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   {
     int success = 0;
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    if(initialization(data, threadData, init_initMethod, init_file, init_time))
+    /* A raised error is reported by the catch below. */
+    if (initialization(data, threadData, init_initMethod, init_file, init_time) && !OMC_ERROR_RAISED())
     {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }
-    if (!retValue)
+    if (!retValue && !OMC_ERROR_RAISED())
     {
       if (data->simulationInfo->homotopySteps == 0) {
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
@@ -440,9 +440,9 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
       }
     }
 
-    success = 1;
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
     if (!success)
@@ -629,7 +629,9 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod, const char* init_file,
     double init_time, int solverID, const char* outputVariablesAtEnd, const char *argv_0)
 {
-  int i, retVal = 1, initSolverInfo = 0;
+  int i;
+  /* Read after a longjmp into the catch below. */
+  volatile int retVal = 1, initSolverInfo = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = data->simulationInfo;
@@ -670,7 +672,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     messageCloseWarning(OMC_LOG_STDOUT);
   }
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /*  initialize external input structure */
@@ -782,9 +784,10 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   embedded_server_deinit(data->embeddedServerState);
   embedded_server_unload_functions(dllHandle);
 #endif
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   /*  free external input data */
@@ -985,7 +988,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
     for(i = 0; i < data->modelData->nVariablesString; i++)
       if(!strcmp(p, data->modelData->stringVarsData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
+        fprintf(stdout, ",%s=\"%s\"", p, omc_string_data((data->localData[0])->stringVars[i]));
 
     for(i = 0; i < data->modelData->nAliasReal; i++)
       if(!strcmp(p, data->modelData->realAlias[i].info.name))
@@ -1013,7 +1016,7 @@ static void writeOutputVars(char* names, DATA* data)
       }
     for(i = 0; i < data->modelData->nAliasString; i++)
       if(!strcmp(p, data->modelData->stringAlias[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
+        fprintf(stdout, ",%s=\"%s\"", p, omc_string_data((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
 
     /* parameters */
     for(i = 0; i < data->modelData->nParametersReal; i++)
@@ -1030,7 +1033,7 @@ static void writeOutputVars(char* names, DATA* data)
 
     for(i = 0; i < data->modelData->nParametersString; i++)
       if(!strcmp(p, data->modelData->stringParameterData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo->stringParameter[i]));
+        fprintf(stdout, ",%s=\"%s\"", p, omc_string_data(data->simulationInfo->stringParameter[i]));
 
     /* move to next */
     p = strtok(NULL, "!");

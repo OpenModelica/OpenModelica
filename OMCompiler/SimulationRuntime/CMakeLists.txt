@@ -10,14 +10,7 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
   endif()
   omc_add_subdirectory(fmi)
 
-  # ModelicaExternalC
-  # Disable ModelicaExternalC for MSVC since right now we are building static
-  # and shared versions of the library with the *same name*. This works on linux
-  # and MinGW because lib.a and lib.so. MSVC, however, wants to build an import
-  # lib (.lib) for DLLs. This conflicts with the static library (also .lib).
-  if(NOT MSVC)
-    omc_add_subdirectory(ModelicaExternalC)
-  endif()
+  omc_add_subdirectory(ModelicaExternalC)
 
   # OMSI
   #
@@ -28,7 +21,7 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
   # The OMSI runtimes assume a MinGW/MSYS2 toolchain on Windows (OMSICpp hard-
   # requires $ENV{MSYSTEM_PREFIX} and bundled-under-OMHOME Boost), so they are
   # not yet buildable in the MSVC cross build — disable for MSVC, like
-  # ModelicaExternalC / ParModelica above.
+  # ParModelica below.
   if(NOT MSVC)
     omc_add_subdirectory(OMSI)
     omc_add_subdirectory(OMSIC)

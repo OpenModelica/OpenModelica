@@ -1,0 +1,41 @@
+// name: whenConditionAssertSplit
+// keywords: NewBackend
+// status: correct
+// When equations with an assert and an assignment are split into a removed and a
+// regular part. The auxiliary condition variables of both parts need unique names.
+
+loadString("
+model WhenConditionAssertSplit
+  Integer stage = if time > 0.5 then 1 else 0;
+  Boolean checkA(start = true, fixed = true);
+  Boolean checkB(start = true, fixed = true);
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  when stage == 1 and pre(checkA) then
+    assert(x < 10, \"x is large\", AssertionLevel.warning);
+    checkA = false;
+  end when;
+  when stage == 1 and pre(checkB) then
+    assert(x < 20, \"x is very large\", AssertionLevel.warning);
+    checkB = false;
+  end when;
+end WhenConditionAssertSplit;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(WhenConditionAssertSplit); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "WhenConditionAssertSplit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'WhenConditionAssertSplit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

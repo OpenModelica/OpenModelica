@@ -139,6 +139,10 @@ RunScript.mos \
 saveShort.mos \
 saveTotalModel.mos \
 saveTotalModel2.mos \
+saveTotalModel3.mos \
+saveTotalModel4.mos \
+saveTotalModel5.mos \
+previous_saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementAnnotation.mos \

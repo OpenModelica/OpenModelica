@@ -775,7 +775,7 @@ public
       Expression.ARRAY(Type.ARRAY(ty, {m, _}), arr) := Expression.transposeArray(exp2);
       ty := Type.ARRAY(ty, {m});
 
-      if arrayEmpty(arr) then
+      if arrayEmpty(arr) or Type.isEmptyArray(ty) then
         outExp := Expression.makeZero(ty);
       else
         (exp1, expanded) := expand(exp1);
@@ -811,7 +811,7 @@ public
       Expression.ARRAY(Type.ARRAY(ty, {n, _}), arr) := exp1;
       ty := Type.ARRAY(ty, {n});
 
-      if arrayEmpty(arr) then
+      if arrayEmpty(arr) or Type.isEmptyArray(ty) then
         outExp := Expression.makeZero(ty);
       else
         (exp2, expanded) := expand(exp2);

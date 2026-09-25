@@ -31,6 +31,13 @@
  * and arrays, etc.
  */
 
+/* Including this header makes the translation unit MetaModelica. Generated
+   code compiled with plain flags (-d=gen, bootstrapping) gets the define here,
+   before util/modelica.h picks the counted vocabulary. */
+#ifndef OMC_METAMODELICA_RUNTIME
+#define OMC_METAMODELICA_RUNTIME 1
+#endif
+
 #ifndef META_MODELICA_H_
 #define META_MODELICA_H_
 
@@ -46,6 +53,53 @@ extern "C" {
 #include "../gc/omc_gc.h"
 #include "../omc_inline.h"
 #include "../openmodelica.h"
+#include "meta_modelica_string.h"
+
+/* gc/omc_gc.h was included first and bound the counted allocator: boxes built
+   here would be invisible to the collector. */
+#if defined(OMC_NO_BOEHM_GC)
+#error "MetaModelica translation unit built against the counted runtime: add -DOMC_METAMODELICA_RUNTIME=1"
+#endif
+
+/* The box vocabulary of generated code. The literal macros differ per runtime,
+   so the code generator names them directly (litDefBox and friends). */
+#define OMC_BOX_FIELD(X, I) MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X), I))
+#define omc_mk_rcon           mmc_mk_rcon
+#define omc_mk_real           mmc_mk_real
+#define omc_mk_integer        mmc_mk_integer
+#define omc_mk_boolean        mmc_mk_boolean
+#define omc_mk_enumeration    mmc_mk_integer
+#define omc_mk_icon           mmc_mk_icon
+#define omc_mk_bcon           mmc_mk_bcon
+#define omc_mk_string         mmc_mk_string
+#define omc_mk_modelica_array mmc_mk_modelica_array
+#define omc_unbox_real        mmc_unbox_real
+#define omc_unbox_integer     mmc_unbox_integer
+#define omc_unbox_boolean     mmc_unbox_boolean
+#define omc_unbox_string      mmc_unbox_string
+#define omc_unbox_array       mmc_unbox_array
+#define omc_mk_box   mmc_mk_box
+#define omc_mk_box0   mmc_mk_box0
+#define omc_mk_box1   mmc_mk_box1
+#define omc_mk_box2   mmc_mk_box2
+#define omc_mk_box3   mmc_mk_box3
+#define omc_mk_box4   mmc_mk_box4
+#define omc_mk_box5   mmc_mk_box5
+#define omc_mk_box6   mmc_mk_box6
+#define omc_mk_box7   mmc_mk_box7
+#define omc_mk_box8   mmc_mk_box8
+#define omc_mk_box9   mmc_mk_box9
+#define omc_mk_box10  mmc_mk_box10
+#define omc_mk_box11  mmc_mk_box11
+#define omc_mk_box12  mmc_mk_box12
+#define omc_mk_box13  mmc_mk_box13
+#define omc_mk_box14  mmc_mk_box14
+#define omc_mk_box15  mmc_mk_box15
+#define omc_mk_box16  mmc_mk_box16
+#define omc_mk_box17  mmc_mk_box17
+#define omc_mk_box18  mmc_mk_box18
+#define omc_mk_box19  mmc_mk_box19
+#define omc_mk_box20  mmc_mk_box20
 #include "meta_modelica_data.h"
 #include "../util/omc_init.h"
 
@@ -189,12 +243,6 @@ extern char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaT
  * the descriptions will be duplicated, and cost additional memory
  * for each and every Values.Value copied. /sjoelund 2009-05-20
  */
-struct record_description {
-  const char* path; /* package_record__X */
-  const char* name; /* package.record_X */
-  const char** fieldNames;
-};
-
 #if defined(OMC_MINIMAL_RUNTIME)
 static void* mmc_mk_rcon(double d)
 {

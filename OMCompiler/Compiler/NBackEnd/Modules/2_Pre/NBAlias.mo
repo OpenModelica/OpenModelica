@@ -532,7 +532,9 @@ protected
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
 
-      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+      // an array variable and a scalar are not aliases, even if the array has only one element:
+      // replacing the array by the scalar breaks the array expressions it is used in
+      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs) and sameArrayness(eq.lhs, eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
@@ -735,6 +737,13 @@ protected
                                   else false;
     end match;
   end findCrefsFail;
+
+  function sameArrayness
+    "true if both expressions are arrays or both are scalars"
+    input Expression exp1;
+    input Expression exp2;
+    output Boolean same = Type.isArray(Expression.typeOf(exp1)) == Type.isArray(Expression.typeOf(exp2));
+  end sameArrayness;
 
   function isSimpleExp
     "checks if an expression can be considered simple."
@@ -1266,17 +1275,16 @@ protected
       end if;
     end if;
 
-    // zero valued nominal values are not allowed
+    // zero valued nominal values are invalid, but the models still work, so they are only reported
     if not listEmpty(zeroes) then
-      str := getInstanceName() + " failed because zero values are not allowed.";
+      str := getInstanceName() + ": Zero valued nominal values are not allowed.";
       if Flags.isSet(Flags.DUMP_REPL) then
         str := str + "\n\tNominal map after replacements (violating array index = " + intString(index) + "):\n\t"
           + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
       else
         str := str + " Use -d=dumprepl for more information.\n";
       end if;
-      Error.addCompilerError(str);
-      fail();
+      Error.addCompilerWarning(str);
     end if;
   end checkNominalThresholdSingle;
 
@@ -1418,6 +1426,19 @@ protected
     end if;
   end optionMinMax;
 
+  function isAuxStart
+    "true if the start value is the call of a function alias variable"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CALL()            then true;
+      case Expression.RECORD_ELEMENT()  then Expression.isCall(exp.recordExp);
+      case Expression.TUPLE_ELEMENT()   then Expression.isCall(exp.tupleExp);
+      else false;
+    end match;
+  end isAuxStart;
+
   function optionStartFixed
     "Collects start and fixed attributes if available."
     input Pointer<Variable> var_ptr;
@@ -1428,8 +1449,11 @@ protected
   algorithm
     if isSome(attr_start) then
       SOME(start_b) := attr_start;
-      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), start_b, attrcollector.start_binding_map);
+      // the generated start values of function alias variables (see NBFunctionAlias) are only guesses
+      if not (BVariable.isFunctionAlias(var_ptr) and Binding.source(start_b) == NFBinding.Source.GENERATED and isAuxStart(Binding.getTypedExp(start_b))) then
+        UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
+        UnorderedMap.add(BVariable.getVarName(var_ptr), start_b, attrcollector.start_binding_map);
+      end if;
     end if;
     if isSome(attr_fixed) then
       SOME(fixed_b) := attr_fixed;

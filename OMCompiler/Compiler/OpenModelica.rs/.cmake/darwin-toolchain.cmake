@@ -184,7 +184,7 @@ set(CMAKE_CXX_ARCHIVE_FINISH "${CMAKE_C_ARCHIVE_FINISH}")
 
 # The Mach-O tools CMake and 3rdParty reach for by their Apple names, which a
 # Linux host has only as LLVM's drop-in equivalents: `libtool -static` merges
-# static archives (3rdParty/FMIL), and install_name_tool/otool are what CMake
+# static archives (3rdParty/fmi-library), and install_name_tool/otool are what CMake
 # rewrites install rpaths with. Set in the cache so the find_program()s that
 # want them (which search host paths, since the SDK has no binaries) stop early.
 foreach(_tool libtool:LIBTOOL install-name-tool:INSTALL_NAME_TOOL otool:OTOOL)

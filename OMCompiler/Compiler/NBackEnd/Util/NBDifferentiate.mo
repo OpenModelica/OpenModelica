@@ -1094,7 +1094,8 @@ public
       // Any variable that is in the HT will be differentiated accordingly. 0 otherwise
       case (Expression.CREF(), DifferentiationType.FUNCTION, SOME(diff_map)) algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
-        if UnorderedMap.contains(strippedCref, diff_map) then
+        // discrete variables (e.g. for-loop iterators with the name of a local) have no derivative
+        if not Type.isDiscrete(Type.arrayElementType(exp.ty)) and UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
@@ -1303,7 +1304,7 @@ public
               (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
               elem_exps := elem_res :: elem_exps;
             end for;
-            res := Expression.makeArray(exp.ty, listArray(listReverse(elem_exps)));
+            res := makeShapedArray(exp.ty, listReverse(elem_exps));
           end if;
         end if;
       then (res, diffArguments);
@@ -1315,6 +1316,39 @@ public
 
     end match;
   end differentiateComponentRef;
+
+  function makeShapedArray
+    "Builds an array expression of type ty from its scalar elements given in row-major
+     order. A multi-dimensional type gets one nested array per leading dimension, e.g.
+     Real[2, 1] with {a, b} becomes {{a}, {b}}, so that the shape matches the type. A flat
+     array of scalars typed as a matrix breaks the code generation."
+    input Type ty;
+    input list<Expression> elems "row-major";
+    output Expression res;
+  protected
+    list<Dimension> dims = Type.arrayDims(ty);
+    Type row_ty;
+    Integer row_size, n_rows;
+    list<Expression> rows = {}, row, remaining = elems;
+  algorithm
+    if listLength(dims) < 2 then
+      res := Expression.makeArray(ty, listArray(elems));
+    else
+      row_ty := Type.ARRAY(Type.arrayElementType(ty), listRest(dims));
+      row_size := Type.sizeOf(row_ty);
+      if row_size < 1 or listLength(elems) <> row_size * Dimension.size(listHead(dims)) then
+        // sizes that do not add up, keep the previous (flat) result rather than guess
+        res := Expression.makeArray(ty, listArray(elems));
+      else
+        n_rows := Dimension.size(listHead(dims));
+        for i in 1:n_rows loop
+          (row, remaining) := List.split(remaining, row_size);
+          rows := makeShapedArray(row_ty, row) :: rows;
+        end for;
+        res := Expression.makeArray(ty, listArray(listReverse(rows)));
+      end if;
+    end if;
+  end makeShapedArray;
 
   function differentiateComponentRefNoCollect
     input output Expression exp;
@@ -1442,6 +1476,9 @@ public
           if isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
             der_func := addDiffInfo(func, der_func, diffArguments);
+          elseif List.any(func.inputs, InstNode.isFunction) then
+            // the body calls the function input, which has no derivative (e.g. solveOneNonlinearEquation)
+            fail();
           else
             (der_func, diffArguments) := differentiateFunction(func, interface_map, diffArguments);
           end if;
@@ -2768,6 +2805,17 @@ public
     alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, SOME(diffInfo), alg.scope, alg.source);
   end differentiateAlgorithm;
 
+  function wildIfNotCref
+    "replaces direct non-cref tuple elements by a wildcard"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.TUPLE()
+      then Expression.TUPLE(exp.ty, list(if Expression.isCref(e) then e else Expression.CREF(Expression.typeOf(e), ComponentRef.WILD()) for e in exp.elements));
+      else exp;
+    end match;
+  end wildIfNotCref;
+
   function differentiateStatement
     input Statement stmt;
     input UnorderedSet<Statement> diffInfo;
@@ -2808,6 +2856,16 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
+      // I-c. differentiate tuple assignment from a function call
+      // (a, b) := f(x) -> (a', b') := f'(x, x')
+      case diff_stmt as Statement.ASSIGNMENT(lhs = Expression.TUPLE()) guard(Expression.isCall(diff_stmt.rhs)) algorithm
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        // outputs without a derivative variable (e.g. Integer) are ignored
+        diff_stmt.lhs := wildIfNotCref(lhs);
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};
 

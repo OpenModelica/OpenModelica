@@ -2,7 +2,7 @@
 // keywords: ffi
 // status:   correct
 // cflags: -d=newInst
-// win: yes
+// suite: smoke
 //
 //
 

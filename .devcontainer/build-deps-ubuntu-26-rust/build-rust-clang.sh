@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Reproduce the Jenkins `cmake-rust-clang` stage locally.
+# Reproduce the Jenkins `rust-clang` stage locally.
 #
 # This mirrors common.buildRustOMC() in ../../.CI/common.groovy: same cmake
 # flags, same build targets, same order. Run it from inside the

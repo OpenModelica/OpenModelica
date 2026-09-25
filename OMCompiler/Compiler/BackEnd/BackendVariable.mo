@@ -3477,15 +3477,14 @@ end setPrefixIndices;
 protected function updatePrefixIndices
   "Adds index under every proper prefix of cr that isPrefixQuery
    can name: each qualifier of an array or record type, with each leading part
-   of its subscripts. The hash of a prefix is the sum
-   ComponentReferenceBasics.hashComponentRef would give it, so every qualifier
-   is walked even where nothing is stored."
+   of its subscripts. The hash of a prefix is the hashComponentRef of that prefix, so
+   every qualifier is walked even where nothing is stored."
   input DAE.ComponentRef cr;
   input Integer index;
   input BackendDAE.Variables vars;
 protected
   DAE.ComponentRef c = cr;
-  Integer hash = 0, depth = 0, nsubs, factor, count;
+  Integer hash = ComponentReferenceBasics.crefHashSeed, depth = 0, nsubs, count;
   list<DAE.Subscript> subs;
   DAE.Type ty;
   Boolean last, ok, store;
@@ -3500,17 +3499,15 @@ algorithm
       return;
     end if;
     depth := depth + 1;
-    hash := hash + stringHashDjb2(ComponentReferenceBasics.crefFirstIdent(c));
+    hash := ComponentReferenceBasics.crefHashIdent(ComponentReferenceBasics.crefFirstIdent(c), hash);
     count := listLength(subs);
     nsubs := 0;
-    factor := 1;
     store := isExpandableType(ty);
     if store and not (last and count == 0) then
       updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
     end if;
     for sub in subs loop
-      hash := hash + ComponentReferenceBasics.hashSubscript(sub) * factor;
-      factor := factor * 1000;
+      hash := ComponentReferenceBasics.crefHashSubscript(sub, hash);
       nsubs := nsubs + 1;
       if store and not (last and nsubs == count) then
         updatePrefixIndex(cr, depth, nsubs, hash, index, vars);

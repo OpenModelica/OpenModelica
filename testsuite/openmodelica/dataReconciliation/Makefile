@@ -27,7 +27,6 @@ stateEstimation2.mos\
 FourFlows.mos\
 TSP_Pipe.mos\
 TSP_Pipe1.mos\
-TSP_Pipe4.mos\
 TSP_Pipe7.mos\
 TSP_Pipe8.mos\
 TSP_Pipe9.mos\
@@ -43,11 +42,7 @@ TSP_FourFlows.mos\
 TSP_FourFlows1.mos\
 TSP_FourFlows3.mos\
 TSP_FourFlows8.mos\
-TSP_FourFlows10.mos\
-
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES= \
+UncertainAliasSimulation.mos\
 TSP_FourFlows2.mos\
 TSP_FourFlows4.mos\
 TSP_FourFlows5.mos\
@@ -60,6 +55,14 @@ TSP_Pipe5.mos\
 TSP_Pipe3.mos\
 TSP_Splitter6.mos\
 TSP_Pipe2.mos\
+TSP_Pipe4.mos\
+TSP_FourFlows10.mos\
+
+# Tests that fail and cannot be part of the testsuite (crash, hang, ...).
+# Models that fail in a reproducible way go in TESTFILES instead, with the
+# failure recorded as the expected result, see #15384.
+# Run make failingtest
+FAILINGTESTFILES= \
 
 
 # Dependency files that are not .mo .mos or Makefile

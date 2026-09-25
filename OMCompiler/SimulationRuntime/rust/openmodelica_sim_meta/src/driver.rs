@@ -4292,6 +4292,7 @@ fn fire_time_event(
     te: f64,
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
+    let _clock = rtclock::Span::new(rtclock::EVENT);
     let addr = e.error_stage_addr();
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
     let r = fire_time_event_inner(e, samples, sim_data, layout, te, dae);
@@ -4431,6 +4432,7 @@ pub fn event_update_dae(
     time: f64,
     dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<EventUpdate> {
+    let _clock = rtclock::Span::new(rtclock::EVENT);
     let addr = e.error_stage_addr();
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
     let r = event_update_inner(e, sim_data, layout, samples, time, dae);
@@ -6984,7 +6986,10 @@ impl CvodeState {
         if !cv.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: CVODE setup failed");
         }
-        let stop = cv.step(t, target);
+        let stop = {
+            let _clock = rtclock::Span::new(rtclock::SOLVER);
+            cv.step(t, target)
+        };
         y.copy_from_slice(cv.y());
         Ok(match stop {
             crate::sundials::Stop::Failed(flag)
@@ -7077,7 +7082,10 @@ impl IdaState {
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: IDA setup failed");
         }
-        let stop = ida.step(t, target, no_equidistant_grid());
+        let stop = {
+            let _clock = rtclock::Span::new(rtclock::SOLVER);
+            ida.step(t, target, no_equidistant_grid())
+        };
         y.copy_from_slice(ida.y());
         yp.copy_from_slice(ida.yp());
         if !matches!(stop, crate::sundials::Stop::Failed(_)) {
@@ -9539,6 +9547,7 @@ unsafe extern "C" fn cvode_rhs(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    let _solver = rtclock::Pause::new(rtclock::SOLVER);
     let e = unsafe { &mut *ctx.engine };
     let n = ctx.n_states;
     let run = (|| -> Result<()> {
@@ -9600,6 +9609,7 @@ unsafe extern "C" fn cvode_root(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    let _solver = rtclock::Pause::new(rtclock::SOLVER);
     match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(y), core::ptr::null(), gout) } {
         Err(err) => {
             ctx.err = Some(err);
@@ -9824,7 +9834,10 @@ impl Driver for CvodeDriver {
                 self.row += 1;
                 continue;
             }
-            let stop_reason = cv.step(&mut self.t, tout);
+            let stop_reason = {
+                let _clock = rtclock::Span::new(rtclock::SOLVER);
+                cv.step(&mut self.t, tout)
+            };
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }
@@ -10355,6 +10368,7 @@ unsafe extern "C" fn ida_res(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    let _solver = rtclock::Pause::new(rtclock::SOLVER);
     let e = unsafe { &mut *ctx.engine };
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
@@ -10393,6 +10407,7 @@ unsafe extern "C" fn ida_root(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    let _solver = rtclock::Pause::new(rtclock::SOLVER);
     match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(yy), crate::sundials::nv_data(yp), gout) } {
         Err(err) => {
             ctx.err = Some(err);
@@ -10423,6 +10438,8 @@ unsafe extern "C" fn ida_jac(
     if ctx.jac.is_null() {
         return -1;
     }
+    let _solver = rtclock::Pause::new(rtclock::SOLVER);
+    let _jac = rtclock::Span::new(rtclock::JACOBIAN);
     let jac = unsafe { &*ctx.jac };
     let dae = unsafe { ctx.ida.dae.as_ref() };
     let e = unsafe { &mut *ctx.engine };
@@ -10771,7 +10788,10 @@ impl Driver for IdaDriver {
                 self.row += 1;
                 continue;
             }
-            let stop_reason = ida.step(&mut self.t, tout, no_grid);
+            let stop_reason = {
+                let _clock = rtclock::Span::new(rtclock::SOLVER);
+                ida.step(&mut self.t, tout, no_grid)
+            };
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }

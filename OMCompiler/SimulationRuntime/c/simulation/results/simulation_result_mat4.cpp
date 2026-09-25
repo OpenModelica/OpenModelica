@@ -176,7 +176,7 @@ static size_t lengthDescription(const char *comment, modelica_string *unit)
   size_t unitLength = 0;
   if (unit != NULL)
   {
-    const char *unitStr = MMC_STRINGDATA(*unit);
+    const char *unitStr = omc_string_data(*unit);
     unitLength = unitStr ? strlen(unitStr) + 3 : 0; /* Lenght of " [<unit>]" */
   }
 
@@ -480,7 +480,7 @@ char * printArrayDescription(char *buffer,
   modelica_boolean hasUnit = FALSE;
   char *unitStr = NULL;
   if (unit != NULL) {
-    unitStr = MMC_STRINGDATA(*unit);
+    unitStr = omc_string_data(*unit);
     hasUnit = unitStr != NULL && strlen(unitStr) > 0;
   }
 
@@ -762,7 +762,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                    mData->realAlias[i].info.name,
                                    NULL,
                                    FALSE);
-        modelica_string unitStr = mmc_mk_scon("s");
+        modelica_string unitStr = omc_string_new("s");
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
                                                  mData->realAlias[i].info.comment,

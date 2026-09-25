@@ -52,7 +52,6 @@
 #include <stdint.h>
 #include <assert.h>
 #include "../simulation_runtime.h"
-#include "meta/meta_modelica.h"
 
 typedef struct IA_DATA
 {
@@ -202,10 +201,10 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   // count string length
   unsigned int strLength = 0;
   for(i=0; i<data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput) {
-    strLength += MMC_STRLEN(data->localData[0]->stringVars[i]) + 1;
+    strLength += omc_string_len(data->localData[0]->stringVars[i]) + 1;
   }
   for(i=0; i<data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-    strLength += MMC_STRLEN(data->localData[0]->stringVars[data->modelData->stringAlias[i].nameID]) + 1;
+    strLength += omc_string_len(data->localData[0]->stringVars[data->modelData->stringAlias[i].nameID]) + 1;
   }
 
   unsigned int msgSIZE = iaData->nReal*sizeof(modelica_real) + iaData->nInteger*sizeof(modelica_integer) + iaData->nBoolean*sizeof(modelica_boolean) + strLength;
@@ -270,14 +269,14 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
   {
-    strLength = MMC_STRLEN((data->localData[0])->stringVars[i]) + 1;
-    memcpy(msgDATA+offset, MMC_STRINGDATA((data->localData[0])->stringVars[i]), strLength); offset += strLength;
+    strLength = omc_string_len((data->localData[0])->stringVars[i]) + 1;
+    memcpy(msgDATA+offset, omc_string_data((data->localData[0])->stringVars[i]), strLength); offset += strLength;
   }
 
   for(i=0; i<data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
-    strLength = MMC_STRLEN((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]) + 1;
-    memcpy(msgDATA+offset, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]), strLength); offset += strLength;
+    strLength = omc_string_len((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]) + 1;
+    memcpy(msgDATA+offset, omc_string_data((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]), strLength); offset += strLength;
   }
 
   communicateMsg(4, msgSIZE, msgDATA);

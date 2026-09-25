@@ -36,7 +36,8 @@ add_library(omc::compiler::frontendcpp ALIAS omcfrontendcpp)
 target_sources(omcfrontendcpp PRIVATE ${OMC_FRONTEND_CPP_SOURCES})
 
 target_link_libraries(omcfrontendcpp PUBLIC omc::compiler::frontendcpp::absyn)
-target_link_libraries(omcfrontendcpp PUBLIC omc::simrt::runtime)
+# MetaModelica code: the collected runtime.
+target_link_libraries(omcfrontendcpp PUBLIC omc::mmc::runtime)
 
 target_include_directories(omcfrontendcpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

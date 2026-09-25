@@ -2614,12 +2614,37 @@ API function, which loads <code>className</code> and all the other needed
 classes into memory.</p>
 <p>This is useful to allow third parties to run a certain model (e.g. for
 debugging) without worrying about all the library dependencies.</p>
+<p>The classes it depends upon are found by looking up the names used in
+<code>className</code>, in every class declared in it and in what they use, in the
+scopes of the new frontend, without instantiating them. <code>className</code> is
+saved whole, so for a package all its classes are saved, while of the other classes
+only the ones used and of their packages only the constants used are saved. A class
+that fails to instantiate is saved with what it refers to, so the saved model fails
+the same way. The <code>className_total</code> model extending
+<code>className</code> is not added for packages and functions.</p>
 <p>Please note that the resulting file is not a valid Modelica .mo file according
 to the specification and cannot be loaded in OMEdit - it can only be
 loaded with loadFile() or passing the file to the compiler on the command line.</p>
 </html>"),
   preferredView="text");
 end saveTotalModel;
+
+function previous_saveTotalModel
+  "Saves a model and dependencies to a single file, the previous way."
+  input String fileName;
+  input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
+  input Boolean obfuscate = false;
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>The previous implementation of <a href=\"modelica://OpenModelica.Scripting.saveTotalModel\">saveTotalModel()</a>,
+which finds the classes <code>className</code> depends upon with the dependency
+analysis of the old frontend. It is kept for comparison for now and will be removed.</p>
+</html>"),
+  preferredView="text");
+end previous_saveTotalModel;
 
 function getTotalModel
   "Saves a model and dependencies to a single string."
@@ -2637,6 +2662,14 @@ API function, which loads <code>className</code> and all the other needed
 classes into memory.</p>
 <p>This is useful to allow third parties to run a certain model (e.g. for
 debugging) without worrying about all the library dependencies.</p>
+<p>The classes it depends upon are found by looking up the names used in
+<code>className</code>, in every class declared in it and in what they use, in the
+scopes of the new frontend, without instantiating them. <code>className</code> is
+saved whole, so for a package all its classes are saved, while of the other classes
+only the ones used and of their packages only the constants used are saved. A class
+that fails to instantiate is saved with what it refers to, so the saved model fails
+the same way. The <code>className_total</code> model extending
+<code>className</code> is not added for packages and functions.</p>
 <p>Please note that the resulting file is not a valid Modelica .mo file according
 to the specification and cannot be loaded in OMEdit - it can only be
 loaded with loadFile() or passing the file to the compiler on the command line.</p>

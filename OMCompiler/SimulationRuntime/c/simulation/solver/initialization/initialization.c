@@ -43,7 +43,6 @@
 #endif
 #include "../events.h"
 #include "../stateset.h"
-#include "../../../meta/meta_modelica.h"
 
 #if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
 #define check_mixed_solutions(X,Y) 0
@@ -152,39 +151,45 @@ void dumpInitialSolution(DATA *simData)
     messageClose(OMC_LOG_SOTI);
   }
 
-  if (0 < mData->nVariablesInteger)
+  if (0 < mData->nVariablesIntegerArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "integer variables");
-    for(i=0; i<mData->nVariablesInteger; ++i)
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1,
-                                   mData->integerVarsData[i].info.name,
-                                   mData->integerVarsData[i].attribute.start,
-                                   simData->localData[0]->integerVars[i],
-                                   sInfo->integerVarsPre[i]);
+    for(i=0; i<mData->nVariablesIntegerArray; ++i) {
+      integer_vector_to_string(&mData->integerVarsData[i].attribute.start, mData->integerVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=%s) = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1,
+                      mData->integerVarsData[i].info.name,
+                      start_buffer,
+                      simData->localData[0]->integerVars[sInfo->integerVarsIndex[i]],
+                      sInfo->integerVarsPre[sInfo->integerVarsIndex[i]]);
+    }
     messageClose(OMC_LOG_SOTI);
   }
 
-  if (0 < mData->nVariablesBoolean)
+  if (0 < mData->nVariablesBooleanArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "boolean variables");
-    for(i=0; i<mData->nVariablesBoolean; ++i)
+    for(i=0; i<mData->nVariablesBooleanArray; ++i) {
+      boolean_vector_to_string(&mData->booleanVarsData[i].attribute.start, mData->booleanVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
-                                   mData->booleanVarsData[i].info.name,
-                                   mData->booleanVarsData[i].attribute.start ? "true" : "false",
-                                   simData->localData[0]->booleanVars[i] ? "true" : "false",
-                                   sInfo->booleanVarsPre[i] ? "true" : "false");
+                      mData->booleanVarsData[i].info.name,
+                      start_buffer,
+                      simData->localData[0]->booleanVars[sInfo->booleanVarsIndex[i]] ? "true" : "false",
+                      sInfo->booleanVarsPre[sInfo->booleanVarsIndex[i]] ? "true" : "false");
+    }
     messageClose(OMC_LOG_SOTI);
   }
 
-  if (0 < mData->nVariablesString)
+  if (0 < mData->nVariablesStringArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "string variables");
-    for(i=0; i<mData->nVariablesString; ++i)
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", i+1,
-                                   mData->stringVarsData[i].info.name,
-                                   MMC_STRINGDATA(mData->stringVarsData[i].attribute.start),
-                                   MMC_STRINGDATA(simData->localData[0]->stringVars[i]),
-                                   MMC_STRINGDATA(sInfo->stringVarsPre[i]));
+    for(i=0; i<mData->nVariablesStringArray; ++i) {
+      string_vector_to_string(&mData->stringVarsData[i].attribute.start, mData->stringVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] String %s(start=%s) = \"%s\" (pre: \"%s\")", i+1,
+                      mData->stringVarsData[i].info.name,
+                      start_buffer,
+                      omc_string_data(simData->localData[0]->stringVars[sInfo->stringVarsIndex[i]]),
+                      omc_string_data(sInfo->stringVarsPre[sInfo->stringVarsIndex[i]]));
+    }
     messageClose(OMC_LOG_SOTI);
   }
 
@@ -289,6 +294,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MODEL_DATA *mData = data->modelData;
   modelica_boolean homotopySupport = FALSE;
   int solveWithGlobalHomotopy;
+  int triedWithoutHomotopy = 0;
   int adaptiveGlobal;
   int kinsol = 0;
 
@@ -324,6 +330,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   if (!solveWithGlobalHomotopy){
     data->simulationInfo->lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
+    OMC_ERROR_CHECK_RETURN(-1);
 
   /* If there is homotopy in the model and global homotopy is activated
      and homotopy on first try is deactivated,
@@ -333,7 +340,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
     /* try */
 #ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal && kinsol) {
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
@@ -343,12 +350,13 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       data->simulationInfo->lambda = 1.0;
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Try to solve the initialization problem without homotopy first.");
       data->callback->functionInitialEquations(data, threadData);
-      solveWithGlobalHomotopy = 0;
+      triedWithoutHomotopy = 1;
     }
 
     /* catch */
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else if (triedWithoutHomotopy) { solveWithGlobalHomotopy = 0; }
 #ifndef OMC_EMCC
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal)
       data->callback->homotopyMethod = GLOBAL_ADAPTIVE_HOMOTOPY; /* new global homotopy approach (adaptive lambda) */
@@ -385,7 +393,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
     /* try */
 #ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     for(step=0; step<=init_lambda_steps; ++step)
     {
@@ -425,10 +433,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       }
 #endif
     }
-    success = 1;
     /* catch */
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #ifndef OMC_EMCC
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
@@ -463,10 +471,12 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       warningStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
       data->callback->functionInitialEquations(data, threadData);
     }
+    OMC_ERROR_CHECK_RETURN(-1);
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
     data->callback->functionInitialEquations(data, threadData);
+    OMC_ERROR_CHECK_RETURN(-1);
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
   }
@@ -606,7 +616,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import integer variables");
-    for(i=0; i<mData->nVariablesInteger; ++i) {
+    for(i=0; i<mData->nVariablesIntegerArray; ++i) {
+      if (mData->integerVarsData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+      }
       if (isQuantityOverridden(mData->integerVarsData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of integer variable %s: overridden on command line", mData->integerVarsData[i].info.name);
         continue;
@@ -620,8 +633,8 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->integerVarsData[i].attribute.start = (modelica_integer) value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerVarsData[i].info.name, mData->integerVarsData[i].attribute.start);
+        put_integer_element((modelica_integer) value, 0, &mData->integerVarsData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerVarsData[i].info.name, integer_get(mData->integerVarsData[i].attribute.start, 0));
       } else if((strlen(mData->integerVarsData[i].info.name) > 0) &&
               (mData->integerVarsData[i].info.name[0] != '$') &&
               (strncmp(mData->integerVarsData[i].info.name, "der($", 5) != 0)) {
@@ -631,7 +644,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import boolean variables");
-    for(i=0; i<mData->nVariablesBoolean; ++i) {
+    for(i=0; i<mData->nVariablesBooleanArray; ++i) {
+      if (mData->booleanVarsData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+      }
       if (isQuantityOverridden(mData->booleanVarsData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of boolean variable %s: overridden on command line", mData->booleanVarsData[i].info.name);
         continue;
@@ -645,13 +661,13 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->booleanVarsData[i].attribute.start = (modelica_integer) value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanVarsData[i].info.name, mData->booleanVarsData[i].attribute.start ? "true" : "false");
+        put_boolean_element((modelica_boolean) value, 0, &mData->booleanVarsData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanVarsData[i].info.name, boolean_get(mData->booleanVarsData[i].attribute.start, 0) ? "true" : "false");
       } else if((strlen(mData->booleanVarsData[i].info.name) > 0) &&
               (mData->booleanVarsData[i].info.name[0] != '$') &&
               (strncmp(mData->booleanVarsData[i].info.name, "der($", 5) != 0)) {
         /* skip warnings about self-generated variables */
-        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean variable %s from given file", mData->integerVarsData[i].info.name);
+        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean variable %s from given file", mData->booleanVarsData[i].info.name);
       }
     }
 
@@ -686,8 +702,11 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import integer parameters");
-    for(i=0; i<mData->nParametersInteger; ++i)
+    for(i=0; i<mData->nParametersIntegerArray; ++i)
     {
+      if (mData->integerParameterData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array parameters not yet implemented!");
+      }
       if (isQuantityOverridden(mData->integerParameterData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of integer parameter %s: overridden on command line", mData->integerParameterData[i].info.name);
         continue;
@@ -702,16 +721,19 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
       if (pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->integerParameterData[i].attribute.start = (modelica_integer)value;
+        put_integer_element((modelica_integer)value, 0, &mData->integerParameterData[i].attribute.start);
         data->simulationInfo->integerParameter[i] = (modelica_integer)value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerParameterData[i].info.name, integer_get(mData->integerParameterData[i].attribute.start, 0));
       } else {
         warningStreamPrint(OMC_LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }
     }
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import boolean parameters");
-    for(i=0; i<mData->nParametersBoolean; ++i) {
+    for(i=0; i<mData->nParametersBooleanArray; ++i) {
+      if (mData->booleanParameterData[i].dimension.numberOfDimensions > 0) {
+        throwStreamPrint(NULL, "Support for array parameters not yet implemented!");
+      }
       if (isQuantityOverridden(mData->booleanParameterData[i].info.name)) {
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of boolean parameter %s: overridden on command line", mData->booleanParameterData[i].info.name);
         continue;
@@ -726,9 +748,9 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
-        mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
+        put_boolean_element((modelica_boolean)value, 0, &mData->booleanParameterData[i].attribute.start);
         data->simulationInfo->booleanParameter[i] = (modelica_boolean)value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, boolean_get(mData->booleanParameterData[i].attribute.start, 0) ? "true" : "false");
       } else {
         warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
       }
@@ -798,6 +820,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
+    OMC_ERROR_CHECK_RETURN(1);
 
     if(importStartValues(data, threadData, pInitFile, initTime)) {
       return 1;
@@ -813,12 +836,14 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
   }
+  OMC_ERROR_CHECK_RETURN(1);
 
   data->callback->function_initSpatialDistribution(data, threadData);
 
   /* Update nominal, min and max values of linear/non-linear system solvers */
   updateStaticDataOfLinearSystems(data, threadData);
   updateStaticDataOfNonlinearSystems(data, threadData);
+  OMC_ERROR_CHECK_RETURN(1);
 
   /* if there are user-specified options, use them! */
   if (pInitMethod && (strcmp(pInitMethod, "") && !fmi_init_method)) {
@@ -870,6 +895,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     retVal = 0;
   } else if(IIM_SYMBOLIC == initMethod) {
     retVal = symbolic_initialization(data, threadData);
+    OMC_ERROR_CHECK_RETURN(retVal);
   } else {
     throwStreamPrint(threadData, "unsupported option -iim");
   }

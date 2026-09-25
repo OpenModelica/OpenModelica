@@ -14,15 +14,22 @@ project(OMModelicaExternalC)
 # been built and installed to this dirs before we can build the ModelicaExternalC libs.
 link_directories(${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_BINDIR})
 
-# Set the rpath to the one dir up as the destination of the libs
-# when installing there is an 'ffi' directory in the lib directory.
-# See the install command at the end of this file. If that is
-# changed make sure to adjust this as well.
+# The shared libraries (in ffi/) only need each other: whoever dlopens them
+# provides ModelicaUtilities. A Windows DLL cannot leave symbols undefined, so
+# it links the runtime.
 if(APPLE)
-  set(CMAKE_INSTALL_RPATH "@loader_path/../../${CMAKE_INSTALL_LIBDIR}")
+  set(CMAKE_INSTALL_RPATH "@loader_path")
 else()
-  set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../../${CMAKE_INSTALL_LIBDIR}")
+  set(CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
+
+function(omc_mec_modelica_utilities tgt)
+  if(WIN32)
+    target_link_libraries(${tgt} PUBLIC OpenModelicaRuntimeC)
+  elseif(APPLE)
+    set_property(TARGET ${tgt} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-undefined,dynamic_lookup")
+  endif()
+endfunction()
 
 ## ModelicaExternalC #########################################################################
 set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
@@ -39,7 +46,6 @@ if(UNIX)
 endif()
 
 target_link_libraries(ModelicaExternalC PUBLIC OpenModelicaRuntimeC)
-target_link_libraries(ModelicaExternalC PUBLIC omcgc)
 
 # Shared version.
 add_library(ModelicaExternalC_shared SHARED ${libModelicaExternalC_SOURCES})
@@ -51,8 +57,7 @@ if(UNIX)
   target_link_libraries(ModelicaExternalC_shared PUBLIC m)
 endif()
 
-target_link_libraries(ModelicaExternalC_shared PUBLIC OpenModelicaRuntimeC)
-target_link_libraries(ModelicaExternalC_shared PUBLIC omcgc)
+omc_mec_modelica_utilities(ModelicaExternalC_shared)
 
 if(MINGW)
   set_target_properties(ModelicaExternalC_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
@@ -71,7 +76,6 @@ add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO PUBLIC zlib)
 target_link_libraries(ModelicaMatIO PUBLIC OpenModelicaRuntimeC)
-target_link_libraries(ModelicaMatIO PUBLIC omcgc)
 
 # Shared version
 add_library(ModelicaMatIO_shared SHARED ${libModelicaMatIO_SOURCES})
@@ -81,8 +85,10 @@ set_target_properties(ModelicaMatIO_shared
 
 target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC zlib)
-target_link_libraries(ModelicaMatIO_shared PUBLIC OpenModelicaRuntimeC)
-target_link_libraries(ModelicaMatIO_shared PUBLIC omcgc)
+if(UNIX)
+  target_link_libraries(ModelicaMatIO_shared PUBLIC m)
+endif()
+omc_mec_modelica_utilities(ModelicaMatIO_shared)
 
 if(MINGW)
   set_target_properties(ModelicaMatIO_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
@@ -106,6 +112,7 @@ set_target_properties(ModelicaIO_shared
                       PROPERTIES OUTPUT_NAME ModelicaIO CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
+omc_mec_modelica_utilities(ModelicaIO_shared)
 if(MINGW)
   set_target_properties(ModelicaIO_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
 elseif(MSVC)
@@ -139,6 +146,7 @@ set_target_properties(ModelicaStandardTables_shared
 target_compile_definitions(ModelicaStandardTables_shared PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
+omc_mec_modelica_utilities(ModelicaStandardTables_shared)
 if(UNIX)
   target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
 endif()

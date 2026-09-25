@@ -24,7 +24,7 @@ target_compile_definitions(OMCDLL PRIVATE IMPORT_INTO=1 BUILDING_OMC_DLL)
 # GC_free.
 target_link_libraries(OMCDLL PRIVATE
   OpenModelicaCompiler
-  omc::simrt::runtime
+  omc::mmc::runtime
   omc::3rd::omcgc)
 
 # Put libOMCDLL next to libOpenModelicaCompiler in the build tree so it can be

@@ -164,7 +164,6 @@ parser.log \
 meta.log \
 biochem.log \
 flatteningmodelicamsl.log \
-mmdev.log \
 flatteningmosfiles.log \
 interactive-API.log \
 instance-API.log \
@@ -210,8 +209,19 @@ threaded :
 	$(MAKE) -j5 clean
 	$(MAKE) -j5 test
 
+# omc-diff is built and installed by the CMake build (testsuite/difftool/
+# CMakeLists.txt); build it with 'cmake --build <build_dir> --target omc-diff',
+# or --target testsuite-depends for everything the testsuite needs. The *.log
+# targets keep it as a prerequisite so a missing binary is reported once, here,
+# instead of once per test inside rtest. The locations searched are the ones
+# rtest itself looks in - keep the two in sync.
 omc-diff :
-	$(MAKE) -C difftool
+	@for d in ../build ../build/install_cmake ../build_cmake/install_cmake; do \
+	   test -x "$$d/bin/omc-diff" && exit 0; \
+	 done; \
+	 echo "omc-diff not found. Build it with:"; \
+	 echo "  cmake --build <build_dir> --target omc-diff"; \
+	 exit 1
 test : slow.logs fast.logs
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
 	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
@@ -483,9 +493,6 @@ flatteningmosfiles.log: omc-diff
 	@echo $@ done
 meta.log: omc-diff
 	$(MAKE) -C metamodelica/meta -f Makefile test > $@
-	@echo $@ done
-mmdev.log: omc-diff
-	$(MAKE) -C metamodelica/MetaModelicaDev -f Makefile test > $@
 	@echo $@ done
 records.log: omc-diff
 	$(MAKE) -C flattening/modelica/records -f Makefile test > $@

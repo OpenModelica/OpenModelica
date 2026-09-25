@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# clang-cl against the MSVC CRT and Windows SDK cargo-xwin downloads, taking the
+# Windows paths a program under wine hands it. /MP compiles the sources in
+# parallel, which clang-cl itself does not.
+for xwin in "$XWIN_CACHE_DIR" "$XWIN_CACHE_DIR/xwin" "$CARGO_HOME/xwin" \
+            "$HOME/.cache/cargo-xwin/xwin"; do
+  [ -d "$xwin/crt/include" ] && break
+done
+source "$(dirname "$(readlink -f "$0")")/unix-path.sh"
+
+cc() {
+  clang-cl --target=x86_64-pc-windows-msvc -fuse-ld=lld-link \
+    -Wno-unused-command-line-argument \
+    "/imsvc$xwin/crt/include" "/imsvc$xwin/sdk/include/ucrt" \
+    "/imsvc$xwin/sdk/include/um" "/imsvc$xwin/sdk/include/shared" \
+    "$@"
+}
+
+flags=() sources=() link=(/link) linking= mp= compile_only=
+for a; do
+  a=$(unix_path "$a")
+  if [ "$linking" ]; then
+    # The SDK's libraries in any case, as on Windows.
+    if [[ $a == *.[lL][iI][bB] && $a != */* && ! -e $xwin/sdk/lib/um/x86_64/$a &&
+          -e $xwin/sdk/lib/um/x86_64/${a,,} ]]; then
+      a=${a,,}
+    fi
+    link+=("$a")
+    continue
+  fi
+  case "$a" in
+    /link|/LINK|-link) linking=1;;
+    /MP*) mp=1;;
+    /c) compile_only=1; flags+=("$a");;
+    [/-]*) flags+=("$a");;
+    *.c|*.cc|*.cpp|*.cxx) sources+=("$a");;
+    *) flags+=("$a");;
+  esac
+done
+link+=("-libpath:$xwin/crt/lib/x86_64" "-libpath:$xwin/sdk/lib/um/x86_64"
+       "-libpath:$xwin/sdk/lib/ucrt/x86_64")
+
+if [ "$mp" ] && [ ! "$compile_only" ] && [ ${#sources[@]} -gt 1 ]; then
+  export -f cc
+  export xwin
+  printf '%s\0' "${sources[@]}" |
+    xargs -0 -n1 -P"$(nproc)" bash -c 'cc "$@" /c "$0"' "${flags[@]}" || exit 1
+  objs=()
+  for s in "${sources[@]}"; do objs+=("$(basename "${s%.*}").obj"); done
+  cc "${flags[@]}" "${objs[@]}" "${link[@]}"
+else
+  cc "${flags[@]}" "${sources[@]}" "${link[@]}"
+fi

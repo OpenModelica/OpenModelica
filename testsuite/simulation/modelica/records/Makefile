@@ -10,6 +10,7 @@ InputRecord.mos \
 RecordCoercion1.mos \
 RecordConstructor1.mos \
 RecordNested1.mos \
+RecordStructs.mos \
 TestComplexSum1.mos \
 TestComplexSum2.mos \
 Ticket5134.mos \

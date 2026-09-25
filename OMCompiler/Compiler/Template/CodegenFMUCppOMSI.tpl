@@ -85,7 +85,7 @@ import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenCppOMSI.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenCppCommon.*;
-import CodegenFMU.*;
+import CodegenFMUModelDescription;
 import CodegenCppInit;
 import CodegenFMUCommon;
 import CodegenFMU2;
@@ -115,8 +115,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile((if isFMIVersion10(FMUVersion) then CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName) else
-                   CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
-  let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
+                   CodegenFMUModelDescription.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
+  let()= textFile(CodegenFMUCommon.fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, false)

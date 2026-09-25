@@ -57,7 +57,7 @@ else()
 endif()
 
 # Compile the generated model code with -DUSE_LOGGER, like the runtime libraries
-# themselves (see cmake_3.14.cmake). The generated makefile turns this into that
+# themselves (see ../CMakeLists.txt). The generated makefile turns this into that
 # flag itself, so it must not also be listed in SYSTEM_CFLAGS above.
 set(USE_LOGGER_ "ON")
 

@@ -56,9 +56,10 @@ target_include_directories(OpenModelicaRuntimeCInterface
     ${CMAKE_CURRENT_SOURCE_DIR}/gc
 )
 
+# The headers need pthreads: threadData_t holds a pthread_mutex_t.
 target_link_libraries(OpenModelicaRuntimeCInterface
   INTERFACE
-    omc::3rd::omcgc
+    OMCPThreads::OMCPThreads
 )
 
 set_target_properties(OpenModelicaRuntimeCInterface PROPERTIES
@@ -88,10 +89,10 @@ endif()
 
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
+# meta/ belongs to libOpenModelicaRuntimeMMC only.
 target_link_libraries(OpenModelicaRuntimeC
   PUBLIC
     omc::simrt::runtime::gc
-    omc::simrt::runtime::meta
     omc::simrt::runtime::util
 )
 
@@ -102,7 +103,6 @@ target_link_libraries(OpenModelicaRuntimeC
 target_compile_definitions(OpenModelicaRuntimeC PUBLIC WIN32_LEAN_AND_MEAN)
 
 target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
-target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::simrt::runtime::headers)
 
 if(MINGW)
@@ -162,10 +162,9 @@ if(MINGW)
 elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
   # WINDOWS_EXPORT_ALL_SYMBOLS only scans the target's own objects, so the
-  # static OpenModelicaRuntimeC's symbols (boxptr_*, the MMC runtime) would sit
+  # static OpenModelicaRuntimeC's symbols would sit
   # in the DLL unexported. Put those objects in it directly.
   target_sources(SimulationRuntimeC PRIVATE
-    $<TARGET_OBJECTS:OpenModelicaRuntimeCMeta>
     $<TARGET_OBJECTS:OpenModelicaRuntimeCUtil>
     $<TARGET_OBJECTS:OpenModelicaRuntimeCGC>)
 endif(MINGW)

@@ -1437,7 +1437,7 @@ algorithm
         // equation/algorithm, select the first output.
         if Type.isTuple(ty) and not InstContext.isSingleExpression(context) then
           ty := Type.firstTupleType(ty);
-          e1 := Expression.tupleElement(e1, ty, 1);
+          e1 := Expression.tupleElement(e1, 1);
         end if;
       then
         (e1, ty, var1, pur1);
@@ -1748,7 +1748,7 @@ algorithm
 
         if Type.isTuple(ty) then
           ty := Type.firstTupleType(ty);
-          e := Expression.tupleElement(e, ty, 1);
+          e := Expression.tupleElement(e, 1);
         end if;
 
         if Type.isConditionalArray(ty) then
@@ -3452,8 +3452,7 @@ algorithm
       algorithm
         i := 1;
         for e in lhsExp.elements loop
-          checkAssignment(e, Expression.tupleElement(rhsExp, lhsExp.ty, i),
-                          Expression.variability(e), context, info);
+          checkAssignment(e, Expression.tupleElement(rhsExp, i), Expression.variability(e), context, info);
           i := i + 1;
         end for;
       then

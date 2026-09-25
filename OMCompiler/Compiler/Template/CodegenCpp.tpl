@@ -1591,12 +1591,23 @@ template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraF
         >>
       case  "win32"
       case  "win64" then
+        let omPlatform = System.openModelicaPlatform()
+        let msysPath = if intEq(-1, stringFind(omPlatform, "msvc")) then
+          'if defined OMDEV set OMC_MSYS=%OMDEV%\\tools\\msys\\<%omPlatform%><%\n%>if not defined OMDEV set OMC_MSYS=<%home%>\\tools\\msys\\<%omPlatform%>'
+        else ""
+        let msysPathEntries = if intEq(-1, stringFind(omPlatform, "msvc")) then
+          ';%OMC_MSYS%\\bin;%OMC_MSYS%\\lib\\gcc\\<%System.gccDumpMachine()%>\\<%System.gccVersion()%>;%OMC_MSYS%\\..\\usr\\bin'
+        else ""
+
         <<
         @echo off
-        SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
+        setlocal
+        <%msysPath%>
+        SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%><%msysPathEntries%>;%PATH%
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         <%preRunCommandWindows%>
         "<%moLib%>/<%fileNamePrefixx%>.exe" <%execParameters%> <%outputParameter%>
+        endlocal
         >>
     end match
   end match
@@ -3573,7 +3584,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       deleteObjects();
       <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-        let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
+        let numOfEqs = SimCodeCodegenUtil.getMaxSimEqSystemIndex(simCode)
         <<
         #ifdef MEASURETIME_PROFILEBLOCKS
         delete measuredProfileBlockStartValues;
@@ -3689,7 +3700,7 @@ match simCode
       //Number of residues
        _event_handling= shared_ptr<EventHandling>(new EventHandling());
       <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-            let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
+            let numOfEqs = SimCodeCodegenUtil.getMaxSimEqSystemIndex(simCode)
             <<
             #ifdef MEASURETIME_PROFILEBLOCKS
             measureTimeProfileBlocksArray = new std::vector<MeasureTimeData*>(size_t(<%numOfEqs%>), NULL);
@@ -4174,6 +4185,26 @@ template forIteratorBodyCpp(SimIterator iter, Context context, Text &preExp, Tex
     <%iter_%>_+<%size%>*(
     >>
 end forIteratorBodyCpp;
+
+template lhsCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                 Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates an assignable reference for the left hand side of an equation.
+  cref1 names the whole variable and, without NF_SCALARIZE, silently drops the subscripts of a
+  non-scalarized (array-typed) variable. For a cref that is fully subscripted down to a single
+  element that would name the whole array object, so index it instead, the same way daeExpCref
+  reads such a cref on the right hand side."
+::=
+  if boolAnd(boolNot(crefIsScalar(cr, context)),
+             boolAnd(intEq(listLength(crefSubs(cr)), listLength(crefDims(cr))), crefSubIsScalar(cr)))
+  then
+    let arrName = contextCref(crefStripLastSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let subsStr = (crefSubs(cr) |> INDEX(__) =>
+        daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      ;separator=",")
+    '<%arrName%>(<%subsStr%>)'
+  else
+    cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+end lhsCref;
 
 template subIteratorCpp(tuple<ComponentRef, array<Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, SimCode simCode,
                         Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -6382,7 +6413,8 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
    <%nls.crefs |> name hasindex i0 =>
-     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+     let &preExpElem = buffer ""
+     let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      <<
      vars[<%i0%>] = <%namestr%>;
      >>
@@ -6403,12 +6435,12 @@ template initAlgloopVarAttributes(SimEqSystem eq, SimCode simCode, Text& extraFu
   let vars = match eq
     case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
       (nls.crefs |> cref hasindex i0 =>
-        let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+        let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), cref, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
         '_vars[<%i0%>] = <%initializer%>;'
       ;separator="\n")
     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-      (ls.vars |> var hasindex i0 =>
-        let initializer = createAlgloopVarAttributes(var, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+      (ls.vars |> var as SIMVAR(__) hasindex i0 =>
+        let initializer = createAlgloopVarAttributes(var, name, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
         '_vars[<%i0%>] = <%initializer%>;'
       ;separator="\n")
   <<
@@ -6418,7 +6450,23 @@ template initAlgloopVarAttributes(SimEqSystem eq, SimCode simCode, Text& extraFu
   >>
 end initAlgloopVarAttributes;
 
-template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template algloopVarAttrElem(Text expPart, Exp exp, ComponentRef elemCr, Context context, Text &preExp, Text &varDecls, SimCode simCode,
+                            Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Attribute (nominal/min/max) of one iteration variable. A non-scalarized array variable has a
+  single array-valued attribute, so pick the element the (fully subscripted) cref selects."
+::=
+  if boolAnd(isArrayType(typeof(exp)),
+             boolAnd(intEq(listLength(crefSubs(elemCr)), listLength(crefDims(elemCr))), crefSubIsScalar(elemCr)))
+  then
+    let subsStr = (crefSubs(elemCr) |> INDEX(__) =>
+        daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      ;separator=",")
+    '<%expPart%>(<%subsStr%>)'
+  else
+    expPart
+end algloopVarAttrElem;
+
+template createAlgloopVarAttributes(SimVar var, ComponentRef elemCr, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Returns the initializer for one AlgLoopVar."
 ::=
   let nameStr = match var case SIMVAR(name=cref) then
@@ -6427,7 +6475,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
   let nominalStr = match var
     case SIMVAR(nominalValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%expPart%>'
+      algloopVarAttrElem(expPart, exp, elemCr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     // fallback for state derivatives lacking nominal value: use nominal value of state
     case SIMVAR(varKind = STATE_DER(), name = CREF_QUAL(componentRef = stateCref)) then
       match cref2simvar(stateCref, simCode)
@@ -6445,7 +6493,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
       '-HUGE_VAL'
     case SIMVAR(minValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%expPart%>'
+      algloopVarAttrElem(expPart, exp, elemCr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
       '-HUGE_VAL'
 
@@ -6454,7 +6502,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
       'HUGE_VAL'
     case SIMVAR(maxValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%expPart%>'
+      algloopVarAttrElem(expPart, exp, elemCr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
       'HUGE_VAL'
 
@@ -6519,7 +6567,8 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
    <%nls.crefs |> name hasindex i0 =>
-    let namestr = cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
+    let &preExpElem = buffer ""
+    let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     match name
     case CREF_QUAL(ident = "$PRE") then
       let varname = '_system-><%cref(componentRef, useFlatArrayNotation)%>'
@@ -7956,7 +8005,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=name) then
       match(createDebugCode)
         case true then
-          let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+          let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
           let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(getSimVars()->init<%type%>Var(<%index%>))<%\n%>'
           ""
         else ""
@@ -7966,7 +8015,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
     case v as SIMVAR(type_ = T_ARRAY()) then
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name, dims)
-      let arrayHeadIdx = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+      let arrayHeadIdx = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
        <<
        <%varName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
        >>
@@ -7984,19 +8033,19 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
           case "0" then
             match(createDebugCode)
               case true then
-                let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+                let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
                 let& additionalConstructorVariables += ',<%arrayName%>(getSimVars()->init<%type%>Var(<%index%>))'
                 ""
               else ""
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
-            if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
-              let arrayHeadIdx = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+            if SimCodeCodegenUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+              let arrayHeadIdx = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               <<
               <%arrayName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
             else
-              let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences) |> idx => '<%idx%>'; separator=" LIST_SEP "
+              let arrayIndices = SimCodeCodegenUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences) |> idx => '<%idx%>'; separator=" LIST_SEP "
               <<
               <%typeString%>* <%arrayName%>_ref_data[<%size%>];
               getSimVars()->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
@@ -8012,7 +8061,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
         case "0" then
           match createDebugCode
             case true then
-              let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+              let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               let& additionalConstructorVariables += ',<%varName%>(getSimVars()->init<%type%>Var(<%index%>))'
               ""
             else ""
@@ -8223,7 +8272,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           >>
         else
           if createRefVar then
-            let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+            let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
             <<
             #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%index%>]
             >>
@@ -8253,14 +8302,14 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
             >>
           else
             if createRefVar then
-              let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+              let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               <<
               #define <%arrayName%> _pointerTo<%type%>Vars[<%index%>]
               >>
             else
               '<%typeString%> <%arrayName%>;'
       else
-        if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+        if SimCodeCodegenUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
           <<
           StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, <%createRefVar%>> <%arrayName%>;
           >>
@@ -8280,7 +8329,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
               '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
             else
               if createRefVar then
-                let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+                let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
                 '#define <%varName%> _pointerTo<%type%>Vars[<%index%>]'
               else
                 '<%varType%> <%varName%>;'
@@ -11408,7 +11457,7 @@ case SES_SIMPLE_ASSIGN(__) then
     >>
   else
     let startValueType = crefStartValueType(cref)
-    let lvalue = cref1(cref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+    let lvalue = lhsCref(cref, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let assignExp = if boolAnd(assignToStartValues, boolNot(stringEq(startValueType, "ExternalObject"))) then
       'SystemDefaultImplementation::set<%startValueType%>StartValue(<%lvalue%>, <%expPart%>, <%overwriteOldStartValue%>);' else
       '<%lvalue%> = <%expPart%>;'
@@ -12807,7 +12856,7 @@ end createEvaluate;
 template createEvaluatePartitions(Integer partIdx, Context context, list<SimEqSystem> odeEquations, list<Integer> partition, list<Integer> activators, String className, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   let condition = partitionCondition(activators)
-  let equation_func_calls = (SimCodeUtil.getSimEqSystemsByIndexLst(partition,odeEquations) |> eq  =>
+  let equation_func_calls = (SimCodeCodegenUtil.getSimEqSystemsByIndexLst(partition,odeEquations) |> eq  =>
                     equation_function_call(eq, context, simCode, "evaluate")
                     ;separator="\n")
 <<

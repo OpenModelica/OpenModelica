@@ -44,14 +44,13 @@ extern "C" {
 #include "../../util/varinfo.h"
 #include "model_help.h"
 #include "../../gc/omc_gc.h"
-#include "../../meta/meta_modelica.h"
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHybrd.h"
 
 extern double enorm_(integer *n, double *x);
 
-static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* userData);
+static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, integer* iflag, void* userData);
 
 /**
  * @brief Allocate memory for non-linear hybrid solver.
@@ -304,7 +303,7 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
  *                        iflag = 2 ==> Jacobian evaluation
  * @param userDataIn      User data. Get's typecasted to NLS_USERDATA
  */
-static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* userDataIn)
+static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, integer* iflag, void* userDataIn)
 {
   int i,j;
   int n = *n_p;
@@ -332,17 +331,16 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     }
 
     /* call residual function */
-#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
-    MemPoolState mem_pool_state = omc_util_get_pool_state();
-#endif
     if(hybrdData->useXScaling){
       (systemData->residualFunc)(&resUserData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
     } else {
       (systemData->residualFunc)(&resUserData, x, f, (const int*)iflag);
     }
-#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
-    omc_util_restore_pool_state(mem_pool_state);
-#endif
+    /* A negative iflag makes MINPACK stop. */
+    if (OMC_ERROR_RAISED()) {
+      *iflag = -1;
+      return;
+    }
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {
@@ -524,7 +522,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     {
       catchedError = TRUE;
 #ifndef OMC_EMCC
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       hybrj_(wrapper_fvec_hybrj, &hybrdData->n, hybrdData->x,
           hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &hybrdData->xtol,
@@ -533,6 +531,11 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
           &hybrdData->lr, hybrdData->qtf, hybrdData->wa1, hybrdData->wa2,
           hybrdData->wa3, hybrdData->wa4, hybrdData->userData);
 
+      /* The residual raised: skip the success tail, so the retry counter
+         below keeps counting. */
+      if (OMC_ERROR_RAISED()) {
+        OMC_ERROR_CLEAR();
+      } else {
       if(assertCalled)
       {
         infoStreamPrint(OMC_LOG_NLS_V, 0, "After assertions failed, found a solution for which assertions did not fail.");
@@ -547,8 +550,9 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       assertRetries = 0;
       assertCalled = 0;
       catchedError = FALSE;
+      }
 #ifndef OMC_EMCC
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+      OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       /* catch */
       if (catchedError)
@@ -604,12 +608,12 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
         /* try */
 #ifndef OMC_EMCC
-        MMC_TRY_INTERNAL(simulationJumpBuffer)
+        OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
-        catchedError = FALSE;
+        if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { catchedError = FALSE; }
 #ifndef OMC_EMCC
-        MMC_CATCH_INTERNAL(simulationJumpBuffer)
+        OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         /* catch */
         if (catchedError)
@@ -712,12 +716,12 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       {
         catchedError = TRUE;
 #ifndef OMC_EMCC
-        MMC_TRY_INTERNAL(simulationJumpBuffer)
+        OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
-        catchedError = FALSE;
+        if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { catchedError = FALSE; }
 #ifndef OMC_EMCC
-        MMC_CATCH_INTERNAL(simulationJumpBuffer)
+        OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         /* catch */
         if (catchedError) {

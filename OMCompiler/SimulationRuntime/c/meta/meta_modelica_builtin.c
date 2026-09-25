@@ -25,6 +25,7 @@
  *
  */
 
+#include "meta_modelica_string.h"
 #include "meta_modelica_builtin.h"
 #include "meta_modelica.h"
 #include <float.h>
@@ -713,16 +714,6 @@ void boxptr_setGlobalRoot(threadData_t *threadData, modelica_metatype i, modelic
   } else {
     threadData->localRoots[ix] = val;
   }
-}
-
-modelica_real realMaxLit(void)
-{
-  return DBL_MAX / 2048; /* in case some non-linear or ODE solver tries to add eps to this value */
-}
-
-modelica_integer intMaxLit(void)
-{
-  return LONG_MAX / 2;
 }
 
 modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)

@@ -1199,6 +1199,8 @@ class StatArrayDim1 : public StatArray<T, size, external>
     return 1;
   }
 
+  // keep the inherited setDims(vector) visible, it is hidden by the overload below
+  using StatArray<T, size, external>::setDims;
   void setDims(size_t size1)  { }
 
   typedef const T* const_iterator;
@@ -1395,6 +1397,8 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
     return 2;
   }
 
+  // keep the inherited setDims(vector) visible, it is hidden by the overload below
+  using StatArray<T, size1*size2, external>::setDims;
   void setDims(size_t i, size_t j) {}
 };
 
@@ -1580,6 +1584,8 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
     return 3;
   }
 
+  // keep the inherited setDims(vector) visible, it is hidden by the overload below
+  using StatArray<T, size1*size2*size3, external>::setDims;
   void setDims(size_t i, size_t j, size_t k) {}
 };
 
@@ -1772,6 +1778,8 @@ class StatArrayDim4 : public StatArray<T, size1*size2*size3*size4, external>
     return 4;
   }
 
+  // keep the inherited setDims(vector) visible, it is hidden by the overload below
+  using StatArray<T, size1*size2*size3*size4, external>::setDims;
   void setDims(size_t i, size_t j, size_t k, size_t l) {}
 };
 
@@ -1971,6 +1979,8 @@ class StatArrayDim5 : public StatArray<T, size1*size2*size3*size4*size5, externa
     return 5;
   }
 
+  // keep the inherited setDims(vector) visible, it is hidden by the overload below
+  using StatArray<T, size1*size2*size3*size4*size5, external>::setDims;
   void setDims(size_t i, size_t j, size_t k, size_t l, size_t m) {}
 };
 
@@ -2177,6 +2187,8 @@ class StatArrayDim6 : public StatArray<T, size1*size2*size3*size4*size5*size6, e
     return 6;
   }
 
+  // keep the inherited setDims(vector) visible, it is hidden by the overload below
+  using StatArray<T, size1*size2*size3*size4*size5*size6, external>::setDims;
   void setDims(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) {}
 };
 

@@ -88,7 +88,7 @@ static int value_to_type_desc(void *value, type_description *desc)
   case Values__STRING_3dBOX1: {
     void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_STRING;
-    desc->data.string = data;
+    desc->data.string = MMC_STRINGDATA(data);
   }; break;
   case Values__ARRAY_3dBOX2: {
     void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
@@ -287,7 +287,7 @@ static void *generate_array(enum type_desc_e type, int curdim, int ndims,
       *data = ptr;
     }; break;
     case TYPE_DESC_STRING: {
-      modelica_string *ptr = *((modelica_string**)data);
+      const char **ptr = *((const char***)data);
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.string = *ptr;
         lst = (void *) mmc_mk_cons(type_desc_to_value(&tmp), lst);
@@ -575,7 +575,7 @@ void *type_desc_to_value(type_description *desc)
     return (void *) Values__BOOL(MMC_FALSE);
   case TYPE_DESC_STRING:
     /* Duplicate since we unload the object */
-    return (void *) Values__STRING(mmc_mk_scon(MMC_STRINGDATA(desc->data.string)));
+    return (void *) Values__STRING(mmc_mk_scon(desc->data.string));
   case TYPE_DESC_TUPLE: {
     type_description *e = desc->data.tuple.element + desc->data.tuple.elements;
     void *lst = (void *) mmc_mk_nil();
@@ -625,8 +625,8 @@ void *type_desc_to_value(type_description *desc)
                           desc->data.bool_array.dim_size, &ptr);
   };
   case TYPE_DESC_STRING_ARRAY: {
-    void *ptr = (modelica_string *) desc->data.str_array.data
-      + base_array_nr_of_elements(desc->data.str_array) - 1;
+    void *ptr = desc->data.str_array.data
+      + str_array_nr_of_elements(desc->data.str_array) - 1;
     return generate_array(TYPE_DESC_STRING, 1, desc->data.str_array.ndims,
                           desc->data.str_array.dim_size, &ptr);
   };
@@ -728,12 +728,12 @@ static int get_array_data(int curdim, int dims, const _index_t *dim_size,
         *data = ++ptr;
       }; break;
       case TYPE_DESC_STRING: {
-        modelica_string *ptr = *((modelica_string**)data);
+        const char **ptr = *((const char***)data);
         void *str;
         if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__STRING_3dBOX1)
           return -1;
         str = MMC_STRUCTDATA(item)[UNBOX_OFFSET+0];
-        *ptr = str;
+        *ptr = MMC_STRINGDATA(str);
         *data = ++ptr;
       }; break;
       default:
@@ -813,7 +813,8 @@ static int parse_array(type_description *desc, void *arrdata, void *dimLst)
     data = desc->data.bool_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_BOOL, &data);
   case TYPE_DESC_STRING_ARRAY:
-    alloc_string_array_data(&(desc->data.str_array));
+    desc->data.str_array.data = (const char**)
+      GC_malloc(sizeof(const char*) * str_array_nr_of_elements(desc->data.str_array));
     data = desc->data.str_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_STRING, &data);
   default:

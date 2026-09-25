@@ -76,7 +76,7 @@ pub(crate) fn build_plan(sim_code: &SimCode::SimCode, vars: &SimCodeVar::SimVars
 
 /// C's `sizeRows`, as `linearize::matrix_rows`: one past the last row a `JAC_VAR`
 /// result or the sparsity pattern names.
-fn matrix_rows(jm: &SimCode::JacobianMatrix) -> u32 {
+fn matrix_rows(jm: &Arc<SimCode::JacobianMatrix>) -> u32 {
     let results = jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
@@ -122,7 +122,7 @@ pub(crate) fn build_jac_infos(
             cursor += 8;
         }
         let mut result_offs = vec![None; rows];
-        for sv in &jac_column_vars(jm) {
+        for sv in jac_column_vars(jm).iter() {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
                 SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },

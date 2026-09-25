@@ -162,6 +162,21 @@ pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CO
     },
 };
 
+/// `@RT_LDFLAGS_GENERATED_CODE_MMC@`: a MetaModelica function library is
+/// dlopened into omc and shares its runtime.
+pub const ldflags_runtime_mmc: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_MMC") {
+    Some(s) => s,
+    None => if msvc_is_target {
+        const_str::concat!("OpenModelicaRuntimeMMC.lib omcgc.lib ", msvc_ldflags_basic)
+    } else if cfg!(windows) {
+        const_str::concat!(" -lOpenModelicaRuntimeMMC -lomcgc", win_ldflags_basic)
+    } else if cfg!(target_os = "macos") {
+        " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm"
+    } else {
+        " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm -lpthread -rdynamic"
+    },
+};
+
 /// `@RT_LDFLAGS_GENERATED_CODE_SIM@` (CMake-configured via OMC_RT_LDFLAGS_*; the
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM") {
@@ -239,6 +254,13 @@ pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_G
 /// `@OMC_HDF5_LDFLAGS@`: the HDF5 a link line naming ModelicaMatIO needs, empty
 /// unless CMake found HDF5 (`OM_ENABLE_HDF5`).
 pub const hdf5Libs: &str = match option_env!("OMC_HDF5_LDFLAGS") {
+    Some(s) => s,
+    None => "",
+};
+
+/// `@OMC_FMILIB_LDFLAGS@`: what a link line naming fmilib needs besides it, space-separated --
+/// the system expat and minizip, empty unless OM_USE_SYSTEM_EXPAT/OM_USE_SYSTEM_MINIZIP.
+pub const fmilibLibs: &str = match option_env!("OMC_FMILIB_LDFLAGS") {
     Some(s) => s,
     None => "",
 };

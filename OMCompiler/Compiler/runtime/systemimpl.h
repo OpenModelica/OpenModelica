@@ -113,6 +113,7 @@ extern void SystemImpl__plotCallBack(threadData_t *threadData, int externalWindo
 extern double SystemImpl__time(void);
 extern int SystemImpl__directoryExists(const char *dirname);
 extern int SystemImpl__copyFile(const char* str_1, const char* str_2);
+extern int SystemImpl__copyPath(const char* source, const char* destination);
 extern int SystemImpl__createDirectory(const char *str);
 extern int SystemImpl__removeDirectory(const char *str);
 extern const char* SystemImpl__readFileNoNumeric(const char* filename);

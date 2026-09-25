@@ -2177,12 +2177,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         }
         assert(pPlotCurve != pLastPlotCurve); // implies pPlotCurve != nullptr
         bool requiresUpdate = false;
-        if (!pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
-          /* Ticket:15501. We could have prefix unit when we called pPlotWindow->plot(pPlotCurve); above.
-           * So use it when converting since the values represent prefix + unit and not just unit.
-           */
-          QString yUnitPrefix = pPlotCurve->getYUnitPrefix();
-          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(yUnitPrefix + pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
+        /* Ticket:15501. We could have prefix unit when we called pPlotWindow->plot(pPlotCurve); above.
+          * So use it when converting since the values represent prefix + unit and not just unit.
+          */
+        QString yUnitPrefix = pPlotCurve->getYUnitPrefix();
+        const QString yUnit = yUnitPrefix + pVariablesTreeItem->getUnit();
+        if (!pVariablesTreeItem->isString() && yUnit.compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(yUnit, pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
             requiresUpdate = true;
             for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
@@ -2298,50 +2299,51 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
             assert(pPlotCurve != pLastPlotCurve); // implies pPlotCurve != nullptr
             bool requiresUpdate = false;
-            // convert x value
-            if (!plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
-              QString xUnitPrefix = pPlotCurve->getXUnitPrefix();
-              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(xUnitPrefix + plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
-              if (convertUnit.unitsCompatible) {
-                requiresUpdate = true;
-                for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
-                  pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
-                }
-              } else {
-                pPlotCurve->setXDisplayUnit(plotParametricCurve.xVariable.displayUnit);
-              }
-            }
-            // convert y value
-            if (!plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
-              QString yUnitPrefix = pPlotCurve->getYUnitPrefix();
-              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(yUnitPrefix + plotParametricVariable.unit, plotParametricVariable.displayUnit);
-              if (convertUnit.unitsCompatible) {
-                requiresUpdate = true;
-                for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
-                  pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
-                }
-              } else {
-                pPlotCurve->setYDisplayUnit(plotParametricVariable.displayUnit);
-              }
-            }
-            if (ctrl) {
-              pPlotCurve->setYAxisRight(true);
-              requiresUpdate = true;
-            }
-            if (requiresUpdate) {
-              pPlotCurve->plotData();
-            }
-            pPlotWindow->updatePlot();
-            // update unit and value for x variable
             QString xVariable = pPlotCurve->getFileName() % "." % pPlotCurve->getXVariable();
             VariablesTreeItem *pXVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-            if (pXVariablesTreeItem) {
-              updateDisplayUnitAndValue(pPlotCurve->getXUnitPrefix(), pPlotCurve->getXDisplayUnit(), pXVariablesTreeItem);
-            }
-            // update unit and value for y variable
             QString yVariable = pPlotCurve->getFileName() % "." % pPlotCurve->getYVariable();
             VariablesTreeItem *pYVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-            if (pYVariablesTreeItem) {
+
+            if (pXVariablesTreeItem && pYVariablesTreeItem) {
+              // convert x value
+              QString xUnitPrefix = pPlotCurve->getXUnitPrefix();
+              const QString xUnit = xUnitPrefix + pXVariablesTreeItem->getUnit();
+              if (!pXVariablesTreeItem->isString() && xUnit.compare(pXVariablesTreeItem->getDisplayUnit()) != 0) {
+                OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(xUnit, pXVariablesTreeItem->getDisplayUnit());
+                if (convertUnit.unitsCompatible) {
+                  requiresUpdate = true;
+                  for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+                    pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+                  }
+                } else {
+                  pPlotCurve->setXDisplayUnit(pXVariablesTreeItem->getDisplayUnit());
+                }
+              }
+              // convert y value
+              QString yUnitPrefix = pPlotCurve->getYUnitPrefix();
+              const QString yUnit = yUnitPrefix + pYVariablesTreeItem->getUnit();
+              if (!pYVariablesTreeItem->isString() && yUnit.compare(pYVariablesTreeItem->getDisplayUnit()) != 0) {
+                OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(yUnit, pYVariablesTreeItem->getDisplayUnit());
+                if (convertUnit.unitsCompatible) {
+                  requiresUpdate = true;
+                  for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
+                    pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+                  }
+                } else {
+                  pPlotCurve->setYDisplayUnit(pYVariablesTreeItem->getDisplayUnit());
+                }
+              }
+              if (ctrl) {
+                pPlotCurve->setYAxisRight(true);
+                requiresUpdate = true;
+              }
+              if (requiresUpdate) {
+                pPlotCurve->plotData();
+              }
+              pPlotWindow->updatePlot();
+              // update unit and value for x variable
+              updateDisplayUnitAndValue(pPlotCurve->getXUnitPrefix(), pPlotCurve->getXDisplayUnit(), pXVariablesTreeItem);
+              // update unit and value for y variable
               updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pYVariablesTreeItem);
             }
           }

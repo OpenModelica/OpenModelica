@@ -403,6 +403,7 @@ fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, 
 fn isolated_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, log_stats: bool) -> RunOutcome {
     // The child must not have to JIT-compile: it has no thread pool left, and the
     // work belongs to the compile phase anyway.
+    sim_runtime::set_alarm(flags.alarm);
     sim_runtime::ensure_prepared(model);
     let run = || encode_outcome(&perform_run(model, flags, result_file, log_stats));
     let failed = |why: String| RunOutcome {

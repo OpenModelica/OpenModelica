@@ -115,6 +115,22 @@ enum type_desc_e {
   TYPE_DESC_NORETCALL
 };
 
+/* As type_desc_s.data.string: elements cross as char*, not modelica_string. */
+struct _str_array {
+  int ndims;
+  _index_t *dim_size;
+  const char **data;
+};
+
+static inline size_t str_array_nr_of_elements(struct _str_array a)
+{
+  size_t i, n = 1;
+  for (i = 0; i < (size_t) a.ndims; ++i) {
+    n *= (size_t) a.dim_size[i];
+  }
+  return n;
+}
+
 struct type_desc_s {
   enum type_desc_e type;
   int retval : 1;
@@ -125,8 +141,8 @@ struct type_desc_s {
     integer_array int_array;
     modelica_boolean boolean;
     boolean_array bool_array;
-    modelica_string string;
-    string_array str_array;
+    const char *string;   /* neutral: omc and a dlopened library differ */
+    struct _str_array str_array;
     struct _tuple {
       size_t elements;
       struct type_desc_s *element;

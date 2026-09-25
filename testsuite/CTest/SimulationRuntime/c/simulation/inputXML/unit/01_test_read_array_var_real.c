@@ -4,6 +4,7 @@
 
 #include "simulation_input_xml.h"
 #include "openmodelica_types.h"
+#include "util/base_array.h"
 
 /* private prototype */
 void read_array_var_real(real_array *array, const char *str, modelica_real default_value);
@@ -56,7 +57,7 @@ int main(void)
   }
 
   // Free allocated memory
-  omc_alloc_interface.free_uncollectable(test_array.data);
+  omc_array_release(&test_array);
 
   if (test_success)
   {

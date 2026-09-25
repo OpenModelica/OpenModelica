@@ -359,7 +359,7 @@ algorithm
         if Type.hasKnownSize(ty) then
           Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)))
         else
-          Expression.makeEmptyArray(ty);
+          Expression.ARRAY(ty, listArray({}), true);
 
     case Type.COMPLEX() then buildRecordBinding(node, map, mutableParams);
     else Expression.EMPTY(ty);

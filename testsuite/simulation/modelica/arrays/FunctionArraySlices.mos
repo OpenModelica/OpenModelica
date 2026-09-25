@@ -1,0 +1,49 @@
+// name:     FunctionArraySlices
+// keywords: array slice codegen runtime
+// status: correct
+// teardown_command: rm -rf FunctionArraySlices_* FunctionArraySlices FunctionArraySlices.exe FunctionArraySlices.cpp FunctionArraySlices.makefile FunctionArraySlices.libs FunctionArraySlices.log output.log
+//
+// Tuple outputs assigned to slices, zero-size slices on both sides of an
+// assignment, a vector times a non-square matrix, and a row of an array
+// literal selected at run time.
+//
+
+loadFile("FunctionArraySlices.mo"); getErrorString();
+simulate(FunctionArraySlices, stopTime=1.0); getErrorString();
+val(e[3,1], 1.0);
+val(e[3,2], 1.0);
+val(s, 1.0);
+val(rows, 1.0);
+val(cols, 1.0);
+val(y[1], 1.0);
+val(y[2], 1.0);
+val(y[3], 1.0);
+val(row[1], 0.25);
+val(row[3], 0.25);
+val(row[1], 1.0);
+val(row[3], 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionArraySlices_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'FunctionArraySlices', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 2.0
+// 1.0
+// 0.0
+// 9.0
+// 12.0
+// 15.0
+// 1.0
+// 3.0
+// 4.0
+// 6.0
+// endResult

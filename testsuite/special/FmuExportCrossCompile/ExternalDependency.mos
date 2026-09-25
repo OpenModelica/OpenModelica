@@ -13,11 +13,6 @@ if not loadFile("ExtLib/package.mo") then
   exit(1);
 end if;
 
-if not setCommandLineOptions("--fmuCMakeBuild=true") then
-  print(getErrorString());
-  exit(1);
-end if;
-
 platforms := {
   "x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0",
   "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.27.0"};

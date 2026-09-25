@@ -74,6 +74,7 @@ pub(super) fn build_sim_model(
     fmi_solver_flags: &str,
 ) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
+    let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
@@ -323,7 +324,11 @@ pub(super) fn build_sim_model(
                         // Sources that only wrap a platform library still compile,
                         // and keeping the result would hide the functions from the
                         // host fallback that can serve them.
-                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm);
+                        let carried = match ext_builtin {
+                            true => openmodelica_wasm_jit::dylink::libraries_for(ext_imports.iter().map(|s| s.name.as_str())),
+                            false => Vec::new(),
+                        };
+                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm, &carried);
                         if unresolved.is_empty() {
                             ext_libs.wasm.push(l);
                         } else {
@@ -1894,9 +1899,10 @@ pub(super) fn lin_system_nnz(lsystem: &SimCode::LinearSystem) -> usize {
 pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
     SimCtx {
         data_local: 0,
-        vars: var_map.vars.clone(),
+        vars: SlotMap::new(var_map.vars.clone()),
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
+        start_aliases: var_map.start_aliases.clone(),
         array_groups: var_map.array_groups.clone(),
         scatter_groups: var_map.scatter_groups.clone(),
         consts: var_map.consts.clone(),
