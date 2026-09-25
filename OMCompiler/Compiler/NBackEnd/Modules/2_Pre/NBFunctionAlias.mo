@@ -420,13 +420,16 @@ protected
   algorithm
     if listEmpty(children) then
       var := Pointer.access(var_ptr);
-      if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(var_ptr) and not BVariable.isRecord(var_ptr) then
+      // keep a start value inherited from the function output declaration
+      if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(var_ptr) and not BVariable.isRecord(var_ptr)
+         and isNone(BVariable.getStartAttribute(var_ptr)) then
         Pointer.update(var_ptr, BVariable.setStartAttribute(var, exp));
       end if;
     else
       for child in children loop
         var := Pointer.access(child);
-        if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(child) and not BVariable.isRecord(child) then
+        if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(child) and not BVariable.isRecord(child)
+           and isNone(BVariable.getStartAttribute(child)) then
           Pointer.update(child, BVariable.setStartAttribute(var, Expression.recordElement(ComponentRef.firstName(var.name), exp)));
         end if;
       end for;

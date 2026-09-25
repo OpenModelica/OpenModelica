@@ -287,9 +287,11 @@ public
               Expression e;
             // only create if there is a start attribute that is not literal
             case SOME(e) guard not Expression.isLiteralXML(e) algorithm
-              // the start value can only depend on the start values of other variables
+              // the start value of a function output is the call at the start values of its arguments
               start_ok := Pointer.create(true);
-              e := resolveStartCrefs(e, ptr_start_vars, aliasVars, start_ok, 0);
+              if BVariable.isFunctionAlias(var) then
+                e := resolveStartCrefs(e, ptr_start_vars, aliasVars, start_ok, 0);
+              end if;
               if Pointer.access(start_ok) then
                 (_, _, start_var, start_name) := createStartVar(var, BVariable.getVarName(var), {});
                 // make the new start equation
@@ -819,6 +821,9 @@ public
             else
               Pointer.update(ok, false);
             end if;
+          elseif isNone(start_opt) and not existed then
+            // no start value, the call would be evaluated at a meaningless zero
+            Pointer.update(ok, false);
           else
             (start_name, start_var) := BVariable.makeStartVar(exp.cref);
             res := Expression.fromCref(start_name);
