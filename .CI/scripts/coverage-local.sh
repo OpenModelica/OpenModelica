@@ -161,7 +161,7 @@ do_build() {
   # one strips its libraries before they are stashed.
   in_docker "$ws" "$root" "
     cmake --version | head -1
-    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=build \
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=build \
           -DOM_ENABLE_COVERAGE=ON $(compiler_flags "$c") ${cache_args[*]}
     cmake --build build_cmake --parallel $JOBS --target install
     if [ $c = gcc ]; then
@@ -241,7 +241,7 @@ do_collect() {
   echo "$root" > "$REPORT/.coverage-local-root"
 
   in_docker "$REPORT" "$root" "
-    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF \
           -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON $(compiler_flags "$c") \
           '-DOM_COVERAGE_TRACEFILES=$root/coverage-tracefiles/*.json' \
           '-DOM_COVERAGE_TITLE=OpenModelica Code Coverage Report (local)' > /dev/null
@@ -270,7 +270,7 @@ do_merge() {
   step "merge $REPORT/coverage-tracefiles/*.json, at $root"
   ls "$REPORT"/coverage-tracefiles/*.json > /dev/null
   in_docker "$REPORT" "$root" "
-    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF \
           -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON $(compiler_flags "$c") \
           '-DOM_COVERAGE_TRACEFILES=$root/coverage-tracefiles/*.json' \
           '-DOM_COVERAGE_TITLE=OpenModelica Code Coverage Report (local)' > /dev/null
