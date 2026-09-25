@@ -77,8 +77,14 @@ add_compile_definitions(OMC_GCOV_COVERAGE)
 # run from the object directory, where that relative path does not resolve,
 # and the template modules would silently drop out of the report. Recording
 # absolute paths instead fixes it.
+#
+# Only for C and C++: the options are the C/C++ compiler's, while Fortran
+# (MUMPS, RADAU, ...) is compiled by gfortran whichever of the two that is,
+# and gfortran rejects clang's. Nothing in Fortran is instrumented anyway.
+# (CMake 3.14 has no COMPILE_LANGUAGE:C,CXX yet.)
+set(_om_coverage_c_or_cxx "$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>")
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  add_compile_options(-fprofile-abs-path)
+  add_compile_options("$<${_om_coverage_c_or_cxx}:-fprofile-abs-path>")
 elseif(CMAKE_C_COMPILER_ID MATCHES "Clang")
   # Clang has no -fprofile-abs-path. It records a path relative to the
   # compilation directory whenever the file is below it, and absolute
@@ -91,7 +97,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "Clang")
   # left once this is in effect.
   set(OM_COVERAGE_CLANG_COMPILATION_DIR "${CMAKE_SOURCE_DIR}/.omc-coverage-abs-paths"
       CACHE STRING "Recorded compilation directory that keeps Clang's coverage paths absolute")
-  add_compile_options("-ffile-compilation-dir=${OM_COVERAGE_CLANG_COMPILATION_DIR}")
+  add_compile_options("$<${_om_coverage_c_or_cxx}:-ffile-compilation-dir=${OM_COVERAGE_CLANG_COMPILATION_DIR}>")
 else()
   message(WARNING
     "OM_ENABLE_COVERAGE with ${CMAKE_C_COMPILER_ID}: the Susan-generated "
