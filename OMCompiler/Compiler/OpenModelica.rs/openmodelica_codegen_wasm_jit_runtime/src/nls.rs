@@ -810,7 +810,7 @@ struct WasmModel {
     load_idx: u32,
     jac_idx: u32,
     strict_idx: u32,
-    /// Scratch for the unknowns, residuals and Jacobian; freed by `rt_solve_nls`.
+    /// Scratch for the unknowns, residuals and Jacobian, owned by `rt_solve_nls`.
     x_ptr: u32,
     r_ptr: u32,
     jac_ptr: u32,
@@ -1029,15 +1029,22 @@ pub extern "C" fn rt_solve_nls(
     } else {
         hist_n * size
     };
+    // The model callbacks read and write these through their linear-memory
+    // addresses, which a local array on the shadow stack has too.
+    let words = (size + 1) + size.max(1) + if has_jacobian { jac_len.max(1) } else { 0 };
+    let mut small = core::mem::MaybeUninit::<[f64; 64]>::uninit();
+    let heap = words > 64;
+    let base = if heap { rt_alloc((words * 8) as u32) } else { small.as_mut_ptr() as u32 };
+    let r_ptr = base + ((size + 1) * 8) as u32;
     let mut model = WasmModel {
         sim_data,
         res_idx,
         load_idx,
         jac_idx,
         strict_idx,
-        x_ptr: rt_alloc(((size + 1) * 8) as u32),
-        r_ptr: rt_alloc((size.max(1) * 8) as u32),
-        jac_ptr: if has_jacobian { rt_alloc((jac_len.max(1) * 8) as u32) } else { 0 },
+        x_ptr: base,
+        r_ptr,
+        jac_ptr: if has_jacobian { r_ptr + (size.max(1) * 8) as u32 } else { 0 },
     };
     let mut state =
         WasmState { nls_fail_addr, rel_fresh_addr, rel_addr, n_rel, lambda_addr };
@@ -1101,10 +1108,8 @@ pub extern "C" fn rt_solve_nls(
     unsafe { store_f64(block.last_solved(), last_solved) };
     unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
 
-    rt_free(model.x_ptr);
-    rt_free(model.r_ptr);
-    if has_jacobian {
-        rt_free(model.jac_ptr);
+    if heap {
+        rt_free(base);
     }
     ret
 }
