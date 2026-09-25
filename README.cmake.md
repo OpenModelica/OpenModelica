@@ -532,7 +532,7 @@ generated model code.
 Configure and build as usual, with coverage on:
 
 ```sh
-cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=build \
+cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=build \
       -DOM_ENABLE_COVERAGE=ON
 cmake --build build_cmake --target install --parallel $(nproc)
 ```
@@ -595,7 +595,9 @@ where opening the file directly would not. Otherwise just open
 
 - The build type's optimization level is left alone, because `omc` and the simulation
   runtime are on the hot path of every test and an unoptimized coverage build makes a
-  testsuite run far slower. For exact per-line attribution (no inlining) at that cost,
+  testsuite run far slower. CI builds everything it reports on as `RelWithDebInfo`: builds
+  at different optimization levels record different lines, which merged only add to the
+  total. For exact per-line attribution (no inlining) at that cost,
   configure with `-DOM_COVERAGE_COMPILE_OPTIONS="--coverage;-fprofile-update=atomic;-O0"`.
 - With Clang the report is read back with `llvm-cov gcov`; this is picked automatically and
   can be overridden with `-DOM_COVERAGE_GCOV=...`.

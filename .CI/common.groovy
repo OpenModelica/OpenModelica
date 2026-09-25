@@ -1570,9 +1570,14 @@ void buildGccOMC() {
   // The instrumented objects carry the absolute path gcov writes their .gcda to, so
   // caching them is only safe because a hit needs the identical workspace path (see
   // withSccache); coverageReportStage would not find counters written anywhere else.
+  //
+  // RelWithDebInfo, like every build the coverage report is made of: builds
+  // at different optimization levels record different lines of the same
+  // source, and merged, the lines only one of them has add to the total but
+  // hardly ever to the hits.
   withSccache {
     buildOMC([
-      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DOM_ENABLE_COVERAGE=ON"])
@@ -1634,8 +1639,9 @@ void stashCoverageNotes(String compiler) {
 void buildClangOMC() {
   // See buildGccOMC() on caching instrumented objects.
   withSccache {
+    // RelWithDebInfo: see buildGccOMC().
     buildOMC([
-      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DCMAKE_C_COMPILER=clang",
@@ -1911,7 +1917,7 @@ void collectCoverage(String compiler, List counterNames, boolean render) {
     # rather than further down with an empty report.
     test -e "${coverageBuildRoot}/OMCompiler/Compiler/CMakeLists.txt"
     cd "${coverageBuildRoot}"
-    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \\
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF \\
           -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON ${compilerFlags} \\
           '-DOM_COVERAGE_TRACEFILES=${coverageBuildRoot}/coverage-tracefiles/*.json' \\
           '-DOM_COVERAGE_TITLE=OpenModelica Code Coverage Report (GCC and Clang)'
