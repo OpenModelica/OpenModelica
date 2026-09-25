@@ -27,6 +27,12 @@ target_link_libraries(OMCDLL PRIVATE
   omc::mmc::runtime
   omc::3rd::omcgc)
 
+# A DLL cannot leave symbols undefined; make an ELF shared library fail the same
+# way when it uses something libOpenModelicaCompiler does not export.
+if(CMAKE_EXECUTABLE_FORMAT STREQUAL "ELF")
+  target_link_options(OMCDLL PRIVATE -Wl,--no-undefined)
+endif()
+
 # Put libOMCDLL next to libOpenModelicaCompiler in the build tree so it can be
 # used straight from there (dll -> .../bin on Windows, .so -> .../lib on ELF).
 get_target_property(_omcdll_rt_dir  OpenModelicaCompiler RUNTIME_OUTPUT_DIRECTORY)

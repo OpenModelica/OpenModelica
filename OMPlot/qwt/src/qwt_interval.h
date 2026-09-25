@@ -100,8 +100,6 @@ class QWT_EXPORT QwtInterval
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS( QwtInterval::BorderFlags )
-Q_DECLARE_METATYPE( QwtInterval )
-Q_DECLARE_TYPEINFO( QwtInterval, Q_MOVABLE_TYPE );
 
 /*!
    \brief Default Constructor
@@ -331,5 +329,10 @@ inline void QwtInterval::invalidate()
 #ifndef QT_NO_DEBUG_STREAM
 QWT_EXPORT QDebug operator<<( QDebug, const QwtInterval& );
 #endif
+
+// After the inline constructors: these look at the default constructor, and
+// before its definition MinGW warns that it loses its dllimport.
+Q_DECLARE_TYPEINFO( QwtInterval, Q_MOVABLE_TYPE );
+Q_DECLARE_METATYPE( QwtInterval )
 
 #endif

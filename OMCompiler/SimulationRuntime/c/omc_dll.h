@@ -37,6 +37,12 @@
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define DLLImport   __declspec( dllimport )
 #define DLLExport   __declspec( dllexport )
+#elif defined(OMC_EXPORT_BY_VISIBILITY)
+/* Set when building libOpenModelicaCompiler with hidden visibility: it then
+ * exports the same symbols as the DLL, so its users fail to link on Linux too
+ * when they use a symbol the DLL does not export. */
+#define DLLImport /* extern */
+#define DLLExport __attribute__((visibility("default")))
 #else
 #define DLLImport /* extern */
 #define DLLExport /* nothing */

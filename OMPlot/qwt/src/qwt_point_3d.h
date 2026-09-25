@@ -51,9 +51,6 @@ class QWT_EXPORT QwtPoint3D
     double m_z;
 };
 
-Q_DECLARE_TYPEINFO( QwtPoint3D, Q_MOVABLE_TYPE );
-Q_DECLARE_METATYPE( QwtPoint3D )
-
 #ifndef QT_NO_DEBUG_STREAM
 QWT_EXPORT QDebug operator<<( QDebug, const QwtPoint3D& );
 #endif
@@ -172,5 +169,10 @@ inline bool QwtPoint3D::operator!=( const QwtPoint3D& other ) const
 {
     return !operator==( other );
 }
+
+// After the inline constructors: these look at the default constructor, and
+// before its definition MinGW warns that it loses its dllimport.
+Q_DECLARE_TYPEINFO( QwtPoint3D, Q_MOVABLE_TYPE );
+Q_DECLARE_METATYPE( QwtPoint3D )
 
 #endif
