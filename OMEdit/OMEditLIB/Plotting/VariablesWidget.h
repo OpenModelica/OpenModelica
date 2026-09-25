@@ -202,9 +202,12 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, ScalarVariable> mScalarVariablesHash;
+  // ArrayVariable elements of model_init.xml, keyed by name without subscripts
+  QHash<QString, ScalarVariable> mArrayVariablesHash;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   static ScalarVariable parseScalarVariable(QXmlStreamReader &xmlReader);
+  static QString removeSubscripts(const QString &name);
   void getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:
