@@ -364,6 +364,14 @@ set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPI
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
+# Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON). Nearly all of OMEdit is in
+# this static library, so whatever links it - OMEdit and the Testsuite programs -
+# needs the gcov runtime. See cmake/modules/OpenModelicaCoverage.cmake.
+if(OM_ENABLE_COVERAGE)
+  target_compile_options(OMEditLib PRIVATE ${OM_COVERAGE_COMPILE_OPTIONS})
+  target_link_options(OMEditLib INTERFACE --coverage)
+endif()
+
 # Wait for the generated Qt API (rust_codegen); AUTOGEN_TARGET_DEPENDS so AUTOMOC waits too.
 # In the prebuilt GUI-only build (RUST_OMC_PREBUILT_CDYLIB) there is no codegen target —
 # the Qt sources are supplied ready-made — so only wire the dependency when it exists.

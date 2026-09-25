@@ -16,12 +16,14 @@ is what tells dead templates apart from live ones. It is not line coverage
 *within* a template; that would need Susan to emit a real line map.
 
 Reads a gcovr JSON tracefile and writes another one, to be merged into the
-report with `gcovr --add-tracefile`.
+report with `gcovr --add-tracefile`. Its paths are relative to --root, like
+gcovr's own, so it merges with tracefiles collected in another checkout.
 """
 
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -70,6 +72,8 @@ def main():
                         help="directory holding the generated *Tpl.mo")
     parser.add_argument("--template-dir", required=True, type=Path,
                         help="source directory holding the *.tpl")
+    parser.add_argument("--root", required=True, type=Path,
+                        help="the --root gcovr was given; paths are written relative to it")
     parser.add_argument("--output", required=True, type=Path,
                         help="gcovr JSON tracefile to write")
     args = parser.parse_args()
@@ -118,7 +122,7 @@ def main():
 
         if lines_out:
             files_out.append({
-                "file": str(tpl_path),
+                "file": os.path.relpath(tpl_path, args.root),
                 "functions": [],
                 "lines": lines_out,
             })

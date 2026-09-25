@@ -1304,7 +1304,13 @@ void ctestRust() {
 // Build the whole tree with the GUI clients and run the OMEdit testsuite. The
 // OMEdit tests are CTest tests registered with absolute build-tree paths, so
 // they run in the stage that builds them.
+//
+// Instrumented for coverage (OMEdit, and the compiler and runtimes the tests
+// drive). The counters land in the build tree right here, so unlike the
+// testsuite stages this collects them itself and hands coverageReportStage()
+// the finished tracefiles, as stash 'coverage-tracefiles-omedit'.
 void buildGUIAndRunOMEditTestsuite() {
+  // See buildGccOMC() on caching instrumented objects.
   withSccache {
     buildOMC([
       // RelWithDebInfo, not Release: OMEdit's crash report shells out to gdb
@@ -1315,7 +1321,8 @@ void buildGUIAndRunOMEditTestsuite() {
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DCMAKE_C_COMPILER=clang",
       "-DCMAKE_CXX_COMPILER=clang++",
-      "-DOM_OMEDIT_ENABLE_TESTS=ON"], 'cmake', false)
+      "-DOM_OMEDIT_ENABLE_TESTS=ON",
+      "-DOM_ENABLE_COVERAGE=ON"], 'cmake', false)
   }
 
   // The tests browse the MSL, so they need the test libraries and a writable HOME.
@@ -1336,6 +1343,16 @@ void buildGUIAndRunOMEditTestsuite() {
   } finally {
     junit testResults: 'omedit-testsuite.xml', allowEmptyResults: true
   }
+
+  // The paths in the tracefiles are relative to this checkout, so they merge
+  // with the ones coverageReportStage() collects in its own.
+  sh label: 'Collect the coverage', script: """#!/bin/bash -xe
+  cmake --build build_cmake --target coverage-collect
+  mkdir -p coverage-tracefiles
+  cp build_cmake/coverage/coverage.json coverage-tracefiles/omedit-coverage.json
+  cp build_cmake/coverage/templates.json coverage-tracefiles/omedit-templates.json
+  """
+  stash name: 'coverage-tracefiles-omedit', includes: 'coverage-tracefiles/*.json'
 }
 
 void cloneOMDev() {
@@ -1553,9 +1570,14 @@ void buildGccOMC() {
   // The instrumented objects carry the absolute path gcov writes their .gcda to, so
   // caching them is only safe because a hit needs the identical workspace path (see
   // withSccache); coverageReportStage would not find counters written anywhere else.
+  //
+  // RelWithDebInfo, like every build the coverage report is made of: builds
+  // at different optimization levels record different lines of the same
+  // source, and merged, the lines only one of them has add to the total but
+  // hardly ever to the hits.
   withSccache {
     buildOMC([
-      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DOM_ENABLE_COVERAGE=ON"])
@@ -1575,18 +1597,24 @@ void buildGccOMC() {
         includes: 'build/**,' +
                   'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
                   'OMCompiler/Compiler/Util/Autoconf.mo'
+  stashCoverageNotes('gcc')
+}
 
+// What coverageReportStage() needs of an instrumented build to turn the
+// counters of the stages testing it into a report. See section 9 of
+// README.cmake.md for what is instrumented.
+void stashCoverageNotes(String compiler) {
   // Coverage counters (*.gcda), written by the instrumented binaries as the
   // testsuite runs, land next to the *.gcno files below, at whatever absolute
   // path this build happened to compile at (baked in by the compiler). The
-  // testsuite-gcc stages run on other agents/workspaces that don't have
-  // that path, so they redirect their counters elsewhere with GCOV_PREFIX
-  // (see ctestStashed) instead of writing there directly; this string is
+  // testsuite stages run on other agents/workspaces that don't have that
+  // path, so they redirect their counters elsewhere with GCOV_PREFIX (see
+  // withCoverageCounters) instead of writing there directly; this string is
   // what lets coverageReportStage() find them again afterwards to merge in
-  // the *.gcno tree. See section 9 of README.cmake.md for what is instrumented.
+  // the *.gcno tree.
   writeFile file: 'coverage-build-root.txt', text: env.WORKSPACE
-  stash name: 'omc-gcc-coverage-root', includes: 'coverage-build-root.txt'
-  stash name: 'omc-gcc-gcno', includes: 'build_cmake/**/*.gcno'
+  stash name: "coverage-${compiler}-root", includes: 'coverage-build-root.txt'
+  stash name: "coverage-${compiler}-gcno", includes: 'build_cmake/**/*.gcno'
   // Sources that only exist because this stage built them: Susan's generated
   // *.mo and the two *.mo generated into the source tree. The report stage
   // starts from a clean checkout and only configures, so nothing regenerates
@@ -1594,21 +1622,34 @@ void buildGccOMC() {
   // it, failing the whole report otherwise. They are also what lets the
   // template mapping (OpenModelicaCoverageTemplates.py) find the generated
   // functions to attribute back to *.tpl.
-  stash name: 'omc-gcc-coverage-sources',
+  //
+  // And the compiler's generated C: without it gcc's gcov loses the
+  // MetaModelica coverage of most modules, and clang's coverage is filed
+  // under it, to be moved onto the MetaModelica by replaying the C's #line
+  // directives (see OpenModelicaCoverageLineDirectives.py).
+  stash name: "coverage-${compiler}-sources",
         includes: 'build_cmake/OMCompiler/Compiler/generated-mo/**/*.mo,' +
                   'OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo,' +
-                  'OMCompiler/Compiler/Util/Autoconf.mo'
+                  'OMCompiler/Compiler/Util/Autoconf.mo,' +
+                  'build_cmake/OMCompiler/Compiler/c_files/*.c'
 }
 
+// The jammy clang build of omc, tested by the testsuite-clang and testsuite-misc
+// stages. Instrumented for coverage like buildGccOMC(), and for the same
+// reason: coverageReportStage() merges what those stages cover into the report.
 void buildClangOMC() {
+  // See buildGccOMC() on caching instrumented objects.
   withSccache {
+    // RelWithDebInfo: see buildGccOMC().
     buildOMC([
-      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DCMAKE_C_COMPILER=clang",
-      "-DCMAKE_CXX_COMPILER=clang++"], 'cmake', false)
+      "-DCMAKE_CXX_COMPILER=clang++",
+      "-DOM_ENABLE_COVERAGE=ON"], 'cmake', false)
   }
+  stashCoverageNotes('clang')
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
   // Find unused imports
   sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
@@ -1662,12 +1703,54 @@ String sharedTestSuites() {
 }
 
 // A partest shard against a stashed CMake install tree (see buildClangOMC).
+// The install tree is coverage-instrumented, so this also leaves coverage
+// counters behind, as stash 'coverage-counters-<stashName>-<partition>'.
 void partestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
-  partest(partition, partitionmodulo, true,
-          "-suites=${sharedTestSuites()} -partition-suites=${sharedTestSuites()}")
+  withCoverageCounters("${stashName}-${partition}") {
+    partest(partition, partitionmodulo, true,
+            "-suites=${sharedTestSuites()} -partition-suites=${sharedTestSuites()}")
+  }
+}
+
+// Runs body with the coverage counters (*.gcda) of the instrumented omc and
+// runtimes redirected under the workspace, then stashes them as
+// 'coverage-counters-<name>' for coverageReportStage().
+//
+// The instrumented binaries come from an install tree built elsewhere. They
+// can't write their counters to the build tree they were compiled in - this
+// stage has none - so GCOV_PREFIX redirects them to gcda-out/, where they
+// land at gcda-out/<coverage-build-root>/... (GCOV_PREFIX is prepended
+// verbatim to the original build's absolute compile path;
+// coverageReportStage() re-derives that same coverage-build-root string from
+// the stash stashCoverageNotes() left, to find them again).
+//
+// FMUs exported along the way are instrumented by their own build, and keep
+// their notes and counters in OMC_COVERAGE_FMU_DIR (see Coverage.cmake.in in
+// SimulationRuntime/fmi/export/buildproject). GCOV_PREFIX redirects those
+// counters too, so they are moved back next to their notes before stashing.
+void withCoverageCounters(String name, Closure body) {
+  def ws = sh(script: 'pwd', returnStdout: true).trim()
+  sh 'rm -rf gcda-out fmu-coverage'
+  withEnv(["GCOV_PREFIX=${ws}/gcda-out",
+           "OMC_COVERAGE_FMU_DIR=${ws}/fmu-coverage"]) {
+    body()
+  }
+  sh label: 'Gather the coverage counters', script: """#!/bin/bash -e
+  if [ -d 'gcda-out${ws}/fmu-coverage' ]; then
+    mkdir -p fmu-coverage
+    cp -a 'gcda-out${ws}/fmu-coverage/.' fmu-coverage/
+    rm -rf 'gcda-out${ws}/fmu-coverage'
+  fi
+  echo "\$(find gcda-out -name '*.gcda' 2>/dev/null | wc -l) counter files and" \\
+       "\$(find fmu-coverage -name '*.gcda' 2>/dev/null | wc -l) of FMUs"
+  """
+  // Only the counters (and the FMUs' notes), not the rest of gcda-out.
+  stash name: "coverage-counters-${name}",
+        includes: 'gcda-out/**/*.gcda,fmu-coverage/**/*.gcno,fmu-coverage/**/*.gcda',
+        allowEmpty: true
 }
 
 // A CTest-driven testsuite shard against a stashed CMake install tree (see
@@ -1680,11 +1763,8 @@ void partestStashed(stashName, partition, partitionmodulo) {
 //
 // The install tree carries the coverage-instrumented runtime/omc from
 // buildGccOMC(), so this shard's share of the testsuite also produces
-// coverage counters (*.gcda). They can't be written to the build tree they
-// were compiled in - this stage never has one, only the install tree - so
-// GCOV_PREFIX redirects them under the workspace instead, and
-// coverageReportStage() merges them back onto the original *.gcno tree
-// afterwards. See section 9 of README.cmake.md.
+// coverage counters, stashed as 'coverage-counters-<stashName>-<partition>'
+// (see withCoverageCounters()). See section 9 of README.cmake.md.
 void ctestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
@@ -1693,115 +1773,77 @@ void ctestStashed(stashName, partition, partitionmodulo) {
   sh 'build/bin/omc-diff -v1.4'
 
   def ws = sh(script: 'pwd', returnStdout: true).trim()
-  withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}",
-           "GCOV_PREFIX=${ws}/gcda-out"]) {
-    sh """
-    cmake -DTESTSUITE_DIR=${ws}/testsuite -DOUTPUT_DIR=${ws}/build-testsuite-ctest \\
-          -DTESTSUITE_SUITES=${sharedTestSuites()} \\
-          -DTESTSUITE_PARTITION=${partition}/${partitionmodulo} \\
-          -DTESTSUITE_PARTITION_SUITES=${sharedTestSuites()} \\
-          -P testsuite/CTest/Partest/GenerateCTestFile.cmake
-    """
-    // hdf5: the CMake build links the system HDF5, which gives it MAT v7.3.
-    // (baked into the generated CTestTestfile.cmake above)
-    sh ("""#!/bin/bash -x
-    ulimit -t 1500
-    # On top of the cgroup limit, to catch a single runaway process early
-    ulimit -v 6291456 # Max 6GB per process
+  withCoverageCounters("${stashName}-${partition}") {
+    withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {
+      sh """
+      cmake -DTESTSUITE_DIR=${ws}/testsuite -DOUTPUT_DIR=${ws}/build-testsuite-ctest \\
+            -DTESTSUITE_SUITES=${sharedTestSuites()} \\
+            -DTESTSUITE_PARTITION=${partition}/${partitionmodulo} \\
+            -DTESTSUITE_PARTITION_SUITES=${sharedTestSuites()} \\
+            -P testsuite/CTest/Partest/GenerateCTestFile.cmake
+      """
+      // hdf5: the CMake build links the system HDF5, which gives it MAT v7.3.
+      // (baked into the generated CTestTestfile.cmake above)
+      sh ("""#!/bin/bash -x
+      ulimit -t 1500
+      # On top of the cgroup limit, to catch a single runaway process early
+      ulimit -v 6291456 # Max 6GB per process
 
-    .CI/scripts/cgroup-memory.sh check
-    ctest --test-dir build-testsuite-ctest \\
-          -j${numPhysicalCPU()} --output-on-failure --output-junit ctest-result.xml || true
-    .CI/scripts/cgroup-memory.sh report
-    test -f build-testsuite-ctest/ctest-result.xml
-    """)
+      .CI/scripts/cgroup-memory.sh check
+      ctest --test-dir build-testsuite-ctest \\
+            -j${numPhysicalCPU()} --output-on-failure --output-junit ctest-result.xml || true
+      .CI/scripts/cgroup-memory.sh report
+      test -f build-testsuite-ctest/ctest-result.xml
+      """)
+    }
   }
   junit 'build-testsuite-ctest/ctest-result.xml'
-
-  // GCOV_PREFIX is prepended verbatim to the original build's absolute
-  // compile path, so the counters land at gcda-out/<coverage-build-root>/...
-  // (coverageReportStage() re-derives that same coverage-build-root string
-  // from the stash buildGccOMC() left, to find them again). Stash only
-  // the counters themselves (not the rest of gcda-out) to keep it small.
-  sh "find gcda-out -name '*.gcda' | wc -l"
-  stash name: "gcda-${partition}", includes: 'gcda-out/**/*.gcda', allowEmpty: true
 }
 
-// Merges the coverage counters (*.gcda) the shardCount testsuite-gcc
-// shards produced (ctestStashed) back onto the *.gcno tree from the
-// original instrumented build (buildGccOMC), then writes the combined
-// report. gcov-tool only merges two directories at a time, so shards are
-// folded in pairwise. This never rebuilds anything - the coverage-report
-// CMake target only invokes gcovr - so a fresh, otherwise-empty configure
-// (matching -DOM_ENABLE_COVERAGE=ON) is enough to get that target back
-// without a configured build tree having to be stashed/unstashed. See
-// section 9 of README.cmake.md.
+// Turns the coverage counters the testsuite stages left (withCoverageCounters)
+// into one report, merged with the tracefiles of the OMEdit stage
+// (buildGUIAndRunOMEditTestsuite) and of the C runtime unit tests (testUnitC). countersByCompiler maps each instrumented
+// build, by the name it passed to stashCoverageNotes(), to the names of the
+// counter stashes of the stages that tested it.
 //
-// Known gap: the *.gcno files embed the build's absolute source paths. Every
-// agent checks out to ws/OpenModelica, but that is relative to each node's own
-// root, so when this stage runs on a different node than the build the paths
-// may not match and gcovr's HTML report may fail to annotate some source files
-// with their text. The line/function/branch numbers - and the Cobertura XML -
-// are unaffected; they come from the *.gcno structure and the counters alone.
-void coverageReportStage(int shardCount) {
+// gcc and clang counters can't be merged as such - they are not even read by
+// the same gcov - so each set is collected into a gcovr JSON tracefile on its
+// own, against the *.gcno tree of the build that produced it, and the report
+// is rendered from all tracefiles at the end. gcovr sums up what they say
+// about the same source line. Where the compilers disagree on which lines of
+// a source are code at all, the report holds the union of both.
+//
+// This never rebuilds anything - the coverage targets only invoke gcovr - so a
+// fresh, otherwise-empty configure (matching -DOM_ENABLE_COVERAGE=ON) is
+// enough to get them back without a configured build tree having to be
+// stashed/unstashed. See section 9 of README.cmake.md.
+void coverageReportStage(Map countersByCompiler) {
   standardSetup()
-  unstash 'omc-gcc-coverage-root'
-  def coverageBuildRoot = readFile('coverage-build-root.txt').trim()
-  unstash 'omc-gcc-gcno'
-  unstash 'omc-gcc-coverage-sources'
+  sh 'rm -rf coverage-tracefiles && mkdir coverage-tracefiles'
+  unstash 'coverage-tracefiles-omedit'
+  unstash 'coverage-tracefiles-unit-c'
 
-  def mergeDirs = []
-  for (int i = 1; i <= shardCount; i++) {
-    dir("shard-${i}") {
-      unstash "gcda-${i}"
+  // Not iterating the Map itself: its iterator can't be serialized when the
+  // pipeline checkpoints at a step inside the loop.
+  List compilers = new ArrayList(countersByCompiler.keySet())
+  try {
+    for (int i = 0; i < compilers.size(); i++) {
+      collectCoverage(compilers[i], countersByCompiler[compilers[i]], i == compilers.size() - 1)
     }
-    mergeDirs << "shard-${i}/gcda-out${coverageBuildRoot}/build_cmake"
-  }
-
-  // The compiler bakes the absolute path of the build into the *.gcno files,
-  // and that is the only path under which the data is recognised afterwards:
-  // gcov looks for the sources there and gcovr's --filter (absolute, built
-  // from CMAKE_SOURCE_DIR) has to match it. 'ws/OpenModelica' resolves
-  // against each agent's own root, so landing on another agent than the build
-  // did - the normal case - leaves gcovr filtering everything out and
-  // reporting 0%. Bind-mount the workspace a second time at the path the
-  // build used and work through that; it is the same directory, so what is
-  // written there is in the workspace as usual, for archiveArtifacts and
-  // recordCoverage below.
-  def extraMounts = coverageBuildRoot == env.WORKSPACE ? ''
-                                                       : "-v ${env.WORKSPACE}:${coverageBuildRoot}"
-
-  // gcov and gcov-tool have to be the ones that match the compiler the data
-  // was produced with, which is this image's; the testsuite caches are of no
-  // use here because this stage runs no tests.
-  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', extraMounts) {
-    sh """#!/bin/bash -xe
-    # Fails the stage right here if the mount above did not take effect,
-    # rather than further down with an empty report.
-    test -e "${coverageBuildRoot}/OMCompiler/Compiler/CMakeLists.txt"
-    cd "${coverageBuildRoot}"
-
-    merged=${mergeDirs[0]}
-    for src in ${mergeDirs.drop(1).join(' ')}; do
-      gcov-tool merge "\$merged" "\$src" -o merged-next
-      rm -rf merged-tmp
-      mv merged-next merged-tmp
-      merged=merged-tmp
+  } finally {
+    // Every tracefile the report is rendered from, one per stage, so that
+    // the merge can be redone (or each stage's part inspected) locally with
+    // gcovr --add-tracefile. Compressed: each is tens of MB of JSON. Also
+    // when collecting or rendering failed, which is when they are most
+    // needed.
+    sh label: 'Compress the coverage tracefiles', script: '''#!/bin/bash -e
+    rm -rf coverage-tracefiles-archive && mkdir coverage-tracefiles-archive
+    for f in coverage-tracefiles/*.json; do
+      [ -e "$f" ] || continue
+      gzip -c "$f" > "coverage-tracefiles-archive/$(basename "$f").gz"
     done
-    # Overlay the merged counters onto the *.gcno tree unstashed above.
-    cp -a "\$merged/." build_cmake/
-    """
-
-    // Configure only: nothing needs (re)building for the coverage-report
-    // target, and the flags otherwise just have to be enough to reach it
-    // (matching buildGccOMC() keeps this from silently drifting out of
-    // sync with what was actually instrumented).
-    sh """#!/bin/bash -xe
-    cd "${coverageBuildRoot}"
-    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF \\
-          -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON
-    cmake --build build_cmake --target coverage-report
-    """
+    '''
+    archiveArtifacts artifacts: 'coverage-tracefiles-archive/*.json.gz', allowEmptyArchive: true
   }
 
   // The browsable HTML, kept per build.
@@ -1825,8 +1867,91 @@ void coverageReportStage(int shardCount) {
   recordCoverage(tools: [[parser: 'COBERTURA',
                           pattern: 'build_cmake/coverage/coverage.xml']],
                  id: 'omc-coverage',
-                 name: 'C/C++ runtime and compiler',
+                 name: 'Compiler, runtimes, FMU export and OMEdit',
                  sourceCodeRetention: 'LAST_BUILD')
+}
+
+// Collects the counter stashes counterNames, left by the stages testing the
+// build stashCoverageNotes(compiler) describes, into coverage-tracefiles/, one
+// gcovr JSON tracefile per stash. With render, also renders the report from
+// every tracefile in there, into build_cmake/coverage/.
+void collectCoverage(String compiler, List counterNames, boolean render) {
+  sh "rm -rf build_cmake coverage-build-root.txt"
+  unstash "coverage-${compiler}-root"
+  def coverageBuildRoot = readFile('coverage-build-root.txt').trim()
+  unstash "coverage-${compiler}-gcno"
+  unstash "coverage-${compiler}-sources"
+  for (int i = 0; i < counterNames.size(); i++) {
+    sh "rm -rf 'counters-${counterNames[i]}'"
+    dir("counters-${counterNames[i]}") {
+      unstash "coverage-counters-${counterNames[i]}"
+    }
+  }
+
+  // The compiler bakes the absolute path of the build into the *.gcno files,
+  // and that is the only path under which the data is recognised afterwards:
+  // gcov looks for the sources there and gcovr's --filter (absolute, built
+  // from CMAKE_SOURCE_DIR) has to match it. 'ws/OpenModelica' resolves
+  // against each agent's own root, so landing on another agent than the build
+  // did - the normal case - leaves gcovr filtering everything out and
+  // reporting 0%. Bind-mount the workspace a second time at the path the
+  // build used and work through that; it is the same directory, so what is
+  // written there is in the workspace as usual, for archiveArtifacts and
+  // recordCoverage.
+  def extraMounts = coverageBuildRoot == env.WORKSPACE ? ''
+                                                       : "-v ${env.WORKSPACE}:${coverageBuildRoot}"
+  // The gcov the coverage targets pick (gcov or llvm-cov gcov) follows the
+  // compiler CMake finds, so it has to be the one the build used.
+  def compilerFlags = compiler == 'clang' ? '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++' : ''
+
+  // gcov and llvm-cov have to be the ones that match the compilers the data
+  // was produced with, which are this image's; the testsuite caches are of no
+  // use here because this stage runs no tests.
+  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', extraMounts) {
+    // Configure only: nothing needs (re)building for the coverage targets,
+    // and the flags otherwise just have to be enough to reach them (matching
+    // the build's keeps this from silently drifting out of sync with what was
+    // actually instrumented). OM_COVERAGE_TRACEFILES is a pattern gcovr
+    // expands when it renders, so it picks up everything collected by then.
+    sh """#!/bin/bash -xe
+    # Fails the stage right here if the mount above did not take effect,
+    # rather than further down with an empty report.
+    test -e "${coverageBuildRoot}/OMCompiler/Compiler/CMakeLists.txt"
+    cd "${coverageBuildRoot}"
+    cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF \\
+          -DCMAKE_INSTALL_PREFIX=build -DOM_ENABLE_COVERAGE=ON ${compilerFlags} \\
+          '-DOM_COVERAGE_TRACEFILES=${coverageBuildRoot}/coverage-tracefiles/*.json' \\
+          '-DOM_COVERAGE_TITLE=OpenModelica Code Coverage Report (GCC and Clang)'
+    """
+
+    for (int i = 0; i < counterNames.size(); i++) {
+      String counters = "counters-${counterNames[i]}"
+      sh label: "Collect ${counterNames[i]}", script: """#!/bin/bash -xe
+      cd "${coverageBuildRoot}"
+      # Only this stash's counters on the *.gcno tree unstashed above.
+      find build_cmake -name '*.gcda' -delete
+      rm -rf build_cmake/coverage-fmu
+      if [ -d '${counters}/gcda-out${coverageBuildRoot}/build_cmake' ]; then
+        cp -a '${counters}/gcda-out${coverageBuildRoot}/build_cmake/.' build_cmake/
+      fi
+      # The FMUs' notes and counters, where coverage-collect looks for them.
+      if [ -d '${counters}/fmu-coverage' ]; then
+        mkdir -p build_cmake/coverage-fmu
+        cp -a '${counters}/fmu-coverage/.' build_cmake/coverage-fmu/
+      fi
+      cmake --build build_cmake --target coverage-collect
+      cp build_cmake/coverage/coverage.json 'coverage-tracefiles/${counterNames[i]}-coverage.json'
+      cp build_cmake/coverage/templates.json 'coverage-tracefiles/${counterNames[i]}-templates.json'
+      """
+    }
+
+    if (render) {
+      sh label: 'Render the coverage report', script: """#!/bin/bash -xe
+      cd "${coverageBuildRoot}"
+      cmake --build build_cmake --target coverage-html
+      """
+    }
+  }
 }
 
 // The 'testsuite-windows' stage (see buildOMC()'s Windows branch for
@@ -1935,30 +2060,53 @@ void buildUsersGuide() {
   stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${tagName()}*.*"
 }
 
+// The C runtime unit tests, against a C runtime built right here.
+//
+// Instrumented for coverage. Like buildGUIAndRunOMEditTestsuite(), the counters
+// land in the build tree right here, so this collects them itself and hands
+// coverageReportStage() the finished tracefiles, as stash
+// 'coverage-tracefiles-unit-c'.
 void testUnitC() {
+  // See buildGccOMC() on caching instrumented objects.
   withSccache {
     sh label: 'cmake version', script: "cmake --version"
-    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache"
+    // Only the C runtime is what the unit tests exercise; see
+    // OM_COVERAGE_SOURCE_DIRS on why the rest must stay out of the tracefile.
+    sh label: 'Configure the C unit tests', script: "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_COMPILER_CACHE=sccache -DOM_ENABLE_COVERAGE=ON -DOM_COVERAGE_SOURCE_DIRS=OMCompiler/SimulationRuntime/c/"
     sh label: 'Build the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target ctestsuite-depends"
     sh label: 'Run the C unit tests', script: "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target test"
   }
   sh label: 'Check that the C unit tests wrote junit.xml', script: "test -f ./build_cmake/junit.xml"
+
+  // The paths in the tracefiles are relative to this checkout, so they merge
+  // with the ones coverageReportStage() collects in its own.
+  sh label: 'Collect the coverage of the C unit tests', script: """#!/bin/bash -xe
+  cmake --build build_cmake --target coverage-collect
+  mkdir -p coverage-tracefiles
+  cp build_cmake/coverage/coverage.json coverage-tracefiles/unit-c-coverage.json
+  """
+  stash name: 'coverage-tracefiles-unit-c', includes: 'coverage-tracefiles/unit-c-*.json'
 }
 
 // The short test suites, run back to back in one node. testUnitC() goes first
-// so CMake configures a tree that only git clean has touched.
+// so CMake configures a tree that only git clean has touched; it collects its
+// own coverage. The omc the others run is the coverage-instrumented one of
+// buildClangOMC(), so they leave coverage counters behind, as stash
+// 'coverage-counters-omc-clang-misc'.
 void testMisc() {
   echo "Running on: ${env.NODE_NAME}"
   standardSetup()
   testUnitC()
   unstash 'omc-clang'
-  partest(1, 1, false, '-j1 -parmodexp')
-  makeLibsAndCache()
-  // The translator loads the compiler sources by path, Susan's *.mo included.
-  withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {
-    sh label: 'Matlab translator', script: 'make -C testsuite/special/MatlabTranslator/ test'
+  withCoverageCounters('omc-clang-misc') {
+    partest(1, 1, false, '-j1 -parmodexp')
+    makeLibsAndCache()
+    // The translator loads the compiler sources by path, Susan's *.mo included.
+    withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {
+      sh label: 'Matlab translator', script: 'make -C testsuite/special/MatlabTranslator/ test'
+    }
+    sh label: 'Icon generator', script: 'make -C testsuite/openmodelica/icon-generator test'
   }
-  sh label: 'Icon generator', script: 'make -C testsuite/openmodelica/icon-generator test'
 }
 
 void fmpyLinux() {

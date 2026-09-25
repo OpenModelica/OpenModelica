@@ -299,6 +299,8 @@ add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 if(OM_ENABLE_COVERAGE)
   target_compile_options(OpenModelicaCompiler PRIVATE ${OM_COVERAGE_COMPILE_OPTIONS})
   target_link_options(OpenModelicaCompiler PUBLIC --coverage)
+  # Clang only: it drops the #line'd lines otherwise.
+  omc_coverage_line_directives_launcher(OpenModelicaCompiler ${CMAKE_CURRENT_BINARY_DIR}/c_files)
 endif()
 
 # output libOpenModelicaCompiler in a directory named 'lib' or 'bin' (on Windows, dll) inside
