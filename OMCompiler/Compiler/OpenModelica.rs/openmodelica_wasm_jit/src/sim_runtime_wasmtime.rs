@@ -391,8 +391,9 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         ("lib-libc.so".to_string(), crate::LIBC_PIC()),
         ("lib-usertab".to_string(), crate::USERTAB_DYLINK()),
     ];
+    // Tagged with the file name, as `library_module` is called with it.
     for (file, bytes) in crate::EXT_FAMILY {
-        blobs.push((format!("lib-{}", file.trim_end_matches(".wasm")), bytes()));
+        blobs.push((format!("lib-{file}"), bytes()));
     }
     blobs.retain(|(_, b)| !b.is_empty());
     // Every engine a run can land on: the inliner is off for a model with one
