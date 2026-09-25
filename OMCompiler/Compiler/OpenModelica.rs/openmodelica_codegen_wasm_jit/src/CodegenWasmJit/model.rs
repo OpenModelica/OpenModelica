@@ -1791,7 +1791,10 @@ pub(super) fn build_sim_model(
         module.section(&data);
     }
     module.section(&name_section);
-    let wasm = module.finish();
+    let mut wasm = module.finish();
+    if crate::CodegenWasmJitFunctions::take_unlikely_ifs() {
+        wasm = add_branch_hints(&wasm, import_base);
+    }
     // `OMC_WASM_DUMP_DIR=<dir>`: the lowered module as `<dir>/<prefix>.wasm`, for
     // `wasm-objdump` on a trap the backtrace names only by function index.
     #[cfg(not(target_arch = "wasm32"))]

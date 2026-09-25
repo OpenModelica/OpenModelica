@@ -222,6 +222,8 @@ fn build_engine_cfg(inlining: bool, extra: impl FnOnce(&mut wasmtime::Config)) -
     // A model with external "C" carries the `model_error` tag its `ext` call sites
     // catch, so the module does not validate without this.
     cfg.wasm_exceptions(true);
+    // Lays the model's error paths out of line (`emit_unlikely_if`).
+    cfg.wasm_branch_hinting(true);
     // Compile module functions across threads (off by default with
     // default-features=false) — ~4x faster module compilation here.
     cfg.parallel_compilation(!crate::model::single_threaded());
