@@ -260,16 +260,127 @@ pub(super) fn emit_initial_flag(ctx: &mut FnCtx) {
 
 /// The dumped source form of `e`, for embedding in an assertion message.
 pub(crate) fn dumped_exp(e: &DAE::Exp) -> Result<String> {
-    if let DAE::Exp::CREF { componentRef, .. } = e
-        && !openmodelica_util::Config::typeinfo()?
-    {
+    let e = metamodelica::Ref::new(e.clone());
+    if !openmodelica_util::Config::typeinfo()? {
         let mut s = String::new();
-        if push_dumped_cref(componentRef, openmodelica_util::Config::modelicaOutput()?, &mut s) {
+        if push_dumped_exp(&e, openmodelica_util::Config::modelicaOutput()?, &mut s)? {
             return Ok(s);
         }
     }
-    let e = metamodelica::Ref::new(e.clone());
     Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e, arcstr::literal!("\""))?)?.to_string())
+}
+
+/// `ExpressionDumpTpl.dumpExp` for literals, crefs, scalar arithmetic and calls
+/// of those; false for anything else.
+fn push_dumped_exp(e: &metamodelica::Ref<DAE::Exp>, modelica_output: bool, s: &mut String) -> Result<bool> {
+    use std::fmt::Write;
+    use DAE::Exp as E;
+    use DAE::Operator as O;
+    Ok(match &**e {
+        E::ICONST { integer } => {
+            let _ = write!(s, "{integer}");
+            true
+        }
+        E::RCONST { real } => {
+            s.push_str(&metamodelica::realString(*real));
+            true
+        }
+        E::CREF { componentRef, .. } => push_dumped_cref(componentRef, modelica_output, s),
+        E::BINARY { exp1, operator, exp2 } => {
+            let op = match operator {
+                O::ADD { .. } => " + ",
+                O::SUB { .. } => " - ",
+                O::MUL { .. } => " * ",
+                O::DIV { .. } => " / ",
+                O::POW { .. } => " ^ ",
+                _ => return Ok(false),
+            };
+            push_dumped_operand(exp1, e, true, modelica_output, s)? && {
+                s.push_str(op);
+                push_dumped_operand(exp2, e, false, modelica_output, s)?
+            }
+        }
+        E::UNARY { operator: O::UMINUS { .. }, exp } => {
+            s.push('-');
+            push_dumped_operand(exp, e, false, modelica_output, s)?
+        }
+        E::CALL { path, expLst, .. } => {
+            match &**path {
+                Absyn::Path::FULLYQUALIFIED { path } => push_dumped_path(path, modelica_output, s),
+                _ => push_dumped_path(path, modelica_output, s),
+            }
+            s.push('(');
+            for (i, arg) in expLst.iter().enumerate() {
+                if i > 0 {
+                    s.push_str(", ");
+                }
+                if !push_dumped_exp(arg, modelica_output, s)? {
+                    return Ok(false);
+                }
+            }
+            s.push(')');
+            true
+        }
+        _ => false,
+    })
+}
+
+/// `ExpressionDumpTpl.dumpOperand`, with `ExpressionBasics.shouldParenthesize`.
+fn push_dumped_operand(
+    operand: &metamodelica::Ref<DAE::Exp>,
+    operation: &metamodelica::Ref<DAE::Exp>,
+    lhs: bool,
+    modelica_output: bool,
+    s: &mut String,
+) -> Result<bool> {
+    use std::cmp::Ordering;
+    use DAE::Exp as E;
+    use DAE::Operator as O;
+    let paren = match &**operand {
+        E::UNARY { .. } => true,
+        _ => match openmodelica_frontend_dump::ExpressionBasics::priority(operand.clone(), lhs)?
+            .cmp(&openmodelica_frontend_dump::ExpressionBasics::priority(operation.clone(), lhs)?)
+        {
+            Ordering::Greater => true,
+            Ordering::Less => false,
+            Ordering::Equal => match &**operand {
+                E::BINARY { operator, .. } if lhs => matches!(
+                    operator,
+                    O::POW { .. } | O::POW_ARRAY_SCALAR { .. } | O::POW_SCALAR_ARRAY { .. } | O::POW_ARR { .. } | O::POW_ARR2 { .. }
+                ),
+                E::BINARY { operator, .. } => !matches!(
+                    operator,
+                    O::ADD { .. } | O::MUL { .. } | O::ADD_ARR { .. } | O::MUL_ARRAY_SCALAR { .. } | O::ADD_ARRAY_SCALAR { .. }
+                ),
+                E::LBINARY { .. } => false,
+                _ => !lhs,
+            },
+        },
+    };
+    if paren {
+        s.push('(');
+    }
+    let ok = push_dumped_exp(operand, modelica_output, s)?;
+    if paren {
+        s.push(')');
+    }
+    Ok(ok)
+}
+
+/// `AbsynDumpTpl.dumpPath`.
+fn push_dumped_path(path: &Absyn::Path, modelica_output: bool, s: &mut String) {
+    match path {
+        Absyn::Path::FULLYQUALIFIED { path } => {
+            s.push('.');
+            push_dumped_path(path, modelica_output, s);
+        }
+        Absyn::Path::QUALIFIED { name, path } => {
+            s.push_str(name);
+            s.push_str(if modelica_output { "__" } else { "." });
+            push_dumped_path(path, modelica_output, s);
+        }
+        Absyn::Path::IDENT { name } => s.push_str(name),
+    }
 }
 
 /// `ExpressionDumpTpl.dumpCref` for crefs whose subscripts are all `:` or
