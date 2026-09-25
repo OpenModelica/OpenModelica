@@ -228,10 +228,10 @@ pub(crate) const OPT_JAC_FNS: [&str; 6] = [
 /// `nVariablesReal` counts those last, which is what the optimizer's
 /// `index_con = nReal - (nc + ncf)` relies on).
 pub(super) fn real_alg_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimVar> {
-    lst(&vars.algVars)
-        .chain(lst(&vars.discreteAlgVars))
-        .chain(lst(&vars.realOptimizeConstraintsVars))
-        .chain(lst(&vars.realOptimizeFinalConstraintsVars))
+    svs(&vars.algVars)
+        .chain(svs(&vars.discreteAlgVars))
+        .chain(svs(&vars.realOptimizeConstraintsVars))
+        .chain(svs(&vars.realOptimizeFinalConstraintsVars))
         .collect()
 }
 

@@ -9,6 +9,11 @@ pub(crate) fn lst<T: Clone>(l: &List<T>) -> impl Iterator<Item = &T> {
     l.iter()
 }
 
+/// Iterate a `SimVar` list by the records themselves.
+pub(crate) fn svs(l: &List<metamodelica::Ref<SimCodeVar::SimVar>>) -> impl Iterator<Item = &SimCodeVar::SimVar> {
+    l.iter().map(|v| &**v)
+}
+
 /// Record the reason as an `INTERNAL_ERROR` so `getErrorString()` (and OMEdit)
 /// show it and the scripting layer treats the build as failed. Does NOT panic: a
 /// panic traps the wasm instance, after which the buffered error can't be read

@@ -11,7 +11,7 @@ use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::LinLanguage;
 use std::fmt::Write;
 
-use crate::CodegenWasmJit::lst;
+use crate::CodegenWasmJit::{lst, svs};
 
 /// The four frames plus the diagnostic C prints when linearization is off.
 pub(crate) struct Frames {
@@ -182,10 +182,10 @@ pub(crate) fn build_frames(
         return Ok(disabled("Linearization not available with `--daeMode`."));
     }
 
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
-    let inputs: Vec<&SimCodeVar::SimVar> = lst(&vars.inputVars).collect();
-    let outputs: Vec<&SimCodeVar::SimVar> = lst(&vars.outputVars).collect();
-    let algs: Vec<&SimCodeVar::SimVar> = lst(&vars.algVars).collect();
+    let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
+    let inputs: Vec<&SimCodeVar::SimVar> = svs(&vars.inputVars).collect();
+    let outputs: Vec<&SimCodeVar::SimVar> = svs(&vars.outputVars).collect();
+    let algs: Vec<&SimCodeVar::SimVar> = svs(&vars.algVars).collect();
     let m = |name: &str, row: &str, col: &str, r: u32, c: u32| gen_matrix(language, name, row, col, r, c);
     let (a, b, c, d) = (
         m("A", "n", "n", n_states, n_states),
@@ -293,7 +293,7 @@ fn covers_sparsity(jm: &std::sync::Arc<SimCode::JacobianMatrix>, rows: u32) -> b
     let produced: Vec<usize> = crate::CodegenWasmJit::jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
-        .filter_map(crate::CodegenWasmJit::jac_result_row)
+        .filter_map(|v| crate::CodegenWasmJit::jac_result_row(v))
         .collect();
     lst(&jm.sparsity)
         .flat_map(|(_, nz)| lst(nz))
@@ -338,7 +338,7 @@ fn matrix_rows(jm: &std::sync::Arc<SimCode::JacobianMatrix>) -> u32 {
     let results = crate::CodegenWasmJit::jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
-        .filter_map(crate::CodegenWasmJit::jac_result_row)
+        .filter_map(|v| crate::CodegenWasmJit::jac_result_row(v))
         .map(|r| r as u32 + 1)
         .max()
         .unwrap_or(0);
