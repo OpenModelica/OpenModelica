@@ -354,6 +354,17 @@ public
     end if;
   end scalarSlices;
 
+  function containsNamedCref
+    input Expression exp;
+    input UnorderedSet<ComponentRef> names;
+    input output Boolean b;
+  algorithm
+    b := match (b, exp)
+      case (false, Expression.CREF()) then UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), names);
+      else b;
+    end match;
+  end containsNamedCref;
+
   function isLinearSlice
     "local, differentiation-based linearity check for a single equation against a
     list of crefs, for use where no adjacency-matrix solvability info is available
@@ -369,18 +380,23 @@ public
     Expression residual;
     Differentiate.DifferentiationArguments diffArgs;
     Expression derivative;
+    UnorderedSet<ComponentRef> names = UnorderedSet.fromList(list(ComponentRef.stripSubscriptsAll(c) for c in crefs), ComponentRef.hash, ComponentRef.isEqual);
+    list<ComponentRef> occurrences;
   algorithm
     if isSome(residual_opt) then
       SOME(residual) := residual_opt;
+      // differentiate w.r.t. the crefs as they occur (e.g. x[$i1, :] in a for equation), the elements would give zero
+      occurrences := list(c for c guard(UnorderedSet.contains(ComponentRef.stripSubscriptsAll(c), names)) in UnorderedSet.toList(Expression.extractCrefs(residual)));
+      if listEmpty(occurrences) then
+        occurrences := crefs;
+      end if;
       try
-        for cref in crefs loop
+        for cref in occurrences loop
           diffArgs := Differentiate.DifferentiationArguments.simpleCref(cref, funcMap);
           (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-          for other in crefs loop
-            if Expression.containsCref(derivative, other) then
-              linear := false;
-            end if;
-          end for;
+          if Expression.fold(derivative, function containsNamedCref(names = names), false) then
+            linear := false;
+          end if;
         end for;
       else
         // not everything can be differentiated, e.g. functions with function inputs
@@ -408,9 +424,8 @@ public
   algorithm
     funcs := match flag
       case "minimalTearing" then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize};
-      case "cellier"        then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "cellier"        then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, cellier, finalize};
       case "omcTearing"     then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
-      case "cellierArray"   then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, cellier, finalize};
       case "guruTearing"    then {function initialize(varFunc = isNotGuruVar, eqnFunc = noFilterEqn), guru, finalize};
       /* ... New tearing modules have to be added here */
       else fail();
@@ -849,6 +864,12 @@ protected
     end match;
   end cellier;
 
+  function cellierHasRow
+    input Pointer<Equation> eqn;
+    input UnorderedMap<ComponentRef, Integer> map;
+    output Boolean b = UnorderedMap.contains(Equation.getEqnName(eqn), map);
+  end cellierHasRow;
+
   function cellierTearingSet
     input output Tearing strict;
     input Adjacency.Matrix full;
@@ -899,6 +920,14 @@ protected
     if nv <> listLength(loop_vars) + listLength(block_vars) or ne <> listLength(loop_eqns) then
       return;
     end if;
+    // equations without adjacency row (not in the equation map) can not be handled
+    for b in 1:nb loop
+      loop_eqns := listAppend(StrongComponent.getEquations(blocks[b]), loop_eqns);
+    end for;
+    if not List.all(loop_eqns, function cellierHasRow(map = equations.map)) then
+      return;
+    end if;
+    loop_eqns := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
 
     // unit kinds: 1 = loop variable, 3 = solved by a block of minimal tearing
     unit_kind := arrayCreate(nv, 3);
@@ -1046,6 +1075,9 @@ protected
     array<Integer> m_data, mT_data, unknown_rem, eqn_unknown, eqn_size, stamp;
     array<Boolean> known_scal, row_in_loop;
     array<list<tuple<Integer, list<Integer>>>> ready = arrayCreate(4, {});
+    array<list<Integer>> partial_eqns;
+    array<Integer> partial_cov, partial_rank, cover_owner;
+    Boolean is_partial, overlap;
     Integer nv, ne, nb = arrayLength(block_in), start, size, open_units = 0, step = 0, next_block = 1, stamp_id = 0;
     Integer rank, best = 0, u;
     list<Integer> fresh = {}, units = {};
@@ -1067,6 +1099,10 @@ protected
     row_var := arrayCreate(arrayLength(mapping.eqn_StA), -1);
     block_step := arrayCreate(nb, 0);
     stamp := arrayCreate(arrayLength(mapping.var_StA), 0);
+    partial_eqns := arrayCreate(nv, {});
+    partial_cov := arrayCreate(nv, 0);
+    partial_rank := arrayCreate(nv, 0);
+    cover_owner := arrayCreate(arrayLength(mapping.var_StA), 0);
 
     // elements of partially contained variables that are not in the loop are known
     known_scal := arrayCreate(arrayLength(mapping.var_StA), false);
@@ -1124,9 +1160,22 @@ protected
       // check the new candidates
       for e in fresh loop
         stamp_id := stamp_id + 1;
-        (rank, units) := cellierCanAssign(e, eqn_rows[e], eqn_size[e], mapping, m, m_data, known_scal, unknown_rem, eqn_unknown, unit_kind, stamp, stamp_id, row_var, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
-        if rank > 0 then
+        (rank, units, is_partial) := cellierCanAssign(e, eqn_rows[e], eqn_size[e], mapping, m, m_data, known_scal, unknown_rem, eqn_unknown, unit_kind, stamp, stamp_id, row_var, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
+        if rank > 0 and not is_partial then
           ready[rank] := (e, units) :: ready[rank];
+        elseif rank > 0 then
+          // collect equations that solve distinct elements of the unit, the unit is assigned once they cover all of it
+          u := listHead(units);
+          overlap := List.any(eqn_rows[e], function cellierIsCovered(row_var = row_var, cover_owner = cover_owner));
+          if not overlap then
+            for r in eqn_rows[e] loop cover_owner[row_var[r]] := e; end for;
+            partial_eqns[u] := e :: partial_eqns[u];
+            partial_cov[u] := partial_cov[u] + eqn_size[e];
+            partial_rank[u] := max(partial_rank[u], rank);
+            if partial_cov[u] == unknown_rem[u] then
+              ready[partial_rank[u]] := (-u, units) :: ready[partial_rank[u]];
+            end if;
+          end if;
         end if;
       end for;
       fresh := {};
@@ -1137,7 +1186,9 @@ protected
         while not found and not listEmpty(ready[r]) loop
           (best, units) := listHead(ready[r]);
           ready[r] := listRest(ready[r]);
-          if eqn_step[best] == 0 and eqn_unknown[best] == eqn_size[best] then
+          if best < 0 then
+            found := unknown_rem[-best] > 0;
+          elseif eqn_step[best] == 0 and eqn_unknown[best] == eqn_size[best] then
             found := true;
           end if;
         end while;
@@ -1146,8 +1197,10 @@ protected
 
       if found then
         step := step + 1;
-        eqn_step[best] := step;
-        eqn_units[best] := units;
+        for e in (if best < 0 then partial_eqns[-best] else {best}) loop
+          eqn_step[e] := step;
+          eqn_units[e] := units;
+        end for;
         for un in units loop
           fresh := cellierMarkKnown(un, mapping, mT, mT_data, row_in_loop, known_scal, unknown_rem, eqn_unknown, eqn_size, eqn_step, fresh);
           open_units := open_units - 1;
@@ -1165,6 +1218,13 @@ protected
       end if;
     end while;
   end cellierCausalize;
+
+  function cellierIsCovered
+    input Integer r;
+    input array<Integer> row_var;
+    input array<Integer> cover_owner;
+    output Boolean b = cover_owner[row_var[r]] <> 0;
+  end cellierIsCovered;
 
   function cellierIsKnown
     input Integer u;
@@ -1231,6 +1291,7 @@ protected
     input UnorderedMap<Integer, Boolean> probes;
     output Integer rank = 0;
     output list<Integer> units = {};
+    output Boolean is_partial = false "the rows only cover a part of the unit";
   protected
     Integer cnt, sv = 0, u, covered = 0, key;
     ComponentRef name;
@@ -1263,7 +1324,9 @@ protected
         covered := covered + unknown_rem[u];
       end if;
     end for;
-    if covered <> size then
+    // a single unit can also be covered by several equations together
+    is_partial := covered > size and List.hasOneElement(units);
+    if covered <> size and not is_partial then
       units := {};
       return;
     end if;
@@ -1387,7 +1450,7 @@ protected
   end recordNames;
 
   function cellierSelectTear
-    "chooses the unknown unit with the best tearing select, then most open equations, then smallest size"
+    "chooses the unknown unit with the best tearing select, then a start value, then most open equations, then smallest size"
     input Adjacency.Mapping mapping;
     input Adjacency.IntMatrix mT;
     input array<Integer> mT_data;
@@ -1400,11 +1463,14 @@ protected
     output Integer best = 0;
   protected
     Integer start, size, cls, occ, e, best_cls = -1, best_occ = -1, best_size = 0;
+    Boolean has_start, best_start = false;
     array<Integer> seen = arrayCreate(arrayLength(eqn_step), 0);
   algorithm
     for u in 1:arrayLength(unknown_rem) loop
       if unit_kind[u] <> 3 and unknown_rem[u] > 0 then
         cls := Integer(BVariable.getTearingSelect(VariablePointers.getVarAt(vars, u)));
+        // a tear variable without start value would start the iteration at zero
+        has_start := isSome(BVariable.getStartAttribute(VariablePointers.getVarAt(vars, u)));
         occ := 0;
         (start, size) := mapping.var_AtS[u];
         for s in start:start + size - 1 loop
@@ -1420,8 +1486,9 @@ protected
             end for;
           end if;
         end for;
-        if cls > best_cls or (cls == best_cls and (occ > best_occ or (occ == best_occ and unknown_rem[u] < best_size))) then
-          best := u; best_cls := cls; best_occ := occ; best_size := unknown_rem[u];
+        if cls > best_cls or (cls == best_cls and ((has_start and not best_start) or (has_start == best_start
+           and (occ > best_occ or (occ == best_occ and unknown_rem[u] < best_size))))) then
+          best := u; best_cls := cls; best_start := has_start; best_occ := occ; best_size := unknown_rem[u];
         end if;
       end if;
     end for;
