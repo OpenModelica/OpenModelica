@@ -19063,6 +19063,22 @@ fn emit_pat_assign<'a>(
                     is_arc_wrapped(scrut_ty, ctx) || is_arc_wrapped(ty, ctx) || constructor_needs_arc(ty, ctx),
                 _ => false,
             };
+            // A by-value record matched only to copy fields back into existing
+            // variables is read through a borrow of the place, not a copy.
+            let borrow_place = (irrefutable
+                && !outer_arc
+                && !matches!(pat_for_render, TypedPat::Tuple(_))
+                && !matches!(fail_mode, FailureMode::IfLetElse(_))
+                && !pat_has_as_binding(pat_for_render)
+                && {
+                    let mut bound = Vec::new();
+                    pat_collect_all_bindings(pat_for_render, &mut bound);
+                    !bound.is_empty() && bound.iter().all(|n| reassign_pairs.iter().any(|(_, f, _)| f == n))
+                })
+                .then(|| scrut_expr.strip_suffix(".clone()"))
+                .flatten()
+                .filter(|p| p.chars().all(|c| c.is_alphanumeric() || c == '_')
+                    && !reassign_pairs.iter().any(|(orig, _, _)| orig == p));
             let scrut_borrowed = (needs_borrow || outer_arc) && !matches!(pat_for_render, TypedPat::Tuple(_));
             // Render shallow with deferrals for Arc-edge crossings.
             let mut deferrals: Vec<(String, TypedPat, Ty)> = Vec::new();
@@ -19342,6 +19358,8 @@ fn emit_pat_assign<'a>(
                                 writeln!(out, "{indent}let {} = __arc{n}.clone();", escape_ident(v)).unwrap();
                             }
                             writeln!(out, "{indent}let {surface} = &*__arc{n};").unwrap();
+                        } else if let Some(place) = borrow_place.filter(|_| deferrals.is_empty()) {
+                            writeln!(out, "{indent}let {surface} = &{place};").unwrap();
                         } else if needs_borrow {
                             writeln!(out, "{indent}let {surface} = {scrut_for_pat};").unwrap();
                         } else {
