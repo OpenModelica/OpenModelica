@@ -15,7 +15,7 @@ pub(super) fn sync_engine_threading() -> Result<()> {
 /// buffer (so `getErrorString` / OMEdit show it) and the failure is returned so
 /// translation fails — as the other codegen targets do — never a stderr print or
 /// a panic (a panic would trap the wasm instance and lose the buffered message).
-pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
+pub fn translateModel(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let prefix = simCode.fileNamePrefix.to_string();
@@ -198,7 +198,7 @@ pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
 /// separate `wasmtime` process. Native only (the omc wasm build cannot `wasm-merge`).
 /// A failure is recorded to the Error buffer and returned so translation fails.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn emitStandalone(simCode: SimCode::SimCode) -> Result<()> {
+pub fn emitStandalone(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()> {
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let bytes = emit_standalone_module(&simCode).map_err(|e| {
@@ -215,7 +215,7 @@ pub fn emitStandalone(simCode: SimCode::SimCode) -> Result<()> {
 /// The omc wasm build cannot `wasm-merge` the standalone module; record why and
 /// fail so translation reports it rather than emitting a silent empty module.
 #[cfg(target_arch = "wasm32")]
-pub fn emitStandalone(simCode: SimCode::SimCode) -> Result<()> {
+pub fn emitStandalone(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()> {
     let _ = simCode;
     let msg = "CodegenWasmJit: simCodeTarget=wasm (standalone export) is unavailable in the wasm omc build";
     record_error(msg.to_string());

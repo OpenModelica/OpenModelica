@@ -10,7 +10,7 @@ use super::*;
 /// declares CoSimulation alone; the unused ME exports cost ~38 KB against the
 /// 1.28 MB a fourth adapter blob costs every omc.
 pub fn emitCsFmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
@@ -25,7 +25,7 @@ pub fn emitCsFmu(
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
 /// classic me_cs FMU — a single binary and modelIdentifier).
 pub fn emitMeCsFmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
@@ -402,7 +402,7 @@ fn keep_fmu_kernel(prefix: &str, model: &Arc<SimModel>) {
 /// the FMU sources without building them. Lower the model once and keep it, both
 /// for the `buildModelFMU` that follows and as the prepared simulation model, so a
 /// run and an export share one kernel.
-pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_flags_json: ArcStr) -> Result<()> {
+pub fn translateFmu(sim_code: metamodelica::Ref<SimCode::SimCode>, fmu_type: ArcStr, simulation_flags_json: ArcStr) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let kind = fmu_kind(&fmu_type);
@@ -472,7 +472,7 @@ const LS_DAE_MANIFEST: &str = "extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn emit_fmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     model_description: ArcStr,
     ls_dae_manifest: ArcStr,
