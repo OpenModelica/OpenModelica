@@ -171,7 +171,7 @@ pub(crate) fn compile_fnref_cref(
     cref: &DAE::ComponentRef,
     ty: &DAE::Type,
 ) -> Result<()> {
-    let path = ComponentReference::crefToPath(metamodelica::Ref::new(cref.clone()))?;
+    let path = ComponentReference::crefToPath(&metamodelica::Ref::new(cref.clone()))?;
     emit_reference(ctx, &mangle(&path)?, &[], ty, ty)
 }
 

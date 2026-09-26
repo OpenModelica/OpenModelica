@@ -111,7 +111,7 @@ fn fmu_directory() -> bool {
 /// MetaModelica side emits. Not a compiler notification: those reach
 /// `getErrorString()`, where a timing makes every FMU test depend on the clock.
 fn export_phase(name: &str) {
-    let _ = openmodelica_util::ExecStat::execStat(ArcStr::from(name));
+    let _ = openmodelica_util::ExecStat::execStat(&ArcStr::from(name));
 }
 
 /// The platforms `platforms={...}` named besides `"wasm"`.
@@ -260,7 +260,7 @@ pub(super) fn fmi_flag(json: &str, name: &str) -> Option<String> {
 /// loader recovers the component's value reference by adding the offset for the
 /// type the call names (`SimCodeUtil.getFMI2ValueReferenceOffsets`).
 fn fmi2_vr_offsets(sim_code: &SimCode::SimCode) -> Result<String> {
-    let offsets = openmodelica_codegen_util::SimCodeCodegenUtil::getFMI2ValueReferenceOffsets(sim_code.modelInfo.clone());
+    let offsets = openmodelica_codegen_util::SimCodeCodegenUtil::getFMI2ValueReferenceOffsets(&sim_code.modelInfo);
     let [real, integer, boolean, string] = lst(&offsets).collect::<Vec<_>>()[..] else {
         return Err("CodegenWasmJit: expected four FMI 2.0 value-reference offsets");
     };

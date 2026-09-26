@@ -188,7 +188,7 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<metamodelica::Ref<DAE::
         // `traverseDAEEquationsStmts` visits a statement's left-hand side too.
         E::SES_ALGORITHM { statements, .. } => {
             let alg = metamodelica::Ref::new(DAE::Algorithm { statementLst: statements.clone() });
-            let exps = openmodelica_frontend_base::Algorithm::getAllExps(alg).ok()?;
+            let exps = openmodelica_frontend_base::Algorithm::getAllExps(&alg).ok()?;
             lst(&exps).all(|e| exp(e, &mut out)).then_some(out)
         }
         E::SES_WHEN { conditions, whenStmtLst, elseWhen, .. } => {

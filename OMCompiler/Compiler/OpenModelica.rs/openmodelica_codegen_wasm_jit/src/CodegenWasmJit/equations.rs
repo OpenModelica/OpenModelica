@@ -523,7 +523,7 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
             E::SES_SIMPLE_ASSIGN { cref, exp, .. }
             | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, exp, .. }
             | E::SES_FOR_LOOP { cref, exp, .. } => (Some(name(cref)?), exp),
-            E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => (Some(name(&Expression::expCref(lhs.clone())?)?), exp),
+            E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => (Some(name(&Expression::expCref(&lhs)?)?), exp),
             E::SES_RESIDUAL { exp, .. } => (None, exp),
             other => return Err(unsupported(eq_index_of(other), "internal equation type not yet handled")),
         };
@@ -559,7 +559,7 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
                 rhs.extend(uses(exp)?);
             }
             E::SES_ARRAY_CALL_ASSIGN { lhs: l, exp, .. } => {
-                lhs.insert(name(&Expression::expCref(l.clone())?)?);
+                lhs.insert(name(&Expression::expCref(&l)?)?);
                 rhs.extend(uses(exp)?);
             }
             E::SES_ALGORITHM { statements, .. } | E::SES_INVERSE_ALGORITHM { statements, .. } => {

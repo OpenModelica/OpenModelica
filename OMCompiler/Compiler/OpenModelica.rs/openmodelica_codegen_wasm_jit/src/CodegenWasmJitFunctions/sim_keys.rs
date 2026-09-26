@@ -113,7 +113,7 @@ fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
 /// a recorded message. The callers that recover must not record one.
 pub(super) fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
     sim_cref_key(cr).map_err(|e| {
-        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(metamodelica::Ref::new(cr.clone()))
+        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(&metamodelica::Ref::new(cr.clone()))
             .map(|s| s.to_string())
             .unwrap_or_default();
         crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: cannot resolve `{shown}` to a simulation variable"));

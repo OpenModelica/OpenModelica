@@ -54,6 +54,7 @@ metamodelica_derive/Cargo.toml
 metamodelica_derive/src/lib.rs
 mmtorust/Cargo.toml
 mmtorust/src/MM.rs
+mmtorust/src/borrow_params.rs
 mmtorust/src/codegen.rs
 mmtorust/src/const_patterns.rs
 mmtorust/src/dep_analysis.rs

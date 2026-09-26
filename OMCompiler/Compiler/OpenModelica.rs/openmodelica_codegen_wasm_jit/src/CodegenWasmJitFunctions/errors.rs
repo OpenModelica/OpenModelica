@@ -338,8 +338,8 @@ fn push_dumped_operand(
     use DAE::Operator as O;
     let paren = match &**operand {
         E::UNARY { .. } => true,
-        _ => match openmodelica_frontend_dump::ExpressionBasics::priority(operand.clone(), lhs)?
-            .cmp(&openmodelica_frontend_dump::ExpressionBasics::priority(operation.clone(), lhs)?)
+        _ => match openmodelica_frontend_dump::ExpressionBasics::priority(&operand, lhs)?
+            .cmp(&openmodelica_frontend_dump::ExpressionBasics::priority(&operation, lhs)?)
         {
             Ordering::Greater => true,
             Ordering::Less => false,
