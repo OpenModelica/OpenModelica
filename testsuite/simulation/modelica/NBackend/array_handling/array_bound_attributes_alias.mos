@@ -56,9 +56,7 @@ val(cap.T[1], 1.0);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'array_bound_attributes_alias.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
-// LOG_INIT_V        | info    | cap.T(min={1, 2, 3, 4})
 // LOG_INIT          | info    | updating max-values
-// LOG_INIT_V        | info    | cap.T(max={500, 500, 500, 500})
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
@@ -73,13 +71,13 @@ val(cap.T[1], 1.0);
 // |                 | |       | | | [4] Real cap.T[4](start=293.15, nominal=300) = 293.15 (pre: 293.15)
 // |                 | |       | | derivatives variables
 // |                 | |       | | | [5] Real der(cap.T)[1] = -0 (pre: 0)
-// |                 | |       | | | [6] Real der(cap.T)[2] = 0 (pre: 0)
-// |                 | |       | | | [7] Real der(cap.T)[3] = 0 (pre: 0)
+// |                 | |       | | | [6] Real der(cap.T)[2] = -0 (pre: 0)
+// |                 | |       | | | [7] Real der(cap.T)[3] = -0 (pre: 0)
 // |                 | |       | | | [8] Real der(cap.T)[4] = 0 (pre: 0)
 // |                 | |       | | other real variables
 // |                 | |       | | | [9] Real cap.port.Q[1](start=0, nominal=1) = -0 (pre: 0)
-// |                 | |       | | | [10] Real cap.port.Q[2](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [11] Real cap.port.Q[3](start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [10] Real cap.port.Q[2](start=0, nominal=1) = -0 (pre: 0)
+// |                 | |       | | | [11] Real cap.port.Q[3](start=0, nominal=1) = -0 (pre: 0)
 // |                 | |       | | | [12] Real cap.port.Q[4](start=0, nominal=1) = 0 (pre: 0)
 // |                 | |       | | | [13] Real cond.a.T[1](start=288.15, nominal=300) = 293.15 (pre: 288.15)
 // |                 | |       | | | [14] Real cond.a.T[2](start=288.15, nominal=300) = 293.15 (pre: 288.15)
