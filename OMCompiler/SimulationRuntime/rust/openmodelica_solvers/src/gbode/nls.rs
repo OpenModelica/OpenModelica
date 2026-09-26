@@ -52,6 +52,8 @@ pub(super) struct GbNls {
     etas: Vec<f64>,
     /// Evaluate `J` through the model's symbolic Jacobian (colored seeds).
     sym_jac: bool,
+    /// ... or as a whole, through the adjoint or both directions.
+    whole_jac: Option<crate::simflags::JacobianMethod>,
     /// The factorization is stale and `J` must be recomputed.
     call_jac: bool,
     scal: Vec<f64>,
@@ -87,7 +89,14 @@ pub(super) struct GbNls {
 
 impl GbNls {
     /// C's `gbInternalNlsAllocate` for the single-rate case.
-    pub(super) fn new(t: &Tableau, n_states: usize, tol: f64, jac_colors: usize, sym_jac: bool) -> Self {
+    pub(super) fn new(
+        t: &Tableau,
+        n_states: usize,
+        tol: f64,
+        jac_colors: usize,
+        sym_jac: bool,
+        whole_jac: Option<crate::simflags::JacobianMethod>,
+    ) -> Self {
         let size = if t.gm_type == GmType::Implicit { t.n_stages * n_states } else { n_states };
         // C's Newton convergence target `fnewt`.
         let alpha_default: f64 = 3e-2;
@@ -132,6 +141,7 @@ impl GbNls {
             max_newton_it,
             etas: vec![f64::MAX; t.n_stages],
             sym_jac,
+            whole_jac,
             call_jac: true,
             scal: vec![0.0; size],
             j: vec![0.0; n_states * n_states],
@@ -203,6 +213,12 @@ impl GbNls {
         if self.sym_jac && ode.has_jacobian_vector() {
             // C evaluates the ODE at the base point before the column equations.
             ode.eval(time, y, &mut self.fbase)?;
+            if let Some(method) = self.whole_jac {
+                return match ode.jacobian_matrix(time, y, method, &mut self.j) {
+                    true => Ok(()),
+                    false => Err("CodegenWasmJit: gbode: the model could not evaluate its Jacobian"),
+                };
+            }
             let mut seed = vec![0.0; n];
             let mut out = vec![0.0; n];
             for group in &colors {

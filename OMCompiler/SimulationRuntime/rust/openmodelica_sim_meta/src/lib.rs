@@ -1013,6 +1013,9 @@ pub struct OptInfo {
     pub jac_b: Option<OptJac>,
     pub jac_c: Option<OptJac>,
     pub jac_d: Option<OptJac>,
+    /// What C's `runOptimizer` throws before it optimizes anything: a variable
+    /// that is not scalarized, or goal functions the model was compiled without.
+    pub setup_error: Option<String>,
 }
 
 /// Solver statistics filled by the driver and rendered into the simulation log by
@@ -1829,6 +1832,13 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
                     }
                 }
             }
+            match &t.setup_error {
+                None => o.push(0),
+                Some(msg) => {
+                    o.push(1);
+                    put_str(&mut o, msg);
+                }
+            }
         }
     }
     put_u32(&mut o, m.inputs.len() as u32);
@@ -2375,9 +2385,13 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             let jac_b = jac()?;
             let jac_c = jac()?;
             let jac_d = jac()?;
+            let setup_error = match r.u8()? {
+                0 => None,
+                _ => Some(r.string()?),
+            };
             Some(OptInfo {
                 n_con, n_final_con, inputs, loop_inputs, mayer, lagrange, real_names, tgrid,
-                start_time_opt, jac_b, jac_c, jac_d,
+                start_time_opt, jac_b, jac_c, jac_d, setup_error,
             })
         }
     };
@@ -2637,6 +2651,7 @@ mod tests {
                 }),
                 jac_c: None,
                 jac_d: None,
+                setup_error: Some("x is an array".to_string()),
             }),
             inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
             recon: Some(ReconInfo {

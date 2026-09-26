@@ -3,13 +3,20 @@
 # generator becomes Unix Makefiles with the xwin toolchain.
 here=$(dirname "$(readlink -f "$0")")
 source "$here/unix-path.sh"
-args=()
+args=() configure=
 for a; do
   if [ "$a" = "NMake Makefiles" ]; then
+    configure=1
     args+=("Unix Makefiles"
            "-DCMAKE_TOOLCHAIN_FILE=$here/../../OMCompiler/Compiler/OpenModelica.rs/.cmake/xwin-toolchain.cmake")
   else
     args+=("$(unix_path "$a")")
   fi
 done
+# omc writes its installation's Windows paths into the FMU's CMakeLists.txt,
+# such as the prebuilt libSimulationRuntimeRust.a.
+if [ "$configure" ] && [ -f "${args[-1]}/CMakeLists.txt" ]; then
+  z=$(unix_path 'Z:/')
+  sed -i -E "s#([\"}])Z:/#\1${z%/}/#g" "${args[-1]}/CMakeLists.txt"
+fi
 PATH=${PATH//"$here:"/} exec cmake "${args[@]}"

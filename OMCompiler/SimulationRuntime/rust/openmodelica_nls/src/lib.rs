@@ -48,7 +48,9 @@ use counters::{
 };
 use solverflags::Nls;
 use core::cell::UnsafeCell;
-use core::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
+
+use openmodelica_solvers::atomic64::AtomicU64;
 
 /// The parts of a run that belong to the runtime around this solver: how a model
 /// error ends the evaluation, and where a side file goes.
@@ -386,7 +388,7 @@ fn context_stores_guess() -> bool {
 /// C's `simulationInfo->stepSize`, which bounds how far back [`solve_nls`] looks in
 /// a system's solution history. Pushed in by the host, which has the model
 /// description it comes from. 0 leaves the window empty.
-static STEP_SIZE: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+static STEP_SIZE: AtomicU64 = AtomicU64::new(0);
 
 /// C's `simulationInfo->stepSize`, pushed in by the driver that has it.
 pub fn set_step_size(h: f64) {

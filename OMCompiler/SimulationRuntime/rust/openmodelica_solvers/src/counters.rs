@@ -4,7 +4,9 @@
 //!
 //! Indices are an ABI: a wasm host reads them by number.
 
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::Ordering;
+
+use crate::atomic64::AtomicU64;
 
 /// The wasm-jit runtime's allocator, which owns these four and [`STAT_ELEM_PTR`].
 pub const STAT_ALLOC: u32 = 0;

@@ -41,9 +41,7 @@
 #include "systemimpl.h"
 #include "ptolemyio.h"
 #include "util/read_csv.h"
-#ifdef OMC_HAVE_OMC_RESULT
 #include "omc_result.h"
-#endif
 #include <math.h>
 #include <gc.h>
 #include "util/omc_file.h"
@@ -64,7 +62,7 @@ typedef enum {
   MATLAB4,
   PLT,
   CSV,
-  ARROW /* read through libomc_result (OMC_HAVE_OMC_RESULT) */
+  ARROW /* read through libomc_result */
 } PlotFormat;
 const char *PlotFormatStr[] = {"Unknown","MATLAB4","PLT","CSV","ARROW"};
 
@@ -75,9 +73,7 @@ typedef struct {
   ModelicaMatReader matReader;
   FILE *pltReader;
   struct csv_data *csvReader;
-#ifdef OMC_HAVE_OMC_RESULT
   omc_result *arrowReader;
-#endif
 } SimulationResult_Globals;
 
 static SimulationResult_Globals simresglob = {
@@ -91,9 +87,7 @@ static void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
   case MATLAB4: omc_free_matlab4_reader(&simresglob->matReader); break;
   case PLT: fclose(simresglob->pltReader); break;
   case CSV: omc_free_csv_reader(simresglob->csvReader); simresglob->csvReader=NULL; break;
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: omc_result_close(simresglob->arrowReader); simresglob->arrowReader=NULL; break;
-#endif
   default: break;
   }
   simresglob->curFormat = UNKNOWN_PLOT;
@@ -122,9 +116,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   else if (0 == strcmp(filename+len-4, ".mat")) format = MATLAB4;
   else if (0 == strcmp(filename+len-4, ".plt")) format = PLT;
   else if (0 == strcmp(filename+len-4, ".csv")) format = CSV;
-#ifdef OMC_HAVE_OMC_RESULT
   else if (len > 6 && 0 == strcmp(filename+len-6, ".arrow")) format = ARROW;
-#endif
   else {
     msg[0] = filename;
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Unknown result-file suffix of file '%s'"), msg, 1);
@@ -154,7 +146,6 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
       return UNKNOWN_PLOT;
     }
     break;
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: {
     char *error = NULL;
     simresglob->arrowReader = omc_result_open(filename, &error);
@@ -166,7 +157,6 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     }
     break;
   }
-#endif
   default:
     msg[0] = filename;
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s"), msg, 1);
@@ -250,7 +240,6 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
       return pv*w2 + v*w1;
     }
   }
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: {
     if (!omc_result_has_variable(simresglob->arrowReader, varname)) {
       msg[1] = varname;
@@ -272,7 +261,6 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
     }
     return res;
   }
-#endif
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("val() not implemented for plot format: %s\n"), msg, 1);
@@ -303,11 +291,9 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
     if (size == -1) c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to read readSimulationResultSize from file: %s\n"), msg, 1);
     return size;
   }
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: {
     return (int) omc_result_num_rows(simresglob->arrowReader);
   }
-#endif
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("readSimulationResultSize() not implemented for plot format: %s\n"), msg, 1);
@@ -361,7 +347,6 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
     }
     return res;
   }
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: {
     int i;
     for (i=(int)omc_result_num_variables(simresglob->arrowReader)-1; i>=0; i--) {
@@ -372,7 +357,6 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
     }
     return res;
   }
-#endif
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("readSimulationResultSize() not implemented for plot format: %s"), msg, 1);
@@ -406,7 +390,6 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
     free(vars);
     return res;
   }
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: {
     void *res = mmc_mk_nil();
     int i;
@@ -415,7 +398,6 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
     }
     return res;
   }
-#endif
   default: return SimulationResultsImpl__readVars(filename, 0, 0, simresglob);
   }
 }
@@ -489,7 +471,6 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     }
     return res;
   }
-#ifdef OMC_HAVE_OMC_RESULT
   case ARROW: {
     size_t nrows = omc_result_num_rows(simresglob->arrowReader);
     if (dimsize == 0) {
@@ -516,7 +497,6 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     }
     return res;
   }
-#endif
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("readDataSet() not implemented for plot format: %s\n"), msg, 1);
@@ -550,7 +530,6 @@ static int endsWith(const char *s, const char *suffix)
 }
 int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals, int removeDescription, int readAllVars)
 {
-#ifdef OMC_HAVE_OMC_RESULT
   if (endsWith(inFile, ".arrow") || endsWith(outFile, ".arrow")) {
     const char *msg[2] = {"",""};
     char *error = NULL;
@@ -579,7 +558,6 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     }
     return 1;
   }
-#endif
   const char *msg[5] = {"","","","",""};
   void *tmp;
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(inFile, &simresglob)) {

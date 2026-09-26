@@ -9,6 +9,15 @@ set(OMC_SIMRT_DATA_RECONCILIATION_HEADERS
   "dataReconciliation.h"
 )
 
+# Install headers
+install(
+  FILES ${OMC_SIMRT_DATA_RECONCILIATION_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/dataReconciliation)
+
+if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+  return()
+endif()
+
 add_library(OpenModelicaRuntimeCDataReconciliation OBJECT ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES})
 add_library(omc::simrt::simruntime::dataReconciliation ALIAS OpenModelicaRuntimeCDataReconciliation)
 
@@ -30,8 +39,3 @@ if(MINGW)
 elseif(MSVC)
   target_link_libraries(OpenModelicaRuntimeCDataReconciliation PUBLIC omc::3rd::regex)
 endif()
-
-# Install headers
-install(
-  FILES ${OMC_SIMRT_DATA_RECONCILIATION_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/dataReconciliation)

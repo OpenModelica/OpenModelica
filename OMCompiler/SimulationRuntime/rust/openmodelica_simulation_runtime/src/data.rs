@@ -60,6 +60,8 @@ pub struct Extra {
     pub recon_jac_h: u32,
     /// `INDEX_JAC_{B,C,D}`'s seeds then results.
     pub opt_jac: [u32; 3],
+    /// JAC_A's adjoint: seeds, results, then temporaries.
+    pub jac_adj: u32,
     /// One past the last of them.
     pub end: u32,
 }
@@ -83,6 +85,7 @@ pub fn extra(layout: &Layout, md: &MODEL_DATA) -> Extra {
         recon_jac_f: take(jac_f * 8),
         recon_jac_h: take(jac_h * 8),
         opt_jac: opt.map(|w| take(w * 8)),
+        jac_adj: take(JAC_ADJ_WORDS.load(core::sync::atomic::Ordering::Relaxed) * 8),
         end: 0,
     };
     Extra { end: at, ..e }
@@ -656,18 +659,39 @@ pub fn build_rt(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
 /// `analyticJacobians[INDEX_JAC_A]`, the ODE Jacobian the solvers ask for, once the
 /// model's `initialAnalyticJacobianA` has filled it. Null where the model has none.
 pub fn jac_a_ptr(data: *mut DATA) -> *mut JACOBIAN {
-    let cb = unsafe { &*(*data).callback };
-    let si = unsafe { &*(*data).simulationInfo };
-    if cb.INDEX_JAC_A < 0 || si.analyticJacobians.is_null() {
-        return core::ptr::null_mut();
-    }
-    unsafe { si.analyticJacobians.add(cb.INDEX_JAC_A as usize) }
+    jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_A })
 }
 
 /// [`jac_a_ptr`] for the readers.
 pub fn jac_a(data: *mut DATA) -> Option<&'static JACOBIAN> {
     unsafe { jac_a_ptr(data).as_ref() }
 }
+
+/// The adjoint Jacobian: the one a bidirectionally compiled JAC_A links, else
+/// `analyticJacobians[INDEX_JAC_ADJ]` once [`init_jac_a`] initialized it.
+pub fn jac_adj_ptr(data: *mut DATA) -> *mut JACOBIAN {
+    let a = match jac_a(data) {
+        Some(j) if !j.adjointJacobian.is_null() => j.adjointJacobian,
+        _ => jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ }),
+    };
+    match unsafe { a.as_ref() } {
+        Some(j) if j.availability == JACOBIAN_AVAILABLE
+            && !j.seedVars.is_null()
+            && !j.resultVars.is_null()
+            && j.evalColumn.is_some() => a,
+        _ => core::ptr::null_mut(),
+    }
+}
+
+fn jac_ptr(data: *mut DATA, index: c_int) -> *mut JACOBIAN {
+    let si = unsafe { &*(*data).simulationInfo };
+    if index < 0 || si.analyticJacobians.is_null() {
+        return core::ptr::null_mut();
+    }
+    unsafe { si.analyticJacobians.add(index as usize) }
+}
+
+static JAC_ADJ_WORDS: core::sync::atomic::AtomicU32 = core::sync::atomic::AtomicU32::new(0);
 
 /// C's solvers each run `initialAnalyticJacobianA` at setup; the layout needs the
 /// shape before the driver starts, so it runs once here instead.
@@ -683,6 +707,27 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
     if !ok {
         unsafe { (*j).availability = JACOBIAN_NOT_AVAILABLE };
     }
+    // C's `initSymbolicOdeJacobian`: a model compiled bidirectionally initialized its
+    // adjoint along with A; one compiled with the adjoint alone only on request.
+    let cb = unsafe { &*(*data).callback };
+    let adjoint_only = openmodelica_sim_meta::simflags::with_flags(|f| {
+        f.jacobian == Some(openmodelica_sim_meta::simflags::JacobianMethod::ColoredSymJacAdj)
+    });
+    let adj = jac_ptr(data, cb.INDEX_JAC_ADJ);
+    if adjoint_only && unsafe { (*j).adjointJacobian.is_null() } && !adj.is_null() {
+        let ok = match cb.initialAnalyticJacobianADJ {
+            Some(f) => (unsafe { f(data, thread_data, adj) }) == 0,
+            None => false,
+        };
+        if !ok {
+            unsafe { (*adj).availability = JACOBIAN_NOT_AVAILABLE };
+        }
+    }
+    let words = match unsafe { jac_adj_ptr(data).as_ref() } {
+        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVars) as u32,
+        None => 0,
+    };
+    JAC_ADJ_WORDS.store(words, core::sync::atomic::Ordering::Relaxed);
 }
 
 /// The flat words the Jacobian window holds: its seeds then its results.
@@ -841,6 +886,14 @@ pub fn build_regions(rt: &mut RtData) {
             (j.sizeRows * 8) as u32,
             j.resultVars.cast(),
         );
+    }
+    if let Some(a) = unsafe { jac_adj_ptr(rt.data).as_ref() } {
+        let (cols, rows) = ((a.sizeCols * 8) as u32, (a.sizeRows * 8) as u32);
+        direct(x.jac_adj, cols, a.seedVars.cast());
+        direct(x.jac_adj + cols, rows, a.resultVars.cast());
+        if !a.tmpVars.is_null() {
+            direct(x.jac_adj + cols + rows, (a.sizeTmpVars * 8) as u32, a.tmpVars.cast());
+        }
     }
     if l.n_dae_res > 0 {
         direct(l.dae_res_off, l.n_dae_res * 8, unsafe { (*si.daeModeData).residualVars } as *mut c_void);

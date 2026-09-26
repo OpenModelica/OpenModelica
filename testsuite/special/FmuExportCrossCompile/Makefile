@@ -1,6 +1,6 @@
 .PHONY: clean test fmuExportCrossCompile CMakeCrossCompile ExternalDependency
 
-DOCKER_IMAGE := ghcr.io/openmodelica/crossbuild:v1.27.0
+DOCKER_IMAGE := ghcr.io/openmodelica/crossbuild:v1.28.0
 
 # Note: Requires PATH to include:
 # all cross-compilation targets (no OSX)

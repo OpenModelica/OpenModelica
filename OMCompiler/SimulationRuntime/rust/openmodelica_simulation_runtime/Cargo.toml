@@ -1,6 +1,6 @@
 # `libSimulationRuntimeRust`: the simulation runtime the C code generator's output
-# links against under `--simCodeTarget=C+Rust`. The generated sources are byte for
-# byte the ones `--simCodeTarget=C` produces; only the runtime behind them differs.
+# links against under `--simCodeTarget=C`. The generated sources are byte for
+# byte the ones `--simCodeTarget=C.old` produces; only the runtime behind them differs.
 #
 # Nothing here re-implements a driver or an integrator: those, the event handling
 # and the result writers are the same crates the `wasm-jit` target runs

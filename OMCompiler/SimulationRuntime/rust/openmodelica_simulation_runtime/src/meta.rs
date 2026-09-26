@@ -100,7 +100,7 @@ impl Units<'_> {
     }
 }
 
-pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> SimMeta {
+pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, layout: &Layout, prefix: &str) -> SimMeta {
     let md: &MODEL_DATA = unsafe { &*(*data).modelData };
     let si: &SIMULATION_INFO = unsafe { &*(*data).simulationInfo };
     let units = Units { xml };
@@ -234,6 +234,22 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             });
         }
     }
+    // After the sensitivities, as interned ids.
+    let str_col0 = layout.sens_col0() + layout.n_sens;
+    for a in 0..md.nVariablesStringArray as usize {
+        let v = unsafe { &*md.stringVarsData.add(a) };
+        let base = unsafe { *si.stringVarsIndex.add(a) };
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+            vars.push(string_var(
+                name,
+                cstr(v.info.comment),
+                true,
+                MetaKind::Column { col: str_col0 + (base + k) as u32, negate: Neg::None },
+                filter_bits(v.filterOutput, false),
+                v.time_unvarying != 0,
+            ));
+        }
+    }
 
     // Parameters, read out of `SimData` once the run is over.
     for a in 0..md.nParametersRealArray as usize {
@@ -306,6 +322,23 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 unvarying: v.time_unvarying != 0,
                 enumeration: None,
             });
+        }
+    }
+    let string_param = |nameID: usize, k: usize, negate: Neg| {
+        let base = unsafe { *si.stringParamsIndex.add(nameID) } + k;
+        MetaKind::Param { off: layout.sparam_off + base as u32 * 4, wty: WTy::I32, negate }
+    };
+    for a in 0..md.nParametersStringArray as usize {
+        let v = unsafe { &*md.stringParameterData.add(a) };
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+            vars.push(string_var(
+                name,
+                cstr(v.info.comment),
+                false,
+                string_param(a, k, Neg::None),
+                filter_bits(v.filterOutput, false),
+                v.time_unvarying != 0,
+            ));
         }
     }
 
@@ -401,6 +434,20 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             }
         }
     }
+    for a in 0..if md.stringAlias.is_null() { 0 } else { md.nAliasStringArray as usize } {
+        let al = unsafe { &*md.stringAlias.add(a) };
+        let dim = alias_dimension(md, al, 3);
+        for (k, name) in scalar_names(&cstr(al.info.name), dim, false).into_iter().enumerate() {
+            let kind = match al.aliasType {
+                1 => string_param(al.nameID as usize, k, Neg::None),
+                _ => {
+                    let base = unsafe { *si.stringVarsIndex.add(al.nameID as usize) } + k;
+                    MetaKind::Column { col: str_col0 + base as u32, negate: Neg::None }
+                }
+            };
+            vars.push(string_var(name, cstr(al.info.comment), true, kind, filter_bits(al.filterOutput, true), false));
+        }
+    }
 
     let soti = soti_vars(md, si);
     let params = param_vars(md, si);
@@ -449,7 +496,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         lin: crate::linearize::describe(data, layout),
         parmod: crate::parmod::describe(),
         inputs: input_vars(data, md, si, layout, &real_names),
-        opt: crate::optimization::describe(data, layout, real_names),
+        opt: crate::optimization::describe(data, thread_data, layout, real_names),
         recon: crate::datarecon::describe(data, layout, &version),
         prof: crate::info_json::prof_info(data),
     }
@@ -524,9 +571,53 @@ fn jac_a_info(data: *mut DATA, layout: &Layout) -> Option<openmodelica_sim_meta:
         seed_offs: (0..cols).map(|k| layout.nls_jac_off + k * 8).collect(),
         result_offs: (0..n).map(|k| layout.nls_jac_off + (cols + k) * 8).collect(),
         has_constant: j.constantEqns.is_some(),
-        adj: None,
+        adj: jac_adj_info(data, layout, n),
     });
     Some(info)
+}
+
+/// JAC_A's adjoint for `-jacobian=bicoloredSymbolical`: seeded by row through the
+/// window `build_regions` maps, its results by column.
+fn jac_adj_info(data: *mut DATA, layout: &Layout, n: u32) -> Option<openmodelica_sim_meta::JacAdj> {
+    let a = unsafe { crate::data::jac_adj_ptr(data).as_ref()? };
+    let sp = unsafe { a.sparsePattern.as_ref()? };
+    if a.sizeCols != n as usize || a.sizeRows != n as usize || sp.maxColors == 0 {
+        return None;
+    }
+    let mut row_colors = vec![Vec::new(); sp.maxColors as usize];
+    for r in 0..n as usize {
+        let color = unsafe { *sp.colorCols.add(r) } as usize;
+        if color == 0 || color > row_colors.len() {
+            return None;
+        }
+        row_colors[color - 1].push(r as u32);
+    }
+    let base = crate::data::extra(layout, unsafe { &*(*data).modelData }).jac_adj;
+    let tmp = a.sizeTmpVars as u32;
+    Some(openmodelica_sim_meta::JacAdj {
+        seed_offs: (0..n).map(|k| base + k * 8).collect(),
+        result_offs: (0..n).map(|k| base + (n + k) * 8).collect(),
+        zero_offs: (n..2 * n + tmp).map(|k| base + k * 8).collect(),
+        has_constant: a.constantEqns.is_some(),
+        row_colors,
+    })
+}
+
+/// A String signal: it has no unit, and C marks the variables discrete.
+fn string_var(name: String, comment: String, discrete: bool, kind: MetaKind, filter: u8, unvarying: bool) -> MetaVar {
+    MetaVar {
+        name,
+        comment,
+        unit: String::new(),
+        display_unit: String::new(),
+        relative_quantity: false,
+        ty: VarTy::String,
+        discrete,
+        kind,
+        filter,
+        unvarying,
+        enumeration: None,
+    }
 }
 
 /// The dimension of the variable an alias reads, which gives its element names.
@@ -546,6 +637,8 @@ fn alias_dimension(md: &MODEL_DATA, al: &DATA_ALIAS, kind: usize) -> &'static DI
             (1, 1) => &(*md.integerParameterData.add(ix)).dimension,
             (2, 0) => &(*md.booleanVarsData.add(ix)).dimension,
             (2, 1) => &(*md.booleanParameterData.add(ix)).dimension,
+            (3, 0) => &(*md.stringVarsData.add(ix)).dimension,
+            (3, 1) => &(*md.stringParameterData.add(ix)).dimension,
             _ => SCALAR,
         }
     }
@@ -556,7 +649,7 @@ fn descriptions(count: c_long, get: impl Fn(c_int_t) -> Option<String>) -> Vec<S
 }
 
 /// What the `LOG_SOTI` initialization dump walks.
-fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
+pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
     let mut v = SotiVars::default();
     unsafe {
         for a in 0..md.nVariablesRealArray as usize {

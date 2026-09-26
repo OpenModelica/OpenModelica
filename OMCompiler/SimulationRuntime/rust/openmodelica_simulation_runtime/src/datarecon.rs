@@ -5,14 +5,14 @@
 use core::ffi::{c_char, c_int};
 
 use openmodelica_sim_meta::{Layout, Neg, ReconInfo, ReconJac, ReconVar};
+use openmodelica_solvers::atomic64::AtomicU64;
 
 use crate::abi::*;
 use crate::model_data::cstr;
 
 /// `(rows, cols)` of `F` and `H`, packed, from [`initialize`]: the layout needs
 /// them before the driver starts.
-static SHAPE: [core::sync::atomic::AtomicU64; 2] =
-    [core::sync::atomic::AtomicU64::new(0), core::sync::atomic::AtomicU64::new(0)];
+static SHAPE: [AtomicU64; 2] = [AtomicU64::new(0), AtomicU64::new(0)];
 
 fn shape(k: usize) -> Option<(u32, u32)> {
     let v = SHAPE[k].load(core::sync::atomic::Ordering::Relaxed);

@@ -2,7 +2,7 @@
 //! time grid and the three symbolic Jacobians the collocation solver
 //! differentiates through, all as `data->callback` already states them.
 
-use core::ffi::{c_int, c_void};
+use core::ffi::{c_int, c_long, c_void};
 
 use openmodelica_sim_meta::{Layout, OptInfo, OptJac, OptTerm};
 
@@ -161,10 +161,56 @@ fn tgrid(data: *mut DATA, layout: &Layout) -> Vec<u32> {
 }
 
 /// [`SimMeta::opt`]. `real_names` is in scalarized real-variable order.
-pub fn describe(data: *mut DATA, layout: &Layout, real_names: Vec<String>) -> Option<OptInfo> {
+/// `None` for a model translated without Optimica, whose goal functions throw.
+pub fn describe(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    layout: &Layout,
+    real_names: Vec<String>,
+) -> Option<OptInfo> {
     if !is_optimization() {
         return None;
     }
+    let md = unsafe { &*(*data).modelData };
+    if let Some(name) = first_array_variable(md) {
+        let msg = format!(
+            "Optimization does not support array variables, but {name} is an array. Use \
+             --simCodeScalarize=true."
+        );
+        return Some(OptInfo { setup_error: Some(msg), real_names, ..Default::default() });
+    }
+    // C calls them in the optimizer's step, whose catch reports the throw.
+    let mut info = None;
+    openmodelica_solvers::omclog::start_capture();
+    let ok = crate::support::protected(thread_data, crate::support::error_stage::OPTIMIZE, || {
+        info = Some(collect(data, layout));
+    });
+    let _ = openmodelica_solvers::omclog::take_capture();
+    let mut info = info.filter(|_| ok)?;
+    info.real_names = real_names;
+    Some(info)
+}
+
+/// C's `firstArrayVariable` (`optimizer_main.c`): the optimizer maps variables to
+/// optimization variables by scalar index.
+fn first_array_variable(md: &MODEL_DATA) -> Option<String> {
+    fn find<T>(vars: *const T, n: c_long, dim: impl Fn(&T) -> (&DIMENSION_INFO, &VAR_INFO)) -> Option<String> {
+        (0..n.max(0) as usize).find_map(|i| {
+            let (d, info) = dim(unsafe { &*vars.add(i) });
+            (d.numberOfDimensions > 0).then(|| cstr(info.name))
+        })
+    }
+    find(md.realVarsData, md.nVariablesRealArray, |v| (&v.dimension, &v.info))
+        .or_else(|| find(md.integerVarsData, md.nVariablesIntegerArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| find(md.booleanVarsData, md.nVariablesBooleanArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| find(md.stringVarsData, md.nVariablesStringArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| find(md.realParameterData, md.nParametersRealArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| find(md.integerParameterData, md.nParametersIntegerArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| find(md.booleanParameterData, md.nParametersBooleanArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| find(md.stringParameterData, md.nParametersStringArray, |v| (&v.dimension, &v.info)))
+}
+
+fn collect(data: *mut DATA, layout: &Layout) -> OptInfo {
     let md = unsafe { &*(*data).modelData };
     let cb = unsafe { &*(*data).callback };
     let n_u = md.nInputVars.max(0) as usize;
@@ -178,14 +224,14 @@ pub fn describe(data: *mut DATA, layout: &Layout, real_names: Vec<String>) -> Op
         .filter(|&k| loop_idx[k] >= 0)
         .map(|k| (k as u32, loop_idx[k] as u32))
         .collect();
-    Some(OptInfo {
+    OptInfo {
         n_con: md.nOptimizeConstraints.max(0) as u32,
         n_final_con: md.nOptimizeFinalConstraints.max(0) as u32,
         inputs,
         loop_inputs,
         mayer: term(data, false),
         lagrange: term(data, true),
-        real_names,
+        real_names: Vec::new(),
         tgrid: tgrid(data, layout),
         // The Optimica `startTime` class attribute would start a pre-simulation.
         // The code generator emits C's `startTime - 1.0` default and nothing else,
@@ -194,7 +240,8 @@ pub fn describe(data: *mut DATA, layout: &Layout, real_names: Vec<String>) -> Op
         jac_b: jac(data, layout, 0),
         jac_c: jac(data, layout, 1),
         jac_d: jac(data, layout, 2),
-    })
+        setup_error: None,
+    }
 }
 
 /// The parts of `analyticJacobians[INDEX_JAC_<X>]` that

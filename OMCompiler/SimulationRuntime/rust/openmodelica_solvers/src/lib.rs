@@ -62,6 +62,7 @@ macro_rules! omclog_error {
     };
 }
 
+pub mod atomic64;
 pub mod clock;
 pub mod counters;
 pub mod dassl;
@@ -147,6 +148,19 @@ pub trait Ode {
 
     /// Whether [`Ode::jacobian_vector`] answers at all, asked once per assembly.
     fn has_jacobian_vector(&self) -> bool {
+        false
+    }
+
+    /// The whole `df/dy` into `j` (column-major, pattern entries only) through the
+    /// adjoint Jacobian, alone or with the forward one, as `method` says. `false` ⇒
+    /// the model cannot.
+    fn jacobian_matrix(
+        &mut self,
+        _t: f64,
+        _y: &[f64],
+        _method: crate::simflags::JacobianMethod,
+        _j: &mut [f64],
+    ) -> bool {
         false
     }
 

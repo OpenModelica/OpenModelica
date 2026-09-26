@@ -54,7 +54,7 @@
 #include "real_time_sync.h"
 #endif
 
-/* The Rust simulation runtime (`--simCodeTarget=C+Rust`) drives the model from
+/* The Rust simulation runtime (`--simCodeTarget=C`) drives the model from
  * its own loop, so nothing below is ever entered -- and every runtime function
  * it names would otherwise have to exist twice. Compile it away instead; the
  * two callbacks stay valid function pointers that report if anything calls them.

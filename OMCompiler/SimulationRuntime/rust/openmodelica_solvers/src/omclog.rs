@@ -222,6 +222,8 @@ struct State {
     last_stream: Stream,
     /// `-logFormat=xml`: C's `setStreamPrintXML(1)`.
     xml: bool,
+    /// `<message>` elements left open for [`close`].
+    xml_depth: u32,
 }
 
 impl State {
@@ -234,6 +236,7 @@ impl State {
             last_type: [0; N_STREAMS],
             last_stream: UNKNOWN,
             xml: false,
+            xml_depth: 0,
         }
     }
 }
@@ -336,6 +339,16 @@ pub fn set_mask(m: Mask) {
 /// C's `setStreamPrintXML`: write every message as a `<message …>` element.
 pub fn set_xml(v: bool) {
     store::with(|s| s.xml = v);
+}
+
+pub fn is_xml() -> bool {
+    store::with(|s| s.xml)
+}
+
+/// How many `<message>` elements are open. C's `xmltcp` sends only complete
+/// top-level elements.
+pub fn xml_depth() -> u32 {
+    store::with(|s| s.xml_depth)
 }
 
 pub fn mask() -> Mask {
@@ -472,7 +485,9 @@ pub fn close(stream: Stream) {
         if !mask_has(s.use_stream, stream) {
             return false;
         }
-        if !s.xml {
+        if s.xml {
+            s.xml_depth = s.xml_depth.saturating_sub(1);
+        } else {
             s.level[stream as usize] -= 1;
         }
         s.xml
@@ -489,7 +504,9 @@ pub fn close_warning(stream: Stream) {
         if !(mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0) {
             return false;
         }
-        if !s.xml {
+        if s.xml {
+            s.xml_depth = s.xml_depth.saturating_sub(1);
+        } else {
             s.level[stream as usize] -= 1;
         }
         s.xml
@@ -502,8 +519,14 @@ pub fn close_warning(stream: Stream) {
 /// C's `messageText`. A newline in `msg` starts a `subline`: `|` in both header
 /// columns and no level indent, as C's recursive call gives.
 pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+    message_text_used(ty, stream, indent_next, msg, &[]);
+}
+
+/// [`message_text`] with the equation indexes C's `messageXML` lists as
+/// `<used index=…>`; the text layout does not show them.
+pub fn message_text_used(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
     if store::with(|s| s.xml) {
-        return message_xml(ty, stream, indent_next, msg);
+        return message_xml(ty, stream, indent_next, msg, used);
     }
     let mut out = String::new();
     // C prints a message that ends in `\n` as it is: no empty sub-line after it.
@@ -543,7 +566,16 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
 
 /// C's `messageXML`: the whole message as one element's `text` attribute, left
 /// open for [`close`] when `indent_next`.
-fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    let out = xml_element(ty, stream, indent_next, msg, used);
+    if indent_next {
+        store::with(|s| s.xml_depth += 1);
+    }
+    crate::log_line(stream, ty, &out);
+}
+
+/// The element [`message_xml`] writes.
+pub fn xml_element(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) -> String {
     let mut out = format!(
         "<message stream=\"{}\" type=\"{}\" text=\"",
         STREAM_NAME[stream as usize], TYPE_DESC[ty as usize]
@@ -557,8 +589,18 @@ fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             _ => out.push(c),
         }
     }
-    out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
-    crate::log_line(stream, ty, &out);
+    if used.is_empty() {
+        out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
+        return out;
+    }
+    out.push_str("\">\n");
+    for i in used {
+        out.push_str(&format!("<used index=\"{i}\" />\n"));
+    }
+    if !indent_next {
+        out.push_str("</message>\n");
+    }
+    out
 }
 
 /// C's `%<width>.<prec>g`.

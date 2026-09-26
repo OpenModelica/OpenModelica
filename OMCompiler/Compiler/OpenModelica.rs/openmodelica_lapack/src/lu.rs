@@ -3,7 +3,8 @@
 //!
 //! `A` comes back holding the packed `L\U` and `IPIV` the 1-based row
 //! interchanges, the layout `Modelica.Math.Matrices.LU` exposes to Modelica code
-//! directly. `dgetrf_ref` is LAPACK's unblocked `DGETF2` kernel step for step;
+//! directly. `dgetrf2` is the recursive `DGETRF2` reference `DGETRF` factors a
+//! small matrix with, step for step, and `dgetrf_ref` the unblocked `DGETF2`;
 //! faer factors the larger matrices, to the same convention.
 
 
@@ -29,7 +30,83 @@ pub fn dgetrf(m: usize, n: usize, a: &mut [f64], lda: usize, ipiv: &mut [i32]) -
     if m.min(n) >= FAER_LU_MIN {
         return crate::faer_backend::dgetrf(m, n, a, lda, ipiv);
     }
-    dgetrf_ref(m, n, a, lda, ipiv)
+    dgetrf2(m, n, a, 0, lda, ipiv)
+}
+
+/// The port of `DGETRF2` on the `m`×`n` block at `a[off..]`: factor the left half
+/// of the columns, update the right half, factor that, and apply its interchanges
+/// back to the left. Its rounding is reference LAPACK's, which decides whether a
+/// nearly singular system is singular.
+fn dgetrf2(m: usize, n: usize, a: &mut [f64], off: usize, lda: usize, ipiv: &mut [i32]) -> i32 {
+    if m == 0 || n == 0 {
+        return 0;
+    }
+    let ix = |i: usize, j: usize| off + i + j * lda;
+    if m == 1 {
+        ipiv[0] = 1;
+        return (a[ix(0, 0)] == 0.0) as i32;
+    }
+    if n == 1 {
+        let p = idamax(&a[ix(0, 0)..ix(m, 0)]);
+        ipiv[0] = (p + 1) as i32;
+        if a[ix(p, 0)] == 0.0 {
+            return 1;
+        }
+        a.swap(ix(0, 0), ix(p, 0));
+        let piv = a[ix(0, 0)];
+        if abs(piv) >= crate::SAFMIN {
+            dscal(1.0 / piv, &mut a[ix(1, 0)..ix(m, 0)]);
+        } else {
+            for i in 1..m {
+                a[ix(i, 0)] /= piv;
+            }
+        }
+        return 0;
+    }
+    let k = m.min(n);
+    let n1 = k / 2;
+    let mut info = dgetrf2(m, n1, a, off, lda, &mut ipiv[..n1]);
+    swap_pivots(a, ix(0, 0), lda, n1..n, &ipiv[..n1], 0);
+    // DTRSM('L', 'L', 'N', 'U') on A12, then DGEMM's A22 -= A21*A12, in
+    // reference BLAS's loop order.
+    for j in n1..n {
+        for l in 0..n1 {
+            let b = a[ix(l, j)];
+            if b != 0.0 {
+                for i in l + 1..n1 {
+                    a[ix(i, j)] -= b * a[ix(i, l)];
+                }
+            }
+        }
+        for l in 0..n1 {
+            let t = -a[ix(l, j)];
+            for i in n1..m {
+                a[ix(i, j)] += t * a[ix(i, l)];
+            }
+        }
+    }
+    let iinfo = dgetrf2(m - n1, n - n1, a, ix(n1, n1), lda, &mut ipiv[n1..k]);
+    if info == 0 && iinfo > 0 {
+        info = iinfo + n1 as i32;
+    }
+    for p in &mut ipiv[n1..k] {
+        *p += n1 as i32;
+    }
+    swap_pivots(a, ix(0, 0), lda, 0..n1, &ipiv[n1..k], n1);
+    info
+}
+
+/// `DLASWP` over `cols` of the block at `a[off..]`: row `first + i` with the
+/// 1-based pivot row `ipiv[i]`.
+fn swap_pivots(a: &mut [f64], off: usize, lda: usize, cols: core::ops::Range<usize>, ipiv: &[i32], first: usize) {
+    for (i, &p) in ipiv.iter().enumerate() {
+        let (r, p) = (first + i, p as usize - 1);
+        if p != r {
+            for c in cols.clone() {
+                a.swap(off + r + c * lda, off + p + c * lda);
+            }
+        }
+    }
 }
 
 /// The port of `DGETF2`: the small-`n` and faer-free path.
@@ -101,11 +178,11 @@ pub fn dgetrs_ref(
     let notran = opt(trans) == b'N';
     if notran {
         apply_pivots(n, nrhs, ipiv, b, ldb, false);
-        crate::blas::dtrsm("L", "L", "N", "U", n, nrhs, 1.0, a, lda, b, ldb);
-        crate::blas::dtrsm("L", "U", "N", "N", n, nrhs, 1.0, a, lda, b, ldb);
+        crate::blas::dtrsm_ref("L", "L", "N", "U", n, nrhs, 1.0, a, lda, b, ldb);
+        crate::blas::dtrsm_ref("L", "U", "N", "N", n, nrhs, 1.0, a, lda, b, ldb);
     } else {
-        crate::blas::dtrsm("L", "U", "T", "N", n, nrhs, 1.0, a, lda, b, ldb);
-        crate::blas::dtrsm("L", "L", "T", "U", n, nrhs, 1.0, a, lda, b, ldb);
+        crate::blas::dtrsm_ref("L", "U", "T", "N", n, nrhs, 1.0, a, lda, b, ldb);
+        crate::blas::dtrsm_ref("L", "L", "T", "U", n, nrhs, 1.0, a, lda, b, ldb);
         apply_pivots(n, nrhs, ipiv, b, ldb, true);
     }
     0

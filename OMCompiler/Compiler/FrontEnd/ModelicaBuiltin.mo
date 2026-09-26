@@ -2790,7 +2790,7 @@ function translateModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
@@ -2814,7 +2814,7 @@ function buildModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
   input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";

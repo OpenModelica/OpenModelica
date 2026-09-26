@@ -43,14 +43,8 @@
 #include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 #include "Animation/TimeManager.h"
-#ifdef OM_LEGACY_RESULT_READERS
-#include "util/read_matlab4.h"
-#include "util/read_csv.h"
-typedef ModelicaMatReader ResultFileReader;
-#else
 #include "omc_result.h"
 typedef omc::ResultFile ResultFileReader;
-#endif
 
 #include <QDomDocument>
 #include <QTreeView>
@@ -293,13 +287,7 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   QVector<PlotParametricCurve> mPlotParametricCurves;
   QMdiSubWindow *mpLastActiveSubWindow;
-#ifdef OM_LEGACY_RESULT_READERS
-  ModelicaMatReader mModelicaMatReader;
-  csv_data *mpCSVData;
-  QFile mPlotFileReader;
-#else
   omc::ResultFile mResultFile;
-#endif
   QString mOpenedResultFileName;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);
