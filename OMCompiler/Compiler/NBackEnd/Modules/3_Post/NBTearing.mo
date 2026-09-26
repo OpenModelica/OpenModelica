@@ -84,6 +84,7 @@ protected
   //Util imports
   import BackendUtil = NBBackendUtil;
   import StringUtil;
+  import ErrorExt;
 
 public
 
@@ -409,6 +410,7 @@ public
       case "minimalTearing" then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize};
       case "cellier"        then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
       case "omcTearing"     then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "cellierArray"   then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, cellier, finalize};
       case "guruTearing"    then {function initialize(varFunc = isNotGuruVar, eqnFunc = noFilterEqn), guru, finalize};
       /* ... New tearing modules have to be added here */
       else fail();
@@ -818,6 +820,600 @@ protected
     end match;
   end guru;
 
+  function cellier extends Module.tearingInterface;
+    // Cellier style tearing of what minimal tearing left over. Variables are only assigned as a whole
+    // (the part of them that is in the loop), so arrays and records are never split any further.
+    // The inner components of minimal tearing are kept as they are.
+  protected
+    Tearing strict;
+  algorithm
+    comp := match (comp, full)
+      case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL())
+        guard(not listEmpty(strict.iteration_vars) and not listEmpty(strict.residual_eqns)) algorithm
+        comp.strict := cellierTearingSet(strict, full, equations, funcMap);
+      then comp;
+      else comp;
+    end match;
+  end cellier;
+
+  function cellierTearingSet
+    input output Tearing strict;
+    input Adjacency.Matrix full;
+    input EquationPointers equations;
+    input UnorderedMap<Path, Function> funcMap;
+  protected
+    UnorderedMap<Integer, Boolean> probes = UnorderedMap.new<Boolean>(Util.id, intEq);
+    list<Pointer<Variable>> loop_vars, block_vars = {};
+    list<Pointer<Equation>> loop_eqns;
+    VariablePointers vars;
+    EquationPointers eqns;
+    Adjacency.Matrix adj;
+    Adjacency.Mapping mapping;
+    Integer nv, ne, nb, idx, start, size;
+    array<Integer> unit_kind, eqn_glob, owner, eqn_step, row_var, block_step;
+    array<Slice<VariablePointer>> var_slices;
+    array<Slice<EquationPointer>> eqn_slices;
+    array<list<Integer>> block_in, block_out, eqn_rows, eqn_units;
+    array<StrongComponent> blocks;
+    list<Integer> tears, fixed = {}, trial;
+    Option<Integer> opt_idx;
+    Boolean complete;
+    list<tuple<Integer, StrongComponent>> ordered = {};
+    UnorderedSet<Integer> tear_set;
+    array<UnorderedSet<ComponentRef>> occurrences;
+    array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+    Slice<EquationPointer> eqn_slice;
+  algorithm
+    () := match full
+      case Adjacency.FULL() algorithm
+        occurrences := full.occurrences;
+        solvabilities := full.solvabilities;
+      then ();
+      else fail();
+    end match;
+    blocks := strict.innerEquations;
+    nb := arrayLength(blocks);
+    loop_vars := list(Slice.getT(var) for var in strict.iteration_vars);
+    for b in nb:-1:1 loop
+      block_vars := listAppend(StrongComponent.getVariables(blocks[b]), block_vars);
+    end for;
+    loop_eqns := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
+    vars := VariablePointers.fromList(listAppend(loop_vars, block_vars));
+    eqns := EquationPointers.fromList(loop_eqns);
+    nv := VariablePointers.size(vars);
+    ne := EquationPointers.size(eqns);
+    // a variable or equation that occurs more than once can not be handled as one unit
+    if nv <> listLength(loop_vars) + listLength(block_vars) or ne <> listLength(loop_eqns) then
+      return;
+    end if;
+
+    // unit kinds: 1 = loop variable, 3 = solved by a block of minimal tearing
+    unit_kind := arrayCreate(nv, 3);
+    var_slices := arrayCreate(nv, listHead(strict.iteration_vars));
+    for var in strict.iteration_vars loop
+      idx := UnorderedMap.getSafe(BVariable.getVarName(Slice.getT(var)), vars.map, sourceInfo());
+      unit_kind[idx] := 1;
+      var_slices[idx] := var;
+      if Integer(BVariable.getTearingSelect(Slice.getT(var))) == Integer(NFBackendExtension.TearingSelect.ALWAYS) then
+        fixed := idx :: fixed;
+      end if;
+    end for;
+
+    // scalar adjacency of the leftover system, only the rows of the loop count
+    eqn_glob := listArray(list(UnorderedMap.getSafe(Equation.getEqnName(eqn), equations.map, sourceInfo()) for eqn in loop_eqns));
+    adj := Adjacency.Matrix.subFull(full, arrayList(eqn_glob), eqns, vars);
+    adj := Adjacency.Matrix.fullToFinal(adj, vars.map, eqns.map, eqns, NBAdjacency.MatrixStrictness.SORTING);
+    mapping := Util.getOption(Adjacency.Matrix.getMappingOpt(adj));
+    eqn_slices := listArray(strict.residual_eqns);
+    eqn_rows := arrayCreate(ne, {});
+    for i in 1:ne loop
+      eqn_slice := eqn_slices[i];
+      (start, size) := mapping.eqn_AtS[i];
+      eqn_rows[i] := if listEmpty(eqn_slice.indices) then list(start + k for k in 0:size - 1)
+        else list(start + k for k in List.sort(eqn_slice.indices, intGt));
+    end for;
+
+    // blocks of minimal tearing keep their order, they wait for the loop variables they depend on
+    owner := arrayCreate(nv, 0);
+    block_in := arrayCreate(nb, {});
+    block_out := arrayCreate(nb, {});
+    for b in 1:nb loop
+      block_out[b] := list(UnorderedMap.getSafe(BVariable.getVarName(v), vars.map, sourceInfo()) for v in StrongComponent.getVariables(blocks[b]));
+      for o in block_out[b] loop owner[o] := b; end for;
+    end for;
+    for b in 1:nb loop
+      for eqn in StrongComponent.getEquations(blocks[b]) loop
+        for cref in UnorderedSet.toList(occurrences[UnorderedMap.getSafe(Equation.getEqnName(eqn), equations.map, sourceInfo())]) loop
+          opt_idx := UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), vars.map);
+          if isSome(opt_idx) then
+            SOME(idx) := opt_idx;
+            if owner[idx] < b and not listMember(idx, block_in[b]) then
+              block_in[b] := idx :: block_in[b];
+            end if;
+          end if;
+        end for;
+      end for;
+    end for;
+
+    // greedy tearing, then try to remove every tear variable again, biggest first
+    (tears, _, _, _, _, _) := cellierCausalize(fixed, true, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+    for t in List.sort(tears, function cellierSizeLess(var_slices = var_slices)) loop
+      if not listMember(t, fixed) then
+        trial := list(i for i guard(i <> t) in tears);
+        (_, _, _, _, _, complete) := cellierCausalize(trial, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+        if complete then tears := trial; end if;
+      end if;
+    end for;
+    (tears, eqn_step, eqn_units, row_var, block_step, complete) := cellierCausalize(tears, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+
+    if not complete or Array.all(eqn_step, function intEq(i2 = 0)) then
+      return;
+    end if;
+
+    // new inner components in causal order, interleaved with the blocks of minimal tearing
+    for i in 1:ne loop
+      if eqn_step[i] > 0 then
+        ordered := (eqn_step[i], cellierComponent(i, eqn_units[i], eqn_rows[i], row_var, mapping, vars, eqns, var_slices, eqn_slices, solvabilities[eqn_glob[i]])) :: ordered;
+      end if;
+    end for;
+    for b in 1:nb loop
+      ordered := (block_step[b], blocks[b]) :: ordered;
+    end for;
+    ordered := List.sort(ordered, function Util.compareTupleIntGt());
+
+    tear_set := UnorderedSet.fromList(tears, Util.id, intEq);
+    strict.innerEquations := listArray(list(Util.tuple22(tpl) for tpl in ordered));
+    strict.iteration_vars := list(var for var guard(UnorderedSet.contains(UnorderedMap.getSafe(BVariable.getVarName(Slice.getT(var)), vars.map, sourceInfo()), tear_set)) in strict.iteration_vars);
+    strict.residual_eqns  := list(eqn for eqn guard(eqn_step[UnorderedMap.getSafe(Equation.getEqnName(Slice.getT(eqn)), eqns.map, sourceInfo())] == 0) in strict.residual_eqns);
+  end cellierTearingSet;
+
+  function cellierComponent
+    "creates the inner component of an assignment like sorting does"
+    input Integer e;
+    input list<Integer> units;
+    input list<Integer> rows;
+    input array<Integer> row_var;
+    input Adjacency.Mapping mapping;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    input array<Slice<VariablePointer>> var_slices;
+    input array<Slice<EquationPointer>> eqn_slices;
+    input UnorderedMap<ComponentRef, Solvability> solvabilities;
+    output StrongComponent comp;
+  protected
+    Integer u;
+    ComponentRef name;
+  algorithm
+    if not List.hasOneElement(units) then
+      comp := StrongComponent.MULTI_COMPONENT(list(var_slices[i] for i in units), eqn_slices[e], NBSolve.Status.UNPROCESSED);
+    elseif List.hasOneElement(rows) then
+      comp := StrongComponent.createPseudoScalar(rows, row_var, mapping, vars, eqns);
+    else
+      u := listHead(units);
+      name := BVariable.getVarName(VariablePointers.getVarAt(vars, u));
+      comp := StrongComponent.createPseudoSlice(u, e, listHead(cellierOccurrences(name, solvabilities)), rows, row_var, eqns, mapping,
+        Equation.isArrayEquation(EquationPointers.getEqnAt(eqns, e)));
+    end if;
+  end cellierComponent;
+
+  function cellierSizeLess
+    "sorts bigger units first"
+    input Integer u1;
+    input Integer u2;
+    input array<Slice<VariablePointer>> var_slices;
+    output Boolean b = Slice.size(var_slices[u1], function BVariable.size(resize = false)) < Slice.size(var_slices[u2], function BVariable.size(resize = false));
+  end cellierSizeLess;
+
+  function cellierCausalize
+    "causalizes the leftover system for the given tear variables. greedy chooses new tear
+    variables whenever it gets stuck, otherwise it stops and reports the system incomplete."
+    input list<Integer> fixed_tears;
+    input Boolean greedy;
+    input Adjacency.Matrix adj;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    input array<Integer> eqn_glob;
+    input array<list<Integer>> eqn_rows;
+    input array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+    input array<Integer> unit_kind;
+    input array<Slice<VariablePointer>> var_slices;
+    input array<list<Integer>> block_in;
+    input array<list<Integer>> block_out;
+    input UnorderedMap<Path, Function> funcMap;
+    input UnorderedMap<Integer, Boolean> probes "cached solver checks";
+    output list<Integer> tears = fixed_tears;
+    output array<Integer> eqn_step;
+    output array<list<Integer>> eqn_units;
+    output array<Integer> row_var;
+    output array<Integer> block_step;
+    output Boolean complete = true;
+  protected
+    Adjacency.IntMatrix m, mT;
+    Adjacency.Mapping mapping;
+    array<Integer> m_data, mT_data, unknown_rem, eqn_unknown, eqn_size, stamp;
+    array<Boolean> known_scal, row_in_loop;
+    array<list<tuple<Integer, list<Integer>>>> ready = arrayCreate(4, {});
+    Integer nv, ne, nb = arrayLength(block_in), start, size, open_units = 0, step = 0, next_block = 1, stamp_id = 0;
+    Integer rank, best = 0, u;
+    list<Integer> fresh = {}, units = {};
+    Boolean found;
+    Slice<VariablePointer> slice;
+  algorithm
+    () := match adj
+      case Adjacency.Matrix.FINAL() algorithm
+        m := adj.m; mT := adj.mT; mapping := adj.mapping;
+      then ();
+      else fail();
+    end match;
+    m_data := Adjacency.IntMatrix.entries(m);
+    mT_data := Adjacency.IntMatrix.entries(mT);
+    nv := arrayLength(mapping.var_AtS);
+    ne := arrayLength(mapping.eqn_AtS);
+    eqn_step := arrayCreate(ne, 0);
+    eqn_units := arrayCreate(ne, {});
+    row_var := arrayCreate(arrayLength(mapping.eqn_StA), -1);
+    block_step := arrayCreate(nb, 0);
+    stamp := arrayCreate(arrayLength(mapping.var_StA), 0);
+
+    // elements of partially contained variables that are not in the loop are known
+    known_scal := arrayCreate(arrayLength(mapping.var_StA), false);
+    unknown_rem := arrayCreate(nv, 0);
+    for i in 1:nv loop
+      (start, size) := mapping.var_AtS[i];
+      slice := var_slices[i];
+      if unit_kind[i] == 1 and not listEmpty(slice.indices) then
+        for k in 0:size - 1 loop known_scal[start + k] := true; end for;
+        for k in slice.indices loop known_scal[start + k] := false; end for;
+        unknown_rem[i] := listLength(slice.indices);
+      else
+        unknown_rem[i] := size;
+      end if;
+      if unit_kind[i] <> 3 and unknown_rem[i] > 0 then
+        open_units := open_units + 1;
+      end if;
+    end for;
+
+    // unknown entries per equation, an equation can only be assigned if every row has exactly one
+    row_in_loop := arrayCreate(arrayLength(mapping.eqn_StA), false);
+    eqn_unknown := arrayCreate(ne, 0);
+    eqn_size := arrayCreate(ne, 0);
+    for e in 1:ne loop
+      eqn_size[e] := listLength(eqn_rows[e]);
+      for r in eqn_rows[e] loop
+        row_in_loop[r] := true;
+        for p in m.start[r]:m.start[r] + m.len[r] - 1 loop
+          if not known_scal[m_data[p]] then
+            eqn_unknown[e] := eqn_unknown[e] + 1;
+          end if;
+        end for;
+      end for;
+    end for;
+    for e in ne:-1:1 loop
+      if eqn_unknown[e] == eqn_size[e] then fresh := e :: fresh; end if;
+    end for;
+
+    for t in fixed_tears loop
+      fresh := cellierMarkKnown(t, mapping, mT, mT_data, row_in_loop, known_scal, unknown_rem, eqn_unknown, eqn_size, eqn_step, fresh);
+      open_units := open_units - 1;
+    end for;
+
+    while true loop
+      // fire all blocks of minimal tearing that have their inputs
+      while next_block <= nb and List.all(block_in[next_block], function cellierIsKnown(unknown_rem = unknown_rem)) loop
+        step := step + 1;
+        block_step[next_block] := step;
+        for o in block_out[next_block] loop
+          fresh := cellierMarkKnown(o, mapping, mT, mT_data, row_in_loop, known_scal, unknown_rem, eqn_unknown, eqn_size, eqn_step, fresh);
+        end for;
+        next_block := next_block + 1;
+      end while;
+
+      // check the new candidates
+      for e in fresh loop
+        stamp_id := stamp_id + 1;
+        (rank, units) := cellierCanAssign(e, eqn_rows[e], eqn_size[e], mapping, m, m_data, known_scal, unknown_rem, eqn_unknown, unit_kind, stamp, stamp_id, row_var, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
+        if rank > 0 then
+          ready[rank] := (e, units) :: ready[rank];
+        end if;
+      end for;
+      fresh := {};
+
+      // assign the best valid candidate, a candidate stays valid as long as its unknowns do not change
+      found := false;
+      for r in 1:4 loop
+        while not found and not listEmpty(ready[r]) loop
+          (best, units) := listHead(ready[r]);
+          ready[r] := listRest(ready[r]);
+          if eqn_step[best] == 0 and eqn_unknown[best] == eqn_size[best] then
+            found := true;
+          end if;
+        end while;
+        if found then break; end if;
+      end for;
+
+      if found then
+        step := step + 1;
+        eqn_step[best] := step;
+        eqn_units[best] := units;
+        for un in units loop
+          fresh := cellierMarkKnown(un, mapping, mT, mT_data, row_in_loop, known_scal, unknown_rem, eqn_unknown, eqn_size, eqn_step, fresh);
+          open_units := open_units - 1;
+        end for;
+      elseif open_units == 0 then
+        break;
+      elseif greedy then
+        u := cellierSelectTear(mapping, mT, mT_data, row_in_loop, known_scal, unknown_rem, unit_kind, eqn_step, vars);
+        tears := u :: tears;
+        fresh := cellierMarkKnown(u, mapping, mT, mT_data, row_in_loop, known_scal, unknown_rem, eqn_unknown, eqn_size, eqn_step, fresh);
+        open_units := open_units - 1;
+      else
+        complete := false;
+        break;
+      end if;
+    end while;
+  end cellierCausalize;
+
+  function cellierIsKnown
+    input Integer u;
+    input array<Integer> unknown_rem;
+    output Boolean b = unknown_rem[u] == 0;
+  end cellierIsKnown;
+
+  function cellierMarkKnown
+    "marks all scalars of a unit known and collects the equations that might be assignable now"
+    input Integer u;
+    input Adjacency.Mapping mapping;
+    input Adjacency.IntMatrix mT;
+    input array<Integer> mT_data;
+    input array<Boolean> row_in_loop;
+    input array<Boolean> known_scal;
+    input array<Integer> unknown_rem;
+    input array<Integer> eqn_unknown;
+    input array<Integer> eqn_size;
+    input array<Integer> eqn_step;
+    input output list<Integer> fresh;
+  protected
+    Integer start, size, e, r;
+  algorithm
+    (start, size) := mapping.var_AtS[u];
+    for s in start:start + size - 1 loop
+      if not known_scal[s] then
+        arrayUpdate(known_scal, s, true);
+        for p in mT.start[s]:mT.start[s] + mT.len[s] - 1 loop
+          r := mT_data[p];
+          if row_in_loop[r] then
+            e := mapping.eqn_StA[r];
+            arrayUpdate(eqn_unknown, e, eqn_unknown[e] - 1);
+            if eqn_unknown[e] == eqn_size[e] and eqn_step[e] == 0 then
+              fresh := e :: fresh;
+            end if;
+          end if;
+        end for;
+      end if;
+    end for;
+    arrayUpdate(unknown_rem, u, 0);
+  end cellierMarkKnown;
+
+  function cellierCanAssign
+    "returns the solvability rank (0 if not assignable) and the units an equation can be solved for.
+    every row needs exactly one unknown scalar, all distinct and together covering the units."
+    input Integer e;
+    input list<Integer> rows;
+    input Integer size;
+    input Adjacency.Mapping mapping;
+    input Adjacency.IntMatrix m;
+    input array<Integer> m_data;
+    input array<Boolean> known_scal;
+    input array<Integer> unknown_rem;
+    input array<Integer> eqn_unknown;
+    input array<Integer> unit_kind;
+    input array<Integer> stamp;
+    input Integer stamp_id;
+    input array<Integer> row_var;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    input array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+    input array<Integer> eqn_glob;
+    input UnorderedMap<Path, Function> funcMap;
+    input UnorderedMap<Integer, Boolean> probes;
+    output Integer rank = 0;
+    output list<Integer> units = {};
+  protected
+    Integer cnt, sv = 0, u, covered = 0, key;
+    ComponentRef name;
+  algorithm
+    if eqn_unknown[e] <> size then return; end if;
+    for r in rows loop
+      cnt := 0;
+      for p in m.start[r]:m.start[r] + m.len[r] - 1 loop
+        if not known_scal[m_data[p]] then
+          cnt := cnt + 1;
+          sv := m_data[p];
+        end if;
+      end for;
+      if cnt <> 1 then
+        units := {};
+        return;
+      elseif stamp[sv] == stamp_id then
+        units := {};
+        return;
+      end if;
+      arrayUpdate(stamp, sv, stamp_id);
+      arrayUpdate(row_var, r, sv);
+      u := mapping.var_StA[sv];
+      if not listMember(u, units) then
+        if unit_kind[u] <> 1 then
+          units := {};
+          return;
+        end if;
+        units := u :: units;
+        covered := covered + unknown_rem[u];
+      end if;
+    end for;
+    if covered <> size then
+      units := {};
+      return;
+    end if;
+
+    if List.hasOneElement(units) then
+      name := BVariable.getVarName(VariablePointers.getVarAt(vars, listHead(units)));
+      rank := cellierRank(name, solvabilities[eqn_glob[e]]);
+      if rank < 1 or rank > 4 then
+        rank := 0;
+      else
+        // make sure the solver can actually do it
+        key := e * (arrayLength(unit_kind) + 1) + listHead(units);
+        if not UnorderedMap.contains(key, probes) then
+          UnorderedMap.add(key, cellierSolvable(EquationPointers.getEqnAt(eqns, e), name, solvabilities[eqn_glob[e]], funcMap), probes);
+        end if;
+        if not UnorderedMap.getSafe(key, probes, sourceInfo()) then rank := 0; end if;
+      end if;
+    elseif isRecordAssignment(EquationPointers.getEqnAt(eqns, e), list(VariablePointers.getVarAt(vars, i) for i in units)) then
+      rank := 1;
+    end if;
+    if rank == 0 then units := {}; end if;
+  end cellierCanAssign;
+
+  function cellierOccurrences
+    "all crefs of a variable as they occur in an equation"
+    input ComponentRef name;
+    input UnorderedMap<ComponentRef, Solvability> solvabilities;
+    output list<ComponentRef> crefs = list(c for c guard(ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(c), name)) in UnorderedMap.keyList(solvabilities));
+  end cellierOccurrences;
+
+  function cellierSolvable
+    "checks with the solver if the equation can be solved explicitly for the only occurrence of the variable"
+    input Pointer<Equation> eqn_ptr;
+    input ComponentRef name;
+    input UnorderedMap<ComponentRef, Solvability> solvabilities;
+    input UnorderedMap<Path, Function> funcMap;
+    output Boolean b = false;
+  protected
+    list<ComponentRef> crefs = cellierOccurrences(name, solvabilities);
+    Equation eqn = Pointer.access(eqn_ptr);
+    Solve.Status status;
+    Boolean single;
+  algorithm
+    (eqn, single) := match eqn
+      local
+        Equation body;
+      case Equation.FOR_EQUATION(body = {body}) then (body, true);
+      case Equation.FOR_EQUATION() then (eqn, false);
+      else (eqn, true);
+    end match;
+    if single and List.hasOneElement(crefs) then
+      ErrorExt.setCheckpoint(getInstanceName());
+      try
+        (_, status, _) := Solve.solveBody(eqn, listHead(crefs), funcMap);
+        b := status == NBSolve.Status.EXPLICIT;
+      else
+        b := false;
+      end try;
+      ErrorExt.rollBack(getInstanceName());
+    end if;
+  end cellierSolvable;
+
+  function cellierRank
+    "worst solvability rank of all occurrences of a variable, for equations also keyed by subscripted crefs"
+    input ComponentRef name;
+    input UnorderedMap<ComponentRef, Solvability> solvabilities;
+    output Integer rank = 0;
+  protected
+    Integer r;
+  algorithm
+    for tpl in UnorderedMap.toList(solvabilities) loop
+      if ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(Util.tuple21(tpl)), name) then
+        r := Solvability.rank(Util.tuple22(tpl));
+        // unknown solvability makes the whole variable unknown
+        if r == 0 then
+          rank := 0;
+          return;
+        end if;
+        rank := max(rank, r);
+      end if;
+    end for;
+  end cellierRank;
+
+  function isRecordAssignment
+    "true if the record equation has all variables (or their record parents) on the lhs and none on the rhs"
+    input Pointer<Equation> eqn;
+    input list<Pointer<Variable>> vars;
+    output Boolean b = true;
+  protected
+    UnorderedSet<ComponentRef> lhs, rhs;
+    list<ComponentRef> names;
+  algorithm
+    () := match Pointer.access(eqn)
+      local
+        Equation e;
+      case e as Equation.RECORD_EQUATION() algorithm
+        lhs := UnorderedSet.fromList(list(ComponentRef.stripSubscriptsAll(c) for c in UnorderedSet.toList(Expression.extractCrefs(e.lhs))), ComponentRef.hash, ComponentRef.isEqual);
+        rhs := UnorderedSet.fromList(list(ComponentRef.stripSubscriptsAll(c) for c in UnorderedSet.toList(Expression.extractCrefs(e.rhs))), ComponentRef.hash, ComponentRef.isEqual);
+        for var in vars loop
+          names := recordNames(var);
+          if not List.any(names, function UnorderedSet.contains(set = lhs)) or List.any(names, function UnorderedSet.contains(set = rhs)) then
+            b := false;
+          end if;
+        end for;
+      then ();
+      else algorithm b := false; then ();
+    end match;
+  end isRecordAssignment;
+
+  function recordNames
+    "the variable name and the names of all its record parents"
+    input Pointer<Variable> var;
+    output list<ComponentRef> names = {BVariable.getVarName(var)};
+  algorithm
+    names := match BVariable.getParent(var)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then listAppend(names, recordNames(parent));
+      else names;
+    end match;
+  end recordNames;
+
+  function cellierSelectTear
+    "chooses the unknown unit with the best tearing select, then most open equations, then smallest size"
+    input Adjacency.Mapping mapping;
+    input Adjacency.IntMatrix mT;
+    input array<Integer> mT_data;
+    input array<Boolean> row_in_loop;
+    input array<Boolean> known_scal;
+    input array<Integer> unknown_rem;
+    input array<Integer> unit_kind;
+    input array<Integer> eqn_step;
+    input VariablePointers vars;
+    output Integer best = 0;
+  protected
+    Integer start, size, cls, occ, e, best_cls = -1, best_occ = -1, best_size = 0;
+    array<Integer> seen = arrayCreate(arrayLength(eqn_step), 0);
+  algorithm
+    for u in 1:arrayLength(unknown_rem) loop
+      if unit_kind[u] <> 3 and unknown_rem[u] > 0 then
+        cls := Integer(BVariable.getTearingSelect(VariablePointers.getVarAt(vars, u)));
+        occ := 0;
+        (start, size) := mapping.var_AtS[u];
+        for s in start:start + size - 1 loop
+          if not known_scal[s] then
+            for p in mT.start[s]:mT.start[s] + mT.len[s] - 1 loop
+              if row_in_loop[mT_data[p]] then
+                e := mapping.eqn_StA[mT_data[p]];
+                if eqn_step[e] == 0 and seen[e] <> u then
+                  seen[e] := u;
+                  occ := occ + 1;
+                end if;
+              end if;
+            end for;
+          end if;
+        end for;
+        if cls > best_cls or (cls == best_cls and (occ > best_occ or (occ == best_occ and unknown_rem[u] < best_size))) then
+          best := u; best_cls := cls; best_occ := occ; best_size := unknown_rem[u];
+        end if;
+      end if;
+    end for;
+  end cellierSelectTear;
+
   function checkLinearity
     input Adjacency.Matrix full;
     input UnorderedMap<ComponentRef, Integer> v "variables in the algebraic loop";
@@ -927,3 +1523,4 @@ protected
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBTearing;
+

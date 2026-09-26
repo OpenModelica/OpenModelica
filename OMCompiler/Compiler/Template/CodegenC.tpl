@@ -7830,7 +7830,7 @@ template equationGenericAssign(SimEqSystem eq, Context context,
  "Generate a call for a generic for-loop structure with an index-list."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
 <<
 <%modelicaLine(eqInfo(eq))%>
 <%match eq
@@ -7912,7 +7912,7 @@ template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
 <%match eq
 case eqn as SES_GENERIC_ASSIGN() then
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
   <<
     case <%i0%>:
       genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
@@ -8933,7 +8933,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
   (genericCalls |> call =>
     let comment = escapeCComments(simGenericCallString(call))
     let &sub = buffer ""
@@ -9163,7 +9163,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL()
     case IF_GENERIC_CALL()

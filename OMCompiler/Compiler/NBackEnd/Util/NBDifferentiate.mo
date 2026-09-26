@@ -1279,6 +1279,8 @@ public
             end if;
             UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
+        elseif Type.isRecord(exp.ty) and isMixedRecordDerivative(strippedCref, diff_map) then
+          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
         elseif UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
@@ -1412,6 +1414,35 @@ public
     end match;
   end derivativeOfPrefix;
 
+  function isMixedRecordDerivative
+    "true if the fields of a record do not all have derivatives of the same kind as the record itself,
+    e.g. a torn record with seeds and inner variables. It has to be differentiated fieldwise then."
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Boolean b = false;
+  protected
+    Option<ComponentRef> der_opt = UnorderedMap.get(cref, diff_map);
+    String root;
+  algorithm
+    if isSome(der_opt) and BVariable.checkCref(cref, BVariable.isRecord, sourceInfo()) then
+      root := crefRoot(Util.getOption(der_opt));
+      for child in BVariable.getRecordChildrenCref(cref) loop
+        b := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(child), diff_map)
+          local
+            ComponentRef child_der;
+          case SOME(child_der) then crefRoot(child_der) <> root;
+          else true;
+        end match;
+        if b then break; end if;
+      end for;
+    end if;
+  end isMixedRecordDerivative;
+
+  function crefRoot
+    input ComponentRef cref;
+    output String root = listHead(Util.stringSplitAtChar(ComponentRef.toString(cref), "."));
+  end crefRoot;
+
   function differentiateRecordCref
     "A record variable whose fields are differentiated on their own: Record(der(field1), ...)."
     input output Expression exp;
@@ -1461,12 +1492,13 @@ public
     Boolean found;
   algorithm
     res := Expression.makeZero(Expression.typeOf(exp));
+    // subscripts of all parts, e.g. module[i].x for a component array
     (base, subs) := match exp
-      case Expression.CREF() then ComponentRef.stripSubscripts(exp.cref);
+      case Expression.CREF() then (ComponentRef.stripSubscriptsAll(exp.cref), ComponentRef.subscriptsAllFlat(exp.cref));
       else (ComponentRef.EMPTY(), {});
     end match;
     if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
-    base_ty := ComponentRef.getSubscriptedType(base);
+    base_ty := ComponentRef.getSubscriptedType(base, true);
     if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
     elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
     found := false;

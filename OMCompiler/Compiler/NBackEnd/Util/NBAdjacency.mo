@@ -926,11 +926,22 @@ public
           list<UnorderedMap<ComponentRef, Dependency>> deps = {};
           list<UnorderedSet<ComponentRef>> reps = {};
           list<list<ComponentRef>> solved_crefs = {};
+          list<ComponentRef> iter_names;
+          UnorderedSet<ComponentRef> own_iters;
+          UnorderedMap<ComponentRef, Dependencies> seed_elements = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
 
         case FULL() algorithm
           // create the equation name -> index map
           for i in 1:arrayLength(full.equation_names) loop
             UnorderedMap.add(full.equation_names[i], i, index_map);
+          end for;
+
+          // element seeds by variable name, for dependencies with iterators that can not be resolved
+          for key in UnorderedMap.keyList(diff_map) loop
+            if ComponentRef.hasSubscripts(key) and List.all(ComponentRef.subscriptsAllFlat(key), Subscript.isLiteral)
+               and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(key), diff_map) then
+              UnorderedMap.add(ComponentRef.stripSubscriptsAll(key), key :: UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(key), seed_elements, {}), seed_elements);
+            end if;
           end for;
 
           // get only relevant equations
@@ -979,11 +990,14 @@ public
                // create a new dependency map for this row and get all relevant seeds
                 dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
                 rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+                (iter_names, _, _) := Iterator.getFrames(Equation.getForIterator(Pointer.access(eqn)));
+                own_iters := UnorderedSet.fromList(iter_names, ComponentRef.hash, ComponentRef.isEqual);
                 for tpl in local_deps loop
                   // this might lead to duplicate occurrences. can and should not be optimized here
                   // as dependency information might not be combinable. optimize afterwards!
                   // ToDo: combine dependencies
                   (inner_deps, dep, repeated) := tpl;
+                  inner_deps := List.flatten(list(sparsityExpandForeignIterators(c, own_iters, seed_elements) for c in inner_deps));
                   for dep_cref in List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)) loop
                     if filterSet(dep_cref, seed_set) then
                       // Try subscripted key first (NLS with per-element scalar seeds), then
@@ -1020,9 +1034,9 @@ public
                 else
                   inner_deps := UnorderedMap.keyList(full.dependencies[eqn_index]);
                 end if;
-                inner_deps := List.filterOnTrue(inner_deps, function filterSet(set = seed_set));
+                inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
                 for cref in pder_crefs loop
-                  UnorderedMap.add(cref, inner_deps, inner_map);
+                  sparsityAddInner(cref, inner_deps, inner_map);
                 end for;
 
                 if isAdjoint then
@@ -1069,9 +1083,9 @@ public
                 end if;
 
                 // filter inner dependencies for relevant seeds and add
-                inner_deps := List.filterOnTrue(inner_deps, function filterSet(set = seed_set));
+                inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
                 for cref in tmp_crefs loop
-                  UnorderedMap.add(cref, inner_deps, inner_map);
+                  sparsityAddInner(cref, inner_deps, inner_map);
                 end for;
               end if;
             end for;
@@ -1100,6 +1114,48 @@ public
         print(toString(sparsity) + "\n");
       end if;
     end fullToSparsity;
+
+    function sparsityExpandForeignIterators
+      "a dependency with iterators of another (inner) equation depends on all its seed elements"
+      input ComponentRef cref;
+      input UnorderedSet<ComponentRef> own_iters;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> seed_elements "base name -> element seeds";
+      output list<ComponentRef> crefs = {cref};
+    protected
+      ComponentRef base;
+      Type ty;
+    algorithm
+      if not List.all(ComponentRef.subscriptsAllFlat(cref), function sparsityIsOwnSubscript(own_iters = own_iters)) then
+        base := ComponentRef.stripSubscriptsAll(cref);
+        if UnorderedMap.contains(base, seed_elements) then
+          crefs := UnorderedMap.getSafe(base, seed_elements, sourceInfo());
+        else
+          ty := ComponentRef.getSubscriptedType(base);
+          crefs := if Type.isArray(ty) and Type.sizeOf(ty) <= 1024 then ComponentRef.scalarizeAll(base, false) else {base};
+        end if;
+      end if;
+    end sparsityExpandForeignIterators;
+
+    function sparsityIsOwnSubscript
+      input Subscript sub;
+      input UnorderedSet<ComponentRef> own_iters;
+      output Boolean b = Subscript.isLiteral(sub) or Subscript.isWhole(sub) or Subscript.isSliced(sub)
+        or UnorderedSet.all(Expression.extractCrefs(Subscript.toExp(sub)), function UnorderedSet.contains(set = own_iters));
+    end sparsityIsOwnSubscript;
+
+    function sparsityAddInner
+      "sliced inner variables are also added by their name, later equations might use other slices of them"
+      input ComponentRef cref;
+      input list<ComponentRef> deps;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> inner_map;
+    protected
+      ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+    algorithm
+      UnorderedMap.add(cref, deps, inner_map);
+      if not ComponentRef.isEqual(stripped, cref) then
+        UnorderedMap.add(stripped, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(stripped, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
+      end if;
+    end sparsityAddInner;
 
     function upgrade
       "upgrades a matrix using the information provided by the full matrix"
