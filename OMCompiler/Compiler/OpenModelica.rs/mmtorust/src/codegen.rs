@@ -21049,6 +21049,16 @@ impl<'a> UseBeforeDef<'a> {
             E::Match { kind, input, cases, .. } => {
                 self.walk_exp(input, assigned);
                 for c in cases {
+                    // A matchcontinue arm's pattern bindings and case locals are
+                    // locals of its closure, so they shadow the tracked names.
+                    let mut in_arm = assigned.clone();
+                    if matches!(kind, MatchKind::MatchContinue) {
+                        let mut bound = Vec::new();
+                        pat_collect_all_bindings(&c.pattern, &mut bound);
+                        in_arm.extend(bound);
+                        in_arm.extend(c.locals.iter().map(|(n, _, _, _)| n.clone()));
+                    }
+                    let assigned = &in_arm;
                     if let Some(g) = &c.guard { self.walk_exp(g, assigned); }
                     for (_, _, def, _) in &c.locals {
                         if let Some(d) = def { self.walk_exp(d, assigned); }
