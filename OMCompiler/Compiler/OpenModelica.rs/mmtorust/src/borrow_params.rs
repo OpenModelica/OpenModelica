@@ -11,7 +11,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use crate::hierarchy::{NameNode, NodeKind, Ty};
-use crate::typedexp::{self, BinOpKind, MatchKind, TypedExp, TypedPat, TypedStmt};
+use crate::typedexp::{self, BinOpKind, TypedExp, TypedPat, TypedStmt};
 use crate::MM;
 use rayon::prelude::*;
 use openmodelica_ast::Absyn;
@@ -288,10 +288,10 @@ impl Scan<'_, '_> {
                     }
                 }
             }
-            TypedExp::Match { kind, input, cases, as_binding, .. } => {
+            TypedExp::Match { input, cases, as_binding, .. } => {
                 let whole = |p: &TypedPat| matches!(p, TypedPat::Var(_) | TypedPat::As { .. } | TypedPat::Index { .. }
                     | TypedPat::FieldAccess { .. } | TypedPat::Todo(_));
-                let borrowing = matches!(kind, MatchKind::Match) && as_binding.is_none();
+                let borrowing = as_binding.is_none();
                 match &**input {
                     TypedExp::Tuple(elems) if borrowing => {
                         for (i, el) in elems.iter().enumerate() {
