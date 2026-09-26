@@ -5725,6 +5725,47 @@ class is redeclared as. The uses of the definition are returned by
 </html>"));
 end getDefinitionAt;
 
+function getClassDiagram
+  input TypeName className;
+  input String fileName = "" "The file to write the diagram to, if not empty.";
+  input String format = "plantuml" "plantuml, mermaid or drawio.";
+  input Integer depth = 1 "How many levels of used classes to include.";
+  input String exclude[:] = {"Modelica.Icons"} "Classes and packages to leave out.";
+  input Boolean showModifiers = true;
+  output String diagram "The diagram, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns a UML class diagram of <code>className</code>, as <a href=\"https://plantuml.com\">PlantUML</a>
+text, as <a href=\"https://mermaid.js.org\">Mermaid</a> text, which GitHub and GitLab show as a
+diagram in a <code>mermaid</code> code block, or as a <a href=\"https://www.drawio.com\">draw.io</a>
+(diagrams.net) file that can be edited and rearranged.</p>
+<p>The diagram has the class, the classes it extends, directly or not, and the classes it uses
+up to <code>depth</code> levels: the types of its components, and the classes replaceable
+classes default to, are constrained by or are redeclared as. With <code>depth = 0</code> it only
+has the class and its base classes. Class extends (<code>redeclare model extends</code>) and
+redeclared classes declared in a class in the diagram are also in it, together with the classes
+they replace. The names are looked up like in <code>getDefUseChains</code>, without instantiating
+anything, so it also works for packages and partial classes.</p>
+<p>Every class is shown with its full name, how it's declared as stereotype
+(e.g. <code>&laquo;replaceable package&raquo;</code> or <code>&laquo;redeclare function extends&raquo;</code>)
+and partial classes as abstract, with the components and short class definitions declared in it and
+the replaceable classes declared in it that aren't in the diagram. <code>extends</code> and class
+extends are generalizations, labelled with their modifiers, components of a class in the diagram
+are compositions, labelled with their names and dimensions, and short class definitions, constraining
+classes and redeclares in modifiers are dependencies, labelled with what declares them, and a
+redeclared class that doesn't extend the class it replaces depends on it, labelled
+<code>redeclares</code>. Classes declared in a class are nested in it; Mermaid has no nesting, so
+there they are linked to it, labelled <code>nested</code>.</p>
+<p>In the draw.io file every class links to <code>modelica://</code> and its name, and every line
+in the box of a class links to the line in the file of the element it shows, e.g.
+<code>modelica://P.M?lineNumber=12</code>, and for a component also to its name, e.g.
+<code>modelica://P.M?lineNumber=12&amp;element=c</code>.</p>
+<p>The classes in <code>exclude</code> and in the packages in <code>exclude</code> are left out,
+except <code>className</code> itself.
+With <code>showModifiers = false</code> the modifiers and bindings aren't shown.</p>
+</html>"));
+end getClassDiagram;
+
 function reverseLookup
   input TypeName name;
   input TypeName scope = $TypeName(AllLoadedClasses);
