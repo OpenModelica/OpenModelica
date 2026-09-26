@@ -104,7 +104,8 @@ stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString
 // A component of a record the class extends of a class extends adds.
 getDefUseChains(T.PMM.TS.X, fileName = "getDefUseChains5.json");
 stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
-// Of the type a replaceable component is redeclared with, a candidate, also as a named argument.
+// Of the type a replaceable component is redeclared with, a candidate, and as a named argument
+// of a record redeclared in the modifier of an extends, which is not a candidate.
 getDefUseChains(T.MoreData.b, fileName = "getDefUseChains5.json");
 stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
 // A named argument of the constructor of an external object.
@@ -133,7 +134,7 @@ deleteFile("getDefUseChains5.mo"); deleteFile("getDefUseChains5.json");
 // "{\"class\":\"T.PMM.TS.X\", \"definitions\":[{\"name\":\"T.PMM.TS.X\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":28, \"columnStart\":7, \"lineEnd\":28, \"columnEnd\":13, \"nameLine\":28, \"nameColumnStart\":12, \"nameColumnEnd\":12, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":40, \"columnStart\":29, \"lineEnd\":40, \"columnEnd\":29, \"exact\":true, \"text\":\"state.X\", \"part\":2, \"in\":\"T.MA.g\", \"role\":\"binding\"}]}], \"unresolved\":[]}"
 // ""
 // "getDefUseChains5.json"
-// "{\"class\":\"T.MoreData.b\", \"definitions\":[{\"name\":\"T.MoreData.b\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":53, \"columnStart\":5, \"lineEnd\":53, \"columnEnd\":15, \"nameLine\":53, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":60, \"columnStart\":31, \"lineEnd\":60, \"columnEnd\":31, \"exact\":true, \"text\":\"data.b\", \"part\":2, \"in\":\"T.Stack\", \"role\":\"binding\", \"candidate\":true}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":65, \"columnStart\":31, \"lineEnd\":65, \"columnEnd\":31, \"exact\":true, \"text\":\"b\", \"in\":\"T.LF.mk\", \"role\":\"argument\", \"candidate\":true}]}], \"unresolved\":[]}"
+// "{\"class\":\"T.MoreData.b\", \"definitions\":[{\"name\":\"T.MoreData.b\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":53, \"columnStart\":5, \"lineEnd\":53, \"columnEnd\":15, \"nameLine\":53, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":60, \"columnStart\":31, \"lineEnd\":60, \"columnEnd\":31, \"exact\":true, \"text\":\"data.b\", \"part\":2, \"in\":\"T.Stack\", \"role\":\"binding\", \"candidate\":true}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":65, \"columnStart\":31, \"lineEnd\":65, \"columnEnd\":31, \"exact\":true, \"text\":\"b\", \"in\":\"T.LF.mk\", \"role\":\"argument\"}]}], \"unresolved\":[]}"
 // ""
 // "getDefUseChains5.json"
 // "{\"class\":\"T.Table.constructor.fileName\", \"definitions\":[{\"name\":\"T.Table.constructor.fileName\", \"kind\":\"component\", \"type\":\"String\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":71, \"columnStart\":7, \"lineEnd\":71, \"columnEnd\":28, \"nameLine\":71, \"nameColumnStart\":20, \"nameColumnEnd\":27, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":73, \"columnStart\":34, \"lineEnd\":73, \"columnEnd\":41, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.Table.constructor\", \"role\":\"external\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":82, \"columnStart\":31, \"lineEnd\":82, \"columnEnd\":38, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.UseTable\", \"role\":\"argument\"}]}], \"unresolved\":[]}"
