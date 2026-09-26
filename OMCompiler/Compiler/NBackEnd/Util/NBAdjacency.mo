@@ -929,6 +929,7 @@ public
           list<ComponentRef> iter_names;
           UnorderedSet<ComponentRef> own_iters;
           UnorderedMap<ComponentRef, Dependencies> seed_elements = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedSet<ComponentRef> no_iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
         case FULL() algorithm
           // create the equation name -> index map
@@ -973,8 +974,10 @@ public
                     if not filterSet(dep_cref, seed_set) then
                       inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
                       if isSome(inner_opt) then
-                        // keep the cref itself, other elements of the same array might be seeds
-                        inner_deps := dep_cref :: Util.getOption(inner_opt);
+                        // keep the cref itself, other elements of the same array might be seeds.
+                        // iterators of the found dependencies belong to another equation and can not be
+                        // matched with the ones of this equation (e.g. x[i+1] = y[i]), use all elements
+                        inner_deps := dep_cref :: List.flatten(list(sparsityExpandForeignIterators(c, no_iters, seed_elements) for c in Util.getOption(inner_opt)));
                         changed := true;
                       end if;
                     end if;
@@ -1144,14 +1147,16 @@ public
     end sparsityIsOwnSubscript;
 
     function sparsityAddInner
-      "sliced inner variables are also added by their name, later equations might use other slices of them"
+      "sliced inner variables are also added by their name, later equations might use other slices of them.
+      entries are merged, several components can solve parts of the same variable"
       input ComponentRef cref;
       input list<ComponentRef> deps;
       input UnorderedMap<ComponentRef, list<ComponentRef>> inner_map;
     protected
       ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
     algorithm
-      UnorderedMap.add(cref, deps, inner_map);
+      // several components can solve slices of the same variable with the same cref (e.g. x[$i1])
+      UnorderedMap.add(cref, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(cref, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
       if not ComponentRef.isEqual(stripped, cref) then
         UnorderedMap.add(stripped, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(stripped, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
       end if;
