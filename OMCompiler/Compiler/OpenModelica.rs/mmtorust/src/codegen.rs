@@ -21353,17 +21353,27 @@ impl<'a> UseBeforeDef<'a> {
             E::Match { kind, input, cases, .. } => {
                 self.walk_exp(input, assigned);
                 for c in cases {
-                    // A matchcontinue arm's pattern bindings and case locals are
-                    // locals of its closure, so they shadow the tracked names.
+                    // Pattern bindings assign tracked names for the arm. A
+                    // matchcontinue arm's case locals are closure locals, so
+                    // they shadow the tracked names too.
                     let mut in_arm = assigned.clone();
                     if matches!(kind, MatchKind::MatchContinue) {
-                        let mut bound = Vec::new();
-                        pat_collect_all_bindings(&c.pattern, &mut bound);
-                        in_arm.extend(bound);
                         in_arm.extend(c.locals.iter().map(|(n, _, _, _)| n.clone()));
                     }
+                    // The guard runs before a plain match's write-back.
+                    if let Some(g) = &c.guard {
+                        let mut in_guard = in_arm.clone();
+                        if matches!(kind, MatchKind::MatchContinue) {
+                            let mut bound = Vec::new();
+                            pat_collect_all_bindings(&c.pattern, &mut bound);
+                            in_guard.extend(bound);
+                        }
+                        self.walk_exp(g, &in_guard);
+                    }
+                    let mut bound = Vec::new();
+                    pat_collect_all_bindings(&c.pattern, &mut bound);
+                    in_arm.extend(bound);
                     let assigned = &in_arm;
-                    if let Some(g) = &c.guard { self.walk_exp(g, assigned); }
                     for (_, _, def, _) in &c.locals {
                         if let Some(d) = def { self.walk_exp(d, assigned); }
                     }
@@ -21378,14 +21388,25 @@ impl<'a> UseBeforeDef<'a> {
                     if matches!(kind, MatchKind::MatchContinue) {
                         let mut arm_writes = HashSet::new();
                         stmts_assigned_var_names(&c.stmts, &mut arm_writes);
+                        let mut probe = c.clone();
+                        let mut visit = |x: &mut TypedExp| if let TypedExp::Match { cases, .. } = x {
+                            for nc in cases.iter() {
+                                let mut b = Vec::new();
+                                pat_collect_all_bindings(&nc.pattern, &mut b);
+                                arm_writes.extend(b);
+                            }
+                        };
+                        probe.stmts.iter_mut().for_each(|st| walk_stmt_mut(st, &mut visit));
+                        walk_exp_mut(&mut probe.result, &mut visit);
                         for v in &arm_writes { self.read(v, assigned); }
                     }
                     // Arm bodies run conditionally: collect their reads against a
                     // throwaway copy of `assigned` and discard any assignments
                     // they make (they are never definite for the whole match).
                     let mut arm_assigned = assigned.clone();
-                    self.walk_stmts(&c.stmts, &mut arm_assigned);
-                    self.walk_exp(&c.result, assigned);
+                    if self.walk_stmts(&c.stmts, &mut arm_assigned) == UbdFlow::Falls {
+                        self.walk_exp(&c.result, &arm_assigned);
+                    }
                 }
             }
             E::Range { start, step, stop, .. } => {
@@ -21603,6 +21624,17 @@ fn checkpoint_assigned_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<St
             S::Try { body, else_body, checkpoint } => {
                 if *checkpoint {
                     collect_stmts_assigned(body, out);
+                    // Match arms in the closure write back their bindings.
+                    let mut probe = body.clone();
+                    let mut visit = |x: &mut TypedExp| if let TypedExp::Match { cases, .. } = x {
+                        for c in cases.iter() {
+                            let mut b = Vec::new();
+                            pat_collect_all_bindings(&c.pattern, &mut b);
+                            out.extend(b);
+                            stmts_assigned_var_names(&c.stmts, out);
+                        }
+                    };
+                    probe.iter_mut().for_each(|st| walk_stmt_mut(st, &mut visit));
                 }
                 checkpoint_assigned_names(body, out);
                 checkpoint_assigned_names(else_body, out);
