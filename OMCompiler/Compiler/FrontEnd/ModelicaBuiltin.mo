@@ -5653,6 +5653,78 @@ longer has a CORBA interface.</p>
 </html>"));
 end getDefinitions;
 
+function getDefUseChains
+  input TypeName className "A class, or a component declared in a class.";
+  input String fileName = "" "The file to write the JSON to, if not empty.";
+  input TypeName scope = $TypeName(AllLoadedClasses) "The class to look for the uses in.";
+  input Boolean prettyPrint = false;
+  output String chains "The JSON, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the def-use chains of the names in <code>className</code> as JSON: for every
+name used in it or declared in it, where it's declared and everywhere in <code>scope</code>
+it's used. If <code>className</code> is a component, e.g. <code>P.Base.x</code>, only the
+chain of that component is returned.</p>
+<p>The names are looked up with the new frontend like the instantiation would, through
+imports, base classes and redeclares, but without instantiating anything, so it also works
+for packages, partial classes and classes that can't be instantiated. A name looked up
+through a replaceable class is also looked up in the classes it's redeclared as, and those
+uses are marked as <code>candidate</code>.</p>
+<p>The JSON has the definitions, each with its <code>name</code>, <code>kind</code> (class,
+component or iterator), its source span and the position of its name, and its
+<code>uses</code>. A use has the position of the name, the <code>text</code> as written,
+the <code>part</code> of a qualified name that refers to the definition, the class it's
+used <code>in</code> and its <code>role</code> (type, extends, modifier, binding,
+dimension, condition, constrainedby, equation, algorithm, argument, import, annotation,
+classExtends, redeclare, end). If the name isn't found in the source,
+<code>exact</code> is false and the position is the span of what it's used in. The names
+that couldn't be looked up are listed under <code>unresolved</code>.</p>
+</html>"));
+end getDefUseChains;
+
+function getDependencyGraph
+  input TypeName scope = $TypeName(AllLoadedClasses) "The classes to include.";
+  input String fileName = "" "The file to write the JSON to, if not empty.";
+  input Boolean prettyPrint = false;
+  output String graph "The JSON, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the classes in <code>scope</code> and the classes they use as JSON,
+to find out which classes a change of a library affects. The names are looked up like
+in <code>getDefUseChains</code>.</p>
+<p>The JSON has an object <code>classes</code> with a member for each class, named by its
+full name, with its <code>kind</code>, <code>restriction</code>, source span, <code>hash</code>
+and <code>uses</code>. The hash is computed from the source of the class without the classes
+declared in it, comments and whitespace, so it only changes when the class itself changes.
+<code>uses</code> are the full names of the classes it uses, sorted, including the classes
+that declare the components, constants and enumeration literals it uses and the candidates
+of names looked up through replaceable classes. A class is affected by a change if it or
+a class it uses, directly or not, has another hash or other uses.</p>
+</html>"));
+end getDependencyGraph;
+
+function getDefinitionAt
+  input String fileName "A file of a loaded class.";
+  input Integer line;
+  input Integer column "Starting at 1, counting bytes.";
+  input Boolean prettyPrint = false;
+  output String definition;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the definition of the name at a position in a file as JSON, e.g. for go to
+definition in an editor. The names in the innermost class the position is in are looked
+up like in <code>getDefUseChains</code>, and the positions of the names are found in the
+file on disk.</p>
+<p>The JSON has the <code>file</code>, <code>line</code> and <code>column</code>, the
+<code>definition</code> (as in <code>getDefUseChains</code>, without its uses) or
+<code>null</code> if there's no name at the position or it can't be looked up, the
+<code>use</code> of the name at the position or <code>null</code> if it's the declared
+name of the definition, and the <code>candidates</code> in the classes a replaceable
+class is redeclared as. The uses of the definition are returned by
+<code>getDefUseChains</code> with its name.</p>
+</html>"));
+end getDefinitionAt;
+
 function reverseLookup
   input TypeName name;
   input TypeName scope = $TypeName(AllLoadedClasses);

@@ -119,6 +119,7 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
+import NFDefUseChains;
 import NFUsedElements;
 import Obfuscate;
 import OMGraphics;
@@ -3540,6 +3541,15 @@ algorithm
 
     case ("getDefaultOpenCLDevice", {})
       then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
+
+    case ("getDefUseChains", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then ValuesMake.makeString(getDefUseChains(path, str, classpath, b));
+
+    case ("getDependencyGraph", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.BOOL(b)})
+      then ValuesMake.makeString(getDependencyGraph(classpath, str, b));
+
+    case ("getDefinitionAt", {Values.STRING(str), Values.INTEGER(x), Values.INTEGER(y), Values.BOOL(b)})
+      then ValuesMake.makeString(getDefinitionAt(str, x, y, b));
 
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
@@ -8233,6 +8243,231 @@ algorithm
   program := filterUsedClasses(program, used, program);
   cls := InteractiveUtil.getPathedSCodeElementInProgram(classPath, program);
 end getTotalProgramNF;
+
+protected function getDefUseChains
+  "Returns the def-use chains of the names in a class as JSON, or writes them
+   to a file and returns its name."
+  input Absyn.Path className "A class, or a component declared in a class.";
+  input String fileName;
+  input Absyn.Path scope "The class to look for the uses in, or AllLoadedClasses.";
+  input Boolean prettyPrint;
+  output String result;
+protected
+  Absyn.Path cls_path = className;
+  list<Absyn.Path> paths = {};
+  SCode.Program program;
+  SCode.Element cls;
+  list<NFUsedElements.Definition> defs;
+  list<NFUsedElements.Use> uses, unresolved;
+algorithm
+  program := SymbolTable.getSCode();
+
+  // A component gives the chain of the component, the class it's declared in is walked.
+  try
+    cls := InteractiveUtil.getPathedSCodeElementInProgram(className, program);
+    if not SCodeUtil.elementIsClass(cls) then
+      cls_path := AbsynUtil.stripLast(className);
+    end if;
+  else
+    cls_path := AbsynUtil.stripLast(className);
+  end try;
+
+  paths := scopeClassPaths(scope, program);
+
+  if not isAllLoadedClasses(scope) and not AbsynUtil.pathPrefixOf(scope, cls_path) then
+    try
+      cls := InteractiveUtil.getPathedSCodeElementInProgram(cls_path, program);
+      paths := getNestedClassPaths(cls, cls_path, cls_path :: paths);
+    else
+    end try;
+  end if;
+
+  (defs, uses, unresolved) := collectDefUse(paths, program);
+  result := NFDefUseChains.toJSON(AbsynUtil.pathString(className), defs, uses, unresolved,
+    if isAllLoadedClasses(scope) then "" else AbsynUtil.pathString(scope), prettyPrint);
+
+  if not stringEmpty(fileName) then
+    System.writeFile(fileName, result);
+    result := fileName;
+  end if;
+end getDefUseChains;
+
+protected function getDependencyGraph
+  "Returns the classes in a scope, the hashes of their source and the classes
+   they use as JSON, or writes it to a file and returns its name."
+  input Absyn.Path scope "A class, or AllLoadedClasses.";
+  input String fileName;
+  input Boolean prettyPrint;
+  output String result;
+protected
+  SCode.Program program;
+  list<NFUsedElements.Definition> defs;
+  list<NFUsedElements.Use> uses;
+algorithm
+  program := SymbolTable.getSCode();
+  (defs, uses, _) := collectDefUse(scopeClassPaths(scope, program), program);
+  result := NFDefUseChains.dependencyGraphJSON(AbsynUtil.pathString(scope), defs, uses, prettyPrint);
+
+  if not stringEmpty(fileName) then
+    System.writeFile(fileName, result);
+    result := fileName;
+  end if;
+end getDependencyGraph;
+
+protected function getDefinitionAt
+  "Returns the definition of the name at a position in a file as JSON."
+  input String fileName;
+  input Integer line;
+  input Integer column;
+  input Boolean prettyPrint;
+  output String result;
+protected
+  SCode.Program program;
+  Option<tuple<Absyn.Path, String>> found = NONE();
+  Absyn.Path path;
+  String file = fileName, real_path;
+  list<NFUsedElements.Definition> defs = {};
+  list<NFUsedElements.Use> uses = {};
+algorithm
+  program := SymbolTable.getSCode();
+  real_path := System.realpath(fileName);
+
+  for c in program loop
+    found := findClassAt(c, Absyn.IDENT(SCodeUtil.elementName(c)), fileName, real_path, line, column, found);
+  end for;
+
+  // The names in the innermost class the position is in are looked up. The
+  // classes it's in and their class extends and redeclared classes are also
+  // walked, since those replace what the names are looked up through.
+  if isSome(found) then
+    SOME((path, file)) := found;
+    (defs, uses, _) := collectDefUse(path :: enclosingReplacingClasses(path, program), program);
+  end if;
+
+  result := NFDefUseChains.definitionAtJSON(file, line, column, defs, uses, prettyPrint);
+end getDefinitionAt;
+
+protected function enclosingReplacingClasses
+  "Returns the classes a class is in and the class extends and redeclared
+   classes declared in them, outermost first."
+  input Absyn.Path path;
+  input SCode.Program program;
+  output list<Absyn.Path> paths = {};
+protected
+  Absyn.Path p = path;
+  SCode.Element cls;
+algorithm
+  while AbsynUtil.pathIsQual(p) loop
+    p := AbsynUtil.stripLast(p);
+
+    try
+      cls := InteractiveUtil.getPathedSCodeElementInProgram(p, program);
+
+      for e in SCodeUtil.getClassElements(cls) loop
+        if SCodeUtil.elementIsClass(e) and (SCodeUtil.isClassExtends(e) or SCodeUtil.isElementRedeclare(e)) then
+          paths := AbsynUtil.suffixPath(p, SCodeUtil.elementName(e)) :: paths;
+        end if;
+      end for;
+
+      paths := p :: paths;
+    else
+    end try;
+  end while;
+end enclosingReplacingClasses;
+
+protected function findClassAt
+  "Finds the innermost class declared in a file that a position is in, and the
+   name of the file as the class has it."
+  input SCode.Element element;
+  input Absyn.Path path;
+  input String fileName;
+  input String realPath "fileName with a full path.";
+  input Integer line;
+  input Integer column;
+  input output Option<tuple<Absyn.Path, String>> found;
+protected
+  SourceInfo info;
+algorithm
+  if not SCodeUtil.elementIsClass(element) then
+    return;
+  end if;
+
+  info := SCodeUtil.elementInfo(element);
+
+  if (info.fileName == fileName or info.fileName == realPath) and
+     (line > info.lineNumberStart or (line == info.lineNumberStart and column >= info.columnNumberStart)) and
+     (line < info.lineNumberEnd or (line == info.lineNumberEnd and column <= info.columnNumberEnd)) then
+    found := SOME((path, info.fileName));
+  end if;
+
+  // A class in a file of its own is declared in a class in another file.
+  for e in SCodeUtil.getClassElements(element) loop
+    if SCodeUtil.elementIsClass(e) then
+      found := findClassAt(e, AbsynUtil.suffixPath(path, SCodeUtil.elementName(e)),
+        fileName, realPath, line, column, found);
+    end if;
+  end for;
+end findClassAt;
+
+protected function isAllLoadedClasses
+  input Absyn.Path path;
+  output Boolean res = AbsynUtil.pathEqual(path, Absyn.Path.IDENT("AllLoadedClasses"));
+end isAllLoadedClasses;
+
+protected function scopeClassPaths
+  "Returns the paths of a class and all classes declared in it, or of all
+   loaded classes."
+  input Absyn.Path scope;
+  input SCode.Program program;
+  output list<Absyn.Path> paths = {};
+protected
+  SCode.Element cls;
+algorithm
+  if isAllLoadedClasses(scope) then
+    for c in program loop
+      if SCodeUtil.elementIsClass(c) and SCodeUtil.elementName(c) <> "OpenModelica" then
+        paths := getNestedClassPaths(c, Absyn.IDENT(SCodeUtil.elementName(c)),
+          Absyn.IDENT(SCodeUtil.elementName(c)) :: paths);
+      end if;
+    end for;
+  else
+    try
+      cls := InteractiveUtil.getPathedSCodeElementInProgram(scope, program);
+      paths := getNestedClassPaths(cls, scope, {scope});
+    else
+    end try;
+  end if;
+end scopeClassPaths;
+
+protected function collectDefUse
+  "Walks the given classes and returns the definitions and uses of the names in
+   them, see NFUsedElements.collectUses."
+  input list<Absyn.Path> paths "In reverse order.";
+  input SCode.Program program;
+  output list<NFUsedElements.Definition> defs = {};
+  output list<NFUsedElements.Use> uses = {};
+  output list<NFUsedElements.Use> unresolved = {};
+protected
+  SCode.Program builtin_p, annotation_p;
+  Boolean nf_inst;
+algorithm
+  // Only the uses are wanted from the lookups, not their messages.
+  ErrorExt.setCheckpoint(getInstanceName());
+  // The new frontend needs its own builtin classes, also with -d=nonewInst.
+  nf_inst := FlagsUtil.set(Flags.SCODE_INST, true);
+
+  try
+    (_, builtin_p) := FBuiltin.getInitialFunctions();
+    annotation_p := AbsynToSCode.translateAbsyn2SCode(
+      InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    (defs, uses, unresolved) := NFUsedElements.collectUses(listReverse(paths),
+      listAppend(builtin_p, program), annotation_p);
+  else
+  end try;
+
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst);
+  ErrorExt.rollBack(getInstanceName());
+end collectDefUse;
 
 protected function getNestedClassPaths
   "Returns the paths of all classes declared in a class, at any depth."

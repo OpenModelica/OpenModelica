@@ -1,0 +1,117 @@
+// name: getDefUseChains4
+// keywords: def-use, #16931
+// status: correct
+//
+// Tests getDefUseChains with a class that isn't in a file, a name that
+// isn't found, the scope argument and classes that don't exist.
+
+loadString("package E
+  constant Real c = 1;
+  model A
+    Real x = c + undefinedName;
+  end A;
+  model B
+    Real y = c;
+  end B;
+end E;
+", "getDefUseChains4.mo"); getErrorString();
+
+// Without the source the uses have the span of what they're used in.
+getDefUseChains(E.A, prettyPrint = true); getErrorString();
+// Only the uses in E.B.
+getDefUseChains(E.c, scope = E.B); getErrorString();
+getDefUseChains(E.NoSuchClass); getErrorString();
+getDefUseChains(NoSuchPackage.C); getErrorString();
+
+// Result:
+// true
+// ""
+// "{
+//   \"class\": \"E.A\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"E.A\",
+//       \"kind\": \"class\",
+//       \"restriction\": \"model\",
+//       \"file\": \"getDefUseChains4.mo\",
+//       \"lineStart\": 3,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 5,
+//       \"columnEnd\": 8,
+//       \"uses\": [
+//
+//       ]
+//     },
+//     {
+//       \"name\": \"E.A.x\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains4.mo\",
+//       \"lineStart\": 4,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 4,
+//       \"columnEnd\": 31,
+//       \"uses\": [
+//
+//       ]
+//     },
+//     {
+//       \"name\": \"E.c\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains4.mo\",
+//       \"lineStart\": 2,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 2,
+//       \"columnEnd\": 22,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains4.mo\",
+//           \"lineStart\": 4,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 31,
+//           \"exact\": false,
+//           \"text\": \"c\",
+//           \"part\": 1,
+//           \"in\": \"E.A\",
+//           \"role\": \"binding\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains4.mo\",
+//           \"lineStart\": 7,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 15,
+//           \"exact\": false,
+//           \"text\": \"c\",
+//           \"part\": 1,
+//           \"in\": \"E.B\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//     {
+//       \"file\": \"getDefUseChains4.mo\",
+//       \"lineStart\": 4,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 4,
+//       \"columnEnd\": 31,
+//       \"exact\": false,
+//       \"text\": \"undefinedName\",
+//       \"part\": 1,
+//       \"in\": \"E.A\",
+//       \"role\": \"binding\"
+//     }
+//   ]
+// }"
+// ""
+// "{\"class\":\"E.c\", \"definitions\":[{\"name\":\"E.c\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains4.mo\", \"lineStart\":2, \"columnStart\":3, \"lineEnd\":2, \"columnEnd\":22, \"uses\":[{\"file\":\"getDefUseChains4.mo\", \"lineStart\":7, \"columnStart\":5, \"lineEnd\":7, \"columnEnd\":15, \"exact\":false, \"text\":\"c\", \"part\":1, \"in\":\"E.B\", \"role\":\"binding\"}]}], \"unresolved\":[]}"
+// ""
+// "{\"class\":\"E.NoSuchClass\", \"definitions\":[], \"unresolved\":[]}"
+// ""
+// "{\"class\":\"NoSuchPackage.C\", \"definitions\":[], \"unresolved\":[]}"
+// ""
+// endResult

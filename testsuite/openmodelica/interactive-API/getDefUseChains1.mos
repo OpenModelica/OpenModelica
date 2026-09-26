@@ -1,0 +1,174 @@
+// name: getDefUseChains1
+// keywords: def-use, #16931
+// status: correct
+//
+// Tests getDefUseChains with an inherited component used in the derived class,
+// a qualified import and a name used both qualified and unqualified.
+// The model is written to a file since the positions are found in its source.
+
+writeFile("getDefUseChains1.mo", "package P
+  constant Real c = 2;
+  model Base
+    Real x(start = c);
+  end Base;
+  model M
+    extends Base;
+    import P.c;
+    Real y;
+  equation
+    der(x) = -c*x;
+    y = 2*x + P.c;
+  end M;
+end P;
+");
+loadFile("getDefUseChains1.mo"); getErrorString();
+
+// The chains of everything used or declared in P.M, compact, written to a file.
+getDefUseChains(P.M, fileName = "getDefUseChains1.json");
+stringReplace(readFile("getDefUseChains1.json"), cd() + "/", ""); getErrorString();
+
+// Only the chain of the inherited component, which is used in P.M.
+stringReplace(getDefUseChains(P.Base.x, prettyPrint = true), cd() + "/", ""); getErrorString();
+
+// P.c is used as c through the import and as P.c.
+stringReplace(getDefUseChains(P.c, prettyPrint = true), cd() + "/", ""); getErrorString();
+
+deleteFile("getDefUseChains1.mo"); deleteFile("getDefUseChains1.json");
+
+// Result:
+// true
+// true
+// ""
+// "getDefUseChains1.json"
+// "{\"class\":\"P.M\", \"definitions\":[{\"name\":\"P\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"getDefUseChains1.mo\", \"lineStart\":1, \"columnStart\":1, \"lineEnd\":14, \"columnEnd\":6, \"nameLine\":1, \"nameColumnStart\":9, \"nameColumnEnd\":9, \"uses\":[{\"file\":\"getDefUseChains1.mo\", \"lineStart\":8, \"columnStart\":12, \"lineEnd\":8, \"columnEnd\":12, \"exact\":true, \"text\":\"P.c\", \"part\":1, \"in\":\"P.M\", \"role\":\"import\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":12, \"columnStart\":15, \"lineEnd\":12, \"columnEnd\":15, \"exact\":true, \"text\":\"P.c\", \"part\":1, \"in\":\"P.M\", \"role\":\"equation\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":14, \"columnStart\":5, \"lineEnd\":14, \"columnEnd\":5, \"exact\":true, \"text\":\"P\", \"in\":\"P\", \"role\":\"end\"}]}, {\"name\":\"P.Base\", \"kind\":\"class\", \"restriction\":\"model\", \"file\":\"getDefUseChains1.mo\", \"lineStart\":3, \"columnStart\":3, \"lineEnd\":5, \"columnEnd\":11, \"nameLine\":3, \"nameColumnStart\":9, \"nameColumnEnd\":12, \"uses\":[{\"file\":\"getDefUseChains1.mo\", \"lineStart\":5, \"columnStart\":7, \"lineEnd\":5, \"columnEnd\":10, \"exact\":true, \"text\":\"Base\", \"in\":\"P.Base\", \"role\":\"end\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":7, \"columnStart\":13, \"lineEnd\":7, \"columnEnd\":16, \"exact\":true, \"text\":\"Base\", \"in\":\"P.M\", \"role\":\"extends\"}]}, {\"name\":\"P.Base.x\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains1.mo\", \"lineStart\":4, \"columnStart\":5, \"lineEnd\":4, \"columnEnd\":22, \"nameLine\":4, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains1.mo\", \"lineStart\":11, \"columnStart\":9, \"lineEnd\":11, \"columnEnd\":9, \"exact\":true, \"text\":\"x\", \"in\":\"P.M\", \"role\":\"equation\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":11, \"columnStart\":17, \"lineEnd\":11, \"columnEnd\":17, \"exact\":true, \"text\":\"x\", \"in\":\"P.M\", \"role\":\"equation\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":12, \"columnStart\":11, \"lineEnd\":12, \"columnEnd\":11, \"exact\":true, \"text\":\"x\", \"in\":\"P.M\", \"role\":\"equation\"}]}, {\"name\":\"P.M\", \"kind\":\"class\", \"restriction\":\"model\", \"file\":\"getDefUseChains1.mo\", \"lineStart\":6, \"columnStart\":3, \"lineEnd\":13, \"columnEnd\":8, \"nameLine\":6, \"nameColumnStart\":9, \"nameColumnEnd\":9, \"uses\":[{\"file\":\"getDefUseChains1.mo\", \"lineStart\":13, \"columnStart\":7, \"lineEnd\":13, \"columnEnd\":7, \"exact\":true, \"text\":\"M\", \"in\":\"P.M\", \"role\":\"end\"}]}, {\"name\":\"P.M.y\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains1.mo\", \"lineStart\":9, \"columnStart\":5, \"lineEnd\":9, \"columnEnd\":11, \"nameLine\":9, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains1.mo\", \"lineStart\":12, \"columnStart\":5, \"lineEnd\":12, \"columnEnd\":5, \"exact\":true, \"text\":\"y\", \"in\":\"P.M\", \"role\":\"equation\"}]}, {\"name\":\"P.c\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains1.mo\", \"lineStart\":2, \"columnStart\":3, \"lineEnd\":2, \"columnEnd\":22, \"nameLine\":2, \"nameColumnStart\":17, \"nameColumnEnd\":17, \"uses\":[{\"file\":\"getDefUseChains1.mo\", \"lineStart\":4, \"columnStart\":20, \"lineEnd\":4, \"columnEnd\":20, \"exact\":true, \"text\":\"c\", \"in\":\"P.Base\", \"role\":\"binding\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":8, \"columnStart\":14, \"lineEnd\":8, \"columnEnd\":14, \"exact\":true, \"text\":\"P.c\", \"part\":2, \"in\":\"P.M\", \"role\":\"import\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":11, \"columnStart\":15, \"lineEnd\":11, \"columnEnd\":15, \"exact\":true, \"text\":\"c\", \"in\":\"P.M\", \"role\":\"equation\"}, {\"file\":\"getDefUseChains1.mo\", \"lineStart\":12, \"columnStart\":17, \"lineEnd\":12, \"columnEnd\":17, \"exact\":true, \"text\":\"P.c\", \"part\":2, \"in\":\"P.M\", \"role\":\"equation\"}]}], \"unresolved\":[]}"
+// ""
+// "{
+//   \"class\": \"P.Base.x\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"P.Base.x\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains1.mo\",
+//       \"lineStart\": 4,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 4,
+//       \"columnEnd\": 22,
+//       \"nameLine\": 4,
+//       \"nameColumnStart\": 10,
+//       \"nameColumnEnd\": 10,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 11,
+//           \"columnStart\": 9,
+//           \"lineEnd\": 11,
+//           \"columnEnd\": 9,
+//           \"exact\": true,
+//           \"text\": \"x\",
+//           \"in\": \"P.M\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 11,
+//           \"columnStart\": 17,
+//           \"lineEnd\": 11,
+//           \"columnEnd\": 17,
+//           \"exact\": true,
+//           \"text\": \"x\",
+//           \"in\": \"P.M\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 12,
+//           \"columnStart\": 11,
+//           \"lineEnd\": 12,
+//           \"columnEnd\": 11,
+//           \"exact\": true,
+//           \"text\": \"x\",
+//           \"in\": \"P.M\",
+//           \"role\": \"equation\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"P.c\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"P.c\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains1.mo\",
+//       \"lineStart\": 2,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 2,
+//       \"columnEnd\": 22,
+//       \"nameLine\": 2,
+//       \"nameColumnStart\": 17,
+//       \"nameColumnEnd\": 17,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 4,
+//           \"columnStart\": 20,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 20,
+//           \"exact\": true,
+//           \"text\": \"c\",
+//           \"in\": \"P.Base\",
+//           \"role\": \"binding\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 8,
+//           \"columnStart\": 14,
+//           \"lineEnd\": 8,
+//           \"columnEnd\": 14,
+//           \"exact\": true,
+//           \"text\": \"P.c\",
+//           \"part\": 2,
+//           \"in\": \"P.M\",
+//           \"role\": \"import\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 11,
+//           \"columnStart\": 15,
+//           \"lineEnd\": 11,
+//           \"columnEnd\": 15,
+//           \"exact\": true,
+//           \"text\": \"c\",
+//           \"in\": \"P.M\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains1.mo\",
+//           \"lineStart\": 12,
+//           \"columnStart\": 17,
+//           \"lineEnd\": 12,
+//           \"columnEnd\": 17,
+//           \"exact\": true,
+//           \"text\": \"P.c\",
+//           \"part\": 2,
+//           \"in\": \"P.M\",
+//           \"role\": \"equation\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// true
+// true
+// endResult

@@ -1,0 +1,301 @@
+// name: getDefUseChains3
+// keywords: def-use, #16931
+// status: correct
+//
+// Tests getDefUseChains with a replaceable package, the classes it's redeclared
+// as (candidates), a class extends, a renaming import and a name used both in
+// the dimensions and in the binding of a component.
+
+writeFile("getDefUseChains3.mo", "package R
+  partial package PartialMedium
+    constant Integer nX = 1;
+    replaceable function h
+      input Real x;
+      output Real y = x;
+    end h;
+  end PartialMedium;
+  package Water
+    extends PartialMedium(nX = 2);
+    redeclare function extends h
+    algorithm
+      y := 2*x;
+    end h;
+  end Water;
+  model Pipe
+    replaceable package Medium = PartialMedium;
+    Real z[Medium.nX] = fill(Medium.h(1), Medium.nX);
+  end Pipe;
+  model System
+    import W = R.Water;
+    Pipe p(redeclare package Medium = W);
+    Integer n = W.nX;
+    Real q = R.Water.h(2);
+  end System;
+end R;
+");
+loadFile("getDefUseChains3.mo"); getErrorString();
+
+// The class extends, its x and y are the ones of the function it extends.
+// Medium.h in Pipe is R.Water.h if Medium is redeclared as R.Water, a candidate.
+stringReplace(getDefUseChains(R.Water.h, prettyPrint = true), cd() + "/", ""); getErrorString();
+// The dimension comes before the binding.
+stringReplace(getDefUseChains(R.PartialMedium.nX, prettyPrint = true), cd() + "/", ""); getErrorString();
+// Used through the renaming import.
+getDefUseChains(R.Water, fileName = "getDefUseChains3.json");
+stringReplace(readFile("getDefUseChains3.json"), cd() + "/", ""); getErrorString();
+
+deleteFile("getDefUseChains3.mo"); deleteFile("getDefUseChains3.json");
+
+// Result:
+// true
+// true
+// ""
+// "{
+//   \"class\": \"R.Water.h\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"R.PartialMedium.h\",
+//       \"kind\": \"class\",
+//       \"restriction\": \"function\",
+//       \"file\": \"getDefUseChains3.mo\",
+//       \"lineStart\": 4,
+//       \"columnStart\": 17,
+//       \"lineEnd\": 7,
+//       \"columnEnd\": 10,
+//       \"nameLine\": 4,
+//       \"nameColumnStart\": 26,
+//       \"nameColumnEnd\": 26,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 7,
+//           \"columnStart\": 9,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 9,
+//           \"exact\": true,
+//           \"text\": \"h\",
+//           \"in\": \"R.PartialMedium.h\",
+//           \"role\": \"end\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 11,
+//           \"columnStart\": 32,
+//           \"lineEnd\": 11,
+//           \"columnEnd\": 32,
+//           \"exact\": true,
+//           \"text\": \"h\",
+//           \"in\": \"R.Water.h\",
+//           \"role\": \"classExtends\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 18,
+//           \"columnStart\": 37,
+//           \"lineEnd\": 18,
+//           \"columnEnd\": 37,
+//           \"exact\": true,
+//           \"text\": \"Medium.h\",
+//           \"part\": 2,
+//           \"in\": \"R.Pipe\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     },
+//     {
+//       \"name\": \"R.PartialMedium.h.x\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains3.mo\",
+//       \"lineStart\": 5,
+//       \"columnStart\": 7,
+//       \"lineEnd\": 5,
+//       \"columnEnd\": 19,
+//       \"nameLine\": 5,
+//       \"nameColumnStart\": 18,
+//       \"nameColumnEnd\": 18,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 6,
+//           \"columnStart\": 23,
+//           \"lineEnd\": 6,
+//           \"columnEnd\": 23,
+//           \"exact\": true,
+//           \"text\": \"x\",
+//           \"in\": \"R.PartialMedium.h\",
+//           \"role\": \"binding\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 13,
+//           \"columnStart\": 14,
+//           \"lineEnd\": 13,
+//           \"columnEnd\": 14,
+//           \"exact\": true,
+//           \"text\": \"x\",
+//           \"in\": \"R.Water.h\",
+//           \"role\": \"algorithm\"
+//         }
+//       ]
+//     },
+//     {
+//       \"name\": \"R.PartialMedium.h.y\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains3.mo\",
+//       \"lineStart\": 6,
+//       \"columnStart\": 7,
+//       \"lineEnd\": 6,
+//       \"columnEnd\": 24,
+//       \"nameLine\": 6,
+//       \"nameColumnStart\": 19,
+//       \"nameColumnEnd\": 19,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 13,
+//           \"columnStart\": 7,
+//           \"lineEnd\": 13,
+//           \"columnEnd\": 7,
+//           \"exact\": true,
+//           \"text\": \"y\",
+//           \"in\": \"R.Water.h\",
+//           \"role\": \"algorithm\"
+//         }
+//       ]
+//     },
+//     {
+//       \"name\": \"R.Water.h\",
+//       \"kind\": \"class\",
+//       \"restriction\": \"function\",
+//       \"file\": \"getDefUseChains3.mo\",
+//       \"lineStart\": 11,
+//       \"columnStart\": 15,
+//       \"lineEnd\": 14,
+//       \"columnEnd\": 10,
+//       \"nameLine\": 11,
+//       \"nameColumnStart\": 32,
+//       \"nameColumnEnd\": 32,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 14,
+//           \"columnStart\": 9,
+//           \"lineEnd\": 14,
+//           \"columnEnd\": 9,
+//           \"exact\": true,
+//           \"text\": \"h\",
+//           \"in\": \"R.Water.h\",
+//           \"role\": \"end\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 18,
+//           \"columnStart\": 37,
+//           \"lineEnd\": 18,
+//           \"columnEnd\": 37,
+//           \"exact\": true,
+//           \"text\": \"Medium.h\",
+//           \"part\": 2,
+//           \"in\": \"R.Pipe\",
+//           \"role\": \"binding\",
+//           \"candidate\": true
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 24,
+//           \"columnStart\": 22,
+//           \"lineEnd\": 24,
+//           \"columnEnd\": 22,
+//           \"exact\": true,
+//           \"text\": \"R.Water.h\",
+//           \"part\": 3,
+//           \"in\": \"R.System\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"R.PartialMedium.nX\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"R.PartialMedium.nX\",
+//       \"kind\": \"component\",
+//       \"type\": \"Integer\",
+//       \"file\": \"getDefUseChains3.mo\",
+//       \"lineStart\": 3,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 3,
+//       \"columnEnd\": 28,
+//       \"nameLine\": 3,
+//       \"nameColumnStart\": 22,
+//       \"nameColumnEnd\": 23,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 10,
+//           \"columnStart\": 27,
+//           \"lineEnd\": 10,
+//           \"columnEnd\": 28,
+//           \"exact\": true,
+//           \"text\": \"nX\",
+//           \"in\": \"R.Water\",
+//           \"role\": \"modifier\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 18,
+//           \"columnStart\": 19,
+//           \"lineEnd\": 18,
+//           \"columnEnd\": 20,
+//           \"exact\": true,
+//           \"text\": \"Medium.nX\",
+//           \"part\": 2,
+//           \"in\": \"R.Pipe\",
+//           \"role\": \"dimension\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 18,
+//           \"columnStart\": 50,
+//           \"lineEnd\": 18,
+//           \"columnEnd\": 51,
+//           \"exact\": true,
+//           \"text\": \"Medium.nX\",
+//           \"part\": 2,
+//           \"in\": \"R.Pipe\",
+//           \"role\": \"binding\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains3.mo\",
+//           \"lineStart\": 23,
+//           \"columnStart\": 19,
+//           \"lineEnd\": 23,
+//           \"columnEnd\": 20,
+//           \"exact\": true,
+//           \"text\": \"W.nX\",
+//           \"part\": 2,
+//           \"in\": \"R.System\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "getDefUseChains3.json"
+// "{\"class\":\"R.Water\", \"definitions\":[{\"name\":\"R.PartialMedium\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":2, \"columnStart\":3, \"lineEnd\":8, \"columnEnd\":20, \"nameLine\":2, \"nameColumnStart\":19, \"nameColumnEnd\":31, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":8, \"columnStart\":7, \"lineEnd\":8, \"columnEnd\":19, \"exact\":true, \"text\":\"PartialMedium\", \"in\":\"R.PartialMedium\", \"role\":\"end\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":10, \"columnStart\":13, \"lineEnd\":10, \"columnEnd\":25, \"exact\":true, \"text\":\"PartialMedium\", \"in\":\"R.Water\", \"role\":\"extends\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":17, \"columnStart\":34, \"lineEnd\":17, \"columnEnd\":46, \"exact\":true, \"text\":\"PartialMedium\", \"in\":\"R.Pipe.Medium\", \"role\":\"extends\"}]}, {\"name\":\"R.PartialMedium.h\", \"kind\":\"class\", \"restriction\":\"function\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":4, \"columnStart\":17, \"lineEnd\":7, \"columnEnd\":10, \"nameLine\":4, \"nameColumnStart\":26, \"nameColumnEnd\":26, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":7, \"columnStart\":9, \"lineEnd\":7, \"columnEnd\":9, \"exact\":true, \"text\":\"h\", \"in\":\"R.PartialMedium.h\", \"role\":\"end\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":11, \"columnStart\":32, \"lineEnd\":11, \"columnEnd\":32, \"exact\":true, \"text\":\"h\", \"in\":\"R.Water.h\", \"role\":\"classExtends\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":18, \"columnStart\":37, \"lineEnd\":18, \"columnEnd\":37, \"exact\":true, \"text\":\"Medium.h\", \"part\":2, \"in\":\"R.Pipe\", \"role\":\"binding\"}]}, {\"name\":\"R.PartialMedium.h.x\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":5, \"columnStart\":7, \"lineEnd\":5, \"columnEnd\":19, \"nameLine\":5, \"nameColumnStart\":18, \"nameColumnEnd\":18, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":6, \"columnStart\":23, \"lineEnd\":6, \"columnEnd\":23, \"exact\":true, \"text\":\"x\", \"in\":\"R.PartialMedium.h\", \"role\":\"binding\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":13, \"columnStart\":14, \"lineEnd\":13, \"columnEnd\":14, \"exact\":true, \"text\":\"x\", \"in\":\"R.Water.h\", \"role\":\"algorithm\"}]}, {\"name\":\"R.PartialMedium.h.y\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":6, \"columnStart\":7, \"lineEnd\":6, \"columnEnd\":24, \"nameLine\":6, \"nameColumnStart\":19, \"nameColumnEnd\":19, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":13, \"columnStart\":7, \"lineEnd\":13, \"columnEnd\":7, \"exact\":true, \"text\":\"y\", \"in\":\"R.Water.h\", \"role\":\"algorithm\"}]}, {\"name\":\"R.PartialMedium.nX\", \"kind\":\"component\", \"type\":\"Integer\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":3, \"columnStart\":5, \"lineEnd\":3, \"columnEnd\":28, \"nameLine\":3, \"nameColumnStart\":22, \"nameColumnEnd\":23, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":10, \"columnStart\":27, \"lineEnd\":10, \"columnEnd\":28, \"exact\":true, \"text\":\"nX\", \"in\":\"R.Water\", \"role\":\"modifier\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":18, \"columnStart\":19, \"lineEnd\":18, \"columnEnd\":20, \"exact\":true, \"text\":\"Medium.nX\", \"part\":2, \"in\":\"R.Pipe\", \"role\":\"dimension\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":18, \"columnStart\":50, \"lineEnd\":18, \"columnEnd\":51, \"exact\":true, \"text\":\"Medium.nX\", \"part\":2, \"in\":\"R.Pipe\", \"role\":\"binding\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":23, \"columnStart\":19, \"lineEnd\":23, \"columnEnd\":20, \"exact\":true, \"text\":\"W.nX\", \"part\":2, \"in\":\"R.System\", \"role\":\"binding\"}]}, {\"name\":\"R.Water\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":9, \"columnStart\":3, \"lineEnd\":15, \"columnEnd\":12, \"nameLine\":9, \"nameColumnStart\":11, \"nameColumnEnd\":15, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":15, \"columnStart\":7, \"lineEnd\":15, \"columnEnd\":11, \"exact\":true, \"text\":\"Water\", \"in\":\"R.Water\", \"role\":\"end\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":21, \"columnStart\":18, \"lineEnd\":21, \"columnEnd\":22, \"exact\":true, \"text\":\"R.Water\", \"part\":2, \"in\":\"R.System\", \"role\":\"import\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":22, \"columnStart\":39, \"lineEnd\":22, \"columnEnd\":39, \"exact\":true, \"text\":\"W\", \"in\":\"R.System\", \"role\":\"type\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":23, \"columnStart\":17, \"lineEnd\":23, \"columnEnd\":17, \"exact\":true, \"text\":\"W.nX\", \"part\":1, \"in\":\"R.System\", \"role\":\"binding\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":24, \"columnStart\":16, \"lineEnd\":24, \"columnEnd\":20, \"exact\":true, \"text\":\"R.Water.h\", \"part\":2, \"in\":\"R.System\", \"role\":\"binding\"}]}, {\"name\":\"R.Water.h\", \"kind\":\"class\", \"restriction\":\"function\", \"file\":\"getDefUseChains3.mo\", \"lineStart\":11, \"columnStart\":15, \"lineEnd\":14, \"columnEnd\":10, \"nameLine\":11, \"nameColumnStart\":32, \"nameColumnEnd\":32, \"uses\":[{\"file\":\"getDefUseChains3.mo\", \"lineStart\":14, \"columnStart\":9, \"lineEnd\":14, \"columnEnd\":9, \"exact\":true, \"text\":\"h\", \"in\":\"R.Water.h\", \"role\":\"end\"}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":18, \"columnStart\":37, \"lineEnd\":18, \"columnEnd\":37, \"exact\":true, \"text\":\"Medium.h\", \"part\":2, \"in\":\"R.Pipe\", \"role\":\"binding\", \"candidate\":true}, {\"file\":\"getDefUseChains3.mo\", \"lineStart\":24, \"columnStart\":22, \"lineEnd\":24, \"columnEnd\":22, \"exact\":true, \"text\":\"R.Water.h\", \"part\":3, \"in\":\"R.System\", \"role\":\"binding\"}]}], \"unresolved\":[]}"
+// ""
+// true
+// true
+// endResult

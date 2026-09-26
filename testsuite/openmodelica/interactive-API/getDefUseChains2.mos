@@ -1,0 +1,388 @@
+// name: getDefUseChains2
+// keywords: def-use, #16931
+// status: correct
+//
+// Tests getDefUseChains with modifiers, named arguments, a component that
+// shadows a package constant, enumeration literals, connect equations and
+// iterators with the same name.
+
+writeFile("getDefUseChains2.mo", "package Q
+  type E = enumeration(a, b);
+  constant Real k = 3;
+  function f
+    input Real u;
+    input Real gain = 1;
+    output Real y;
+  algorithm
+    y := gain*u;
+    for i in 1:2 loop
+      y := y + i;
+    end for;
+  end f;
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model Res
+    parameter Real R = 1;
+    Pin p, n;
+  equation
+    p.v - n.v = R*p.i;
+    p.i + n.i = 0;
+  end Res;
+  model Top
+    parameter Real k = 2 \"shadows Q.k\";
+    parameter E e = E.b;
+    Res r1(R = k), r2(R = Q.k);
+    Real w = f(u = 2, gain = k);
+  equation
+    connect(r1.n, r2.p);
+  end Top;
+  model Iter
+    Real a[3];
+    Real b[3] = {i*k for i in 1:3};
+    Real s = sum(a[i] for i in 1:3);
+  equation
+    for i in 1:3 loop
+      a[i] = i;
+    end for;
+  end Iter;
+end Q;
+");
+loadFile("getDefUseChains2.mo"); getErrorString();
+
+// Used as modifiers.
+stringReplace(getDefUseChains(Q.Res.R, prettyPrint = true), cd() + "/", ""); getErrorString();
+// Used as a named argument.
+stringReplace(getDefUseChains(Q.f.gain, prettyPrint = true), cd() + "/", ""); getErrorString();
+// k in Q.Top is Q.Top.k, in Q.Iter it's Q.k.
+stringReplace(getDefUseChains(Q.Top.k, prettyPrint = true), cd() + "/", ""); getErrorString();
+stringReplace(getDefUseChains(Q.k, prettyPrint = true), cd() + "/", ""); getErrorString();
+// An enumeration literal.
+stringReplace(getDefUseChains(Q.E.b, prettyPrint = true), cd() + "/", ""); getErrorString();
+// Used in equations and a connect equation.
+stringReplace(getDefUseChains(Q.Res.p, prettyPrint = true), cd() + "/", ""); getErrorString();
+// Each i is its own iterator.
+getDefUseChains(Q.Iter, fileName = "getDefUseChains2.json", scope = Q.Iter);
+stringReplace(readFile("getDefUseChains2.json"), cd() + "/", ""); getErrorString();
+getDefUseChains(Q.f, fileName = "getDefUseChains2.json", scope = Q.f);
+stringReplace(readFile("getDefUseChains2.json"), cd() + "/", ""); getErrorString();
+
+deleteFile("getDefUseChains2.mo"); deleteFile("getDefUseChains2.json");
+
+// Result:
+// true
+// true
+// ""
+// "{
+//   \"class\": \"Q.Res.R\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"Q.Res.R\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains2.mo\",
+//       \"lineStart\": 19,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 19,
+//       \"columnEnd\": 25,
+//       \"nameLine\": 19,
+//       \"nameColumnStart\": 20,
+//       \"nameColumnEnd\": 20,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 22,
+//           \"columnStart\": 17,
+//           \"lineEnd\": 22,
+//           \"columnEnd\": 17,
+//           \"exact\": true,
+//           \"text\": \"R\",
+//           \"in\": \"Q.Res\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 28,
+//           \"columnStart\": 12,
+//           \"lineEnd\": 28,
+//           \"columnEnd\": 12,
+//           \"exact\": true,
+//           \"text\": \"R\",
+//           \"in\": \"Q.Top\",
+//           \"role\": \"modifier\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 28,
+//           \"columnStart\": 23,
+//           \"lineEnd\": 28,
+//           \"columnEnd\": 23,
+//           \"exact\": true,
+//           \"text\": \"R\",
+//           \"in\": \"Q.Top\",
+//           \"role\": \"modifier\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"Q.f.gain\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"Q.f.gain\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains2.mo\",
+//       \"lineStart\": 6,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 6,
+//       \"columnEnd\": 24,
+//       \"nameLine\": 6,
+//       \"nameColumnStart\": 16,
+//       \"nameColumnEnd\": 19,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 9,
+//           \"columnStart\": 10,
+//           \"lineEnd\": 9,
+//           \"columnEnd\": 13,
+//           \"exact\": true,
+//           \"text\": \"gain\",
+//           \"in\": \"Q.f\",
+//           \"role\": \"algorithm\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 29,
+//           \"columnStart\": 23,
+//           \"lineEnd\": 29,
+//           \"columnEnd\": 26,
+//           \"exact\": true,
+//           \"text\": \"gain\",
+//           \"in\": \"Q.Top\",
+//           \"role\": \"argument\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"Q.Top.k\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"Q.Top.k\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains2.mo\",
+//       \"lineStart\": 26,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 26,
+//       \"columnEnd\": 39,
+//       \"nameLine\": 26,
+//       \"nameColumnStart\": 20,
+//       \"nameColumnEnd\": 20,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 28,
+//           \"columnStart\": 16,
+//           \"lineEnd\": 28,
+//           \"columnEnd\": 16,
+//           \"exact\": true,
+//           \"text\": \"k\",
+//           \"in\": \"Q.Top\",
+//           \"role\": \"binding\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 29,
+//           \"columnStart\": 30,
+//           \"lineEnd\": 29,
+//           \"columnEnd\": 30,
+//           \"exact\": true,
+//           \"text\": \"k\",
+//           \"in\": \"Q.Top\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"Q.k\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"Q.k\",
+//       \"kind\": \"component\",
+//       \"type\": \"Real\",
+//       \"file\": \"getDefUseChains2.mo\",
+//       \"lineStart\": 3,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 3,
+//       \"columnEnd\": 22,
+//       \"nameLine\": 3,
+//       \"nameColumnStart\": 17,
+//       \"nameColumnEnd\": 17,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 28,
+//           \"columnStart\": 29,
+//           \"lineEnd\": 28,
+//           \"columnEnd\": 29,
+//           \"exact\": true,
+//           \"text\": \"Q.k\",
+//           \"part\": 2,
+//           \"in\": \"Q.Top\",
+//           \"role\": \"binding\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 35,
+//           \"columnStart\": 20,
+//           \"lineEnd\": 35,
+//           \"columnEnd\": 20,
+//           \"exact\": true,
+//           \"text\": \"k\",
+//           \"in\": \"Q.Iter\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"Q.E.b\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"Q.E.b\",
+//       \"kind\": \"enumerationLiteral\",
+//       \"file\": \"getDefUseChains2.mo\",
+//       \"lineStart\": 2,
+//       \"columnStart\": 3,
+//       \"lineEnd\": 2,
+//       \"columnEnd\": 29,
+//       \"nameLine\": 2,
+//       \"nameColumnStart\": 27,
+//       \"nameColumnEnd\": 27,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 27,
+//           \"columnStart\": 23,
+//           \"lineEnd\": 27,
+//           \"columnEnd\": 23,
+//           \"exact\": true,
+//           \"text\": \"E.b\",
+//           \"part\": 2,
+//           \"in\": \"Q.Top\",
+//           \"role\": \"binding\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "{
+//   \"class\": \"Q.Res.p\",
+//   \"definitions\": [
+//     {
+//       \"name\": \"Q.Res.p\",
+//       \"kind\": \"component\",
+//       \"type\": \"Pin\",
+//       \"file\": \"getDefUseChains2.mo\",
+//       \"lineStart\": 20,
+//       \"columnStart\": 5,
+//       \"lineEnd\": 20,
+//       \"columnEnd\": 13,
+//       \"nameLine\": 20,
+//       \"nameColumnStart\": 9,
+//       \"nameColumnEnd\": 9,
+//       \"uses\": [
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 22,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 22,
+//           \"columnEnd\": 5,
+//           \"exact\": true,
+//           \"text\": \"p.v\",
+//           \"part\": 1,
+//           \"in\": \"Q.Res\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 22,
+//           \"columnStart\": 19,
+//           \"lineEnd\": 22,
+//           \"columnEnd\": 19,
+//           \"exact\": true,
+//           \"text\": \"p.i\",
+//           \"part\": 1,
+//           \"in\": \"Q.Res\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 23,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 23,
+//           \"columnEnd\": 5,
+//           \"exact\": true,
+//           \"text\": \"p.i\",
+//           \"part\": 1,
+//           \"in\": \"Q.Res\",
+//           \"role\": \"equation\"
+//         },
+//         {
+//           \"file\": \"getDefUseChains2.mo\",
+//           \"lineStart\": 31,
+//           \"columnStart\": 22,
+//           \"lineEnd\": 31,
+//           \"columnEnd\": 22,
+//           \"exact\": true,
+//           \"text\": \"r2.p\",
+//           \"part\": 2,
+//           \"in\": \"Q.Top\",
+//           \"role\": \"equation\"
+//         }
+//       ]
+//     }
+//   ],
+//   \"unresolved\": [
+//
+//   ]
+// }"
+// ""
+// "getDefUseChains2.json"
+// "{\"class\":\"Q.Iter\", \"definitions\":[{\"name\":\"Q.Iter\", \"kind\":\"class\", \"restriction\":\"model\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":33, \"columnStart\":3, \"lineEnd\":41, \"columnEnd\":11, \"nameLine\":33, \"nameColumnStart\":9, \"nameColumnEnd\":12, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":41, \"columnStart\":7, \"lineEnd\":41, \"columnEnd\":10, \"exact\":true, \"text\":\"Iter\", \"in\":\"Q.Iter\", \"role\":\"end\"}]}, {\"name\":\"Q.Iter.a\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":34, \"columnStart\":5, \"lineEnd\":34, \"columnEnd\":14, \"nameLine\":34, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":36, \"columnStart\":18, \"lineEnd\":36, \"columnEnd\":18, \"exact\":true, \"text\":\"a\", \"in\":\"Q.Iter\", \"role\":\"binding\"}, {\"file\":\"getDefUseChains2.mo\", \"lineStart\":39, \"columnStart\":7, \"lineEnd\":39, \"columnEnd\":7, \"exact\":true, \"text\":\"a\", \"in\":\"Q.Iter\", \"role\":\"equation\"}]}, {\"name\":\"Q.Iter.b\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":35, \"columnStart\":5, \"lineEnd\":35, \"columnEnd\":35, \"nameLine\":35, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[]}, {\"name\":\"Q.Iter.i\", \"kind\":\"iterator\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":35, \"columnStart\":5, \"lineEnd\":35, \"columnEnd\":35, \"nameLine\":35, \"nameColumnStart\":26, \"nameColumnEnd\":26, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":35, \"columnStart\":18, \"lineEnd\":35, \"columnEnd\":18, \"exact\":true, \"text\":\"i\", \"in\":\"Q.Iter\", \"role\":\"binding\"}]}, {\"name\":\"Q.Iter.i\", \"kind\":\"iterator\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":36, \"columnStart\":5, \"lineEnd\":36, \"columnEnd\":36, \"nameLine\":36, \"nameColumnStart\":27, \"nameColumnEnd\":27, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":36, \"columnStart\":20, \"lineEnd\":36, \"columnEnd\":20, \"exact\":true, \"text\":\"i\", \"in\":\"Q.Iter\", \"role\":\"binding\"}]}, {\"name\":\"Q.Iter.i\", \"kind\":\"iterator\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":38, \"columnStart\":5, \"lineEnd\":40, \"columnEnd\":12, \"nameLine\":38, \"nameColumnStart\":9, \"nameColumnEnd\":9, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":39, \"columnStart\":9, \"lineEnd\":39, \"columnEnd\":9, \"exact\":true, \"text\":\"i\", \"in\":\"Q.Iter\", \"role\":\"equation\"}, {\"file\":\"getDefUseChains2.mo\", \"lineStart\":39, \"columnStart\":14, \"lineEnd\":39, \"columnEnd\":14, \"exact\":true, \"text\":\"i\", \"in\":\"Q.Iter\", \"role\":\"equation\"}]}, {\"name\":\"Q.Iter.s\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":36, \"columnStart\":5, \"lineEnd\":36, \"columnEnd\":36, \"nameLine\":36, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[]}, {\"name\":\"Q.k\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":3, \"columnStart\":3, \"lineEnd\":3, \"columnEnd\":22, \"nameLine\":3, \"nameColumnStart\":17, \"nameColumnEnd\":17, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":35, \"columnStart\":20, \"lineEnd\":35, \"columnEnd\":20, \"exact\":true, \"text\":\"k\", \"in\":\"Q.Iter\", \"role\":\"binding\"}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains2.json"
+// "{\"class\":\"Q.f\", \"definitions\":[{\"name\":\"Q.f\", \"kind\":\"class\", \"restriction\":\"function\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":4, \"columnStart\":3, \"lineEnd\":13, \"columnEnd\":8, \"nameLine\":4, \"nameColumnStart\":12, \"nameColumnEnd\":12, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":13, \"columnStart\":7, \"lineEnd\":13, \"columnEnd\":7, \"exact\":true, \"text\":\"f\", \"in\":\"Q.f\", \"role\":\"end\"}]}, {\"name\":\"Q.f.gain\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":6, \"columnStart\":5, \"lineEnd\":6, \"columnEnd\":24, \"nameLine\":6, \"nameColumnStart\":16, \"nameColumnEnd\":19, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":9, \"columnStart\":10, \"lineEnd\":9, \"columnEnd\":13, \"exact\":true, \"text\":\"gain\", \"in\":\"Q.f\", \"role\":\"algorithm\"}]}, {\"name\":\"Q.f.i\", \"kind\":\"iterator\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":10, \"columnStart\":5, \"lineEnd\":12, \"columnEnd\":12, \"nameLine\":10, \"nameColumnStart\":9, \"nameColumnEnd\":9, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":11, \"columnStart\":16, \"lineEnd\":11, \"columnEnd\":16, \"exact\":true, \"text\":\"i\", \"in\":\"Q.f\", \"role\":\"algorithm\"}]}, {\"name\":\"Q.f.u\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":5, \"columnStart\":5, \"lineEnd\":5, \"columnEnd\":17, \"nameLine\":5, \"nameColumnStart\":16, \"nameColumnEnd\":16, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":9, \"columnStart\":15, \"lineEnd\":9, \"columnEnd\":15, \"exact\":true, \"text\":\"u\", \"in\":\"Q.f\", \"role\":\"algorithm\"}]}, {\"name\":\"Q.f.y\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains2.mo\", \"lineStart\":7, \"columnStart\":5, \"lineEnd\":7, \"columnEnd\":18, \"nameLine\":7, \"nameColumnStart\":17, \"nameColumnEnd\":17, \"uses\":[{\"file\":\"getDefUseChains2.mo\", \"lineStart\":9, \"columnStart\":5, \"lineEnd\":9, \"columnEnd\":5, \"exact\":true, \"text\":\"y\", \"in\":\"Q.f\", \"role\":\"algorithm\"}, {\"file\":\"getDefUseChains2.mo\", \"lineStart\":11, \"columnStart\":7, \"lineEnd\":11, \"columnEnd\":7, \"exact\":true, \"text\":\"y\", \"in\":\"Q.f\", \"role\":\"algorithm\"}, {\"file\":\"getDefUseChains2.mo\", \"lineStart\":11, \"columnStart\":12, \"lineEnd\":11, \"columnEnd\":12, \"exact\":true, \"text\":\"y\", \"in\":\"Q.f\", \"role\":\"algorithm\"}]}], \"unresolved\":[]}"
+// ""
+// true
+// true
+// endResult
