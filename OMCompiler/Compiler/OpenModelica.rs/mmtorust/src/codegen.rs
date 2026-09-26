@@ -702,6 +702,9 @@ struct GenCtx {
     borrow_mask: Vec<bool>,
     /// Inputs of the current function emitted as `&T` (see [`crate::borrow_params`]).
     borrowed_params: HashSet<String>,
+    /// While set, a function value is emitted as `&closure` for a `&dyn Fn`
+    /// parameter instead of being boxed in an `Arc`. Consumed like `borrow_reads`.
+    fn_value_ref: bool,
     /// Stack of enclosing loop labels (innermost last), one entry per active
     /// `for`/`while` loop. `Some(label)` when the loop was emitted with an
     /// explicit `'__loopN:` label because its body contains a `break`/`continue`
@@ -817,6 +820,7 @@ impl GenCtx {
             assign_lhs_names: HashSet::new(),
             borrow_mask: Vec::new(),
             borrowed_params: HashSet::new(),
+            fn_value_ref: false,
             loop_label_stack: Vec::new(),
         }
     }
@@ -7882,15 +7886,24 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     ctx.current_fn_fallible = ctx.fallible_functions.contains(&fn_qname);
     let saved_fn_qname = std::mem::replace(&mut ctx.current_fn_qname, fn_qname.clone());
     let is_fallible_fn = ctx.current_fn_fallible;
-    // Rendered before the function-local imports are applied: the signature
-    // does not see them.
-    let param_tys: Vec<(String, String)> = fn_inputs_eff.iter()
-        .map(|inp| (inp.name.clone(), try_alias(&inp.name, None).unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx))))
-        .collect();
     let borrowed: HashSet<String> = match crate::borrow_params::mask(&fn_qname) {
         Some(m) => fn_inputs_eff.iter().zip(m).filter(|(_, b)| **b).map(|(i, _)| i.name.clone()).collect(),
         None => HashSet::new(),
     };
+    // Rendered before the function-local imports are applied: the signature
+    // does not see them. A borrowed callback is a `&dyn Fn`, not an `Arc`.
+    let param_tys: Vec<(String, String)> = fn_inputs_eff.iter()
+        .map(|inp| {
+            let ty_s = match &inp.ty {
+                Ty::Function { inputs, output, .. } if borrowed.contains(&inp.name) => {
+                    let ins = inputs.iter().map(|i| fmt_param_ty(&i.ty, ctx)).collect::<Vec<_>>().join(", ");
+                    format!("dyn ::std::ops::Fn({ins}) -> Result<{}>", fmt_param_ty(output, ctx))
+                }
+                _ => try_alias(&inp.name, None).unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx)),
+            };
+            (inp.name.clone(), ty_s)
+        })
+        .collect();
 
     // Visibility keyword. MetaModelica-protected functions stay module-private
     // (`fn`). Public ones are `pub` only when the visibility analysis found them
@@ -9203,6 +9216,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
     // Borrow mode applies to this node only; the tuple arm re-arms it per element.
     let borrow_here = std::mem::take(&mut ctx.borrow_reads);
     let place_here = std::mem::take(&mut ctx.place_reads);
+    let fn_ref_here = std::mem::take(&mut ctx.fn_value_ref);
     let borrow_mask = std::mem::take(&mut ctx.borrow_mask);
     match exp {
         TypedExp::Lit(Lit::Int(v))  => v.to_string(),
@@ -9544,7 +9558,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     let var_str = format!("{var_str}{tf}");
                     let bmask = resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask);
                     let closure = if let Some(m) = bmask {
-                        borrow_adapter(&var_str, m, &input_tys, true)
+                        borrow_adapter(&var_str, m, inputs, &input_tys, true)
                     } else if input_tys.is_empty() {
                         format!("fnptr!({var_str})")
                     } else {
@@ -9582,7 +9596,9 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     // `Arc<dyn Fn>` type itself. The `_` placeholders in the
                     // cast are then pinned by the surrounding context, exactly
                     // as for a fallible reference (which always keeps the cast).
-                    if has_typevars && ctx.expected_arg_fn_formal.is_some() {
+                    if fn_ref_here && gated_value_feat.is_none() {
+                        format!("&{closure}")
+                    } else if has_typevars && ctx.expected_arg_fn_formal.is_some() {
                         format!("std::sync::Arc::new({closure})")
                     } else {
                         format!("(std::sync::Arc::new({closure}) as std::sync::Arc<dyn ::std::ops::Fn({}) -> Result<{out_ty}> + 'static>)",
@@ -9686,9 +9702,12 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                         .and_then(|q| fn_ref_turbofish(q, ctx, top_level))
                         .unwrap_or_default();
                     let f = match resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask) {
-                        Some(m) => borrow_adapter(&format!("{var_str}{tf}"), m, &input_tys, false),
+                        Some(m) => borrow_adapter(&format!("{var_str}{tf}"), m, inputs, &input_tys, false),
                         None => format!("{var_str}{tf}"),
                     };
+                    if fn_ref_here && gated_value_feat.is_none() {
+                        return format!("&{f}");
+                    }
                     format!("(std::sync::Arc::new({f}) as std::sync::Arc<dyn ::std::ops::Fn({}) -> Result<{out_ty}> + 'static>)",
                         input_tys.join(", "))
                 }
@@ -10958,7 +10977,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             emit_reduction(func, body, iterators, *iter_kind, ty, is_const, ctx, top_level),
 
         TypedExp::PartEval { func, args, named_args, sig_ty, callee_is_local, .. } =>
-            emit_parteval(func, args, named_args, sig_ty, *callee_is_local, is_const, ctx, top_level),
+            emit_parteval(func, args, named_args, sig_ty, *callee_is_local, fn_ref_here, is_const, ctx, top_level),
 
         TypedExp::Todo(s) => format!("todo!(/*{}*/)", s.chars().take(60).collect::<String>()),
     }
@@ -10991,6 +11010,7 @@ fn emit_parteval<'a>(
     named_args: &[(String, TypedExp)],
     sig_ty: &Ty,
     callee_is_local: bool,
+    by_ref: bool,
     is_const: bool,
     ctx: &mut GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
@@ -11115,7 +11135,12 @@ fn emit_parteval<'a>(
     let pe_mask = if callee_is_local { None } else {
         resolve_call_qname(func, ctx, top_level).and_then(|q| crate::borrow_params::mask(&q))
     };
-    let amp = |i: usize| if pe_mask.is_some_and(|m| m.get(i) == Some(&true)) { "&" } else { "" };
+    // `&Arc<dyn Fn>` does not coerce to `&dyn Fn`: deref a callback explicitly.
+    let amp = |i: usize| match (pe_mask.is_some_and(|m| m.get(i) == Some(&true)), formal_tys.get(i)) {
+        (false, _) => "",
+        (true, Some(Ty::Function { .. })) => "&*",
+        (true, _) => "&",
+    };
     for (i, formal_name) in formal_names.iter().enumerate() {
         let formal_ty = formal_tys.get(i).cloned();
         let cap_annot = formal_ty.as_ref().and_then(|t| dyn_fn_annot(t, ctx));
@@ -11130,13 +11155,13 @@ fn emit_parteval<'a>(
             let v = emit_call_arg_with_formal(&args[i], formal_ty.as_ref(), is_const, ctx, top_level);
             let cap_name = format!("__pe_b{i}");
             captures.push(cap_decl(&cap_name, &v));
-            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("&{cap_name}") });
+            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("{}{cap_name}", amp(i)) });
         } else if let Some(named_expr) = named_map.remove(formal_name.as_str()) {
             // Named binding (looked up by formal name).
             let v = emit_call_arg_with_formal(named_expr, formal_ty.as_ref(), is_const, ctx, top_level);
             let cap_name = format!("__pe_b{i}");
             captures.push(cap_decl(&cap_name, &v));
-            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("&{cap_name}") });
+            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("{}{cap_name}", amp(i)) });
         } else {
             // Unbound — becomes a closure parameter.
             let p = format!("__pe_a{i}");
@@ -11209,6 +11234,9 @@ fn emit_parteval<'a>(
         .map(|t| if ty_mentions_typevar(t) { "_".to_owned() } else { fmt_param_ty(t, ctx) })
         .collect();
     let out_ty_str = if ty_mentions_typevar(&fn_output) { "_".to_owned() } else { fmt_param_ty(&fn_output, ctx) };
+    if by_ref && ctx.gated_feature_for_path(&func_str).is_none() {
+        return format!("&({closure_block})");
+    }
     let cast = format!("(std::sync::Arc::new({closure_block}) as std::sync::Arc<dyn ::std::ops::Fn({}) -> Result<{out_ty_str}> + 'static>)",
         param_ty_strs.join(", "));
     // Partial application of a gated target crate's function (e.g.
@@ -11921,6 +11949,9 @@ fn emit_borrowed_arg<'a>(
     ctx: &mut GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> String {
+    if matches!(formal_ty, Some(Ty::Function { .. })) {
+        return emit_fn_ref_arg(arg, formal_ty, ctx, top_level);
+    }
     if let TypedExp::Var { name, segments, .. } = arg
         && !matches!(arg.ty(), Ty::Tuple(_))
     {
@@ -11955,12 +11986,55 @@ fn emit_borrowed_arg<'a>(
     format!("&({})", emit_call_arg_with_formal(arg, formal_ty, false, ctx, top_level))
 }
 
+/// An argument for a `&dyn Fn` parameter: a borrowed callback is passed on, an
+/// `Arc` is dereferenced, and a function item or partial application becomes a
+/// borrowed closure instead of being boxed.
+fn emit_fn_ref_arg<'a>(
+    arg: &TypedExp,
+    formal_ty: Option<&Ty>,
+    ctx: &mut GenCtx,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> String {
+    if let TypedExp::Var { name, segments, .. } = arg
+        && segments.len() <= 1
+        && !name.contains('.')
+    {
+        if ctx.borrowed_params.contains(name.as_str()) {
+            return escape_ident(name);
+        }
+        if ctx.fn_input_names.contains(name.as_str()) && ctx.place_mode.get(name.as_str()) == Some(&PlaceMode::Owned) {
+            return format!("&*{}", escape_ident(name));
+        }
+    }
+    // A branch-local `&closure` would not outlive its branch: box the branches.
+    if let TypedExp::If { cond, then_, elseif, else_, .. } = arg {
+        let c = emit_exp(cond, false, ctx, top_level);
+        let t = emit_call_arg_with_formal(then_, formal_ty, false, ctx, top_level);
+        let mut out = format!("&*(if ({c}) {{ {t} }}");
+        for (ec, eb) in elseif {
+            let ec = emit_exp(ec, false, ctx, top_level);
+            let eb = emit_call_arg_with_formal(eb, formal_ty, false, ctx, top_level);
+            out.push_str(&format!(" else if ({ec}) {{ {eb} }}"));
+        }
+        let e = emit_call_arg_with_formal(else_, formal_ty, false, ctx, top_level);
+        return format!("{out} else {{ {e} }})");
+    }
+    ctx.fn_value_ref = true;
+    let r = emit_call_arg_with_formal(arg, formal_ty, false, ctx, top_level);
+    ctx.fn_value_ref = false;
+    if r.starts_with('&') { r } else { format!("&*({r})") }
+}
+
 /// A closure with the by-value signature of the function at `path`, which
 /// takes the parameters flagged in `mask` by reference.
-fn borrow_adapter(path: &str, mask: &[bool], input_tys: &[String], wrap_ok: bool) -> String {
+fn borrow_adapter(path: &str, mask: &[bool], inputs: &[FunctionInput], input_tys: &[String], wrap_ok: bool) -> String {
     let params: Vec<String> = input_tys.iter().enumerate().map(|(i, t)| format!("__a{i}: {t}")).collect();
     let args: Vec<String> = (0..input_tys.len())
-        .map(|i| if mask.get(i) == Some(&true) { format!("&__a{i}") } else { format!("__a{i}") })
+        .map(|i| match (mask.get(i) == Some(&true), inputs.get(i).map(|inp| &inp.ty)) {
+            (false, _) => format!("__a{i}"),
+            (true, Some(Ty::Function { .. })) => format!("metamodelica::arc_ref(&__a{i})"),
+            (true, _) => format!("&__a{i}"),
+        })
         .collect();
     let call = format!("{path}({})", args.join(", "));
     if wrap_ok {
@@ -13724,10 +13798,16 @@ fn emit_call_arg_with_formal<'a>(
         Some(t @ (Ty::Function { .. } | Ty::FunctionAlias { .. })) => Some(t.clone()),
         _ => None,
     };
+    let by_ref = std::mem::take(&mut ctx.fn_value_ref);
     let raw = if !needs_first {
-        ctx.with_arg_fn_formal(arg_fn_formal.clone(), |ctx| {
+        let raw = ctx.with_arg_fn_formal(arg_fn_formal.clone(), |ctx| {
+            ctx.fn_value_ref = by_ref && matches!(arg, TypedExp::Var { .. } | TypedExp::PartEval { .. });
             emit_cloned_call_arg(arg, is_const, ctx, top_level)
-        })
+        });
+        if by_ref && raw.starts_with('&') {
+            return raw;
+        }
+        raw
     } else {
         // Emit the call (with `?` propagation already attached by emit_exp via ctx.q),
         // wrap in parens so `.0` binds to the whole call result, then re-apply the
@@ -13862,13 +13942,13 @@ fn emit_call_arg_with_formal<'a>(
                 let _ = output;
                 let bmask = if is_user_fn { user_q.as_deref().and_then(crate::borrow_params::mask) } else { None };
                 let fnptr = if let Some(m) = bmask {
-                    borrow_adapter(path, m, &in_tys, true)
+                    borrow_adapter(path, m, inputs, &in_tys, true)
                 } else if in_tys.is_empty() {
                     format!("fnptr!({path})")
                 } else {
                     format!("fnptr!({path}, {})", in_tys.join(", "))
                 };
-                return format!("Arc::new({fnptr})");
+                return if by_ref { format!("&{fnptr}") } else { format!("Arc::new({fnptr})") };
             }
         }
         // case 1b: the actual is a Var/Cref reference to a concrete fn-item

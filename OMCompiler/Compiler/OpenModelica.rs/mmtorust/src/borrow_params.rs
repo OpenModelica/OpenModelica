@@ -1,12 +1,13 @@
 //! Chooses the input parameters that are emitted as `&T` instead of `T`.
 //!
 //! A parameter qualifies when its type is a heap handle (`Ref<T>`, `List<T>`,
-//! `ArcStr`) or a non-`Copy` record, it is never written or shadowed, and every
-//! read borrows it: a field access, a match or pattern-let subject, a borrowing
-//! builtin, or an argument to a callee parameter that itself qualifies (solved
-//! as a greatest fixpoint). In a loop-lowered (tail-recursive) function a
-//! self-call must pass it on unchanged or replace it by a field of a borrowed
-//! parameter. Callers then pass `&x` instead of cloning the value into the call.
+//! `ArcStr`, a callback, which becomes a `&dyn Fn`) or a non-`Copy` record, it
+//! is never written or shadowed, and every read borrows it: a field access, a
+//! match or pattern-let subject, a borrowing builtin, or an argument to a callee
+//! parameter that itself qualifies (solved as a greatest fixpoint). In a
+//! loop-lowered (tail-recursive) function a self-call must pass it on unchanged
+//! or replace it by a field of a borrowed parameter. Callers then pass `&x`
+//! instead of cloning the value into the call.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -31,7 +32,7 @@ pub(crate) fn mask(qname: &str) -> Option<&'static [bool]> {
 
 #[derive(Clone, Copy, PartialEq)]
 enum Kind {
-    /// `Ref<T>`, `List<T>`, `ArcStr`.
+    /// `Ref<T>`, `List<T>`, `ArcStr`, and a callback, borrowed as `&dyn Fn`.
     Handle,
     /// A record or uniontype stored by value.
     Value,
@@ -44,7 +45,7 @@ pub(crate) struct Types<'t> {
 
 fn candidate_kind(ty: &Ty, types: &Types<'_>) -> Option<Kind> {
     match ty {
-        Ty::List(_) | Ty::Str => Some(Kind::Handle),
+        Ty::List(_) | Ty::Str | Ty::Function { .. } => Some(Kind::Handle),
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if types.recursive.contains(n) => Some(Kind::Handle),
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if !types.copy.contains(n) => Some(Kind::Value),
         Ty::UnionTypeVariant(parent, _) if types.recursive.contains(parent) => Some(Kind::Handle),
@@ -340,7 +341,12 @@ impl Scan<'_, '_> {
                 }
             }
             TypedExp::UnOp { operand, .. } => self.exp(operand, Pos::Owned),
-            TypedExp::Constructor { args, named_args, .. } | TypedExp::PartEval { args, named_args, .. } => {
+            TypedExp::Constructor { args, named_args, .. } => {
+                args.iter().for_each(|a| self.exp(a, Pos::Owned));
+                named_args.iter().for_each(|(_, a)| self.exp(a, Pos::Owned));
+            }
+            TypedExp::PartEval { func, args, named_args, .. } => {
+                self.disqualify(func, &"partially applied");
                 args.iter().for_each(|a| self.exp(a, Pos::Owned));
                 named_args.iter().for_each(|(_, a)| self.exp(a, Pos::Owned));
             }
