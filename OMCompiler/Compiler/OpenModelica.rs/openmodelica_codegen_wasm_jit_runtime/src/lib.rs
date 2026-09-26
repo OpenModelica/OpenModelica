@@ -2033,21 +2033,12 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
     }
 }
 
-fn ew_f64(x: f64, y: f64, op: u32) -> f64 {
-    match op {
-        OP_ADD => x + y,
-        OP_SUB => x - y,
-        OP_MUL => x * y,
-        OP_DIV => x / y,
-        _ => libm::pow(x, y),
-    }
-}
-
-/// A fresh array with the same kind and dimensions as `obj`, zeroed data.
+/// A fresh array with the same kind and dimensions as `obj`, every element for
+/// the caller to write.
 fn array_like(obj: u32) -> u32 {
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     let ndims = rt_array_ndims(obj);
-    let res = rt_array_new(kind, ndims, rt_array_total(obj));
+    let res = array_new_uninit(kind, ndims, rt_array_total(obj));
     for axis in 0..ndims {
         unsafe { store_u32(res + ARR_DIMS_OFF + axis * 4, load_u32(obj + ARR_DIMS_OFF + axis * 4)) };
     }
@@ -2070,12 +2061,40 @@ pub extern "C" fn rt_array_ew_i32(a: u32, b: u32, op: u32) -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_ew_f64(a: u32, b: u32, op: u32) -> u32 {
     let res = array_like(a);
-    let (da, db, dr) = (arr_data(a), arr_data(b), arr_data(res));
-    for i in 0..rt_array_total(a) {
-        let v = ew_f64(unsafe { load_f64(da + i * 8) }, unsafe { load_f64(db + i * 8) }, op);
-        unsafe { store_f64(dr + i * 8, v) };
+    let (x, y, r) = unsafe { (f64s(a), f64s(b), f64s_mut(res)) };
+    // One loop per operator, so each one vectorizes.
+    match op {
+        OP_ADD => map2(x, y, r, |p, q| p + q),
+        OP_SUB => map2(x, y, r, |p, q| p - q),
+        OP_MUL => map2(x, y, r, |p, q| p * q),
+        OP_DIV => map2(x, y, r, |p, q| p / q),
+        _ => map2(x, y, r, libm::pow),
     }
     res
+}
+
+/// The f64 elements of array `obj`.
+unsafe fn f64s<'a>(obj: u32) -> &'a [f64] {
+    unsafe { core::slice::from_raw_parts(arr_data(obj) as *const f64, rt_array_total(obj) as usize) }
+}
+
+/// [`f64s`] of an array nothing else refers to.
+unsafe fn f64s_mut<'a>(obj: u32) -> &'a mut [f64] {
+    unsafe { core::slice::from_raw_parts_mut(arr_data(obj) as *mut f64, rt_array_total(obj) as usize) }
+}
+
+#[inline(always)]
+fn map1(x: &[f64], r: &mut [f64], f: impl Fn(f64) -> f64) {
+    for (r, x) in r.iter_mut().zip(x) {
+        *r = f(*x);
+    }
+}
+
+#[inline(always)]
+fn map2(x: &[f64], y: &[f64], r: &mut [f64], f: impl Fn(f64, f64) -> f64) {
+    for ((r, x), y) in r.iter_mut().zip(x).zip(y) {
+        *r = f(*x, *y);
+    }
 }
 
 /// Broadcast a scalar over an i32-element array: `rev ? (s op a[i]) : (a[i] op s)`.
@@ -2095,11 +2114,18 @@ pub extern "C" fn rt_array_scalar_i32(a: u32, s: i32, op: u32, rev: u32) -> u32 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_scalar_f64(a: u32, s: f64, op: u32, rev: u32) -> u32 {
     let res = array_like(a);
-    let (da, dr) = (arr_data(a), arr_data(res));
-    for i in 0..rt_array_total(a) {
-        let x = unsafe { load_f64(da + i * 8) };
-        let v = if rev != 0 { ew_f64(s, x, op) } else { ew_f64(x, s, op) };
-        unsafe { store_f64(dr + i * 8, v) };
+    let (x, r) = unsafe { (f64s(a), f64s_mut(res)) };
+    match (op, rev != 0) {
+        (OP_ADD, false) => map1(x, r, |p| p + s),
+        (OP_ADD, true) => map1(x, r, |p| s + p),
+        (OP_SUB, false) => map1(x, r, |p| p - s),
+        (OP_SUB, true) => map1(x, r, |p| s - p),
+        (OP_MUL, false) => map1(x, r, |p| p * s),
+        (OP_MUL, true) => map1(x, r, |p| s * p),
+        (OP_DIV, false) => map1(x, r, |p| p / s),
+        (OP_DIV, true) => map1(x, r, |p| s / p),
+        (_, false) => map1(x, r, |p| libm::pow(p, s)),
+        (_, true) => map1(x, r, |p| libm::pow(s, p)),
     }
     res
 }
@@ -2130,10 +2156,8 @@ pub extern "C" fn rt_array_not_i32(a: u32) -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_neg_f64(a: u32) -> u32 {
     let res = array_like(a);
-    let (da, dr) = (arr_data(a), arr_data(res));
-    for i in 0..rt_array_total(a) {
-        unsafe { store_f64(dr + i * 8, -load_f64(da + i * 8)) };
-    }
+    let (x, r) = unsafe { (f64s(a), f64s_mut(res)) };
+    map1(x, r, |p| -p);
     res
 }
 
