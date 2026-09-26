@@ -119,6 +119,7 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
+import NFClassDiagram;
 import NFDefUseChains;
 import NFUsedElements;
 import Obfuscate;
@@ -3550,6 +3551,10 @@ algorithm
 
     case ("getDefinitionAt", {Values.STRING(str), Values.INTEGER(x), Values.INTEGER(y), Values.BOOL(b)})
       then ValuesMake.makeString(getDefinitionAt(str, x, y, b));
+
+    case ("getClassDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
+                              Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
+      then ValuesMake.makeString(getClassDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b));
 
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
@@ -8291,6 +8296,56 @@ algorithm
     result := fileName;
   end if;
 end getDefUseChains;
+
+protected function getClassDiagram
+  "Returns a UML class diagram of a class, see NFClassDiagram, or writes it to a
+   file and returns its name."
+  input Absyn.Path className;
+  input String fileName;
+  input String format;
+  input Integer depth;
+  input list<String> exclude;
+  input Boolean showModifiers;
+  output String result = "";
+protected
+  SCode.Program program, builtin_p, annotation_p;
+  Boolean nf_inst;
+algorithm
+  if format <> "plantuml" and format <> "mermaid" and format <> "drawio" then
+    Error.addCompilerError("getClassDiagram: unknown format " + format + ", expected plantuml, mermaid or drawio.");
+    return;
+  end if;
+
+  program := SymbolTable.getSCode();
+
+  try
+    _ := InteractiveUtil.getPathedSCodeElementInProgram(className, program);
+  else
+    Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
+    return;
+  end try;
+
+  // Only the uses are wanted from the lookups, not their messages, see collectDefUse.
+  ErrorExt.setCheckpoint(getInstanceName());
+  nf_inst := FlagsUtil.set(Flags.SCODE_INST, true);
+
+  try
+    (_, builtin_p) := FBuiltin.getInitialFunctions();
+    annotation_p := AbsynToSCode.translateAbsyn2SCode(
+      InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    result := NFClassDiagram.generate(className, listAppend(builtin_p, program), annotation_p,
+      format, depth, exclude, showModifiers);
+  else
+  end try;
+
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst);
+  ErrorExt.rollBack(getInstanceName());
+
+  if not stringEmpty(fileName) and not stringEmpty(result) then
+    System.writeFile(fileName, result);
+    result := fileName;
+  end if;
+end getClassDiagram;
 
 protected function getDependencyGraph
   "Returns the classes in a scope, the hashes of their source and the classes

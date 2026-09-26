@@ -60,6 +60,10 @@ GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
 GetAllSubtypeOf5.mos \
 getClassComment.mos \
+getClassDiagram1.mos \
+getClassDiagram2.mos \
+getClassDiagram3.mos \
+getClassDiagram4.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \
