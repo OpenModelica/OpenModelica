@@ -71,8 +71,9 @@ fn primme() {
     println!("cargo:rustc-cfg=primme");
 }
 
-/// MSVC has no system `lapack.lib`, so CMake names the LAPACK/BLAS it found
-/// (OpenBLAS) in `OMC_LAPACK_LINK`, `|`-separated.
+/// Windows has no system `lapack`/`blas` (MSVC has no `lapack.lib`, MSYS2 only
+/// OpenBLAS), so CMake names the LAPACK/BLAS it found in `OMC_LAPACK_LINK`,
+/// `|`-separated. `openmodelica_sim_meta`'s script does the same for Ipopt.
 fn link_lapack(system: &[&str]) {
     println!("cargo:rerun-if-env-changed=OMC_LAPACK_LINK");
     let Ok(libs) = std::env::var("OMC_LAPACK_LINK") else {
@@ -81,9 +82,22 @@ fn link_lapack(system: &[&str]) {
         }
         return;
     };
+    let gnu = std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu");
     for lib in libs.split('|').map(std::path::Path::new) {
-        let (Some(dir), Some(name)) = (lib.parent(), lib.file_stem()) else { continue };
+        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else { continue };
         println!("cargo:rustc-link-search=native={}", dir.display());
-        println!("cargo:rustc-link-lib=dylib={}", name.to_string_lossy());
+        println!("cargo:rustc-link-lib=dylib={name}");
     }
+}
+
+/// The name to link a library file by: `openblas.lib` on MSVC, and on MinGW the
+/// import library `libopenblas.dll.a` (or `libopenblas.a`) is `-lopenblas`.
+fn link_name(lib: &std::path::Path, gnu: bool) -> Option<String> {
+    let file = lib.file_name()?.to_str()?;
+    if !gnu {
+        return Some(lib.file_stem()?.to_string_lossy().into_owned());
+    }
+    let stem = file.strip_suffix(".dll.a").or_else(|| file.strip_suffix(".a"))
+        .or_else(|| file.strip_suffix(".dll"))?;
+    Some(stem.strip_prefix("lib").unwrap_or(stem).to_string())
 }

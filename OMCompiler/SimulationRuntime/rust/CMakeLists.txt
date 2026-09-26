@@ -72,6 +72,18 @@ if(RUST_OMC_TARGET)
 endif()
 
 set(_simrt_so ${_simrt_target_dir}/${_simrt_artifact_subdir}/${CMAKE_SHARED_LIBRARY_PREFIX}SimulationRuntimeRust${CMAKE_SHARED_LIBRARY_SUFFIX})
+if(WIN32)
+  # rustc names a Windows DLL without the lib prefix MinGW's CMake expects, and its
+  # import library <dll>.lib with MSVC but lib<name>.dll.a with MinGW.
+  set(_simrt_so ${_simrt_target_dir}/${_simrt_artifact_subdir}/SimulationRuntimeRust.dll)
+  if(MSVC)
+    set(_simrt_implib ${_simrt_so}.lib)
+    set(_simrt_implib_name SimulationRuntimeRust.lib)
+  else()
+    set(_simrt_implib ${_simrt_target_dir}/${_simrt_artifact_subdir}/libSimulationRuntimeRust.dll.a)
+    set(_simrt_implib_name libSimulationRuntimeRust.dll.a)
+  endif()
+endif()
 # The same runtime as an archive, which a source-code FMU links. Its own cargo
 # invocation and target directory, because two things must differ:
 #
@@ -122,8 +134,9 @@ if(TARGET primme)
        "OMC_PRIMME_NATIVE_DIR=$<TARGET_FILE_DIR:primme>"
        "OMC_PRIMME_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/primme-3.2.3/include")
 endif()
-# MSVC has no lapack.lib/blas.lib for openmodelica_nls to name.
-if(MSVC)
+# Windows has no lapack/blas library for openmodelica_nls and openmodelica_sim_meta
+# to name: MSVC has no lapack.lib/blas.lib and MSYS2 only has OpenBLAS.
+if(WIN32)
   set(_simrt_lapack "")
   foreach(_l IN LISTS LAPACK_LIBRARIES BLAS_LIBRARIES)
     if(IS_ABSOLUTE "${_l}" AND NOT _l IN_LIST _simrt_lapack)
@@ -235,11 +248,11 @@ if(TARGET OpenModelicaRuntimeC)
 endif()
 
 if(WIN32)
-  # The DLL belongs next to the executables that load it, and cargo names the
-  # import library <dll>.lib, not <name>.lib.
+  # The DLL belongs next to the executables that load it, and the import library
+  # where the generated code's -lSimulationRuntimeRust finds it.
   install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
-  install(FILES ${_simrt_so}.lib DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc
-          RENAME SimulationRuntimeRust.lib)
+  install(FILES ${_simrt_implib} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc
+          RENAME ${_simrt_implib_name})
 else()
   install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
 endif()
