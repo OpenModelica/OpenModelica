@@ -1,6 +1,5 @@
 //! String hashing builtins (djb2 / sdbm).
 
-
 /// Returns a hash of the string using Rust's built-in hash.
 pub fn stringHash(str: impl AsRef<str>) -> i32 {
     use std::collections::hash_map::DefaultHasher;
@@ -38,17 +37,20 @@ fn djb2_wide(bytes: &[u8]) -> u64 {
 
 /// Returns a DJB2 hash of the string.
 /// DJB2 algorithm: hash = hash * 33 + byte
+#[inline]
 pub fn stringHashDjb2(str: impl AsRef<str>) -> i32 {
     (djb2(str.as_ref().as_bytes(), 5381) & HASH_MASK) as i32
 }
 
 /// Continues computing a DJB2 hash by adding another string to it.
+#[inline]
 pub fn stringHashDjb2Continue(str: impl AsRef<str>, hash: i32) -> i32 {
     (djb2(str.as_ref().as_bytes(), hash as u32) & HASH_MASK) as i32
 }
 
 /// Same result as `stringHashDjb2Continue(intString(i), hash)`, without
 /// building the string.
+#[inline]
 pub fn intHashDjb2Continue(i: i32, hash: i32) -> i32 {
     let mut buf = [0u8; 11];
     let mut n = buf.len();
