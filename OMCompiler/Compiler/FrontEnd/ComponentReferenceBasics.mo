@@ -913,8 +913,8 @@ protected
 algorithm
   while not last loop
     (hash, c, last) := match c
-      case DAE.CREF_IDENT() then (crefHashSubscripts(c.subscriptLst, crefHashIdent(c.ident, hash)), c, true);
-      case DAE.CREF_QUAL() then (crefHashSubscripts(c.subscriptLst, crefHashIdent(c.ident, hash)), c.componentRef, false);
+      case DAE.CREF_IDENT() then (crefHashSubscripts(c.subscriptLst, stringHashDjb2Continue(c.ident, stringHashDjb2Continue(".", hash))), c, true);
+      case DAE.CREF_QUAL() then (crefHashSubscripts(c.subscriptLst, stringHashDjb2Continue(c.ident, stringHashDjb2Continue(".", hash))), c.componentRef, false);
       else (hash, c, true);
     end match;
   end while;
