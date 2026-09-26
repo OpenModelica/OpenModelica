@@ -38,6 +38,7 @@
  */
 
 #include <iostream>
+#include <QApplication>
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 #include "Options/OptionsDialog.h"
@@ -361,6 +362,9 @@ void TextAnnotation::drawAnnotation(QPainter *painter)
   QPointF p2 = mExtent.size() > 1 ? mExtent.at(1) : QPointF(100.0, 100.0);
   bool startInv = p1.x() > p2.x();
   applyLinePattern(painter);
+  if (qApp->property("omeditDarkMode").toBool() && painter->pen().color() == QColor(Qt::black)) {
+    painter->setPen(QColor(232, 234, 237));
+  }
   /* Don't apply the fill patterns on Text shapes. */
   /*applyFillPattern(painter);*/
   // store the existing transformations
