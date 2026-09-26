@@ -55,6 +55,7 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 #include "Search/FindUsageWidget.h"
+#include "Modeling/ClassDiagramWidget.h"
 #include "Cloud/CloudMount.h"
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
@@ -2845,6 +2846,10 @@ void LibraryTreeView::createActions()
   mpFindUsageAction = new QAction(Helper::findUsage, this);
   mpFindUsageAction->setStatusTip(Helper::findUsageTip);
   connect(mpFindUsageAction, SIGNAL(triggered()), SLOT(findUsageOfClass()));
+  // class diagram action
+  mpClassDiagramAction = new QAction(Helper::classDiagram, this);
+  mpClassDiagramAction->setStatusTip(Helper::classDiagramTip);
+  connect(mpClassDiagramAction, SIGNAL(triggered()), SLOT(showClassDiagram()));
   // Duplicate action
   /* Ticket #3265
    * Changed the name from Copy to Duplicate.
@@ -3122,6 +3127,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpFindUsageAction);
+#ifdef OM_OMEDIT_CLASS_DIAGRAM
+          menu.addAction(mpClassDiagramAction);
+#endif
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
@@ -3560,6 +3568,20 @@ void LibraryTreeView::findUsageOfClass()
     FindUsageWidget::instance()->findUsageOfClass(pLibraryTreeItem->getNameStructure());
     MainWindow::instance()->getFindUsageDockWidget()->show();
   }
+}
+
+/*!
+ * \brief LibraryTreeView::showClassDiagram
+ * Shows the class diagram of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::showClassDiagram()
+{
+#ifdef OM_OMEDIT_CLASS_DIAGRAM
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->getClassDiagramWidget()->showClassDiagram(pLibraryTreeItem->getNameStructure());
+  }
+#endif
 }
 
 /*!

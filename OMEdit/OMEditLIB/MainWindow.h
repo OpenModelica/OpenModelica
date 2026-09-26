@@ -87,6 +87,7 @@ class LocalsWidget;
 class TargetOutputWidget;
 class GDBLoggerWidget;
 class DocumentationWidget;
+class ClassDiagramWidget;
 class PlotWindowContainer;
 class VariablesWidget;
 class BreakpointsWidget;
@@ -160,6 +161,10 @@ public:
   GDBLoggerWidget* getGDBLoggerWidget() {return mpGDBLoggerWidget;}
   DocumentationWidget* getDocumentationWidget() {return mpDocumentationWidget;}
   QDockWidget* getDocumentationDockWidget() {return mpDocumentationDockWidget;}
+#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE) // see ClassDiagramWidget.h
+  ClassDiagramWidget* getClassDiagramWidget() {return mpClassDiagramWidget;}
+  QDockWidget* getClassDiagramDockWidget() {return mpClassDiagramDockWidget;}
+#endif
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
@@ -337,6 +342,10 @@ private:
   QDockWidget *mpGDBLoggerDockWidget;
   DocumentationWidget *mpDocumentationWidget;
   QDockWidget *mpDocumentationDockWidget;
+#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE) // see ClassDiagramWidget.h
+  ClassDiagramWidget *mpClassDiagramWidget;
+  QDockWidget *mpClassDiagramDockWidget;
+#endif
   PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
