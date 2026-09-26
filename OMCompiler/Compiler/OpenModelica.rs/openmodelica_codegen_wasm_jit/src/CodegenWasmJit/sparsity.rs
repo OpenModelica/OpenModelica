@@ -159,7 +159,7 @@ impl JacArraySlots {
         let mut exact = HashMap::default();
         for sv in lst(&jm.seedVars).cloned().chain(jac_listed_vars(jm)) {
             let Ok(index) = usize::try_from(sv.index) else { continue };
-            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(sv.name.clone()).ok()?;
+            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&sv.name).ok()?;
             let key = sim_cref_key(&stripped).ok()?;
             if let Some(positions) = BoundCref::new(&sv.name, &[]).and_then(|b| b.single_positions()) {
                 exact.entry((key.clone(), positions)).or_insert(index);
@@ -170,13 +170,13 @@ impl JacArraySlots {
     }
 
     fn base(&self, cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<usize> {
-        let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(cr.clone()).ok()?;
+        let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&cr).ok()?;
         self.base.get(&sim_cref_key(&stripped).ok()?).copied()
     }
 
     fn offsets(&self, cr: &BoundCref) -> Option<Vec<usize>> {
         if let Some(positions) = cr.single_positions() {
-            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(cr.cref.clone()).ok()?;
+            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&cr.cref).ok()?;
             if let Some(&index) = self.exact.get(&(sim_cref_key(&stripped).ok()?, positions)) {
                 return Some(vec![index]);
             }

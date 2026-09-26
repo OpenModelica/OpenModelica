@@ -36,8 +36,8 @@ use crate::Main;
 /// `OPENMODELICAHOME` environment variable).
 pub fn init(args: &[ArcStr]) -> Result<()> {
     let arglist: metamodelica::List<ArcStr> = args.iter().cloned().collect();
-    let arglist = Main::init(arglist)?;
-    Main::readSettings(arglist)?;
+    let arglist = Main::init(&arglist)?;
+    Main::readSettings(&arglist)?;
     Ok(())
 }
 

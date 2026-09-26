@@ -113,7 +113,7 @@ fn push_cref_display(cr: &metamodelica::Ref<DAE::ComponentRef>, brackets: bool, 
             push_cref_display(componentRef, brackets, s)?;
         }
         C::CREF_IDENT { ident, subscriptLst, .. } => push_ident_subs(ident, subscriptLst, brackets, s)?,
-        _ => s.push_str(&ComponentReferenceBasics::printComponentRefStr(cr.clone())?),
+        _ => s.push_str(&ComponentReferenceBasics::printComponentRefStr(&cr)?),
     }
     Ok(())
 }
@@ -146,7 +146,7 @@ fn push_ident_subs(
             Some(i) => {
                 let _ = write!(s, "{i}");
             }
-            None => s.push_str(&openmodelica_frontend_dump::ExpressionBasics::printSubscriptStr(sub.clone())?),
+            None => s.push_str(&openmodelica_frontend_dump::ExpressionBasics::printSubscriptStr(&sub)?),
         }
     }
     s.push_str(if brackets { "]" } else { "_R" });

@@ -119,7 +119,7 @@ pub(crate) fn is_cell_ctor(name: &str) -> bool {
     is_mutable_ctor(name) || name == "Pointer"
 }
 
-const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
+pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     "Mutable", "MutableWeak", "GCExt", "Pointer", "PointerWeak",
     "File", "Global", "Vector",
     "ErrorExt", "Print", "ParserExt", "System", "Settings",
@@ -700,6 +700,8 @@ struct GenCtx {
     assign_lhs_names: HashSet<String>,
     /// Per-element borrow decision for a tuple subject. Empty = all elements.
     borrow_mask: Vec<bool>,
+    /// Inputs of the current function emitted as `&T` (see [`crate::borrow_params`]).
+    borrowed_params: HashSet<String>,
     /// Stack of enclosing loop labels (innermost last), one entry per active
     /// `for`/`while` loop. `Some(label)` when the loop was emitted with an
     /// explicit `'__loopN:` label because its body contains a `break`/`continue`
@@ -814,6 +816,7 @@ impl GenCtx {
             place_reads: false,
             assign_lhs_names: HashSet::new(),
             borrow_mask: Vec::new(),
+            borrowed_params: HashSet::new(),
             loop_label_stack: Vec::new(),
         }
     }
@@ -1807,7 +1810,47 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
         }
     }
 
-    phase_times.push(("file_jobs collection", _pp.elapsed()));
+    phase_times.push(("file_jobs collection", _pp.elapsed())); let _pp = std::time::Instant::now();
+
+    // Functions whose Rust signature is not generated from their .mo (hand-written
+    // replacements, alias re-exports) keep their by-value parameters.
+    let mut borrow_excluded: HashSet<String> = HashSet::new();
+    for (dir, classes) in &dir_classes {
+        for (name, _) in classes {
+            if dir == "openmodelica/src" {
+                borrow_excluded.insert(name.to_string());
+                continue;
+            }
+            let hw = HandwrittenItems::read(dir, name)?;
+            borrow_excluded.extend(hw.replaces.iter().chain(hw.drops.iter()).map(|i| format!("{name}.{i}")));
+        }
+    }
+    // A wasm stub must keep the signature it was written against.
+    borrow_excluded.extend(WASM_GATED_TOP_MODULES.iter().filter(|(_, stub)| stub.is_some()).map(|(m, _)| m.to_string()));
+    let mut all_fns: Vec<(String, &NameNode<'_>)> = Vec::new();
+    collect_all_function_nodes(&hier.top_level, "", &mut all_fns);
+    let mut alias_nodes: Vec<(String, String)> = Vec::new();
+    collect_function_aliases(&hier.top_level, "", &mut alias_nodes);
+    for (alias_q, base) in &alias_nodes {
+        let parent = alias_q.rsplit_once('.').map_or("", |(p, _)| p);
+        if let Some(q) = resolve_alias_base_at_alias_scope(base, Some(alias_q), &hier.top_level)
+            .or_else(|| typedexp::resolve_call_node(base, &hier.top_level, parent).map(|(q, _)| q))
+        {
+            borrow_excluded.insert(q);
+        }
+    }
+    for (q, _) in &all_fns {
+        if let Some(top) = q.split('.').next()
+            && borrow_excluded.contains(top) {
+            borrow_excluded.insert(q.clone());
+        }
+    }
+    let types = crate::borrow_params::Types { recursive: &hier.recursive_types, copy: &copy_type_qnames };
+    let masks = crate::borrow_params::analyze(&hier.top_level, &types, &borrow_excluded);
+    let n_params: usize = masks.values().map(|m| m.iter().filter(|b| **b).count()).sum();
+    println!("Borrowed parameters: {n_params} in {} functions", masks.len());
+    crate::borrow_params::install(masks);
+    phase_times.push(("borrowed params", _pp.elapsed()));
 
     // Parallel pass: each file is generated independently. Accumulate the sum of
     // per-file CPU time and the wall-clock of the phase so we can compute the
@@ -4535,7 +4578,7 @@ fn case_tail_has_self_call(case: &TypedCase, self_short_name: &str) -> bool {
 /// Return true if the body `stmts` (interpreted as code that will produce the
 /// `out_names`' value) has a self-call in some tail position. Mirrors the
 /// recursion in [`stmts_lowerable_as_tail_expr`].
-fn stmts_have_tail_self_call(
+pub(crate) fn stmts_have_tail_self_call(
     stmts: &[typedexp::TypedStmt],
     out_names: &[String],
     self_short_name: &str,
@@ -5815,7 +5858,7 @@ fn collect_type_vars_in_typed_stmts(stmts: &[typedexp::TypedStmt], out: &mut Vec
 /// The base variable name a `Var` reference reads — its first dotted/segment
 /// component. Liveness and the move decision operate on this enclosing binding
 /// (a field/subscript access `node.f[i]` is a read of `node`).
-fn var_base_name(name: &str, segments: &[CrefSegment]) -> String {
+pub(crate) fn var_base_name(name: &str, segments: &[CrefSegment]) -> String {
     match segments.first() {
         Some(seg) => seg.name.clone(),
         None => name.split('.').next().unwrap_or(name).to_owned(),
@@ -7047,7 +7090,7 @@ fn collect_pat_names_split(pat: &TypedPat, binds: &mut HashSet<String>, reads: &
 /// writes the returned text verbatim instead of generating a body. The source
 /// must be a complete module-level item with a signature compatible with every
 /// call site (the generator still resolves calls to `Module::fn`).
-fn function_source_replacement(qname: &str) -> Option<&'static str> {
+pub(crate) fn function_source_replacement(qname: &str) -> Option<&'static str> {
     // Two used to live here, both working around referenceEq lowerings that
     // have since been fixed properly:
     //  * `List.allReferenceEq` — generic element compare was an always-false
@@ -7781,22 +7824,6 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     }
     collect_type_vars_in_ty(fn_output_eff, &mut all_type_vars);
 
-    // Mark every parameter `mut`. MetaModelica freely reassigns inputs
-    // (e.g. `classPart` rewritten via `assign_variant_field!`), and detecting
-    // every shape of reassignment (plain assigns, macro-based field updates,
-    // pattern lets that re-bind the name) would require walking the full
-    // typed body twice. Since `#![allow(unused_mut)]` covers the case where
-    // the body never actually mutates the binding, emitting `mut` everywhere
-    // is correct and avoids E0384 across the corpus.
-    let params = fn_inputs_eff.iter()
-        .map(|inp| {
-            let ty_s = try_alias(&inp.name, None)
-                .unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx));
-            format!("mut {}: {}", escape_ident(&inp.name), ty_s)
-        })
-        .collect::<Vec<_>>()
-        .join(", ");
-
     // Return type: prefer a sibling type alias when the (single) output's
     // declared TypeSpec is a bare alias reference. Multi-output functions
     // lower to a tuple — substitute element-wise so `(Key, Value)` survives
@@ -7852,6 +7879,26 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     ctx.current_fn_fallible = ctx.fallible_functions.contains(&fn_qname);
     let saved_fn_qname = std::mem::replace(&mut ctx.current_fn_qname, fn_qname.clone());
     let is_fallible_fn = ctx.current_fn_fallible;
+    let borrowed: HashSet<String> = match crate::borrow_params::mask(&fn_qname) {
+        Some(m) => fn_inputs_eff.iter().zip(m).filter(|(_, b)| **b).map(|(i, _)| i.name.clone()).collect(),
+        None => HashSet::new(),
+    };
+    // Mark every parameter `mut`. MetaModelica freely reassigns inputs
+    // (e.g. `classPart` rewritten via `assign_variant_field!`), and detecting
+    // every shape of reassignment (plain assigns, macro-based field updates,
+    // pattern lets that re-bind the name) would require walking the full
+    // typed body twice. Since `#![allow(unused_mut)]` covers the case where
+    // the body never actually mutates the binding, emitting `mut` everywhere
+    // is correct and avoids E0384 across the corpus.
+    let params = fn_inputs_eff.iter()
+        .map(|inp| {
+            let ty_s = try_alias(&inp.name, None)
+                .unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx));
+            let amp = if borrowed.contains(&inp.name) { "&" } else { "" };
+            format!("mut {}: {amp}{}", escape_ident(&inp.name), ty_s)
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
 
     // Visibility keyword. MetaModelica-protected functions stay module-private
     // (`fn`). Public ones are `pub` only when the visibility analysis found them
@@ -8031,7 +8078,15 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     // exit.
     ctx.place_mode.clear();
     for k in env.vars.keys() {
-        ctx.place_mode.insert(k.clone(), PlaceMode::Owned);
+        let mode = if borrowed.contains(k) { PlaceMode::Ref } else { PlaceMode::Owned };
+        ctx.place_mode.insert(k.clone(), mode);
+    }
+    let saved_borrowed = std::mem::replace(&mut ctx.borrowed_params, borrowed.clone());
+    let saved_shapes_fn = ctx.variant_shapes.clone();
+    for inp in fn_inputs_eff.iter() {
+        if borrowed.contains(&inp.name) && is_arc_wrapped(&inp.ty, ctx) {
+            ctx.variant_shapes.insert(inp.name.clone(), VarShape::RefArc);
+        }
     }
     for st in typed_stmts.iter_mut() {
         walk_stmt_mut(st, &mut |e| bind_match_subject_fields(e, ctx, top_level));
@@ -8264,6 +8319,9 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         let saved_fn_outputs_no_default = ctx.fn_outputs_no_default.clone();
         let saved_uninit_arrays = ctx.uninit_arrays.clone();
         let saved_hoisted_arrays = ctx.hoisted_arrays.clone();
+        let saved_place_mode = ctx.place_mode.clone();
+        let saved_variant_shapes = ctx.variant_shapes.clone();
+        let saved_borrowed_params = ctx.borrowed_params.clone();
         for member in parent_members.iter() {
             if let MM::ClassMember::ClassDef(cdm) = member
                 && matches!(&cdm.class_def.restriction, Absyn::Restriction::R_FUNCTION { .. })
@@ -8314,6 +8372,9 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         ctx.fn_outputs_no_default = saved_fn_outputs_no_default;
         ctx.uninit_arrays = saved_uninit_arrays;
         ctx.hoisted_arrays = saved_hoisted_arrays;
+        ctx.place_mode = saved_place_mode;
+        ctx.variant_shapes = saved_variant_shapes;
+        ctx.borrowed_params = saved_borrowed_params;
     }
 
     // Open the tail-call loop *before* the output/protected-local declarations
@@ -8543,6 +8604,8 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
             ctx.current_fn_fallible = saved_fn_fallible;
             ctx.current_fn_qname = saved_fn_qname;
             ctx.in_tail_lowered_fn = saved_in_tc;
+            ctx.borrowed_params = saved_borrowed;
+            ctx.variant_shapes = saved_shapes_fn;
             restore_imports(ctx, &saved_imports);
             return;
         }
@@ -8563,6 +8626,8 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
             ctx.current_fn_fallible = saved_fn_fallible;
             ctx.current_fn_qname = saved_fn_qname;
             ctx.in_tail_lowered_fn = saved_in_tc;
+            ctx.borrowed_params = saved_borrowed;
+            ctx.variant_shapes = saved_shapes_fn;
             ctx.tail_loop_params.clear();
             ctx.tail_self_short.clear();
             restore_imports(ctx, &saved_imports);
@@ -8596,6 +8661,8 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     ctx.current_fn_fallible = saved_fn_fallible;
     ctx.current_fn_qname = saved_fn_qname;
     ctx.in_tail_lowered_fn = saved_in_tc;
+    ctx.borrowed_params = saved_borrowed;
+    ctx.variant_shapes = saved_shapes_fn;
     restore_imports(ctx, &saved_imports);
 }
 
@@ -9457,7 +9524,10 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                         .and_then(|q| fn_ref_turbofish(q, ctx, top_level))
                         .unwrap_or_default();
                     let var_str = format!("{var_str}{tf}");
-                    let closure = if input_tys.is_empty() {
+                    let bmask = resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask);
+                    let closure = if let Some(m) = bmask {
+                        borrow_adapter(&var_str, m, &input_tys, true)
+                    } else if input_tys.is_empty() {
                         format!("fnptr!({var_str})")
                     } else {
                         format!("fnptr!({}, {})", var_str, input_tys.join(", "))
@@ -9597,7 +9667,11 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     let tf = resolved_fn_qname.as_deref()
                         .and_then(|q| fn_ref_turbofish(q, ctx, top_level))
                         .unwrap_or_default();
-                    format!("(std::sync::Arc::new({var_str}{tf}) as std::sync::Arc<dyn ::std::ops::Fn({}) -> Result<{out_ty}> + 'static>)",
+                    let f = match resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask) {
+                        Some(m) => borrow_adapter(&format!("{var_str}{tf}"), m, &input_tys, false),
+                        None => format!("{var_str}{tf}"),
+                    };
+                    format!("(std::sync::Arc::new({f}) as std::sync::Arc<dyn ::std::ops::Fn({}) -> Result<{out_ty}> + 'static>)",
                         input_tys.join(", "))
                 }
                 // `Ty::FunctionAlias { base, .. }` — e.g.
@@ -9734,6 +9808,13 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     && matches!(effective_ty, Ty::RustStruct(_) | Ty::RustEnum(_) | Ty::AliasTo(_) | Ty::Option(_) | Ty::Tuple(_))
                     && !ty_contains_unknown(effective_ty) =>
                     format!("&{var_str}"),
+                _ if borrow_here && is_plain_local && ctx.borrowed_params.contains(&base)
+                    && (is_arc_wrapped(effective_ty, ctx) || matches!(effective_ty, Ty::List(_))) =>
+                    format!("&**{var_str}"),
+                _ if borrow_here && is_plain_local && ctx.borrowed_params.contains(&base)
+                    && matches!(effective_ty, Ty::RustStruct(_) | Ty::RustEnum(_) | Ty::AliasTo(_))
+                    && !ty_contains_unknown(effective_ty) =>
+                    var_str,
                 _ => format!("{var_str}.clone()"),
             };
             // `emit_var` reported an inline `RefCell::borrow()` guard (an
@@ -10118,6 +10199,14 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 QMode::TryBlock(label) => QMode::TryBlock(label.clone()),
                 _ => QMode::Function,
             };
+            let callee_mask: Option<&'static [bool]> = if is_const {
+                None
+            } else if local_shadows_fn {
+                resolved_fn_qname.clone().or_else(|| resolve_call_qname(func, ctx, top_level))
+                    .and_then(|q| crate::borrow_params::mask(&q))
+            } else {
+                resolve_call_qname(func, ctx, top_level).and_then(|q| crate::borrow_params::mask(&q))
+            };
             let (parts, turbofish): (Vec<String>, Option<String>) = ctx.with_qmode(arg_qmode, |ctx| -> (Vec<String>, Option<String>) {
             let _ = &outer_qmode;
             if let Some(formals) = formals {
@@ -10297,9 +10386,19 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     }
                     parts
                 } else {
-                    slots.into_iter().enumerate()
-                        .map(|(i, s)| {
-                            emit_call_arg_with_formal(&s.unwrap(), formal_at(i).as_ref(), is_const, ctx, top_level)
+                    let slots: Vec<TypedExp> = slots.into_iter().map(Option::unwrap).collect();
+                    let borrowed = |i: usize| callee_mask.is_some_and(|m| m.get(i) == Some(&true));
+                    (0..slots.len())
+                        .map(|i| {
+                            if borrowed(i) {
+                                let others: Vec<&TypedExp> = slots.iter().enumerate()
+                                    .filter(|(j, e)| *j != i && !(borrowed(*j) && matches!(e, TypedExp::Var { .. })))
+                                    .map(|(_, e)| e)
+                                    .collect();
+                                emit_borrowed_arg(&slots[i], &others, formal_at(i).as_ref(), ctx, top_level)
+                            } else {
+                                emit_call_arg_with_formal(&slots[i], formal_at(i).as_ref(), is_const, ctx, top_level)
+                            }
                         })
                         .collect()
                 };
@@ -10322,7 +10421,15 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 // A PartEval already self-wraps as `Arc<dyn Fn(..)>` in
                 // `emit_parteval`, so it's forwarded unchanged here.
                 let wrap_part_eval = |_a: &TypedExp, raw: String| -> String { raw };
-                let mut parts: Vec<String> = args.iter().map(|a| {
+                let borrowed = |i: usize| named_args.is_empty() && callee_mask.is_some_and(|m| m.get(i) == Some(&true));
+                let mut parts: Vec<String> = args.iter().enumerate().map(|(i, a)| {
+                    if borrowed(i) {
+                        let others: Vec<&TypedExp> = args.iter().enumerate()
+                            .filter(|(j, e)| *j != i && !(borrowed(*j) && matches!(e, TypedExp::Var { .. })))
+                            .map(|(_, e)| e)
+                            .collect();
+                        return emit_borrowed_arg(a, &others, None, ctx, top_level);
+                    }
                     let raw = emit_cloned_call_arg(a, is_const, ctx, top_level);
                     wrap_part_eval(a, raw)
                 }).collect();
@@ -10987,6 +11094,10 @@ fn emit_parteval<'a>(
         Some(format!("Arc<dyn ::std::ops::Fn({ins}) -> Result<{out}> + 'static>"))
     }
 
+    let pe_mask = if callee_is_local { None } else {
+        resolve_call_qname(func, ctx, top_level).and_then(|q| crate::borrow_params::mask(&q))
+    };
+    let amp = |i: usize| if pe_mask.is_some_and(|m| m.get(i) == Some(&true)) { "&" } else { "" };
     for (i, formal_name) in formal_names.iter().enumerate() {
         let formal_ty = formal_tys.get(i).cloned();
         let cap_annot = formal_ty.as_ref().and_then(|t| dyn_fn_annot(t, ctx));
@@ -11001,19 +11112,19 @@ fn emit_parteval<'a>(
             let v = emit_call_arg_with_formal(&args[i], formal_ty.as_ref(), is_const, ctx, top_level);
             let cap_name = format!("__pe_b{i}");
             captures.push(cap_decl(&cap_name, &v));
-            call_arg_exprs.push(format!("{cap_name}.clone()"));
+            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("&{cap_name}") });
         } else if let Some(named_expr) = named_map.remove(formal_name.as_str()) {
             // Named binding (looked up by formal name).
             let v = emit_call_arg_with_formal(named_expr, formal_ty.as_ref(), is_const, ctx, top_level);
             let cap_name = format!("__pe_b{i}");
             captures.push(cap_decl(&cap_name, &v));
-            call_arg_exprs.push(format!("{cap_name}.clone()"));
+            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("&{cap_name}") });
         } else {
             // Unbound — becomes a closure parameter.
             let p = format!("__pe_a{i}");
             closure_params.push(p.clone());
             closure_param_tys.push(formal_tys.get(i).cloned().unwrap_or(Ty::Unknown));
-            call_arg_exprs.push(p);
+            call_arg_exprs.push(format!("{}{p}", amp(i)));
         }
     }
 
@@ -11411,7 +11522,8 @@ fn emit_reduction<'a>(
                     };
                     let fname = escape_ident(&fname);
                     let acc_ty = ty_or_underscore(ty, ctx);
-                    let call_expr = format!("{fname}(__x, __acc)");
+                    let (a0, a1) = reduction_arg_borrows(func, ctx, top_level);
+                    let call_expr = format!("{fname}({a0}__x, {a1}__acc)");
                     let update = format!("__acc = {};", ctx.q(&call_expr));
                     (
                         format!("let mut __acc: {acc_ty} = {seed};"),
@@ -11434,7 +11546,8 @@ fn emit_reduction<'a>(
                     };
                     let fname = escape_ident(&fname);
                     let acc_ty = ty_or_underscore(ty, ctx);
-                    let call_expr = format!("{fname}(__x, __cur)");
+                    let (a0, a1) = reduction_arg_borrows(func, ctx, top_level);
+                    let call_expr = format!("{fname}({a0}__x, {a1}__cur)");
                     // Only propagate with `?` when the fold function is
                     // actually fallible (returns `Result<T>`).
                     let call_expr = match resolve_call_qname(func, ctx, top_level) {
@@ -11695,6 +11808,13 @@ fn numeric_sum_ty(ty: &Ty) -> &'static str {
 /// Returns `None` if the builtin has no entry (e.g. constructor-shaped builtins
 /// such as `SOME`, `list`, or `SOURCEINFO` whose argument shapes are
 /// context-dependent and don't have a static formal type).
+/// The `&` prefixes for the element and accumulator of a user reduction `f(x, acc)`.
+fn reduction_arg_borrows(func: &str, ctx: &GenCtx, top_level: &BTreeMap<String, NameNode<'_>>) -> (&'static str, &'static str) {
+    let m = resolve_call_qname(func, ctx, top_level).and_then(|q| crate::borrow_params::mask(&q));
+    let amp = |i: usize| if m.is_some_and(|m| m.get(i) == Some(&true)) { "&" } else { "" };
+    (amp(0), amp(1))
+}
+
 fn builtin_formal_ty(func: &str, idx: usize) -> Option<Ty> {
     if let Some(Ty::Function { inputs, .. }) = typedexp::builtin_function_ty(func) {
         return inputs.get(idx).map(|i| i.ty.clone());
@@ -11771,6 +11891,84 @@ fn emit_place_arg<'a>(
     } else {
         format!("({})", emit_builtin_call_arg_raw(func, idx, arg, is_const, ctx, top_level))
     }
+}
+
+/// An argument for a callee parameter declared `&T`: the variable's place when
+/// that can be borrowed for the call, else a borrow of the owned value.
+/// `others` are the arguments of the same call that may move the variable.
+fn emit_borrowed_arg<'a>(
+    arg: &TypedExp,
+    others: &[&TypedExp],
+    formal_ty: Option<&Ty>,
+    ctx: &mut GenCtx,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> String {
+    if let TypedExp::Var { name, segments, .. } = arg
+        && !matches!(arg.ty(), Ty::Tuple(_))
+    {
+        let base = var_base_name(name, segments);
+        let read_elsewhere = others.iter().any(|a| {
+            let mut names = HashSet::new();
+            collect_exp_names(a, &mut names);
+            names.contains(&base)
+        });
+        let plain = segments.len() <= 1 && !name.contains('.') && segments.iter().all(|s| s.subscripts.is_empty());
+        let mode = ctx.place_mode.get(&base).copied();
+        let owned = mode == Some(PlaceMode::Owned)
+            && !ctx.match_refbound.contains(&base)
+            && !matches!(ctx.variant_shapes.get(&base), Some(VarShape::RefArc));
+        let by_ref = mode == Some(PlaceMode::Ref);
+        if (by_ref || owned) && (by_ref && plain || !read_elsewhere) {
+            ctx.place_reads = true;
+            let s = emit_exp(arg, false, ctx, top_level);
+            ctx.place_reads = false;
+            if plain {
+                return if ctx.borrowed_params.contains(&base) {
+                    s
+                } else if by_ref {
+                    format!("metamodelica::AsArg::as_arg(&{s})")
+                } else {
+                    format!("&{s}")
+                };
+            }
+            return if is_single_macro_call(&s, "var_field!(") { s } else { format!("&{s}") };
+        }
+    }
+    format!("&({})", emit_call_arg_with_formal(arg, formal_ty, false, ctx, top_level))
+}
+
+/// A closure with the by-value signature of the function at `path`, which
+/// takes the parameters flagged in `mask` by reference.
+fn borrow_adapter(path: &str, mask: &[bool], input_tys: &[String], wrap_ok: bool) -> String {
+    let params: Vec<String> = input_tys.iter().enumerate().map(|(i, t)| format!("__a{i}: {t}")).collect();
+    let args: Vec<String> = (0..input_tys.len())
+        .map(|i| if mask.get(i) == Some(&true) { format!("&__a{i}") } else { format!("__a{i}") })
+        .collect();
+    let call = format!("{path}({})", args.join(", "));
+    if wrap_ok {
+        format!("move |{}| -> metamodelica::Result<_> {{ ::std::result::Result::Ok({call}) }}", params.join(", "))
+    } else {
+        format!("move |{}| {call}", params.join(", "))
+    }
+}
+
+/// `s` is exactly one `name!( … )` invocation (no trailing field access).
+fn is_single_macro_call(s: &str, open: &str) -> bool {
+    let Some(rest) = s.strip_prefix(open) else { return false };
+    let mut depth = 1usize;
+    for (i, c) in rest.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return i + 1 == rest.len();
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Result<String> {
@@ -11966,13 +12164,15 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // collapse every variant onto a single value, reproducing the
             // bug this code replaces).
             let arg_ty = args[0].ty();
-            let arg_expr = emit_builtin_call_arg_raw(func, 0, &args[0], is_const, ctx, top_level);
             let is_arc_wrapped = match &arg_ty {
                 Ty::RustEnum(n) | Ty::AliasTo(n) | Ty::RustStruct(n) => {
                     ctx.recursive_types.contains(n.as_str())
                 }
                 _ => false,
             };
+            ctx.borrow_reads = is_arc_wrapped && matches!(args[0], TypedExp::Var { .. });
+            let arg_expr = emit_builtin_call_arg_raw(func, 0, &args[0], is_const, ctx, top_level);
+            ctx.borrow_reads = false;
             let ref_expr = if is_arc_wrapped {
                 format!("(&*{arg_expr})")
             } else {
@@ -13642,7 +13842,10 @@ fn emit_call_arg_with_formal<'a>(
                     }
                 }).collect();
                 let _ = output;
-                let fnptr = if in_tys.is_empty() {
+                let bmask = if is_user_fn { user_q.as_deref().and_then(crate::borrow_params::mask) } else { None };
+                let fnptr = if let Some(m) = bmask {
+                    borrow_adapter(path, m, &in_tys, true)
+                } else if in_tys.is_empty() {
                     format!("fnptr!({path})")
                 } else {
                     format!("fnptr!({path}, {})", in_tys.join(", "))
@@ -19347,11 +19550,13 @@ fn emit_pat_assign<'a>(
                     _ => {
                         if outer_arc {
                             let n = *fresh; *fresh += 1;
-                            writeln!(out, "{indent}let __arc{n} = {scrut_expr};").unwrap();
+                            // A borrowed parameter arrives as the place `(*p)`.
+                            let (amp, star) = if scrut_expr.starts_with("(*") { ("&", "*") } else { ("", "") };
+                            writeln!(out, "{indent}let __arc{n} = {amp}{scrut_expr};").unwrap();
                             if let Some(v) = &as_var {
-                                writeln!(out, "{indent}let {} = __arc{n}.clone();", escape_ident(v)).unwrap();
+                                writeln!(out, "{indent}let {} = ({star}__arc{n}).clone();", escape_ident(v)).unwrap();
                             }
-                            writeln!(out, "{indent}let {surface} = &*__arc{n};").unwrap();
+                            writeln!(out, "{indent}let {surface} = &*{star}__arc{n};").unwrap();
                         } else if let Some(place) = borrow_place.filter(|_| deferrals.is_empty()) {
                             writeln!(out, "{indent}let {surface} = &{place};").unwrap();
                         } else if needs_borrow {
@@ -21679,6 +21884,13 @@ fn emit_stmt<'a>(
                 && matches!(lhs_ty_for_rhs, Some(Ty::List(_)) | Some(Ty::Array(_)))
             {
                 emit_call_arg_with_formal(rhs, lhs_ty_for_rhs.as_ref(), /*is_const=*/false, ctx, top_level)
+            } else if let TypedExp::Var { name, segments, .. } = rhs
+                && segments.len() <= 1
+                && ctx.borrowed_params.contains(name.as_str())
+                && crate::borrow_params::pat_destructures(lhs)
+                && ctx.fn_env_vars.get(name.as_str()).is_some_and(|t| is_arc_wrapped(t, ctx) || matches!(t, Ty::List(_) | Ty::Str))
+            {
+                format!("(*{})", escape_ident(name))
             } else {
                 emit_exp(rhs, /*is_const=*/false, ctx, top_level)
             };
@@ -23020,6 +23232,17 @@ pub(crate) fn collect_all_function_nodes<'a>(
                 out.push((qname.clone(), node));
             }
         collect_all_function_nodes(&node.children, &qname, out);
+    }
+}
+
+/// `(alias qname, base as written)` for every `function f = g;` short class.
+fn collect_function_aliases(nodes: &BTreeMap<String, NameNode<'_>>, prefix: &str, out: &mut Vec<(String, String)>) {
+    for (name, node) in nodes {
+        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        if let Ty::FunctionAlias { base, .. } = &node.ty {
+            out.push((qname.clone(), base.clone()));
+        }
+        collect_function_aliases(&node.children, &qname, out);
     }
 }
 

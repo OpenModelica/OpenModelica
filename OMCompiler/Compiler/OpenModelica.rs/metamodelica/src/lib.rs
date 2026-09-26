@@ -106,6 +106,25 @@ impl<T: Clone> Own<T> for &T {
     }
 }
 
+/// A `&T` from a value bound either by move (`T`) or through a borrow (`&T`).
+pub trait AsArg<T> {
+    fn as_arg(&self) -> &T;
+}
+
+impl<T> AsArg<T> for T {
+    #[inline(always)]
+    fn as_arg(&self) -> &T {
+        self
+    }
+}
+
+impl<T> AsArg<T> for &T {
+    #[inline(always)]
+    fn as_arg(&self) -> &T {
+        self
+    }
+}
+
 /// Wrap an infallible function value so it satisfies a function-pointer type
 /// whose signature expects `Result<T>`.
 ///
