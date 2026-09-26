@@ -6003,18 +6003,8 @@ protected function traversingisVarDiscreteCrefFinder
   output BackendDAE.Var outVar;
   output list<DAE.ComponentRef> outTpl;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      BackendDAE.Var v;
-      list<DAE.ComponentRef> cr_lst;
-      DAE.ComponentRef cr;
-    case (v, cr_lst)
-      algorithm
-        true := BackendVariable.isVarDiscrete(v);
-        cr := BackendVariable.varCref(v);
-      then (v, cr::cr_lst);
-    else (inVar,inTpl);
-  end matchcontinue;
+  outVar := inVar;
+  outTpl := if BackendVariable.isVarDiscrete(inVar) then BackendVariable.varCref(inVar) :: inTpl else inTpl;
 end traversingisVarDiscreteCrefFinder;
 
 protected function jacToSimjac

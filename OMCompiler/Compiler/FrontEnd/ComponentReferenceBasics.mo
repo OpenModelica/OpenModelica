@@ -906,19 +906,20 @@ public constant Integer crefHashSeed = 5381;
 public function hashComponentRef
   "djb2 continued over the qualifiers and subscripts in order."
   input DAE.ComponentRef cr;
-  output Integer hash = crefHashSeed;
-protected
-  DAE.ComponentRef c = cr;
-  Boolean last = false;
-algorithm
-  while not last loop
-    (hash, c, last) := match c
-      case DAE.CREF_IDENT() then (crefHashSubscripts(c.subscriptLst, stringHashDjb2Continue(c.ident, stringHashDjb2Continue(".", hash))), c, true);
-      case DAE.CREF_QUAL() then (crefHashSubscripts(c.subscriptLst, stringHashDjb2Continue(c.ident, stringHashDjb2Continue(".", hash))), c.componentRef, false);
-      else (hash, c, true);
-    end match;
-  end while;
+  output Integer hash = hashComponentRefFrom(cr, crefHashSeed);
 end hashComponentRef;
+
+protected function hashComponentRefFrom
+  input DAE.ComponentRef cr;
+  input Integer hash;
+  output Integer outHash;
+algorithm
+  outHash := match cr
+    case DAE.CREF_IDENT() then crefHashSubscripts(cr.subscriptLst, crefHashIdent(cr.ident, hash));
+    case DAE.CREF_QUAL() then hashComponentRefFrom(cr.componentRef, crefHashSubscripts(cr.subscriptLst, crefHashIdent(cr.ident, hash)));
+    else hash;
+  end match;
+end hashComponentRefFrom;
 
 public function crefHashIdent
   input String ident;
