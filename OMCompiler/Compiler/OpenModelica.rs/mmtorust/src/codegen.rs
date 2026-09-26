@@ -6746,7 +6746,7 @@ fn match_drop_columns(
 /// the arm writes `subj` are taken from a pattern binding `V { f: __subj_f, .. }`
 /// instead of a `var_field!` destructure each. Runs before [`mark_last_uses`],
 /// so the reads it removes no longer keep `subj` alive.
-fn bind_match_subject_fields(e: &mut TypedExp, ctx: &GenCtx, top_level: &BTreeMap<String, NameNode<'_>>) {
+fn bind_match_subject_fields(e: &mut TypedExp, skip: &HashSet<String>, ctx: &GenCtx, top_level: &BTreeMap<String, NameNode<'_>>) {
     let TypedExp::Match { kind: MatchKind::Match, input, cases, as_binding: None, .. } = e else { return };
     if !is_arc_wrapped(&input.ty(), ctx) {
         return;
@@ -6756,6 +6756,9 @@ fn bind_match_subject_fields(e: &mut TypedExp, ctx: &GenCtx, top_level: &BTreeMa
         return;
     }
     let subj = var_base_name(name, segments);
+    if skip.contains(&subj) {
+        return;
+    }
     let input_ty = input.ty();
     for case in cases.iter_mut() {
         if let Some(c) = bind_subject_fields(case, &subj, &input_ty, top_level) {
@@ -7879,26 +7882,15 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     ctx.current_fn_fallible = ctx.fallible_functions.contains(&fn_qname);
     let saved_fn_qname = std::mem::replace(&mut ctx.current_fn_qname, fn_qname.clone());
     let is_fallible_fn = ctx.current_fn_fallible;
+    // Rendered before the function-local imports are applied: the signature
+    // does not see them.
+    let param_tys: Vec<(String, String)> = fn_inputs_eff.iter()
+        .map(|inp| (inp.name.clone(), try_alias(&inp.name, None).unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx))))
+        .collect();
     let borrowed: HashSet<String> = match crate::borrow_params::mask(&fn_qname) {
         Some(m) => fn_inputs_eff.iter().zip(m).filter(|(_, b)| **b).map(|(i, _)| i.name.clone()).collect(),
         None => HashSet::new(),
     };
-    // Mark every parameter `mut`. MetaModelica freely reassigns inputs
-    // (e.g. `classPart` rewritten via `assign_variant_field!`), and detecting
-    // every shape of reassignment (plain assigns, macro-based field updates,
-    // pattern lets that re-bind the name) would require walking the full
-    // typed body twice. Since `#![allow(unused_mut)]` covers the case where
-    // the body never actually mutates the binding, emitting `mut` everywhere
-    // is correct and avoids E0384 across the corpus.
-    let params = fn_inputs_eff.iter()
-        .map(|inp| {
-            let ty_s = try_alias(&inp.name, None)
-                .unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx));
-            let amp = if borrowed.contains(&inp.name) { "&" } else { "" };
-            format!("mut {}: {amp}{}", escape_ident(&inp.name), ty_s)
-        })
-        .collect::<Vec<_>>()
-        .join(", ");
 
     // Visibility keyword. MetaModelica-protected functions stay module-private
     // (`fn`). Public ones are `pub` only when the visibility analysis found them
@@ -8088,8 +8080,13 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
             ctx.variant_shapes.insert(inp.name.clone(), VarShape::RefArc);
         }
     }
+    let out_names: Vec<String> = outputs.iter().map(|(n, _, _, _)| n.clone()).collect();
+    let tail_rec_borrowed = !borrowed.is_empty() && stmts_have_tail_self_call(&typed_stmts, &out_names, name);
+    // Their field reads stay `var_field!` re-borrows of the parameter, which a
+    // self-call can pass on; a pattern binding would not outlive the arm.
+    let keep_field_reads = if tail_rec_borrowed { borrowed.clone() } else { HashSet::new() };
     for st in typed_stmts.iter_mut() {
-        walk_stmt_mut(st, &mut |e| bind_match_subject_fields(e, ctx, top_level));
+        walk_stmt_mut(st, &mut |e| bind_match_subject_fields(e, &keep_field_reads, ctx, top_level));
     }
     // Backward liveness: mark the final read of each variable so the `Var` arm
     // of `emit_exp` can move (not clone) an owned value there. The outputs are
@@ -8233,6 +8230,27 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     // tail-position match — see the field's doc comment.
     let saved_in_tc = std::mem::replace(&mut ctx.in_tail_lowered_fn, tail_plan.is_some());
 
+    // Mark every parameter `mut`. MetaModelica freely reassigns inputs
+    // (e.g. `classPart` rewritten via `assign_variant_field!`), and detecting
+    // every shape of reassignment (plain assigns, macro-based field updates,
+    // pattern lets that re-bind the name) would require walking the full
+    // typed body twice. Since `#![allow(unused_mut)]` covers the case where
+    // the body never actually mutates the binding, emitting `mut` everywhere
+    // is correct and avoids E0384 across the corpus.
+    let params = param_tys.iter()
+        .map(|(name, ty_s)| {
+            let amp = if !borrowed.contains(name) { "" } else if tail_rec_borrowed { "&'__b " } else { "&" };
+            format!("mut {}: {amp}{ty_s}", escape_ident(name))
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    // A tail self-call may pass a field of a borrowed parameter, which must
+    // outlive the loop iteration.
+    let type_params = match (tail_rec_borrowed, type_params.strip_prefix('<')) {
+        (false, _) => type_params,
+        (true, Some(rest)) => format!("<'__b, {rest}"),
+        (true, None) => "<'__b>".to_owned(),
+    };
     writeln!(out, "{indent}{pub_kw}fn {ename}{type_params}({params}) -> {sig_ret} {{").unwrap();
     let body_indent = format!("{indent}    ");
 
@@ -11918,7 +11936,7 @@ fn emit_borrowed_arg<'a>(
             && !ctx.match_refbound.contains(&base)
             && !matches!(ctx.variant_shapes.get(&base), Some(VarShape::RefArc));
         let by_ref = mode == Some(PlaceMode::Ref);
-        if (by_ref || owned) && (by_ref && plain || !read_elsewhere) {
+        if by_ref || owned && !read_elsewhere {
             ctx.place_reads = true;
             let s = emit_exp(arg, false, ctx, top_level);
             ctx.place_reads = false;
@@ -15460,10 +15478,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         Some(s) => cases.iter().all(|c| arm_bindings_dead_at_subject_write(c, s)),
         None => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
     };
+    // Reassigning a borrowed parameter does not disturb a borrow of its target.
+    let subject_is_borrowed_param = matches!(input, TypedExp::Var { name, segments, .. }
+        if segments.len() <= 1 && ctx.borrowed_params.contains(name.as_str()));
     let borrow_scrutinee = borrowable
         && as_binding.is_none()
-        && ctx.tail_lowering.is_none()
-        && subject_writes_ok
+        && (subject_is_borrowed_param || ctx.tail_lowering.is_none() && subject_writes_ok)
         && match_uses_match_deref(&deref_ty, cases, ctx, top_level);
     ctx.borrow_reads = borrow_scrutinee;
     ctx.borrow_mask = if borrow_scrutinee { borrow_mask } else { Vec::new() };
@@ -22190,7 +22210,32 @@ fn emit_stmt<'a>(
             if try_emit_enum_for(out, indent, var, range, body, &fail_mode, ctx, env, top_level, fresh) {
                 return;
             }
-            let r = emit_exp(range, false, ctx, top_level);
+            let mut body_writes = HashSet::new();
+            stmts_assigned_var_names(body, &mut body_writes);
+            // A list variable the body leaves alone is iterated in place.
+            let range_place = match range {
+                TypedExp::Var { name, segments, ty, .. }
+                    if matches!(ty, Ty::List(_)) && segments.len() <= 1 && !name.contains('.')
+                        && segments.iter().all(|s| s.subscripts.is_empty())
+                        && !body_writes.contains(name.as_str()) =>
+                {
+                    let owned = ctx.place_mode.get(name.as_str()) == Some(&PlaceMode::Owned)
+                        && !ctx.match_refbound.contains(name.as_str())
+                        && !matches!(ctx.variant_shapes.get(name.as_str()), Some(VarShape::RefArc));
+                    if ctx.borrowed_params.contains(name.as_str()) {
+                        Some(format!("&**{}", escape_ident(name)))
+                    } else if owned {
+                        Some(format!("&*{}", escape_ident(name)))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            };
+            let r = match &range_place {
+                Some(p) => p.clone(),
+                None => emit_exp(range, false, ctx, top_level),
+            };
             // MetaModelica takes the *first* output of a multi-output function
             // call when it appears in single-value position — here, as the
             // iterable of a `for` loop (e.g. `for v in scalarizeList(vars)`,
@@ -22208,6 +22253,7 @@ fn emit_stmt<'a>(
             //   borrowing through the RefCell guard for the whole body (avoids
             //   holding a borrow across user code that may itself touch the array).
             let r = match &range_ty {
+                Ty::List(..) if range_place.is_some() => r,
                 Ty::List(..) => format!("&*{r}"),
                 Ty::Array(..) => format!("{r}.borrow().iter().cloned().collect::<Vec<_>>()"),
                 Ty::Range(..) => r,
@@ -22238,23 +22284,25 @@ fn emit_stmt<'a>(
             }
             // Element type: peel List/Array.
             let elem_ty = match range_ty.clone() { Ty::List(t) | Ty::Array(t) | Ty::Range(t) => *t, _ => Ty::Unknown };
-            // The `&*lst`/`arr.borrow().iter().cloned()` iterators above yield
-            // `&T` for List and `T` for the cloned Array path; integer ranges
-            // yield `T` directly. To present a uniform owned binding to the
-            // body — so downstream codegen (e.g. `var_field!` shape selection)
-            // can assume `var: T` rather than threading a `&T` borrow shape —
-            // we shadow the loop variable with an owned clone for the List
-            // case. For Arc-wrapped element types this is a cheap atomic
-            // increment; for primitives/ArcStr it is also cheap. For other
-            // types, MetaModelica semantics already treat list elements as
-            // independent copies.
-            if matches!(range_ty, Ty::List(_)) {
+            // The List iterator yields `&T`. A loop variable the body writes (or
+            // that names a function-scope variable) is shadowed with an owned
+            // clone; otherwise it stays the reference.
+            let var_by_ref = matches!(range_ty, Ty::List(_))
+                && !body_writes.contains(var.as_str())
+                && !ctx.fn_scope_vars.contains(var.as_str());
+            if matches!(range_ty, Ty::List(_)) && !var_by_ref {
                 // `mut` because the loop body may rebind the variable
                 // (assign_variant_field! mutates through &mut on the binding,
                 // and MetaModelica's `for x in xs loop x := ... end for;`
                 // semantics are translated as reassignments to the loop var).
                 writeln!(out, "{indent}    let mut {0} = {0}.clone();", escape_ident(var)).unwrap();
             }
+            let saved_var_mode = ctx.place_mode.insert(var.clone(), if var_by_ref { PlaceMode::Ref } else { PlaceMode::Owned });
+            let saved_var_shape = if var_by_ref && is_arc_wrapped(&elem_ty, ctx) {
+                Some(ctx.variant_shapes.insert(var.clone(), VarShape::RefArc))
+            } else {
+                None
+            };
             let mut inner = env.clone();
             inner.vars.insert(var.clone(), elem_ty.clone());
             // Register the loop binding in ctx.fn_env_vars so emit_var's
@@ -22272,6 +22320,15 @@ fn emit_stmt<'a>(
             emit_stmts(out, &format!("{indent}    "), body, fail_mode, ctx, &mut inner, top_level, fresh);
             ctx.loop_label_stack.pop();
             if iter_newly_init { ctx.fn_initialized_vars.remove(var); }
+            match saved_var_mode {
+                Some(m) => { ctx.place_mode.insert(var.clone(), m); }
+                None => { ctx.place_mode.remove(var); }
+            }
+            match saved_var_shape {
+                Some(Some(sh)) => { ctx.variant_shapes.insert(var.clone(), sh); }
+                Some(None) => { ctx.variant_shapes.remove(var); }
+                None => {}
+            }
             match saved_arg_ty {
                 Some(t) => { ctx.fn_env_vars.insert(var.clone(), t); }
                 None => { ctx.fn_env_vars.remove(var); }
@@ -23279,6 +23336,34 @@ pub(crate) fn typedexp_function_body_for_analysis<'a>(
 
     let pkg_prefix = fn_qname.rsplit_once('.').map_or("", |(p, _)| p);
     typedexp::infer_stmts(alg_items, &mut env, top_level, pkg_prefix, &all_type_vars)
+}
+
+/// The typed `= expr` initialisers of a function's outputs and protected
+/// components, for the analyses that walk its body.
+pub(crate) fn typedexp_initializers_for_analysis<'a>(
+    fn_qname: &str,
+    node: &NameNode<'_>,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> Vec<TypedExp> {
+    let NodeKind::Class(c) = &node.kind else { return Vec::new() };
+    let MM::ClassDef::Parts { members, .. } = &c.body else { return Vec::new() };
+    let mut all_type_vars: Vec<String> = Vec::new();
+    if let Ty::Function { type_vars, inputs, output, .. } = &node.ty {
+        all_type_vars = type_vars.clone();
+        for inp in inputs.iter() {
+            collect_type_vars_in_ty(&inp.ty, &mut all_type_vars);
+        }
+        collect_type_vars_in_ty(output, &mut all_type_vars);
+    }
+    let env: HashMap<String, Ty> = node.children.iter().map(|(n, c)| (n.clone(), c.ty.clone())).collect();
+    let pkg_prefix = fn_qname.rsplit_once('.').map_or("", |(p, _)| p);
+    members.iter()
+        .filter_map(|m| match m {
+            MM::ClassMember::Component(cm) if !matches!(cm.direction, Absyn::Direction::INPUT) => extract_default_exp(&cm.modification),
+            _ => None,
+        })
+        .map(|e| typedexp::infer_exp(e, &env, top_level, pkg_prefix, &all_type_vars))
+        .collect()
 }
 
 /// Walk a typed statement, looking for user-function calls. For each

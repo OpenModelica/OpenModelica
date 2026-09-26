@@ -59,7 +59,7 @@ pub(crate) fn reset_declined_externals() {
 
 pub(crate) fn note_declined_external(f: &SimCodeFunction::Function::Function, why: String) {
     let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else { return };
-    let ident = AbsynUtil::pathLastIdent(name.clone());
+    let ident = AbsynUtil::pathLastIdent(&name);
     DECLINED_EXTERNALS.with(|d| d.borrow_mut().insert(ident.to_string(), why));
 }
 

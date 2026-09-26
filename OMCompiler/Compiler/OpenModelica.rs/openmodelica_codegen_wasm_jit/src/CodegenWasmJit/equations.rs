@@ -270,7 +270,7 @@ pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]
             }
             E::SES_ALGORITHM { statements, .. } | E::SES_INVERSE_ALGORITHM { statements, .. } => {
                 let defs = openmodelica_frontend_base::Expression::extractUniqueCrefsFromStatmentS(
-                    statements.clone(),
+                    &statements,
                 );
                 if let Ok((defs, _)) = defs {
                     for c in lst(&defs) {
@@ -563,7 +563,7 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
                 rhs.extend(uses(exp)?);
             }
             E::SES_ALGORITHM { statements, .. } | E::SES_INVERSE_ALGORITHM { statements, .. } => {
-                let (defs, used) = Expression::extractUniqueCrefsFromStatmentS(statements.clone())?;
+                let (defs, used) = Expression::extractUniqueCrefsFromStatmentS(&statements)?;
                 lhs.extend(lst(&defs).map(name).collect::<Result<Vec<_>>>()?);
                 rhs.extend(lst(&used).map(name).collect::<Result<Vec<_>>>()?);
             }

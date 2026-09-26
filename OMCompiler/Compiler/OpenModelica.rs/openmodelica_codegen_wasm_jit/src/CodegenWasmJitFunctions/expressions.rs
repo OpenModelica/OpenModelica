@@ -421,7 +421,7 @@ pub(super) fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
 /// which matters where the frontend left the call itself untyped.
 fn identity_builtin_arg(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Exp>> {
     let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
-    let name = AbsynUtil::pathLastIdent(path.clone());
+    let name = AbsynUtil::pathLastIdent(&path);
     let args: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expLst).into_iter().collect();
     match (name.as_str(), args.len()) {
         ("smooth", 2) => Some(args[1].clone()),

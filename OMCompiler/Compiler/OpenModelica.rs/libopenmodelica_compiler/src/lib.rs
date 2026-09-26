@@ -256,7 +256,7 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
             .collect()
     };
     let arglist: metamodelica::List<_> = args.into_iter().collect();
-    let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(&arglist)));
+    let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
     // `process::exit` drops no thread-local, so flush the buffered writers here.
     openmodelica_util::File::flush_all_registered();
     match status {

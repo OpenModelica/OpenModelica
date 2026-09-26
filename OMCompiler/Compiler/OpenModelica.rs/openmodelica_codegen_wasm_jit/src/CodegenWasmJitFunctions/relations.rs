@@ -381,7 +381,7 @@ pub(super) fn compile_call(
         return Ok(vec![rty]);
     }
     // Otherwise it must be a (builtin) math/string function.
-    let name = AbsynUtil::pathLastIdent(metamodelica::Ref::new(path.clone())).to_string();
+    let name = AbsynUtil::pathLastIdent(&metamodelica::Ref::new(path.clone())).to_string();
     // `print(s)`: write the String to the model's stdout via the host `rt_print`.
     // A void procedure, so it yields no result; the owned handle is released after.
     if name == "print" {
