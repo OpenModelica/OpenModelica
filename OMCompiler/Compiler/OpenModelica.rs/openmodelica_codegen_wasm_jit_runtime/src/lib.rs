@@ -911,27 +911,40 @@ fn arr_data(obj: u32) -> u32 {
 /// partially filled array is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_new(elem_kind: u32, ndims: u32, total: u32) -> u32 {
+    let obj = array_new_uninit(elem_kind, ndims, total);
+    // Zero the dim words and the element area (rt_alloc does not zero).
+    let size = arr_data_off(ndims) + total * elem_stride(elem_kind);
+    unsafe { core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize) };
+    obj
+}
+
+/// [`rt_array_new`] with the dim words and elements left for the caller to fill.
+fn array_new_uninit(elem_kind: u32, ndims: u32, total: u32) -> u32 {
     stat_inc(STAT_ARRAY_NEW);
     let data_off = arr_data_off(ndims);
     let bytes = data_off as u64 + total as u64 * elem_stride(elem_kind) as u64;
     if bytes > MAX_ARRAY_BYTES {
-        // Otherwise `size` wraps, or the allocator traps with no message.
-        note_runtime_error(&alloc::format!(
-            "wasm-jit: cannot allocate an array of {total} elements ({bytes} bytes); a dimension was computed from a value that is not a valid size."
-        ));
-        trap();
+        array_too_large(total, bytes);
     }
-    let size = bytes as u32;
-    let obj = rt_alloc(size);
+    let obj = rt_alloc(bytes as u32);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + ARR_KIND_OFF, elem_kind);
         store_u32(obj + ARR_NDIMS_OFF, ndims);
         store_u32(obj + ARR_TOTAL_OFF, total);
-        // Zero the dim words and the element area (rt_alloc does not zero).
-        core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize);
     }
     obj
+}
+
+/// Out of line: formatting the message would give every allocation a stack frame.
+#[cold]
+#[inline(never)]
+fn array_too_large(total: u32, bytes: u64) -> ! {
+    // Otherwise `size` wraps, or the allocator traps with no message.
+    note_runtime_error(&alloc::format!(
+        "wasm-jit: cannot allocate an array of {total} elements ({bytes} bytes); a dimension was computed from a value that is not a valid size."
+    ));
+    trap();
 }
 
 /// Set the size of dimension `axis` (0-based) of an array.
@@ -1055,7 +1068,7 @@ pub extern "C" fn rt_array_copy(obj: u32) -> u32 {
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     let ndims = rt_array_ndims(obj);
     let total = rt_array_total(obj);
-    let dup = rt_array_new(kind, ndims, total);
+    let dup = array_new_uninit(kind, ndims, total);
     for axis in 0..ndims {
         unsafe { store_u32(dup + ARR_DIMS_OFF + axis * 4, load_u32(obj + ARR_DIMS_OFF + axis * 4)) };
     }
