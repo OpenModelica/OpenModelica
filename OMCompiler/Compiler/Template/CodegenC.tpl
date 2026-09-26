@@ -6095,7 +6095,7 @@ match sparsity
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
-    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
+    let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let isAdjointInt = if isAdjoint then 1 else 0
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -6133,12 +6133,8 @@ match sparsity
       <%if isAdjoint then <<
       /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
        * generated primal CSC structure to CSR before computing row colors. */
-      {
-        SPARSE_PATTERN* cscPattern = jacobian->sparsePattern;
-        jacobian->sparsePattern = cscToCsr(cscPattern, <%patternRows%>, <%patternCols%>);
-        freeSparsePattern(cscPattern);
-        if (!jacobian->sparsePattern) return 1;
-      }
+      jacobian->sparsePatternT = cscToCsr(jacobian->sparsePattern, <%patternRows%>, <%patternCols%>);
+      if (!jacobian->sparsePatternT) return 1;
       >> %>
 
       /* Compute coloring at runtime from the actual sparse pattern.
