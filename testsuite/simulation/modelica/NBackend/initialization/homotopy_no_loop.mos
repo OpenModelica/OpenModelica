@@ -33,10 +33,9 @@ simulate(homotopy_no_loop); getErrorString();
 //   (0)[ALGB] (1) Real u
 //   (1)[ALGB] (1) Real y
 //
-// Residual Variables (2)
+// Residual Variables (1)
 // ************************
-//   (0)[RES-] (1) Real $RES_SIM_0
-//   (1)[RES-] (1) Real $RES_SIM_1
+//   (0)[RES-] (1) Real $RES_SIM_1
 //
 // Initial Partition (Lambda = 0)
 // --------------------------------
@@ -49,16 +48,16 @@ simulate(homotopy_no_loop); getErrorString();
 //
 // Initial Partition
 // -------------------
-//   (5) Nonlinear System (size = 2, homotopy = true, mixed = false, torn = true)
-//   --Iteration Vars:{u, y}
-//   --(1) 0 = (u ^ 3.0 + u) - y
+//   (5) Nonlinear System (size = 1, homotopy = true, mixed = false, torn = true)
+//   --Iteration Vars:{u}
+//   --(1) y := u ^ 3.0 + u
 //   --(2) 0 = 1.0 - homotopy(u, y + y ^ 2.0)
 //
 // Algebraic Partition 1
 // -----------------------
-//   (16) Nonlinear System (size = 2, homotopy = true, mixed = false, torn = true)
-//   --Iteration Vars:{y, u}
-//   --(12) 0 = (u ^ 3.0 + u) - y
+//   (16) Nonlinear System (size = 1, homotopy = true, mixed = false, torn = true)
+//   --Iteration Vars:{u}
+//   --(12) y := u ^ 3.0 + u
 //   --(13) 0 = 1.0 - u
 //
 // Event Partition
@@ -68,26 +67,25 @@ simulate(homotopy_no_loop); getErrorString();
 //   SimCode Jacobian INI_NLS_JAC_1(idx = 0, partition = 0)
 // ==========================================================
 //
-// SeedVars (size = 2)
+// SeedVars (size = 1)
 // *********************
 //   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1.u
-//   (1)[SEED] (1) Real $SEED_INI_NLS_JAC_1.y
 //
-// TmpVars (size = 0)
+// TmpVars (size = 1)
 // ********************
+//   (0)[JTMP] (1) Real $pDER_INI_NLS_JAC_1.y
 //
-// ResultVars (size = 2)
+// ResultVars (size = 1)
 // ***********************
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (4) $pDER_INI_NLS_JAC_1.$RES_SIM_0 := (3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u) - $SEED_INI_NLS_JAC_1.y
-//   (3) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := -homotopy($SEED_INI_NLS_JAC_1.u, $SEED_INI_NLS_JAC_1.y + 2.0 * y * $SEED_INI_NLS_JAC_1.y)
+//   (4) $pDER_INI_NLS_JAC_1.y := 3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u
+//   (3) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := -homotopy($SEED_INI_NLS_JAC_1.u, $pDER_INI_NLS_JAC_1.y + 2.0 * y * $pDER_INI_NLS_JAC_1.y)
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_0} ... {($SEED_INI_NLS_JAC_1.y, {}, false), ($SEED_INI_NLS_JAC_1.u, {}, false)}
-// $RES_SIM_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_1} ... {($SEED_INI_NLS_JAC_1.y, {}, true), ($SEED_INI_NLS_JAC_1.u, {}, true)}
+// $RES_SIM_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_1} ... {($SEED_INI_NLS_JAC_1.u, {}, true)}
 //
 // =============================================================
 //   SimCode Jacobian INI_0_NLS_IMPL_1(idx = 2, partition = 2)
@@ -137,25 +135,24 @@ simulate(homotopy_no_loop); getErrorString();
 //   SimCode Jacobian ALG_NLS_JAC_1(idx = 3, partition = 3)
 // ==========================================================
 //
-// SeedVars (size = 2)
+// SeedVars (size = 1)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.y
-//   (1)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.u
+//   (0)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.u
 //
-// TmpVars (size = 0)
+// TmpVars (size = 1)
 // ********************
+//   (0)[JTMP] (1) Real $pDER_ALG_NLS_JAC_1.y
 //
-// ResultVars (size = 2)
+// ResultVars (size = 1)
 // ***********************
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (15) $pDER_ALG_NLS_JAC_1.$RES_SIM_0 := (3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u) - $SEED_ALG_NLS_JAC_1.y
+//   (15) $pDER_ALG_NLS_JAC_1.y := 3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u
 //   (14) $pDER_ALG_NLS_JAC_1.$RES_SIM_1 := -$SEED_ALG_NLS_JAC_1.u
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_0 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_NLS_JAC_1.y, {}, false), ($SEED_ALG_NLS_JAC_1.u, {}, false)}
 // $RES_SIM_1 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_NLS_JAC_1.u, {}, false)}
 //
 // ======================================================
@@ -209,13 +206,16 @@ simulate(homotopy_no_loop); getErrorString();
 // ========================================
 //
 // 16:  (NONLINEAR) index:3 jacobian: true
-// crefs: y , u
-// 	12: u ^ 3.0 + u - y (RESIDUAL)
+// crefs: u
+// 	12: y=u ^ 3.0 + u [Real]
 // 	13: 1.0 - u (RESIDUAL)
 // 	Jacobian idx: 3
-// 	15: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.y [Real]
+// 	15: $pDER_ALG_NLS_JAC_1.y=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u [Real]
 // 	14: $pDER_ALG_NLS_JAC_1.$RES_SIM_1=-$SEED_ALG_NLS_JAC_1.u [Real]
 //
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_ALG_NLS_JAC_1.y (no alias)  initial: 	no arrCref index:(1) []
 //
 // ========================================
 //
@@ -230,13 +230,16 @@ simulate(homotopy_no_loop); getErrorString();
 // algebraicEquations (1 systems):
 // ========================================
 // 16:  (NONLINEAR) index:3 jacobian: true
-// crefs: y , u
-// 	12: u ^ 3.0 + u - y (RESIDUAL)
+// crefs: u
+// 	12: y=u ^ 3.0 + u [Real]
 // 	13: 1.0 - u (RESIDUAL)
 // 	Jacobian idx: 3
-// 	15: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.y [Real]
+// 	15: $pDER_ALG_NLS_JAC_1.y=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u [Real]
 // 	14: $pDER_ALG_NLS_JAC_1.$RES_SIM_1=-$SEED_ALG_NLS_JAC_1.u [Real]
 //
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_ALG_NLS_JAC_1.y (no alias)  initial: 	no arrCref index:(1) []
 //
 // ========================================
 //
@@ -250,13 +253,16 @@ simulate(homotopy_no_loop); getErrorString();
 // initialEquations: (1)
 // ========================================
 // 5:  (NONLINEAR) index:0 jacobian: true
-// crefs: u , y
-// 	1: u ^ 3.0 + u - y (RESIDUAL)
+// crefs: u
+// 	1: y=u ^ 3.0 + u [Real]
 // 	2: 1.0 - homotopy(u, y + y ^ 2.0) (RESIDUAL)
 // 	Jacobian idx: 0
-// 	4: $pDER_INI_NLS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.y [Real]
-// 	3: $pDER_INI_NLS_JAC_1.$RES_SIM_1=-homotopy($SEED_INI_NLS_JAC_1.u, $SEED_INI_NLS_JAC_1.y + 2.0 * y * $SEED_INI_NLS_JAC_1.y) [Real]
+// 	4: $pDER_INI_NLS_JAC_1.y=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u [Real]
+// 	3: $pDER_INI_NLS_JAC_1.$RES_SIM_1=-homotopy($SEED_INI_NLS_JAC_1.u, $pDER_INI_NLS_JAC_1.y + 2.0 * y * $pDER_INI_NLS_JAC_1.y) [Real]
 //
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_INI_NLS_JAC_1.y (no alias)  initial: 	no arrCref index:(1) []
 //
 // ========================================
 //
@@ -315,9 +321,12 @@ simulate(homotopy_no_loop); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	4: $pDER_INI_NLS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.y [Real]
-// 	3: $pDER_INI_NLS_JAC_1.$RES_SIM_1=-homotopy($SEED_INI_NLS_JAC_1.u, $SEED_INI_NLS_JAC_1.y + 2.0 * y * $SEED_INI_NLS_JAC_1.y) [Real]
+// 	4: $pDER_INI_NLS_JAC_1.y=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u [Real]
+// 	3: $pDER_INI_NLS_JAC_1.$RES_SIM_1=-homotopy($SEED_INI_NLS_JAC_1.u, $pDER_INI_NLS_JAC_1.y + 2.0 * y * $pDER_INI_NLS_JAC_1.y) [Real]
 //
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_INI_NLS_JAC_1.y (no alias)  initial: 	no arrCref index:(1) []
 // 	Jacobian idx: 2
 // 	10: $pDER_INI_0_NLS_IMPL_1.$RES_SIM_1=-($SEED_INI_0_NLS_IMPL_1.y + 2.0 * y * $SEED_INI_0_NLS_IMPL_1.y) [Real]
 //
@@ -325,9 +334,12 @@ simulate(homotopy_no_loop); getErrorString();
 // 	7: $pDER_INI_0_NLS_IMPL_2.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_0_NLS_IMPL_2.u + $SEED_INI_0_NLS_IMPL_2.u [Real]
 //
 // 	Jacobian idx: 3
-// 	15: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.y [Real]
+// 	15: $pDER_ALG_NLS_JAC_1.y=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u [Real]
 // 	14: $pDER_ALG_NLS_JAC_1.$RES_SIM_1=-$SEED_ALG_NLS_JAC_1.u [Real]
 //
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_ALG_NLS_JAC_1.y (no alias)  initial: 	no arrCref index:(1) []
 // 	Jacobian idx: 4
 //
 // 	Jacobian idx: 6
