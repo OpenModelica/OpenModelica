@@ -106,6 +106,13 @@ impl<T: Clone> Own<T> for &T {
     }
 }
 
+/// The callback in an `Arc`, for a `&dyn Fn` parameter. Unlike `&*a` it needs
+/// no known type for `a`, so it works on an inferred closure parameter.
+#[inline(always)]
+pub fn arc_ref<F: ?Sized>(a: &std::sync::Arc<F>) -> &F {
+    a
+}
+
 /// A `&T` from a value bound either by move (`T`) or through a borrow (`&T`).
 pub trait AsArg<T> {
     fn as_arg(&self) -> &T;
