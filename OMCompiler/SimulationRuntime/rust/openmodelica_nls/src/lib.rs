@@ -2442,6 +2442,14 @@ pub trait History {
     /// Overwrite entry `k` and set the count to `len`.
     fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]);
     fn set_len(&mut self, len: usize);
+    /// Store `(time, x)` as entry 0, the oldest falling off at [`HIST_DEPTH`].
+    fn push_front(&mut self, time: f64, x: &[f64]) {
+        let count = self.len();
+        for k in (0..count.min(HIST_DEPTH - 1)).rev() {
+            self.shift(k, k + 1);
+        }
+        self.put(0, (count + 1).min(HIST_DEPTH), time, x);
+    }
 }
 
 /// Which stored solutions C's `getValues` builds the guess from.
@@ -2507,10 +2515,7 @@ pub fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
         h.put(0, count, time, x);
         return;
     }
-    for k in (0..count.min(HIST_DEPTH - 1)).rev() {
-        h.shift(k, k + 1);
-    }
-    h.put(0, (count + 1).min(HIST_DEPTH), time, x);
+    h.push_front(time, x);
 }
 
 /// `cleanValueListbyTime`: keep only the newest entry at or before `time`.

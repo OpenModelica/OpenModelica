@@ -400,7 +400,9 @@ fn nls_ls_backend() -> solverflags::Sparse {
     }
 }
 
-/// Count at `count_addr`, then `HIST_DEPTH` × (time, `n` values) from `base`.
+/// A ring of `HIST_DEPTH` × (time, `n` values) from `base`. The word at
+/// `count_addr` holds the count in its low half and the slot of entry 0 in its
+/// high half, so storing a solution moves no other entry.
 struct MemHistory {
     count_addr: u32,
     base: u32,
@@ -408,14 +410,21 @@ struct MemHistory {
 }
 
 impl MemHistory {
+    fn head(&self) -> usize {
+        (unsafe { load_u32(self.count_addr) } >> 16) as usize % HIST_DEPTH
+    }
     fn entry(&self, k: usize) -> u32 {
-        self.base + (k * (8 + self.n * 8)) as u32
+        let slot = (self.head() + k) % HIST_DEPTH;
+        self.base + (slot * (8 + self.n * 8)) as u32
+    }
+    fn set_word(&self, len: usize, head: usize) {
+        unsafe { store_u32(self.count_addr, len as u32 | (head as u32) << 16) };
     }
 }
 
 impl History for MemHistory {
     fn len(&self) -> usize {
-        (unsafe { load_u32(self.count_addr) } as usize).min(HIST_DEPTH)
+        (unsafe { load_u32(self.count_addr) } as usize & 0xffff).min(HIST_DEPTH)
     }
     fn time(&self, k: usize) -> f64 {
         unsafe { load_f64(self.entry(k)) }
@@ -435,10 +444,15 @@ impl History for MemHistory {
         for (i, v) in x.iter().enumerate() {
             unsafe { store_f64(at + 8 + (i * 8) as u32, *v) };
         }
-        unsafe { store_u32(self.count_addr, len as u32) };
+        self.set_word(len, self.head());
     }
     fn set_len(&mut self, len: usize) {
-        unsafe { store_u32(self.count_addr, len as u32) };
+        self.set_word(len, self.head());
+    }
+    fn push_front(&mut self, time: f64, x: &[f64]) {
+        let len = (self.len() + 1).min(HIST_DEPTH);
+        self.set_word(len, (self.head() + HIST_DEPTH - 1) % HIST_DEPTH);
+        self.put(0, len, time, x);
     }
 }
 
