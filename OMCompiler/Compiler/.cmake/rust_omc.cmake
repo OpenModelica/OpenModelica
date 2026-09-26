@@ -1637,6 +1637,7 @@ function(omc_rust_setup_omedit)
   # Windows links a DLL through its import library (cargo emits <dll>.lib).
   if(RUST_OMC_TARGET MATCHES "windows")
     set_target_properties(OpenModelicaCompiler PROPERTIES IMPORTED_IMPLIB "${_cdylib}.lib")
+    set_property(TARGET OpenModelicaCompiler APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS IMPORT_INTO=1)
   endif()
   # Deps the clients inherited transitively from the C OpenModelicaCompiler but
   # which the cdylib does not carry, so propagate the targets here:
