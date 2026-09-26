@@ -15916,8 +15916,14 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // read it as the owned function output — not under the
                     // by-reference shape `record_pattern_variants_with_shapes`
                     // just recorded for the (renamed-away) pattern binding.
+                    // The guard reads the renamed binding (`__esc_o`) instead.
                     for o in &escaping_outputs {
-                        ctx.variant_shapes.remove(o);
+                        if let Some(sh) = ctx.variant_shapes.remove(o) {
+                            ctx.variant_shapes.insert(format!("__esc_{o}"), sh);
+                        }
+                        if let Some(v) = ctx.variants.get(o).cloned() {
+                            ctx.variants.insert(format!("__esc_{o}"), v);
+                        }
                     }
                     // `match e as v case Variant(..) => …`: the as-bound name
                     // also denotes the scrutinee, narrowed to this arm's
@@ -16020,18 +16026,32 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                             (p, t) => owned_leaf(p, t, ctx, &mut owned_binds),
                         }
                     }
-                    for (n, _) in &typed_pat_bindings {
+                    for (n, t) in &typed_pat_bindings {
+                        let mode = if owned_binds.contains(n.as_str()) { PlaceMode::Owned } else { PlaceMode::Ref };
                         // An escaping binding is renamed away, so reads of the
                         // name inside the arm are the enclosing variable's.
                         if escaping_outputs.contains(n) {
+                            ctx.place_mode.insert(format!("__esc_{n}"), mode);
+                            ctx.fn_env_vars.insert(format!("__esc_{n}"), t.clone());
                             continue;
                         }
-                        let mode = if owned_binds.contains(n.as_str()) { PlaceMode::Owned } else { PlaceMode::Ref };
                         ctx.place_mode.insert(n.clone(), mode);
                     }
                 }
-                let user_guard = case.guard.as_ref()
-                    .map(|g| emit_exp(g, is_const, ctx, top_level));
+                // The guard runs before the escaping outputs are written back.
+                let user_guard = case.guard.as_ref().map(|g| {
+                    let mut g = g.clone();
+                    walk_exp_mut(&mut g, &mut |x| if let TypedExp::Var { name, segments, .. } = x {
+                        let root = segments.first().map_or(name.as_str(), |seg| seg.name.as_str());
+                        if escaping_outputs.iter().any(|o| o == root) && name.starts_with(root) {
+                            *name = format!("__esc_{name}");
+                            if let Some(seg) = segments.first_mut() {
+                                seg.name = format!("__esc_{}", seg.name);
+                            }
+                        }
+                    });
+                    emit_exp(&g, is_const, ctx, top_level)
+                });
                 // Combine pattern-induced guards (e.g. from real-literal
                 // patterns) with any user-written guard via `&&`.
                 let guard = {
@@ -21360,20 +21380,11 @@ impl<'a> UseBeforeDef<'a> {
                     if matches!(kind, MatchKind::MatchContinue) {
                         in_arm.extend(c.locals.iter().map(|(n, _, _, _)| n.clone()));
                     }
-                    // The guard runs before a plain match's write-back.
-                    if let Some(g) = &c.guard {
-                        let mut in_guard = in_arm.clone();
-                        if matches!(kind, MatchKind::MatchContinue) {
-                            let mut bound = Vec::new();
-                            pat_collect_all_bindings(&c.pattern, &mut bound);
-                            in_guard.extend(bound);
-                        }
-                        self.walk_exp(g, &in_guard);
-                    }
                     let mut bound = Vec::new();
                     pat_collect_all_bindings(&c.pattern, &mut bound);
                     in_arm.extend(bound);
                     let assigned = &in_arm;
+                    if let Some(g) = &c.guard { self.walk_exp(g, assigned); }
                     for (_, _, def, _) in &c.locals {
                         if let Some(d) = def { self.walk_exp(d, assigned); }
                     }
