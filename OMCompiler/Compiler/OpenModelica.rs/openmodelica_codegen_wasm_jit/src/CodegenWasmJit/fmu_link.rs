@@ -16,6 +16,7 @@ pub(super) fn link_err(e: impl core::fmt::Debug) -> &'static str {
 /// formulation. The synthetic variables follow `CodegenFMU3`: time, then the event
 /// indicators, then (`--daeMode`) the DAE-mode switch and the residuals.
 pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<(Vec<FmiVr>, u32)> {
+    let sim_code_ref = metamodelica::Ref::new(sim_code.clone());
     use openmodelica_codegen_util::SimCodeCodegenUtil;
     let vars = &sim_code.modelInfo.vars;
     let all = lst(&vars.stateVars)
@@ -48,7 +49,7 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
     for sv in all {
         let key = sim_cref_key(&sv.name)?;
         let Some(slot) = map.vars.get(&key).copied() else { continue };
-        let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(sv.clone(), sim_code.clone())?
+        let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(sv.clone(), sim_code_ref.clone())?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
         // A real variable's start slot: an init-mode set must go to the `start`
@@ -74,7 +75,7 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
     {
         let key = sim_cref_key(&sv.name)?;
         let Some(slot) = map.vars.get(&key).copied() else { continue };
-        let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(sv.clone(), sim_code.clone())?
+        let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(sv.clone(), sim_code_ref.clone())?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
         out.push(FmiVr {
@@ -89,7 +90,7 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
         });
     }
     // time, then the event indicators after it (`EventIndicatorVariables3`).
-    let time_vr: u32 = SimCodeCodegenUtil::getFMI3TimeValueReference(sim_code.clone())?
+    let time_vr: u32 = SimCodeCodegenUtil::getFMI3TimeValueReference(sim_code_ref)?
         .parse()
         .map_err(|_| "CodegenWasmJit: FMI3 time value reference is not a number")?;
     out.push(FmiVr {
