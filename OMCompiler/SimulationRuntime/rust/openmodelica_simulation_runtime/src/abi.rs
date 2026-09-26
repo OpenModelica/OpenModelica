@@ -132,10 +132,9 @@ pub struct SAMPLE_INFO {
 #[repr(C)]
 pub struct CHATTERING_INFO {
     pub numEventLimit: c_int,
-    pub lastSteps: *mut c_int,
     pub lastTimes: *mut f64,
     pub currentIndex: c_int,
-    pub lastStepsNumStateEvents: c_int,
+    pub stateEventsInARow: c_int,
     pub messageEmitted: c_int,
 }
 

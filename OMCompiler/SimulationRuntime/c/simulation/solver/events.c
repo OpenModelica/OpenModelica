@@ -136,6 +136,23 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
   return 0;
 }
 
+/* Chattering: numEvents state events in a row within less than the step size
+ * and intervalFraction*(stopTime-startTime). numEventLimit is the largest
+ * numEvents. */
+static const struct { int numEvents; double intervalFraction; } chatteringLimits[] = {
+  {1000, 1e-6},
+  {100, 1e-9}
+};
+
+static double chatteringTimeLimit(SIMULATION_INFO *simulationInfo, double intervalFraction)
+{
+  double interval = simulationInfo->stopTime - simulationInfo->startTime;
+  if (interval > 0 && isfinite(interval)) {
+    return fmin(simulationInfo->stepSize, intervalFraction * interval);
+  }
+  return simulationInfo->stepSize;
+}
+
 /*! \fn handleEvents
  *
  *  \param [ref] [data]
@@ -166,10 +183,10 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 
     solverInfo->sampleEvents++;
   }
-  data->simulationInfo->chatteringInfo.lastStepsNumStateEvents-=data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex];
   /* state event */
   if(listLen(eventLst)>0)
   {
+    CHATTERING_INFO *chattering = &data->simulationInfo->chatteringInfo;
     data->localData[0]->timeValue = *eventTime;
     /* time = data->localData[0]->timeValue; */
 
@@ -185,35 +202,39 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
     }
 
     solverInfo->stateEvents++;
-    data->simulationInfo->chatteringInfo.lastStepsNumStateEvents++;
-    data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex]=1;
-    data->simulationInfo->chatteringInfo.lastTimes[data->simulationInfo->chatteringInfo.currentIndex]=time;
+    if (chattering->stateEventsInARow < chattering->numEventLimit) {
+      chattering->stateEventsInARow++;
+    }
+    chattering->lastTimes[chattering->currentIndex]=time;
 
-    if (!data->simulationInfo->chatteringInfo.messageEmitted && data->simulationInfo->chatteringInfo.lastStepsNumStateEvents == data->simulationInfo->chatteringInfo.numEventLimit)
+    for (i = 0; !chattering->messageEmitted && i < (long) (sizeof(chatteringLimits)/sizeof(chatteringLimits[0])); i++)
     {
-      int numEventLimit = data->simulationInfo->chatteringInfo.numEventLimit;
-      int currentIndex = data->simulationInfo->chatteringInfo.currentIndex;
-      double t0 = data->simulationInfo->chatteringInfo.lastTimes[(currentIndex+1) % numEventLimit];
-      if (time - t0 < data->simulationInfo->stepSize)
+      int numEvents = chatteringLimits[i].numEvents;
+      double t0, limit;
+      if (chattering->stateEventsInARow < numEvents) {
+        continue;
+      }
+      t0 = chattering->lastTimes[(chattering->currentIndex + chattering->numEventLimit - (numEvents-1)) % chattering->numEventLimit];
+      limit = chatteringTimeLimit(data->simulationInfo, chatteringLimits[i].intervalFraction);
+      if (time - t0 < limit)
       {
         long ix = *((long*) listNodeData(listFirstNode(eventLst)));
         int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
-        infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo->stepSize, exp_str);
-        data->simulationInfo->chatteringInfo.messageEmitted = 1;
+        infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than %.12g, the smaller of the step size and %g times the simulation interval). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEvents, limit, chatteringLimits[i].intervalFraction, exp_str);
+        chattering->messageEmitted = 1;
         if (omc_flag[FLAG_ABORT_SLOW])
         {
           throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
         }
       }
     }
+    chattering->currentIndex = (chattering->currentIndex+1) % chattering->numEventLimit;
 
     listClear(eventLst);
   } else {
-    data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex]=0;
-    /* Setting time does not matter */
+    data->simulationInfo->chatteringInfo.stateEventsInARow = 0;
   }
-  data->simulationInfo->chatteringInfo.currentIndex = (data->simulationInfo->chatteringInfo.currentIndex+1) % data->simulationInfo->chatteringInfo.numEventLimit;
 
   /* update the whole system */
   updateDiscreteSystem(data, threadData);

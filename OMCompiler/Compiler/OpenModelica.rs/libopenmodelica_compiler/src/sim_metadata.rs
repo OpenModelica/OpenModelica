@@ -179,7 +179,7 @@ pub static FLAG_NAME: CStrTable<157> = CStrTable([
 #[unsafe(no_mangle)]
 pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
     c"unknown".as_ptr(),
-    c"  Aborts if the simulation chatters.".as_ptr(),
+    c"  Aborts if the simulation chatters: 1000 state events in a row within 1e-6 times\x0a  the simulation interval, or 100 within 1e-9 times it, and within the step size.".as_ptr(),
     c"  Aborts after the given number of seconds (default=0 disables the alarm).".as_ptr(),
     c"  Selects the type of clock to use. Valid options include:\x0a\x0a  * RT (monotonic real-time clock)\x0a  * CYC (cpu cycles measured with RDTSC)\x0a  * CPU (process-based CPU-time)".as_ptr(),
     c"  Dumps the cpu-time into the result file using the variable named $cpuTime.".as_ptr(),

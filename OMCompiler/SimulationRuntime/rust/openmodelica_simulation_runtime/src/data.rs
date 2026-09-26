@@ -562,11 +562,10 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     md.modelDataXml.equationInfo = core::ptr::null_mut();
     si.extObjs = calloc((md.nExtObjs as usize).max(1));
 
-    si.chatteringInfo.numEventLimit = 100;
-    si.chatteringInfo.lastSteps = calloc(si.chatteringInfo.numEventLimit as usize);
+    si.chatteringInfo.numEventLimit = 1000;
     si.chatteringInfo.lastTimes = calloc(si.chatteringInfo.numEventLimit as usize);
     si.chatteringInfo.currentIndex = 0;
-    si.chatteringInfo.lastStepsNumStateEvents = 0;
+    si.chatteringInfo.stateEventsInARow = 0;
     si.chatteringInfo.messageEmitted = 0;
 
     si.callStatistics.functionODE = 0;

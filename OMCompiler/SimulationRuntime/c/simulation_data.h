@@ -109,11 +109,10 @@ typedef struct SAMPLE_INFO
 
 typedef struct CHATTERING_INFO
 {
-  int numEventLimit;
-  int *lastSteps;
-  double *lastTimes;
+  int numEventLimit;          /* size of lastTimes */
+  double *lastTimes;          /* ring of the last state event times */
   int currentIndex;
-  int lastStepsNumStateEvents;
+  int stateEventsInARow;
   int messageEmitted;
 } CHATTERING_INFO;
 
