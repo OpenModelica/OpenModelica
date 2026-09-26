@@ -1579,6 +1579,22 @@ real_array division_alloc_real_array_scalar(threadData_t *threadData, const real
 }
 
 /**
+ * @brief Allocate and perform division with the checks of DIVISION_SIM (0/0 is 0 during initialization).
+ */
+real_array division_alloc_real_array_scalar_sim(threadData_t *threadData, const real_array a, modelica_real b, const char *division_str, const int *equationIndexes, modelica_boolean noThrowDivZero, modelica_real time, modelica_boolean initial)
+{
+    real_array dest;
+    size_t nr_of_elements, i;
+    clone_real_array_spec(&a, &dest);
+    alloc_real_array_data(&dest);
+    nr_of_elements = base_array_nr_of_elements(a);
+    for (i = 0; i < nr_of_elements; ++i) {
+        real_set(&dest, i, __OMC_DIV_SIM(threadData, real_get(a, i), b, division_str, equationIndexes, noThrowDivZero, time, initial));
+    }
+    return dest;
+}
+
+/**
  * @brief Divide scalar `a` by every element of array `b` and store in `dest`.
  */
 void div_scalar_real_array(modelica_real a, const real_array *b, real_array *dest)
