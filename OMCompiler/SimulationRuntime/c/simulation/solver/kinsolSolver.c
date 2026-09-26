@@ -1241,6 +1241,9 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
       }
     }
     break;
+  /* the step got too small but the residual is not (checked by the caller) */
+  case KIN_STEP_LT_STPTOL:
+    break;
   case KIN_LINESEARCH_BCFAIL:
     KINGetNumBetaCondFails(kinsolData->kinsolMemory, &outL);
     warningStreamPrint(
@@ -1255,9 +1258,9 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     break;
   }
 
-  /* check if the current solution is sufficient anyway */
+  /* check if the current solution is sufficient anyway (a stalled step was checked already) */
   KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
-  if (fNorm < FTOL_WITH_LESS_ACCURACY) {
+  if (errorCode != KIN_STEP_LT_STPTOL && fNorm < FTOL_WITH_LESS_ACCURACY) {
     warningStreamPrint(OMC_LOG_NLS_V, 0, "KINSOL: Move forward with a less accurate solution.");
     KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
@@ -1337,14 +1340,11 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
 
   for (i = 0; i < kinsolData->size; i++) {
     c[i] = 0.0;
-    if (nlsData->min[i] > 0.0 && x[i] > 0.0) {
-      c[i] = 2.0;   /* x > 0 */
-    } else if (nlsData->min[i] >= 0.0 && x[i] >= 0.0) {
-      c[i] = 1.0;   /* x >= 0 */
-    } else if (nlsData->max[i] < 0.0 && x[i] < 0.0) {
-      c[i] = -2.0;  /* x < 0 */
-    } else if (nlsData->max[i] <= 0.0 && x[i] <= 0.0) {
-      c[i] = -1.0;  /* x <= 0 */
+    /* a variable on the bound would block every step that points outside */
+    if (nlsData->min[i] >= 0.0 && x[i] > 0.0) {
+      c[i] = nlsData->min[i] > 0.0 ? 2.0 : 1.0;    /* x > 0 or x >= 0 */
+    } else if (nlsData->max[i] <= 0.0 && x[i] < 0.0) {
+      c[i] = nlsData->max[i] < 0.0 ? -2.0 : -1.0;  /* x < 0 or x <= 0 */
     }
   }
   flag = KINSetConstraints(kinsolData->kinsolMemory, kinsolData->constraints);
@@ -1361,6 +1361,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
   long nFEval;
   modelica_boolean success = FALSE;
   modelica_boolean retry = TRUE;
+  modelica_boolean stalled;
   NLS_SOLVER_STATUS solver_status;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
@@ -1422,12 +1423,25 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     } else {
       infoStreamPrint(OMC_LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }
+    /* a step below the tolerance without any iteration only solves the system if the residual is small */
+    stalled = FALSE;
+    KINGetNumNonlinSolvIters(kinsolData->kinsolMemory, &nFEval);
+    if (flag == KIN_STEP_LT_STPTOL && nFEval == 0) {
+      /* KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual */
+      nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes, kinsolData->userData);
+      fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fScale);
+      stalled = !(fNormValue < FTOL_WITH_LESS_ACCURACY);
+      if (stalled) {
+        warningStreamPrint(OMC_LOG_NLS_V, 0, "KINSOL: Step below tolerance but fx = %g is not small.", fNormValue);
+      }
+    }
+
     /* Try to handle recoverable errors */
-    retry = flag < 0 && kinsolData->attemptRetry && nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
+    retry = (flag < 0 || stalled) && kinsolData->attemptRetry && nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
 
     /* solution found */
     if ((flag == KIN_SUCCESS) || (flag == KIN_INITIAL_GUESS_OK) ||
-        (flag == KIN_STEP_LT_STPTOL)) {
+        (flag == KIN_STEP_LT_STPTOL && !stalled)) {
       success = TRUE;
     }
     kinsolData->retries++;
