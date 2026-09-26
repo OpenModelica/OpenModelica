@@ -81,12 +81,30 @@ struct Event {
     sign: f64,
 }
 
-fn f(v: f64) -> alloc::string::String {
-    format!("{v:.6}")
+/// A value for a log message, formatted only if the message is written: the
+/// logging calls below run on every evaluation.
+struct F(f64);
+
+impl core::fmt::Display for F {
+    fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(out, "{:.6}", self.0)
+    }
 }
 
-fn e(v: f64) -> alloc::string::String {
-    omclog::e(v, 0, 6)
+struct E(f64);
+
+impl core::fmt::Display for E {
+    fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        out.write_str(&omclog::e(self.0, 0, 6))
+    }
+}
+
+fn f(v: f64) -> F {
+    F(v)
+}
+
+fn e(v: f64) -> E {
+    E(v)
 }
 
 /// C's `errorStreamPrint(OMC_LOG_STDOUT, ...)` + `omc_throw_function`.
