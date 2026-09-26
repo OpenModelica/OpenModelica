@@ -372,7 +372,7 @@ pipeline {
         stage('04 testsuite-gcc 1/2') {
           agent {
             node {
-              label 'linux'
+              label 'linux && !slow'
               customWorkspace 'ws/OpenModelica'
             }
           }
@@ -400,7 +400,7 @@ pipeline {
         stage('05 testsuite-clang 2/2') {
           agent {
             node {
-              label 'linux'
+              label 'linux && !slow'
               customWorkspace 'ws/OpenModelica'
             }
           }
