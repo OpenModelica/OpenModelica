@@ -4183,17 +4183,8 @@ protected function traversingVarCrefFinder
   output BackendDAE.Var outVar;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  (outVar,outCrefs) := matchcontinue (inVar,inCrefs)
-    local
-      BackendDAE.Var v;
-      list<DAE.ComponentRef> cr_lst;
-      DAE.ComponentRef cr;
-    case (v,cr_lst)
-      algorithm
-        cr := varCref(v);
-      then (v,cr::cr_lst);
-    else (inVar,inCrefs);
-  end matchcontinue;
+  outVar := inVar;
+  outCrefs := varCref(inVar) :: inCrefs;
 end traversingVarCrefFinder;
 
 public function collectVarKindVarinVariables
