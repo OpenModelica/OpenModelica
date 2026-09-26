@@ -216,6 +216,7 @@ public:
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
+  QString getClassDiagram(QString className, int depth, bool showModifiers);
   bool ngspicetoModelica(QString fileName);
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);

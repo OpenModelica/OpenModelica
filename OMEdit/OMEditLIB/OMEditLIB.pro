@@ -165,6 +165,7 @@ SOURCES += Util/Helper.cpp \
   Element/ElementProperties.cpp \
   Element/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
+  Modeling/ClassDiagramWidget.cpp \
   Simulation/TranslationFlagsWidget.cpp \
   Simulation/SimulationDialog.cpp \
   Simulation/SimulationOutputWidget.cpp \
@@ -305,6 +306,7 @@ HEADERS  += Util/Helper.h \
   Element/ElementProperties.h \
   Element/Transformation.h \
   Modeling/DocumentationWidget.h \
+  Modeling/ClassDiagramWidget.h \
   Simulation/SimulationOptions.h \
   Simulation/TranslationFlagsWidget.h \
   Simulation/SimulationDialog.h \
@@ -411,6 +413,7 @@ OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIParser.cpp \
   Debugger/Parser/main.cpp
 
-RESOURCES += resource_omedit.qrc
+RESOURCES += resource_omedit.qrc \
+  resource_drawio.qrc
 
 include(../OMEdit.config.post.pri)
