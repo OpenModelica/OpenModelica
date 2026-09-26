@@ -22,6 +22,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.
+// "
 // -6e6
 // endResult
