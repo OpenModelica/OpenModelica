@@ -4,9 +4,9 @@
 //! `ArcStr`) or a non-`Copy` record, it is never written or shadowed, and every
 //! read borrows it: a field access, a match or pattern-let subject, a borrowing
 //! builtin, or an argument to a callee parameter that itself qualifies (solved
-//! as a greatest fixpoint). In a loop-lowered (tail-recursive) function the
-//! self-calls must also pass it through unchanged. Callers then pass `&x`
-//! instead of cloning the value into the call.
+//! as a greatest fixpoint). In a loop-lowered (tail-recursive) function a
+//! self-call must pass it on unchanged or replace it by a field of a borrowed
+//! parameter. Callers then pass `&x` instead of cloning the value into the call.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -79,9 +79,9 @@ enum Pos {
 
 struct Scan<'a, 'b> {
     top_level: &'a BTreeMap<String, NameNode<'a>>,
+    qname: &'b str,
     /// Set for a loop-lowered function (short name, inputs): its tail
-    /// self-calls reassign the parameters, so a borrowed one must be passed
-    /// through unchanged.
+    /// self-calls reassign the parameters.
     self_call: Option<(&'b str, &'b [String])>,
     pkg_prefix: &'b str,
     candidates: &'b HashSet<String>,
@@ -165,7 +165,8 @@ impl Scan<'_, '_> {
             }
             TypedStmt::For { var, range, body } => {
                 self.bind(var);
-                self.exp(range, Pos::Owned);
+                let p = if matches!(range.ty(), Ty::List(_)) { Pos::Borrow } else { Pos::Owned };
+                self.arg(range, p);
                 self.stmts(body);
             }
             TypedStmt::While { cond, body } => {
@@ -246,6 +247,17 @@ impl Scan<'_, '_> {
                     for (i, a) in slots {
                         given.insert(i);
                         if passed(i, a) {
+                            continue;
+                        }
+                        // A field of a borrowed parameter outlives the iteration too.
+                        let field_of = match a {
+                            TypedExp::Var { segments, .. }
+                                if segments.len() == 2 && segments.iter().all(|s| s.subscripts.is_empty()) =>
+                                inputs.iter().position(|n| *n == segments[0].name && self.candidates.contains(n)),
+                            _ => None,
+                        };
+                        if let (Some(p), Some(j)) = (inputs.get(i), field_of) {
+                            self.deps.push((p.clone(), self.qname.to_owned(), j));
                             continue;
                         }
                         if let Some(p) = inputs.get(i) {
@@ -396,10 +408,7 @@ fn scan_fn<'a>(
     if c.partial_prefix {
         return None;
     }
-    let MM::ClassDef::Parts { members, algorithms, external: None, .. } = &c.body else { return None };
-    if algorithms.is_empty() {
-        return None;
-    }
+    let MM::ClassDef::Parts { members, external: None, .. } = &c.body else { return None };
     let Ty::Function { inputs, .. } = &node.ty else { return None };
     let mut outputs: Vec<String> = Vec::new();
     let mut locals: HashSet<String> = HashSet::new();
@@ -427,6 +436,7 @@ fn scan_fn<'a>(
     let pkg_prefix = qname.rsplit_once('.').map_or("", |(p, _)| p);
     let mut scan = Scan {
         top_level,
+        qname,
         self_call: tail_recursive.then_some((short, input_names.as_slice())),
         pkg_prefix,
         candidates: &candidates,
@@ -437,6 +447,9 @@ fn scan_fn<'a>(
         trace: trace.filter(|t| qname.ends_with(*t)).map(|_| qname),
         parent: String::new(),
     };
+    for init in crate::codegen::typedexp_initializers_for_analysis(qname, node, top_level) {
+        scan.exp(&init, Pos::Owned);
+    }
     scan.stmts(&stmts);
     let (disq, deps) = (scan.disq, scan.deps);
     Some(FnScan {
