@@ -19127,21 +19127,15 @@ fn emit_pat_assign<'a>(
                         emit_pat_assign($out, $ind, &sub_pat, &sub_ty, &sub_expr, $fm, ctx, env, top_level, fresh);
                     }
                     for (orig, fresh_name, orig_ty) in &reassign_pairs {
-                        // Always `.clone()`. The `fresh_name` may have been
-                        // emitted with `ref` (e.g. an `As` pattern with inner
-                        // sub-bindings forced to `ref` to dodge a partial
-                        // move), in which case it has type `&T` and a plain
-                        // assignment would mismatch. `T::clone()` is defined
-                        // on both `T` and `&T` so this is a safe blanket
-                        // coercion and keeps with the codegen's clone-heavy
-                        // lowering style elsewhere.
+                        // `fresh_name` is `T` or `&T` (a `ref` binding or a
+                        // borrowed scrutinee); `Own::own` handles both.
                         //
                         // MetaModelica allows `Integer → Real` promotion in
                         // pattern-let LHSs (e.g. `Real lo; INTERVAL(lo,..) :=
                         // int_with_integer_lo;`). Coerce the clone-expression
                         // to the original variable's declared type so the
                         // generated Rust assignment type-checks.
-                        let rhs = format!("{}.clone()", escape_ident(fresh_name));
+                        let rhs = format!("metamodelica::Own::own({})", escape_ident(fresh_name));
                         // MetaModelica allows silent `Integer → Real`
                         // promotion in pattern LHSs (e.g. `Real lo;
                         // INTERVAL(lo,..) := int_with_integer_lo;`). If the
@@ -19151,7 +19145,7 @@ fn emit_pat_assign<'a>(
                         // Same-type rebinds (Real-into-Real) leave `rhs` as-is.
                         let src_ty = env.vars.get(fresh_name.as_str()).cloned().unwrap_or(Ty::Unknown);
                         let rhs = if matches!(orig_ty, Ty::F64) && matches!(src_ty, Ty::I32) {
-                            format!("metamodelica::OrderedFloat(({rhs}) as f64)")
+                            format!("metamodelica::OrderedFloat(({}.clone()) as f64)", escape_ident(fresh_name))
                         } else {
                             rhs
                         };
@@ -19315,10 +19309,10 @@ fn emit_pat_assign<'a>(
                 // names that collided with the surrounding scope.
                 for (orig, fresh_name, orig_ty) in &reassign_pairs {
                     // Mirror the Integer→Real promotion in the shallow path.
-                    let rhs = format!("{}.clone()", escape_ident(fresh_name));
+                    let rhs = format!("metamodelica::Own::own({})", escape_ident(fresh_name));
                     let src_ty = env.vars.get(fresh_name.as_str()).cloned().unwrap_or(Ty::Unknown);
                     let rhs = if matches!(orig_ty, Ty::F64) && matches!(src_ty, Ty::I32) {
-                        format!("metamodelica::OrderedFloat(({rhs}) as f64)")
+                        format!("metamodelica::OrderedFloat(({}.clone()) as f64)", escape_ident(fresh_name))
                     } else {
                         rhs
                     };

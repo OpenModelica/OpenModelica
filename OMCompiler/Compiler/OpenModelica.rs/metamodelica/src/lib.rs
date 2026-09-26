@@ -86,6 +86,26 @@ pub use array::*;
 pub use value::*;
 pub use misc::*;
 
+/// An owned `T` from a value bound either by move (`T`) or through a borrow
+/// (`&T`): moves the former, clones the latter.
+pub trait Own<T> {
+    fn own(self) -> T;
+}
+
+impl<T> Own<T> for T {
+    #[inline(always)]
+    fn own(self) -> T {
+        self
+    }
+}
+
+impl<T: Clone> Own<T> for &T {
+    #[inline(always)]
+    fn own(self) -> T {
+        self.clone()
+    }
+}
+
 /// Wrap an infallible function value so it satisfies a function-pointer type
 /// whose signature expects `Result<T>`.
 ///
