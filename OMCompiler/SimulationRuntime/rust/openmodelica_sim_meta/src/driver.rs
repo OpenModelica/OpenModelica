@@ -7268,12 +7268,11 @@ struct SolverCore {
     maxs: Vec<f64>,
     /// Relative tolerance, for the numerical Jacobian's first step.
     tol: f64,
-    /// C's `chatteringInfo`: a ring over the last [`CHATTER_LIMIT`] events, whether
-    /// each was a state event and when. Fires once.
+    /// C's `chatteringInfo`: a ring of the last [`CHATTER_LIMIT`] state event times
+    /// and how many state events came in a row. Fires once.
     chatter_times: [f64; CHATTER_LIMIT],
-    chatter_steps: [bool; CHATTER_LIMIT],
     chatter_idx: usize,
-    chatter_count: usize,
+    chatter_in_a_row: usize,
     chatter_emitted: bool,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
@@ -7286,9 +7285,8 @@ struct SolverCore {
     jac_a: Option<JacAInfo>,
 }
 
-/// C's `numEventLimit`: state events in a row within one output step that count
-/// as chattering.
-const CHATTER_LIMIT: usize = 100;
+/// C's `numEventLimit`: the longest run in [`crate::CHATTER_LIMITS`].
+const CHATTER_LIMIT: usize = 1000;
 
 /// The model-call handle the hand-written solvers (gbode, the fixed-step ones)
 /// evaluate through, built from the `ResCtx` the integrator already has.
@@ -7694,9 +7692,8 @@ impl SolverCore {
             maxs,
             tol,
             chatter_times: [0.0; CHATTER_LIMIT],
-            chatter_steps: [false; CHATTER_LIMIT],
             chatter_idx: 0,
-            chatter_count: 0,
+            chatter_in_a_row: 0,
             chatter_emitted: false,
             step_emit: StepEmit::new(),
             sample_limit: f64::INFINITY,
@@ -7820,18 +7817,22 @@ impl SolverCore {
         Ok(())
     }
 
-    /// Record a state event at `time` (C's `handleEvents`). `Some((t0, time))` once
-    /// the whole ring is state events spanning less than `step_size`.
-    fn note_chatter_event(&mut self, time: f64, step_size: f64) -> Option<(f64, f64)> {
-        self.chatter_count -= self.chatter_steps[self.chatter_idx] as usize;
-        self.chatter_steps[self.chatter_idx] = true;
-        self.chatter_count += 1;
+    /// Record a state event at `time` (C's `handleEvents`). Once a run in
+    /// [`crate::CHATTER_LIMITS`] trips: `(events, t0, time, limit, fraction)`.
+    fn note_chatter_event(&mut self, model: &SimModel, time: f64) -> Option<(usize, f64, f64, f64, f64)> {
         self.chatter_times[self.chatter_idx] = time;
-        let hit = if !self.chatter_emitted && self.chatter_count == CHATTER_LIMIT {
-            let t0 = self.chatter_times[(self.chatter_idx + 1) % CHATTER_LIMIT];
-            (time - t0 < step_size).then_some((t0, time))
-        } else {
+        self.chatter_in_a_row = (self.chatter_in_a_row + 1).min(CHATTER_LIMIT);
+        let hit = if self.chatter_emitted {
             None
+        } else {
+            crate::CHATTER_LIMITS.iter().find_map(|&(events, fraction)| {
+                if self.chatter_in_a_row < events {
+                    return None;
+                }
+                let t0 = self.chatter_times[(self.chatter_idx + CHATTER_LIMIT - (events - 1)) % CHATTER_LIMIT];
+                let limit = model.chatter_time_limit(fraction);
+                (time - t0 < limit).then_some((events, t0, time, limit, fraction))
+            })
         };
         if hit.is_some() {
             self.chatter_emitted = true;
@@ -7841,28 +7842,27 @@ impl SolverCore {
     }
 
     /// A time event with no state event: C's `handleEvents` enters it as a break in
-    /// the run. A step with no event at all leaves the ring alone.
+    /// the run. A step with no event at all leaves the count alone.
     fn note_time_event(&mut self) {
-        self.chatter_count -= self.chatter_steps[self.chatter_idx] as usize;
-        self.chatter_steps[self.chatter_idx] = false;
-        self.chatter_idx = (self.chatter_idx + 1) % CHATTER_LIMIT;
+        self.chatter_in_a_row = 0;
     }
 
     /// Record a state event for chattering detection, reporting the run once it
     /// trips (C's `chatteringInfo`). `-abortSlowSimulation` makes it a failure.
     fn note_chatter(&mut self, model: &SimModel, zc: usize) -> Result<()> {
-        let step_size = model.step_size();
-        let Some((t0, t1)) = self.note_chatter_event(self.t, step_size) else {
+        let Some((events, t0, t1, limit, fraction)) = self.note_chatter_event(model, self.t) else {
             return Ok(());
         };
         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
+        let (t0, t1, limit) = (format_g(t0, 12), format_g(t1, 12), format_g(limit, 12));
+        let fraction = format_g(fraction, 6);
         omclog::info!(
             omclog::STDOUT,
             false,
-            "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
-             with a total time delta less than the step size {step_size}). This can be a \
-             performance bottleneck. Use -lv LOG_EVENTS for more information. The \
-             zero-crossing was: {desc}",
+            "Chattering detected around time {t0}..{t1} ({events} state events in a row \
+             with a total time delta less than {limit}, the smaller of the step size and \
+             {fraction} times the simulation interval). This can be a performance bottleneck. \
+             Use -lv LOG_EVENTS for more information. The zero-crossing was: {desc}",
         );
         if chatter_store::abort() {
             omclog::debug(
@@ -8910,11 +8910,13 @@ impl CsDriver {
                     // The bisection left `SimData` at its last trial point.
                     update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                     self.core.t = tr;
-                    log_state_event(tr, &zc_crossed_idx(&self.zc0, &scratch), model);
+                    let crossed = zc_crossed_idx(&self.zc0, &scratch);
+                    log_state_event(tr, &crossed, model);
                     if defers(tr) {
                         write_time(e, sim_data, tr)?;
                         return Ok(CsStep::Event { time: tr });
                     }
+                    self.core.note_chatter(model, crossed.first().copied().unwrap_or(usize::MAX))?;
                     event_update(e, sim_data, layout, None, tr)?;
                     self.core.state_events += 1;
                     if terminated(e, sim_data, layout)? {
@@ -8934,6 +8936,7 @@ impl CsDriver {
                     fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                     e.clean_nls_history(te);
                     self.core.time_events += 1;
+                    self.core.note_time_event();
                     if terminated(e, sim_data, layout)? {
                         return Ok(CsStep::Terminated);
                     }
@@ -9337,6 +9340,7 @@ impl Driver for EventsDriver {
                 let mut evaluated = false;
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
+                    check_alarm()?;
                     rotate_old_real(e, sim_data, layout)?;
                     let te = self.samp.next_time();
                     let tc = self.sync.next_time();
@@ -9362,7 +9366,10 @@ impl Driver for EventsDriver {
                         supersede(e, &mut evaluated);
                         // The bisection left `SimData` at its last trial point.
                         update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
-                        log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
+                        let crossed = zc_crossed_idx(&zc0, &scratch);
+                        log_state_event(tr, &crossed, model);
+                        self.core.t = tr;
+                        self.core.note_chatter(model, crossed.first().copied().unwrap_or(usize::MAX))?;
                         eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                         write_time(e, sim_data, tr)?;
                         if !no_event_emit() {
@@ -9380,7 +9387,6 @@ impl Driver for EventsDriver {
                             self.finished = true;
                             return Ok(Advance::Terminated);
                         }
-                        self.core.t = tr;
                         // The discrete update may have fired an event clock.
                         if fire_clocks(e, &mut self.sync, model, sim_data, tr, SYNC_EPS, Some(&mut self.rows))?
                             && terminated(e, sim_data, layout)?
@@ -9414,6 +9420,7 @@ impl Driver for EventsDriver {
                         fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
+                        self.core.note_time_event();
                         self.core.walk_steps += 1;
                         if emit_post_event_row(model, te) {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;

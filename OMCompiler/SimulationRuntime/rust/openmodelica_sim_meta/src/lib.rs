@@ -67,6 +67,10 @@ pub use openmodelica_solvers::sundials;
 pub const CVODE: bool = cfg!(sundials);
 pub const IDA: bool = cfg!(sundials);
 
+/// Chattering: this many state events in a row within less than the step size and
+/// this fraction of the simulation interval (C's `chatteringLimits`).
+pub const CHATTER_LIMITS: [(usize, f64); 2] = [(1000, 1e-6), (100, 1e-9)];
+
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;
 /// Byte offset of the first real variable within `SimData`:
@@ -1391,6 +1395,18 @@ impl SimMeta {
             return h;
         }
         self.translated_step_size()
+    }
+
+    /// C's `chatteringTimeLimit`: the step size, and `fraction` of the simulation
+    /// interval when there is one.
+    pub fn chatter_time_limit(&self, fraction: f64) -> f64 {
+        let step_size = self.step_size();
+        let interval = self.stop_time - self.start_time;
+        if interval > 0.0 && interval.is_finite() {
+            fmath::fmin(step_size, fraction * interval)
+        } else {
+            step_size
+        }
     }
 
     /// [`step_size`](Self::step_size) as the model was translated, ignoring
