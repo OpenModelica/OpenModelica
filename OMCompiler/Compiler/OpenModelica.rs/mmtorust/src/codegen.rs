@@ -15461,7 +15461,6 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         None => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
     };
     let borrow_scrutinee = borrowable
-        && matches!(kind, MatchKind::Match)
         && as_binding.is_none()
         && ctx.tail_lowering.is_none()
         && subject_writes_ok
