@@ -326,6 +326,7 @@ openmodelica_nf_frontend/src/NFCardinalityTable.rs
 openmodelica_nf_frontend/src/NFCeval.rs
 openmodelica_nf_frontend/src/NFCheckModel.rs
 openmodelica_nf_frontend/src/NFClass.rs
+openmodelica_nf_frontend/src/NFClassDiagram.rs
 openmodelica_nf_frontend/src/NFClassTree.rs
 openmodelica_nf_frontend/src/NFClockKind.rs
 openmodelica_nf_frontend/src/NFComplexType.rs

@@ -1,0 +1,100 @@
+// name: getClassDiagram4
+// keywords: UML, class diagram, Mermaid, #16938
+// status: correct
+//
+// Tests getClassDiagram with the Mermaid format: the characters Mermaid reads
+// as syntax are escaped (a member ending with ) would be a method, braces end
+// the class, ~ is a generic type, : starts a label and # an escape), and
+// partial classes, arrays and nested classes, which Mermaid can't draw, so
+// they are linked to their class.
+
+loadString("package D
+  partial model Base
+    parameter Real k = 1 \"Gain\";
+    parameter String s = \"#1: ~2~\";
+    parameter Real c[:] = {1, 2};
+    parameter Boolean b = k < 2 and k > 0;
+    Real x = sin(k);
+  end Base;
+  model Part
+    Real y;
+  end Part;
+  model M
+    extends Base(k = 2);
+    Part parts[3](each y = 1);
+    replaceable model P = Part;
+    model Inner
+      Real z;
+    end Inner;
+    Inner i;
+  end M;
+end D;
+", "getClassDiagram4.mo"); getErrorString();
+
+getClassDiagram(D.M, format = "mermaid"); getErrorString();
+getClassDiagram(D.M, format = "mermaid", showModifiers = false); getErrorString();
+
+// Result:
+// true
+// ""
+// "classDiagram
+//   class D_M[\"D.M\"] {
+//     <<model>>
+//     + Part parts[3]#40;each y = 1#41;
+//     + replaceable model P = Part
+//     + Inner i
+//   }
+//   class D_Base[\"D.Base\"] {
+//     <<partial model>>
+//     + parameter Real k = 1
+//     + parameter String s = \"#35;1#58; #126;2#126;\"
+//     + parameter Real c[#58;] = #123;1, 2#125;
+//     + parameter Boolean b = k #60; 2 and k #62; 0
+//     + Real x = sin#40;k#41;
+//   }
+//   class D_Part[\"D.Part\"] {
+//     <<model>>
+//     + Real y
+//   }
+//   class D_M_Inner[\"D.M.Inner\"] {
+//     <<model>>
+//     + Real z
+//   }
+//   D_Base <|-- D_M : #40;k = 2#41;
+//   D_M *-- \"[3]\" D_Part : parts
+//   D_M ..> D_Part : replaceable model P
+//   D_M -- D_M_Inner : nested
+//   D_M *-- D_M_Inner : i
+// "
+// ""
+// "classDiagram
+//   class D_M[\"D.M\"] {
+//     <<model>>
+//     + Part parts[3]
+//     + replaceable model P = Part
+//     + Inner i
+//   }
+//   class D_Base[\"D.Base\"] {
+//     <<partial model>>
+//     + parameter Real k
+//     + parameter String s
+//     + parameter Real c[#58;]
+//     + parameter Boolean b
+//     + Real x
+//   }
+//   class D_Part[\"D.Part\"] {
+//     <<model>>
+//     + Real y
+//   }
+//   class D_M_Inner[\"D.M.Inner\"] {
+//     <<model>>
+//     + Real z
+//   }
+//   D_Base <|-- D_M
+//   D_M *-- \"[3]\" D_Part : parts
+//   D_M ..> D_Part : replaceable model P
+//   D_M -- D_M_Inner : nested
+//   D_M *-- D_M_Inner : i
+// "
+// ""
+// endResult
