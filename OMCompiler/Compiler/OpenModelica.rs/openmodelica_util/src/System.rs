@@ -2658,11 +2658,11 @@ pub fn covertTextFileToCLiteral(textFile: ArcStr, outFile: ArcStr, target: ArcSt
     true
 }
 
-pub fn dladdr<T: Clone + 'static>(_symbol: T) -> (ArcStr, ArcStr, ArcStr) {
+pub fn dladdr<T: ?Sized>(_symbol: &T) -> (ArcStr, ArcStr, ArcStr) {
     // C: dladdr(3) on the MM closure's entry pointer, used purely as
     // best-effort diagnostics for Error.TEMPLATE_ERROR_FUNC ("Template
     // error: <file>: <symbol>"); platforms without dladdr return dummy
-    // strings ("dladdr failed"). A Rust `Arc<dyn Fn>` value carries no
+    // strings ("dladdr failed"). A Rust callback carries no
     // resolvable exported symbol, so this port always takes the
     // dummy-string path. The callback's static type name is the best
     // information available without symbolication machinery.
