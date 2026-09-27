@@ -12004,7 +12004,8 @@ fn emit_borrowed_arg<'a>(
         let owned = mode == Some(PlaceMode::Owned)
             && !ctx.match_refbound.contains(&base)
             && !matches!(ctx.variant_shapes.get(&base), Some(VarShape::RefArc));
-        let by_ref = mode == Some(PlaceMode::Ref);
+        // A matchcontinue arm binds by reference without recording a mode.
+        let by_ref = mode == Some(PlaceMode::Ref) || ctx.match_refbound.contains(&base);
         if by_ref || owned && !read_elsewhere {
             ctx.place_reads = true;
             let s = emit_exp(arg, false, ctx, top_level);
@@ -16777,9 +16778,16 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // emit `let mut x: T = x.clone();`, reading the outer (still
                 // uninitialised) binding.
                 let saved_fn_initialized_vars_mc = ctx.fn_initialized_vars.clone();
+                let saved_place_mode_mc = ctx.place_mode.clone();
+                let mut arm_bound = Vec::new();
+                pat_collect_all_bindings(&case.pattern, &mut arm_bound);
                 for (n, t, _, _) in &case.locals {
                     if !matches!(t, Ty::Unknown) {
                         ctx.fn_env_vars.insert(n.clone(), t.clone());
+                    }
+                    // Declared in the arm's closure, so an owned value.
+                    if !arm_bound.contains(n) {
+                        ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
                     }
                     // Arm locals are scope variables for nested matches: a
                     // nested pattern binding one of them assigns it in MM, so
@@ -17080,6 +17088,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 ctx.variants = saved_variants;
                 ctx.variant_shapes = saved_shapes;
                 ctx.fn_env_vars = saved_fn_env_vars_mc;
+                ctx.place_mode = saved_place_mode_mc;
                 ctx.fn_scope_vars = saved_fn_scope_vars_mc;
                 ctx.fn_initialized_vars = saved_fn_initialized_vars_mc;
                 ctx.mc_arm_writeback = saved_mc_arm_writeback;
