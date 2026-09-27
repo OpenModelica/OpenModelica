@@ -201,6 +201,10 @@ impl SimEngine for CEngine {
         self.rt.write(addr, buf)
     }
 
+    fn copy_bytes(&mut self, from: u32, to: u32, len: usize) -> Result<()> {
+        self.rt.copy(from, to, len)
+    }
+
     /// C's `currentContext`, mapped past the layout's end (`data::CONTEXT_OFF`).
     fn context_addr(&mut self) -> u32 {
         self.rt.layout.total + crate::data::CONTEXT_OFF

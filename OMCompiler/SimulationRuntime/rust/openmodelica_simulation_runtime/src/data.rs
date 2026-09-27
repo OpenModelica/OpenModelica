@@ -218,6 +218,34 @@ impl RtData {
         (addr >= r.start).then(|| (r, addr - r.start))
     }
 
+    /// The native bytes behind `[addr, addr + len)` when they are stored as the
+    /// layout has them, in one piece.
+    fn span(&mut self, addr: u32, len: usize) -> Option<*mut u8> {
+        let end = addr as usize + len;
+        if addr >= self.reals.0 && end <= self.reals.1 as usize {
+            return Some(unsafe { self.reals.2.add((addr - self.reals.0) as usize) });
+        }
+        match self.find(addr) {
+            None => self.owned.get_mut(addr as usize..end).map(|s| s.as_mut_ptr()),
+            Some((r, off)) => match r.backing {
+                Backing::Direct(base) if end <= r.end as usize => Some(unsafe { base.add(off as usize) }),
+                _ => None,
+            },
+        }
+    }
+
+    /// Copy `len` bytes from flat address `from` to `to`: one `memmove` when both
+    /// sides are plain, else through [`RtData::read`] and [`RtData::write`].
+    pub fn copy(&mut self, from: u32, to: u32, len: usize) -> Result<(), &'static str> {
+        if let (Some(src), Some(dst)) = (self.span(from, len), self.span(to, len)) {
+            unsafe { core::ptr::copy(src, dst, len) };
+            return Ok(());
+        }
+        let mut buf = vec![0u8; len];
+        self.read(from, &mut buf)?;
+        self.write(to, &buf)
+    }
+
     /// Read `buf.len()` bytes at flat address `addr`, converting on the way where
     /// the backing's width differs from the layout's.
     #[inline]
