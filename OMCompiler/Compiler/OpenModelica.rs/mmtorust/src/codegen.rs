@@ -13685,10 +13685,12 @@ fn collect_string_concat_parts<'a>(exp: &TypedExp, is_const: bool, ctx: &mut Gen
     }
 }
 
-/// `src` is the expression `expr` was emitted from: a variable read, literal
-/// or call already yields an owned `ArcStr`.
+/// `src` is the expression `expr` was emitted from: a variable read, literal,
+/// call, concatenation, `if` or `match` already yields an owned `ArcStr`.
 fn maybe_clone_string_value(expr: String, ty: &Ty, src: &TypedExp) -> String {
-    if matches!(ty, Ty::Str) && !matches!(src, TypedExp::Var { .. } | TypedExp::Lit(_) | TypedExp::Call { .. }) {
+    if matches!(ty, Ty::Str) && !matches!(src, TypedExp::Var { .. } | TypedExp::Lit(_) | TypedExp::Call { .. }
+        | TypedExp::BinOp { .. } | TypedExp::If { .. } | TypedExp::Match { .. })
+    {
         format!("({expr}).clone()")
     } else {
         expr
