@@ -10477,6 +10477,7 @@ unsafe extern "C" fn ida_res(
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
     let _solver = rtclock::Pause::new(rtclock::SOLVER);
     let e = unsafe { &mut *ctx.engine };
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
@@ -10486,6 +10487,7 @@ unsafe extern "C" fn ida_res(
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         r
     })();
+    let model_error = took_error_stage(e, ctx.err_stage_addr, save);
     ctx.nfe += 1;
     match run {
         Err(err) if residual_model_throw(e, err, t) => 1,
@@ -10494,11 +10496,11 @@ unsafe extern "C" fn ida_res(
             -1
         }
         Ok(()) => {
-            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) == 0 {
-                return 0;
+            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0 {
+                report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
+                return 1;
             }
-            report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
-            1
+            model_error as core::ffi::c_int
         }
     }
 }
@@ -10597,6 +10599,7 @@ unsafe extern "C" fn ida_jac(
         };
     }
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let run = (|| -> Result<()> {
         for color in &jac.colors {
             for &col in color {
@@ -10657,6 +10660,7 @@ unsafe extern "C" fn ida_jac(
         // Restore the base point; the last colour left a perturbed one.
         unsafe { ida_push_unknowns(ctx, y, ypv) }
     })();
+    took_error_stage(e, ctx.err_stage_addr, save);
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     match run {
         Err(err) => {
