@@ -3227,14 +3227,14 @@ protected
       case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
           cref :: cref_parts := ComponentRef.toListReverse(exp.cref);
-          oexp := ParameterTree.getOpt(ptree, InstNode.name(ComponentRef.node(cref)));
+          oexp := ParameterTree.getOpt(ptree, ComponentRef.nodeName(cref));
 
           if isSome(oexp) then
             SOME(outExp) := oexp;
             outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), outExp);
 
             for cr in cref_parts loop
-              outExp := Expression.recordElement(InstNode.name(ComponentRef.node(cr)), outExp);
+              outExp := Expression.recordElement(ComponentRef.nodeName(cr), outExp);
               outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
             end for;
           else

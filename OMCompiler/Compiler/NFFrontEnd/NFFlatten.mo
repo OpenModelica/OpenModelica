@@ -1180,7 +1180,7 @@ protected
   ComponentRef iter;
   String name;
 algorithm
-  name := "$" + InstNode.name(ComponentRef.node(prefix));
+  name := "$" + ComponentRef.nodeName(prefix);
 
   for d in dimensions loop
     index := index + 1;
