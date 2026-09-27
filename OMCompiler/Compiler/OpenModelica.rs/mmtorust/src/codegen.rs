@@ -9878,7 +9878,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     && (is_arc_wrapped(effective_ty, ctx) || matches!(effective_ty, Ty::List(_))) =>
                     format!("&**{var_str}"),
                 _ if borrow_here && is_plain_local && ctx.borrowed_params.contains(&base)
-                    && matches!(effective_ty, Ty::RustStruct(_) | Ty::RustEnum(_) | Ty::AliasTo(_))
+                    && matches!(effective_ty, Ty::RustStruct(_) | Ty::RustEnum(_) | Ty::AliasTo(_) | Ty::Tuple(_))
                     && !ty_contains_unknown(effective_ty) =>
                     var_str,
                 _ => format!("{var_str}.clone()"),
@@ -11980,6 +11980,12 @@ fn emit_borrowed_arg<'a>(
 ) -> String {
     if matches!(formal_ty, Some(Ty::Function { .. })) {
         return emit_fn_ref_arg(arg, formal_ty, ctx, top_level);
+    }
+    if let TypedExp::Var { name, segments, .. } = arg
+        && segments.len() <= 1 && !name.contains('.')
+        && ctx.borrowed_params.contains(name.as_str())
+    {
+        return escape_ident(name).to_string();
     }
     if let TypedExp::Var { name, segments, .. } = arg
         && !matches!(arg.ty(), Ty::Tuple(_))
@@ -19441,6 +19447,10 @@ fn emit_pat_assign<'a>(
             // destructured by value; refutable Arc-crossing patterns take the
             // separate `match_deref!` path and discard `surface`).
             let needs_borrow = type_destructure_needs_borrow(scrut_ty, ctx);
+            // A borrowed parameter is already the `&T` to match against.
+            let borrowed_scrut = scrut_expr.strip_suffix(".clone()")
+                .filter(|p| ctx.borrowed_params.iter().any(|b| escape_ident(b) == *p));
+            let scrut_ref = |e: &str| borrowed_scrut.map_or_else(|| format!("&({e})"), str::to_string);
             let irrefutable = pat_is_irrefutable(pat_for_render, top_level);
             // A sole-record constructor on an Arc-wrapped value is matched
             // through `&*` instead of `match_deref!`.
@@ -19504,7 +19514,7 @@ fn emit_pat_assign<'a>(
             // Borrowing the whole tuple makes match ergonomics auto-ref all
             // bindings uniformly.
             let scrut_for_pat = if needs_borrow {
-                format!("&({scrut_expr})")
+                scrut_ref(scrut_expr)
             } else {
                 format!("({scrut_expr})")
             };
@@ -19674,21 +19684,21 @@ fn emit_pat_assign<'a>(
                     // refutability check (no names bound). Use `match` with
                     // unit-valued arms; the let-binding to `()` would be
                     // wasteful, so emit a bare match expression.
-                    writeln!(out, "{indent}::match_deref::match_deref! {{ match &({scrut_expr}) {{").unwrap();
+                    writeln!(out, "{indent}::match_deref::match_deref! {{ match {} {{", scrut_ref(scrut_expr)).unwrap();
                     writeln!(out, "{indent}    {md_pat} => (),").unwrap();
                     writeln!(out, "{indent}    _ => {fail},").unwrap();
                     writeln!(out, "{indent}}} }};").unwrap();
                 } else if bindings.len() == 1 {
                     let (n, _) = &bindings[0];
                     let id = escape_ident(n);
-                    writeln!(out, "{indent}let {id} = ::match_deref::match_deref! {{ match &({scrut_expr}) {{").unwrap();
+                    writeln!(out, "{indent}let {id} = ::match_deref::match_deref! {{ match {} {{", scrut_ref(scrut_expr)).unwrap();
                     writeln!(out, "{indent}    {md_pat} => {id}.clone(),").unwrap();
                     writeln!(out, "{indent}    _ => {fail},").unwrap();
                     writeln!(out, "{indent}}} }};").unwrap();
                 } else {
                     let lhs: Vec<String> = bindings.iter().map(|(n, _)| escape_ident(n)).collect();
                     let rhs: Vec<String> = bindings.iter().map(|(n, _)| format!("{}.clone()", escape_ident(n))).collect();
-                    writeln!(out, "{indent}let ({}) = ::match_deref::match_deref! {{ match &({scrut_expr}) {{", lhs.join(", ")).unwrap();
+                    writeln!(out, "{indent}let ({}) = ::match_deref::match_deref! {{ match {} {{", lhs.join(", "), scrut_ref(scrut_expr)).unwrap();
                     writeln!(out, "{indent}    {md_pat} => ({}),", rhs.join(", ")).unwrap();
                     writeln!(out, "{indent}    _ => {fail},").unwrap();
                     writeln!(out, "{indent}}} }};").unwrap();
@@ -19732,7 +19742,13 @@ fn emit_pat_assign<'a>(
             if irrefutable {
                 match pat_for_render {
                     TypedPat::Tuple(_) => {
-                        writeln!(out, "{indent}let {surface} = {scrut_expr};").unwrap();
+                        // Destructure a borrowed tuple in place when every binding
+                        // is copied out to its variable.
+                        let mut bound = Vec::new();
+                        pat_collect_all_bindings(pat_for_render, &mut bound);
+                        let in_place = borrowed_scrut.filter(|_| deferrals.is_empty() && !surface.contains("ref ")
+                            && bound.iter().all(|n| reassign_pairs.iter().any(|(_, f, _)| f == n)));
+                        writeln!(out, "{indent}let {surface} = {};", in_place.unwrap_or(scrut_expr)).unwrap();
                     }
                     _ => {
                         if outer_arc {
