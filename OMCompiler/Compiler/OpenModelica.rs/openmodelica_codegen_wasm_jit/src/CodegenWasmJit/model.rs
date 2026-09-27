@@ -200,7 +200,7 @@ pub(super) fn build_sim_model(
         );
         for (i, sv) in states.iter().enumerate() {
             let old = openmodelica_frontend_base::ComponentReference::appendStringLastIdent(
-                arcstr::literal!("$Old"),
+                &arcstr::literal!("$Old"),
                 &sv.name,
             )?;
             Arc::make_mut(&mut var_map.vars).insert(
