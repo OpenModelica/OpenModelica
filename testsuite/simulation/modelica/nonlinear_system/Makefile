@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 bug_2841.mos \
 bug_3527.mos \
+externalErrorThenThrow.mos \
 nanTest.mos \
 nonlinear.mos \
 nonlinear_kinsol.mos \
