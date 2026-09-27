@@ -74,8 +74,8 @@ pub(crate) fn pat_destructures(p: &TypedPat) -> bool {
 }
 
 /// For a plain match on `Ref`/`List` parameters (one, or a tuple of them), the
-/// list tails a case binds from a parameter column into its own (not escaping)
-/// locals and does not reassign, as (binding, parameter). When every column is
+/// list tails and constructor fields a case binds from a parameter column into
+/// its own (not escaping) locals and does not reassign, as (binding, parameter). When every column is
 /// borrowed, codegen matches the references themselves, so these outlive the
 /// arm.
 pub(crate) fn param_tail_bindings(
@@ -101,16 +101,22 @@ pub(crate) fn param_tail_bindings(
     let mut written = HashSet::new();
     crate::codegen::stmts_assigned_var_names(&case.stmts, &mut written);
     crate::codegen::exp_assigned_var_names(&case.result, &mut written);
-    cols.into_iter()
-        .filter_map(|(p, pat)| match pat {
-            TypedPat::Cons { tail, .. } => match &**tail {
-                TypedPat::Var(x) if !written.contains(x) && case.locals.iter().any(|(n, _, d, _)| n == x && d.is_none()) =>
-                    Some((x.clone(), p)),
-                _ => None,
-            },
-            _ => None,
-        })
-        .collect()
+    let local = |x: &String| !written.contains(x) && case.locals.iter().any(|(n, _, d, _)| n == x && d.is_none());
+    let mut out = Vec::new();
+    for (p, pat) in cols {
+        let parts: Vec<&TypedPat> = match pat {
+            TypedPat::Cons { tail, .. } => vec![&**tail],
+            TypedPat::Constructor { fields, named_fields, .. } =>
+                fields.iter().chain(named_fields.iter().map(|(_, f)| f)).collect(),
+            _ => Vec::new(),
+        };
+        for part in parts {
+            if let TypedPat::Var(x) = part && local(x) {
+                out.push((x.clone(), p.clone()));
+            }
+        }
+    }
+    out
 }
 
 #[derive(Clone)]
@@ -130,7 +136,7 @@ struct Scan<'a, 'b> {
     candidates: &'b HashSet<String>,
     values: &'b HashSet<String>,
     locals: &'b HashSet<String>,
-    /// In a loop-lowered function, the list tails of parameters bound by the
+    /// In a loop-lowered function, the parts of parameters bound by the
     /// enclosing match arms (see [`param_tail_bindings`]).
     tails: HashMap<String, Vec<String>>,
     recursive: &'b BTreeSet<String>,
