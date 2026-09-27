@@ -6993,15 +6993,21 @@ fn arm_bindings_dead_at_subject_write(case: &TypedCase, subj: &str) -> bool {
         r.iter().any(|n| binds.contains(n))
     };
     // An `if` may move the subject in a branch that reads no binding: the
-    // condition runs first and the other branches are other paths.
-    let branch_move_ok = |e: &TypedExp| match e {
-        TypedExp::If { cond, then_, elseif, else_, .. } =>
-            !exp_writes_or_moves(cond, subj)
-                && elseif.iter().all(|(c, _)| !exp_writes_or_moves(c, subj))
-                && std::iter::once(&**then_).chain(elseif.iter().map(|(_, b)| b)).chain(std::iter::once(&**else_))
-                    .all(|b| !exp_writes_or_moves(b, subj) || !reads_exp(b)),
-        e => !exp_writes_or_moves(e, subj) || !reads_exp(e),
-    };
+    // condition runs first and the other branches are other paths. A tuple
+    // element may move it when the elements after it read no binding.
+    fn branch_move_ok(e: &TypedExp, subj: &str, reads_exp: &dyn Fn(&TypedExp) -> bool) -> bool {
+        match e {
+            TypedExp::If { cond, then_, elseif, else_, .. } =>
+                !exp_writes_or_moves(cond, subj)
+                    && elseif.iter().all(|(c, _)| !exp_writes_or_moves(c, subj))
+                    && std::iter::once(&**then_).chain(elseif.iter().map(|(_, b)| b)).chain(std::iter::once(&**else_))
+                        .all(|b| branch_move_ok(b, subj, reads_exp)),
+            TypedExp::Tuple(es) => es.iter().enumerate().all(|(j, x)|
+                !exp_writes_or_moves(x, subj) || branch_move_ok(x, subj, reads_exp) && !es[j + 1..].iter().any(reads_exp)),
+            e => !exp_writes_or_moves(e, subj) || !reads_exp(e),
+        }
+    }
+    let branch_move_ok = |e: &TypedExp| branch_move_ok(e, subj, &reads_exp);
     match case.stmts.iter().position(|st| stmt_writes_or_moves(st, subj)) {
         None => branch_move_ok(&case.result),
         Some(k) => {
@@ -15619,7 +15625,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     };
     let borrow_scrutinee = borrowable
         && as_binding.is_none()
-        && (subject_is_borrowed_param || ctx.tail_lowering.is_none() && subject_writes_ok)
+        && (subject_is_borrowed_param || subject_writes_ok)
         && match_uses_match_deref(&deref_ty, cases, ctx, top_level);
     ctx.borrow_reads = borrow_scrutinee;
     ctx.borrow_mask = if borrow_scrutinee { borrow_mask } else { Vec::new() };
