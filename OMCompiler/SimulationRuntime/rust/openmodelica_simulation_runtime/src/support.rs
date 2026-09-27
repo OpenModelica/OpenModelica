@@ -610,6 +610,27 @@ pub extern "C" fn cscToCsr(
     csr
 }
 
+/// C's `sortUniqueSparsePattern`: the resizable NBackend pattern can have unsorted
+/// and duplicate row indices per column, which KLU does not accept.
+fn sort_unique_sparse_pattern(sp: &mut SPARSE_PATTERN, cols: usize) {
+    let ap = unsafe { core::slice::from_raw_parts_mut(sp.leadindex, cols + 1) };
+    let index = unsafe { core::slice::from_raw_parts_mut(sp.index, sp.nnz as usize) };
+    let mut out = 0usize;
+    for c in 0..cols {
+        let (start, end) = (ap[c] as usize, ap[c + 1] as usize);
+        index[start..end].sort_unstable();
+        ap[c] = out as c_uint;
+        for nz in start..end {
+            if nz == start || index[nz] != index[nz - 1] {
+                index[out] = index[nz];
+                out += 1;
+            }
+        }
+    }
+    ap[cols] = out as c_uint;
+    sp.nnz = out as c_uint;
+}
+
 /// C's `computeColumnColoring`: a greedy distance-2 column coloring of the CSC
 /// pattern, which the NBackend's resizable Jacobian needs because its runtime
 /// pattern over-approximates the symbolic one. Colors are 1-based.
@@ -624,6 +645,7 @@ pub extern "C" fn computeColumnColoring(sp: *mut SPARSE_PATTERN, nRows: c_uint, 
         sp.maxColors = 0;
         return;
     }
+    sort_unique_sparse_pattern(sp, cols);
     let color_cols = unsafe { core::slice::from_raw_parts_mut(sp.colorCols, cols) };
     let csr = cscToCsr(sp, nRows, nCols);
     if csr.is_null() {

@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+duplicatePattern.mos \
 slicedLinearSystem.mos \
 minimalTearing.mos \
 partialForArrayBody.mos \
