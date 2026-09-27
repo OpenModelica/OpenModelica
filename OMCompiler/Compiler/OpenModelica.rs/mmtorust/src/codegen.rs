@@ -713,6 +713,9 @@ struct GenCtx {
     /// A `break`/`continue` consults the innermost entry and uses the label
     /// when present so it diverges to the loop rather than the labeled block.
     loop_label_stack: Vec<Option<String>>,
+    /// Variables read by the ranges of the enclosing `for` loops, which may
+    /// borrow them for the whole loop.
+    loop_range_reads: Vec<String>,
 }
 
 /// Binding-shape classification for variables tracked in `GenCtx::variants`.
@@ -822,6 +825,7 @@ impl GenCtx {
             borrowed_params: HashSet::new(),
             fn_value_ref: false,
             loop_label_stack: Vec::new(),
+            loop_range_reads: Vec::new(),
         }
     }
 
@@ -8465,6 +8469,25 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         }
     }
 
+    // An input that initialises exactly one local and is not read otherwise
+    // (nor returned as an `input output`) is moved into it.
+    let init_var = |modif: &Option<metamodelica::Ref<Absyn::Modification>>| match extract_default_exp(modif)
+        .map(|exp| typedexp::infer_exp(exp, &infer_env, top_level, &pkg_prefix, &all_type_vars))
+    {
+        Some(TypedExp::Var { name, segments, .. }) if segments.len() <= 1 && !name.contains('.') => Some(name),
+        _ => None,
+    };
+    let inits: Vec<typedexp::TypedExp> = outputs.iter().chain(protected.iter())
+        .filter_map(|(_, _, modif, _)| extract_default_exp(modif))
+        .map(|exp| typedexp::infer_exp(exp, &infer_env, top_level, &pkg_prefix, &all_type_vars))
+        .collect();
+    let movable_init: HashSet<String> = outputs.iter().chain(protected.iter())
+        .filter_map(|(_, _, modif, _)| init_var(modif))
+        .filter(|v| input_names.contains(v) && !borrowed.contains(v) && !ctx.hoisted_arrays.contains_key(v)
+            && !env.outputs.contains(v)
+            && inits.iter().filter(|e| exp_reads_name(e, v)).count() == 1
+            && !stmts_read_name(&typed_stmts, v))
+        .collect();
     for (n, t, modif, is_const_local) in outputs.iter().chain(protected.iter()) {
         // The output `n` is consumed by the tail-call lowering: its declaration
         // would otherwise force `let mut <n>: …;`, but `<n>` never appears in
@@ -8495,6 +8518,8 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         });
         let init: Option<(String, Ty)> = if input_names.contains(n) {
             Some((escape_ident(n).to_string(), t.clone()))
+        } else if let Some(v) = init_var(modif).filter(|v| movable_init.contains(v)) {
+            init_raw.map(|(_, ty)| (escape_ident(&v).to_string(), ty))
         } else {
             let cloned_s = format!("{}.clone()", escape_ident(n));
             init_raw.filter(|(s, _)| s != &escape_ident(n) && s != &cloned_s)
@@ -21592,7 +21617,7 @@ fn outputs_tuple(env: &LocalEnv) -> String {
 /// value may be an output, so everything is cloned there.
 fn returned_outputs_tuple(env: &LocalEnv, ctx: &GenCtx) -> String {
     let read = |n: &String| {
-        let owned = ctx.loop_label_stack.is_empty()
+        let owned = !ctx.loop_range_reads.contains(n)
             && matches!(ctx.place_mode.get(n), Some(PlaceMode::Owned))
             && !ctx.match_refbound.contains(n)
             && !matches!(ctx.variant_shapes.get(n), Some(VarShape::RefArc));
@@ -22441,9 +22466,15 @@ fn emit_stmt<'a>(
             // seeds its shadow with `= x.clone()` rather than a bare
             // `let mut x: T;` that reads uninitialised memory (E0381).
             let iter_newly_init = ctx.fn_initialized_vars.insert(var.clone());
+            let saved_range_reads = ctx.loop_range_reads.len();
+            let mut probe = range.clone();
+            walk_exp_mut(&mut probe, &mut |x| if let TypedExp::Var { name, segments, .. } = x {
+                ctx.loop_range_reads.push(var_base_name(name, segments));
+            });
             ctx.loop_label_stack.push(loop_label);
             emit_stmts(out, &format!("{indent}    "), body, fail_mode, ctx, &mut inner, top_level, fresh);
             ctx.loop_label_stack.pop();
+            ctx.loop_range_reads.truncate(saved_range_reads);
             if iter_newly_init { ctx.fn_initialized_vars.remove(var); }
             match saved_var_mode {
                 Some(m) => { ctx.place_mode.insert(var.clone(), m); }
