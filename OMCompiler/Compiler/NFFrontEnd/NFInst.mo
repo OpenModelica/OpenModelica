@@ -2398,6 +2398,11 @@ protected
   list<InstNode> enclosing = {};
   InstNodeType ty;
 algorithm
+  // Only a redeclared class lowers the confidence.
+  if not (hasRedeclaredScope(clsNode) or List.any(prefixes, isRedeclaredClass)) then
+    return;
+  end if;
+
   // Redeclares of the scopes enclosing the component did not determine its type.
   while not (InstNode.isEmpty(node) or InstNode.isTopScope(node)) loop
     enclosing := node :: enclosing;
@@ -2437,6 +2442,33 @@ algorithm
     end if;
   end for;
 end classConfidence;
+
+function isRedeclaredClass
+  input InstNode node;
+  output Boolean res;
+algorithm
+  res := match node
+    case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS()) then true;
+    else false;
+  end match;
+end isRedeclaredClass;
+
+function hasRedeclaredScope
+  "Whether a redeclared class is on the instance scope chain of a node."
+  input InstNode node;
+  output Boolean res = false;
+protected
+  InstNode scope = node;
+algorithm
+  while not (InstNode.isEmpty(scope) or InstNode.isTopScope(scope)) loop
+    if isRedeclaredClass(scope) then
+      res := true;
+      return;
+    end if;
+
+    scope := instanceScope(scope);
+  end while;
+end hasRedeclaredScope;
 
 function instanceScope
   "Returns the scope a node was instantiated in, for a redeclared class the
