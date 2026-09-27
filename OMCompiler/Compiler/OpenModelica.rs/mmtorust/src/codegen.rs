@@ -12004,9 +12004,7 @@ fn emit_borrowed_arg<'a>(
     {
         return escape_ident(name).to_string();
     }
-    if let TypedExp::Var { name, segments, .. } = arg
-        && !matches!(arg.ty(), Ty::Tuple(_))
-    {
+    if let TypedExp::Var { name, segments, .. } = arg {
         let base = var_base_name(name, segments);
         let read_elsewhere = others.iter().any(|a| {
             let mut names = HashSet::new();
@@ -12017,12 +12015,14 @@ fn emit_borrowed_arg<'a>(
         if plain && ctx.param_tails.contains(&base) {
             return escape_ident(name).to_string();
         }
+        let tuple = matches!(arg.ty(), Ty::Tuple(_));
         let mode = ctx.place_mode.get(&base).copied();
         let owned = mode == Some(PlaceMode::Owned)
+            && (!tuple || plain)
             && !ctx.match_refbound.contains(&base)
             && !matches!(ctx.variant_shapes.get(&base), Some(VarShape::RefArc));
         // A matchcontinue arm binds by reference without recording a mode.
-        let by_ref = mode == Some(PlaceMode::Ref) || ctx.match_refbound.contains(&base);
+        let by_ref = !tuple && (mode == Some(PlaceMode::Ref) || ctx.match_refbound.contains(&base));
         if by_ref || owned && !read_elsewhere {
             ctx.place_reads = true;
             let s = emit_exp(arg, false, ctx, top_level);
@@ -12636,15 +12636,19 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // reads as `&*x` (the `Var` arm decides ownership) instead of a clone.
             let ty = if ty_contains_unknown(&ty1) { &ty2 } else { &ty1 };
             let borrowable = referenceeq_derefs_to_pointee(ty, ctx) || matches!(ty, Ty::List(_));
-            let arg1 = args.first().map(|a| {
-                ctx.borrow_reads = borrowable && matches!(a, TypedExp::Var { .. });
-                emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)
-            }).unwrap_or_default();
-            let arg2 = args.get(1).map(|a| {
-                ctx.borrow_reads = borrowable && matches!(a, TypedExp::Var { .. });
-                emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)
-            }).unwrap_or_default();
-            ctx.borrow_reads = false;
+            // The Option lowering matches on `&(operand)`, which accepts a place.
+            let as_place = matches!(ty, Ty::Option(_)) && !is_const;
+            let emit_operand = |i: usize, a: &TypedExp, ctx: &mut GenCtx| {
+                let is_var = matches!(a, TypedExp::Var { .. });
+                ctx.borrow_reads = borrowable && is_var;
+                ctx.place_reads = as_place && is_var;
+                let s = emit_builtin_call_arg_raw(func, i, a, is_const, ctx, top_level);
+                ctx.borrow_reads = false;
+                ctx.place_reads = false;
+                s
+            };
+            let arg1 = args.first().map(|a| emit_operand(0, a, ctx)).unwrap_or_default();
+            let arg2 = args.get(1).map(|a| emit_operand(1, a, ctx)).unwrap_or_default();
             // The lowering is type-directed; see [`try_emit_reference_eq`].
             // Both sides carry the same MM type, but one may have decayed to
             // Unknown during typing — try the first side's type, then the
