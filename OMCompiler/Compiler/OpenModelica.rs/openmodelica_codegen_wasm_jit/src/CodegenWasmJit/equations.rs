@@ -509,7 +509,7 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
     use SimCode::SimEqSystem as E;
     use openmodelica_frontend_base::{ComponentReference, Expression};
     fn name(cref: &metamodelica::Ref<DAE::ComponentRef>) -> Result<String> {
-        Ok(ComponentReference::crefStr(cref.clone())?.to_string())
+        Ok(ComponentReference::crefStr(cref)?.to_string())
     }
     fn uses(exp: &metamodelica::Ref<DAE::Exp>) -> Result<Vec<String>> {
         lst(&Expression::extractUniqueCrefsFromExpDerPreStart(exp.clone(), true)?).map(name).collect()

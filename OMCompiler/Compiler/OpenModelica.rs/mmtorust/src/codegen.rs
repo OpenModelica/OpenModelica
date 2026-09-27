@@ -716,7 +716,7 @@ struct GenCtx {
     /// Variables read by the ranges of the enclosing `for` loops, which may
     /// borrow them for the whole loop.
     loop_range_reads: Vec<String>,
-    /// List tails of borrowed parameters bound by the enclosing match arms:
+    /// Parts of borrowed parameters bound by the enclosing match arms:
     /// `&'__b` references that can be passed on as they are.
     param_tails: HashSet<String>,
 }
