@@ -18,14 +18,14 @@ use crate::AvlSetString as S;
 fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<S::Tree>> {
     let mut t = S::new();
     for k in keys {
-        t = S::add(t, arcstr::format!("{}", k))?;
+        t = S::add(t, &arcstr::format!("{}", k))?;
     }
     Ok(t)
 }
 
 /// Collect listKeys into a Vec<String> for easy comparison.
 fn keys_vec(t: metamodelica::Ref<S::Tree>) -> Vec<String> {
-    let list = S::listKeys(t, metamodelica::nil());
+    let list = S::listKeys(&t, metamodelica::nil());
     let mut v = vec![];
     for k in &*list { v.push(k.to_string()); }
     v
@@ -36,13 +36,13 @@ fn keys_vec(t: metamodelica::Ref<S::Tree>) -> Vec<String> {
 #[test]
 fn test_new_is_empty() {
     let t = S::new();
-    assert!(S::isEmpty(t));
+    assert!(S::isEmpty(&t));
 }
 
 #[test]
 fn test_non_empty_is_not_empty() -> Result<()> {
     let t = set_of(&["hello"])?;
-    assert!(!S::isEmpty(t));
+    assert!(!S::isEmpty(&t));
     Ok(())
 }
 
@@ -107,7 +107,7 @@ fn test_listkeys_single() -> Result<()> {
 #[test]
 fn test_listkeysreverse_descending_order() -> Result<()> {
     let t = set_of(&["banana", "apple", "cherry"])?;
-    let list = S::listKeysReverse(t, metamodelica::nil());
+    let list = S::listKeysReverse(&t, metamodelica::nil());
     let mut rev = vec![];
     for k in &*list { rev.push(k.to_string()); }
     assert_eq!(rev, vec!["cherry", "banana", "apple"]);
@@ -119,7 +119,7 @@ fn test_listkeysreverse_descending_order() -> Result<()> {
 #[test]
 fn test_addlist_basic() -> Result<()> {
     let lst = list![literal!("c"), literal!("a"), literal!("b")];
-    let t = S::addList(S::new(), lst)?;
+    let t = S::addList(S::new(), &lst)?;
     assert_eq!(keys_vec(t), vec!["a", "b", "c"]);
     Ok(())
 }
@@ -127,8 +127,8 @@ fn test_addlist_basic() -> Result<()> {
 #[test]
 fn test_addlist_empty_list() -> Result<()> {
     let lst: List<ArcStr> = metamodelica::nil();
-    let t = S::addList(S::new(), lst)?;
-    assert!(S::isEmpty(t));
+    let t = S::addList(S::new(), &lst)?;
+    assert!(S::isEmpty(&t));
     Ok(())
 }
 
@@ -138,7 +138,7 @@ fn test_addlist_empty_list() -> Result<()> {
 fn test_join_disjoint() -> Result<()> {
     let t1 = set_of(&["a", "b"])?;
     let t2 = set_of(&["c", "d"])?;
-    let joined = S::join(t1, t2)?;
+    let joined = S::join(t1, &t2)?;
     assert_eq!(keys_vec(joined), vec!["a", "b", "c", "d"]);
     Ok(())
 }
@@ -147,7 +147,7 @@ fn test_join_disjoint() -> Result<()> {
 fn test_join_overlapping() -> Result<()> {
     let t1 = set_of(&["a", "b", "c"])?;
     let t2 = set_of(&["b", "c", "d"])?;
-    let joined = S::join(t1, t2)?;
+    let joined = S::join(t1, &t2)?;
     // No duplicates
     assert_eq!(keys_vec(joined), vec!["a", "b", "c", "d"]);
     Ok(())
@@ -157,7 +157,7 @@ fn test_join_overlapping() -> Result<()> {
 fn test_join_with_empty() -> Result<()> {
     let t = set_of(&["x", "y"])?;
     let empty = S::new();
-    let joined = S::join(t.clone(), empty)?;
+    let joined = S::join(t.clone(), &empty)?;
     assert_eq!(keys_vec(joined), keys_vec(t));
     Ok(())
 }
@@ -190,14 +190,14 @@ fn test_keystr() {
 #[test]
 fn test_print_node_str_leaf() -> Result<()> {
     let t = set_of(&["only"])?;
-    let s = S::printNodeStr(t)?;
+    let s = S::printNodeStr(&t)?;
     assert_eq!(s, literal!("only"));
     Ok(())
 }
 
 #[test]
 fn test_print_tree_str_empty() -> Result<()> {
-    let s = S::printTreeStr(S::new())?;
+    let s = S::printTreeStr(&S::new())?;
     assert_eq!(s, literal!("EMPTY()"));
     Ok(())
 }
@@ -218,7 +218,7 @@ fn test_print_tree_str_empty() -> Result<()> {
 fn test_smallest_key_returns_rightmost() -> Result<()> {
     let t = set_of(&["b", "a", "c"])?;
     // MetaModelica's smallestKey recurses right, so it finds the maximum.
-    let k = S::smallestKey(t)?;
+    let k = S::smallestKey(&t)?;
     assert_eq!(k, literal!("c"),
         "smallestKey recurses right (matching MetaModelica source) and returns the maximum key");
     Ok(())
@@ -228,7 +228,7 @@ fn test_smallest_key_returns_rightmost() -> Result<()> {
 fn test_smallest_key_single_element() -> Result<()> {
     let t = set_of(&["only"])?;
     // Single-element tree: leaf node. This case works correctly.
-    let k = S::smallestKey(t)?;
+    let k = S::smallestKey(&t)?;
     assert_eq!(k, literal!("only"));
     Ok(())
 }
@@ -268,8 +268,8 @@ fn test_intersection_empty_left() -> Result<()> {
     let t1 = S::new();
     let t2 = set_of(&["a", "b"])?;
     let (intersect, rest1, rest2) = S::intersection(t1, t2)?;
-    assert!(S::isEmpty(intersect));
-    assert!(S::isEmpty(rest1));
+    assert!(S::isEmpty(&intersect));
+    assert!(S::isEmpty(&rest1));
     assert_eq!(keys_vec(rest2), vec!["a", "b"]);
     Ok(())
 }
@@ -279,9 +279,9 @@ fn test_intersection_empty_right() -> Result<()> {
     let t1 = set_of(&["a", "b"])?;
     let t2 = S::new();
     let (intersect, rest1, rest2) = S::intersection(t1, t2)?;
-    assert!(S::isEmpty(intersect));
+    assert!(S::isEmpty(&intersect));
     assert_eq!(keys_vec(rest1), vec!["a", "b"]);
-    assert!(S::isEmpty(rest2));
+    assert!(S::isEmpty(&rest2));
     Ok(())
 }
 
@@ -295,7 +295,7 @@ fn test_intersection_disjoint() -> Result<()> {
     let t1 = set_of(&["a", "c"])?;
     let t2 = set_of(&["b", "d"])?;
     let (intersect, rest1, rest2) = S::intersection(t1, t2)?;
-    assert!(S::isEmpty(intersect));
+    assert!(S::isEmpty(&intersect));
     assert_eq!(keys_vec(rest1), vec!["a", "c"]);
     // MetaModelica algorithm drops the last-advanced k2 ('d') when keylist1
     // runs out; rest2 contains only what was explicitly recorded before the break.
@@ -315,7 +315,7 @@ fn test_intersection_orphaned_k2_bug() -> Result<()> {
     assert_eq!(keys_vec(rest1), vec!["a", "c"]);
     // MetaModelica algorithm: k2='d' is advanced out of keylist2 but keylist1
     // then runs out, causing a break before 'd' is recorded in rest2.
-    assert!(S::isEmpty(rest2));
+    assert!(S::isEmpty(&rest2));
     Ok(())
 }
 
@@ -330,7 +330,7 @@ fn test_intersection_orphaned_k1_bug() -> Result<()> {
     assert_eq!(keys_vec(intersect), vec!["b"]);
     // MetaModelica algorithm: k1='d' is advanced out of keylist1 but keylist2
     // then runs out, causing a break before 'd' is recorded in rest1.
-    assert!(S::isEmpty(rest1));
+    assert!(S::isEmpty(&rest1));
     assert_eq!(keys_vec(rest2), vec!["a", "c"]);
     Ok(())
 }

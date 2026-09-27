@@ -26,27 +26,27 @@ impl Sources {
         let Ok(root) = json::parseFile(ArcStr::from(path.to_string_lossy().as_ref())) else {
             return Sources::default();
         };
-        let Ok(libs) = json::get(root, arcstr::literal!("libs")) else {
+        let Ok(libs) = json::get(&root, arcstr::literal!("libs")) else {
             return Sources::default();
         };
         let mut libraries = HashMap::new();
-        let Ok(names) = json::getKeys(libs.clone()) else {
+        let Ok(names) = json::getKeys(&libs) else {
             return Sources::default();
         };
         for name in &names {
             let name = name.clone();
-            let Ok(entry) = json::get(libs.clone(), name.clone()) else {
+            let Ok(entry) = json::get(&libs, name.clone()) else {
                 continue;
             };
             let Some(git) = string(&entry, "git") else {
                 continue;
             };
             let mut releases = HashMap::new();
-            if let Ok(versions) = json::get(entry, arcstr::literal!("versions"))
-                && let Ok(found) = json::getKeys(versions.clone())
+            if let Ok(versions) = json::get(&entry, arcstr::literal!("versions"))
+                && let Ok(found) = json::getKeys(&versions)
             {
                 for version in &found {
-                    if let Ok(v) = json::get(versions.clone(), version.clone()) {
+                    if let Ok(v) = json::get(&versions, version.clone()) {
                         releases.insert(
                             version.to_string(),
                             Release {
@@ -85,7 +85,7 @@ impl Sources {
 }
 
 fn string(object: &metamodelica::Ref<JSON>, key: &str) -> Option<String> {
-    match &*json::get(object.clone(), ArcStr::from(key)).ok()? {
+    match &*json::get(&object, ArcStr::from(key)).ok()? {
         JSON::STRING { r#str } => Some(r#str.to_string()),
         _ => None,
     }
@@ -144,8 +144,8 @@ impl Tested {
             return Tested::default();
         };
         let mut entries: HashMap<String, Vec<(String, String)>> = HashMap::new();
-        for i in 1..=json::size(root.clone()) {
-            let Ok(entry) = json::at(root.clone(), i) else {
+        for i in 1..=json::size(&root) {
+            let Ok(entry) = json::at(&root, i) else {
                 continue;
             };
             let Some(library) = string(&entry, "library") else {
