@@ -5155,7 +5155,7 @@ algorithm
     case DAE.MATCHEXPRESSION(matchTy, expl, aliases, localDecls, cases, tp) algorithm
       // Don't traverse the local declarations; we don't store bindings there (yet)
       (expl_1, ext_arg) := traverseExpList(expl, inFunc, inExtArg);
-      (cases_1, ext_arg) := traverseCases(cases, inFunc, ext_arg);
+      (cases_1, ext_arg) := traverseMatchCases(cases, inFunc, ext_arg);
       e := if referenceEq(expl, expl_1) and referenceEq(cases, cases_1) then inExp else DAE.MATCHEXPRESSION(matchTy, expl_1, aliases, localDecls, cases_1, tp);
       (e, ext_arg) := inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -5710,7 +5710,7 @@ algorithm
     case (_,DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),rel,ext_arg)
       algorithm
         (expl,ext_arg) := traverseExpListTopDown(expl,rel,ext_arg);
-        (cases, ext_arg) := traverseCasesTopDown(cases, rel, ext_arg);
+        (cases, ext_arg) := traverseMatchCasesTopDown(cases, rel, ext_arg);
       then (DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg);
 
     case (_,DAE.METARECORDCALL(fn,expl,fieldNames,i,typeVars),rel,ext_arg)
@@ -12402,6 +12402,41 @@ algorithm
       then (cases,a);
   end match;
 end traverseCases;
+
+protected function traverseMatchCases<A>
+  "traverseCases for a match expression met by traverseExpBottomUp."
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> outCases;
+  output A oa;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end FuncExpType;
+algorithm
+  (outCases, oa) := traverseCases(inCases, func, inA);
+end traverseMatchCases;
+
+protected function traverseMatchCasesTopDown<A>
+  "traverseCasesTopDown for a match expression met by traverseExpTopDown."
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> cases;
+  output A a;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output A outA;
+  end FuncExpType;
+algorithm
+  (cases, a) := traverseCasesTopDown(inCases, func, inA);
+end traverseMatchCasesTopDown;
 
 public function traverseCasesTopDown<A>
   "Traverses the expressions in a list of match-expression cases (top-down).
