@@ -21,7 +21,15 @@ pub(crate) type BorrowMasks = BTreeMap<String, Vec<bool>>;
 
 static MASKS: std::sync::OnceLock<BorrowMasks> = std::sync::OnceLock::new();
 
-pub(crate) fn install(masks: BorrowMasks) {
+/// Hand-written functions whose parameters are borrowed.
+const HANDWRITTEN_MASKS: &[(&str, &[bool])] = &[
+    ("System.dladdr", &[true]),
+];
+
+pub(crate) fn install(mut masks: BorrowMasks) {
+    for (q, m) in HANDWRITTEN_MASKS {
+        masks.insert((*q).to_owned(), m.to_vec());
+    }
     let _ = MASKS.set(masks);
 }
 
@@ -347,8 +355,13 @@ impl Scan<'_, '_> {
                     if q == self.qname {
                         self.calls_self = true;
                     }
+                    let fixed = HANDWRITTEN_MASKS.iter().find(|(h, _)| *h == q).map(|(_, m)| *m);
                     for (i, a) in args.iter().enumerate() {
-                        self.arg(a, Pos::Arg(q.clone(), i));
+                        match fixed {
+                            Some(m) if m.get(i) == Some(&true) => self.arg(a, Pos::Borrow),
+                            Some(_) => self.exp(a, Pos::Owned),
+                            None => self.arg(a, Pos::Arg(q.clone(), i)),
+                        }
                     }
                     for (n, a) in named_args {
                         match formals.iter().position(|f| f == n) {
