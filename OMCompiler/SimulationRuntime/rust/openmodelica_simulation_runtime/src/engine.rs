@@ -106,15 +106,11 @@ impl CEngine {
 
     /// Whether a model error raised now is one of the open region's to absorb.
     /// Outside every region it is what C's outermost `MMC_TRY_INTERNAL` would not
-    /// catch either, and ends the run.
+    /// catch either, and ends the run. So does one in event handling, which has
+    /// nothing left to retry from.
     fn error_absorbed(stage: i32) -> bool {
         use openmodelica_nls as nls;
-        [
-            nls::ERROR_INTEGRATOR,
-            nls::ERROR_NONLINEARSOLVER,
-            nls::ERROR_SIMULATION_STEP,
-            nls::ERROR_EVENTHANDLING,
-        ]
+        [nls::ERROR_INTEGRATOR, nls::ERROR_NONLINEARSOLVER, nls::ERROR_SIMULATION_STEP]
         .contains(&(stage as u32))
     }
 

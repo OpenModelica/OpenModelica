@@ -114,6 +114,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    return;
+  }
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
@@ -142,6 +145,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     printZeroCrossings(data, OMC_LOG_EVENTS_V);
 
     data->callback->functionDAE(data, threadData);
+    if (OMC_ERROR_RAISED()) {
+      return;
+    }
 
     numEventIterations++;
     if(numEventIterations > maxEventIterations) {

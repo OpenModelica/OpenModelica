@@ -238,6 +238,9 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 
   /* update the whole system */
   updateDiscreteSystem(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    return;
+  }
   saveZeroCrossingsAfterEvent(data, threadData);
   /*sim_result_emit(data);*/
 
