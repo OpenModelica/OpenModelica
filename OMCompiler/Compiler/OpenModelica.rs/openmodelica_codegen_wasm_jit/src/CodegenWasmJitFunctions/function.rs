@@ -526,7 +526,7 @@ fn exp_mentions(e: &metamodelica::Ref<DAE::Exp>, name: &str) -> bool {
         };
         Ok((e, found | hit as i32))
     };
-    Expression::traverseExpBottomUp(e.clone(), Arc::new(visit), 0).map_or(true, |(_, found)| found != 0)
+    Expression::traverseExpBottomUp(e.clone(), &visit, 0).map_or(true, |(_, found)| found != 0)
 }
 
 /// The wasm local a `VARIABLE` was interned into, if any.
