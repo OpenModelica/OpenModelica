@@ -49,6 +49,8 @@ fn candidate_kind(ty: &Ty, types: &Types<'_>) -> Option<Kind> {
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if types.recursive.contains(n) => Some(Kind::Handle),
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if !types.copy.contains(n) => Some(Kind::Value),
         Ty::UnionTypeVariant(parent, _) if types.recursive.contains(parent) => Some(Kind::Handle),
+        Ty::Tuple(ts) if ts.iter().any(|t| candidate_kind(t, types).is_some() || matches!(t, Ty::Option(_))) =>
+            Some(Kind::Handle),
         _ => None,
     }
 }
@@ -68,7 +70,7 @@ fn builtin_borrows(func: &str, idx: usize) -> bool {
 /// A pattern-let target that only reads its subject.
 pub(crate) fn pat_destructures(p: &TypedPat) -> bool {
     matches!(p, TypedPat::Constructor { .. } | TypedPat::Cons { .. } | TypedPat::Some_(_) | TypedPat::None_
-        | TypedPat::EmptyList | TypedPat::As { .. })
+        | TypedPat::EmptyList | TypedPat::As { .. } | TypedPat::Tuple(_))
 }
 
 /// For a plain match on `Ref`/`List` parameters (one, or a tuple of them), the
@@ -427,8 +429,11 @@ impl Scan<'_, '_> {
             }
             TypedExp::PartEval { func, args, named_args, .. } => {
                 self.disqualify(func, &"partially applied");
-                args.iter().for_each(|a| self.exp(a, Pos::Owned));
-                named_args.iter().for_each(|(_, a)| self.exp(a, Pos::Owned));
+                // The closure captures a clone once; a callback cannot be cloned
+                // out of a `&dyn Fn`.
+                let capture = |a: &TypedExp| if matches!(a.ty(), Ty::Function { .. }) { Pos::Owned } else { Pos::Borrow };
+                args.iter().for_each(|a| self.arg(a, capture(a)));
+                named_args.iter().for_each(|(_, a)| self.arg(a, capture(a)));
             }
             TypedExp::If { cond, then_, elseif, else_, .. } => {
                 self.exp(cond, Pos::Owned);
