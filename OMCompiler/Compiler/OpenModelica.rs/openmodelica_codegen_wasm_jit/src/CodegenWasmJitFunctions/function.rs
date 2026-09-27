@@ -606,7 +606,7 @@ fn init_var(
             ctx.emit(we::Instruction::LocalSet(slot));
         }
         SigTy::Array { elem, .. } if matches!(&**elem, SigTy::Record { .. }) => {
-            emit_array_record_defaults(ctx, slot, &Types::arrayElementType(ty.clone()))?;
+            emit_array_record_defaults(ctx, slot, &Types::arrayElementType(ty))?;
         }
         _ => {}
     }

@@ -142,6 +142,12 @@ struct Scan<'a, 'b> {
     recursive: &'b BTreeSet<String>,
     disq: HashSet<String>,
     deps: Vec<(String, String, usize)>,
+    /// Match-arm nesting of the current read.
+    case_depth: usize,
+    /// Owned uses inside a match arm, which a recursive function pays for with
+    /// a clone there instead of one per call: (param, callee slot or `None`).
+    soft: Vec<(String, Option<(String, usize)>)>,
+    calls_self: bool,
     /// `MMTORUST_TRACE_BORROW=<qname suffix>` reports why a parameter is by value.
     trace: Option<&'b str>,
     /// The expression enclosing the current read, for the trace.
@@ -268,18 +274,21 @@ impl Scan<'_, '_> {
 
     fn exp_inner(&mut self, e: &TypedExp, pos: Pos) {
         match e {
-            TypedExp::Var { name, segments, .. } => {
+            TypedExp::Var { name, segments, ty, .. } => {
                 let base = crate::codegen::var_base_name(name, segments);
                 if !self.candidates.contains(&base) {
                     return;
                 }
                 if is_plain(name, segments) {
+                    let soft = self.case_depth > 0 && !matches!(ty, Ty::Function { .. });
                     match pos {
+                        Pos::Owned if soft => self.soft.push((base, None)),
                         Pos::Owned => {
                             let why = format!("read in {}", self.parent);
                             self.disqualify(&base, &why);
                         }
                         Pos::Borrow => {}
+                        Pos::Arg(q, i) if soft => self.soft.push((base, Some((q, i)))),
                         Pos::Arg(q, i) => self.deps.push((base, q, i)),
                     }
                 } else {
@@ -335,6 +344,9 @@ impl Scan<'_, '_> {
                         }
                     }
                 } else if let Some((q, formals)) = self.user_callee(func) {
+                    if q == self.qname {
+                        self.calls_self = true;
+                    }
                     for (i, a) in args.iter().enumerate() {
                         self.arg(a, Pos::Arg(q.clone(), i));
                     }
@@ -397,6 +409,7 @@ impl Scan<'_, '_> {
                     TypedExp::Var { name, .. } => vec![name.clone()],
                     _ => Vec::new(),
                 };
+                self.case_depth += 1;
                 for c in cases {
                     let saved_tails = self.tails.clone();
                     if track_tails {
@@ -427,6 +440,7 @@ impl Scan<'_, '_> {
                     self.exp(&c.result, Pos::Owned);
                     self.tails = saved_tails;
                 }
+                self.case_depth -= 1;
             }
             TypedExp::UnOp { operand, .. } => self.exp(operand, Pos::Owned),
             TypedExp::Constructor { args, named_args, .. } => {
@@ -543,6 +557,9 @@ fn scan_fn<'a>(
         recursive: types.recursive,
         disq: HashSet::new(),
         deps: Vec::new(),
+        case_depth: 0,
+        soft: Vec::new(),
+        calls_self: false,
         trace: trace.filter(|t| qname.ends_with(*t)).map(|_| qname),
         parent: String::new(),
     };
@@ -550,6 +567,14 @@ fn scan_fn<'a>(
         scan.exp(&init, Pos::Owned);
     }
     scan.stmts(&stmts);
+    if !scan.calls_self && scan.self_call.is_none() {
+        for (p, slot) in std::mem::take(&mut scan.soft) {
+            match slot {
+                Some((q, i)) => scan.deps.push((p, q, i)),
+                None => scan.disqualify(&p, &"read in a match arm"),
+            }
+        }
+    }
     let (disq, deps) = (scan.disq, scan.deps);
     Some(FnScan {
         inputs: input_names,
