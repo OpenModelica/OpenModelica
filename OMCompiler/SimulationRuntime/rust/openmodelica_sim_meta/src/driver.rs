@@ -5793,13 +5793,14 @@ unsafe fn dassl_jac(
                     let yi = unsafe { *y.add(ci) };
                     let hyp = h * unsafe { *yprime.add(ci) };
                     let nom = unsafe { *ctx.nominals.add(ci) };
-                    let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
+                    let ewt_inv = (1.0 / unsafe { *wt.add(ci) }).abs();
+                    let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
                     del = yi + del - yi; // floating-point rounding, as in the C runtime
                     if del == 0.0 {
                         del = DELTA_X_SOLVER;
                     }
                     ctx.jac_ysave[ci] = yi;
-                    ctx.jac_del[ci] = del;
+                    ctx.jac_del[ci] = 1.0 / del;
                     unsafe { *y.add(ci) = yi + del };
                 }
                 // One residual evaluation at the perturbed point. No `IRES` here: a
@@ -5821,12 +5822,12 @@ unsafe fn dassl_jac(
                     // Scatter the finite difference into the affected rows.
                     for &col in group {
                         let ci = col as usize;
-                        let del = ctx.jac_del[ci];
+                        let inv = ctx.jac_del[ci];
                         let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
                         for &row in rows {
                             let ri = row as usize;
                             let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
-                            unsafe { *pd.add(ci * n + ri) = d / del };
+                            unsafe { *pd.add(ci * n + ri) = d * inv };
                         }
                     }
                 }
@@ -5863,16 +5864,6 @@ const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
 /// Give a step the sign of `h*y'`, as both runtimes do.
 fn signed(mag: f64, hyp: f64) -> f64 {
     if hyp >= 0.0 { mag } else { -mag }
-}
-
-/// The Jacobian's step for a column, C's `numericalJacobianStep` (`model_help.h`):
-/// the relative step, or the nominal where the state is inside its own absolute
-/// tolerance and so is no scale of its own to difference over.
-fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64, factor: f64) -> f64 {
-    let scale = yi.abs().max(hyp.abs());
-    let ewt_inv = tol * (yi.abs() + nominal);
-    let step = if scale > ewt_inv { scale } else { ewt_inv.max(factor * nominal) };
-    signed(DELTA_X_SOLVER * step, hyp)
 }
 
 /// C's `numericalJacobianStep` as `jacA_num` calls it.
@@ -10610,10 +10601,12 @@ unsafe extern "C" fn ida_jac(
                 let yi = unsafe { *y.add(ci) };
                 let hyp = h * unsafe { *ypv.add(ci) };
                 let nom = unsafe { *ctx.nominals.add(ci) };
-                let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
+                // C's `rtol*fabs(states[ii]) + abstol[ii]`, `abstol = nominal*tolerance`.
+                let ewt_inv = ctx.tol * yi.abs() + nom * ctx.tol;
+                let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
                 del = yi + del - yi; // floating-point rounding, as in the C runtime
                 ctx.jac_ysave[ci] = yi;
-                ctx.jac_del[ci] = del;
+                ctx.jac_del[ci] = 1.0 / del;
                 unsafe { *y.add(ci) = yi + del };
                 // In DAE mode the same difference carries `cj·∂F/∂y'`, so there is
                 // no `-cj·I` term to add afterwards.
@@ -10637,14 +10630,14 @@ unsafe extern "C" fn ida_jac(
             }
             for &col in color {
                 let ci = col as usize;
-                let del = ctx.jac_del[ci];
+                let inv = ctx.jac_del[ci];
                 for (k, &row) in jac.rows_by_col[ci].iter().enumerate() {
                     let ri = row as usize;
                     let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
                     vals[match pattern {
                         Some(p) => p.slots[ci][k],
                         None => ci * n + ri,
-                    }] = d / del;
+                    }] = d * inv;
                 }
                 unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
                 if dae.is_some() {
