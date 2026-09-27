@@ -854,7 +854,6 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(40, "tearingMethod",
     ("minimalTearing", "Minimal tearing method to only tear discrete variables."),
     ("omcTearing", "Tearing method developed by TU Dresden: Frenkel, Schubert."),
     ("cellier", "Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"),
-    ("cellierArray", "New backend only: minimal tearing followed by array and record aware Cellier tearing."),
     ("guruTearing", "Tearing based solely on TearingSelect annotation. Forces prefer/always variables to be iteration variables.")})),
   "Sets the tearing method to use. Select no tearing or choose tearing method.");
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(41, "tearingHeuristic",

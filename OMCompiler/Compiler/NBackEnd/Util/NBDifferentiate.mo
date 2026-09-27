@@ -1662,9 +1662,15 @@ public
 
           // differentiate type arguments and append to original ones
           (arguments, diffArguments) := List.mapFold(arguments, differentiateExpression, diffArguments);
-          arguments := listAppend(call.arguments, arguments);
-
-          ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
+          if diffArguments.diffType <> DifferentiationType.FUNCTION and List.all(arguments, isZeroDerivative)
+             and not Type.isTuple(Expression.typeOf(exp)) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)))
+             and (not Type.isArray(Expression.typeOf(exp)) or Type.hasKnownSize(Expression.typeOf(exp))) then
+            // no argument depends on the differentiation variable (keeps the arguments out of the derivative)
+            ret := Expression.makeZero(Expression.typeOf(exp));
+          else
+            arguments := listAppend(call.arguments, arguments);
+            ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
+          end if;
         else
           // The function is not in the function tree and not builtin -> error
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -3124,6 +3130,22 @@ public
     iterOut := NBEquation.Iterator.fromFrames(List.zip3(names, listReverse(revRanges), maps));
   end reverseEquationIterator;
 
+  function bothZero
+    "true if both derivatives of a product or quotient are zero, then the derivative is zero as well
+    (keeps the operands out of it, they would make it look nonlinear)"
+    input Expression diffExp1;
+    input Expression diffExp2;
+    input Operator operator;
+    output Boolean b = isZeroDerivative(diffExp1) and isZeroDerivative(diffExp2)
+                       and (not Type.isArray(Operator.typeOf(operator)) or Type.hasKnownSize(Operator.typeOf(operator)));
+  end bothZero;
+
+  function isZeroDerivative
+    "zero after simplification, e.g. a subscripted array of zeros"
+    input Expression exp;
+    output Boolean b = Expression.isZero(exp) or Expression.isZero(SimplifyExp.simplify(exp));
+  end isZeroDerivative;
+
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().
     Will always try to convert to MULTARY whenever possible. (commutativity)"
@@ -3308,7 +3330,8 @@ public
         addOp := Operator.fromClassification(
           (NFOperator.MathClassification.ADDITION, sizeClass),
           operator.ty);
-      then (Expression.MULTARY(
+      then (if not isReverse and bothZero(diffExp1, diffExp2, operator) then Expression.makeZero(Operator.typeOf(operator))
+            else Expression.MULTARY(
               {Expression.BINARY(diffExp1, operator, exp2),       // f'g
                 Expression.BINARY(exp1, operator, diffExp2)},     // fg'
               {},
@@ -3359,7 +3382,8 @@ public
           // the addition in the numerator f'g +/- fg' must be element-wise when the result is an array (same as multiplication case)
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, Operator.classifyAddition(operator)), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-      then (Expression.MULTARY(
+      then (if not isReverse and bothZero(diffExp1, diffExp2, operator) then Expression.makeZero(Operator.typeOf(operator))
+            else Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.BINARY(diffExp1, mulOp, exp2)},              // f'g
                 {Expression.BINARY(exp1, mulOp, diffExp2)},              // - fg'

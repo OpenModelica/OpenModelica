@@ -68,7 +68,7 @@ package CellierArray
 end CellierArray;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --tearingMethod=cellierArray -d=tearingdump"); getErrorString();
+setCommandLineOptions("--newBackend -d=tearingdump"); getErrorString();
 simulate(CellierArray.Loop); getErrorString();
 val(z, 1);
 val(x[3], 1);
