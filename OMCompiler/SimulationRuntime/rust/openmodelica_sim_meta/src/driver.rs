@@ -418,6 +418,12 @@ pub trait SimEngine {
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()>;
     /// Write `buf` to linear memory starting at byte address `addr`.
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()>;
+    /// Copy `len` bytes of linear memory from address `from` to `to`.
+    fn copy_bytes(&mut self, from: u32, to: u32, len: usize) -> Result<()> {
+        let mut buf = vec![0u8; len];
+        self.read_bytes(from, &mut buf)?;
+        self.write_bytes(to, &buf)
+    }
     /// Call the exported `fn(u32) -> ()` `name` (an equation function). Backends
     /// cache the resolved function; a missing export is an error.
     fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()>;
@@ -3068,19 +3074,20 @@ pub fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout
 }
 
 fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    for i in 0..layout.n_reals_row() {
-        rows.push(read_f64(e, sim_data + i * 8)?);
-    }
-    for i in 0..layout.n_int_alg() {
-        rows.push(read_i32(e, sim_data + layout.int_off + i * 4)? as f64);
-    }
-    for j in 0..layout.n_bool_alg() {
-        rows.push(read_i32(e, sim_data + layout.bool_off + j * 4)? as f64);
-    }
+    let push_f64s = |rows: &mut Vec<f64>, addr: u32, n: u32| -> Result<()> {
+        let at = rows.len();
+        rows.resize(at + n as usize, 0.0);
+        read_f64s(e, addr, &mut rows[at..])
+    };
+    rows.push(read_f64(e, sim_data + TIME_OFF)?);
+    push_f64s(rows, sim_data + REAL_OFF, layout.n_reals_row() - 1)?;
+    let mut ints = vec![0u8; ((layout.n_int_alg() + layout.n_bool_alg()) * 4) as usize];
+    let (int_bytes, bool_bytes) = ints.split_at_mut((layout.n_int_alg() * 4) as usize);
+    e.read_bytes(sim_data + layout.int_off, int_bytes)?;
+    e.read_bytes(sim_data + layout.bool_off, bool_bytes)?;
+    rows.extend(ints.chunks_exact(4).map(|b| i32::from_le_bytes(b.try_into().unwrap()) as f64));
     // Zero for every solver but IDA, which refreshes it from `IDAGetSens`.
-    for k in 0..layout.n_sens {
-        rows.push(read_f64(e, sim_data + layout.sens_off + k * 8)?);
-    }
+    push_f64s(rows, sim_data + layout.sens_off, layout.n_sens)?;
     for i in 0..layout.n_str_alg() {
         let s = e.string_at(sim_data + layout.str_off + i * 4)?;
         rows.push(crate::strings::intern(&s) as f64);
@@ -3492,9 +3499,7 @@ fn save_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     if !layout.has_old_real {
         return Ok(());
     }
-    let mut buf = vec![0u8; layout.real_bytes()];
-    e.read_bytes(sim_data + REAL_OFF, &mut buf)?;
-    e.write_bytes(sim_data + layout.old_real_off, &buf)
+    e.copy_bytes(sim_data + REAL_OFF, sim_data + layout.old_real_off, layout.real_bytes())
 }
 
 /// Copy the live real/integer/boolean regions into their `pre()` mirrors (C's
@@ -3510,9 +3515,7 @@ fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
         if bytes == 0 {
             continue;
         }
-        let mut buf = vec![0u8; bytes as usize];
-        e.read_bytes(sim_data + live, &mut buf)?;
-        e.write_bytes(sim_data + pre, &buf)?;
+        e.copy_bytes(sim_data + live, sim_data + pre, bytes as usize)?;
     }
     e.store_pre_strings();
     Ok(())
