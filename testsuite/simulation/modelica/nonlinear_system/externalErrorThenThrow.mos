@@ -1,0 +1,48 @@
+// name: externalErrorThenThrow
+// keywords: ModelicaError, throw
+// status: correct
+//
+// The Newton step lands where ModelicaError fires and the backtrack where the
+// power throws; that throw must not jump into the external call's frame.
+
+loadString("
+model ExternalErrorThenThrow
+  function err
+    input String msg;
+    external \"C\" ModelicaError(msg) annotation(Include = \"#include \\\"ModelicaUtilities.h\\\"\");
+  end err;
+  function f
+    input Real x;
+    input Integer depth;
+    output Real y;
+  algorithm
+    if depth > 0 then
+      y := f(x, depth - 1);
+    else
+      if x > 100 then
+        err(\"x > 100\");
+      end if;
+      y := x;
+    end if;
+  end f;
+  Real x(start = 1);
+equation
+  f(x, 200)^3 - 1000 + 1e-12*((x - 50)*(x - 100))^1.5 = 0;
+end ExternalErrorThenThrow;
+"); getErrorString();
+simulate(ExternalErrorThenThrow, stopTime = 0.1); getErrorString();
+val(x, 0.1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalErrorThenThrow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalErrorThenThrow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 9.99999999928
+// endResult

@@ -683,6 +683,11 @@ int omc_error_take(threadData_t *threadData)
   return raised;
 }
 
+jmp_buf *omc_external_jump_buffer(threadData_t *threadData)
+{
+  return threadData->externalJumpBuffer;
+}
+
 /* The raising counterparts of throwStreamPrint*, for generated code: they
    return, so the caller leaves through its own _return: and runs its releases. */
 void raiseStreamPrint(threadData_t *threadData, const char *format, ...)
