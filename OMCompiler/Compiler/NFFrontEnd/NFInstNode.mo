@@ -866,6 +866,22 @@ uniontype InstNode
     end match;
   end instanceParent;
 
+  function borrowInstanceParent
+    "As `instanceParent`, without taking ownership of a component's parent:
+     for walking up past scopes that are not kept."
+    input InstNode node;
+    output InstNode parent;
+  protected
+    ScopeRef rdcl_scope;
+  algorithm
+    parent := match node
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
+        then getDerivedNode(borrow(rdcl_scope));
+      case COMPONENT_NODE() then getDerivedNode(borrow(node.parent));
+      else instanceParent(node);
+    end match;
+  end borrowInstanceParent;
+
   function rootParent
     input InstNode node;
     output InstNode parent;
@@ -1477,7 +1493,7 @@ uniontype InstNode
         end if;
       end if;
 
-      scope := instanceParent(scope);
+      scope := borrowInstanceParent(scope);
     end while;
 
     mod := SCode.Mod.NOMOD();
