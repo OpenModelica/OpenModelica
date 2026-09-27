@@ -35,14 +35,14 @@ fn empty() -> HashSet {
 fn with_keys(keys: &[&str]) -> Result<HashSet> {
     let mut hs = empty();
     for k in keys {
-        hs = BaseHashSet::add(arcstr::format!("{}", k), hs)?;
+        hs = BaseHashSet::add(arcstr::format!("{}", k), &hs)?;
     }
     Ok(hs)
 }
 
 /// Collect hashSetList into a sorted Vec<String> for order-independent comparison.
 fn list_sorted(hs: HashSet) -> Result<Vec<String>> {
-    let lst = BaseHashSet::hashSetList(hs)?;
+    let lst = BaseHashSet::hashSetList(&hs)?;
     let mut v: Vec<String> = vec![];
     for k in &*lst { v.push(k.to_string()); }
     v.sort();
@@ -54,19 +54,19 @@ fn list_sorted(hs: HashSet) -> Result<Vec<String>> {
 #[test]
 fn test_empty_hash_set_has_size_zero() {
     let hs = empty();
-    assert_eq!(BaseHashSet::currentSize(hs), 0);
+    assert_eq!(BaseHashSet::currentSize(&hs), 0);
 }
 
 #[test]
 fn test_empty_hash_set_sized_has_size_zero() {
     let hs = HS::emptyHashSetSized(64);
-    assert_eq!(BaseHashSet::currentSize(hs), 0);
+    assert_eq!(BaseHashSet::currentSize(&hs), 0);
 }
 
 #[test]
 fn test_has_on_empty_returns_false() -> Result<()> {
     let hs = empty();
-    assert!(!BaseHashSet::has(literal!("anything"), hs)?);
+    assert!(!BaseHashSet::has(literal!("anything"), &hs)?);
     Ok(())
 }
 
@@ -75,37 +75,37 @@ fn test_has_on_empty_returns_false() -> Result<()> {
 #[test]
 fn test_add_single_key() -> Result<()> {
     let hs = with_keys(&["hello"])?;
-    assert!(BaseHashSet::has(literal!("hello"), hs)?);
+    assert!(BaseHashSet::has(literal!("hello"), &hs)?);
     Ok(())
 }
 
 #[test]
 fn test_add_multiple_keys() -> Result<()> {
     let hs = with_keys(&["alpha", "beta", "gamma"])?;
-    assert!(BaseHashSet::has(literal!("alpha"), hs.clone())?);
-    assert!(BaseHashSet::has(literal!("beta"),  hs.clone())?);
-    assert!(BaseHashSet::has(literal!("gamma"), hs.clone())?);
+    assert!(BaseHashSet::has(literal!("alpha"), &hs)?);
+    assert!(BaseHashSet::has(literal!("beta"),  &hs)?);
+    assert!(BaseHashSet::has(literal!("gamma"), &hs)?);
     Ok(())
 }
 
 #[test]
 fn test_has_absent_key_returns_false() -> Result<()> {
     let hs = with_keys(&["alpha", "beta"])?;
-    assert!(!BaseHashSet::has(literal!("gamma"), hs)?);
+    assert!(!BaseHashSet::has(literal!("gamma"), &hs)?);
     Ok(())
 }
 
 #[test]
 fn test_current_size_grows_with_each_unique_key() -> Result<()> {
     let hs = with_keys(&["a", "b", "c"])?;
-    assert_eq!(BaseHashSet::currentSize(hs), 3);
+    assert_eq!(BaseHashSet::currentSize(&hs), 3);
     Ok(())
 }
 
 #[test]
 fn test_add_duplicate_does_not_grow_size() -> Result<()> {
     let hs = with_keys(&["dup", "dup", "dup"])?;
-    assert_eq!(BaseHashSet::currentSize(hs), 1);
+    assert_eq!(BaseHashSet::currentSize(&hs), 1);
     Ok(())
 }
 
@@ -114,7 +114,7 @@ fn test_add_duplicate_does_not_grow_size() -> Result<()> {
 #[test]
 fn test_get_present_key_returns_some() -> Result<()> {
     let hs = with_keys(&["foo"])?;
-    let result = BaseHashSet::get(literal!("foo"), hs)?;
+    let result = BaseHashSet::get(literal!("foo"), &hs)?;
     assert_eq!(result, Some(literal!("foo")));
     Ok(())
 }
@@ -122,7 +122,7 @@ fn test_get_present_key_returns_some() -> Result<()> {
 #[test]
 fn test_get_absent_key_returns_none() -> Result<()> {
     let hs = with_keys(&["foo"])?;
-    let result = BaseHashSet::get(literal!("bar"), hs)?;
+    let result = BaseHashSet::get(literal!("bar"), &hs)?;
     assert_eq!(result, None);
     Ok(())
 }
@@ -132,7 +132,7 @@ fn test_get_absent_key_returns_none() -> Result<()> {
 #[test]
 fn test_hashsetlist_empty() -> Result<()> {
     let hs = empty();
-    let lst = BaseHashSet::hashSetList(hs)?;
+    let lst = BaseHashSet::hashSetList(&hs)?;
     assert!(lst.is_empty());
     Ok(())
 }
@@ -159,11 +159,11 @@ fn test_hashsetlist_no_duplicates_after_re_add() -> Result<()> {
 #[test]
 fn test_delete_present_key() -> Result<()> {
     let hs = with_keys(&["to_delete", "to_keep"])?;
-    let hs = BaseHashSet::delete(literal!("to_delete"), hs)?;
+    let hs = BaseHashSet::delete(literal!("to_delete"), &hs)?;
     // After delete the key should no longer be found.
-    assert!(!BaseHashSet::has(literal!("to_delete"), hs.clone())?);
+    assert!(!BaseHashSet::has(literal!("to_delete"), &hs)?);
     // The other key is unaffected.
-    assert!(BaseHashSet::has(literal!("to_keep"), hs)?);
+    assert!(BaseHashSet::has(literal!("to_keep"), &hs)?);
     Ok(())
 }
 
@@ -171,7 +171,7 @@ fn test_delete_present_key() -> Result<()> {
 fn test_delete_absent_key_fails() -> Result<()> {
     // delete requires the key to be present; it should fail when it isn't.
     let hs = with_keys(&["present"])?;
-    let result = BaseHashSet::delete(literal!("absent"), hs);
+    let result = BaseHashSet::delete(literal!("absent"), &hs);
     assert!(result.is_err());
     Ok(())
 }
@@ -181,15 +181,15 @@ fn test_delete_absent_key_fails() -> Result<()> {
 #[test]
 fn test_add_unique_new_key_succeeds() -> Result<()> {
     let hs = empty();
-    let hs = BaseHashSet::addUnique(literal!("new_key"), hs)?;
-    assert!(BaseHashSet::has(literal!("new_key"), hs)?);
+    let hs = BaseHashSet::addUnique(literal!("new_key"), &hs)?;
+    assert!(BaseHashSet::has(literal!("new_key"), &hs)?);
     Ok(())
 }
 
 #[test]
 fn test_add_unique_duplicate_fails() -> Result<()> {
     let hs = with_keys(&["existing"])?;
-    let result = BaseHashSet::addUnique(literal!("existing"), hs);
+    let result = BaseHashSet::addUnique(literal!("existing"), &hs);
     assert!(result.is_err());
     Ok(())
 }
@@ -201,12 +201,12 @@ fn test_large_set_all_keys_present() -> Result<()> {
     let mut hs = empty();
     let n = 200;
     for i in 0..n {
-        hs = BaseHashSet::add(arcstr::format!("key_{}", i), hs)?;
+        hs = BaseHashSet::add(arcstr::format!("key_{}", i), &hs)?;
     }
-    assert_eq!(BaseHashSet::currentSize(hs.clone()), n);
+    assert_eq!(BaseHashSet::currentSize(&hs), n);
     for i in 0..n {
         assert!(
-            BaseHashSet::has(arcstr::format!("key_{}", i), hs.clone())?,
+            BaseHashSet::has(arcstr::format!("key_{}", i), &hs)?,
             "key_{} not found",
             i
         );

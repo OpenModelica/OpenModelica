@@ -81,10 +81,10 @@ fn run_diff(seq1: &[&str], seq2: &[&str]) -> Result<Vec<(Diff, Vec<String>)>> {
     let result = DiffAlgorithm::diff(
         list1,
         list2,
-        Arc::new(str_equals),
-        Arc::new(not_whitespace),
-        Arc::new(not_whitespace),
-        Arc::new(to_str),
+        &str_equals,
+        &not_whitespace,
+        &not_whitespace,
+        &to_str,
     )?;
     Ok(collect_diff(result))
 }
