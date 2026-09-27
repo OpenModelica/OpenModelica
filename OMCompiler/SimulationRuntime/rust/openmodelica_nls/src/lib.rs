@@ -3901,7 +3901,8 @@ pub fn solve_nls(
     // branch would re-flip the relation the event set. Newton holds relations
     // (`solveContinuous`); an event primes once live, then holds.
     let discrete_call = saved_rel_fresh == 1;
-    let mixed = spec.mixed && discrete_call;
+    // C's `mixedSystem && discreteCall`, which initialization sets as well.
+    let mixed = spec.mixed && saved_rel_fresh != 0;
     // `functionInitialEquations` sets `discreteCall` too, so an initial system starts
     // from `nlsx`: its extrapolation is still zeroes, and the equidistant homotopy
     // hands each lambda step the previous one's solution through the unknowns.
@@ -4252,7 +4253,7 @@ pub fn solve_nls(
             if !converged || !mixed || retried {
                 break converged;
             }
-            state.borrow_mut().set_relation_mode(1);
+            state.borrow_mut().set_relation_mode(saved_rel_fresh);
             let uncounted = n_feval.get();
             eval(&x, &mut scratch);
             n_feval.set(uncounted);
