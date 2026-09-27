@@ -2440,17 +2440,18 @@ end classConfidence;
 
 function instanceScope
   "Returns the scope a node was instantiated in, for a redeclared class the
-   scope of the class it replaced."
+   scope of the class it replaced. The scope is borrowed: it is only for
+   inspecting and comparing."
   input InstNode node;
   output InstNode scope;
 algorithm
   scope := match node
     local NFInstNode.ScopeRef ext_scope;
     case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = ext_scope))
-      then InstNode.fromCell(ext_scope);
+      then InstNode.borrow(ext_scope);
     case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = ext_scope))
-      then InstNode.fromCell(ext_scope);
-    else InstNode.parent(node);
+      then InstNode.borrow(ext_scope);
+    else InstNode.borrowParent(node);
   end match;
 end instanceScope;
 
