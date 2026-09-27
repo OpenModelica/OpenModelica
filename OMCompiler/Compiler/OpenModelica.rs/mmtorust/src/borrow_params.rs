@@ -12,7 +12,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use crate::hierarchy::{NameNode, NodeKind, Ty};
-use crate::typedexp::{self, BinOpKind, TypedExp, TypedPat, TypedStmt};
+use crate::typedexp::{self, BinOpKind, MatchKind, TypedExp, TypedPat, TypedStmt};
 use crate::MM;
 use rayon::prelude::*;
 use openmodelica_ast::Absyn;
@@ -71,6 +71,46 @@ pub(crate) fn pat_destructures(p: &TypedPat) -> bool {
         | TypedPat::EmptyList | TypedPat::As { .. })
 }
 
+/// For a plain match on `Ref`/`List` parameters (one, or a tuple of them), the
+/// list tails a case binds from a parameter column into its own (not escaping)
+/// locals and does not reassign, as (binding, parameter). When every column is
+/// borrowed, codegen matches the references themselves, so these outlive the
+/// arm.
+pub(crate) fn param_tail_bindings(
+    input: &TypedExp,
+    case: &crate::typedexp::TypedCase,
+    is_param: &dyn Fn(&str, &Ty) -> bool,
+) -> Vec<(String, String)> {
+    let plain = |e: &TypedExp| match e {
+        TypedExp::Var { name, segments, ty, .. } if is_plain(name, segments) && is_param(name, ty) => Some(name.clone()),
+        _ => None,
+    };
+    let cols: Vec<(String, &TypedPat)> = match (input, &case.pattern) {
+        (TypedExp::Tuple(es), TypedPat::Tuple(ps)) if es.len() == ps.len() => {
+            let Some(names) = es.iter().map(plain).collect::<Option<Vec<_>>>() else { return Vec::new() };
+            names.into_iter().zip(ps.iter()).collect()
+        }
+        (TypedExp::Tuple(_), _) => return Vec::new(),
+        (e, p) => match plain(e) {
+            Some(n) => vec![(n, p)],
+            None => return Vec::new(),
+        },
+    };
+    let mut written = HashSet::new();
+    crate::codegen::stmts_assigned_var_names(&case.stmts, &mut written);
+    crate::codegen::exp_assigned_var_names(&case.result, &mut written);
+    cols.into_iter()
+        .filter_map(|(p, pat)| match pat {
+            TypedPat::Cons { tail, .. } => match &**tail {
+                TypedPat::Var(x) if !written.contains(x) && case.locals.iter().any(|(n, _, d, _)| n == x && d.is_none()) =>
+                    Some((x.clone(), p)),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect()
+}
+
 #[derive(Clone)]
 enum Pos {
     Owned,
@@ -88,6 +128,10 @@ struct Scan<'a, 'b> {
     candidates: &'b HashSet<String>,
     values: &'b HashSet<String>,
     locals: &'b HashSet<String>,
+    /// In a loop-lowered function, the list tails of parameters bound by the
+    /// enclosing match arms (see [`param_tail_bindings`]).
+    tails: HashMap<String, Vec<String>>,
+    recursive: &'b BTreeSet<String>,
     disq: HashSet<String>,
     deps: Vec<(String, String, usize)>,
     /// `MMTORUST_TRACE_BORROW=<qname suffix>` reports why a parameter is by value.
@@ -261,6 +305,17 @@ impl Scan<'_, '_> {
                             self.deps.push((p.clone(), self.qname.to_owned(), j));
                             continue;
                         }
+                        let tail_of: Option<Vec<usize>> = match a {
+                            TypedExp::Var { name, segments, .. } if is_plain(name, segments) => self.tails.get(name)
+                                .and_then(|from| from.iter().map(|q| inputs.iter().position(|n| n == q)).collect()),
+                            _ => None,
+                        };
+                        if let (Some(p), Some(js)) = (inputs.get(i), tail_of) {
+                            for j in js {
+                                self.deps.push((p.clone(), self.qname.to_owned(), j));
+                            }
+                            continue;
+                        }
                         if let Some(p) = inputs.get(i) {
                             self.disqualify(p, &"changed by a tail self-call");
                         }
@@ -301,7 +356,7 @@ impl Scan<'_, '_> {
                     }
                 }
             }
-            TypedExp::Match { input, cases, as_binding, .. } => {
+            TypedExp::Match { kind, input, cases, as_binding, .. } => {
                 let whole = |p: &TypedPat| matches!(p, TypedPat::Var(_) | TypedPat::As { .. } | TypedPat::Index { .. }
                     | TypedPat::FieldAccess { .. } | TypedPat::Todo(_));
                 let borrowing = as_binding.is_none();
@@ -325,7 +380,31 @@ impl Scan<'_, '_> {
                 if let Some(n) = as_binding {
                     self.bind(n);
                 }
+                let track_tails = self.self_call.is_some() && matches!(kind, MatchKind::Match) && as_binding.is_none();
+                let columns: Vec<String> = match &**input {
+                    TypedExp::Tuple(es) => es.iter().filter_map(|e| match e {
+                        TypedExp::Var { name, .. } => Some(name.clone()),
+                        _ => None,
+                    }).collect(),
+                    TypedExp::Var { name, .. } => vec![name.clone()],
+                    _ => Vec::new(),
+                };
                 for c in cases {
+                    let saved_tails = self.tails.clone();
+                    if track_tails {
+                        let (cands, recursive) = (self.candidates, self.recursive);
+                        let is_param = |n: &str, t: &Ty| cands.contains(n) && match t {
+                            Ty::List(_) => true,
+                            Ty::RustStruct(q) | Ty::RustEnum(q) | Ty::AliasTo(q) => recursive.contains(q),
+                            Ty::UnionTypeVariant(q, _) => recursive.contains(q),
+                            _ => false,
+                        };
+                        for (x, p) in param_tail_bindings(input, c, &is_param) {
+                            let mut from = vec![p.clone()];
+                            from.extend(columns.iter().filter(|q| **q != p).cloned());
+                            self.tails.insert(x, from);
+                        }
+                    }
                     self.pat(&c.pattern);
                     for (n, _, init, _) in &c.locals {
                         self.bind(n);
@@ -338,6 +417,7 @@ impl Scan<'_, '_> {
                     }
                     self.stmts(&c.stmts);
                     self.exp(&c.result, Pos::Owned);
+                    self.tails = saved_tails;
                 }
             }
             TypedExp::UnOp { operand, .. } => self.exp(operand, Pos::Owned),
@@ -448,6 +528,8 @@ fn scan_fn<'a>(
         candidates: &candidates,
         values: &values,
         locals: &locals,
+        tails: HashMap::new(),
+        recursive: types.recursive,
         disq: HashSet::new(),
         deps: Vec::new(),
         trace: trace.filter(|t| qname.ends_with(*t)).map(|_| qname),

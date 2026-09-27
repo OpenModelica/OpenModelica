@@ -716,6 +716,9 @@ struct GenCtx {
     /// Variables read by the ranges of the enclosing `for` loops, which may
     /// borrow them for the whole loop.
     loop_range_reads: Vec<String>,
+    /// List tails of borrowed parameters bound by the enclosing match arms:
+    /// `&'__b` references that can be passed on as they are.
+    param_tails: HashSet<String>,
 }
 
 /// Binding-shape classification for variables tracked in `GenCtx::variants`.
@@ -826,6 +829,7 @@ impl GenCtx {
             fn_value_ref: false,
             loop_label_stack: Vec::new(),
             loop_range_reads: Vec::new(),
+            param_tails: HashSet::new(),
         }
     }
 
@@ -11987,6 +11991,9 @@ fn emit_borrowed_arg<'a>(
             names.contains(&base)
         });
         let plain = segments.len() <= 1 && !name.contains('.') && segments.iter().all(|s| s.subscripts.is_empty());
+        if plain && ctx.param_tails.contains(&base) {
+            return escape_ident(name).to_string();
+        }
         let mode = ctx.place_mode.get(&base).copied();
         let owned = mode == Some(PlaceMode::Owned)
             && !ctx.match_refbound.contains(&base)
@@ -15586,8 +15593,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         None => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
     };
     // Reassigning a borrowed parameter does not disturb a borrow of its target.
-    let subject_is_borrowed_param = matches!(input, TypedExp::Var { name, segments, .. }
+    let is_borrowed_var = |e: &TypedExp| matches!(e, TypedExp::Var { name, segments, .. }
         if segments.len() <= 1 && ctx.borrowed_params.contains(name.as_str()));
+    let subject_is_borrowed_param = match input {
+        TypedExp::Tuple(es) => !es.is_empty() && es.iter().all(is_borrowed_var),
+        e => is_borrowed_var(e),
+    };
     let borrow_scrutinee = borrowable
         && as_binding.is_none()
         && (subject_is_borrowed_param || ctx.tail_lowering.is_none() && subject_writes_ok)
@@ -15724,7 +15735,28 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     } else {
         None
     };
-    let match_subject = if let Some(s) = &tuple_arc_rewrite {
+    // Matching the parameters' own `&'__b` references (not a borrow of a
+    // temporary) keeps the bindings alive for the whole call.
+    let param_subject = (use_match_deref && !plain_ref_match && borrow_scrutinee && subject_is_borrowed_param
+        && matches!(kind, MatchKind::Match))
+        .then(|| {
+            let arc_like = |e: &TypedExp| { let t = e.ty(); is_arc_wrapped(&t, ctx) || matches!(t, Ty::List(_)) };
+            match input {
+                TypedExp::Tuple(es) if es.iter().all(arc_like) => {
+                    let names: Vec<String> = es.iter().filter_map(|e| match e {
+                        TypedExp::Var { name, .. } => Some(escape_ident(name).to_string()),
+                        _ => None,
+                    }).collect();
+                    Some(format!("({})", names.join(", ")))
+                }
+                TypedExp::Var { name, .. } if arc_like(input) => Some(escape_ident(name).to_string()),
+                _ => None,
+            }
+        })
+        .flatten();
+    let match_subject = if let Some(s) = &param_subject {
+        s.clone()
+    } else if let Some(s) = &tuple_arc_rewrite {
         s.clone()
     } else if plain_ref_match {
         if borrow_scrutinee && input_str.starts_with("&*") {
@@ -15827,7 +15859,15 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
             // infallible (the fallibility analysis uses the same predicate
             // on the Absyn side; the two must agree).
             let exhaustive = cases_exhaustive(kind, cases, &input_ty, top_level);
+            let outer_param_tails = ctx.param_tails.clone();
             let arms: Vec<String> = cases.iter().enumerate().map(|(case_idx, case)| {
+                ctx.param_tails = outer_param_tails.clone();
+                if param_subject.is_some() || plain_ref_match && borrow_scrutinee && subject_is_borrowed_param {
+                    let borrowed = ctx.borrowed_params.clone();
+                    let is_param = |n: &str, t: &Ty| borrowed.contains(n) && (is_arc_wrapped(t, ctx) || matches!(t, Ty::List(_)));
+                    let tails = crate::borrow_params::param_tail_bindings(input, case, &is_param);
+                    ctx.param_tails.extend(tails.into_iter().map(|(x, _)| x));
+                }
                 // Pattern bindings that name a *function output*. In
                 // MetaModelica a match-case pattern variable lives in the
                 // enclosing (function) scope, so binding an output in a pattern
@@ -16401,6 +16441,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 ctx.match_refbound = saved_match_refbound;
                 arm_str
             }).collect();
+            ctx.param_tails = outer_param_tails;
             // Inside a loop-lowered body (`in_tail_lowered_fn`) the match
             // fallback depends on whether this is the tail-position match:
             //
@@ -17568,7 +17609,7 @@ fn pat_assigned_names(p: &TypedPat, out: &mut HashSet<String>) {
 /// case we emit a spurious `let mut <name> = (*<name>).clone();` at the
 /// top of the outer arm, which is harmless (the unused-mut lint is
 /// allowed for generated code).
-fn stmts_assigned_var_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<String>) {
+pub(crate) fn stmts_assigned_var_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<String>) {
     use typedexp::TypedStmt as S;
     for s in stmts {
         match s {
@@ -17609,7 +17650,7 @@ fn stmts_assigned_var_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<Str
 /// expressions only). Used by `stmts_assigned_var_names` so an outer
 /// match-arm's prologue can shadow `<name>` as an owned mut even when the
 /// only writes occur inside a nested match's arm body.
-fn exp_assigned_var_names(e: &TypedExp, out: &mut HashSet<String>) {
+pub(crate) fn exp_assigned_var_names(e: &TypedExp, out: &mut HashSet<String>) {
     match e {
         TypedExp::Match { input, cases, .. } => {
             exp_assigned_var_names(input, out);
