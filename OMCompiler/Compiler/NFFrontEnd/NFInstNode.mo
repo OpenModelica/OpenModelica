@@ -2289,6 +2289,14 @@ uniontype InstNode
   function cloneComponent
     input InstNode component;
     input InstNode newParent;
+    output InstNode outComponent = cloneComponentInScope(component, identityCell(newParent));
+  end cloneComponent;
+
+  function cloneComponentInScope
+    "As `cloneComponent`, given the parent's `identityCell`: taking it once for
+     all of a parent's components publishes the parent once."
+    input InstNode component;
+    input ScopeRef parent;
     output InstNode outComponent;
   algorithm
     outComponent := match component
@@ -2296,11 +2304,11 @@ uniontype InstNode
         then
           COMPONENT_NODE(component.name, component.definition, component.visibility,
             Pointer.create(Pointer.access(component.component)),
-            identityCell(newParent), component.nodeType);
+            parent, component.nodeType);
 
       else component;
     end match;
-  end cloneComponent;
+  end cloneComponentInScope;
 
   function getComments
     input InstNode node;

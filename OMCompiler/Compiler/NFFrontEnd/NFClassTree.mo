@@ -455,6 +455,7 @@ public
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
       InstNode node, parent_scope, inst_scope;
+      NFInstNode.ScopeRef inst_ref;
       DuplicateTree.Tree dups;
       SCode.Element ext_def;
       Boolean is_typish;
@@ -564,12 +565,13 @@ public
             end for;
 
             // Copy both local and inherited components into the new array.
+            inst_ref := InstNode.identityCell(instance);
             for c in old_comps loop
               () := match c
                 case InstNode.COMPONENT_NODE()
                   algorithm
                     // Set the component's parent and create a unique instance for it.
-                    node := InstNode.cloneComponent(c, instance);
+                    node := InstNode.cloneComponentInScope(c, inst_ref);
 
                     // If the component is outer, link it with the corresponding
                     // inner component.
@@ -632,7 +634,8 @@ public
         case Class.PARTIAL_BUILTIN(elements = tree as FLAT_TREE(components = old_comps))
           algorithm
             instance := if InstNode.isEmpty(instance) then clsNode else instance;
-            tree.components := Array.map(old_comps, function InstNode.cloneComponent(newParent = instance));
+            inst_ref := InstNode.identityCell(instance);
+            tree.components := Array.map(old_comps, function InstNode.cloneComponentInScope(parent = inst_ref));
             cls.elements := tree;
             compCount := arrayLength(old_comps);
 
