@@ -6992,11 +6992,22 @@ fn arm_bindings_dead_at_subject_write(case: &TypedCase, subj: &str) -> bool {
         collect_stmt_names(st, &mut r);
         r.iter().any(|n| binds.contains(n))
     };
+    // An `if` may move the subject in a branch that reads no binding: the
+    // condition runs first and the other branches are other paths.
+    let branch_move_ok = |e: &TypedExp| match e {
+        TypedExp::If { cond, then_, elseif, else_, .. } =>
+            !exp_writes_or_moves(cond, subj)
+                && elseif.iter().all(|(c, _)| !exp_writes_or_moves(c, subj))
+                && std::iter::once(&**then_).chain(elseif.iter().map(|(_, b)| b)).chain(std::iter::once(&**else_))
+                    .all(|b| !exp_writes_or_moves(b, subj) || !reads_exp(b)),
+        e => !exp_writes_or_moves(e, subj) || !reads_exp(e),
+    };
     match case.stmts.iter().position(|st| stmt_writes_or_moves(st, subj)) {
-        None => !exp_writes_or_moves(&case.result, subj) || !reads_exp(&case.result),
+        None => branch_move_ok(&case.result),
         Some(k) => {
             let at_k = match &case.stmts[k] {
                 TypedStmt::Assign { rhs, .. } if !exp_writes_or_moves(rhs, subj) => false,
+                TypedStmt::Assign { lhs: TypedPat::Var(_), rhs, .. } => !branch_move_ok(rhs),
                 st => reads_stmt(st),
             };
             !at_k && !case.stmts[k + 1..].iter().any(reads_stmt) && !reads_exp(&case.result)
