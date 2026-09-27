@@ -164,8 +164,8 @@ public
   function isNodeNameEqual
     input Connector conn1;
     input Connector conn2;
-    output Boolean isEqual = InstNode.name(ComponentRef.node(conn1.name)) ==
-                             InstNode.name(ComponentRef.node(conn2.name));
+    output Boolean isEqual = ComponentRef.nodeName(conn1.name) ==
+                             ComponentRef.nodeName(conn2.name);
   end isNodeNameEqual;
 
   function isOutside

@@ -541,7 +541,7 @@ protected
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF() then InstNode.name(ComponentRef.node(exp.cref));
+    case Expression.CREF() then ComponentRef.nodeName(exp.cref);
     case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then getStateSelectName(e);
     else
       algorithm
@@ -580,7 +580,7 @@ protected
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
+    case Expression.CREF(cref = ComponentRef.CREF()) then ComponentRef.nodeName(exp.cref);
     else
       algorithm
         Error.terminate(getInstanceName() +
