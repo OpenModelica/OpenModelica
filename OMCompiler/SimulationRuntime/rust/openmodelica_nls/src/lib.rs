@@ -543,6 +543,12 @@ fn enter_nls_stage() -> StageGuard {
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
 
+/// C's `h_function` raises whenever the residual does, whatever the rest of `H`
+/// would cancel it with.
+fn eval_failed(fx: &[f64]) -> bool {
+    fx.iter().any(|v| fmath::fabs(*v) >= ASSERT_RESIDUAL)
+}
+
 /// Whether the last residual evaluation violated a local constraint of a casual
 /// tearing set.
 pub fn dt_violated() -> bool {
@@ -1186,6 +1192,10 @@ struct NewtonHom<'a, 'b> {
 impl Homotopy for NewtonHom<'_, '_> {
     fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
         (self.eval)(&y[..self.n], &mut self.fx);
+        if eval_failed(&self.fx) {
+            hvec[..self.n].fill(ASSERT_RESIDUAL);
+            return;
+        }
         let lam = y[self.n];
         for i in 0..self.n {
             hvec[i] = self.fx[i] - (1.0 - lam) * self.fx0[i];
@@ -1471,6 +1481,10 @@ struct FixpointHom<'a, 'b> {
 impl Homotopy for FixpointHom<'_, '_> {
     fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
         (self.eval)(&y[..self.n], &mut self.fx);
+        if eval_failed(&self.fx) {
+            hvec[..self.n].fill(ASSERT_RESIDUAL);
+            return;
+        }
         let lam = y[self.n];
         for i in 0..self.n {
             hvec[i] = lam * self.fx[i] + (1.0 - lam) * (y[i] - self.x0[i]);
