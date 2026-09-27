@@ -4094,8 +4094,8 @@ fn locate_zc_root(
     Ok((a, b))
 }
 
-/// Snapshot of the discrete state — boolean/integer algebraics and held relations
-/// — used to detect when an event's discrete update has reached a fixed point.
+/// Snapshot of the discrete state — boolean/integer algebraics, held relations and
+/// discrete Reals — used to detect when an event's discrete update has reached a fixed point.
 pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
     let mut buf = vec![0u8; ((layout.n_bool_alg() + layout.n_int_alg()) * 4 + layout.n_rel * 4) as usize];
     let (bools, rest) = buf.split_at_mut((layout.n_bool_alg() * 4) as usize);
@@ -4103,6 +4103,13 @@ pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -
     e.read_bytes(sim_data + layout.bool_off, bools)?;
     e.read_bytes(sim_data + layout.int_off, ints)?;
     e.read_bytes(sim_data + layout.relations_off, rels)?;
+    // C's `checkForDiscreteChanges` walks the discrete Reals first.
+    event_dump_store::with(|d| {
+        for (_, live, _) in &d.reals {
+            buf.extend_from_slice(&read_f64(e, sim_data + live)?.to_bits().to_ne_bytes());
+        }
+        Ok(())
+    })?;
     Ok(buf)
 }
 
