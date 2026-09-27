@@ -279,10 +279,14 @@ impl nls::NlsState for CState {
 
     fn set_relation_mode(&mut self, mode: u32) {
         // The pair `relationhysteresis` branches on: held relations are
-        // `solveContinuous`, fresh ones `discreteCall`.
+        // `solveContinuous`, fresh ones `discreteCall`. Holding them leaves
+        // `discreteCall` alone, as C's solve does: a `when` body inside the
+        // system is gated on it and still runs at an event.
         let si = self.info();
         si.solveContinuous = (mode == 0) as modelica_boolean;
-        si.discreteCall = (mode != 0) as modelica_boolean;
+        if mode != 0 {
+            si.discreteCall = 1;
+        }
     }
 
     fn relations(&self, out: &mut [i32]) {
