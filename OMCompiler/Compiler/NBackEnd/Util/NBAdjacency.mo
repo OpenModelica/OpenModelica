@@ -1306,30 +1306,38 @@ public
       output ComponentRef iter = ComponentRef.EMPTY();
       output Integer offset = 0;
       output Boolean negated = false;
-    protected
-      Integer iterators = 0;
     algorithm
-      for tpl in listAppend(list((e, false) for e in arguments), list((e, true) for e in inv_arguments)) loop
-        () := match tpl
-          local
-            Expression e;
-            Boolean inv;
-            Integer value;
-          case (Expression.INTEGER(value = value), inv) algorithm
-            offset := if inv then offset - value else offset + value;
-          then ();
-          case (e as Expression.CREF(), inv) guard(ComponentRef.isIterator(e.cref)) algorithm
-            iter := e.cref;
-            negated := inv;
-            iterators := iterators + 1;
-          then ();
-          else algorithm
-            ok := false;
-          then ();
-        end match;
+      for e in arguments loop
+        (ok, iter, offset, negated) := sparsityMultaryArgument(e, false, ok, iter, offset, negated);
       end for;
-      ok := ok and iterators == 1;
+      for e in inv_arguments loop
+        (ok, iter, offset, negated) := sparsityMultaryArgument(e, true, ok, iter, offset, negated);
+      end for;
+      ok := ok and not ComponentRef.isEmpty(iter);
     end sparsityMultaryOffset;
+
+    function sparsityMultaryArgument
+      input Expression e;
+      input Boolean inv;
+      input output Boolean ok;
+      input output ComponentRef iter;
+      input output Integer offset;
+      input output Boolean negated;
+    algorithm
+      () := match e
+        case Expression.INTEGER() algorithm
+          offset := if inv then offset - e.value else offset + e.value;
+        then ();
+        case Expression.CREF() guard(ComponentRef.isIterator(e.cref)) algorithm
+          ok := ok and ComponentRef.isEmpty(iter);
+          iter := e.cref;
+          negated := inv;
+        then ();
+        else algorithm
+          ok := false;
+        then ();
+      end match;
+    end sparsityMultaryArgument;
 
     function sparsityBind
       input output Expression exp;
