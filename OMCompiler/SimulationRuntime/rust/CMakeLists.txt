@@ -218,17 +218,21 @@ foreach(_e IN LISTS _simrt_env)
 endforeach()
 list(APPEND _simrt_fmu_env "OMC_SIMRT_FMI=1")
 # Only the archive: cargo also links a dependency's cdylib, which cannot link on
-# Windows without the C half. cargo-zigbuild has no `rustc`.
+# Windows or macOS without the C half. cargo-zigbuild's `rustc` is not a cargo
+# subcommand, so it is run directly.
 if(_simrt_cargo_cmd STREQUAL "zigbuild")
-  set(_simrt_fmu_cargo_cmd zigbuild)
+  find_program(CARGO_ZIGBUILD_EXECUTABLE cargo-zigbuild REQUIRED
+               HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
+  set(_simrt_fmu_cargo ${CARGO_ZIGBUILD_EXECUTABLE} rustc)
 else()
   string(REPLACE "build" "rustc" _simrt_fmu_cargo_cmd "${_simrt_cargo_cmd}")
-  list(APPEND _simrt_fmu_cargo_cmd -p openmodelica_simulation_runtime --lib --crate-type staticlib)
+  set(_simrt_fmu_cargo ${CARGO_EXECUTABLE} ${_simrt_fmu_cargo_cmd})
 endif()
+list(APPEND _simrt_fmu_cargo -p openmodelica_simulation_runtime --lib --crate-type staticlib)
 add_custom_target(SimulationRuntimeRustFmu ALL
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openmodelica_simulation_runtime_fmu
   ${OMC_JOB_SERVER_AWARE}
-  COMMAND ${_simrt_fmu_env} ${CARGO_EXECUTABLE} ${_simrt_fmu_cargo_cmd} --target-dir ${_simrt_fmu_target_dir}
+  COMMAND ${_simrt_fmu_env} ${_simrt_fmu_cargo} --target-dir ${_simrt_fmu_target_dir}
           ${_simrt_target_flag} ${_simrt_profile_flag}
   BYPRODUCTS ${_simrt_a}
   COMMENT "Rust: building libSimulationRuntimeRust.a for source-code FMUs"

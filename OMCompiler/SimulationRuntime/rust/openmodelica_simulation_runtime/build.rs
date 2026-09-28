@@ -34,8 +34,19 @@ fn link_runtime_c() {
     let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
     println!("cargo:rustc-link-search=native={dir}");
     println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
-    if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "ios")) {
-        println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined");
+    match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        Ok("windows") => {}
+        // It is installed beside the dylib, which links it as @rpath/.
+        Ok("macos" | "ios") => println!("cargo:rustc-cdylib-link-arg=-Wl,-rpath,@loader_path"),
+        _ => println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined"),
+    }
+}
+
+/// ld64 defaults a dylib's install name to its output path in the cargo target
+/// directory, which every simulation linking it would then load from.
+fn macos_install_name() {
+    if matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("macos" | "ios")) {
+        println!("cargo:rustc-cdylib-link-arg=-Wl,-install_name,@rpath/libSimulationRuntimeRust.dylib");
     }
 }
 
@@ -140,6 +151,7 @@ fn main() {
         export_shim_entry_points();
     }
     link_runtime_c();
+    macos_install_name();
     link_blas();
     println!("cargo:rerun-if-changed=src/abi.rs");
     println!("cargo:rerun-if-env-changed=OMC_SIMRT_INCLUDE_DIRS");
