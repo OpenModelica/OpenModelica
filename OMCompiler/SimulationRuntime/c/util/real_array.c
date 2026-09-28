@@ -2634,18 +2634,20 @@ void create_real_array_from_range(real_array *dest, modelica_real start, modelic
 }
 
 /**
- * @brief Grow a start attribute array to n elements, repeating its values.
+ * @brief Resize a start attribute array to n elements, repeating its values.
  *
  * The start attribute of an array variable can hold a single broadcast value
  * or the values of an inner dimension only. Writing the start values of the
- * whole array needs one element per array element.
+ * whole array needs one element per array element. If the array has more than
+ * n elements, the first n are kept. Nothing is reallocated if the array
+ * already has n elements.
  */
 void real_array_ensure_size(real_array *a, int n)
 {
     int m = (int) base_array_nr_of_elements(*a);
     real_array tmp;
     int i;
-    if (m >= n) {
+    if (m == n) {
         return;
     }
     simple_alloc_1d_real_array(&tmp, n);
@@ -2654,12 +2656,4 @@ void real_array_ensure_size(real_array *a, int n)
     }
     omc_array_release(a);
     *a = tmp;
-}
-
-/**
- * @brief Make real attribute array hold `n` elements, see base_array_resize_attribute.
- */
-void resizeRealAttribute(real_array *attribute, size_t n)
-{
-    base_array_resize_attribute(attribute, n, sizeof(modelica_real), simple_alloc_1d_real_array);
 }

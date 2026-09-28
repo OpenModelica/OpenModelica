@@ -629,9 +629,9 @@ static void importStartValue(ModelicaMatReader *reader,
 
   /* one start value per element, e.g. start attributes given with `each` hold a single value */
   switch (type) {
-    case IMPORT_REAL:    resizeRealAttribute(start, n);    break;
-    case IMPORT_INTEGER: resizeIntegerAttribute(start, n); break;
-    case IMPORT_BOOLEAN: resizeBooleanAttribute(start, n); break;
+    case IMPORT_REAL:    real_array_ensure_size(start, (int) n);    break;
+    case IMPORT_INTEGER: integer_array_ensure_size(start, (int) n); break;
+    case IMPORT_BOOLEAN: boolean_array_ensure_size(start, (int) n); break;
   }
 
   for (k = 0; k < n; k++) {

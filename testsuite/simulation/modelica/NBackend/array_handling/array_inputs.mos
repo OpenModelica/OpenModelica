@@ -19,7 +19,7 @@ equation
 end array_inputs;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C.old"); getErrorString();
 
 // start values
 simulate(array_inputs, stopTime=1.0); getErrorString();

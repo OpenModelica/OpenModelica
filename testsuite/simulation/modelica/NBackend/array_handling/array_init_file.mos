@@ -21,7 +21,7 @@ equation
 end array_init_file;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C.old"); getErrorString();
 
 simulate(array_init_file, stopTime=1.0, simflags="-r=array_init_file_first.mat"); getErrorString();
 

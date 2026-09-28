@@ -2112,7 +2112,7 @@ let &sub = buffer ""
           let ty = expTypeShort(type_)
           let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          resize<%resizeTypeName(ty)%>Attribute(&<%start%>, <%numScalarElemsVar(v)%>);
+          <%ensureSizeFunction(ty)%>(&<%start%>, <%numScalarElemsVar(v)%>);
           for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
             put_<%ty%>_element(data->simulationInfo->inputVars[<%offset%> + k], k, &<%start%>);
           }
@@ -2165,14 +2165,14 @@ template inputValue(SimVar var, String k)
       'data->localData[0]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>] + <%k%>]'
 end inputValue;
 
-template resizeTypeName(String ty)
+template ensureSizeFunction(String ty)
 ::=
   match ty
-    case "real" then "Real"
-    case "integer" then "Integer"
-    case "boolean" then "Boolean"
+    case "real"
+    case "integer"
+    case "boolean" then '<%ty%>_array_ensure_size'
     else error(sourceInfo(), 'Inputs of type <%ty%> are not supported.')
-end resizeTypeName;
+end ensureSizeFunction;
 
 template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
