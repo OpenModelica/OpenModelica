@@ -457,6 +457,7 @@ that turn the collected counters into a report. These are covered:
 | C runtime           | `OMCompiler/SimulationRuntime/c/`                       |
 | C++ runtime         | `OMCompiler/SimulationRuntime/cpp/`                     |
 | FMU export          | `OMCompiler/SimulationRuntime/fmi/export/openmodelica/` |
+| Rust runtime        | `OMCompiler/SimulationRuntime/rust/`                    |
 | OMEdit              | `OMEdit/OMEditLIB/`                                     |
 
 You need GCC or Clang, and [gcovr] (`pip install gcovr`, or your package manager).
@@ -630,6 +631,16 @@ where opening the file directly would not. Otherwise just open
   back onto the `.mo` by replaying them (`OpenModelicaCoverageLineDirectives.py`). Turning
   coverage on does not recompile what an existing clang build tree already compiled
   without the launcher, so start from a fresh one.
+- The Rust libraries (`libSimulationRuntimeRust`, and `libomc_result` with the result
+  readers and writers) are built with LLVM's source-based coverage instead of gcov
+  (`-C instrument-coverage`). Each process writes a profile where `LLVM_PROFILE_FILE`
+  says, so point it at the build tree before running anything:
+  `export LLVM_PROFILE_FILE=$PWD/build_cmake/coverage-rust/%m.profraw` (otherwise every
+  process leaves a `default_*.profraw` in its working directory). `coverage-collect`
+  reads them with the `llvm-profdata` and `llvm-cov` of rustc's own LLVM: those of
+  `rustup component add llvm-tools` if installed, and otherwise downloads that component
+  once into the build tree (`OpenModelicaCoverageRust.py`). They go into the report as
+  `rust.json`.
 
 [gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 [gcovr]: https://gcovr.com/

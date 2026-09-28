@@ -119,7 +119,7 @@ in_docker() {
 }
 
 # Leave these alone when syncing: they are what the steps produce.
-SYNC_KEEP=(/build_cmake/ /build/ /.home/ /gcda-out/ /fmu-coverage/
+SYNC_KEEP=(/build_cmake/ /build/ /.home/ /gcda-out/ /fmu-coverage/ /rust-profraw/
            /counters/ /coverage-tracefiles/ /.coverage-local/)
 
 sync_tree() {
@@ -199,11 +199,12 @@ do_test() {
   local c=$1 ws=$WORK/build-$c
   step "test $c: $ws at $TEST_ROOT, counters to $ws/gcda-out"
   [ -x "$ws/build/bin/omc" ] || { echo "No install tree; run 'build' first" >&2; exit 1; }
-  rm -rf "$ws/gcda-out" "$ws/fmu-coverage"
+  rm -rf "$ws/gcda-out" "$ws/fmu-coverage" "$ws/rust-profraw"
   in_docker "$ws" "$TEST_ROOT" "
     ${TEST_CMD:-$DEFAULT_TEST}
   " -e GCOV_PREFIX="$TEST_ROOT/gcda-out" \
     -e OMC_COVERAGE_FMU_DIR="$TEST_ROOT/fmu-coverage" \
+    -e LLVM_PROFILE_FILE="$TEST_ROOT/rust-profraw/%m.profraw" \
     -e OMCOMPILERGENERATEDSOURCES="$TEST_ROOT/build_cmake/OMCompiler/Compiler/generated-mo"
   # withCoverageCounters(): GCOV_PREFIX redirected the FMUs' counters too, so
   # move them back next to their notes.
@@ -214,7 +215,8 @@ do_test() {
   fi
   echo "$(find "$ws/gcda-out" -name '*.gcda' 2>/dev/null | wc -l) counter files," \
        "$(find "$ws/gcda-out" -path '*OpenModelicaCompiler.dir*' -name '*.gcda' 2>/dev/null | wc -l) of them the compiler's," \
-       "and $(find "$ws/fmu-coverage" -name '*.gcda' 2>/dev/null | wc -l) of FMUs"
+       "$(find "$ws/fmu-coverage" -name '*.gcda' 2>/dev/null | wc -l) of FMUs," \
+       "and $(find "$ws/rust-profraw" -name '*.profraw' 2>/dev/null | wc -l) Rust profiles"
 }
 
 do_collect() {
@@ -227,7 +229,10 @@ do_collect() {
   # What the stashes carry: coverage-<c>-gcno, coverage-<c>-sources and
   # coverage-counters-<name>.
   rm -rf "$REPORT/build_cmake" "$REPORT/counters"
-  (cd "$ws" && find build_cmake -name '*.gcno' -print0 | tar --null -T - -cf -) | tar -C "$REPORT" -xf -
+  (cd "$ws" && { find build_cmake -name '*.gcno' -print0
+                 find build_cmake -path '*/release/libomc_result.so' -not -path '*/deps/*' -print0
+                 find build_cmake -path '*/release/libSimulationRuntimeRust.so' -not -path '*/deps/*' -print0
+               } | tar --null -T - -cf -) | tar -C "$REPORT" -xf -
   (cd "$ws" && { find build_cmake/OMCompiler/Compiler/generated-mo -name '*.mo' -print0
                  printf '%s\0' OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo \
                                 OMCompiler/Compiler/Util/Autoconf.mo
@@ -235,7 +240,8 @@ do_collect() {
                } | tar --null -T - -cf -) | tar -C "$REPORT" -xf -
   mkdir -p "$REPORT/counters"
   (cd "$ws" && { find gcda-out -name '*.gcda' -print0
-                 [ -d fmu-coverage ] && find fmu-coverage \( -name '*.gcno' -o -name '*.gcda' \) -print0
+                 if [ -d fmu-coverage ]; then find fmu-coverage \( -name '*.gcno' -o -name '*.gcda' \) -print0; fi
+                 if [ -d rust-profraw ]; then find rust-profraw -name '*.profraw' -print0; fi
                } | tar --null -T - -cf -) | tar -C "$REPORT/counters" -xf -
   mkdir -p "$REPORT/coverage-tracefiles"
   echo "$root" > "$REPORT/.coverage-local-root"
@@ -246,7 +252,7 @@ do_collect() {
           '-DOM_COVERAGE_TRACEFILES=$root/coverage-tracefiles/*.json' \
           '-DOM_COVERAGE_TITLE=OpenModelica Code Coverage Report (local)' > /dev/null
     find build_cmake -name '*.gcda' -delete
-    rm -rf build_cmake/coverage-fmu
+    rm -rf build_cmake/coverage-fmu build_cmake/coverage-rust
     if [ -d 'counters/gcda-out$root/build_cmake' ]; then
       cp -a 'counters/gcda-out$root/build_cmake/.' build_cmake/
     else
@@ -256,9 +262,14 @@ do_collect() {
       mkdir -p build_cmake/coverage-fmu
       cp -a counters/fmu-coverage/. build_cmake/coverage-fmu/
     fi
+    if [ -d counters/rust-profraw ]; then
+      mkdir -p build_cmake/coverage-rust
+      cp -a counters/rust-profraw/. build_cmake/coverage-rust/
+    fi
     cmake --build build_cmake --target coverage-collect
     cp build_cmake/coverage/coverage.json coverage-tracefiles/local-$c-coverage.json
     cp build_cmake/coverage/templates.json coverage-tracefiles/local-$c-templates.json
+    cp build_cmake/coverage/rust.json coverage-tracefiles/local-$c-rust.json
   "
 }
 

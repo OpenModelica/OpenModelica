@@ -102,6 +102,11 @@ set(_simrt_a ${_simrt_fmu_target_dir}/${_simrt_artifact_subdir}/${CMAKE_STATIC_L
 set(_simrt_headers "${CMAKE_CURRENT_SOURCE_DIR}/../c|${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/gc/include")
 
 set(_simrt_env ${CMAKE_COMMAND} -E env "OMC_SIMRT_INCLUDE_DIRS=${_simrt_headers}")
+# Coverage (see cmake/modules/OpenModelicaCoverage.cmake). Not for the
+# source-code FMUs' archive below, which would drag LLVM's profiler into them.
+if(OM_ENABLE_COVERAGE)
+  list(APPEND _simrt_env "RUSTFLAGS=${OM_COVERAGE_RUSTFLAGS}")
+endif()
 if(_simrt_sdkroot)
   list(APPEND _simrt_env "SDKROOT=${_simrt_sdkroot}")
 endif()
@@ -212,6 +217,7 @@ endif()
 set(_simrt_fmu_env "")
 foreach(_e IN LISTS _simrt_env)
   if(NOT _e MATCHES "^OMC_RUNTIME_C_(DIR|LINK|DEF)=" AND NOT _e MATCHES "^OMC_IPOPT_NATIVE_DIR="
+     AND NOT _e MATCHES "^RUSTFLAGS="
      AND NOT _e MATCHES "^OMC_PRIMME_(NATIVE_DIR|INCLUDE_DIR)=")
     list(APPEND _simrt_fmu_env "${_e}")
   endif()

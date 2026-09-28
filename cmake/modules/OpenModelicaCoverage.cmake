@@ -133,7 +133,7 @@ set(OM_COVERAGE_TITLE
 # the C runtime unit tests would otherwise add a hundred thousand uncovered
 # lines of compiler to the report.
 set(OM_COVERAGE_SOURCE_DIRS
-    "OMCompiler/Compiler/;OMCompiler/SimulationRuntime/c/;OMCompiler/SimulationRuntime/cpp/;OMCompiler/SimulationRuntime/fmi/export/openmodelica/;OMEdit/OMEditLIB/"
+    "OMCompiler/Compiler/;OMCompiler/SimulationRuntime/c/;OMCompiler/SimulationRuntime/cpp/;OMCompiler/SimulationRuntime/fmi/export/openmodelica/;OMCompiler/SimulationRuntime/rust/;OMEdit/OMEditLIB/"
     CACHE STRING "Source directories, relative to the source tree, whose coverage coverage-collect reports")
 set(_om_coverage_filter_args)
 foreach(_filter IN LISTS OM_COVERAGE_SOURCE_DIRS)
@@ -193,11 +193,41 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND "OMCompiler/Compiler/" IN_LIST OM_COV
               ${_om_coverage_filter_args})
 endif()
 
+# Rust: libomc_result (the result readers and writers) and
+# libSimulationRuntimeRust are built by cargo, with LLVM's source-based
+# coverage (-C instrument-coverage) rather than gcov, which rustc only has on
+# nightly. Their builds pass OM_COVERAGE_RUSTFLAGS to cargo. Every process
+# writes a profile (.profraw) where LLVM_PROFILE_FILE says; point it into
+# OM_COVERAGE_RUST_PROFILE_DIR, %m keeping one file per library:
+#   export LLVM_PROFILE_FILE=<build>/coverage-rust/%m.profraw
+# The omc_coverage cfg compiles in omc_result_coverage_dump(), which EXIT()
+# calls, as _exit() skips the profile's atexit handler. OpenModelicaCoverageRust.py
+# turns the profiles into a gcovr tracefile of its own, rust.json.
+set(OM_COVERAGE_RUSTFLAGS "-C instrument-coverage --cfg omc_coverage")
+set(OM_COVERAGE_RUST_PROFILE_DIR "${CMAKE_BINARY_DIR}/coverage-rust")
+find_program(OM_COVERAGE_RUSTC rustc)
+set(_om_coverage_rust_source_args)
+foreach(_dir IN LISTS OM_COVERAGE_SOURCE_DIRS)
+  list(APPEND _om_coverage_rust_source_args --source-dir "${_dir}")
+endforeach()
+set(_om_coverage_rust_commands
+    COMMAND ${Python3_EXECUTABLE}
+            "${CMAKE_CURRENT_LIST_DIR}/OpenModelicaCoverageRust.py"
+            --profile-dir "${OM_COVERAGE_RUST_PROFILE_DIR}"
+            --build-dir "${CMAKE_BINARY_DIR}"
+            --root "${CMAKE_SOURCE_DIR}"
+            ${_om_coverage_rust_source_args}
+            --gcovr-json "${OM_COVERAGE_DIR}/coverage.json"
+            --output "${OM_COVERAGE_DIR}/rust.json"
+            --rustc "${OM_COVERAGE_RUSTC}"
+            --tools-dir "${CMAKE_BINARY_DIR}/coverage-llvm-tools")
+
 file(RELATIVE_PATH _report_path "${CMAKE_BINARY_DIR}" "${OM_COVERAGE_DIR}/index.html")
 
 add_custom_target(coverage-reset
                   COMMAND ${CMAKE_COMMAND} -DOM_COVERAGE_BINARY_DIR=${CMAKE_BINARY_DIR}
                           -DOM_COVERAGE_FMU_DIR=${OM_COVERAGE_FMU_DIR}
+                          -DOM_COVERAGE_RUST_PROFILE_DIR=${OM_COVERAGE_RUST_PROFILE_DIR}
                           -P "${CMAKE_CURRENT_LIST_DIR}/OpenModelicaCoverageReset.cmake"
                   COMMENT "Discarding previously collected coverage data"
                   VERBATIM)
@@ -279,6 +309,7 @@ add_custom_target(coverage-collect
                           --template-dir "${OM_COVERAGE_TEMPLATE_DIR}"
                           --root "${CMAKE_SOURCE_DIR}"
                           --output "${OM_COVERAGE_DIR}/templates.json"
+                  ${_om_coverage_rust_commands}
                   COMMENT "Collecting the coverage counters into ${OM_COVERAGE_DIR}"
                   VERBATIM)
 
@@ -286,7 +317,7 @@ add_custom_target(coverage-collect
 # expands them. The paths inside a tracefile are relative to the source tree
 # it was collected in, so tracefiles collected in other checkouts of the same
 # sources can be listed here too.
-set(OM_COVERAGE_TRACEFILES "${OM_COVERAGE_DIR}/coverage.json;${OM_COVERAGE_DIR}/templates.json"
+set(OM_COVERAGE_TRACEFILES "${OM_COVERAGE_DIR}/coverage.json;${OM_COVERAGE_DIR}/templates.json;${OM_COVERAGE_DIR}/rust.json"
     CACHE STRING "gcovr JSON tracefiles coverage-html renders into one report")
 set(_om_coverage_tracefile_args)
 foreach(_tracefile IN LISTS OM_COVERAGE_TRACEFILES)

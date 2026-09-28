@@ -73,7 +73,10 @@ extern "C" {
  * Defined by -DOM_ENABLE_COVERAGE=ON; see cmake/modules/OpenModelicaCoverage.cmake. */
 #include <unistd.h>
 extern void __gcov_dump(void);
-#define EXIT(code) {fflush(NULL); __gcov_dump(); _exit(code);}
+/* The same for the Rust result library's LLVM coverage profile, when the
+ * process has it loaded: weak, as not every program using this has. */
+extern void omc_result_coverage_dump(void) __attribute__((weak));
+#define EXIT(code) {fflush(NULL); __gcov_dump(); if (omc_result_coverage_dump) omc_result_coverage_dump(); _exit(code);}
 #else
 /* We need to patch exit() on Unix systems
  * It does not change the exit code of simulations for some reason! */

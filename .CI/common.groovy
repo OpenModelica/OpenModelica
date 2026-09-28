@@ -1333,6 +1333,8 @@ void buildGUIAndRunOMEditTestsuite() {
     # HOME holding the test libraries.
     export OPENMODELICAHOME="\$PWD/build"
     export HOME="\$PWD/libraries"
+    # The Rust libraries' coverage, where coverage-collect looks for it.
+    export LLVM_PROFILE_FILE="\$PWD/build_cmake/coverage-rust/%m.profraw"
     xvfb-run ctest --test-dir build_cmake/OMEdit/Testsuite \
                    --repeat until-pass:5 \
                    --output-on-failure \
@@ -1349,6 +1351,7 @@ void buildGUIAndRunOMEditTestsuite() {
   mkdir -p coverage-tracefiles
   cp build_cmake/coverage/coverage.json coverage-tracefiles/omedit-coverage.json
   cp build_cmake/coverage/templates.json coverage-tracefiles/omedit-templates.json
+  cp build_cmake/coverage/rust.json coverage-tracefiles/omedit-rust.json
   """
   stash name: 'coverage-tracefiles-omedit', includes: 'coverage-tracefiles/*.json'
 }
@@ -1612,7 +1615,14 @@ void stashCoverageNotes(String compiler) {
   // the *.gcno tree.
   writeFile file: 'coverage-build-root.txt', text: env.WORKSPACE
   stash name: "coverage-${compiler}-root", includes: 'coverage-build-root.txt'
-  stash name: "coverage-${compiler}-gcno", includes: 'build_cmake/**/*.gcno'
+  // With the Rust libraries built with coverage, which llvm-cov needs to read
+  // their profiles (their unstripped build tree copies; see
+  // OpenModelicaCoverageRust.py): libSimulationRuntimeRust, which C
+  // simulations run on, and libomc_result, the result readers and writers.
+  stash name: "coverage-${compiler}-gcno",
+        includes: 'build_cmake/**/*.gcno,' +
+                  'build_cmake/rust-result-target/release/libomc_result.so,' +
+                  'build_cmake/OMCompiler/SimulationRuntime/rust/rust-target/release/libSimulationRuntimeRust.so'
   // Sources that only exist because this stage built them: Susan's generated
   // *.mo and the two *.mo generated into the source tree. The report stage
   // starts from a clean checkout and only configures, so nothing regenerates
@@ -1731,9 +1741,13 @@ void partestStashed(stashName, partition, partitionmodulo) {
 // counters too, so they are moved back next to their notes before stashing.
 void withCoverageCounters(String name, Closure body) {
   def ws = sh(script: 'pwd', returnStdout: true).trim()
-  sh 'rm -rf gcda-out fmu-coverage'
+  sh 'rm -rf gcda-out fmu-coverage rust-profraw'
+  // The Rust libraries' LLVM profiles (see OM_COVERAGE_RUSTFLAGS in
+  // cmake/modules/OpenModelicaCoverage.cmake): %m merges every process's into
+  // one file per library.
   withEnv(["GCOV_PREFIX=${ws}/gcda-out",
-           "OMC_COVERAGE_FMU_DIR=${ws}/fmu-coverage"]) {
+           "OMC_COVERAGE_FMU_DIR=${ws}/fmu-coverage",
+           "LLVM_PROFILE_FILE=${ws}/rust-profraw/%m.profraw"]) {
     body()
   }
   sh label: 'Gather the coverage counters', script: """#!/bin/bash -e
@@ -1742,12 +1756,14 @@ void withCoverageCounters(String name, Closure body) {
     cp -a 'gcda-out${ws}/fmu-coverage/.' fmu-coverage/
     rm -rf 'gcda-out${ws}/fmu-coverage'
   fi
-  echo "\$(find gcda-out -name '*.gcda' 2>/dev/null | wc -l) counter files and" \\
-       "\$(find fmu-coverage -name '*.gcda' 2>/dev/null | wc -l) of FMUs"
+  echo "\$(find gcda-out -name '*.gcda' 2>/dev/null | wc -l) counter files," \\
+       "\$(find fmu-coverage -name '*.gcda' 2>/dev/null | wc -l) of FMUs and" \\
+       "\$(find rust-profraw -name '*.profraw' 2>/dev/null | wc -l) Rust profiles"
   """
   // Only the counters (and the FMUs' notes), not the rest of gcda-out.
   stash name: "coverage-counters-${name}",
-        includes: 'gcda-out/**/*.gcda,fmu-coverage/**/*.gcno,fmu-coverage/**/*.gcda',
+        includes: 'gcda-out/**/*.gcda,fmu-coverage/**/*.gcno,fmu-coverage/**/*.gcda,' +
+                  'rust-profraw/*.profraw',
         allowEmpty: true
 }
 
@@ -1928,7 +1944,7 @@ void collectCoverage(String compiler, List counterNames, boolean render) {
       cd "${coverageBuildRoot}"
       # Only this stash's counters on the *.gcno tree unstashed above.
       find build_cmake -name '*.gcda' -delete
-      rm -rf build_cmake/coverage-fmu
+      rm -rf build_cmake/coverage-fmu build_cmake/coverage-rust
       if [ -d '${counters}/gcda-out${coverageBuildRoot}/build_cmake' ]; then
         cp -a '${counters}/gcda-out${coverageBuildRoot}/build_cmake/.' build_cmake/
       fi
@@ -1937,9 +1953,15 @@ void collectCoverage(String compiler, List counterNames, boolean render) {
         mkdir -p build_cmake/coverage-fmu
         cp -a '${counters}/fmu-coverage/.' build_cmake/coverage-fmu/
       fi
+      # The Rust libraries' profiles, where coverage-collect looks for them.
+      if [ -d '${counters}/rust-profraw' ]; then
+        mkdir -p build_cmake/coverage-rust
+        cp -a '${counters}/rust-profraw/.' build_cmake/coverage-rust/
+      fi
       cmake --build build_cmake --target coverage-collect
       cp build_cmake/coverage/coverage.json 'coverage-tracefiles/${counterNames[i]}-coverage.json'
       cp build_cmake/coverage/templates.json 'coverage-tracefiles/${counterNames[i]}-templates.json'
+      cp build_cmake/coverage/rust.json 'coverage-tracefiles/${counterNames[i]}-rust.json'
       """
     }
 
