@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+ArrayComponentAttributes.mos \
 Alias.mos \
 Alias2.mos \
 Alias_test1.mos \

@@ -728,7 +728,7 @@ algorithm
   ty := flattenType(ty, prefix, info);
   verifyDimensions(Type.arrayDims(ty), comp_node);
   pre := Prefix.push(comp_node, ty, Type.arrayDims(ty), prefix);
-  ty_attrs := list(flattenTypeAttribute(m, prefix) for m in typeAttrs);
+  ty_attrs := list(flattenTypeAttribute(m, prefix, ty) for m in typeAttrs);
 
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
@@ -770,13 +770,34 @@ end checkUnspecifiedEnumType;
 function flattenTypeAttribute
   input Modifier attr;
   input Prefix prefix;
+  input Type ty "type of the component without the prefix dimensions";
   output tuple<String, Binding> outAttr;
 protected
-  Binding binding;
+  Binding binding = Modifier.binding(attr);
 algorithm
-  binding := flattenBinding(Modifier.binding(attr), prefix, isTypeAttribute = true);
+  // an each attribute of an array in an array of components has to cover the dimensions of the
+  // component itself before it gets vectorized over the dimensions of the prefix
+  if Binding.isEach(binding) and Type.isArray(ty) and Prefix.isIndexed(prefix) then
+    binding := fillEachBinding(binding, Type.arrayDims(ty));
+  end if;
+  binding := flattenBinding(binding, prefix, isTypeAttribute = true);
   outAttr := (Modifier.name(attr), binding);
 end flattenTypeAttribute;
+
+function fillEachBinding
+  input output Binding binding;
+  input list<Dimension> dims;
+algorithm
+  () := match binding
+    case Binding.TYPED_BINDING() algorithm
+      binding.bindingType := Type.liftArrayLeftList(binding.bindingType, dims);
+      binding.bindingExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
+        binding.bindingExp :: list(Dimension.sizeExp(d) for d in dims), binding.variability, Purity.PURE, binding.bindingType));
+      binding.eachType := NFBinding.EachType.NOT_EACH;
+    then ();
+    else ();
+  end match;
+end fillEachBinding;
 
 function isTypeAttributeNamed
   input String name;
@@ -1238,8 +1259,12 @@ algorithm
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   dims := List.lastN(dims, listLength(subs));
-  // the expression is already split, e.g. CAST(Real, {..}[$x1]), so its own type is the element type
-  binding_ty := Type.liftArrayLeftList(Expression.typeOf(exp), dims);
+  // the expression is already split, e.g. CAST(Real, {..}[$x1]), so its own type is the element type.
+  // crefs of type attributes can carry the scalar type, use the type of the component instead
+  binding_ty := Type.liftArrayLeftList(match exp
+    case Expression.CREF() then ComponentRef.getSubscriptedType(exp.cref);
+    else Expression.typeOf(exp);
+  end match, dims);
 
   if not listEmpty(dims) then
     if Expression.isLiteral(exp) or not Expression.contains(exp, Expression.isIterator) then

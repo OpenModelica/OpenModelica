@@ -1,0 +1,54 @@
+// name: ArrayComponentAttributes
+// keywords: NewBackend
+// status: correct
+//
+// Attributes of arrays in arrays of components: element wise start values from
+// parameter arrays, each modifiers and bounds of alias sets of arrays.
+
+loadString("
+package ArrayComponentAttributes
+  type MF = Real(min = 0, max = 1);
+  model Medium
+    MF X[2];
+  end Medium;
+  model Channel
+    parameter Real y0[2] = {-3, 3};
+    Real y[2](start = y0);
+    MF X[2](each min = 0.1);
+    Medium medium(X = X);
+  equation
+    for i in 1:2 loop
+      y[i] ^ 3 = 4 * y[i];
+    end for;
+    X = {0.2, 0.3} + 0.1 * time * {1, 1};
+  end Channel;
+  model Top
+    Channel c[2](y0 = {{-3, 3}, {3, -3}});
+  end Top;
+end ArrayComponentAttributes;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ArrayComponentAttributes.Top, stopTime = 0.1, simflags = "-lv=-LOG_STDOUT"); getErrorString();
+val(c[1].y[1], 0); val(c[1].y[2], 0); val(c[2].y[1], 0); val(c[2].y[2], 0);
+system("grep -c 'min=\"0.1\" max=\"1.0\"' ArrayComponentAttributes.Top_init.xml");
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayComponentAttributes.Top_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayComponentAttributes.Top', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_STDOUT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// 2.0
+// 2.0
+// -2.0
+// 4
+// 0
+// endResult

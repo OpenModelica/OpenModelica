@@ -80,6 +80,7 @@ protected
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import ExpandExp = NFExpandExp;
   import ExpressionIterator = NFExpressionIterator;
   import Dimension = NFDimension;
   import Subscript = NFSubscript;
@@ -108,6 +109,7 @@ protected
   import ASSC = NBASSC;
 
   // Util imports
+  import Array;
   import MetaModelica.Dangerous;
   import Slice = NBSlice;
   import StringUtil;
@@ -1203,60 +1205,86 @@ protected
   function getMaximum
     "Gets the maximum value of an UnorderedMap."
     input UnorderedMap<ComponentRef,Expression> map;
-    output Option<Expression> max_exp;
-  protected
-    list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
-    Expression max_exp_val;
-    Real max_val;
-  algorithm
-    (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
-    if not listEmpty(constants) then
-      max_val := List.maxElement(list(Expression.realValue(val) for val in constants), realLt);
-      rest := Expression.REAL(max_val) :: rest;
-    end if;
-    if listEmpty(rest) then // constants and rest are empty
-      max_exp := NONE();
-    elseif List.hasOneElement(rest) then // one constant or one rest
-      max_exp := SOME(listHead(rest));
-    else
-      max_exp_val :=  Expression.CALL(Call.makeTypedCall(
-        fn          = NFBuiltinFuncs.MAX_REAL,
-        args        = rest,
-        variability = NFPrefixes.Variability.PARAMETER,
-        purity      = NFPrefixes.Purity.PURE
-      ));
-      max_exp := SOME(max_exp_val);
-    end if;
+    output Option<Expression> max_exp = getBound(map, true);
   end getMaximum;
 
   function getMinimum
     "Gets the minimum of an UnorderedMap."
     input UnorderedMap<ComponentRef,Expression> map;
-    output Option<Expression> min_exp;
+    output Option<Expression> min_exp = getBound(map, false);
+  end getMinimum;
+
+  function getBound
+    "Combines the min (isMax = true) or max (isMax = false) values of an alias set.
+    Constant arrays are combined element wise."
+    input UnorderedMap<ComponentRef,Expression> map;
+    input Boolean isMax;
+    output Option<Expression> bound;
   protected
-    list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
-    Expression min_exp_val;
-    Real min_val;
+    list<Expression> constants, arrays, rest, lst_values = UnorderedMap.valueList(map);
+    list<Real> reals;
+    Expression arr;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
     if not listEmpty(constants) then
-      min_val := List.minElement(list(Expression.realValue(val) for val in constants), realLt);
-      rest := Expression.REAL(min_val) :: rest;
+      reals := list(Expression.realValue(val) for val in constants);
+      rest := Expression.REAL(if isMax then List.maxElement(reals, realLt) else List.minElement(reals, realLt)) :: rest;
+    end if;
+    (arrays, rest) := List.splitOnTrue(list(expandConstArray(e) for e in rest), isConstArray);
+    if not listEmpty(arrays) then
+      try
+        arr := List.fold(listRest(arrays), function combineConstArrays(isMax = isMax), listHead(arrays));
+        rest := arr :: rest;
+      else
+        rest := listAppend(arrays, rest);
+      end try;
     end if;
     if listEmpty(rest) then // constants and rest are empty
-      min_exp := NONE();
+      bound := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
-      min_exp := SOME(listHead(rest));
+      bound := SOME(listHead(rest));
     else
-      min_exp_val :=  Expression.CALL(Call.makeTypedCall(
-        fn          = NFBuiltinFuncs.MAX_REAL,
+      bound := SOME(Expression.CALL(Call.makeTypedCall(
+        fn          = if isMax then NFBuiltinFuncs.MAX_REAL else NFBuiltinFuncs.MIN_REAL,
         args        = rest,
         variability = NFPrefixes.Variability.PARAMETER,
         purity      = NFPrefixes.Purity.PURE
-      ));
-      min_exp := SOME(min_exp_val);
+      )));
     end if;
-  end getMinimum;
+  end getBound;
+
+  function expandConstArray
+    input output Expression exp;
+  protected
+    Expression e;
+    Boolean expanded;
+  algorithm
+    if Type.isArray(Expression.typeOf(exp)) then
+      (e, expanded) := ExpandExp.expand(exp);
+      if expanded then
+        exp := SimplifyExp.simplify(e);
+      end if;
+    end if;
+  end expandConstArray;
+
+  function isConstArray
+    input Expression exp;
+    output Boolean b = Expression.isArray(exp) and List.all(Expression.arrayScalarElements(exp), Expression.isConstNumber);
+  end isConstArray;
+
+  function combineConstArrays
+    input Expression exp1;
+    input Boolean isMax;
+    input output Expression exp2;
+  algorithm
+    exp2 := match (exp1, exp2)
+      case (Expression.ARRAY(), Expression.ARRAY()) guard(arrayLength(exp1.elements) == arrayLength(exp2.elements))
+        then Expression.makeArray(exp2.ty, Array.threadMap(exp1.elements, exp2.elements, function combineConstArrays(isMax = isMax)), true);
+      case (_, _) guard(Expression.isConstNumber(exp1) and Expression.isConstNumber(exp2))
+        then Expression.REAL(if isMax then max(Expression.realValue(exp1), Expression.realValue(exp2)) else min(Expression.realValue(exp1), Expression.realValue(exp2)));
+      else fail();
+    end match;
+  end combineConstArrays;
 
   function setStartFixed
     "Analyses start and fixed values." // case 1: 1 or 0 fixed ; case 2: more than 1 fixed
