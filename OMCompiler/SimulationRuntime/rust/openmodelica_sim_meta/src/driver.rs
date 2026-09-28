@@ -7627,34 +7627,6 @@ impl SolverCore {
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let maxs = read_state_maxs(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
-        let _ = method;
-        #[cfg(sundials)]
-        let solver = match method {
-            "cvode" => {
-                Solver::Cvode(CvodeState {
-                    cv: None,
-                    rtol: tol,
-                    atol,
-                    n_roots: nrt as usize,
-                    config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
-                    work_retries: 0,
-                    banner: true,
-                })
-            }
-            "ida" => Solver::Ida(IdaState {
-                ida: None,
-                rtol: tol,
-                atol,
-                n_roots: nrt as usize,
-                work_retries: 0,
-                restarted: false,
-                setup: IdaSetup::new(model)?,
-                stop_time: model.stop_time,
-            }),
-            _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
-        };
-        #[cfg(not(sundials))]
-        let solver = Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol));
         let solver = if let Some(kind) = fixed_kind(method) {
             Solver::Fixed(crate::fixedstep::FixedStep::new(kind, n_states, layout.n_zc as usize))
         } else if let Some(kind) = sym_kind(method, layout) {
@@ -7670,7 +7642,33 @@ impl SolverCore {
             g.set_nominals(&nominals);
             Solver::Gbode(g)
         } else {
-            solver
+            #[cfg(sundials)]
+            match method {
+                "cvode" => {
+                    Solver::Cvode(CvodeState {
+                        cv: None,
+                        rtol: tol,
+                        atol,
+                        n_roots: nrt as usize,
+                        config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+                        work_retries: 0,
+                        banner: true,
+                    })
+                }
+                "ida" => Solver::Ida(IdaState {
+                    ida: None,
+                    rtol: tol,
+                    atol,
+                    n_roots: nrt as usize,
+                    work_retries: 0,
+                    restarted: false,
+                    setup: IdaSetup::new(model)?,
+                    stop_time: model.stop_time,
+                }),
+                _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
+            }
+            #[cfg(not(sundials))]
+            Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol))
         };
         Ok(SolverCore {
             sim_data,
