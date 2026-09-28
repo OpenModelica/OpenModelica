@@ -3122,16 +3122,13 @@ algorithm
     // cref and $START.cref
     case (DAE.CREF(componentRef=cr), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
       (varslst, p) := BackendVariable.getVar(cr, vars);
-      (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-
       pa := adjacencyRowExp1(varslst, p, pa, 0);
-      pa := adjacencyRowExp1(varslst, p2, pa, 0);
-    then (inExp, true, (vars, pa, visitedPaths, isInitial, ofunctionTree));
 
-    // only cref
-    case (DAE.CREF(componentRef=cr), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
-      (varslst, p) := BackendVariable.getVar(cr, vars);
-      pa := adjacencyRowExp1(varslst, p, pa, 0);
+      try
+        (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+        pa := adjacencyRowExp1(varslst, p2, pa, 0);
+      else
+      end try;
     then (inExp, true, (vars, pa, visitedPaths, isInitial, ofunctionTree));
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
@@ -3417,15 +3414,14 @@ algorithm
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
-        (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
         pa := listAppend(p, pa);
-        pa := listAppend(p2, pa);
-      then (inExp, true, (vars, pa, isInitial));
 
-    case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
-      algorithm
-        (_, p) := BackendVariable.getVar(cr, vars);
-      then (inExp, true, (vars, listAppend(p, pa), isInitial));
+        try
+          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+          pa := listAppend(p2, pa);
+        else
+        end try;
+      then (inExp, true, (vars, pa, isInitial));
 
     case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, e}), _)
       algorithm
@@ -3471,15 +3467,13 @@ algorithm
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
-        (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
         res := listAppend(p, pa);
-        res := listAppend(p2, res);
-      then (inExp, true, (vars, res, isInitial));
 
-    case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
-      algorithm
-        (_, p) := BackendVariable.getVar(cr, vars);
-        res := listAppend(p, pa);
+        try
+          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+          res := listAppend(p2, res);
+        else
+        end try;
       then (inExp, true, (vars, res, isInitial));
 
     case (DAE.CALL(path=Absyn.IDENT(name="subSample")), _)
@@ -3529,17 +3523,13 @@ algorithm
     case (e as DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (varslst, p) := BackendVariable.getVar(cr, vars);
-        (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-
         res := adjacencyRowExp1(varslst, p, pa, 0);
-        res := adjacencyRowExp1(varslst, p2, res, 0);
-      then (e, true, (vars, res, isInitial));
 
-    // only cref
-    case (e as DAE.CREF(componentRef = cr),(vars, pa, isInitial))
-      algorithm
-        (varslst,p) := BackendVariable.getVar(cr, vars);
-        res := adjacencyRowExp1(varslst,p,pa,0);
+        try
+          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+          res := adjacencyRowExp1(varslst, p2, res, 0);
+        else
+        end try;
       then (e, true, (vars, res, isInitial));
 
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
@@ -3696,21 +3686,17 @@ algorithm
         res := adjacencyRowExp1withInput(varslst,p,pa,0);
       then (inExp,false,(vars,res,isInitial));
 
-    // iteration var with start value
+    // iteration var, with its start value if it has one
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       algorithm
         (varslst, p) := BackendVariable.getVar(cr, vars);
         res := adjacencyRowExp1withInput(varslst, p, pa, 0);
 
-        (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-        res := adjacencyRowExp1withInput(varslst, p, res, 0);
-      then (inExp, true, (vars, res, isInitial));
-
-    // iteration var without start value
-    case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
-      algorithm
-        (varslst,p) := BackendVariable.getVar(cr, vars);
-        res := adjacencyRowExp1withInput(varslst,p,pa,0);
+        try
+          (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+          res := adjacencyRowExp1withInput(varslst, p, res, 0);
+        else
+        end try;
       then (inExp, true, (vars, res, isInitial));
 
     // state derivative (in backend)
