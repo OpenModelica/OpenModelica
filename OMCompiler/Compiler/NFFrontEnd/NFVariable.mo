@@ -349,26 +349,34 @@ public
 
   function isEncrypted
     input Variable variable;
-    output Boolean isEncrypted;
+    output Boolean isEncrypted = isEncryptedName(variable.name);
+  end isEncrypted;
+
+  function isEncryptedName
+    "Whether any part of the name is declared in an encrypted file."
+    input ComponentRef name;
+    output Boolean isEncrypted = false;
   protected
-    ComponentRef name;
-    SourceInfo info;
+    ComponentRef cr = name;
   algorithm
-    name := variable.name;
-
-    while ComponentRef.isCref(name) loop
-      info := InstNode.info(ComponentRef.node(name));
-
-      if StringUtil.endsWith(info.fileName, ".moc") then
+    while ComponentRef.isCref(cr) loop
+      if isEncryptedNode(ComponentRef.node(cr)) then
         isEncrypted := true;
         return;
       end if;
 
-      name := ComponentRef.rest(name);
+      cr := ComponentRef.rest(cr);
     end while;
+  end isEncryptedName;
 
-    isEncrypted := false;
-  end isEncrypted;
+  function isEncryptedNode
+    input InstNode node;
+    output Boolean isEncrypted;
+  protected
+    SourceInfo info = InstNode.info(node);
+  algorithm
+    isEncrypted := StringUtil.endsWith(info.fileName, ".moc");
+  end isEncryptedNode;
 
   function isAccessible
     input Variable variable;
