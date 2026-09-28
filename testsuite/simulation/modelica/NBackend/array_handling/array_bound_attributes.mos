@@ -57,18 +57,25 @@ val(k[2], 1.0);
 // LOG_INIT_V        | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real p(start=2, fixed=true) = 2
-// |                 | |       | | | [2] parameter Real n(start={1, 2, 3}, fixed=true) = 1
+// |                 | |       | | | [2] parameter Real n[1](start=1, fixed=true) = 1
+// |                 | |       | | | [3] parameter Real n[2](start=2, fixed=true) = 2
+// |                 | |       | | | [4] parameter Real n[3](start=3, fixed=true) = 3
 // |                 | |       | | integer parameters
 // |                 | |       | | | [1] parameter Integer q(start=4, fixed=true) = 4
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | states variables
-// |                 | |       | | | [1] Real x(start={1}, nominal={2, 4, 6}) = 1 (pre: 1)
-// |                 | |       | | | [2] Real y(start=1, nominal=20) = 1 (pre: 1)
+// |                 | |       | | | [1] Real x[1](start=1, nominal=2) = 1 (pre: 1)
+// |                 | |       | | | [2] Real x[2](start=1, nominal=4) = 1 (pre: 1)
+// |                 | |       | | | [3] Real x[3](start=1, nominal=6) = 1 (pre: 1)
+// |                 | |       | | | [4] Real y(start=1, nominal=20) = 1 (pre: 1)
 // |                 | |       | | derivatives variables
-// |                 | |       | | | [3] Real der(x) = 1 (pre: 1)
-// |                 | |       | | | [4] Real der(y) = 1 (pre: 1)
+// |                 | |       | | | [5] Real der(x)[1] = -1 (pre: 0)
+// |                 | |       | | | [6] Real der(x)[2] = -1 (pre: 0)
+// |                 | |       | | | [7] Real der(x)[3] = -1 (pre: 0)
+// |                 | |       | | | [8] Real der(y) = -1 (pre: 0)
 // |                 | |       | | integer variables
-// |                 | |       | | | [1] Integer k(start={0}) = 0 (pre: 0)
+// |                 | |       | | | [1] Integer k[1](start=0) = 0 (pre: 0)
+// |                 | |       | | | [2] Integer k[2](start=0) = 0 (pre: 0)
 // |                 | |       | | boolean variables
 // |                 | |       | | | [1] Boolean $TEV_0(start=false) = false (pre: false)
 // LOG_INIT          | info    | ### END INITIALIZATION ###

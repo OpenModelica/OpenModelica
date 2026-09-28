@@ -74,6 +74,43 @@
 
 int init_lambda_steps = 3;
 
+/**
+ * @brief Print the real variables with array index in [from, to), one line per
+ * scalar element.
+ *
+ * @param simData         Simulation data.
+ * @param from            First array index.
+ * @param to              Array index after the last one.
+ * @param withAttributes  Print the start and nominal attribute.
+ */
+static void dumpRealVars(DATA *simData, long from, long to, modelica_boolean withAttributes)
+{
+  const MODEL_DATA      *mData = simData->modelData;
+  const SIMULATION_INFO *sInfo = simData->simulationInfo;
+  char name[2048];
+  long i;
+  size_t k, idx;
+
+  for (i = from; i < to; ++i) {
+    STATIC_REAL_DATA *var = &mData->realVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->realVarsIndex[i] + k;
+      printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+      if (withAttributes) {
+        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Real %s(start=%g, nominal=%g) = %g (pre: %g)", idx+1, name,
+                        real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        real_get(var->attribute.nominal, attributeElementIndex(&var->attribute.nominal, k)),
+                        simData->localData[0]->realVars[idx],
+                        sInfo->realVarsPre[idx]);
+      } else {
+        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Real %s = %g (pre: %g)", idx+1, name,
+                        simData->localData[0]->realVars[idx],
+                        sInfo->realVarsPre[idx]);
+      }
+    }
+  }
+}
+
 /*! \fn void dumpInitializationStatus(DATA *data)
  *
  *  \param [in]  [data]
@@ -82,14 +119,13 @@ int init_lambda_steps = 3;
  */
 void dumpInitialSolution(DATA *simData)
 {
-  long i, j;
+  long i;
+  size_t k, idx;
 
   const MODEL_DATA      *mData = simData->modelData;
   const SIMULATION_INFO *sInfo = simData->simulationInfo;
 
-  const size_t buff_size = 2048;
-  char *start_buffer;
-  char *nominal_buffer;
+  char name[2048];
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_INIT_V))
     printParameters(simData, OMC_LOG_INIT_V);
@@ -98,56 +134,23 @@ void dumpInitialSolution(DATA *simData)
     return;
   }
 
-  start_buffer = (char*) malloc(buff_size * sizeof(char));
-  assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
-  nominal_buffer = (char*) malloc(buff_size * sizeof(char));
-  assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
-
   infoStreamPrint(OMC_LOG_SOTI, 1, "### SOLUTION OF THE INITIALIZATION ###");
 
   if (0 < mData->nStatesArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "states variables");
-    for(i=0; i<mData->nStatesArray; ++i) {
-      real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      real_vector_to_string(&mData->realVarsData[i].attribute.nominal, mData->realVarsData[i].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s(start=%s, nominal=%s) = %g (pre: %g)", i+1,
-                      mData->realVarsData[i].info.name,
-                      start_buffer,
-                      nominal_buffer,
-                      simData->localData[0]->realVars[i],
-                      sInfo->realVarsPre[i]);
-    }
-
+    dumpRealVars(simData, 0, mData->nStatesArray, TRUE);
     messageClose(OMC_LOG_SOTI);
-  }
 
-  if (0 < mData->nStatesArray)
-  {
     infoStreamPrint(OMC_LOG_SOTI, 1, "derivatives variables");
-    for(i=mData->nStatesArray; i<2*mData->nStatesArray; ++i)
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s = %g (pre: %g)", i+1,
-                                   mData->realVarsData[i].info.name,
-                                   simData->localData[0]->realVars[i],
-                                   sInfo->realVarsPre[i]);
+    dumpRealVars(simData, mData->nStatesArray, 2*mData->nStatesArray, FALSE);
     messageClose(OMC_LOG_SOTI);
   }
 
   if (2*mData->nStatesArray < mData->nVariablesRealArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "other real variables");
-    for(i=2*mData->nStatesArray; i<mData->nVariablesRealArray; ++i) {
-      real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      real_vector_to_string(&mData->realVarsData[i].attribute.nominal, mData->realVarsData[i].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
-
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s(start=%s, nominal=%s) = %g (pre: %g)", i+1,
-                      mData->realVarsData[i].info.name,
-                      start_buffer,
-                      nominal_buffer,
-                      simData->localData[0]->realVars[i],
-                      sInfo->realVarsPre[i]);
-    }
-
+    dumpRealVars(simData, 2*mData->nStatesArray, mData->nVariablesRealArray, TRUE);
     messageClose(OMC_LOG_SOTI);
   }
 
@@ -155,12 +158,15 @@ void dumpInitialSolution(DATA *simData)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "integer variables");
     for(i=0; i<mData->nVariablesIntegerArray; ++i) {
-      integer_vector_to_string(&mData->integerVarsData[i].attribute.start, mData->integerVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=%s) = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1,
-                      mData->integerVarsData[i].info.name,
-                      start_buffer,
-                      simData->localData[0]->integerVars[sInfo->integerVarsIndex[i]],
-                      sInfo->integerVarsPre[sInfo->integerVarsIndex[i]]);
+      STATIC_INTEGER_DATA *var = &mData->integerVarsData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->integerVarsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name,
+                        integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        simData->localData[0]->integerVars[idx],
+                        sInfo->integerVarsPre[idx]);
+      }
     }
     messageClose(OMC_LOG_SOTI);
   }
@@ -169,12 +175,15 @@ void dumpInitialSolution(DATA *simData)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "boolean variables");
     for(i=0; i<mData->nVariablesBooleanArray; ++i) {
-      boolean_vector_to_string(&mData->booleanVarsData[i].attribute.start, mData->booleanVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
-                      mData->booleanVarsData[i].info.name,
-                      start_buffer,
-                      simData->localData[0]->booleanVars[sInfo->booleanVarsIndex[i]] ? "true" : "false",
-                      sInfo->booleanVarsPre[sInfo->booleanVarsIndex[i]] ? "true" : "false");
+      STATIC_BOOLEAN_DATA *var = &mData->booleanVarsData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->booleanVarsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Boolean %s(start=%s) = %s (pre: %s)", idx+1, name,
+                        boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
+                        simData->localData[0]->booleanVars[idx] ? "true" : "false",
+                        sInfo->booleanVarsPre[idx] ? "true" : "false");
+      }
     }
     messageClose(OMC_LOG_SOTI);
   }
@@ -183,18 +192,19 @@ void dumpInitialSolution(DATA *simData)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "string variables");
     for(i=0; i<mData->nVariablesStringArray; ++i) {
-      string_vector_to_string(&mData->stringVarsData[i].attribute.start, mData->stringVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] String %s(start=%s) = \"%s\" (pre: \"%s\")", i+1,
-                      mData->stringVarsData[i].info.name,
-                      start_buffer,
-                      omc_string_data(simData->localData[0]->stringVars[sInfo->stringVarsIndex[i]]),
-                      omc_string_data(sInfo->stringVarsPre[sInfo->stringVarsIndex[i]]));
+      STATIC_STRING_DATA *var = &mData->stringVarsData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        modelica_string start = string_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k));
+        idx = sInfo->stringVarsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", idx+1, name,
+                        start ? omc_string_data(start) : "",
+                        omc_string_data(simData->localData[0]->stringVars[idx]),
+                        omc_string_data(sInfo->stringVarsPre[idx]));
+      }
     }
     messageClose(OMC_LOG_SOTI);
   }
-
-  free(start_buffer);
-  free(nominal_buffer);
 
   messageClose(OMC_LOG_SOTI);
 }
