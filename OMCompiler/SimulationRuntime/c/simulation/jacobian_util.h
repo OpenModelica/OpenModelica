@@ -50,6 +50,7 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned
 SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in, unsigned int nLeadOut, unsigned int nLeadIn, unsigned int** nzMap);
 SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac);
 void freeSparsePattern(SPARSE_PATTERN *spp);
+void printSparsePattern(const SPARSE_PATTERN* sp);
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols);
 void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);
