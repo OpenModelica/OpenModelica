@@ -18,7 +18,7 @@ use crate::abi::*;
 use crate::model_data::calloc;
 
 /// C's `SIZERINGBUFFER`.
-const RING: usize = 3;
+pub(crate) const RING: usize = 3;
 
 /// Bytes past `Layout::total` this runtime adds to the flat address space, for the
 /// slots the shared driver addresses as memory but the wasm layout keeps in the
@@ -220,6 +220,17 @@ impl RtData {
         (addr >= r.start).then(|| (r, addr - r.start))
     }
 
+    /// Where the part of `[addr, end)` that one backing serves ends: a span may
+    /// run across regions (an FMU state is the whole layout).
+    fn piece_end(&self, addr: u32, end: u32) -> u32 {
+        let ix = self.regions.partition_point(|r| r.end <= addr);
+        match self.regions.get(ix) {
+            Some(r) if addr >= r.start => end.min(r.end),
+            Some(r) => end.min(r.start),
+            None => end,
+        }
+    }
+
     /// The native bytes behind `[addr, addr + len)` when they are stored as the
     /// layout has them, in one piece.
     fn span(&mut self, addr: u32, len: usize) -> Option<*mut u8> {
@@ -262,6 +273,13 @@ impl RtData {
             };
             return Ok(());
         }
+        let end = addr + buf.len() as u32;
+        let cut = self.piece_end(addr, end);
+        if cut < end {
+            let (head, tail) = buf.split_at_mut((cut - addr) as usize);
+            self.read(addr, head)?;
+            return self.read(cut, tail);
+        }
         match self.find(addr) {
             None => {
                 let end = addr as usize + buf.len();
@@ -271,9 +289,6 @@ impl RtData {
             }
             Some((r, off)) => match r.backing {
                 Backing::Direct(base) => {
-                    if addr as usize + buf.len() > r.end as usize {
-                        return Err("SimData read crosses a region boundary");
-                    }
                     unsafe {
                         core::ptr::copy_nonoverlapping(base.add(off as usize), buf.as_mut_ptr(), buf.len())
                     };
@@ -339,7 +354,14 @@ impl RtData {
             };
             return Ok(());
         }
-        let found = self.find(addr).map(|(r, off)| (r.backing, r.end, off));
+        let end = addr + buf.len() as u32;
+        let cut = self.piece_end(addr, end);
+        if cut < end {
+            let (head, tail) = buf.split_at((cut - addr) as usize);
+            self.write(addr, head)?;
+            return self.write(cut, tail);
+        }
+        let found = self.find(addr).map(|(r, off)| (r.backing, off));
         match found {
             None => {
                 let end = addr as usize + buf.len();
@@ -347,11 +369,8 @@ impl RtData {
                 dst.copy_from_slice(buf);
                 Ok(())
             }
-            Some((backing, region_end, off)) => match backing {
+            Some((backing, off)) => match backing {
                 Backing::Direct(base) => {
-                    if addr as usize + buf.len() > region_end as usize {
-                        return Err("SimData write crosses a region boundary");
-                    }
                     unsafe {
                         core::ptr::copy_nonoverlapping(buf.as_ptr(), base.add(off as usize), buf.len())
                     };
@@ -555,7 +574,7 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
 
     si.baseClocks = if md.nBaseClocks > 0 { calloc(md.nBaseClocks as usize) } else { core::ptr::null_mut() };
     si.intvlTimers = core::ptr::null_mut();
-    // The operators live in `crate::spatial`; nothing reads C's own struct.
+    // A `crate::spatial` state, allocated by `functionInitSpatialDistribution`.
     si.spatialDistributionData = core::ptr::null_mut();
 
     // The defaults `initializeDataStruc` installs; the command line may replace
@@ -697,6 +716,250 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     openmodelica_sim_meta::simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
 }
 
+#[cfg(feature = "fmi")]
+fn free<T>(p: &mut *mut T) {
+    unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+}
+
+#[cfg(feature = "fmi")]
+unsafe extern "C" {
+    fn omc_rc_release(obj: *mut c_void);
+    fn omc_array_release(a: *mut base_array_t);
+    fn omc_string_array_release(a: *mut base_array_t);
+}
+
+#[cfg(feature = "fmi")]
+fn free_string_roots(p: &mut *mut modelica_string, n: c_long) {
+    let q = core::mem::replace(p, core::ptr::null_mut());
+    if !q.is_null() {
+        unsafe {
+            crate::model_data::string_slots_release(q, n.max(0) as usize);
+            omc_alloc_interface.free_uncollectable.expect("omc_alloc_interface")(q as *mut c_void);
+        }
+    }
+}
+
+#[cfg(feature = "fmi")]
+fn release_string(s: &mut modelica_string) {
+    unsafe { omc_rc_release(core::mem::replace(s, core::ptr::null_mut())) };
+}
+
+#[cfg(feature = "fmi")]
+fn each<T>(p: *mut T, n: c_long, mut f: impl FnMut(&mut T)) {
+    if !p.is_null() {
+        for i in 0..n.max(0) as usize {
+            f(unsafe { &mut *p.add(i) });
+        }
+    }
+}
+
+#[cfg(feature = "fmi")]
+/// C's `freeModelDataVarArrays` up to the blocks themselves: the refcounted
+/// attribute arrays and unit strings that hang off them.
+fn release_var_attributes(md: &mut MODEL_DATA) {
+    let real = |v: &mut STATIC_REAL_DATA| unsafe {
+        let a = &mut v.attribute;
+        omc_array_release(&mut a.start);
+        omc_array_release(&mut a.min);
+        omc_array_release(&mut a.max);
+        omc_array_release(&mut a.nominal);
+        release_string(&mut a.unit);
+        release_string(&mut a.displayUnit);
+    };
+    each(md.realVarsData, md.nVariablesRealArray, real);
+    each(md.realParameterData, md.nParametersRealArray, real);
+    each(md.realSensitivityData, md.nSensitivityVars, real);
+    let integer = |v: &mut STATIC_INTEGER_DATA| unsafe {
+        omc_array_release(&mut v.attribute.start);
+        omc_array_release(&mut v.attribute.min);
+        omc_array_release(&mut v.attribute.max);
+    };
+    each(md.integerVarsData, md.nVariablesIntegerArray, integer);
+    each(md.integerParameterData, md.nParametersIntegerArray, integer);
+    let boolean = |v: &mut STATIC_BOOLEAN_DATA| unsafe { omc_array_release(&mut v.attribute.start) };
+    each(md.booleanVarsData, md.nVariablesBooleanArray, boolean);
+    each(md.booleanParameterData, md.nParametersBooleanArray, boolean);
+    let string = |v: &mut STATIC_STRING_DATA| unsafe { omc_string_array_release(&mut v.attribute.start) };
+    each(md.stringVarsData, md.nVariablesStringArray, string);
+    each(md.stringParameterData, md.nParametersStringArray, string);
+    let alias = |a: &mut DATA_ALIAS| {
+        release_string(&mut a.unit);
+        release_string(&mut a.displayUnit);
+    };
+    each(md.realAlias, md.nAliasRealArray, alias);
+    each(md.integerAlias, md.nAliasIntegerArray, alias);
+    each(md.booleanAlias, md.nAliasBooleanArray, alias);
+    each(md.stringAlias, md.nAliasStringArray, alias);
+}
+
+#[cfg(feature = "fmi")]
+/// C's `freeJacobian`, for what `initJacobian` and the model's `initialAnalyticJacobian*`
+/// allocated.
+fn free_jacobian(j: &mut JACOBIAN) {
+    free(&mut j.seedVars);
+    free(&mut j.tmpVars);
+    free(&mut j.resultVars);
+    crate::support::freeSparsePattern(core::mem::replace(&mut j.sparsePattern, core::ptr::null_mut()));
+    j.adjointJacobian = core::ptr::null_mut();
+    j.availability = JACOBIAN_UNKNOWN;
+}
+
+#[cfg(feature = "fmi")]
+/// What [`initialize_data_struc`] allocated, the Jacobians and `DATA`'s own blocks
+/// included.
+pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
+    let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
+    let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
+
+    let local = unsafe { (*data).localData };
+    if !local.is_null() {
+        for i in 0..RING {
+            let mut sd = unsafe { *local.add(i) };
+            if sd.is_null() {
+                continue;
+            }
+            unsafe {
+                free(&mut (*sd).realVars);
+                free(&mut (*sd).integerVars);
+                free(&mut (*sd).booleanVars);
+                free_string_roots(&mut (*sd).stringVars, md.nVariablesString);
+            }
+            free(&mut sd);
+        }
+        unsafe { free(&mut (*data).localData) };
+    }
+
+    crate::sync::free(data);
+    crate::operators::free(data);
+    crate::spatial::free(data);
+    free(&mut md.samplesInfo);
+    free(&mut si.nextSampleTimes);
+    free(&mut si.samples);
+    free(&mut si.baseClocks);
+    for p in [
+        &mut si.zeroCrossings,
+        &mut si.zeroCrossingsPre,
+        &mut si.zeroCrossingsBackup,
+        &mut si.states_left,
+        &mut si.states_right,
+        &mut si.realVarsOld,
+        &mut si.realVarsPre,
+        &mut si.realParameter,
+        &mut si.inputVars,
+        &mut si.outputVars,
+        &mut si.setcVars,
+        &mut si.datainputVars,
+        &mut si.setbVars,
+    ] {
+        free(p);
+    }
+    free(&mut si.relations);
+    free(&mut si.relationsPre);
+    free(&mut si.storedRelations);
+    free(&mut si.mathEventsValuePre);
+    free(&mut si.zeroCrossingIndex);
+    free(&mut si.integerVarsOld);
+    free(&mut si.booleanVarsOld);
+    free(&mut si.integerVarsPre);
+    free(&mut si.booleanVarsPre);
+    free(&mut si.integerParameter);
+    free(&mut si.booleanParameter);
+    free_string_roots(&mut si.stringVarsOld, md.nVariablesString);
+    free_string_roots(&mut si.stringVarsPre, md.nVariablesString);
+    free_string_roots(&mut si.stringParameter, md.nParametersString);
+
+    crate::systems::free_linear_systems(data);
+    crate::nls::free_nonlinear_systems(data);
+    crate::mixed::free_mixed_systems(data);
+    free(&mut si.mixedSystemData);
+    free(&mut si.linearSystemData);
+    free(&mut si.nonlinearSystemData);
+    free(&mut si.stateSetData);
+    free(&mut si.daeModeData);
+    if !si.inlineData.is_null() {
+        unsafe {
+            free(&mut (*si.inlineData).algVars);
+            free(&mut (*si.inlineData).algOldVars);
+        }
+        free(&mut si.inlineData);
+    }
+    if !si.analyticJacobians.is_null() {
+        for i in 0..(md.nJacobians as usize).max(1) {
+            free_jacobian(unsafe { &mut *si.analyticJacobians.add(i) });
+        }
+        free(&mut si.analyticJacobians);
+    }
+    free(&mut si.extObjs);
+    free(&mut si.chatteringInfo.lastTimes);
+
+    for p in [
+        &mut si.realVarsIndex,
+        &mut si.integerVarsIndex,
+        &mut si.booleanVarsIndex,
+        &mut si.stringVarsIndex,
+        &mut si.realParamsIndex,
+        &mut si.integerParamsIndex,
+        &mut si.booleanParamsIndex,
+        &mut si.stringParamsIndex,
+        &mut si.realAliasIndex,
+        &mut si.integerAliasIndex,
+        &mut si.booleanAliasIndex,
+        &mut si.stringAliasIndex,
+    ] {
+        free(p);
+    }
+    for p in [
+        &mut si.realAliasReverseIndex,
+        &mut si.integerAliasReverseIndex,
+        &mut si.booleanAliasReverseIndex,
+        &mut si.stringAliasReverseIndex,
+    ] {
+        free(p);
+    }
+    // The generated `read_simulation_info` and `setupDataStruc`'s `GC_strdup`s.
+    for p in [&mut si.solverMethod, &mut si.outputFormat, &mut si.variableFilter, &mut si.OPENMODELICAHOME] {
+        unsafe { omc_rc_release(core::mem::replace(p, core::ptr::null()) as *mut c_void) };
+    }
+    unsafe { omc_rc_release(core::mem::replace(&mut md.modelDataXml.fileName, core::ptr::null()) as *mut c_void) };
+    for p in [
+        &mut si.realVarsReverseIndex,
+        &mut si.integerVarsReverseIndex,
+        &mut si.booleanVarsReverseIndex,
+        &mut si.stringVarsReverseIndex,
+        &mut si.realParamsReverseIndex,
+        &mut si.integerParamsReverseIndex,
+        &mut si.booleanParamsReverseIndex,
+        &mut si.stringParamsReverseIndex,
+    ] {
+        free(p);
+    }
+
+    release_var_attributes(md);
+    free(&mut md.realVarsData);
+    free(&mut md.integerVarsData);
+    free(&mut md.booleanVarsData);
+    free(&mut md.stringVarsData);
+    free(&mut md.realParameterData);
+    free(&mut md.integerParameterData);
+    free(&mut md.booleanParameterData);
+    free(&mut md.stringParameterData);
+    free(&mut md.realSensitivityData);
+    free(&mut md.realAlias);
+    free(&mut md.integerAlias);
+    free(&mut md.booleanAlias);
+    free(&mut md.stringAlias);
+    free(&mut md.resourcesDir);
+
+    unsafe {
+        free(&mut (*data).simulationInfo);
+        free(&mut (*data).modelData);
+    }
+    let mut d = data;
+    free(&mut d);
+    let mut td = thread_data;
+    free(&mut td);
+}
+
 /// The systems' own allocation, once `analyticJacobians` exists for a torn
 /// system's Jacobian to be initialized into. C's `initializeLinearSystems` and
 /// friends, which an FMU calls one by one.
@@ -720,7 +983,7 @@ pub fn build_rt(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     // Before the layout: only the model knows how many sub-clocks a base clock has,
     // and the flat sub-clock region is sized from the total.
     crate::sync::init_clocks(data, thread_data);
-    crate::sync::mark_fresh();
+    crate::sync::mark_fresh(data);
     crate::optimization::initialize(data, thread_data);
 
     let layout = layout_for(data, md, si, cb);
@@ -952,7 +1215,7 @@ pub fn build_regions(rt: &mut RtData) {
     for (off, bytes, base) in crate::stateset::regions(rt.data, &l) {
         direct(off, bytes, base);
     }
-    direct(l.clock_fire_off, l.n_base_clocks * 4, crate::sync::fire_flags(md) as *mut c_void);
+    direct(l.clock_fire_off, l.n_base_clocks * 4, crate::sync::fire_flags(rt.data) as *mut c_void);
     if l.sym_solver > 0 {
         direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64 as *mut c_void);
         direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars } as *mut c_void);

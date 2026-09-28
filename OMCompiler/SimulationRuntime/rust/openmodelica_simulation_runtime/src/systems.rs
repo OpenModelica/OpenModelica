@@ -55,9 +55,33 @@ fn klu_data(ls: &LINEAR_SYSTEM_DATA) -> *mut KluData {
     ls.solverData[0] as *mut KluData
 }
 
+#[cfg(feature = "fmi")]
 /// C's `initializeLinearSystems`: allocate each system's `A`/`b`/attribute
 /// arrays, install the element setters the generated `setA`/`setb` call, and let
 /// the model fill in its static data.
+/// What [`initialize_linear_systems`] allocated per system.
+pub fn free_linear_systems(data: *mut DATA) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    if si.linearSystemData.is_null() {
+        return;
+    }
+    for i in 0..md.nLinearSystems.max(0) as usize {
+        let ls = unsafe { &mut *si.linearSystemData.add(i) };
+        for p in [&mut ls.b, &mut ls.nominal, &mut ls.min, &mut ls.max, &mut ls.A] {
+            unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+        }
+        let scratch = core::mem::replace(&mut ls.solverData[0], core::ptr::null_mut());
+        if !scratch.is_null() {
+            if ls.useSparseSolver != 0 {
+                drop(unsafe { Box::from_raw(scratch as *mut KluData) });
+            } else {
+                drop(unsafe { Box::from_raw(scratch as *mut LapackData) });
+            }
+        }
+    }
+}
+
 pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };

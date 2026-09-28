@@ -202,11 +202,40 @@ unsafe extern "C" {
     );
 }
 
+#[cfg(unix)]
+unsafe extern "C" {
+    static mmc_thread_data_key: libc::pthread_key_t;
+}
+
+/// C's `pthread_getspecific(mmc_thread_data_key)` fallback, for the runtime's own
+/// `omc_assert(NULL, ...)` calls.
+#[unsafe(no_mangle)]
+pub extern "C" fn omr_thread_data() -> *mut threadData_t {
+    let td = crate::parmod::current_thread_data();
+    #[cfg(unix)]
+    if td.is_null() {
+        return unsafe { libc::pthread_getspecific(mmc_thread_data_key) as *mut threadData_t };
+    }
+    td
+}
+
+/// Where an FMU reports `omc_assert` (`error`) and `omc_assert_warning`, as C's
+/// `omc_assert_fmi` does: `passed_thread_data` is whether the caller had one.
+pub type FmuAssertReport = fn(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: bool);
+
+static mut FMU_ASSERT_REPORT: Option<FmuAssertReport> = None;
+
+#[cfg(feature = "fmi")]
+pub fn set_fmu_assert_report(f: FmuAssertReport) {
+    unsafe { FMU_ASSERT_REPORT = Some(f) };
+}
+
 /// C's `va_omc_assert_simulation_withEquationIndexes`, less the formatting the
 /// shim already did: report, and say which jump buffer the error stage takes.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_report(
     threadData: *mut threadData_t,
+    passed_thread_data: c_int,
     info: *const FILE_INFO,
     text: *const c_char,
 ) -> c_int {
@@ -221,8 +250,10 @@ pub extern "C" fn omr_assert_report(
         error_stage::INTEGRATOR => !omclog::active(omclog::SOLVER),
         _ => false,
     };
-    if !quiet {
-        omclog::error(omclog::ASSERT, false, &with_position(&info, &text));
+    match unsafe { FMU_ASSERT_REPORT } {
+        Some(report) => report(true, &info, &text, passed_thread_data != 0),
+        None if !quiet => omclog::error(omclog::ASSERT, false, &with_position(&info, &text)),
+        None => {}
     }
     match stage {
         error_stage::EVENTHANDLING | error_stage::OPTIMIZE => jump::GLOBAL,
@@ -233,6 +264,10 @@ pub extern "C" fn omr_assert_report(
 /// C's `va_omc_assert_warning_simulation`, likewise already formatted.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_warning_report(info: *const FILE_INFO, text: *const c_char) {
+    if let Some(report) = unsafe { FMU_ASSERT_REPORT } {
+        report(false, unsafe { &*info }, &cstr(text), true);
+        return;
+    }
     let text = with_position(unsafe { &*info }, &cstr(text));
     omclog::warning(omclog::ASSERT, false, &text);
 }
@@ -573,6 +608,12 @@ impl Drop for QuietSystem {
             publish_log_streams();
         }
     }
+}
+
+/// C's `omc_useStream[OMC_LOG_ASSERT]`, which the generated code's held-assert
+/// note is printed under.
+pub fn set_c_assert_stream(on: bool) {
+    unsafe { omc_useStream[openmodelica_sim_meta::omclog::ASSERT as usize] = on as c_int };
 }
 
 pub fn publish_log_streams() {

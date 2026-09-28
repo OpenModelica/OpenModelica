@@ -2316,6 +2316,18 @@ pub fn note_no_throw_assert() -> bool {
     }
 }
 
+static ASSERT_QUIET: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// C's FMU `holdAsserts`: a violation already held in this stretch is not logged
+/// again. The engines that print the held assert themselves read it.
+pub fn set_assert_quiet(quiet: bool) {
+    ASSERT_QUIET.store(quiet, core::sync::atomic::Ordering::Relaxed);
+}
+
+pub fn assert_quiet() -> bool {
+    ASSERT_QUIET.load(core::sync::atomic::Ordering::Relaxed)
+}
+
 /// Enter C's `noThrowAsserts` phase: a failed `assert()` is recorded, not thrown.
 /// Idempotent, so a chunk that yields mid-step just re-enters it.
 pub fn open_assert_window() {
@@ -4354,6 +4366,18 @@ pub struct Samples {
 }
 
 impl Samples {
+    /// The next firing time of every sample, which the model's memory does not
+    /// hold.
+    pub fn next_times(&self) -> &[f64] {
+        &self.next
+    }
+
+    pub fn set_next_times(&mut self, next: &[f64]) {
+        if next.len() == self.next.len() {
+            self.next.copy_from_slice(next);
+        }
+    }
+
     /// Read the start/interval pairs `initSample` wrote into the sample region.
     pub fn load(
         e: &dyn SimEngine,
@@ -8946,6 +8970,38 @@ impl SolverCore {
     }
 }
 
+/// The sample and clock schedule outside the model's memory, as flat words: the
+/// next firing time of each sample, then the clock timers, each list led by its
+/// length. An FMU state carries it, since `SimData` alone would fire a sample
+/// again that already fired at the saved time.
+pub fn schedule_words(samp: Option<&Samples>, sync: Option<&crate::sync::Sync>) -> Vec<f64> {
+    let next = samp.map_or(&[][..], |s| s.next_times());
+    let timers = sync.map(|s| s.timer_words()).unwrap_or_default();
+    let mut w = Vec::with_capacity(2 + next.len() + timers.len());
+    w.push(next.len() as f64);
+    w.extend_from_slice(next);
+    w.push(timers.len() as f64);
+    w.extend(timers);
+    w
+}
+
+/// [`schedule_words`]' inverse; `false` for words it did not lay out.
+pub fn set_schedule_words(samp: Option<&mut Samples>, sync: Option<&mut crate::sync::Sync>, w: &[f64]) -> bool {
+    let Some(&n) = w.first() else { return false };
+    let n = n as usize;
+    let Some(next) = w.get(1..1 + n) else { return false };
+    let Some(&m) = w.get(1 + n) else { return false };
+    let m = m as usize;
+    let Some(timers) = w.get(2 + n..2 + n + m) else { return false };
+    if let Some(s) = samp {
+        s.set_next_times(next);
+    }
+    if let Some(s) = sync {
+        s.set_timer_words(timers);
+    }
+    true
+}
+
 /// Co-Simulation: the FMU owns the integration, the importer picks the
 /// communication points. Unlike [`EventsDriver`] there is no output grid and no
 /// rows. [`step_to`](CsDriver::step_to) takes a [`CsDefer`] saying which events it
@@ -9089,6 +9145,20 @@ impl CsDriver {
     /// The time reached so far (FMI's `last-successful-time`).
     pub fn time(&self) -> f64 {
         self.core.t
+    }
+
+    /// The clock schedule, for a driver rebuilt over a restored state.
+    pub fn into_sync(self) -> crate::sync::Sync {
+        self.sync
+    }
+
+    /// The time events still to come, as [`schedule_words`] lays them out.
+    pub fn schedule_words(&self) -> Vec<f64> {
+        schedule_words(Some(&self.samp), Some(&self.sync))
+    }
+
+    pub fn set_schedule_words(&mut self, w: &[f64]) -> bool {
+        set_schedule_words(Some(&mut self.samp), Some(&mut self.sync), w)
     }
 
     /// A sample or clock is due at `time`: the event the master stopped on is a time event.

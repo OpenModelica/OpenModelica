@@ -347,16 +347,42 @@ if(OMC_RUST_SIMULATION_RUNTIME)
     else()
       set(OM_RUST_SIM_RUNTIME_ARCHIVE "libSimulationRuntimeRust.a")
     endif()
+    set(OM_RUST_CARGO_ENV OMC_SIMRT_FMI=1)
     if(CMAKE_CROSSCOMPILING AND OM_RUST_TARGET_TRIPLE)
       list(APPEND OM_RUST_CARGO_FLAGS --target ${OM_RUST_TARGET_TRIPLE})
       set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/${OM_RUST_TARGET_TRIPLE}/release/${OM_RUST_SIM_RUNTIME_ARCHIVE}")
+      # cargo has no toolchain of its own for the target: the build scripts' C
+      # (cc-rs) and the crates' cdylibs use the one this build cross-compiles with.
+      string(REPLACE "-" "_" _om_rust_triple "${OM_RUST_TARGET_TRIPLE}")
+      string(TOUPPER "${_om_rust_triple}" _om_rust_triple_upper)
+      set(_om_rust_cflags "${CMAKE_C_FLAGS}")
+      if(CMAKE_C_COMPILER_TARGET)
+        string(APPEND _om_rust_cflags " --target=${CMAKE_C_COMPILER_TARGET}")
+      endif()
+      list(APPEND OM_RUST_CARGO_ENV
+           "CC_${_om_rust_triple}=${CMAKE_C_COMPILER}"
+           "CFLAGS_${_om_rust_triple}=${_om_rust_cflags}"
+           "AR_${_om_rust_triple}=${CMAKE_AR}")
+      if(MSVC)
+        find_program(OM_RUST_LINKER NAMES lld-link link HINTS "${CMAKE_LINKER}")
+      else()
+        set(OM_RUST_LINKER "${CMAKE_C_COMPILER}")
+      endif()
+      set(_om_rust_link_args "")
+      separate_arguments(_om_rust_link_flags NATIVE_COMMAND "${CMAKE_SHARED_LINKER_FLAGS}")
+      foreach(_om_rust_link_flag ${_om_rust_link_flags})
+        string(APPEND _om_rust_link_args " -Clink-arg=${_om_rust_link_flag}")
+      endforeach()
+      list(APPEND OM_RUST_CARGO_ENV
+           "CARGO_TARGET_${_om_rust_triple_upper}_LINKER=${OM_RUST_LINKER}"
+           "CARGO_TARGET_${_om_rust_triple_upper}_RUSTFLAGS=${_om_rust_link_args}")
     else()
       set(RUST_SIM_RUNTIME_LIBRARY "${OM_RUST_TARGET_DIR}/release/${OM_RUST_SIM_RUNTIME_ARCHIVE}")
     endif()
     # Only the archive: the crate's cdylib cannot link on Windows without the C half.
-    add_custom_command(
-      OUTPUT "${RUST_SIM_RUNTIME_LIBRARY}"
-      COMMAND ${CMAKE_COMMAND} -E env OMC_SIMRT_FMI=1
+    # Always run: cargo knows what changed, and a rebuild after nothing did is quick.
+    add_custom_target(om_rust_simulation_runtime
+      COMMAND ${CMAKE_COMMAND} -E env ${OM_RUST_CARGO_ENV}
               ${CARGO_EXECUTABLE} rustc --release -p openmodelica_simulation_runtime --lib
               --crate-type staticlib
               --manifest-path "${OM_RUST_MANIFEST}"
@@ -364,9 +390,9 @@ if(OMC_RUST_SIMULATION_RUNTIME)
       # cargo finds .cargo/config.toml by walking up from here, and
       # --fmiSources=full puts one beside the crates pointing at vendor/.
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/rust"
+      BYPRODUCTS "${RUST_SIM_RUNTIME_LIBRARY}"
       COMMENT "Rust: building the FMU's simulation runtime"
       VERBATIM)
-    add_custom_target(om_rust_simulation_runtime DEPENDS "${RUST_SIM_RUNTIME_LIBRARY}")
     add_dependencies(${FMU_NAME_HASH} om_rust_simulation_runtime)
   endif()
 

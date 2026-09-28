@@ -82,6 +82,9 @@ void omr_jump(void *threadData, int where) {
    * after its frame is gone. */
   void *ext = omc_external_jump_buffer(threadData);
   if (ext) buf = ext;
+  /* The stage's own buffer may not be set up yet, as while an FMU instantiates. */
+  if (!buf) buf = TD_PTR(threadData, omr_td_off_global_jumper);
+  if (!buf) buf = TD_PTR(threadData, omr_td_off_mmc_jumper);
   if (!buf) {
     omr_fatal("an assertion fired with no jump buffer installed");
     abort();
@@ -109,20 +112,25 @@ static char *omr_vformat(const char *msg, va_list ap) {
 /* Call `f(data, threadData)` with `threadData`'s simulation jump buffer pointed
  * here, so an assertion inside the model returns control rather than unwinding
  * through Rust. Returns what `f` returned, or -1 if the jump was taken.
+ * The global buffer too, unless a caller set one: an FMU has no
+ * `omr_protected_global` frame for an event-handling error to end in.
  */
 int omr_protected_call(int (*f)(void *, void *), void *data, void *threadData, int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     rc = f(data, threadData);
   } else {
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -132,16 +140,19 @@ int omr_protected_call1(int (*f)(void *, void *, long), void *data, void *thread
                         int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     rc = f(data, threadData, arg);
   } else {
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -151,16 +162,19 @@ int omr_protected_call_zc(int (*f)(void *, void *, double *), void *data, void *
                           double *gout, int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     rc = f(data, threadData, gout);
   } else {
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -174,16 +188,19 @@ int omr_protected_residual(void (*f)(void *, const double *, double *, const int
                            int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc = 0;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     f(user, x, r, flag);
   } else {
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -195,16 +212,19 @@ int omr_protected_residual(void (*f)(void *, const double *, double *, const int
 int omr_protected_call_data(void (*f)(void *), void *data, void *threadData, int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc = 0;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     f(data);
   } else {
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -216,10 +236,12 @@ int omr_protected_residual_con(int (*f)(void *, const double *, double *, const 
                                int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc = 0;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     rc = f(user, x, r, flag);
     if (rc == -1) {
@@ -229,6 +251,7 @@ int omr_protected_residual_con(int (*f)(void *, const double *, double *, const 
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -241,16 +264,19 @@ int omr_protected_residual_con(int (*f)(void *, const double *, double *, const 
 int omr_protected(void (*thunk)(void *), void *ctx, void *threadData, int stage) {
   jmp_buf buf;
   void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
   int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
   int rc = 0;
   if (setjmp(buf) == 0) {
     TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
     TD_INT(threadData, omr_td_off_error_stage) = stage;
     thunk(ctx);
   } else {
     rc = -1;
   }
   TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
@@ -298,7 +324,7 @@ void omr_file_info_layout(size_t *out) {
 }
 
 /* Rust: report the message, and -- for an assertion -- which buffer to jump to. */
-extern int omr_assert_report(void *threadData, const omr_file_info *info, const char *text);
+extern int omr_assert_report(void *threadData, int passed_thread_data, const omr_file_info *info, const char *text);
 extern void omr_assert_warning_report(const omr_file_info *info, const char *text);
 extern void omr_terminate_report(const omr_file_info *info, const char *text);
 
@@ -316,11 +342,15 @@ extern void omr_terminate_report(const omr_file_info *info, const char *text);
 #define OMR_ENTRY(name) omc_##name
 #endif
 
+/* Rust: the calling thread's threadData, for a caller that passed none. */
+extern void *omr_thread_data(void);
+
 static void omr_va_assert(void *threadData, const omr_file_info *info, const char *msg, va_list ap) {
+  void *td = threadData ? threadData : omr_thread_data();
   char *text = omr_vformat(msg, ap);
-  int target = omr_assert_report(threadData, info, text ? text : msg);
+  int target = omr_assert_report(td, threadData != NULL, info, text ? text : msg);
   free(text);
-  omr_jump(threadData, target);
+  omr_jump(td, target);
 }
 
 static void omr_va_assert_warning(const omr_file_info *info, const char *msg, va_list ap) {

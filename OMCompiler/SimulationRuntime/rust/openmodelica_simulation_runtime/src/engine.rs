@@ -7,6 +7,7 @@
 use core::ffi::{c_char, c_int, c_long};
 
 use openmodelica_sim_meta::driver::{self, AssertHold, Result, SimEngine};
+use openmodelica_sim_meta::omclog;
 
 use crate::abi::*;
 use crate::data::RtData;
@@ -86,6 +87,22 @@ impl CEngine {
         CEngine { rt, stage: error_stage::SIMULATION, keep_params: false }
     }
 
+    /// The `modelica_string` behind a string slot (`str_off`/`sparam_off` region).
+    fn string_slot(&self, addr: u32) -> Result<*mut modelica_string> {
+        let l = &self.rt.layout;
+        let md = unsafe { &*(*self.rt.data).modelData };
+        let (base, count, arr) = if addr >= l.sparam_off {
+            (l.sparam_off, md.nParametersString, unsafe { (*(*self.rt.data).simulationInfo).stringParameter })
+        } else {
+            (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
+        };
+        let i = ((addr - base) / 4) as c_long;
+        if i >= count || arr.is_null() {
+            return Err("string slot out of range");
+        }
+        Ok(unsafe { arr.add(i as usize) })
+    }
+
     /// Flat address of the driver's `[stage, hit]` pair.
     fn err_off(&self) -> u32 {
         self.rt.layout.total + crate::data::ERR_STAGE_OFF
@@ -134,6 +151,9 @@ impl CEngine {
         };
         let si = self.rt.info();
         si.noThrowAsserts = (driver::assert_hold() != AssertHold::Throw) as modelica_boolean;
+        crate::support::set_c_assert_stream(
+            omclog::active(omclog::ASSERT) && !(si.noThrowAsserts != 0 && driver::assert_quiet()),
+        );
         // 0 held, 1 event, 2 initialization -- C reaches the held branch through
         // `discreteCall == 0 || solveContinuous`, and the fresh one through neither.
         si.discreteCall = if mode == 0 { 0 } else { 1 };
@@ -282,6 +302,14 @@ impl SimEngine for CEngine {
                 self.store_pre_values();
                 Ok(())
             }
+            // What the FMI getters evaluate: C's `updateIfNeeded` after `functionODE`.
+            "functionOutputs" => {
+                self.rt.info().callStatistics.functionAlgebraics += 1;
+                self.call_cb(cb.functionAlgebraics)?;
+                self.call_cb(cb.output_function)?;
+                self.store_pre_values();
+                Ok(())
+            }
             "functionDAE" => {
                 self.rt.info().callStatistics.updateDiscreteSystem += 1;
                 self.call_cb(cb.functionDAE)
@@ -315,7 +343,7 @@ impl SimEngine for CEngine {
             // fills; the driver calls this on every initialization attempt, so the
             // allocation belongs with it.
             "functionInitSpatialDistribution" => {
-                crate::spatial::init(self.rt.model().nSpatialDistributions as usize);
+                crate::spatial::init(self.rt.data, self.rt.model().nSpatialDistributions as usize);
                 self.call_cb(cb.function_initSpatialDistribution)
             }
             "functionZeroCrossingsEquations" => {
@@ -333,7 +361,7 @@ impl SimEngine for CEngine {
             // already ran it once. A real call moves `baseClocks`, so the region
             // map is re-pointed after it.
             "functionInitSynchronous" => {
-                if crate::sync::take_fresh() {
+                if crate::sync::take_fresh(self.rt.data) {
                     return Ok(());
                 }
                 self.publish();
@@ -379,7 +407,7 @@ impl SimEngine for CEngine {
             "functionInitDelay" => {
                 let md = self.rt.model();
                 let start = self.rt.info().startTime;
-                crate::operators::init(md.nDelayExpressions as usize, start);
+                crate::operators::init(self.rt.data, md.nDelayExpressions as usize, start);
                 Ok(())
             }
             // C's `analyticJacobians[INDEX_JAC_A]` column evaluation; the driver
@@ -559,18 +587,13 @@ impl SimEngine for CEngine {
     /// The string slots are opaque to the region map (a `modelica_string` is a
     /// pointer here); the value is read from the array C keeps it in.
     fn string_at(&self, addr: u32) -> Result<String> {
-        let l = &self.rt.layout;
-        let md = unsafe { &*(*self.rt.data).modelData };
-        let (base, count, arr) = if addr >= l.sparam_off {
-            (l.sparam_off, md.nParametersString, unsafe { (*(*self.rt.data).simulationInfo).stringParameter })
-        } else {
-            (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
-        };
-        let i = ((addr - base) / 4) as c_long;
-        if i >= count || arr.is_null() {
-            return Err("string slot out of range");
-        }
-        Ok(crate::model_data::string_value(unsafe { *arr.add(i as usize) }))
+        Ok(crate::model_data::string_value(unsafe { *self.string_slot(addr)? }))
+    }
+
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> Result<()> {
+        let slot = self.string_slot(addr)?;
+        unsafe { crate::model_data::string_set_new(slot, bytes) };
+        Ok(())
     }
 
     /// C's `rt_init` in `initRuntimeAndSimulation`: the function, equation and
@@ -631,7 +654,7 @@ impl SimEngine for CEngine {
 
     fn store_pre_strings(&mut self) {
         let n = self.rt.model().nVariablesString.max(0) as usize;
-        unsafe { core::ptr::copy_nonoverlapping(self.rt.local(0).stringVars, self.rt.info().stringVarsPre, n) };
+        unsafe { crate::model_data::string_slots_store(self.rt.info().stringVarsPre, self.rt.local(0).stringVars, n) };
     }
 
     fn set_imported_start(&mut self, group: usize, i: usize, value: f64) {

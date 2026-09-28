@@ -73,8 +73,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"test_Bug3049_functions.c\" />
 //       <File name=\"test_Bug3049_init_fmu.c\" />
 //       <File name=\"test_Bug3049_records.c\" />
-//       <File name=\"fmi-export/fmu2_model_interface.c\" />
-//       <File name=\"fmi-export/fmu_read_flags.c\" />
 //       <File name=\"gc/omc_alloc.c\" />
 //       <File name=\"gc/omc_gc.c\" />
 //       <File name=\"gc/omc_rc.c\" />
@@ -112,6 +110,20 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"ModelicaExternalC/ModelicaStandardTables.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c\" />
 //       <File name=\"ModelicaExternalC/snprintf.c\" />
+//       <File name=\"rust/Compiler/OpenModelica.rs/openmodelica_fmi3_wasm/src/lib.rs\" />
+//       <File name=\"rust/Compiler/OpenModelica.rs/openmodelica_lapack/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/daskr/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/minpack/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_arrow_writer/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_mat_reader/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_mat_writer/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_nls/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_plt_writer/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_regex/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_sim_meta/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_simulation_runtime/src/lib.rs\" />
+//       <File name=\"rust/SimulationRuntime/rust/openmodelica_solvers/src/lib.rs\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <UnitDefinitions>

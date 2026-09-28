@@ -3,43 +3,72 @@
 //! `when`-body calls.
 
 use core::ffi::{c_int, c_long};
+use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use openmodelica_sim_meta::{BaseClockMeta, SubClockMeta};
 
 use crate::abi::*;
 use crate::model_data::cstr;
 
+/// Per `DATA`: the fired flags, and whether the clocks are as [`init_clocks`]
+/// just left them.
+///
 /// C's `handleBaseClock` fires the partition and schedules the next tick itself.
 /// The shared driver owns that list and a wasm model cannot call back into it, so
 /// `$_clkfire` raises a flag the driver turns into a timer; a C model reaches the
-/// same flag through this array.
-static FIRE: core::sync::atomic::AtomicPtr<c_int> =
-    core::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
+/// same flag through `fire`, which C has no field for.
+struct Clocks {
+    fire: Box<[c_int]>,
+    fresh: bool,
+}
 
-/// The fired flags, for the region map. Allocated here because C has no such field.
-pub fn fire_flags(md: &MODEL_DATA) -> *mut c_int {
-    let p = FIRE.load(core::sync::atomic::Ordering::Relaxed);
-    if !p.is_null() || md.nBaseClocks <= 0 {
-        return p;
+static CLOCKS: Mutex<BTreeMap<usize, Clocks>> = Mutex::new(BTreeMap::new());
+
+fn with<R>(data: *mut DATA, f: impl FnOnce(Option<&mut Clocks>) -> R) -> R {
+    f(CLOCKS.lock().unwrap_or_else(|e| e.into_inner()).get_mut(&(data as usize)))
+}
+
+/// The fired flags, for the region map.
+pub fn fire_flags(data: *mut DATA) -> *mut c_int {
+    let n = unsafe { (*(*data).modelData).nBaseClocks };
+    if n <= 0 {
+        return core::ptr::null_mut();
     }
-    let p: *mut c_int = crate::model_data::calloc(md.nBaseClocks as usize);
-    FIRE.store(p, core::sync::atomic::Ordering::Relaxed);
-    p
+    let mut map = CLOCKS.lock().unwrap_or_else(|e| e.into_inner());
+    let c = map.entry(data as usize).or_insert_with(|| Clocks {
+        fire: vec![0; n as usize].into_boxed_slice(),
+        fresh: false,
+    });
+    c.fire.as_mut_ptr()
+}
+
+#[cfg(feature = "fmi")]
+/// Drop what [`fire_flags`] and [`mark_fresh`] keep for `data`, and each clock's
+/// `subClocks`.
+pub fn free(data: *mut DATA) {
+    CLOCKS.lock().unwrap_or_else(|e| e.into_inner()).remove(&(data as usize));
+    for c in clocks(data) {
+        if !c.subClocks.is_null() {
+            unsafe { libc::free(c.subClocks as *mut libc::c_void) };
+        }
+    }
 }
 
 /// The `$_clkfire` of a C model. C's returns whether the first sub-clock is the
 /// base clock; the generated call is a `noReturnCall`, so nothing reads it.
 #[unsafe(no_mangle)]
 pub extern "C" fn handleBaseClock(
-    _data: *mut DATA,
+    data: *mut DATA,
     _thread_data: *mut threadData_t,
     idx: c_long,
     _cur_time: f64,
 ) -> modelica_boolean {
-    let p = FIRE.load(core::sync::atomic::Ordering::Relaxed);
-    if !p.is_null() && idx >= 0 {
-        unsafe { *p.add(idx as usize) = 1 };
-    }
+    with(data, |c| {
+        if let Some(f) = c.and_then(|c| usize::try_from(idx).ok().and_then(|i| c.fire.get_mut(i))) {
+            *f = 1;
+        }
+    });
     0
 }
 
@@ -60,10 +89,8 @@ fn clocks(data: *mut DATA) -> &'static [BASECLOCK_DATA] {
 /// is the total -- so the first request reuses that run: nothing has touched a
 /// clock since, and the generated function logs an inferred clock, which C warns
 /// about once.
-static FRESH: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-
-pub fn take_fresh() -> bool {
-    FRESH.swap(false, core::sync::atomic::Ordering::Relaxed)
+pub fn take_fresh(data: *mut DATA) -> bool {
+    with(data, |c| c.is_some_and(|c| core::mem::replace(&mut c.fresh, false)))
 }
 
 /// C's generated `function_initSynchronous`: allocate `baseClocks` and each
@@ -88,13 +115,17 @@ pub fn init_clocks(data: *mut DATA, thread_data: *mut threadData_t) {
     if let Some(f) = unsafe { (*(*data).callback).function_initSynchronous } {
         unsafe { f(data, thread_data) };
     }
-    fire_flags(md);
+    fire_flags(data);
 }
 
 /// Say that [`init_clocks`] has just run, so the driver's first request for it is
 /// a repeat.
-pub fn mark_fresh() {
-    FRESH.store(true, core::sync::atomic::Ordering::Relaxed);
+pub fn mark_fresh(data: *mut DATA) {
+    with(data, |c| {
+        if let Some(c) = c {
+            c.fresh = true;
+        }
+    });
 }
 
 pub fn n_sub_clocks(data: *mut DATA) -> u32 {

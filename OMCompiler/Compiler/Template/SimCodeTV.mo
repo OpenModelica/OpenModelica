@@ -3870,6 +3870,14 @@ package SCodeDump
   constant SCodeDumpOptions defaultOptions;
 end SCodeDump;
 
+package StringUtil
+  function endsWith
+    input String str;
+    input String suffix;
+    output Boolean endsWith;
+  end endsWith;
+end StringUtil;
+
 package Util
 
   uniontype DateTime
@@ -3914,12 +3922,6 @@ package Util
     input String delim;
     output Integer i;
   end mulStringDelimit2Int;
-
-  function endsWith
-    input String str;
-    input String suffix;
-    output Boolean b;
-  end endsWith;
 
   function isCIdentifier
     input String str;

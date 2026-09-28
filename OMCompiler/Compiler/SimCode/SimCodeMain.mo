@@ -1112,8 +1112,9 @@ algorithm
       list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
+      list<String> rust_crate_roots;
       list<String> simrt_c_sources;
-      Boolean rustRuntime;
+      Boolean rustRuntime, rustFmi;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
@@ -1236,12 +1237,18 @@ algorithm
         // same either way -- the generated code and the FMI interface include
         // them whichever runtime is behind them.
         rustRuntime := Config.simCodeRustRuntime();
+        // libSimulationRuntimeRust also serves the FMI 2.0 and 3.0 C API, with its
+        // own Co-Simulation solvers, in place of fmi-export/*.c and cvode_solver.c.
+        rustFmi := rustRuntime;
         simrt_c_sources := if rustRuntime then RuntimeSources.simrt_c_runtime_sources else RuntimeSources.simrt_c_sources;
         // Only worth carrying if the sources survive into the archive; this build
         // links the installed archive either way.
         if rustRuntime and Flags.getConfigEnum(Flags.FMI_SOURCES) <> Flags.FMI_SOURCES_NONE
            and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX then
           copyFmuRustSources(fmutmp);
+          rust_crate_roots := fmuRustCrateRoots(fmutmp + "/sources/", "rust");
+        else
+          rust_crate_roots := {};
         end if;
 
         // The simrt c headers are in the include/omc/c directory.
@@ -1286,7 +1293,7 @@ algorithm
             Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
           end if;
           simrt_c_sundials_sources := {};
-        elseif SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
+        elseif not rustFmi and SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
           // The sundials headers are in the include directory.
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
@@ -1308,16 +1315,24 @@ algorithm
         // This fmu export files of OMC are located in a very unexpected place. Right now they are in SimulationRuntime/fmi/export/openmodelica
         // and then then they are installed to include/omc/c/fmi-export for some reason. The source, install, and source fmu location
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
-        if FMUVersion == "1.0" then
+        if FMUVersion == "1.0" and rustFmi then
+          copyFiles(RuntimeSources.fmi1_rust_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := {};
+        elseif FMUVersion == "1.0" then
           copyFiles(RuntimeSources.fmi1Files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := RuntimeSources.fmi1Files;
         elseif FMUVersion == "3.0" then
           // FMI 3.0 export. fmu3_model_interface.c is built on top of the FMI 2.0
           // ModelInstance and the generated per-base-type get/set helpers, so the
           // FMI 2.0 header (but not the FMI 2.0 interface .c) is required as well.
-          copyFiles(RuntimeSources.fmi3_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          if not rustFmi then
+            copyFiles(RuntimeSources.fmi3_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          end if;
           copyFiles(RuntimeSources.fmi3_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          fmi_export_files := RuntimeSources.fmi3_sources;
+          fmi_export_files := if rustFmi then {} else RuntimeSources.fmi3_sources;
+        elseif rustFmi then
+          copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := {};
         else
           copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
@@ -1372,7 +1387,8 @@ algorithm
                                                 List.sort(dgesv_sources, Util.strcmpNoCaseBool),
                                                 List.sort(cminpack_sources, Util.strcmpNoCaseBool),
                                                 List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
-                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool)
+                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool),
+                                                rust_crate_roots
                                     });
         end if;
 
@@ -1451,7 +1467,7 @@ algorithm
         // FMI 1.0 (Model Exchange only) never links CVODE into the FMU (see note above where the
         // sundials sources are skipped for FMI 1.0); keep NEED_CVODE=OFF so cvode_solver.c and
         // sundials_error.c are not compiled. See issue #15838.
-        if FMUVersion == "1.0" then
+        if FMUVersion == "1.0" or rustFmi then
           (needCvode, cvodeDirectory) := ("OFF", "\"\"");
         else
           (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
@@ -1487,7 +1503,7 @@ algorithm
         // Only for FMI 2.0+. FMI 1.0 includes fmu1_model_interface.c.inc directly into
         // the generated <model>_FMU.c (which already has the model defines), so there is
         // no standalone fmu2_model_interface.c to patch. See issue #15838.
-        if FMUVersion <> "1.0" then
+        if FMUVersion <> "1.0" and not rustFmi then
           fmu_dummy_include_defines := (if FMUVersion == "2.0" then "fmu2" else "fmu3") + "_dummy_model_defines.h";
           for fmuModelInterfaceFile in (
               if FMUVersion == "3.0"
@@ -2685,6 +2701,24 @@ algorithm
     "[source.crates-io]\nreplace-with = \"vendored-sources\"\n\n[source.vendored-sources]\ndirectory = \"vendor\"\n");
 end copyFmuRustSources;
 
+protected function fmuRustCrateRoots
+  "The Rust half of a source FMU's <SourceFiles>: the root of every crate under
+   `dir` (relative to `sources`), the unit rustc compiles, as a .c file is for C.
+   The vendored dependencies are left out, as a library a C FMU links would be."
+  input String sources;
+  input String dir;
+  output list<String> roots = {};
+algorithm
+  for d in listReverse(List.sort(System.subDirectories(sources + dir), Util.strcmpBool)) loop
+    if not listMember(d, {"vendor", "target", "src", ".cargo"}) then
+      roots := listAppend(fmuRustCrateRoots(sources, dir + "/" + d), roots);
+    end if;
+  end for;
+  if System.regularFileExists(sources + dir + "/Cargo.toml") and System.regularFileExists(sources + dir + "/src/lib.rs") then
+    roots := (dir + "/src/lib.rs") :: roots;
+  end if;
+end fmuRustCrateRoots;
+
 protected function writeFmuRustWorkspace
   "The FMU's own cargo workspace root, in place of the one the checkout uses.
 
@@ -2713,7 +2747,7 @@ algorithm
     + "[dependencies]\n"
     + "# default-features = false drops `standalone`, which an FMU has no use for:\n"
     + "# the executable entry points, the result file, --variableFilter and -iif.\n"
-    + "openmodelica_simulation_runtime = { path = \"openmodelica_simulation_runtime\", default-features = false, features = [\"fmu-lapack\", \"fmi\"] }\n"
+    + "openmodelica_simulation_runtime = { path = \"openmodelica_simulation_runtime\", default-features = false, features = [\"fmu-lapack\", \"fmu-runtime\"] }\n"
     + "\n"
     + "# Reached as plain path dependencies; a member would have to belong to this\n"
     + "# workspace, and each of them names another root.\n"

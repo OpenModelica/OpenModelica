@@ -268,13 +268,23 @@ install(FILES ${_simrt_a} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT fmu
 # The crates themselves, for `--fmiSources=slim` / `=full` to put in the FMU.
 # The layout is the checkout's, because the manifests reach openmodelica_lapack by
 # a relative path: <root>/SimulationRuntime/rust beside <root>/Compiler/OpenModelica.rs.
+# Only the path dependencies of openmodelica_simulation_runtime, not the result
+# tools beside them: cargo tolerates a missing path dependency that is optional.
 set(_simrt_fmu_sources ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.lock
         DESTINATION ${_simrt_fmu_sources}/SimulationRuntime/rust
-        COMPONENT fmu
-        PATTERN "target" EXCLUDE
-        PATTERN "CMakeLists.txt" EXCLUDE
-        PATTERN "*.cmake" EXCLUDE)
+        COMPONENT fmu)
+foreach(_simrt_fmu_crate src daskr minpack openmodelica_arrow_writer openmodelica_mat_reader
+                         openmodelica_mat_writer openmodelica_nls openmodelica_plt_writer
+                         openmodelica_regex openmodelica_sim_meta openmodelica_simulation_runtime
+                         openmodelica_solvers)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${_simrt_fmu_crate}/
+          DESTINATION ${_simrt_fmu_sources}/SimulationRuntime/rust/${_simrt_fmu_crate}
+          COMPONENT fmu
+          PATTERN "target" EXCLUDE
+          PATTERN "CMakeLists.txt" EXCLUDE
+          PATTERN "*.cmake" EXCLUDE)
+endforeach()
 foreach(_simrt_fmu_crate openmodelica_lapack openmodelica_fmi3_wasm)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/OpenModelica.rs/${_simrt_fmu_crate}/
           DESTINATION ${_simrt_fmu_sources}/Compiler/OpenModelica.rs/${_simrt_fmu_crate}
