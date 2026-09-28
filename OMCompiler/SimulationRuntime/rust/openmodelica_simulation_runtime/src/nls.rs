@@ -60,6 +60,59 @@ struct Scratch {
     res_scaling: Vec<f64>,
     /// C's `hybrdData->useXScaling`, which `solveHybrd` carries between calls.
     use_xscaling: bool,
+    csv: Option<NlsCsv>,
+}
+
+/// `-nlsInfo`: C's `<prefix>_NLS<eq>StatsCall.csv` and `…StatsIter.csv`, written a
+/// line at a time because the system data is never freed.
+struct NlsCsv {
+    call: std::fs::File,
+    iter: std::fs::File,
+}
+
+/// C's `omc_write_csv`, which quotes every field.
+fn csv_line(file: &mut std::fs::File, fields: &[String]) {
+    use std::io::Write;
+    let quoted: Vec<String> = fields.iter().map(|f| format!("\"{}\"", f.replace('"', "\"\""))).collect();
+    let _ = file.write_all(format!("{}\n", quoted.join(",")).as_bytes());
+}
+
+fn open_nls_csv(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) -> Option<NlsCsv> {
+    let prefix = crate::model_data::cstr(unsafe { (*(*data).modelData).modelFilePrefix });
+    let eq = sys.equationIndex;
+    let open = |kind: &str| std::fs::File::create(format!("{prefix}_NLS{eq}Stats{kind}.csv")).ok();
+    let mut csv = NlsCsv { call: open("Call")?, iter: open("Iter")? };
+    let head = |names: &[&str]| names.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    csv_line(
+        &mut csv.call,
+        &head(&["numberOfCall", "simulationTime", "iterations", "numberOfFunctionCall", "solvingTime", "solvedSystem"]),
+    );
+    let vars = crate::info_json::equation_vars(data, eq as u32);
+    let mut iter = head(&["numberOfCall", "iteration"]);
+    iter.extend(vars.iter().cloned());
+    iter.extend((1..=vars.len()).map(|j| format!("r{j}")));
+    iter.extend(head(&["delta_x", "delta_x_scaled", "error_f", "error_f_scaled", "lambda"]));
+    csv_line(&mut csv.iter, &iter);
+    Some(csv)
+}
+
+std::thread_local! {
+    /// The system being solved and its call number, for [`write_iter_row`].
+    static CSV_TARGET: core::cell::Cell<(*mut NlsCsv, i64)> =
+        const { core::cell::Cell::new((core::ptr::null_mut(), 0)) };
+}
+
+fn write_iter_row(st: &nls::NewtonIterStat) {
+    let (csv, num) = CSV_TARGET.with(|c| c.get());
+    let Some(csv) = (unsafe { csv.as_mut() }) else { return };
+    let g = |v: f64| openmodelica_solvers::format_g(v, 6);
+    let mut row = vec![num.to_string(), st.iteration.to_string()];
+    row.extend(st.x.iter().map(|&v| g(v)));
+    row.extend(st.f.iter().map(|&v| g(v)));
+    row.extend(
+        [st.delta_x_sqrd, st.delta_x_sqrd_scaled, st.error_f_sqrd, st.error_f_sqrd_scaled, st.lambda].map(g),
+    );
+    csv_line(&mut csv.iter, &row);
 }
 
 /// [`nls::History`] over a plain `Vec`: C's list is unbounded and reaches 40+, but
@@ -401,6 +454,10 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     let si = unsafe { &mut *(*data).simulationInfo };
     omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
     omclog::info!(omclog::NLS, false, "{} non-linear systems", md.nNonLinearSystems);
+    let nls_info = openmodelica_sim_meta::simflags::with_flags(|f| f.nls_info);
+    if nls_info {
+        nls::set_newton_iter_hook(Some(write_iter_row));
+    }
     for i in 0..md.nNonLinearSystems as usize {
         let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
         let size = sys.size.max(0) as usize;
@@ -409,6 +466,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.lastTimeSolved = 0.0;
         sys.totalTime = 0.0;
         sys.solved = NLS_SOLVED;
+        sys.logActive = 1;
 
         if sys.residualFunc.is_none() && sys.strictTearingFunctionCall.is_none() {
             crate::throw(thread_data, "residual function pointer is invalid");
@@ -463,6 +521,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             crate::support::freeSparsePattern(sys.sparsePattern);
             sys.sparsePattern = core::ptr::null_mut();
             unsafe { crate::support::omc_flag[crate::abi::FLAG_NO_SCALING] = 1 };
+            openmodelica_solvers::solverflags::set_no_scaling();
         }
 
         register_names(data, sys);
@@ -483,6 +542,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             history: VecHistory::default(),
             res_scaling: vec![0.0; size.max(1)],
             use_xscaling: true,
+            csv: nls_info.then(|| open_nls_csv(data, sys)).flatten(),
         })) as *mut c_void;
     }
     omclog::close(omclog::NLS);
@@ -607,6 +667,7 @@ pub extern "C" fn solve_nonlinear_system(
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let sys = unsafe { &mut *si.nonlinearSystemData.add(sys_number as usize) };
+    let _quiet = crate::support::QuietSystem::new(sys.logActive);
     let size = sys.size.max(0) as usize;
     let time = unsafe { (**(*data).localData).timeValue };
 
@@ -697,7 +758,11 @@ pub extern "C" fn solve_nonlinear_system(
             last_solved: &mut sys.lastTimeSolved,
             use_xscaling: &mut sd.use_xscaling,
         };
-        nls::solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
+        let csv = sd.csv.as_mut().map_or(core::ptr::null_mut(), |c| c as *mut NlsCsv);
+        CSV_TARGET.with(|c| c.set((csv, sys.numberOfCall as i64 + 1)));
+        let ret = nls::solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend);
+        CSV_TARGET.with(|c| c.set((core::ptr::null_mut(), 0)));
+        ret
     };
 
     // C's solvers leave the answer in `nlsx`, and that -- not the unknown slots --
@@ -709,6 +774,24 @@ pub extern "C" fn solve_nonlinear_system(
     }
     sys.solved = if ret == 1 { NLS_FAILED } else { NLS_SOLVED };
     sys.numberOfCall += 1;
+    if let Some(csv) = sd.csv.as_mut() {
+        let stat = openmodelica_solvers::sysstat::systems()
+            .iter()
+            .find(|s| s.nonlinear && s.eq_index == sys.equationIndex as i32)
+            .copied()
+            .unwrap_or_default();
+        csv_line(
+            &mut csv.call,
+            &[
+                sys.numberOfCall.to_string(),
+                openmodelica_solvers::format_g(time, 6),
+                stat.iters.to_string(),
+                stat.res_evals.to_string(),
+                format!("{:.6}", stat.total),
+                (if ret == 1 { "FALSE" } else { "TRUE" }).to_string(),
+            ],
+        );
+    }
     if ret == 1 {
         sys.numberOfFailures += 1;
     }

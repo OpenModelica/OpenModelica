@@ -3092,7 +3092,118 @@ fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, lay
         let s = e.string_at(sim_data + layout.str_off + i * 4)?;
         rows.push(crate::strings::intern(&s) as f64);
     }
+    if layout.extra_cols & crate::EXTRA_CPU_TIME != 0 {
+        rtclock::accumulate(rtclock::TOTAL);
+        rows.push(rtclock::accumulated(rtclock::TOTAL));
+        rtclock::tick(rtclock::TOTAL);
+    }
+    if layout.extra_cols & crate::EXTRA_SOLVER_STEPS != 0 {
+        rows.push(SOLVER_STEPS.load(Ordering::Relaxed) as f64);
+    }
+    #[cfg(feature = "std")]
+    rt_sync::row(read_f64(e, sim_data + TIME_OFF)?);
     Ok(())
+}
+
+/// `-rt`: C's `real_time_sync`, which paces the output rows to the wall clock.
+#[cfg(feature = "std")]
+pub mod rt_sync {
+    use super::{format_g, now_ms};
+    use crate::omclog;
+    use std::cell::Cell;
+
+    #[derive(Clone, Copy)]
+    struct State {
+        scaling: f64,
+        t0: f64,
+        start_ms: f64,
+        step: f64,
+        max_late_ns: i64,
+    }
+
+    std::thread_local! {
+        static STATE: Cell<Option<State>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn arm(t0: f64, step: f64) {
+        let scaling = crate::simflags::with_flags(|f| f.real_time).unwrap_or(0.0);
+        let state = (scaling != 0.0).then(|| State {
+            scaling,
+            t0,
+            start_ms: now_ms(),
+            step,
+            max_late_ns: i64::MIN,
+        });
+        STATE.with(|s| s.set(state));
+    }
+
+    pub(super) fn row(time: f64) {
+        let Some(mut st) = STATE.with(|s| s.get()) else { return };
+        // The rows at the start time come from initialization, which C does not pace.
+        if time <= st.t0 {
+            return;
+        }
+        let target_ns = (st.scaling * (time - st.t0) * 1e9) as u64 as i64;
+        let late = ((now_ms() - st.start_ms) * 1e6) as i64 - target_ns;
+        if late < 0 {
+            std::thread::sleep(std::time::Duration::from_nanos(late.unsigned_abs()));
+        }
+        let max_late = (st.step * 1e9 * 0.1 * st.scaling) as i64;
+        if late > max_late {
+            let (t, unit) = pretty_ns(late);
+            let (t2, unit2) = pretty_ns(max_late);
+            omclog::error!(
+                omclog::RT,
+                false,
+                "Missed deadline at time {}; delta was {t} {unit} (maxLate={t2} {unit2})",
+                format_g(time, 6),
+            );
+        }
+        st.max_late_ns = st.max_late_ns.max(late);
+        STATE.with(|s| s.set(Some(st)));
+    }
+
+    /// C's closing `LOG_RT` line.
+    pub fn finish() {
+        if let Some(st) = STATE.with(|s| s.take()) {
+            let (t, unit) = pretty_ns(st.max_late_ns);
+            omclog::info!(
+                omclog::RT,
+                false,
+                "Maximum real-time latency was (positive=missed dealine, negative is slack): {t} {unit}",
+            );
+        }
+    }
+
+    /// C's `prettyPrintNanoSec`.
+    fn pretty_ns(ns: i64) -> (i64, &'static str) {
+        if !(-100_000_000_000..=100_000_000_000).contains(&ns) {
+            (ns / 1_000_000_000, "s")
+        } else if !(-100_000_000..=100_000_000).contains(&ns) {
+            (ns / 1_000_000, "ms")
+        } else if !(-100_000..=100_000).contains(&ns) {
+            (ns / 1000, "µs")
+        } else {
+            (ns, "ns")
+        }
+    }
+}
+
+/// `-steps`: the integrator steps taken so far (C's `simulationInfo->solverSteps`),
+/// which each driver publishes after a step and the next result row reports.
+static TRACK_STEPS: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+static SOLVER_STEPS: openmodelica_solvers::atomic64::AtomicU64 =
+    openmodelica_solvers::atomic64::AtomicU64::new(0);
+
+fn track_solver_steps(on: bool) {
+    TRACK_STEPS.store(on, Ordering::Relaxed);
+    SOLVER_STEPS.store(0, Ordering::Relaxed);
+}
+
+pub(crate) fn publish_steps(steps: impl FnOnce() -> u64) {
+    if TRACK_STEPS.load(Ordering::Relaxed) {
+        SOLVER_STEPS.store(steps(), Ordering::Relaxed);
+    }
 }
 
 /// Whether the run stops here rather than at `stopTime`: `terminate()` raised the
@@ -4823,6 +4934,8 @@ pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> R
             format_g(model.stop_time, 6),
         );
     }
+    #[cfg(feature = "std")]
+    rt_sync::finish();
     signal_teardown();
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
     read_params(e, model, sim_data)
@@ -4870,8 +4983,17 @@ pub fn drive(
     // C's `measure_time_flag`: the clocks run only when the block that renders
     // them will be printed.
     // `+profiling` is C's other `measure_time_flag` source.
-    rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
+    // `-cpu` too: its column reads the total clock.
+    rtclock::reset(
+        omclog::active(omclog::STATS)
+            || omclog::active(omclog::STATS_V)
+            || model.prof.is_some()
+            || layout.extra_cols & crate::EXTRA_CPU_TIME != 0,
+    );
     rtclock::tick(rtclock::TOTAL);
+    track_solver_steps(layout.extra_cols & crate::EXTRA_SOLVER_STEPS != 0);
+    #[cfg(feature = "std")]
+    rt_sync::arm(model.start_time, model.step_size());
     let lv_time = crate::simflags::with_flags(|f| f.lv_time);
     if let Some((t0, t1)) = lv_time {
         omclog::info!(
@@ -5206,6 +5328,7 @@ impl Driver for EulerDriver {
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
+            publish_steps(|| self.row as u64);
             let emitted = if self.row == 0 {
                 emit_initial_row(e, &mut self.rows, sim_data, layout, time)
             } else {
@@ -5788,6 +5911,7 @@ unsafe fn dassl_jac(
             })?;
         } else {
             set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+            let delta_x = delta_x_solver();
             let groups: &[Vec<u32>] = if colored { &jac.colors } else { &per_column };
             for group in groups {
                 // Perturb every column in this colour; record del and the base value.
@@ -5797,10 +5921,10 @@ unsafe fn dassl_jac(
                     let hyp = h * unsafe { *yprime.add(ci) };
                     let nom = unsafe { *ctx.nominals.add(ci) };
                     let ewt_inv = (1.0 / unsafe { *wt.add(ci) }).abs();
-                    let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
+                    let mut del = fd_step_ewt(delta_x, yi, hyp, ewt_inv, ctx.nominal_factor * nom);
                     del = yi + del - yi; // floating-point rounding, as in the C runtime
                     if del == 0.0 {
-                        del = DELTA_X_SOLVER;
+                        del = delta_x;
                     }
                     ctx.jac_ysave[ci] = yi;
                     ctx.jac_del[ci] = 1.0 / del;
@@ -5860,9 +5984,10 @@ unsafe fn dassl_jac(
     }
 }
 
-/// C's `numericalDifferentiationDeltaXsolver`: `sqrt(DBL_EPSILON)` unless
-/// `-numericalDifferentiationDeltaXsolver` says otherwise (`simulation_runtime.cpp`).
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
+/// C's `numericalDifferentiationDeltaXsolver`, `-deltaXSolver`.
+fn delta_x_solver() -> f64 {
+    crate::simflags::with_flags(crate::simflags::delta_x_solver)
+}
 
 /// Give a step the sign of `h*y'`, as both runtimes do.
 fn signed(mag: f64, hyp: f64) -> f64 {
@@ -5870,10 +5995,10 @@ fn signed(mag: f64, hyp: f64) -> f64 {
 }
 
 /// C's `numericalJacobianStep` as `jacA_num` calls it.
-fn fd_step_ewt(yi: f64, hyp: f64, ewt_inv: f64, nominal: f64) -> f64 {
+fn fd_step_ewt(delta_x: f64, yi: f64, hyp: f64, ewt_inv: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
-    signed(DELTA_X_SOLVER * step, hyp)
+    signed(delta_x * step, hyp)
 }
 
 /// C's `LOG_JAC` block: `printJacobianMatrix`, then the largest differences against
@@ -5920,12 +6045,13 @@ unsafe fn dassl_log_jacobian(
     omclog::close(omclog::JAC);
     let mut numerical = vec![0.0f64; n * n];
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    let delta_x = delta_x_solver();
     for col in (0..n).rev() {
         let yi = unsafe { *y.add(col) };
         let hyp = h * unsafe { *yprime.add(col) };
         let ewt_inv = (1.0 / unsafe { *wt.add(col) }).abs();
         let nom = unsafe { *ctx.nominals.add(col) };
-        let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
+        let mut del = fd_step_ewt(delta_x, yi, hyp, ewt_inv, ctx.nominal_factor * nom);
         del = yi + del - yi;
         let inv = 1.0 / del;
         unsafe { *y.add(col) = yi + del };
@@ -6364,7 +6490,7 @@ struct DasslDriver {
 
 /// DASKR zeroes its IWORK counters on a fresh start, so the run totals are folded
 /// in here before each restart.
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 struct DaskrCounters {
     steps: u64,
     err_test_fails: u64,
@@ -6679,6 +6805,11 @@ impl Driver for DasslDriver {
                 );
             }
             e.set_rhs_final(true); // ... and set for the output evaluation
+            publish_steps(|| {
+                let mut total = self.past;
+                total.fold(&self.iwork);
+                total.steps
+            });
             // C's `dassl_step` logs the statistics once its `while (idid == 1)` loop is done.
             if logging && self.idid != -1 && self.idid != 1 {
                 log_dassl_stats(self.idid, self.t, &self.rwork, &self.iwork);
@@ -8116,6 +8247,7 @@ impl SolverCore {
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
             *did_step = true;
+            publish_steps(|| self.steps_taken());
             // A wasm error in a callback outranks whatever the solver reported.
             let err = ctx.err.take();
             if let Progress::RootThrew = again {
@@ -8143,6 +8275,12 @@ impl SolverCore {
                 Progress::Root => return Ok(Solved::Root),
             }
         }
+    }
+
+    fn steps_taken(&self) -> u64 {
+        let mut stats = SolveStats::default();
+        self.fill_stats(&mut stats);
+        stats.steps
     }
 
     /// Steps, evaluations and failure counts from the integrator (run totals, so
@@ -9388,6 +9526,7 @@ impl Driver for EventsDriver {
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
                         self.core.walk_steps += 1;
+                        publish_steps(|| self.core.steps_taken());
                         event_step = true;
                         if emit_post_event_row(model, tr) {
                             capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
@@ -9432,6 +9571,7 @@ impl Driver for EventsDriver {
                         self.core.time_events += 1;
                         self.core.note_time_event();
                         self.core.walk_steps += 1;
+                        publish_steps(|| self.core.steps_taken());
                         if emit_post_event_row(model, te) {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
@@ -9498,6 +9638,7 @@ impl Driver for EventsDriver {
                     }
                     self.core.t = tout;
                     self.core.walk_steps += 1;
+                    publish_steps(|| self.core.steps_taken());
                 } else {
                     close_assert_window(e, sim_data)?;
                 }
@@ -9954,6 +10095,7 @@ impl Driver for CvodeDriver {
                 let _clock = rtclock::Span::new(rtclock::SOLVER);
                 cv.step(&mut self.t, tout)
             };
+            publish_steps(|| cv.counters().steps);
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }
@@ -10609,6 +10751,7 @@ unsafe extern "C" fn ida_jac(
     }
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
     let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
+    let delta_x = delta_x_solver();
     let run = (|| -> Result<()> {
         for color in &jac.colors {
             for &col in color {
@@ -10618,7 +10761,7 @@ unsafe extern "C" fn ida_jac(
                 let nom = unsafe { *ctx.nominals.add(ci) };
                 // C's `rtol*fabs(states[ii]) + abstol[ii]`, `abstol = nominal*tolerance`.
                 let ewt_inv = ctx.tol * yi.abs() + nom * ctx.tol;
-                let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
+                let mut del = fd_step_ewt(delta_x, yi, hyp, ewt_inv, ctx.nominal_factor * nom);
                 del = yi + del - yi; // floating-point rounding, as in the C runtime
                 ctx.jac_ysave[ci] = yi;
                 ctx.jac_del[ci] = 1.0 / del;
@@ -10915,6 +11058,7 @@ impl Driver for IdaDriver {
                 let _clock = rtclock::Span::new(rtclock::SOLVER);
                 ida.step(&mut self.t, tout, no_grid)
             };
+            publish_steps(|| ida.counters().steps);
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }

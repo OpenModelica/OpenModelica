@@ -552,6 +552,29 @@ unsafe extern "C" fn omr_message_close_warning(stream: c_int) {
     omclog::close_warning(stream as omclog::Stream);
 }
 
+/// C's `deactivateLogging` over the solve of a system `-lv_system` left out.
+pub struct QuietSystem(bool);
+
+impl QuietSystem {
+    pub fn new(log_active: modelica_boolean) -> Self {
+        let quiet = log_active == 0;
+        if quiet {
+            omclog::deactivate();
+            publish_log_streams();
+        }
+        QuietSystem(quiet)
+    }
+}
+
+impl Drop for QuietSystem {
+    fn drop(&mut self) {
+        if self.0 {
+            omclog::reactivate();
+            publish_log_streams();
+        }
+    }
+}
+
 pub fn publish_log_streams() {
     use openmodelica_sim_meta::omclog;
     for i in 0..omclog::N_STREAMS {

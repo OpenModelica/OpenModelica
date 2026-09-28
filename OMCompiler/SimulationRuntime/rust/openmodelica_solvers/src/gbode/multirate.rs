@@ -26,8 +26,6 @@ use crate::{Ode, Result};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
-/// C's `numericalDifferentiationDeltaXsolver` (`sqrt(DBL_EPSILON)`).
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
 /// C's `newtonFTol` default.
 const NEWTON_FTOL_DEFAULT: f64 = 1e-12;
 const NEWTON_MAX_STEPS: u32 = 20;
@@ -129,10 +127,17 @@ pub(super) struct GbfNls {
     fbase: Vec<f64>,
     ftol: f64,
     pub n_jac_evals: u64,
+    kinsol: Option<super::nls_generic::KinsolLadder>,
 }
 
 impl GbfNls {
-    fn new(t: &Tableau, tol: f64, sym_jac: bool, internal: bool) -> Self {
+    fn new(
+        t: &Tableau,
+        tol: f64,
+        sym_jac: bool,
+        internal: bool,
+        kinsol: Option<super::nls_generic::KinsolLadder>,
+    ) -> Self {
         // C's Newton convergence target, as in `gbInternalNlsAllocate`.
         let alpha_default: f64 = 3e-2;
         let alpha_maximal: f64 = 5e-2;
@@ -167,6 +172,7 @@ impl GbfNls {
             fbase: Vec::new(),
             ftol: crate::simflags::with_flags(|f| f.newton_ftol).unwrap_or(NEWTON_FTOL_DEFAULT),
             n_jac_evals: 0,
+            kinsol,
         }
     }
 
@@ -295,6 +301,7 @@ impl GbfNls {
         let maxs: Vec<f64> = ode.maxs().to_vec();
         let tol = self.integrator_tol;
         ode.set_context_jacobian();
+        let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
         let run = (|| -> Result<()> {
             ode.eval(time, y_full, &mut self.fbase)?;
             let mut probe = y_full.to_vec();
@@ -305,10 +312,10 @@ impl GbfNls {
                     let c = fast_idx[cf];
                     let nominal = nominals.get(c).copied().unwrap_or(1.0);
                     let raw_weight = tol * nominal + tol * abs(y_full[c]);
-                    let mut del = DELTA_X_SOLVER
+                    let mut del = delta_x
                         * abs(y_full[c])
                             .max(1e-3)
-                            .max(abs(DELTA_X_SOLVER * self.fbase[c]))
+                            .max(abs(delta_x * self.fbase[c]))
                             .max(abs(raw_weight));
                     del = y_full[c] + del - y_full[c];
                     if maxs.get(c).is_some_and(|&mx| y_full[c] + del >= mx) {
@@ -489,6 +496,9 @@ impl GbfNls {
         x: &mut [f64],
         f_full: &mut [f64],
     ) -> Result<Solved> {
+        if let Some(ladder) = self.kinsol {
+            return self.solve_stage_kinsol(ode, st, nominals, starts, x, f_full, ladder);
+        }
         let nf = self.n_fast;
         let mut attempts: Vec<Vec<f64>> = starts.iter().map(|s| s.to_vec()).collect();
         if let Some(base) = starts.last() {
@@ -499,70 +509,129 @@ impl GbfNls {
             attempts.push(v);
             attempts.push(st.fast_idx.iter().map(|&i| nominals[i]).collect());
         }
-        let mut r = vec![0.0; nf];
-        let mut r_new = vec![0.0; nf];
-        let mut x_try = vec![0.0; nf];
         for relax in 0..5 {
             let tol = self.ftol * pow(10.0, relax as f64);
             for start in &attempts {
                 x.copy_from_slice(start);
-                if st.residual(ode, x, &mut r, f_full).is_err() {
-                    continue;
-                }
-                let mut nrm = enorm(&r);
-                if !nrm.is_finite() {
-                    continue;
-                }
-                let mut factored = self
-                    .assemble_generic(ode, st, nominals, x)
-                    .is_ok();
-                if !factored {
-                    continue;
-                }
-                let mut converged = nrm <= tol;
-                let mut stale = false;
-                'newton: for _ in 0..NEWTON_MAX_STEPS {
-                    if converged {
-                        break;
-                    }
-                    if stale {
-                        factored = self.assemble_generic(ode, st, nominals, x).is_ok();
-                        if !factored {
-                            break 'newton;
-                        }
-                        stale = false;
-                    }
-                    let mut dx = r.clone();
-                    self.factored.as_mut().expect("solve before factor").solve(&mut dx);
-                    let mut lambda = 1.0;
-                    loop {
-                        for i in 0..nf {
-                            x_try[i] = x[i] - lambda * dx[i];
-                        }
-                        let ok = st.residual(ode, &x_try, &mut r_new, f_full).is_ok();
-                        let nrm_new = if ok { enorm(&r_new) } else { f64::INFINITY };
-                        if nrm_new.is_finite() && (nrm_new < nrm || lambda <= 1.0 / 1024.0) {
-                            x.copy_from_slice(&x_try);
-                            r.copy_from_slice(&r_new);
-                            nrm = nrm_new;
-                            break;
-                        }
-                        lambda /= 2.0;
-                        stale = true;
-                        if lambda < 1e-10 {
-                            break 'newton;
-                        }
-                    }
-                    converged = nrm <= tol;
-                }
-                if converged {
-                    // Leave `f_full` at the accepted iterate.
-                    st.residual(ode, x, &mut r, f_full)?;
+                if self.newton_generic(ode, st, nominals, x, f_full, tol, NEWTON_MAX_STEPS, u32::MAX, true)? {
                     return Ok(Solved::Ok);
                 }
             }
         }
         Ok(Solved::Failed)
+    }
+
+    /// [`super::nls_generic::GbNlsGeneric`]'s `-gbnls=kinsol` ladder on the fast stage.
+    #[allow(clippy::too_many_arguments)]
+    fn solve_stage_kinsol(
+        &mut self,
+        ode: &mut dyn Ode,
+        st: &mut MrStage<'_>,
+        nominals: &[f64],
+        starts: &[&[f64]],
+        x: &mut [f64],
+        f_full: &mut [f64],
+        ladder: super::nls_generic::KinsolLadder,
+    ) -> Result<Solved> {
+        let later_steps = ladder.max_steps.max(10 * self.n_fast as u32);
+        let first = starts[0];
+        let old = starts[starts.len() - 1];
+        let phases: [(Option<&[f64]>, u32, bool, f64); 4] = [
+            (Some(first), ladder.max_steps, false, ladder.tol),
+            (Some(first), later_steps, true, ladder.tol),
+            (Some(old), later_steps, true, ladder.tol),
+            (None, later_steps, true, 10.0 * ladder.tol),
+        ];
+        let mut ran = false;
+        for (&(start, steps, fresh, tol), &every) in phases.iter().zip(ladder.jac_updates.iter()) {
+            if every == 0 {
+                continue;
+            }
+            match start {
+                Some(s) => x.copy_from_slice(s),
+                None if !ran => x.copy_from_slice(first),
+                None => {}
+            }
+            ran = true;
+            if self.newton_generic(ode, st, nominals, x, f_full, tol, steps, every, fresh)? {
+                return Ok(Solved::Ok);
+            }
+        }
+        Ok(Solved::Failed)
+    }
+
+    /// Damped Newton from `x` to `tol`, refreshing the Jacobian as
+    /// `GbNlsGeneric::newton` does. On success `f_full` is left at the iterate.
+    #[allow(clippy::too_many_arguments)]
+    fn newton_generic(
+        &mut self,
+        ode: &mut dyn Ode,
+        st: &mut MrStage<'_>,
+        nominals: &[f64],
+        x: &mut [f64],
+        f_full: &mut [f64],
+        tol: f64,
+        max_steps: u32,
+        refresh_every: u32,
+        fresh: bool,
+    ) -> Result<bool> {
+        let nf = self.n_fast;
+        let mut r = vec![0.0; nf];
+        let mut r_new = vec![0.0; nf];
+        let mut x_try = vec![0.0; nf];
+        if st.residual(ode, x, &mut r, f_full).is_err() {
+            return Ok(false);
+        }
+        let mut nrm = enorm(&r);
+        if !nrm.is_finite() {
+            return Ok(false);
+        }
+        if (fresh || self.factored.is_none()) && self.assemble_generic(ode, st, nominals, x).is_err() {
+            return Ok(false);
+        }
+        let mut converged = nrm <= tol;
+        let mut stale = false;
+        let mut since_refresh = 0u32;
+        'newton: for _ in 0..max_steps {
+            if converged {
+                break;
+            }
+            if stale || since_refresh >= refresh_every {
+                if self.assemble_generic(ode, st, nominals, x).is_err() {
+                    break 'newton;
+                }
+                stale = false;
+                since_refresh = 0;
+            }
+            let mut dx = r.clone();
+            self.factored.as_mut().expect("solve before factor").solve(&mut dx);
+            let mut lambda = 1.0;
+            loop {
+                for i in 0..nf {
+                    x_try[i] = x[i] - lambda * dx[i];
+                }
+                let ok = st.residual(ode, &x_try, &mut r_new, f_full).is_ok();
+                let nrm_new = if ok { enorm(&r_new) } else { f64::INFINITY };
+                if nrm_new.is_finite() && (nrm_new < nrm || lambda <= 1.0 / 1024.0) {
+                    x.copy_from_slice(&x_try);
+                    r.copy_from_slice(&r_new);
+                    nrm = nrm_new;
+                    break;
+                }
+                lambda /= 2.0;
+                stale = true;
+                if lambda < 1e-10 {
+                    break 'newton;
+                }
+            }
+            since_refresh += 1;
+            converged = nrm <= tol;
+        }
+        if converged {
+            // Leave `f_full` at the accepted iterate.
+            st.residual(ode, x, &mut r, f_full)?;
+        }
+        Ok(converged)
     }
 
     fn assemble_generic(
@@ -832,7 +901,9 @@ impl GbodeF {
             "Step control factor is set to {}",
             omclog::g(t.fac, 0, 6),
         );
-        let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal));
+        let kinsol = matches!(conf.nls_method, NlsMethod::Kinsol | NlsMethod::KinsolB)
+            .then(super::nls_generic::KinsolLadder::from_flags);
+        let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal, kinsol));
         // C demotes dense output to Hermite when the method has no formula.
         let interpolation = match (conf.interpolation, t.with_dense_output) {
             (Interpolation::DenseOutput, false) => Interpolation::Hermite,

@@ -438,7 +438,54 @@ fn string_roots(n: usize) -> *mut modelica_string {
 pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     initialize_data_struc(data, thread_data);
     initialize_systems(data, thread_data);
+    if let Some(list) = openmodelica_sim_meta::simflags::with_flags(|f| f.lv_system.clone()) {
+        set_lv_systems(data, thread_data, &list);
+    }
     build_rt(data, thread_data)
+}
+
+/// C's `setLVSystems`: only the systems `-lv_system` lists log.
+fn set_lv_systems(data: *mut DATA, thread_data: *mut threadData_t, list: &str) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    let mixed = (0..md.nMixedSystems as usize).map(|i| unsafe { &mut (*si.mixedSystemData.add(i)).logActive });
+    let mixed_ix = (0..md.nMixedSystems as usize).map(|i| unsafe { (*si.mixedSystemData.add(i)).equationIndex });
+    let linear = (0..md.nLinearSystems as usize).map(|i| unsafe { &mut (*si.linearSystemData.add(i)).logActive });
+    let linear_ix = (0..md.nLinearSystems as usize).map(|i| unsafe { (*si.linearSystemData.add(i)).equationIndex });
+    let nonlinear =
+        (0..md.nNonLinearSystems as usize).map(|i| unsafe { &mut (*si.nonlinearSystemData.add(i)).logActive });
+    let nonlinear_ix =
+        (0..md.nNonLinearSystems as usize).map(|i| unsafe { (*si.nonlinearSystemData.add(i)).equationIndex });
+    let systems: Vec<(&mut modelica_boolean, i64)> = mixed
+        .zip(mixed_ix)
+        .chain(linear.zip(linear_ix))
+        .chain(nonlinear.zip(nonlinear_ix))
+        .map(|(active, ix)| (active, ix as i64))
+        .collect();
+    let n = systems.iter().map(|(_, ix)| *ix).max().unwrap_or(0).max(0);
+    let mut wanted = vec![false; n as usize + 1];
+    for item in list.split(',') {
+        // `strtol`: the leading digits, 0 without any.
+        let item = item.trim_start();
+        let end = item
+            .char_indices()
+            .find(|&(k, c)| !(c.is_ascii_digit() || (k == 0 && (c == '-' || c == '+'))))
+            .map_or(item.len(), |(k, _)| k);
+        let i: i64 = item[..end].parse().unwrap_or(0);
+        if i > n {
+            crate::throw(thread_data, &format!("setLVSystems: {i} is not a valid equation index"));
+        }
+        if i >= 0 {
+            wanted[i as usize] = true;
+        }
+    }
+    for (active, ix) in systems {
+        let hit = ix >= 0 && core::mem::take(&mut wanted[ix as usize]);
+        *active = hit as modelica_boolean;
+    }
+    if let Some(i) = wanted.iter().position(|&w| w) {
+        crate::throw(thread_data, &format!("setLVSystems: {i} is not a valid equation index."));
+    }
 }
 
 /// C's `initializeDataStruc`: allocate every array `DATA` points at. The values

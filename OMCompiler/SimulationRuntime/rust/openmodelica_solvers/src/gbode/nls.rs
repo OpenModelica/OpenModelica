@@ -244,6 +244,7 @@ impl GbNls {
         let maxs: Vec<f64> = ode.maxs().to_vec();
         let tol = self.integrator_tol;
         ode.set_context_jacobian();
+        let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
         let run = (|| -> Result<()> {
             ode.eval(time, y, &mut self.fbase)?;
             self.ysave.copy_from_slice(y);
@@ -256,10 +257,10 @@ impl GbNls {
                     // h_i = delta_h * max(|x_i|, 1e-3, |delta_h*f_i|, atol*nom + rtol*|x_i|).
                     let nominal = nominals.get(c).copied().unwrap_or(1.0);
                     let raw_weight = tol * nominal + tol * abs(y[c]);
-                    let mut del = DELTA_X_SOLVER
+                    let mut del = delta_x
                         * abs(y[c])
                             .max(1e-3)
-                            .max(abs(DELTA_X_SOLVER * self.fbase[c]))
+                            .max(abs(delta_x * self.fbase[c]))
                             .max(abs(raw_weight));
                     del = y[c] + del - y[c];
                     if maxs.get(c).is_some_and(|&mx| y[c] + del >= mx) {
@@ -1004,8 +1005,6 @@ impl GbNls {
     }
 }
 
-/// C's `numericalDifferentiationDeltaXsolver`, `sqrt(DBL_EPSILON)` at runtime.
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
 
 /// `(M otimes I) * v` for `stack` blocks of `n`: `out_j = sum_l M[j,l] * v_l`,
 /// with `M` in the tableau data's flat `j*stack + l` convention.

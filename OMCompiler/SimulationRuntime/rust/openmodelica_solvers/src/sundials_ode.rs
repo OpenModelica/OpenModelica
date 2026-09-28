@@ -165,15 +165,16 @@ unsafe extern "C" fn ode_jac(
         vals.fill(0.0);
     }
     let h = sundials::ida_current_step(*mem);
+    let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
     for group in &jac.colors {
         for &col in group {
             let ci = col as usize;
             let yi = ys[ci];
             let nom = nominals.get(ci).copied().unwrap_or(1.0);
-            let mut del = fd_step(yi, h * ypv[ci], *tol, nom);
+            let mut del = fd_step(delta_x, yi, h * ypv[ci], *tol, nom);
             del = yi + del - yi;
             if del == 0.0 {
-                del = fd_step(0.0, 0.0, *tol, nom);
+                del = fd_step(delta_x, 0.0, 0.0, *tol, nom);
             }
             jac.ysave[ci] = yi;
             jac.del[ci] = del;
@@ -684,12 +685,11 @@ impl DaeJac {
 /// (`model_help.h`): a relative step off the larger of the point and the last
 /// step's derivative, floored by the nominal where the unknown is inside its own
 /// absolute tolerance and so carries no scale to difference over.
-fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
-    const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
+fn fd_step(delta_x: f64, yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let ewt_inv = tol * (yi.abs() + nominal);
     let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
-    let mag = DELTA_X_SOLVER * step;
+    let mag = delta_x * step;
     // The step takes the sign of h*y', as both runtimes do.
     if hyp >= 0.0 { mag } else { -mag }
 }
@@ -723,16 +723,17 @@ unsafe extern "C" fn dae_jac(
         core::slice::from_raw_parts_mut(data, nnz)
     };
     vals.fill(0.0);
+    let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
     for c in 0..jac.colors.len() {
         for k in 0..jac.colors[c].len() {
             let ci = jac.colors[c][k] as usize;
             let yi = unsafe { *y.add(ci) };
             let ypi = unsafe { *ypv.add(ci) };
             let nom = nominals.get(ci).copied().unwrap_or(1.0);
-            let mut del = fd_step(yi, h * ypi, *tol, nom);
+            let mut del = fd_step(delta_x, yi, h * ypi, *tol, nom);
             del = yi + del - yi; // floating-point rounding, as in the C runtime
             if del == 0.0 {
-                del = fd_step(0.0, 0.0, *tol, nom);
+                del = fd_step(delta_x, 0.0, 0.0, *tol, nom);
             }
             jac.ysave[ci] = yi;
             jac.ypsave[ci] = ypi;

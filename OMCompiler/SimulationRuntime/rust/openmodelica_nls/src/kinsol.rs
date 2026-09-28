@@ -367,6 +367,10 @@ pub mod sun {
         /// `xScale[i] = 1/max(nominal_i, |x_i|)` at the start point (C's
         /// `SCALING_NOMINALSTART`).
         fn x_scaling(&mut self, nominal: &[f64]) {
+            if openmodelica_solvers::solverflags::no_scaling() {
+                data(self.xscale, self.n).fill(1.0);
+                return;
+            }
             let start = data(self.u, self.n);
             for (s, (nom, x)) in data(self.xscale, self.n).iter_mut().zip(nominal.iter().zip(start.iter())) {
                 *s = 1.0 / fmath::fmax(*nom, fmath::fabs(*x));
@@ -378,6 +382,10 @@ pub mod sun {
         /// The Jacobian is re-evaluated unless the last solve reached full accuracy,
         /// where C scales the one still in memory.
         fn f_scaling(&mut self, ud: &mut Ud) {
+            if openmodelica_solvers::solverflags::no_scaling() {
+                data(self.fscale, self.n).fill(1.0);
+                return;
+            }
             let vals = &mut self.vals;
             if !self.solved {
                 // C assembles this one through `nlsSparseSymJac`/`nlsSparseJac`, so
@@ -922,6 +930,7 @@ pub mod sun {
 
         /// C's `B_nlsKinsolXScaling`.
         fn x_scaling(&self, ud: &mut BUd, nominal: &[f64], mode: BScaling) {
+            let mode = if openmodelica_solvers::solverflags::no_scaling() { BScaling::Ones } else { mode };
             let start = data(self.u, self.n);
             match mode {
                 BScaling::NominalStart => {
@@ -937,6 +946,7 @@ pub mod sun {
         /// C's `1e-12` floor. The Jacobian is re-evaluated unless the last solve
         /// reached full accuracy.
         fn f_scaling(&mut self, ud: &mut BUd, mode: BScaling) {
+            let mode = if openmodelica_solvers::solverflags::no_scaling() { BScaling::Ones } else { mode };
             ud.scaling = false;
             if mode != BScaling::Jacobian {
                 ud.fscale.fill(1.0);
@@ -1195,6 +1205,19 @@ pub mod sun {
             }
             openmodelica_solvers::omclog::close(v);
             unsafe { KINSetUserData(self.kin, core::ptr::null_mut()) };
+            // C's `B_check_stop_at_system` throws, which fails the solve and so the run.
+            if openmodelica_solvers::solverflags::stop_at_system() == Some(eq_index as i64) {
+                use openmodelica_solvers::omclog;
+                if omclog::active(omclog::NLS) {
+                    omclog::debug!(
+                        omclog::ASSERT,
+                        false,
+                        "Success: Finished solving specified NLS system with index {eq_index}. The program will terminate now.",
+                    );
+                }
+                crate::host::note_runtime_error_flag();
+                return false;
+            }
             success
         }
     }

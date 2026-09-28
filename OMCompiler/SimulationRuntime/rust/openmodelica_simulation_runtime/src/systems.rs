@@ -74,6 +74,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
         let size = ls.size.max(0) as usize;
         ls.totalTime = 0.0;
         ls.failed = 0;
+        ls.logActive = 1;
         ls.b = calloc(size.max(1));
         ls.nominal = calloc(size.max(1));
         ls.min = calloc(size.max(1));
@@ -333,6 +334,7 @@ pub extern "C" fn solve_linear_system(
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let ls = unsafe { &mut *si.linearSystemData.add(sys_number as usize) };
+    let _quiet = crate::support::QuietSystem::new(ls.logActive);
     // C's `rt_ext_tp_tick(&linsys->totalTimeClock)`; `A` and `b` are assembled
     // inside, so the assembly mark is taken there.
     sysstat::begin(ls.equationIndex as i32, false, ls.size.max(0) as u32, ls.nnz.max(0) as u32);

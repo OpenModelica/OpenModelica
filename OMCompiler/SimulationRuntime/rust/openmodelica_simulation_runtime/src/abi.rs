@@ -1039,6 +1039,17 @@ pub const LSS_KLU: c_int = 3;
 pub const LSS_UMFPACK: c_int = 4;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
+/// The `*_MAX` sizes of the name/description tables `-help` prints.
+pub const S_MAX: c_int = 11;
+pub const IIM_MAX: c_int = 3;
+pub const LS_MAX: c_int = 7;
+pub const LSS_MAX: c_int = 5;
+pub const NLS_MAX: c_int = 7;
+pub const NLS_LS_MAX: c_int = 5;
+pub const NEWTON_MAX: c_int = 6;
+pub const JAC_MAX: c_int = 8;
+pub const IDA_LS_MAX: c_int = 6;
+pub const OMC_SIM_LOG_MAX: c_int = 57;
 
 /// `omc_alloc_interface_t` (gc/omc_gc.h): the allocator libOpenModelicaRuntimeC
 /// builds Strings with. Arrays that hold `modelica_string`s must come from its

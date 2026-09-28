@@ -108,6 +108,43 @@ pub fn max_step_factor() -> f64 {
     f64::from_bits(MAX_STEP_FACTOR.load(Ordering::Relaxed))
 }
 
+/// `-newton` as its `NewtonStrategy` code (0 unset), `-noScaling` and
+/// `-stopAtSystem` (negative unset).
+static NEWTON_STRATEGY: AtomicU32 = AtomicU32::new(0);
+static NO_SCALING: AtomicU32 = AtomicU32::new(0);
+static STOP_AT_SYSTEM: AtomicU64 = AtomicU64::new(u64::MAX);
+
+pub fn set_nls_options(newton_strategy: u32, no_scaling: u32, stop_at_system: i32) {
+    NEWTON_STRATEGY.store(newton_strategy, Ordering::Relaxed);
+    NO_SCALING.store(no_scaling, Ordering::Relaxed);
+    STOP_AT_SYSTEM.store(stop_at_system as i64 as u64, Ordering::Relaxed);
+}
+
+pub fn stop_at_system() -> Option<i64> {
+    let v = STOP_AT_SYSTEM.load(Ordering::Relaxed) as i64;
+    (v >= 0).then_some(v)
+}
+
+/// C also sets `-noScaling` itself on meeting an irregular sparsity pattern.
+pub fn set_no_scaling() {
+    NO_SCALING.store(1, Ordering::Relaxed);
+}
+
+pub fn no_scaling() -> bool {
+    NO_SCALING.load(Ordering::Relaxed) != 0
+}
+
+pub fn newton_strategy() -> crate::simflags::NewtonStrategy {
+    use crate::simflags::NewtonStrategy as S;
+    match NEWTON_STRATEGY.load(Ordering::Relaxed) {
+        1 => S::Damped,
+        3 => S::DampedLs,
+        4 => S::DampedBt,
+        5 => S::Pure,
+        _ => S::Damped2,
+    }
+}
+
 /// `-nlsJacTestATol` / `-nlsJacTestRTol`, at C's defaults until a run sets them.
 static JAC_TEST_ATOL: AtomicU64 = AtomicU64::new(0x3D19000000000000); // 100 * DBL_EPSILON
 static JAC_TEST_RTOL: AtomicU64 = AtomicU64::new(0x3F1A36E2EB1C432D); // 1e-4
@@ -275,6 +312,8 @@ pub fn apply_flags(f: &crate::simflags::SimFlags) {
     let (ftol, xtol, msf) = crate::simflags::newton_tuning(f);
     set_newton_tuning(ftol, xtol, msf);
     set_max_warn(f.max_warn.unwrap_or(3));
+    let (strategy, no_scaling, stop_at) = crate::simflags::nls_option_codes(f);
+    set_nls_options(strategy, no_scaling, stop_at);
     let (atol, rtol) = crate::simflags::jac_test_tolerances(f);
     set_jac_test_tolerances(atol, rtol);
     let (svd_count, svd_sigma, svd_tol) = crate::simflags::svd_params(f);

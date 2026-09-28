@@ -109,6 +109,7 @@ pub fn initialize_mixed_systems(data: *mut DATA, thread_data: *mut threadData_t)
         sys.iterationVarsPtr = crate::model_data::calloc(size.max(1));
         sys.iterationPreVarsPtr = crate::model_data::calloc(size.max(1));
         sys.solved = 1;
+        sys.logActive = 1;
         sys.solverData = Box::into_raw(Box::new(Search {
             before: vec![0; size],
             after: vec![0; size],
@@ -128,6 +129,8 @@ pub extern "C" fn solve_mixed_system(
 ) -> c_int {
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
+    // C reads `system->logActive`, the first system's, whichever is solved.
+    let _quiet = crate::support::QuietSystem::new(unsafe { (*si.mixedSystemData).logActive });
     let sys = unsafe { &mut *si.mixedSystemData.add(sys_number as usize) };
     if si.mixedMethod != MIXED_SEARCH {
         crate::throw(thread_data, "unrecognized mixed solver");
