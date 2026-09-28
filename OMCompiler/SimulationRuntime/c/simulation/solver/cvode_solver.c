@@ -26,6 +26,7 @@
  */
 
 /* Standard C headers */
+#include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -186,9 +187,24 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
+  for (i = 0; success && i < cvodeData->N; i++)
+  {
+    success = isfinite(NV_Ith_S(ydot, i));
+  }
+
   if (!success)
   {
     retVal = 1; /* Recoverable error, reduce step size and retry */
+#ifndef OMC_FMI_RUNTIME
+    /* At the start point fall back to the derivatives DASSL and IDA start from:
+     * the model can be singular at exactly that point. */
+    if (cvodeData->fStart != NULL && time == cvodeData->startTime
+        && memcmp(N_VGetArrayPointer(y), cvodeData->yStart, cvodeData->N * sizeof(double)) == 0)
+    {
+      memcpy(N_VGetArrayPointer(ydot), cvodeData->fStart, cvodeData->N * sizeof(double));
+      retVal = 0;
+    }
+#endif
   }
 
   threadData->currentErrorStage = saveJumpState;
@@ -887,6 +903,8 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
   }
   free(cvodeData->ysave);
   free(cvodeData->delta_hh);
+  free(cvodeData->yStart);
+  free(cvodeData->fStart);
   freeSymbolicOdeJacobian(cvodeData->simData->data);
 #endif
 
@@ -1017,6 +1035,17 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* Reinitialize after event or at first call to cvode_solver_step() */
   if (solverInfo->didEventStep || !cvodeData->isInitialized)
   {
+#ifndef OMC_FMI_RUNTIME
+    if (!cvodeData->isInitialized)
+    {
+      cvodeData->startTime = solverInfo->currentTime;
+      cvodeData->yStart = (double *)malloc(cvodeData->N * sizeof(double));
+      cvodeData->fStart = (double *)malloc(cvodeData->N * sizeof(double));
+      assertStreamPrint(threadData, cvodeData->yStart != NULL && cvodeData->fStart != NULL, "Out of memory.");
+      memcpy(cvodeData->yStart, simulationData->realVars, cvodeData->N * sizeof(double));
+      memcpy(cvodeData->fStart, simulationData->realVars + cvodeData->N, cvodeData->N * sizeof(double));
+    }
+#endif
     cvode_solver_reinit(data, threadData, solverInfo, cvodeData);
     cvodeData->isInitialized = TRUE;
   }
