@@ -631,6 +631,59 @@ algorithm
   decl := List.find1(allDecls, recordDeclHasName, name);
 end getRecordDependenciesFromType;
 
+public function setTrivialRecords
+  "Registers the records whose members are all scalars without references, or
+   such records. The declarations come sorted by their dependencies."
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
+protected
+  list<String> trivial = {};
+algorithm
+  for decl in recordDecls loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_FULL()
+        guard List.all(decl.variables, function isTrivialRecordMember(allDecls = recordDecls, trivial = trivial))
+        algorithm
+          trivial := decl.name :: trivial;
+        then ();
+      else ();
+    end match;
+  end for;
+  setGlobalRoot(Global.trivialRecords, trivial);
+end setTrivialRecords;
+
+public function isTrivialRecord
+  input String name;
+  output Boolean b;
+algorithm
+  b := listMember(name, getGlobalRoot(Global.trivialRecords));
+end isTrivialRecord;
+
+protected function isTrivialRecordMember
+  input SimCodeFunction.Variable var;
+  input list<SimCodeFunction.RecordDeclaration> allDecls;
+  input list<String> trivial;
+  output Boolean b;
+protected
+  String name;
+algorithm
+  b := match getVarType(var)
+    case DAE.T_REAL() then true;
+    case DAE.T_INTEGER() then true;
+    case DAE.T_BOOL() then true;
+    case DAE.T_ENUMERATION() then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
+      algorithm
+        try
+          SimCodeFunction.RECORD_DECL_FULL(name = name) := getRecordDependenciesFromType(getVarType(var), allDecls);
+          b := listMember(name, trivial);
+        else
+          b := false;
+        end try;
+      then b;
+    else false;
+  end match;
+end isTrivialRecordMember;
+
 protected function recordDeclHasName
   input SimCodeFunction.RecordDeclaration decl;
   input String name;

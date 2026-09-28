@@ -604,6 +604,7 @@ protected
   AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
+  SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   () := match target
     local
       String str, guid;
@@ -1014,6 +1015,7 @@ algorithm
   // The templates look the SimCode up through getSimCode(); an export off a kept
   // translation has no callTargetTemplatesFMU around it to have set it.
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
+  SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   guid := System.getUUIDStr();
   if not bareExport then
     // The C export's scratch directory, which terminalsAndIcons/ and documentation/
@@ -1092,6 +1094,7 @@ protected
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
+  SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   () := match (simCode,fmuTarget)
     local
       String str, newdir, newpath, resourcesDir, dirname, fileName;

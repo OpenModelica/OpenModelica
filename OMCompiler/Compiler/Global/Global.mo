@@ -116,6 +116,9 @@ constant Integer nfDiagramIconCache = 40;
 // model, which, like data reconciliation, must keep its uncertain=refine
 // variables out of alias elimination.
 constant Integer uncertaintyExtraction = 41;
+// C names of the records whose members own nothing, so the generated C code
+// neither retains nor releases them. Set by SimCodeFunctionUtil.setTrivialRecords.
+constant Integer trivialRecords = 42;
 
 // indexes in System.tick
 // ----------------------
@@ -161,6 +164,7 @@ algorithm
   setGlobalRoot(nbCreatedVars, {});
   setGlobalRoot(nfDiagramIconCache, NONE());
   setGlobalRoot(uncertaintyExtraction, NONE());
+  setGlobalRoot(trivialRecords, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

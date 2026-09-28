@@ -271,4 +271,9 @@ thread_local! {
     /// Source: `Uncertainties.mo`, read by `BackendDAEUtil.isDataReconciliationEnabled`.
     pub static uncertaintyExtraction: RefCell<Option<bool>> =
         const { RefCell::new(None) };
+
+    /// Index 42 — C names of the records whose members own nothing.
+    /// Source: `SimCodeFunctionUtil.setTrivialRecords`.
+    pub static trivialRecords: RefCell<metamodelica::List<ArcStr>> =
+        RefCell::new(metamodelica::nil());
 }
