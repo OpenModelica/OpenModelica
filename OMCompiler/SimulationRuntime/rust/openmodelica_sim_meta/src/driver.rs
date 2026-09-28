@@ -7306,7 +7306,10 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig, j
             Some(h) => format!("CVODE initial step size {}", format_g(h, 6)),
             None => "CVODE initial step size is set automatically".to_string(),
         },
-        format!("CVODE maximum integration order {}", lmm.max_order()),
+        format!(
+            "CVODE maximum integration order {}",
+            crate::simflags::with_flags(|f| f.max_order).unwrap_or(lmm.max_order())
+        ),
         "CVODE maximum number of nonlinear convergence failures permitted during one step 10"
             .to_string(),
         format!(

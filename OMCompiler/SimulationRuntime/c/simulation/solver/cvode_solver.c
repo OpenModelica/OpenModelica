@@ -566,8 +566,11 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
   }
 
   /* Maximum integration order */
-  /* TODO: Add a user flag */
-  if (config->lmm == CV_ADAMS)
+  if (omc_flag[FLAG_MAX_ORDER])
+  {
+    config->maxOrderLinearMultistep = atoi(omc_flagValue[FLAG_MAX_ORDER]);
+  }
+  else if (config->lmm == CV_ADAMS)
   {
     config->maxOrderLinearMultistep = 12 /* From ADAMS_Q_MAX */;
   }
