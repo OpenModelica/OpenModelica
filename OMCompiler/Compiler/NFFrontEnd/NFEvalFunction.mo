@@ -334,8 +334,7 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isBound(binding) then
-    bindingExp := Binding.getExp(binding);
-    bindingExp := Expression.map(bindingExp, Expression.clone);
+    bindingExp := Expression.clone(Binding.getExp(binding));
   else
     bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
