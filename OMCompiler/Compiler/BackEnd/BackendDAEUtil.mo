@@ -2738,12 +2738,14 @@ algorithm
           else
             /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
           end try;
-          try
-            (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-            res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
-          else
-            /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
-          end try;
+          if vars.hasStartVars then
+            try
+              (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+              res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
+            else
+              /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
+            end try;
+          end if;
         end for;
       then
         (res,size);
@@ -3124,11 +3126,13 @@ algorithm
       (varslst, p) := BackendVariable.getVar(cr, vars);
       pa := adjacencyRowExp1(varslst, p, pa, 0);
 
-      try
-        (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-        pa := adjacencyRowExp1(varslst, p2, pa, 0);
-      else
-      end try;
+      if vars.hasStartVars then
+        try
+          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+          pa := adjacencyRowExp1(varslst, p2, pa, 0);
+        else
+        end try;
+      end if;
     then (inExp, true, (vars, pa, visitedPaths, isInitial, ofunctionTree));
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
@@ -3416,11 +3420,13 @@ algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
         pa := listAppend(p, pa);
 
-        try
-          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-          pa := listAppend(p2, pa);
-        else
-        end try;
+        if vars.hasStartVars then
+          try
+            (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+            pa := listAppend(p2, pa);
+          else
+          end try;
+        end if;
       then (inExp, true, (vars, pa, isInitial));
 
     case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, e}), _)
@@ -3469,11 +3475,13 @@ algorithm
         (_, p) := BackendVariable.getVar(cr, vars);
         res := listAppend(p, pa);
 
-        try
-          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-          res := listAppend(p2, res);
-        else
-        end try;
+        if vars.hasStartVars then
+          try
+            (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+            res := listAppend(p2, res);
+          else
+          end try;
+        end if;
       then (inExp, true, (vars, res, isInitial));
 
     case (DAE.CALL(path=Absyn.IDENT(name="subSample")), _)
@@ -3525,11 +3533,13 @@ algorithm
         (varslst, p) := BackendVariable.getVar(cr, vars);
         res := adjacencyRowExp1(varslst, p, pa, 0);
 
-        try
-          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-          res := adjacencyRowExp1(varslst, p2, res, 0);
-        else
-        end try;
+        if vars.hasStartVars then
+          try
+            (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+            res := adjacencyRowExp1(varslst, p2, res, 0);
+          else
+          end try;
+        end if;
       then (e, true, (vars, res, isInitial));
 
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
@@ -3692,11 +3702,13 @@ algorithm
         (varslst, p) := BackendVariable.getVar(cr, vars);
         res := adjacencyRowExp1withInput(varslst, p, pa, 0);
 
-        try
-          (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-          res := adjacencyRowExp1withInput(varslst, p, res, 0);
-        else
-        end try;
+        if vars.hasStartVars then
+          try
+            (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+            res := adjacencyRowExp1withInput(varslst, p, res, 0);
+          else
+          end try;
+        end if;
       then (inExp, true, (vars, res, isInitial));
 
     // state derivative (in backend)

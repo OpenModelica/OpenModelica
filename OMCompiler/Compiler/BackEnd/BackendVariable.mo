@@ -2388,7 +2388,7 @@ algorithm
   buckets := bucketCount(arr_size);
   indices := arrayCreate(buckets, {});
   arr := vararrayEmpty(arr_size);
-  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0);
+  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0, false);
 end emptyVars;
 
 protected function bucketCount
@@ -3076,6 +3076,9 @@ algorithm
     arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
     updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables);
     outVariables.numberOfVars := outVariables.numberOfVars + 1;
+    if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
+      outVariables.hasStartVars := true;
+    end if;
   end try;
 end addVar;
 
@@ -3119,6 +3122,9 @@ algorithm
   updatePrefixIndices(inVar.varName, num_vars, outVariables);
   outVariables.varArr := varr;
   outVariables.numberOfVars := num_vars + 1;
+  if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
+    outVariables.hasStartVars := true;
+  end if;
 end addNewVar;
 
 public function addVariables
