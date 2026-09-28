@@ -497,7 +497,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars, inInitDAE_lambda0);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -7557,6 +7557,7 @@ public function createModelInfo
   input String fileDir;
   input Integer nSubClock;
   input list<SimCodeVar.SimVar> tempVars;
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0 = NONE() "homotopy initialization at lambda = 0";
   output SimCode.ModelInfo modelInfo;
 protected
   String description, directory, version, author, license, copyright, fileName;
@@ -7580,7 +7581,7 @@ algorithm
 
     // get fileName as the filename and model name can be different which will be used in dataReconciliation Report
     fileName := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(class_, program)));
-    (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
+    (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars, inInitDAE_lambda0);
 
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
@@ -8136,6 +8137,7 @@ protected function createVars
   input BackendDAE.BackendDAE inSimDAE "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
   input list<SimCodeVar.SimVar> tempvars;
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0 = NONE() "homotopy initialization at lambda = 0";
   output SimCodeVar.SimVars outVars;
   output list<SimCode.UnitDefinition> unitDefinitions = {} "list of unitDefintions which are exported in modelDescription.xml";
 protected
@@ -8220,6 +8222,14 @@ algorithm
   // Extract from external object list
   simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list (init)"); end if;
+
+  // ### initialization at lambda = 0 ###
+  // Its loops can be torn differently and introduce helper variables of their own.
+  if isSome(inInitDAE_lambda0) then
+    SOME(BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, aliasVars=aliasVars2))) := inInitDAE_lambda0;
+    simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars), simVars);
+    if debug then execStat("createVars: variable list (init lambda0)"); end if;
+  end if;
 
   addTempVars(simVars, tempvars);
   if debug then execStat("createVars: addTempVars"); end if;
