@@ -21,6 +21,7 @@ mod math;
 mod multirate;
 mod nls;
 mod nls_generic;
+pub mod nls_hook;
 mod tableau;
 mod tableau_data;
 
@@ -296,10 +297,8 @@ impl Gbode {
         };
         let nls =
             internal_nls.then(|| GbNls::new(&t, n_states, tol, jac_colors, sym_jac, whole_jac));
-        let kinsol = matches!(conf.nls_method, NlsMethod::Kinsol | NlsMethod::KinsolB)
-            .then(nls_generic::KinsolLadder::from_flags);
         let gnls = (!is_explicit && !internal_nls)
-            .then(|| GbNlsGeneric::new(&t, n_states, sym_jac, kinsol));
+            .then(|| GbNlsGeneric::new(&t, n_states, sym_jac, conf.nls_method));
         let multi_rate = conf.ratio > 0.0 && conf.ratio < 1.0;
         // With the birate mode and no explicit `-gbint`, C defaults to dense output.
         let base_interpolation =

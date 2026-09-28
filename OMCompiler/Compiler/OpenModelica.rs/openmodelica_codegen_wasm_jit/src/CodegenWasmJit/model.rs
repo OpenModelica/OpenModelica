@@ -499,6 +499,12 @@ pub(super) fn build_sim_model(
         if let Ok(k) = sim_cref_key(&sv.name) {
             attr_targets.entry(k).or_default().max_offs.push(off);
         }
+        // gbode's KINSOL keeps the sign a state's `min` asks for.
+        let off = layout.state_min_off + (i as u32) * 8;
+        max_defaults.push((off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
+        if let Ok(k) = sim_cref_key(&sv.name) {
+            attr_targets.entry(k).or_default().raw_min_offs.push(off);
+        }
     }
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.

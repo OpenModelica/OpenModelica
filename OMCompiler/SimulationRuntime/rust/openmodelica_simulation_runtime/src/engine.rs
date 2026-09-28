@@ -768,6 +768,7 @@ impl CEngine {
             nominal[..n_states].iter().flat_map(|v| v.abs().max(1e-32).to_ne_bytes()).collect();
         let _ = self.rt.write(l.state_nom_off, &clamped);
         let mut maxs = vec![f64::MAX; n_states];
+        let mut mins = vec![-f64::MAX; n_states];
         unsafe {
             for a in 0..md.nVariablesRealArray as usize {
                 let v = &*md.realVarsData.add(a);
@@ -775,12 +776,15 @@ impl CEngine {
                 for k in 0..v.dimension.scalar_length {
                     if base + k < n_states {
                         maxs[base + k] = v.attribute.max.real_at(k, f64::MAX);
+                        mins[base + k] = v.attribute.min.real_at(k, -f64::MAX);
                     }
                 }
             }
         }
         let bytes: Vec<u8> = maxs.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.state_max_off, &bytes);
+        let bytes: Vec<u8> = mins.iter().flat_map(|v| v.to_ne_bytes()).collect();
+        let _ = self.rt.write(l.state_min_off, &bytes);
         // The optimizer reads `min`/`max`/`nominal`/`useNominal` of every real
         // variable, not just the states'; C reaches them through
         // `getMinFromScalarIdx` and friends, which is this scalarization.

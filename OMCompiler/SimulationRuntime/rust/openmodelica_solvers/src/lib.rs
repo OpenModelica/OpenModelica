@@ -126,6 +126,12 @@ pub trait Ode {
         &[]
     }
 
+    /// State `min` attributes, which KINSOL's sign constraints read. Empty ⇒
+    /// unbounded.
+    fn mins(&self) -> &[f64] {
+        &[]
+    }
+
     /// Colouring of the ODE Jacobian: each entry lists the columns that may be
     /// perturbed together. Empty ⇒ dense, column by column.
     fn jac_colors(&self) -> &[alloc::vec::Vec<u32>] {

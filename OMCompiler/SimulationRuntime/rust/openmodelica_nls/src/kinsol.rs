@@ -248,6 +248,15 @@ pub mod sun {
         0
     }
 
+    fn configure(kin: *mut c_void, p: &openmodelica_solvers::gbode::nls_hook::KinsolParams) {
+        unsafe {
+            KINSetNumMaxIters(kin, p.max_iters as c_long);
+            KINSetNoInitSetup(kin, p.no_init_setup as c_int);
+            KINSetMaxSetupCalls(kin, p.max_setup_calls as c_long);
+            KINSetFuncNormTol(kin, p.fnorm_tol);
+        }
+    }
+
     /// A silent context: KINSOL writes its own diagnostics to `stderr`, which is
     /// captured and dropped during a simulation, and the return code carries
     /// everything the ladder needs.
@@ -300,13 +309,13 @@ pub mod sun {
         /// Set for good once `KIN_LSETUP_FAIL` rejects the analytic Jacobian.
         numeric_jac: bool,
         /// C's `kinsolData->solved == NLS_SOLVED`: the last solve converged to the
-        /// full tolerance, so [`f_scaling`](Self::f_scaling) reuses [`Self::vals`].
+        /// full tolerance, so [`f_scaling`](Self::f_scaling) reuses KINSOL's `J`.
         solved: bool,
-        /// The Jacobian values the scaling was last taken from.
-        vals: vec::Vec<f64>,
         /// `KINGetNumNonlinSolvIters` counts from `KINInit`, so a solve's own share
         /// is the difference across it.
         iters_seen: c_long,
+        /// C's `attemptRetry`, off for gbode's systems.
+        pub attempt_retry: bool,
     }
 
     impl Solver {
@@ -331,8 +340,8 @@ pub mod sun {
                 maxstepfactor: openmodelica_solvers::solverflags::max_step_factor(),
                 numeric_jac: false,
                 solved: false,
-                vals: vec![0.0; nnz],
                 iters_seen: 0,
+                attempt_retry: true,
             };
             if s.kin.is_null()
                 || s.j.is_null()
@@ -364,6 +373,15 @@ pub mod sun {
             Some(s)
         }
 
+        pub fn dims(&self) -> (usize, usize) {
+            (self.n, self.nnz)
+        }
+
+        /// C's `set_kinsol_parameters`, which gbode applies before each phase.
+        pub fn configure(&mut self, p: &openmodelica_solvers::gbode::nls_hook::KinsolParams) {
+            configure(self.kin, p);
+        }
+
         /// `xScale[i] = 1/max(nominal_i, |x_i|)` at the start point (C's
         /// `SCALING_NOMINALSTART`).
         fn x_scaling(&mut self, nominal: &[f64]) {
@@ -386,8 +404,14 @@ pub mod sun {
                 data(self.fscale, self.n).fill(1.0);
                 return;
             }
-            let vals = &mut self.vals;
+            // C scales from KINSOL's own `J`: assembled into it here unless the last
+            // solve converged, and read back from it either way.
+            let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(self.j), self.nnz) };
             if !self.solved {
+                unsafe {
+                    put_index(SUNSparseMatrix_IndexPointers(self.j), &ud.colptr[..ud.n + 1]);
+                    put_index(SUNSparseMatrix_IndexValues(self.j), &ud.rowidx[..ud.nnz]);
+                }
                 // C assembles this one through `nlsSparseSymJac`/`nlsSparseJac`, so
                 // it lands in `numberOfJEval` like any other.
                 crate::note_jac_eval();
@@ -562,7 +586,8 @@ pub mod sun {
                     stalled = !(fnorm < FTOL_LESS_ACCURACY);
                 }
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK) || (flag == KIN_STEP_LT_STPTOL && !stalled);
-                let retry = (flag < 0 || stalled) && self.handle_error(flag, &mut retries, &mut reset_tol);
+                let retry =
+                    self.attempt_retry && (flag < 0 || stalled) && self.handle_error(flag, &mut retries, &mut reset_tol);
                 ud.numeric = self.numeric_jac;
                 retries += 1;
                 passes += 1;
@@ -719,6 +744,7 @@ pub mod sun {
         /// C's `B_nlsSparseSymJac` / `B_nlsSparseJac` / `B_nlsDenseJac` body. C
         /// evaluates `f(x)` itself before differencing, scaling off for the pass.
         fn jacobian(&mut self, x: &mut [f64], vals: &mut [f64]) {
+            crate::note_jac_eval();
             let scaled = self.scaling;
             if scaled {
                 self.unscale_x(x);
@@ -837,9 +863,19 @@ pub mod sun {
         /// C's `kinsolData->solved == NLS_SOLVED`: the f-scaling then reuses `j`.
         solved: bool,
         reset_tol: bool,
+        /// C's `attemptRetry`, off for gbode's systems.
+        pub attempt_retry: bool,
     }
 
     impl BSolver {
+        pub fn dims(&self) -> (usize, usize) {
+            (self.n, self.nnz)
+        }
+
+        pub fn configure(&mut self, p: &openmodelica_solvers::gbode::nls_hook::KinsolParams) {
+            configure(self.kin, p);
+        }
+
         /// `nnz == 0` selects C's dense linear solver, which is what a system without
         /// a sparsity pattern gets (`initKinsolMemory`).
         pub fn new(n: usize, nnz: usize) -> Option<BSolver> {
@@ -877,6 +913,7 @@ pub mod sun {
                 maxstepfactor: openmodelica_solvers::solverflags::max_step_factor(),
                 solved: false,
                 reset_tol: false,
+                attempt_retry: true,
             };
             if s.kin.is_null() || s.j.is_null() || [s.u, s.ones_x, s.ones_f].iter().any(|v| v.is_null()) {
                 return None;
@@ -1172,6 +1209,7 @@ pub mod sun {
                 }
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
                 let retry = flag < 0
+                    && self.attempt_retry
                     && self.handle_error(flag, &mut ud, nominal, start, old, &mut retries);
                 retries += 1;
                 passes += 1;
@@ -1308,11 +1346,73 @@ static KIN_CACHE: Cache<sun::Solver> =
 static KIN_B_CACHE: Cache<sun::BSolver> =
     Cache::new();
 
+/// gbode's own systems (`-gbnls=kinsol` / `experimental-kinsol`), by gbode handle.
+#[cfg(sundials)]
+static GB_KIN_CACHE: Cache<sun::Solver> = Cache::new();
+#[cfg(sundials)]
+static GB_KIN_B_CACHE: Cache<sun::BSolver> = Cache::new();
+
 /// Drop every per-system KINSOL/KLU memory; they belong to one run.
 #[cfg(sundials)]
 pub fn reset_caches() {
     KIN_CACHE.locked(|m| m.clear());
     KIN_B_CACHE.locked(|m| m.clear());
+    GB_KIN_CACHE.locked(|m| m.clear());
+    GB_KIN_B_CACHE.locked(|m| m.clear());
+}
+
+/// C's `nlsKinsolSolve` on a gbode system, without retries.
+#[cfg(sundials)]
+pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -> bool {
+    let (n, nnz, handle) = (req.n, req.rowidx.len(), req.handle);
+    GB_KIN_CACHE.locked(|m| {
+        if m.get(&handle).is_some_and(|s| s.dims() != (n, nnz)) {
+            m.remove(&handle);
+        }
+    });
+    let pat = Pattern { nnz, colptr: req.colptr, rowidx: req.rowidx, colors: req.colors, max: req.max, min: req.min };
+    let (start, nominal, kinsol, time) = (req.start, req.nominal, req.kinsol, req.time);
+    let has_jacobian = req.jacobian.is_some();
+    let mut none = |_: &[f64], _: &mut [f64]| {};
+    let assemble: &mut dyn FnMut(&[f64], &mut [f64]) = match req.jacobian.as_deref_mut() {
+        Some(j) => j,
+        None => &mut none,
+    };
+    let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut *req.eval;
+    let x = &mut *req.x;
+    GB_KIN_CACHE.with(handle, || sun::Solver::new(n, nnz), |solver| {
+        solver.attempt_retry = false;
+        solver.configure(&kinsol);
+        solver.solve(start, nominal, &pat, x, u32::MAX, time, has_jacobian, eval, assemble)
+    })
+}
+
+/// [`gb_solve`] for `experimental-kinsol`: C's `B_nlsKinsolSolve`, whose Jacobian
+/// is taken where the last residual evaluation left the model.
+#[cfg(sundials)]
+pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -> bool {
+    let (n, nnz, handle) = (req.n, req.rowidx.len(), req.handle);
+    GB_KIN_B_CACHE.locked(|m| {
+        if m.get(&handle).is_some_and(|s| s.dims() != (n, nnz)) {
+            m.remove(&handle);
+        }
+    });
+    let (colptr, rowidx, old, start, nominal, kinsol, time) =
+        (req.colptr, req.rowidx, req.old, req.start, req.nominal, req.kinsol, req.time);
+    let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut *req.eval;
+    let jacobian = req.jacobian.as_deref_mut().map(|j| j as &mut dyn FnMut(&[f64], &mut [f64]));
+    let x = &mut *req.x;
+    let last = core::cell::RefCell::new(start.to_vec());
+    let mut tracked = |xs: &[f64], f: &mut [f64]| {
+        last.borrow_mut().copy_from_slice(xs);
+        eval(xs, f)
+    };
+    let mut load_guess = |xs: &mut [f64]| xs.copy_from_slice(&last.borrow());
+    GB_KIN_B_CACHE.with(handle, || sun::BSolver::new(n, nnz), |solver| {
+        solver.attempt_retry = false;
+        solver.configure(&kinsol);
+        solver.solve(start, old, nominal, Some((colptr, rowidx)), x, u32::MAX, time, &mut load_guess, &mut tracked, jacobian)
+    })
 }
 
 /// [`solve`] for `-nls=kinsol_b` (C's `B_nlsKinsolSolve`). `start` is C's
@@ -1410,6 +1510,16 @@ mod stub {
 
 #[cfg(not(sundials))]
 pub use stub::{b_solve, reset_caches, solve};
+
+#[cfg(not(sundials))]
+pub fn gb_solve(_req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -> bool {
+    false
+}
+
+#[cfg(not(sundials))]
+pub fn gb_b_solve(_req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -> bool {
+    false
+}
 
 /// The KINSOL driver `-nls` names, over the system's CSC pattern: `kinsolSolver.c`
 /// for `kinsol`, `kinsol_b.c` for `experimental-kinsol`. C picks between them per

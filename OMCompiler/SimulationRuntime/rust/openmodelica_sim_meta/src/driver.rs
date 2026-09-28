@@ -4768,6 +4768,7 @@ fn alloc_gbode(
     if method != "gbode" {
         return Ok(None);
     }
+    openmodelica_nls::gbode::install();
     let layout = &model.layout;
     let jac_a = match env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() {
         true => None,
@@ -6424,6 +6425,10 @@ fn read_state_maxs(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Resu
     (0..layout.n_states).map(|i| read_f64(e, sim_data + layout.state_max_off + i * 8)).collect()
 }
 
+fn read_state_mins(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
+    (0..layout.n_states).map(|i| read_f64(e, sim_data + layout.state_min_off + i * 8)).collect()
+}
+
 /// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`.
 fn dassl_tolerances(tol: f64, nominals: &[f64]) -> (Vec<f64>, Vec<f64>) {
     (vec![tol; nominals.len()], nominals.iter().map(|n| tol * n).collect())
@@ -7399,6 +7404,7 @@ struct SolverCore {
     nominals: Vec<f64>,
     /// State `max` attributes, for gbode's finite-difference step sign.
     maxs: Vec<f64>,
+    mins: Vec<f64>,
     /// Relative tolerance, for the numerical Jacobian's first step.
     tol: f64,
     /// C's `chatteringInfo`: a ring of the last [`CHATTER_LIMIT`] state event times
@@ -7441,6 +7447,7 @@ pub struct EngineOde<'a> {
     pub jac_a: Option<&'a JacAInfo>,
     pub nominals: &'a [f64],
     pub maxs: &'a [f64],
+    pub mins: &'a [f64],
     pub nominal_factor: f64,
     /// Base of the zero-crossing value region.
     pub zc_off: u32,
@@ -7500,6 +7507,10 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
 
     fn maxs(&self) -> &[f64] {
         self.maxs
+    }
+
+    fn mins(&self) -> &[f64] {
+        self.mins
     }
 
     fn jac_colors(&self) -> &[Vec<u32>] {
@@ -7612,7 +7623,7 @@ fn model_ode<'a>(
     states_base: u32,
     ders_base: u32,
     nominals: &'a [f64],
-    maxs: &'a [f64],
+    (maxs, mins): (&'a [f64], &'a [f64]),
 ) -> EngineOde<'a> {
     EngineOde {
         e,
@@ -7626,6 +7637,7 @@ fn model_ode<'a>(
         jac_a: unsafe { ctx.jac.as_ref() },
         nominals,
         maxs,
+        mins,
         nominal_factor: ctx.nominal_factor,
         zc_off: ctx.zc_off,
         calls: 0,
@@ -7758,6 +7770,7 @@ impl SolverCore {
         // IDA take the same ones, as `cvode_solver_initial`/`ida_solver_initial` do.
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let maxs = read_state_maxs(e, sim_data, layout)?;
+        let mins = read_state_mins(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
         let solver = if let Some(kind) = fixed_kind(method) {
             Solver::Fixed(crate::fixedstep::FixedStep::new(kind, n_states, layout.n_zc as usize))
@@ -7822,6 +7835,7 @@ impl SolverCore {
             walk_steps: 0,
             nominals,
             maxs,
+            mins,
             tol,
             chatter_times: [0.0; CHATTER_LIMIT],
             chatter_idx: 0,
@@ -7942,6 +7956,7 @@ impl SolverCore {
     fn refresh_nominals(&mut self, e: &dyn SimEngine, layout: &SimLayout) -> Result<()> {
         self.nominals = read_state_nominals(e, self.sim_data, layout)?;
         self.maxs = read_state_maxs(e, self.sim_data, layout)?;
+        self.mins = read_state_mins(e, self.sim_data, layout)?;
         let (_, atol) = dassl_tolerances(self.tol, &self.nominals);
         #[cfg(sundials)]
         {
@@ -8218,7 +8233,7 @@ impl SolverCore {
                 }
                 Solver::Fixed(f) => {
                     let e = unsafe { &mut *ctx.engine };
-                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, (&self.maxs, &self.mins));
                     match f.step(&mut ode, &mut self.t, &mut self.y, &mut self.yp, target)? {
                         openmodelica_solvers::events::StepEnd::Reached => Progress::Reached,
                         openmodelica_solvers::events::StepEnd::Root(_) => Progress::Root,
@@ -8226,7 +8241,7 @@ impl SolverCore {
                 }
                 Solver::Sym(s) => {
                     let e = unsafe { &mut *ctx.engine };
-                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, (&self.maxs, &self.mins));
                     match s.step(&mut ode, &mut self.t, &mut self.y, &mut self.yp, target)? {
                         openmodelica_solvers::events::StepEnd::Reached => Progress::Reached,
                         openmodelica_solvers::events::StepEnd::Root(_) => Progress::Root,
@@ -8234,7 +8249,7 @@ impl SolverCore {
                 }
                 Solver::Gbode(g) => {
                     let e = unsafe { &mut *ctx.engine };
-                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, (&self.maxs, &self.mins));
                     let limit = self.sample_limit;
                     match g.step(&mut ode, target, limit, &mut self.t, &mut self.y)? {
                         crate::gbode::GbStep::Reached => Progress::Reached,
