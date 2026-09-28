@@ -4064,7 +4064,7 @@ algorithm
       then ();
     else ();
   end match;
-  (attr, _) := BackendDAEUtil.traverseBackendDAEVarAttr(var.values, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
+  (attr, _) := BackendDAEUtil.traverseBackendDAEVarAttr(var.values, replaceDummyDerivativesExp, ht);
   if not referenceEq(attr, var.values) then
     var := BackendVariable.setVarAttributes(var, attr);
   end if;
