@@ -1343,8 +1343,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   double error_f_sqrd, error_f1_sqrd, error_f2_sqrd, error_f_sqrd_scaled, error_f1_sqrd_scaled;
   double delta_x_sqrd, delta_x_sqrd_scaled, grad_f, grad_f_scaled;
   int numberOfSmallSteps = 0;
-  double error_f_old = 1e100;
+  double error_f_old = 1e100, error_f_old_scaled = 1e100;
   int countNegativeSteps = 0;
+  int countIncreases = 0;
   double lambda;
   double lambda1, lambda2;
   double lambdaMin = 1e-4;
@@ -1554,10 +1555,12 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     delta_x_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->dxScaled);
 
     error_f_old = error_f_sqrd;
+    error_f_old_scaled = error_f_sqrd_scaled;
     error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
     error_f_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->fvecScaled);
 
     countNegativeSteps += (error_f_sqrd > 10*error_f_old);
+    countIncreases += (error_f_sqrd > error_f_old);
     lastWasGood = error_f_sqrd >= error_f_old;
 
 
@@ -1588,7 +1591,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       );
     }
 #endif
-    if (countNegativeSteps > 20)
+    if (countNegativeSteps > 20 || countIncreases > 20)
     {
       debugInt(OMC_LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
@@ -1619,6 +1622,15 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     else if (solverinfo == 1){
       solverData->info = -1;
       debugString(OMC_LOG_DT, "It is not the solution.");
+      break;
+    }
+    /* the residual stopped decreasing at an x that meets the tolerance: further steps are round-off */
+    else if (lastWasGood && ((error_f_old < solverData->ftol_sqrd) || (error_f_old_scaled < solverData->ftol_sqrd)))
+    {
+      solverData->info = 1;
+      debugString(OMC_LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
+      solverData->numberOfIterations += numberOfIterations;
+      solverData->error_f_sqrd = error_f_old;
       break;
     }
 
