@@ -7250,6 +7250,7 @@ struct SolverCore {
     dae_alg_offs: Vec<u32>,
     /// The model was translated with `--daeMode`, so `y'` is a solver result.
     dae: bool,
+    rel_fresh_off: u32,
     states_base: u32,
     ders_base: u32,
     y: Vec<f64>,
@@ -7676,6 +7677,7 @@ impl SolverCore {
             n_unknowns: n_states + layout.n_dae_alg as usize,
             dae_alg_offs: model.dae.as_ref().map(|d| d.alg_offs.clone()).unwrap_or_default(),
             dae: layout.dae_mode(),
+            rel_fresh_off: layout.rel_fresh_off,
             states_base,
             ders_base,
             y: Vec::new(),
@@ -7726,7 +7728,16 @@ impl SolverCore {
             if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
                 return Err("CodegenWasmJit: IDA setup failed");
             }
-            dae_calc_ic(ida, self.t, self.tol)?;
+            // C sets `discreteCall` only around the two discrete evaluations, so
+            // `IDACalcIC`'s residuals read the held relations.
+            let mode_addr = self.sim_data + self.rel_fresh_off;
+            let mode = read_i32(e, mode_addr)?;
+            if mode == 1 {
+                write_i32(e, mode_addr, 0)?;
+            }
+            let r = dae_calc_ic(ida, self.t, self.tol);
+            write_i32(e, mode_addr, mode)?;
+            r?;
             self.y.copy_from_slice(ida.y());
             self.yp.copy_from_slice(ida.yp());
         }
