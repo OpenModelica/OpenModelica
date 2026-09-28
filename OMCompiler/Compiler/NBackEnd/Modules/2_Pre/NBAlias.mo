@@ -1648,6 +1648,8 @@ protected
           stateSelect_val := Util.getOption(attr.stateSelect);
           if stateSelect_val == StateSelect.ALWAYS then
             rating := rating + 100;
+          elseif stateSelect_val == StateSelect.PREFER then
+            rating := rating + 50;
           end if;
           UnorderedMap.add(BVariable.getVarName(var_ptr), stateSelect_val, attrcollector.stateSelect_map);
         end if;
