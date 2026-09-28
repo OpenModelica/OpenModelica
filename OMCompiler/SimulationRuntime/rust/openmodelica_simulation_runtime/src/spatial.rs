@@ -3,45 +3,80 @@
 //! `simulation/solver/spatialDistribution.c`).
 //!
 //! C keeps one `SPATIAL_DISTRIBUTION_DATA` per operator in
-//! `simulationInfo->spatialDistributionData`; this runtime keeps them in the
-//! shared `SpatialState` instead, so both targets transport the profile with one
-//! implementation and `spatialDistributionData` stays null. The generated code
-//! only ever reaches the operators through the four functions below.
+//! `simulationInfo->spatialDistributionData`; this runtime keeps the shared
+//! `SpatialState` there instead, so both targets transport the profile with one
+//! implementation. The generated code only ever reaches the operators through the
+//! four functions below.
 
-use core::cell::UnsafeCell;
+use core::cell::Cell;
 use core::ffi::{c_int, c_uint};
 
 use openmodelica_sim_meta::spatial::SpatialState;
 
 use crate::abi::*;
 
-struct SpatialCell(UnsafeCell<Option<SpatialState>>);
-// One model per process, driven from one thread, as C's own file-scope state.
-unsafe impl Sync for SpatialCell {}
-static SPATIAL: SpatialCell = SpatialCell(UnsafeCell::new(None));
-
-struct TdCell(UnsafeCell<*mut threadData_t>);
-unsafe impl Sync for TdCell {}
-/// The `threadData` of the call in progress. The shared operators report a model
-/// error through a hook that takes only the message, and C throws out of the
-/// model there, so the jump buffer has to be reachable from one.
-static TD: TdCell = TdCell(UnsafeCell::new(core::ptr::null_mut()));
+std::thread_local! {
+    /// The `threadData` of the call in progress. The shared operators report a model
+    /// error through a hook that takes only the message, and C throws out of the
+    /// model there, so the jump buffer has to be reachable from one.
+    static TD: Cell<*mut threadData_t> = const { Cell::new(core::ptr::null_mut()) };
+}
 
 /// C's `allocSpatialDistribution`: empty operators for a fresh run.
-pub fn init(n: usize) {
+pub fn init(data: *mut DATA, n: usize) {
     openmodelica_sim_meta::spatial::set_throw_hook(report);
-    unsafe { *SPATIAL.0.get() = Some(SpatialState::new(n)) };
+    free(data);
+    let si = unsafe { &mut *(*data).simulationInfo };
+    si.spatialDistributionData = Box::into_raw(Box::new(SpatialState::new(n))) as *mut SPATIAL_DISTRIBUTION_DATA;
+}
+
+pub fn free(data: *mut DATA) {
+    let si = unsafe { &mut *(*data).simulationInfo };
+    let p = core::mem::replace(&mut si.spatialDistributionData, core::ptr::null_mut());
+    if !p.is_null() {
+        drop(unsafe { Box::from_raw(p as *mut SpatialState) });
+    }
+}
+
+#[cfg(feature = "fmi")]
+/// The state as flat words for an FMU state, led by whether there is one.
+pub fn to_words(data: *mut DATA, out: &mut Vec<f64>) {
+    match unsafe { ((*(*data).simulationInfo).spatialDistributionData as *const SpatialState).as_ref() } {
+        Some(s) => {
+            out.push(1.0);
+            s.to_words(out);
+        }
+        None => out.push(0.0),
+    }
+}
+
+#[cfg(feature = "fmi")]
+/// [`to_words`]' inverse; `false` for words it did not write.
+pub fn set_from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> bool {
+    let state = match w.next() {
+        Some(0.0) => None,
+        Some(_) => match SpatialState::from_words(w) {
+            Some(s) => Some(s),
+            None => return false,
+        },
+        None => return false,
+    };
+    free(data);
+    if let Some(s) = state {
+        unsafe { (*(*data).simulationInfo).spatialDistributionData = Box::into_raw(Box::new(s)) as *mut SPATIAL_DISTRIBUTION_DATA };
+    }
+    true
 }
 
 /// The operators' `throwStreamPrint`, on the `threadData` the entry point below
 /// recorded. Does not return.
 fn report(msg: &str) -> ! {
-    crate::throw(unsafe { *TD.0.get() }, msg)
+    crate::throw(TD.get(), msg)
 }
 
-fn state(threadData: *mut threadData_t) -> &'static mut SpatialState {
-    unsafe { *TD.0.get() = threadData };
-    match unsafe { (*SPATIAL.0.get()).as_mut() } {
+fn state(data: *mut DATA, threadData: *mut threadData_t) -> &'static mut SpatialState {
+    TD.set(threadData);
+    match unsafe { ((*(*data).simulationInfo).spatialDistributionData as *mut SpatialState).as_mut() } {
         Some(s) => s,
         None => crate::throw(
             threadData,
@@ -58,7 +93,7 @@ fn reals(a: *const real_array, length: usize) -> Vec<f64> {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn initSpatialDistribution(
-    _data: *mut DATA,
+    data: *mut DATA,
     threadData: *mut threadData_t,
     index: c_uint,
     initialPoints: *const real_array,
@@ -67,7 +102,7 @@ pub extern "C" fn initSpatialDistribution(
 ) {
     let n = length as usize;
     let (p, v) = (reals(initialPoints, n), reals(initialValues, n));
-    state(threadData).init_profile(index, &p, &v);
+    state(data, threadData).init_profile(index, &p, &v);
 }
 
 #[unsafe(no_mangle)]
@@ -81,7 +116,7 @@ pub extern "C" fn storeSpatialDistribution(
     isPositiveVelocity: c_int,
 ) {
     let time = unsafe { (*(*(*data).localData)).timeValue };
-    state(threadData).store(index, time, in0, in1, posX, isPositiveVelocity != 0);
+    state(data, threadData).store(index, time, in0, in1, posX, isPositiveVelocity != 0);
 }
 
 #[unsafe(no_mangle)]
@@ -99,7 +134,7 @@ pub extern "C" fn spatialDistribution(
     let time = unsafe { (*(*(*data).localData)).timeValue };
     let mode = (si.discreteCall != 0) as u32;
     let (o0, o1) =
-        state(threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
+        state(data, threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
     if !out1.is_null() {
         unsafe { *out1 = o1 };
     }
@@ -117,5 +152,5 @@ pub extern "C" fn spatialDistributionZeroCrossing(
 ) -> f64 {
     let si = unsafe { &*(*data).simulationInfo };
     let zc_pre = unsafe { *si.zeroCrossingsPre.add(relationIndex as usize) };
-    state(threadData).zc(index, posX, isPositiveVelocity != 0, zc_pre)
+    state(data, threadData).zc(index, posX, isPositiveVelocity != 0, zc_pre)
 }

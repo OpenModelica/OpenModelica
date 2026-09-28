@@ -365,7 +365,9 @@ case SIMCODE(__) then
   <<
   // FMI 1.0 inlines the model interface implementation here, after the forward declarations
   // above (setStartValues, setDefaultStartValues, getReal, ...) that it calls. See #15838.
+  #if !defined(OMC_RUST_SIMULATION_RUNTIME)
   #include "fmi-export/fmu1_model_interface.c.inc"
+  #endif
   >>
   else ""
   %>
@@ -399,6 +401,31 @@ case SIMCODE(__) then
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
+  const size_t omc_fmu_threadDataSize = sizeof(threadData_t);
+  <%if isFMIVersion30(FMUVersion) then
+  <<
+  const int omc_fmu3_nArrays = FMI3_NUMBER_OF_ARRAYS;
+  #if FMI3_NUMBER_OF_ARRAYS > 0
+  const unsigned int omc_fmu3_arrayVrs[] = FMI3_ARRAY_VRS;
+  const unsigned int omc_fmu3_arrayLengths[] = FMI3_ARRAY_LENGTHS;
+  #else
+  const unsigned int omc_fmu3_arrayVrs[1] = {0};
+  const unsigned int omc_fmu3_arrayLengths[1] = {0};
+  #endif
+  >>
+  else
+  <<
+  const int omc_fmu3_nArrays = 0;
+  const unsigned int omc_fmu3_arrayVrs[1] = {0};
+  const unsigned int omc_fmu3_arrayLengths[1] = {0};
+  >>
+  %>
+  void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData) {
+    <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(data, threadData);
+  }
+  #if defined(OMC_RUST_SIMULATION_RUNTIME)
+  #include "fmi-export/fmu<%if isFMIVersion30(FMUVersion) then "3" else if isFMIVersion20(FMUVersion) then "2" else "1"%>_rust_interface.c.inc"
+  #endif
 
   // implementation of the Model Exchange functions
   <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
@@ -499,7 +526,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   <<
   // Set values for all variables that define a start value
   OMC_DISABLE_OPT
-  void setDefaultStartValues(ModelInstance *comp) {
+  void omc_fmu_setDefaultStartValues(DATA *fmuData) {
     <%vars.stateVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
     <%vars.derivativeVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
     <%vars.algVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
@@ -511,6 +538,10 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
     <%vars.intParamVars |> var => initParamsDefault(var,"integerParameter") ;separator="\n"%>
     <%vars.boolParamVars |> var => initParamsDefault(var,"booleanParameter") ;separator="\n"%>
     <%vars.stringParamVars |> var => initParamsDefault(var,"stringParameter") ;separator="\n"%>
+  }
+
+  void setDefaultStartValues(ModelInstance *comp) {
+    omc_fmu_setDefaultStartValues(comp->fmuData);
   }
   >>
 end setDefaultStartValues;
@@ -594,16 +625,16 @@ template initValsDefault(SimVar var, String arrayName) ::=
     case SIMVAR(index=index, type_=T_REAL())
     case SIMVAR(index=index, type_=T_ARRAY(ty=T_REAL())) then
       <<
-      put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_real_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
     case SIMVAR(index=index, type_=T_STRING())
     case SIMVAR(index=index, type_=T_ARRAY(ty=T_STRING())) then
       <<
-      omc_string_move((modelica_string*) comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
+      omc_string_move((modelica_string*) fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
       >>
     case SIMVAR(index=index, type_=type_) then
       <<
-      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initValsDefault;
 
@@ -611,15 +642,15 @@ template initParamsDefault(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(index=index, type_=T_REAL()) then
       <<
-      put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_real_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
     case SIMVAR(index=index, type_=T_STRING()) then
       <<
-      omc_string_move((modelica_string*) comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
+      omc_string_move((modelica_string*) fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
       >>
     case SIMVAR(index=index, type_=type_) then
       <<
-      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initParamsDefault;
 

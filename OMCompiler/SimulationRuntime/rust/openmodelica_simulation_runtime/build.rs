@@ -126,7 +126,8 @@ const C_TAG: &[&str] = &["OpenModelicaGeneratedFunctionCallbacks"];
 fn fmi_runtime_cfg() -> bool {
     println!("cargo:rustc-check-cfg=cfg(omc_fmi_runtime)");
     println!("cargo:rerun-if-env-changed=OMC_SIMRT_FMI");
-    let fmi = std::env::var("OMC_SIMRT_FMI").is_ok_and(|v| v != "0" && !v.is_empty());
+    let fmi = std::env::var("OMC_SIMRT_FMI").is_ok_and(|v| v != "0" && !v.is_empty())
+        || std::env::var_os("CARGO_FEATURE_FMU_RUNTIME").is_some();
     if fmi {
         println!("cargo:rustc-cfg=omc_fmi_runtime");
     }

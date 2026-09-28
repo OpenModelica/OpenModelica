@@ -93,3 +93,28 @@ pub extern "C" fn rt_spatial_out1(index: u32) -> f64 {
 pub extern "C" fn rt_spatial_zc(index: u32, pos_x: f64, positive: u32, zc_pre: f64) -> f64 {
     state().zc(index, pos_x, positive != 0, zc_pre)
 }
+
+/// The state as flat words for an FMU state, led by whether there is one.
+pub fn to_words(out: &mut alloc::vec::Vec<f64>) {
+    match unsafe { (*SPATIAL.0.get()).as_ref() } {
+        Some(s) => {
+            out.push(1.0);
+            s.to_words(out);
+        }
+        None => out.push(0.0),
+    }
+}
+
+/// [`to_words`]' inverse; `false` for words it did not write.
+pub fn set_from_words(w: &mut dyn Iterator<Item = f64>) -> bool {
+    let state = match w.next() {
+        Some(0.0) => None,
+        Some(_) => match SpatialState::from_words(w) {
+            Some(s) => Some(s),
+            None => return false,
+        },
+        None => return false,
+    };
+    unsafe { *SPATIAL.0.get() = state };
+    true
+}
