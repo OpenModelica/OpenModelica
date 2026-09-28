@@ -487,9 +487,6 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
-  printSparsePattern(fwd->sparsePattern);
-  printSparsePattern(fwd->sparsePatternT);
-
   // sortSparseColumns(fwdsp, nCols);
   // sortSparseColumns(adjsp, nRows);
 
@@ -1482,30 +1479,20 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   int forwardStatus = 1;
   int adjointStatus = 1;
 
-  printf("Initializing symbolic ODE Jacobian with method %s\n", JACOBIAN_METHOD_NAME[*jacobianMethod]);
-
   if (needForwardJacobian) {
-    printf("Initializing forward Jacobian A in needForwardJacobian.\n");
     forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
-    printSparsePattern(forwardJacobian->sparsePattern);
   }
 
   if (wantAdjoint || wantBidirectional) {
     //printf("Initializing adjoint Jacobian ADJ in wantAdjoint or wantBidirectional.\n");
     adjointStatus = data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
-    printSparsePattern(adjointJacobian->sparsePattern);
     computeRowColoring(adjointJacobian->sparsePatternT, (unsigned int) adjointJacobian->sizeRows, (unsigned int) adjointJacobian->sizeCols);
-    printSparsePattern(adjointJacobian->sparsePatternT);
   }
 
   if (wantBidirectional) {
     //printf("Initializing bidirectional Jacobian in wantBidirectional.\n");
     if (forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalRow) {
-      printf("Bidirectional Jacobian successfully initialized.\n");
-      printSparsePattern(forwardJacobian->sparsePatternT);
-      printSparsePattern(adjointJacobian->sparsePatternT);
       transferAdjointJacobianToUnifiedStorage(forwardJacobian, adjointJacobian);
-      printSparsePattern(forwardJacobian->sparsePatternT);
       int ret = initBidirectionalRecovery(forwardJacobian, threadData);
       if (ret != 0) {
         errorStreamPrint(OMC_LOG_STDOUT, 0, "Failed to initialize bidirectional Jacobian. "
