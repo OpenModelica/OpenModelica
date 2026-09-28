@@ -67,6 +67,10 @@ pub use openmodelica_solvers::sundials;
 pub const CVODE: bool = cfg!(sundials);
 pub const IDA: bool = cfg!(sundials);
 
+/// Chattering: this many state events in a row within less than the step size and
+/// this fraction of the simulation interval (C's `chatteringLimits`).
+pub const CHATTER_LIMITS: [(usize, f64); 2] = [(1000, 1e-6), (100, 1e-9)];
+
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;
 /// Byte offset of the first real variable within `SimData`:
@@ -1013,6 +1017,9 @@ pub struct OptInfo {
     pub jac_b: Option<OptJac>,
     pub jac_c: Option<OptJac>,
     pub jac_d: Option<OptJac>,
+    /// What C's `runOptimizer` throws before it optimizes anything: a variable
+    /// that is not scalarized, or goal functions the model was compiled without.
+    pub setup_error: Option<String>,
 }
 
 /// Solver statistics filled by the driver and rendered into the simulation log by
@@ -1388,6 +1395,18 @@ impl SimMeta {
             return h;
         }
         self.translated_step_size()
+    }
+
+    /// C's `chatteringTimeLimit`: the step size, and `fraction` of the simulation
+    /// interval when there is one.
+    pub fn chatter_time_limit(&self, fraction: f64) -> f64 {
+        let step_size = self.step_size();
+        let interval = self.stop_time - self.start_time;
+        if interval > 0.0 && interval.is_finite() {
+            fmath::fmin(step_size, fraction * interval)
+        } else {
+            step_size
+        }
     }
 
     /// [`step_size`](Self::step_size) as the model was translated, ignoring
@@ -1827,6 +1846,13 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
                         put_str(&mut o, &j.column_fn);
                         put_str(&mut o, &j.const_fn);
                     }
+                }
+            }
+            match &t.setup_error {
+                None => o.push(0),
+                Some(msg) => {
+                    o.push(1);
+                    put_str(&mut o, msg);
                 }
             }
         }
@@ -2375,9 +2401,13 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             let jac_b = jac()?;
             let jac_c = jac()?;
             let jac_d = jac()?;
+            let setup_error = match r.u8()? {
+                0 => None,
+                _ => Some(r.string()?),
+            };
             Some(OptInfo {
                 n_con, n_final_con, inputs, loop_inputs, mayer, lagrange, real_names, tgrid,
-                start_time_opt, jac_b, jac_c, jac_d,
+                start_time_opt, jac_b, jac_c, jac_d, setup_error,
             })
         }
     };
@@ -2637,6 +2667,7 @@ mod tests {
                 }),
                 jac_c: None,
                 jac_d: None,
+                setup_error: Some("x is an array".to_string()),
             }),
             inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
             recon: Some(ReconInfo {

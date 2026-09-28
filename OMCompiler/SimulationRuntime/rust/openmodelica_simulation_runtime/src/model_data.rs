@@ -314,6 +314,12 @@ unsafe extern "C" {
     /// `util/omc_string.h`. Immortal, so the attribute slots this fills can be
     /// released by the runtime like any other without freeing anything.
     fn omc_string_new_persist(str: *const c_char) -> *mut c_void;
+    fn omc_string_slots_store(dst: *mut *mut c_void, src: *const *mut c_void, n: usize);
+}
+
+/// C's `omc_string_store`: the slot takes its own reference and drops the old one.
+pub(crate) unsafe fn string_store(slot: *mut modelica_string, s: modelica_string) {
+    unsafe { omc_string_slots_store(slot, &s, 1) };
 }
 
 /// The byte offset of an `omc_string`'s data: it points at `struct omc_string_s`,

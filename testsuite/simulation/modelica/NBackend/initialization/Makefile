@@ -4,6 +4,7 @@ TESTFILES = \
 experimental_initialSimplified.mos \
 functionOutputStart.mos \
 functionOutputStartAlias.mos \
+functionAliasStartLoop.mos \
 primaryParameterFor.mos \
 primaryParameterRecord.mos \
 resizableParameterBinding.mos \

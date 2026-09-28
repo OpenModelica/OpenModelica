@@ -252,6 +252,22 @@ public
 
         // if it is an array create for-equation (fixed or unfixed)
         case Variable.VARIABLE() guard BVariable.isArray(var) algorithm
+          // the start value of a function output is the call at the start values of its arguments
+          if not BVariable.isFixed(var) and isFunctionAliasOrElement(var) then
+            start_ok := Pointer.create(true);
+            () := match BVariable.getStartAttribute(var)
+              case SOME(start_exp) guard not Expression.isLiteralXML(start_exp) algorithm
+                start_exp := resolveStartCrefs(start_exp, ptr_start_vars, aliasVars, start_ok, 0);
+                if Pointer.access(start_ok) then
+                  Pointer.update(var, BVariable.setStartAttribute(Pointer.access(var), start_exp, true));
+                end if;
+              then ();
+              else ();
+            end match;
+            if not Pointer.access(start_ok) then
+              return;
+            end if;
+          end if;
           if BVariable.isFixed(var) then
             createStartEquationSlice(Slice.SLICE(var, {}), ptr_start_vars, ptr_start_eqs, idx, BVariable.isFixed(var));
           else
@@ -289,7 +305,7 @@ public
             case SOME(e) guard not Expression.isLiteralXML(e) algorithm
               // the start value of a function output is the call at the start values of its arguments
               start_ok := Pointer.create(true);
-              if BVariable.isFunctionAlias(var) then
+              if isFunctionAliasOrElement(var) then
                 e := resolveStartCrefs(e, ptr_start_vars, aliasVars, start_ok, 0);
               end if;
               if Pointer.access(start_ok) then
@@ -750,6 +766,25 @@ public
     end if;
   end createParameterEquation;
 
+  function isAliasVar
+    input Pointer<Variable> var_ptr;
+    input VariablePointers aliasVars;
+    output Boolean b = VariablePointers.containsCref(BVariable.getVarName(var_ptr), aliasVars);
+  end isAliasVar;
+
+  function isFunctionAliasOrElement
+    "true for function alias variables and the elements of function alias records"
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match BVariable.getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isFunctionAliasOrElement(parent);
+      else BVariable.isFunctionAlias(var_ptr);
+    end match;
+  end isFunctionAliasOrElement;
+
   function resolveStartCrefs
     "Replaces the variables in a start expression by their start values, e.g. the start value of a function output
     is the function call at the start values of its arguments. Since start values can be changed after the
@@ -779,7 +814,6 @@ public
     Pointer<Variable> start_var;
     Boolean existed;
     Option<Expression> start_opt;
-    list<Pointer<Variable>> children;
   algorithm
     res := match exp
       // internal helper functions (e.g. of stream connectors) have no code outside of equations
@@ -796,28 +830,36 @@ public
         elseif VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(exp.cref), aliasVars) then
           // aliases are removed, use their defining expression (e.g. x = time)
           if depth < 10 and Binding.isBound(var.binding) then
-            res := resolveStartCrefs(Binding.getExp(var.binding), ptr_start_vars, aliasVars, ok, depth + 1);
+            // an element of an array alias is the same element of its defining expression
+            res := Binding.getExp(var.binding);
+            if ComponentRef.hasSubscripts(exp.cref) and Type.isArray(Expression.typeOf(res)) then
+              res := Expression.applySubscripts(ComponentRef.subscriptsAllWithWholeFlat(exp.cref), res, true);
+            end if;
+            res := resolveStartCrefs(res, ptr_start_vars, aliasVars, ok, depth + 1);
           else
             Pointer.update(ok, false);
           end if;
+        elseif List.any(BVariable.getRecordChildren(var_ptr), function isAliasVar(aliasVars = aliasVars)) then
+          // alias records are marked as parameters after alias removal, but their elements are aliases
+          Pointer.update(ok, false);
         elseif BVariable.isParamOrConst(var_ptr) or BVariable.isStart(var_ptr)
            or BVariable.isIterator(var_ptr) or BVariable.isExtObj(var_ptr) then
           // already known
-        elseif BVariable.isRecord(var_ptr) and not Type.isArray(Expression.typeOf(exp)) then
-          children := BVariable.getRecordChildren(var_ptr);
-          if listEmpty(children) then
-            Pointer.update(ok, false);
-          else
-            res := Expression.makeRecord(InstNode.scopePath(Type.complexNode(Expression.typeOf(exp))), Expression.typeOf(exp),
-              list(resolveStartCref(Expression.fromCref(BVariable.getVarName(child)), ptr_start_vars, aliasVars, ok, depth) for child in children));
-          end if;
-        elseif Type.isReal(Variable.typeOf(var)) and not Type.isArray(Expression.typeOf(exp)) and BVariable.isContinuous(var_ptr, true) then
+        elseif BVariable.isRecord(var_ptr) or isSome(BVariable.getParent(var_ptr)) then
+          // records (and their elements) can be removed as aliases from the system, referencing
+          // them would bring back their record equations and unbalance the initialization
+          Pointer.update(ok, false);
+        elseif Type.isReal(Type.arrayElementType(Variable.typeOf(var))) and not Type.isArray(Expression.typeOf(exp)) and BVariable.isContinuous(var_ptr, true) then
           start_opt := BVariable.getStartAttribute(var_ptr);
           existed   := isSome(BVariable.getVarStart(var_ptr));
           if BVariable.isFixed(var_ptr) and isSome(start_opt) and not Expression.isLiteralXML(Util.getOption(start_opt)) then
-            // fixed variables use their start expression directly
+            // fixed variables use their start expression directly, an element uses the same element of it
             if depth < 10 then
-              res := resolveStartCrefs(Util.getOption(start_opt), ptr_start_vars, aliasVars, ok, depth + 1);
+              res := Util.getOption(start_opt);
+              if ComponentRef.hasSubscripts(exp.cref) and Type.isArray(Expression.typeOf(res)) then
+                res := Expression.applySubscripts(ComponentRef.subscriptsAllWithWholeFlat(exp.cref), res, true);
+              end if;
+              res := resolveStartCrefs(res, ptr_start_vars, aliasVars, ok, depth + 1);
             else
               Pointer.update(ok, false);
             end if;

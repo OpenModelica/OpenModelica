@@ -48,12 +48,14 @@ protected
 
   // NF imports
   import Call = NFCall;
+  import NFPrefixes;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import NFFunction.Function;
   import Statement = NFStatement;
+  import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -379,7 +381,7 @@ protected
     input Call_Id id;
     input Call_Aux aux;
   algorithm
-    if aux.kind == EquationKind.CONTINUOUS and Iterator.isEmpty(id.iter) then
+    if aux.kind == EquationKind.CONTINUOUS and (Iterator.isEmpty(id.iter) or hasPlainIterators(id.iter)) then
       () := match (id.call, aux.replacer)
         local
           Integer i = 0;
@@ -388,7 +390,7 @@ protected
 
         case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), replacer as Expression.CREF(cref = ComponentRef.CREF()))
           guard(isStartUsefulFunction(Call.typedFunction(call_exp.call))) algorithm
-            setAuxStartValue(BVariable.getVarPointer(replacer.cref, sourceInfo()), id.call);
+            setAuxStartValue(BVariable.getVarPointer(replacer.cref, sourceInfo()), iterateStart(id.call, id.iter));
         then ();
 
         case (call_exp as Expression.CALL(call = Call.TYPED_CALL()), Expression.TUPLE(elements = elements))
@@ -398,7 +400,7 @@ protected
               () := match elem
                 case Expression.CREF(cref = ComponentRef.CREF())
                   algorithm
-                    setAuxStartValue(BVariable.getVarPointer(elem.cref, sourceInfo()), Expression.tupleElement(id.call, i));
+                    setAuxStartValue(BVariable.getVarPointer(elem.cref, sourceInfo()), iterateStart(Expression.tupleElement(id.call, i), id.iter));
                 then ();
                 else ();
               end match;
@@ -410,6 +412,90 @@ protected
     end if;
   end addAuxStartValue;
 
+  function hasPlainIterators
+    "true if all iterators are plain ranges (no mapped array iterators)"
+    input Iterator iter;
+    output Boolean b;
+  protected
+    list<Option<Iterator>> maps;
+  algorithm
+    (_, _, maps) := Iterator.getFrames(iter);
+    b := true;
+    for map in maps loop
+      b := b and isNone(map);
+    end for;
+  end hasPlainIterators;
+
+  function iterateStart
+    "The start value of the full variable of a call inside of a for equation. The dimensions of the
+    call result come first, then the iterators: {{call[k] for i1 in r1, i2 in r2} for k in 1:n}.
+    Only scalar and vector results, EMPTY() otherwise."
+    input output Expression exp;
+    input Iterator iter;
+  protected
+    list<Dimension> dims;
+    list<Expression> elements;
+    Integer n;
+  algorithm
+    if not Iterator.isEmpty(iter) then
+      dims := Type.arrayDims(Expression.typeOf(exp));
+      if listEmpty(dims) then
+        exp := iterateScalarStart(exp, iter);
+      elseif listLength(dims) == 1 and Dimension.isKnown(listHead(dims)) then
+        n := Dimension.size(listHead(dims));
+        elements := list(iterateScalarStart(Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(k))}, exp), iter) for k in 1:n);
+        exp := if List.any(elements, Expression.isEmpty) then Expression.EMPTY(Expression.typeOf(exp))
+               else Expression.makeExpArray(listArray(elements), Expression.typeOf(listHead(elements)));
+      else
+        exp := Expression.EMPTY(Expression.typeOf(exp));
+      end if;
+    end if;
+  end iterateStart;
+
+  function iterateScalarStart
+    "{{exp for i2 in r2} for i1 in r1} for the iterators {i1, i2}, unrolled with literal iterator values
+    (the element crefs have to be simulation variables). EMPTY() for non constant or too big ranges."
+    input output Expression exp;
+    input Iterator iter;
+  protected
+    constant Integer max_size = 1000;
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Integer> values;
+    list<Expression> elements;
+    Integer size = 1;
+    Type ty;
+  algorithm
+    (names, ranges, _) := Iterator.getFrames(iter);
+    for tpl in listReverse(List.zip(names, ranges)) loop
+      values := rangeValues(Util.tuple22(tpl));
+      size := size * listLength(values);
+      if listEmpty(values) or size > max_size then
+        exp := Expression.EMPTY(Expression.typeOf(exp));
+        return;
+      end if;
+      elements := list(SimplifyExp.simplify(Expression.replaceIterator(exp, ComponentRef.node(Util.tuple21(tpl)), Expression.INTEGER(v))) for v in values);
+      ty  := Type.liftArrayLeft(Expression.typeOf(exp), Dimension.fromInteger(listLength(values)));
+      exp := Expression.makeArray(ty, listArray(elements));
+    end for;
+  end iterateScalarStart;
+
+  function rangeValues
+    "the values of a constant integer range, empty otherwise"
+    input Expression range;
+    output list<Integer> values = {};
+  algorithm
+    values := match range
+      local
+        Integer start, step, stop;
+      case Expression.RANGE(start = Expression.INTEGER(start), step = NONE(), stop = Expression.INTEGER(stop))
+        then List.intRange2(start, stop);
+      case Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))
+        guard(step <> 0) then list(i for i in start:step:stop);
+      else {};
+    end match;
+  end rangeValues;
+
   function setAuxStartValue
     "sets the start value of a real variable (or all real children of a record) to the expression"
     input Pointer<Variable> var_ptr;
@@ -420,8 +506,11 @@ protected
   algorithm
     if listEmpty(children) then
       var := Pointer.access(var_ptr);
-      // keep a start value inherited from the function output declaration
-      if Type.isReal(Variable.typeOf(var)) and not BVariable.isArray(var_ptr) and not BVariable.isRecord(var_ptr)
+      // keep a start value inherited from the function output declaration.
+      // arrays (e.g. the outputs of calls in for equations) need a start value of the same size
+      if Type.isReal(Type.arrayElementType(Variable.typeOf(var))) and not BVariable.isRecord(var_ptr)
+         and not Expression.isEmpty(exp)
+         and (not BVariable.isArray(var_ptr) or Type.isEqual(Variable.typeOf(var), Expression.typeOf(exp)))
          and isNone(BVariable.getStartAttribute(var_ptr)) then
         Pointer.update(var_ptr, BVariable.setStartAttribute(var, exp));
       end if;

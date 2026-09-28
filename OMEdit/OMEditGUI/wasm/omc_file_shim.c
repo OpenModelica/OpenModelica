@@ -34,9 +34,9 @@
  */
 
 /*
- * Minimal stdio implementation of the four omc_file functions the OMPlot result
- * readers (read_matlab4.c / read_csv.c) use, so they can be compiled for the web
- * build without the simulation runtime (omc_file.c pulls in the MetaModelica
+ * Minimal stdio implementation of the omc_file functions read_csv.c (used by
+ * VisualizationCSV) needs, so it can be compiled for the web build without the
+ * simulation runtime (omc_file.c pulls in the MetaModelica
  * runtime via omc_error.h). omc_strdup and omc_fseek are header-only.
  */
 #include <stdio.h>

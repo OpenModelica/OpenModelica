@@ -3989,33 +3989,44 @@ algorithm
 end replaceFirstOrderDerivativesExp;
 
 protected function replaceDummyDerivativesExp "author: Frenkel TUD 2012-08"
-  input DAE.Exp inExp;
-  input HashTableCrIntToExp.HashTable iht;
-  output DAE.Exp outExp;
-  output HashTableCrIntToExp.HashTable ht;
+  input output DAE.Exp exp;
+  input output HashTableCrIntToExp.HashTable ht;
+protected
+  DAE.ComponentRef cr;
+  Integer i;
+  DAE.Exp e;
 algorithm
-  (outExp,ht) := matchcontinue(inExp,iht)
-    local
-      DAE.Exp e;
-      DAE.ComponentRef cr;
-      Integer i;
-      String msg;
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr),DAE.ICONST(i)}),ht)
+  exp := match exp
+    case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr),DAE.ICONST(i)})
       algorithm
-        e := BaseHashTable.get((cr,i),ht);
-      then (e,ht);
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),ht)
+        try
+          e := BaseHashTable.get((cr,i),ht);
+        else
+          warnDummyDerivativeFailed(exp);
+          e := exp;
+        end try;
+      then e;
+    case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)})
       algorithm
-        e := BaseHashTable.get((cr,1),ht);
-      then (e,ht);
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht)
+        try
+          e := BaseHashTable.get((cr,1),ht);
+        else
+          e := exp;
+        end try;
+      then e;
+    case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_)
       algorithm
-        msg := "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(e) + "!";
-        Error.addMessage(Error.COMPILER_WARNING, {msg});
-      then (e,ht);
-    else (inExp,iht);
-  end matchcontinue;
+        warnDummyDerivativeFailed(exp);
+      then exp;
+    else exp;
+  end match;
 end replaceDummyDerivativesExp;
+
+protected function warnDummyDerivativeFailed
+  input DAE.Exp exp;
+algorithm
+  Error.addMessage(Error.COMPILER_WARNING, {"IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(exp) + "!"});
+end warnDummyDerivativeFailed;
 
 protected function replaceDummyDerivatives
 "author Frenkel TUD 2012-08"
@@ -4037,32 +4048,26 @@ end replaceDummyDerivatives;
 
 protected function replaceDummyDerivativesVar
 "author: Frenkel TUD 2012-08"
- input BackendDAE.Var inVar;
- input HashTableCrIntToExp.HashTable inHt;
- output BackendDAE.Var outVar;
- output HashTableCrIntToExp.HashTable outHt;
+  input output BackendDAE.Var var;
+  input output HashTableCrIntToExp.HashTable ht;
+protected
+  DAE.Exp e, e1;
+  Option<DAE.VariableAttributes> attr;
 algorithm
-  (outVar,outHt) := matchcontinue (inVar,inHt)
-    local
-      BackendDAE.Var v,v1;
-      HashTableCrIntToExp.HashTable ht;
-      DAE.Exp e,e1;
-      Option<DAE.VariableAttributes> attr;
-
-    case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht)
+  () := match var.bindExp
+    case SOME(e)
       algorithm
         (e1, _) := Expression.traverseExpBottomUp(e, replaceDummyDerivativesExp, ht);
-        v1 := BackendVariable.setBindExp(v, SOME(e1));
-        (attr,_) := BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
-        v1 := BackendVariable.setVarAttributes(v1,attr);
-      then (v1,ht);
-
-    case  (v as BackendDAE.VAR(values=attr),ht)
-      algorithm
-        (attr,_) := BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
-        v1 := BackendVariable.setVarAttributes(v,attr);
-      then (v1,ht);
-  end matchcontinue;
+        if not referenceEq(e, e1) then
+          var := BackendVariable.setBindExp(var, SOME(e1));
+        end if;
+      then ();
+    else ();
+  end match;
+  (attr, _) := BackendDAEUtil.traverseBackendDAEVarAttr(var.values, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
+  if not referenceEq(attr, var.values) then
+    var := BackendVariable.setVarAttributes(var, attr);
+  end if;
 end replaceDummyDerivativesVar;
 
 public function splitEqnsinConstraintAndOther "author: Frenkel TUD 2013-01

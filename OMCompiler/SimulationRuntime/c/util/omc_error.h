@@ -208,6 +208,7 @@ extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_I
    field: the Rust simulation runtime mirrors threadData_t only as far as
    `parent`, because what follows depends on build options. */
 extern int omc_error_take(threadData_t *threadData);
+extern jmp_buf *omc_external_jump_buffer(threadData_t *threadData);
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else

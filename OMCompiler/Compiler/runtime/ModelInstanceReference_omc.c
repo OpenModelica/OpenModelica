@@ -81,7 +81,7 @@ extern int ModelInstanceReference_store(void *json)
 
 /* Returns the boxed JSON value for a handle, or NULL for an invalid handle.
  * Called directly (as a C symbol) from OMEdit. */
-extern void* ModelInstanceReference_get(int handle)
+DLLExport extern void* ModelInstanceReference_get(int handle)
 {
   int i = handle - 1;
   if (i < 0 || i >= MODEL_INSTANCE_REFERENCE_MAX || !modelInstanceReferenceUsed[i]) {
@@ -93,7 +93,7 @@ extern void* ModelInstanceReference_get(int handle)
 /* Releases a handle. Returns 1 on success, 0 for an invalid handle.
  * Called from MetaModelica (NFApi.releaseModelInstanceReference) and may also be
  * called directly from OMEdit. */
-extern int ModelInstanceReference_release(int handle)
+DLLExport extern int ModelInstanceReference_release(int handle)
 {
   int i = handle - 1;
   if (i < 0 || i >= MODEL_INSTANCE_REFERENCE_MAX || !modelInstanceReferenceUsed[i]) {

@@ -6672,6 +6672,12 @@ case BINARY(__) then
     (match context
       case FUNCTION_CONTEXT(__) then
         rcSpillArray(type, 'div_alloc_<%type%>_scalar(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
+      // same checks as DIVISION_SIM, e.g. 0/0 is 0 during initialization
+      case SIMULATION_CONTEXT() then
+        if stringEq(type, "real_array") then
+          rcSpillArray(type, 'division_alloc_real_array_scalar_sim(threadData,<%e1%>,<%e2%>,"<%e2str%>",equationIndexes,data->simulationInfo->noThrowDivZero,data->localData[0]->timeValue,initial())', &preExp, &varDecls, &varFrees)
+        else
+          rcSpillArray(type, 'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")', &preExp, &varDecls, &varFrees)
       else
         rcSpillArray(type, 'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")', &preExp, &varDecls, &varFrees)
     )
@@ -8914,6 +8920,27 @@ template startArrayScatter(ComponentRef cr, Text type, Text arr, Text &varDecls,
   }<%\n%>
   >>
 end startArrayScatter;
+
+template startArrayEnsureSize(ComponentRef cr)
+ "The start attribute of an array variable might only hold a broadcast value or
+  the values of an inner dimension. Before start values of the whole array are
+  written into it, it has to hold one element per array element."
+::=
+  match getDimensionSizes(crefTypeFull(crefStripSubs(popCref(cr))))
+  case sizes as _::_ then
+    match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+    case var as SIMVAR(__) then
+      let ty = crefShortType(name)
+      match ty
+        case "real"
+        case "integer"
+        case "boolean" then
+          let &nosub = buffer ""
+          '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%sizes ; separator="*"%>);'
+        else ""
+    else ""
+  else ""
+end startArrayEnsureSize;
 
 template startArrayElement(ComponentRef cr, Text type, Text idx)
  "Element `idx`'s start attribute. With --simCodeScalarize the array's elements

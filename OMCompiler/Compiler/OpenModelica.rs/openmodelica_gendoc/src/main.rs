@@ -706,7 +706,7 @@ fn load_library(
         None => metamodelica::nil(),
     };
     openmodelica_loader::ClassLoader::loadClass(
-        metamodelica::Ref::new(Absyn::Path::IDENT {
+        &metamodelica::Ref::new(Absyn::Path::IDENT {
             name: ArcStr::from(name),
         }),
         priority,

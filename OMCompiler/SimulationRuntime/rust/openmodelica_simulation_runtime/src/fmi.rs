@@ -37,6 +37,8 @@ struct Instance {
     engine: CEngine,
     meta: SimMeta,
     sel: driver::StateSelection,
+    /// C's `intvlTimers`, set up by `initialization` for a model with clocks.
+    sync: Option<openmodelica_sim_meta::sync::Sync>,
 }
 
 /// The flat address the region map starts the model at. A C model has one block,
@@ -49,13 +51,15 @@ fn instance_for(data: *mut DATA, thread_data: *mut threadData_t) -> &'static mut
     }
     let rt = crate::data::build_rt(data, thread_data);
     let layout = rt.layout;
-    let mut meta = crate::meta::build(data, &crate::model_data::InitXml::default(), &layout, &model_prefix(data));
+    let mut meta =
+        crate::meta::build(data, thread_data, &crate::model_data::InitXml::default(), &layout, &model_prefix(data));
     (meta.fmi_vrs, meta.fmi_dae_enable_vr) = crate::fmi_vrs::build(data, &layout);
     let mut engine = CEngine::new(rt);
+    engine.keep_params = true;
     engine.sync_attributes();
     engine.seed_string_vars();
     let sel = driver::StateSelection::new(&meta);
-    instances().push(Box::new(Instance { data, engine, meta, sel }));
+    instances().push(Box::new(Instance { data, engine, meta, sel, sync: None }));
     instances().last_mut().expect("just pushed")
 }
 
@@ -64,6 +68,13 @@ struct Instances(core::cell::UnsafeCell<Vec<Box<Instance>>>);
 // assumption C's own runtime makes of its globals.
 unsafe impl Sync for Instances {}
 static INSTANCES: Instances = Instances(core::cell::UnsafeCell::new(Vec::new()));
+
+/// `CEngine` publishes the driver's mode into `solveContinuous`, which C only
+/// sets inside a nonlinear solve; the event-triggering math functions refresh
+/// their held values only when it is clear.
+fn leave_driver(data: *mut DATA) {
+    unsafe { (*(*data).simulationInfo).solveContinuous = 0 };
+}
 
 fn instances() -> &'static mut Vec<Box<Instance>> {
     unsafe { &mut *INSTANCES.0.get() }
@@ -269,7 +280,8 @@ pub extern "C" fn setAllParamsToStart(
         let p = unsafe { &*md.stringParameterData.add(a) };
         let base = unsafe { *si.stringParamsIndex.add(a) };
         for k in 0..p.dimension.scalar_length {
-            unsafe { *si.stringParameter.add(base + k) = p.attribute.start.elem_at(k, core::ptr::null_mut()) };
+            let start = p.attribute.start.elem_at(k, core::ptr::null_mut());
+            unsafe { crate::model_data::string_store(si.stringParameter.add(base + k), start) };
         }
     }
 }
@@ -568,18 +580,33 @@ pub extern "C" fn getNextSampleTimeFMU(data: *mut DATA, next_sample_event: *mut 
     1
 }
 
-/// Clocked partitions are not served by this runtime, as on the executable path,
-/// so `intvlTimers` is always null and no timer ever fires.
+/// Fires the clocks due at `current_time`; 1 (`TIMER_FIRED`) if any did.
 #[unsafe(no_mangle)]
 pub extern "C" fn handleTimersFMI(
-    _data: *mut DATA,
-    _thread_data: *mut threadData_t,
-    _current_time: c_double,
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    current_time: c_double,
     next_timer_defined: *mut modelica_boolean,
-    _next_timer_activation_time: *mut c_double,
+    next_timer_activation_time: *mut c_double,
 ) -> c_int {
     unsafe { *next_timer_defined = 0 };
-    0
+    let Some(inst) = instance(data) else { return 0 };
+    let Some(sync) = inst.sync.as_mut() else { return 0 };
+    let r = driver::fmi_handle_timers(&mut inst.engine, sync, &inst.meta, SIM_DATA, current_time);
+    leave_driver(data);
+    let fired = match r {
+        Ok(fired) => fired,
+        Err(e) if driver::is_model_throw(e) => crate::support::rethrow(thread_data),
+        Err(e) => crate::throw(thread_data, e),
+    };
+    let next = sync.next_time();
+    if next.is_finite() {
+        unsafe {
+            *next_timer_defined = 1;
+            *next_timer_activation_time = next;
+        }
+    }
+    fired as c_int
 }
 
 // ---------------------------------------------------------------------------
@@ -651,6 +678,7 @@ pub extern "C" fn stateSelection(
     } else {
         inst.sel.would_change(&mut inst.engine, SIM_DATA, &inst.meta)
     };
+    leave_driver(data);
     match r {
         Ok(changed) => changed as c_int,
         Err(e) => {
@@ -677,6 +705,11 @@ pub extern "C" fn initialization(
     _init_time: c_double,
 ) -> c_int {
     let inst = instance_for(data, thread_data);
+    // The discrete starts the driver seeds from; the importer may have set them
+    // since the instance was built (`fmi2Reset`).
+    inst.meta.soti = unsafe { crate::meta::soti_vars(&*(*data).modelData, &*(*data).simulationInfo) };
+    // `fmi2SetupExperiment`'s start time.
+    inst.meta.start_time = unsafe { (**(*data).localData).timeValue };
     unsafe { (*(*data).simulationInfo).homotopySteps = 0 };
     omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
     let r = driver::run_initialization_model(&mut inst.engine, SIM_DATA, &inst.meta)
@@ -685,6 +718,17 @@ pub extern "C" fn initialization(
         // selected states.
         .and_then(|()| driver::StateSelection::initial(&mut inst.engine, SIM_DATA, &inst.meta));
     omclog::info(omclog::INIT, false, "### END INITIALIZATION ###");
+    // C's `initialization` ends with `initSynchronous`.
+    let r = r.and_then(|sel| {
+        inst.sync = None;
+        if !inst.meta.clocks.is_empty() {
+            let mut sync = openmodelica_sim_meta::sync::Sync::new(&mut inst.engine, &inst.meta, SIM_DATA)?;
+            sync.take_fired(&mut inst.engine, inst.meta.start_time)?;
+            inst.sync = Some(sync);
+        }
+        Ok(sel)
+    });
+    leave_driver(data);
     match r {
         Ok(sel) => {
             inst.sel = sel;
@@ -718,6 +762,27 @@ pub extern "C" fn setZCtol(relative_tol: c_double) {
 #[unsafe(no_mangle)]
 pub extern "C" fn modelInfoInit(_xml: *mut MODEL_DATA_XML) {}
 
+unsafe extern "C" {
+    fn OpenModelica_uriToFilename_impl(
+        threadData: *mut threadData_t,
+        uri: modelica_string,
+        resourcesDir: *const c_char,
+    ) -> modelica_string;
+    fn OpenModelica_decode_uri_inplace(uri: *mut c_char);
+}
+
+/// `loadResource` in an FMU resolves against its `resources` directory.
+#[unsafe(no_mangle)]
+pub extern "C" fn OpenModelica_fmuLoadResource(
+    threadData: *mut threadData_t,
+    path: modelica_string,
+) -> modelica_string {
+    unsafe {
+        let data = (*threadData).localRoots[LOCAL_ROOT_SIMULATION_DATA] as *mut DATA;
+        OpenModelica_uriToFilename_impl(threadData, path, (*(*data).modelData).resourcesDir)
+    }
+}
+
 /// `fmi2Instantiate` is handed a URI and wants a path. Returns a `malloc`ed string
 /// the caller frees, or null for a scheme that names no local directory.
 #[unsafe(no_mangle)]
@@ -747,7 +812,10 @@ pub extern "C" fn OpenModelica_parseFmuResourcePath(path: *const c_char) -> *con
     if p.is_null() {
         return core::ptr::null();
     }
-    unsafe { core::ptr::copy_nonoverlapping(bytes.as_ptr(), p, bytes.len()) };
+    unsafe {
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), p, bytes.len());
+        OpenModelica_decode_uri_inplace(p as *mut c_char);
+    }
     p as *const c_char
 }
 

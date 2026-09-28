@@ -113,7 +113,7 @@ fn push_cref_display(cr: &metamodelica::Ref<DAE::ComponentRef>, brackets: bool, 
             push_cref_display(componentRef, brackets, s)?;
         }
         C::CREF_IDENT { ident, subscriptLst, .. } => push_ident_subs(ident, subscriptLst, brackets, s)?,
-        _ => s.push_str(&ComponentReferenceBasics::printComponentRefStr(cr.clone())?),
+        _ => s.push_str(&ComponentReferenceBasics::printComponentRefStr(&cr)?),
     }
     Ok(())
 }
@@ -146,7 +146,7 @@ fn push_ident_subs(
             Some(i) => {
                 let _ = write!(s, "{i}");
             }
-            None => s.push_str(&openmodelica_frontend_dump::ExpressionBasics::printSubscriptStr(sub.clone())?),
+            None => s.push_str(&openmodelica_frontend_dump::ExpressionBasics::printSubscriptStr(&sub)?),
         }
     }
     s.push_str(if brackets { "]" } else { "_R" });
@@ -236,7 +236,7 @@ fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
 /// computed once at initialization, so the `.mat` stores it with the parameters
 /// (`CodegenC.functionUpdateBoundParameters`, `Expression.isSimpleLiteralValue`).
 pub(super) fn mark_unvarying(result_vars: &mut [ResultVar], param_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Result<()> {
-    let mut literal: HashSet<String> = HashSet::new();
+    let mut literal: HashSet<String> = HashSet::default();
     for eq in param_eqs {
         if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq
             && matches!(
@@ -369,8 +369,8 @@ pub(super) fn scalarize_sim_vars(vars: &SimCodeVar::SimVars) -> Result<SimCodeVa
     Ok(out)
 }
 
-fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar::SimVar>> {
-    let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
+fn scalarize_var_list(list: &List<metamodelica::Ref<SimCodeVar::SimVar>>) -> Result<List<metamodelica::Ref<SimCodeVar::SimVar>>> {
+    let mut out: Vec<metamodelica::Ref<SimCodeVar::SimVar>> = Vec::new();
     for sv in &**list {
         let dims = array_dims_of(&sv.numArrayElement)?;
         if dims.is_empty() {
@@ -378,7 +378,7 @@ fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar
             continue;
         }
         for idx in row_major_indices(&dims) {
-            let mut e = sv.clone();
+            let mut e = (**sv).clone();
             e.name = cref_with_indices(&sv.name, &idx);
             e.numArrayElement = metamodelica::nil();
             e.arrayCref = None;
@@ -387,10 +387,10 @@ fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar
             e.nominalValue = index_attr(&sv.nominalValue, &idx);
             e.minValue = index_attr(&sv.minValue, &idx);
             e.maxValue = index_attr(&sv.maxValue, &idx);
-            out.push(e);
+            out.push(metamodelica::Ref::new(e));
         }
     }
-    Ok(out.into_iter().collect::<List<SimCodeVar::SimVar>>())
+    Ok(out.into_iter().collect::<List<metamodelica::Ref<SimCodeVar::SimVar>>>())
 }
 
 /// Parse `numArrayElement` (dimension sizes) to integers; empty for a scalar.
@@ -556,16 +556,16 @@ pub(super) fn build_var_map(
         scatter_groups: Arc::default(),
         consts: Arc::default(),
         const_groups: Arc::default(),
-        const_acc: HashMap::new(),
+        const_acc: HashMap::default(),
         extobj_dtors: Arc::default(),
-        array_acc: HashMap::new(),
+        array_acc: HashMap::default(),
         terminate_off: layout.terminate_off,
         terminal_off: layout.terminal_off,
         initial_off: layout.initial_off,
         term_info_off: layout.term_info_off,
         nls_fail_off: layout.nls_fail_off,
-        nls_jobs: Arc::new(HashMap::new()),
-        generic_calls: Arc::new(HashMap::new()),
+        nls_jobs: Arc::new(HashMap::default()),
+        generic_calls: Arc::new(HashMap::default()),
         n_samples: 0,
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
@@ -626,8 +626,8 @@ pub(super) fn build_var_map(
         enumeration: None,
     });
 
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
-    let ders: Vec<&SimCodeVar::SimVar> = lst(&vars.derivativeVars).collect();
+    let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
+    let ders: Vec<&SimCodeVar::SimVar> = svs(&vars.derivativeVars).collect();
 
     // Push a primary (non-alias) variable: register its slot (equations reference
     // even protected ones) and list it as a result signal carrying why a run would
@@ -766,7 +766,7 @@ pub(super) fn build_var_map(
     // value is the binding literal. Emit each to data_1 (the C runtime keeps them
     // in the result too, e.g. visualization colors). Record their values so a
     // constant's aliases resolve below.
-    let mut const_of: HashMap<String, f64> = HashMap::new();
+    let mut const_of: HashMap<String, f64> = HashMap::default();
     let const_lists = [
         (&vars.constVars, Some(WTy::F64)),
         (&vars.intConstVars, Some(WTy::I32)),

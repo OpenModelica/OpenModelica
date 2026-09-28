@@ -778,7 +778,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   "Sets the post optimization modules to use in the back end. See --help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "C+Rust", "Cpp","omsicpp", "ExperimentalEmbeddedC", "ESP32", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
+  SOME(STRING_OPTION({"None", "C", "C.old", "Cpp","omsicpp", "ExperimentalEmbeddedC", "ESP32", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
   "Sets the target language for the code generation.");
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
@@ -1278,8 +1278,8 @@ constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(135, "fmiSources", NONE(), EXTERNA
   SOME(STRING_DESC_OPTION({
     ("false", "The FMU carries no sources at all [default]."),
     ("true", "Same as slim."),
-    ("slim", "The FMU carries the sources it was built from. Under --simCodeTarget=C+Rust that is a mix of C and Rust, and rebuilding needs cargo to fetch the Rust dependencies from crates.io."),
-    ("full", "As slim, plus a vendored copy of the Rust dependencies, so the FMU rebuilds without network access. Only differs from slim under --simCodeTarget=C+Rust.")
+    ("slim", "The FMU carries the sources it was built from. Under --simCodeTarget=C that is a mix of C and Rust, and rebuilding needs cargo to fetch the Rust dependencies from crates.io."),
+    ("full", "As slim, plus a vendored copy of the Rust dependencies, so the FMU rebuilds without network access. Only differs from slim under --simCodeTarget=C.")
     })),
   "Defines how much source code FMUs will be exported with. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code.");
 constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(136, "fmiFlags", NONE(), EXTERNAL(),

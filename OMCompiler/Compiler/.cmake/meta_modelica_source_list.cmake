@@ -341,6 +341,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCeval.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassDiagram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClockKind.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
@@ -353,6 +354,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDefUseChains.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDimension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEquation.mo

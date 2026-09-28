@@ -2,7 +2,7 @@
 //
 // Build TableTest.fmu
 
-setCommandLineOptions("--fmiSources=true"); getErrorString();
+setCommandLineOptions("--fmiSources=true --simCodeTarget=C.old"); getErrorString();
 loadModel(Modelica); getErrorString();
 
 loadString("

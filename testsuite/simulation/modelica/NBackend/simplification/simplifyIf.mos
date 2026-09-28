@@ -46,11 +46,11 @@ buildModel(SimplifyIf); getErrorString();
 // [AFTER ] if initial() then 1 else if time > 0.5 then 2 else 3
 //
 // ### dumpSimplify |  ###
-// [BEFORE] if false then 1 else if $TEV_0 then 2 else 3
-// [AFTER ] if $TEV_0 then 2 else 3
+// [BEFORE] if false then 1 else if $SEV_0 then 2 else 3
+// [AFTER ] if $SEV_0 then 2 else 3
 //
 // ### dumpSimplify |  ###
-// [BEFORE] if true then 1 else if $TEV_0 then 2 else 3
+// [BEFORE] if true then 1 else if $SEV_0 then 2 else 3
 // [AFTER ] 1
 //
 // {"SimplifyIf", "SimplifyIf_init.xml"}

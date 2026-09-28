@@ -82,7 +82,7 @@ fn ipopt() {
         println!("cargo:rustc-link-lib=static={l}");
     }
     // Ipopt is C++; MUMPS is Fortran (quadmath). LAPACK/BLAS: `lapack_dyn` on
-    // unix, linked by name elsewhere.
+    // unix, elsewhere what CMake found (see link_lapack), else by name.
     //
     // quadmath only where GCC builds it. It exists to provide __float128 on
     // targets whose `long double` is something else; on aarch64 `long double`
@@ -90,11 +90,10 @@ fn ipopt() {
     // cross package -- and naming it fails the link.
     let unix = std::env::var_os("CARGO_CFG_UNIX").is_some();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
-    let mut libs: Vec<&str> = if unix {
-        vec!["stdc++", "gfortran"]
-    } else {
-        vec!["lapack", "blas", "stdc++", "gfortran"]
-    };
+    if !unix {
+        link_lapack(&["lapack", "blas"]);
+    }
+    let mut libs: Vec<&str> = vec!["stdc++", "gfortran"];
     if matches!(arch.as_str(), "x86" | "x86_64") {
         libs.push("quadmath");
     }
@@ -102,6 +101,37 @@ fn ipopt() {
         println!("cargo:rustc-link-lib=dylib={l}");
     }
     println!("cargo:rustc-cfg=ipopt");
+}
+
+/// Windows has no system `lapack`/`blas` (MSVC has no `lapack.lib`, MSYS2 only
+/// OpenBLAS), so CMake names the LAPACK/BLAS it found in `OMC_LAPACK_LINK`,
+/// `|`-separated. A copy of the one in `openmodelica_nls`'s script, for Ipopt.
+fn link_lapack(system: &[&str]) {
+    println!("cargo:rerun-if-env-changed=OMC_LAPACK_LINK");
+    let Ok(libs) = std::env::var("OMC_LAPACK_LINK") else {
+        for l in system {
+            println!("cargo:rustc-link-lib=dylib={l}");
+        }
+        return;
+    };
+    let gnu = std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu");
+    for lib in libs.split('|').map(std::path::Path::new) {
+        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else { continue };
+        println!("cargo:rustc-link-search=native={}", dir.display());
+        println!("cargo:rustc-link-lib=dylib={name}");
+    }
+}
+
+/// The name to link a library file by: `openblas.lib` on MSVC, and on MinGW the
+/// import library `libopenblas.dll.a` (or `libopenblas.a`) is `-lopenblas`.
+fn link_name(lib: &std::path::Path, gnu: bool) -> Option<String> {
+    let file = lib.file_name()?.to_str()?;
+    if !gnu {
+        return Some(lib.file_stem()?.to_string_lossy().into_owned());
+    }
+    let stem = file.strip_suffix(".dll.a").or_else(|| file.strip_suffix(".a"))
+        .or_else(|| file.strip_suffix(".dll"))?;
+    Some(stem.strip_prefix("lib").unwrap_or(stem).to_string())
 }
 
 fn sundials() {

@@ -154,7 +154,7 @@ pub(super) fn zip_archive(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
 /// `CodegenWasmJit.emitMeFmu` / `emitCsFmu`: build the wasm FMU for `sim_code`
 /// and write it to `fmu_path`. Host-free: no `wasm-merge`, no `zip`.
 pub fn emitMeFmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,

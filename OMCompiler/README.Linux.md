@@ -86,17 +86,13 @@ Install the following dependencies with your package manager:
 - libhdf5 (optional, MAT v7.3 result files, see `OM_ENABLE_HDF5`)
 - ncurses, readline (optional, used by OMShell-terminal)
 - Qt6 with QtWebEngine, Qt5Compat, QtQuick3D (optional, used by OMEdit) and QtSvg (optional, used by the graphical clients)
-- rustc and cargo (optional if you disable it; see [1.3 Rust toolchain](#13-rust-toolchain)
-  for how to install or disable)
+- rustc and cargo (see [1.3 Rust toolchain](#13-rust-toolchain))
 
 ### 1.3 Rust toolchain
 
-Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed for
-a default build: the C simulation runtime writes its result files through
-`libomc_result` (`OM_RUST_RESULT_WRITERS`) and the GUI clients read them back
-through the same library (`OM_RUST_RESULT_READERS`). Both are on by default if
-`cargo` is on the `PATH`. Otherwise CMake turns them off with a status message, and
-turning them on explicitly without `cargo` stops the configuration.
+Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed to
+build it: result files are read and written through `libomc_result`, and
+`--simCodeTarget=C` links the Rust simulation runtime.
 
 Any reasonably recent stable toolchain will do. The crates use the 2024 edition,
 so `rustc`/`cargo` 1.85 or newer:
@@ -116,17 +112,8 @@ sudo apt-get install rustup
 rustup default stable
 ```
 
-To build without Rust, turn both options off. You then lose the `.arrow` result
-format; the C readers and writers handle `.mat`, `.csv` and `.plt` only:
-
-```bash
-cmake -S . -B build_cmake -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF
-```
-
-Two larger Rust components are off by default. `-DOM_ENABLE_RUST_SIM_RUNTIME=ON`
-builds the simulation runtime `--simCodeTarget=C+Rust` links, and also works
-with a stable toolchain. `-DOM_OMC_ENABLE_RUST=ON` builds the compiler itself as
-the Rust port, which needs the pinned nightly toolchain described in
+`-DOM_OMC_ENABLE_RUST=ON` builds the compiler itself as the Rust port, which
+needs the pinned nightly toolchain described in
 [Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md).
 
 ## 2 Compile OpenModelica

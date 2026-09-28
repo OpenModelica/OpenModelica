@@ -678,15 +678,17 @@ impl Gbode {
                 }
 
                 if err > 1.0 && !const_step {
-                    omclog::info!(
-                        omclog::SOLVER,
-                        false,
-                        "Reject step from {} to {}, error {}, new stepsize {}",
-                        omclog::g(self.time, 0, 16),
-                        omclog::g(self.time + self.step_size, 0, 16),
-                        omclog::g(err, 0, 16),
-                        omclog::g(self.step_size * 0.5, 0, 16),
-                    );
+                    if omclog::active(omclog::SOLVER) {
+                        omclog::info!(
+                            omclog::SOLVER,
+                            false,
+                            "Reject step from {} to {}, error {}, new stepsize {}",
+                            omclog::g(self.time, 0, 16),
+                            omclog::g(self.time + self.step_size, 0, 16),
+                            omclog::g(err, 0, 16),
+                            omclog::g(self.step_size * 0.5, 0, 16),
+                        );
+                    }
                     self.stats.err_test_failures += 1;
                     self.step_size *= if self.event_happened { 0.1 } else { 0.5 };
                     continue;
@@ -715,16 +717,18 @@ impl Gbode {
                         if self.step_size < GB_MINIMAL_STEP_SIZE {
                             return Err(GBODE_MIN_INTERP_ERROR);
                         }
-                        omclog::info!(
-                            omclog::SOLVER,
-                            false,
-                            "Reject step from {} to {}, error {}, interpolation error {}, new stepsize {}",
-                            omclog::g(self.time, 0, 16),
-                            omclog::g(self.time + self.step_size, 0, 16),
-                            omclog::g(err, 0, 16),
-                            omclog::g(self.err_int, 0, 16),
-                            omclog::g(self.step_size, 0, 16),
-                        );
+                        if omclog::active(omclog::SOLVER) {
+                            omclog::info!(
+                                omclog::SOLVER,
+                                false,
+                                "Reject step from {} to {}, error {}, interpolation error {}, new stepsize {}",
+                                omclog::g(self.time, 0, 16),
+                                omclog::g(self.time + self.step_size, 0, 16),
+                                omclog::g(err, 0, 16),
+                                omclog::g(self.err_int, 0, 16),
+                                omclog::g(self.step_size, 0, 16),
+                            );
+                        }
                         continue;
                     }
                     retries = 0;
@@ -803,16 +807,18 @@ impl Gbode {
                 break;
             }
 
-            omclog::info!(
-                omclog::SOLVER,
-                false,
-                "Accept step from {} to {}, error {} interpolation error {}, new stepsize {}",
-                omclog::g(self.time_left, 0, 16),
-                omclog::g(self.time_right, 0, 16),
-                omclog::g(err, 0, 16),
-                omclog::g(self.err_int, 0, 16),
-                omclog::g(self.step_size, 0, 16),
-            );
+            if omclog::active(omclog::SOLVER) {
+                omclog::info!(
+                    omclog::SOLVER,
+                    false,
+                    "Accept step from {} to {}, error {} interpolation error {}, new stepsize {}",
+                    omclog::g(self.time_left, 0, 16),
+                    omclog::g(self.time_right, 0, 16),
+                    omclog::g(err, 0, 16),
+                    omclog::g(self.err_int, 0, 16),
+                    omclog::g(self.step_size, 0, 16),
+                );
+            }
             self.time = self.time_right;
             self.y_old.copy_from_slice(&self.y_right);
             for i in (1..self.ring_buffer_size).rev() {
@@ -941,7 +947,7 @@ mod tests {
     #[test]
     fn pending_event_is_reported_when_the_grid_reaches_it() {
         let dt = 2e-3;
-        let mut gb = Gbode::new(2, 1e-6, 1, 0, false).expect("allocate");
+        let mut gb = Gbode::new(2, 1e-6, 1, 0, false, false).expect("allocate");
         gb.set_experiment(0.0, 1.0, dt);
         gb.set_nominals(&[1.0, 1.0]);
         let mut e = Ball { calls: 0, nominals: [1.0, 1.0] };

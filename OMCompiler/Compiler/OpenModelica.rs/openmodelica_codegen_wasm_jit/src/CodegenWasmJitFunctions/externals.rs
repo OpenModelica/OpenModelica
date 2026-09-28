@@ -50,7 +50,7 @@ thread_local! {
     /// to one reports that instead of failing as an unknown builtin — the name
     /// reaching [`compile_math_builtin`] looks the same either way.
     static DECLINED_EXTERNALS: std::cell::RefCell<HashMap<String, String>> =
-        std::cell::RefCell::new(HashMap::new());
+        std::cell::RefCell::new(HashMap::default());
 }
 
 pub(crate) fn reset_declined_externals() {
@@ -59,7 +59,7 @@ pub(crate) fn reset_declined_externals() {
 
 pub(crate) fn note_declined_external(f: &SimCodeFunction::Function::Function, why: String) {
     let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else { return };
-    let ident = AbsynUtil::pathLastIdent(name.clone());
+    let ident = AbsynUtil::pathLastIdent(&name);
     DECLINED_EXTERNALS.with(|d| d.borrow_mut().insert(ident.to_string(), why));
 }
 

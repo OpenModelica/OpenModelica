@@ -206,6 +206,11 @@ pub struct SimFlags {
     pub show_all_warnings: bool,
     /// `-logFormat=xml`, installed by [`set_flags`] (C's `setStreamPrintXML`).
     pub log_xml: bool,
+    /// `-logFormat=xmltcp`: the XML log goes to [`port`](Self::port) instead of
+    /// stdout. Implies [`log_xml`](Self::log_xml).
+    pub log_xmltcp: bool,
+    /// `-port`: where the host sends the log and its progress.
+    pub port: Option<u16>,
     /// `-daeMode`, deprecated in C: `--daeMode` at translation is what selects it.
     pub dae_mode: bool,
     pub nls: Option<Nls>,
@@ -700,6 +705,11 @@ pub enum JacobianMethod {
 }
 
 impl JacobianMethod {
+    /// C's `JACOBIAN_METHOD_NAME`, the `-jacobian` value.
+    pub fn name(self) -> &'static str {
+        JACOBIAN_METHODS.iter().find(|(_, m, _)| *m == self).map_or("", |(n, _, _)| n)
+    }
+
     /// C's `setJacobianMethod` log line, one per enumerator.
     pub fn desc(self) -> &'static str {
         match self {
@@ -727,6 +737,17 @@ const JACOBIAN_METHODS: &[Value<JacobianMethod>] = &[
 
 /// C flags deliberately let through.
 const IGNORED_FLAGS: &[&str] = &[];
+
+static PORT_SERVED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// Accept `-port` and `-logFormat=xmltcp`: the host connects to the port.
+pub fn serve_port() {
+    PORT_SERVED.store(true, core::sync::atomic::Ordering::Relaxed);
+}
+
+fn port_served() -> bool {
+    PORT_SERVED.load(core::sync::atomic::Ordering::Relaxed)
+}
 
 /// Parse an argv slice (`argv[0]` is the program name and is skipped).
 /// `-flag=value` and `-flag value` are both accepted, as in the C runtime.
@@ -842,12 +863,16 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
             "w" => f.show_all_warnings = true,
             "daeMode" => f.dae_mode = true,
-            // C's third format, `xmltcp`, belongs to its `-port` server.
             "logFormat" => match value(name)?.as_str() {
-                "text" => f.log_xml = false,
-                "xml" => f.log_xml = true,
+                "text" => (f.log_xml, f.log_xmltcp) = (false, false),
+                "xml" => (f.log_xml, f.log_xmltcp) = (true, false),
+                "xmltcp" if port_served() => (f.log_xml, f.log_xmltcp) = (true, true),
                 v => return Err(format!("-logFormat={v}: this runtime writes `text` or `xml` logs")),
             },
+            "port" if port_served() => {
+                let v = value(name)?;
+                f.port = Some(v.trim().parse().map_err(|_| format!("-port={v}: expected a TCP port"))?);
+            }
             "emit_protected" => f.emit_protected = true,
             "ignoreHideResult" => f.ignore_hide_result = true,
             "variableFilter" => f.variable_filter = Some(value(name)?),
@@ -982,6 +1007,9 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
         }
+    }
+    if f.log_xmltcp && f.port.is_none() {
+        return Err("xmltcp log format requires a TCP-port to be passed (and successfully open)".into());
     }
     // As C joins it at each read site: always for `-csvInput`, and for `-iif` only
     // when the name does not already resolve on its own.

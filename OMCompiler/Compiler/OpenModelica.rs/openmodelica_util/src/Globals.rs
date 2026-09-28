@@ -77,7 +77,7 @@ thread_local! {
     /// `SimCodeUtil.initFunctionListIndex`.
     /// Source: `SimCodeUtil.mo`.
     pub static codegenFunctionList: RefCell<DoubleEnded::MutableList<ArcStr>> =
-        RefCell::new(DoubleEnded::fromList(metamodelica::nil()).expect("DoubleEnded::fromList(nil) is infallible"));
+        RefCell::new(DoubleEnded::fromList(&metamodelica::nil()).expect("DoubleEnded::fromList(nil) is infallible"));
 
     // Index 3 — symbolTable
     // Declared in openmodelica_backend::Globals (type metamodelica::Ref<SymbolTable::SymbolTable>

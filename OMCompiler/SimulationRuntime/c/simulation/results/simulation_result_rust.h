@@ -26,8 +26,7 @@
  */
 
 /* The result writers of the Rust runtime (libomc_result: .mat, .arrow, .csv,
- * .plt) behind the simulation_result interface. Selected instead of the C
- * writers when OM_RUST_RESULT_WRITERS is defined. */
+ * .plt) behind the simulation_result interface. */
 
 #ifndef _SIMULATION_RESULT_RUST_H
 #define _SIMULATION_RESULT_RUST_H

@@ -39,6 +39,7 @@
 #include <assert.h>
 #include "omc_config.h"
 #include "util/omc_strdup.h"
+#include "omc_dll.h"
 
 #define ADD_METARECORD_DEFINITIONS static
 #include "../OpenModelicaBootstrappingHeader.h"
@@ -83,7 +84,7 @@ char* covertToForwardSlashesInPlace(char* path) {
 }
 
 #if defined(OPENMODELICA_BOOTSTRAPPING_FILE)
-const char* SettingsImpl__getInstallationDirectoryPath(void) {
+DLLExport const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
   /* fprintf(stderr, "SettingsImpl__getInstallationDirectoryPath: %s\n", path); */
   return path &&*path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_NO_OPENMODELICAHOME";
@@ -114,7 +115,7 @@ static void stripbinpath(char *omhome)
 #if defined(__linux__) || defined(__APPLE_CC__)  || defined(__FreeBSD__)
 #include <dlfcn.h>
 
-const char* SettingsImpl__getInstallationDirectoryPath(void) {
+DLLExport const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
   if (omc_installationPath) {
     return omc_installationPath;
@@ -139,7 +140,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 
 #elif defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER) /* Not linux or Apple */
 
-const char* SettingsImpl__getInstallationDirectoryPath(void) {
+DLLExport const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int i = 0;
   if (omc_installationPath) {
     return omc_installationPath;
@@ -307,7 +308,7 @@ extern void SettingsImpl__setTempDirectoryPath(const char *path)
   tempDirectoryPath = omc_strdup(path);
 }
 
-extern const char* SettingsImpl__getTempDirectoryPath(void)
+DLLExport extern const char* SettingsImpl__getTempDirectoryPath(void)
 {
   if (tempDirectoryPath == NULL) {
   // On windows, set Temp directory path to Temp directory as returned by GetTempPath,

@@ -104,19 +104,19 @@ pub fn stringDelimitList(strs: List<ArcStr>, delimiter: ArcStr) -> ArcStr {
 }
 
 /// Returns the length of the string (number of bytes).
-pub fn stringLength(str: ArcStr) -> i32 {
-    str.len() as i32
+pub fn stringLength(str: impl AsRef<str>) -> i32 {
+    str.as_ref().len() as i32
 }
 
 /// Returns true if the string is empty.
-pub fn stringEmpty(str: ArcStr) -> bool {
-    str.is_empty()
+pub fn stringEmpty(str: impl AsRef<str>) -> bool {
+    str.as_ref().is_empty()
 }
 
 /// Returns the byte value at the given 1-based index.
-pub fn stringGet(str: ArcStr, index: i32) -> Result<i32> {
+pub fn stringGet(str: impl AsRef<str>, index: i32) -> Result<i32> {
     let idx = (index - 1) as usize; // 1-based to 0-based
-    str.bytes().nth(idx)
+    str.as_ref().bytes().nth(idx)
         .map(|b| b as i32)
         .ok_or_else(|| "Index {} out of bounds for string of length {}")
 }
@@ -152,20 +152,20 @@ pub fn stringAppend(s1: ArcStr, s2: ArcStr) -> ArcStr {
 
 /// Compares two strings for equality.
 #[inline(always)]
-pub fn stringEq(s1: ArcStr, s2: ArcStr) -> bool {
-    s1 == s2
+pub fn stringEq(s1: impl AsRef<str>, s2: impl AsRef<str>) -> bool {
+    s1.as_ref() == s2.as_ref()
 }
 #[inline(always)]
-pub fn stringEqual(s1: ArcStr, s2: ArcStr) -> bool {
-    s1 == s2
+pub fn stringEqual(s1: impl AsRef<str>, s2: impl AsRef<str>) -> bool {
+    s1.as_ref() == s2.as_ref()
 }
 
 /// Compares two strings lexicographically.
 /// Returns negative if s1 < s2, zero if s1 == s2, positive if s1 > s2.
-pub fn stringCompare(s1: ArcStr, s2: ArcStr) -> i32 {
+pub fn stringCompare(s1: impl AsRef<str>, s2: impl AsRef<str>) -> i32 {
     // Byte-by-byte comparison for consistency
-    let bytes1 = s1.as_bytes();
-    let bytes2 = s2.as_bytes();
+    let bytes1 = s1.as_ref().as_bytes();
+    let bytes2 = s2.as_ref().as_bytes();
     let len = bytes1.len().min(bytes2.len());
     for i in 0..len {
         if bytes1[i] < bytes2[i] {
@@ -294,14 +294,14 @@ mod tests {
 
         #[test]
         fn test_string_length() {
-            assert_eq!(stringLength("hello".into()), 5);
-            assert_eq!(stringLength("".into()), 0);
+            assert_eq!(stringLength("hello"), 5);
+            assert_eq!(stringLength(""), 0);
         }
 
         #[test]
         fn test_string_empty() {
-            assert!(stringEmpty("".into()));
-            assert!(!stringEmpty("hello".into()));
+            assert!(stringEmpty(""));
+            assert!(!stringEmpty("hello"));
         }
     }
 

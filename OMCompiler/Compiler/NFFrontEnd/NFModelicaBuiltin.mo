@@ -3044,7 +3044,7 @@ function translateModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
@@ -3068,7 +3068,7 @@ function buildModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
   input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
@@ -5906,6 +5906,119 @@ name is historical and does not imply a CORBA connection; OpenModelica no
 longer has a CORBA interface.</p>
 </html>"));
 end getDefinitions;
+
+function getDefUseChains
+  input TypeName className "A class, or a component declared in a class.";
+  input String fileName = "" "The file to write the JSON to, if not empty.";
+  input TypeName scope = $TypeName(AllLoadedClasses) "The class to look for the uses in.";
+  input Boolean prettyPrint = false;
+  output String chains "The JSON, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the def-use chains of the names in <code>className</code> as JSON: for every
+name used in it or declared in it, where it's declared and everywhere in <code>scope</code>
+it's used. If <code>className</code> is a component, e.g. <code>P.Base.x</code>, only the
+chain of that component is returned.</p>
+<p>The names are looked up with the new frontend like the instantiation would, through
+imports, base classes and redeclares, but without instantiating anything, so it also works
+for packages, partial classes and classes that can't be instantiated. A name looked up
+through a replaceable class is also looked up in the classes it's redeclared as, and those
+uses are marked as <code>candidate</code>.</p>
+<p>The JSON has the definitions, each with its <code>name</code>, <code>kind</code> (class,
+component or iterator), its source span and the position of its name, and its
+<code>uses</code>. A use has the position of the name, the <code>text</code> as written,
+the <code>part</code> of a qualified name that refers to the definition, the class it's
+used <code>in</code> and its <code>role</code> (type, extends, modifier, binding,
+dimension, condition, constrainedby, equation, algorithm, argument, import, annotation,
+classExtends, redeclare, end). If the name isn't found in the source,
+<code>exact</code> is false and the position is the span of what it's used in. The names
+that couldn't be looked up are listed under <code>unresolved</code>.</p>
+</html>"));
+end getDefUseChains;
+
+function getDependencyGraph
+  input TypeName scope = $TypeName(AllLoadedClasses) "The classes to include.";
+  input String fileName = "" "The file to write the JSON to, if not empty.";
+  input Boolean prettyPrint = false;
+  output String graph "The JSON, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the classes in <code>scope</code> and the classes they use as JSON,
+to find out which classes a change of a library affects. The names are looked up like
+in <code>getDefUseChains</code>.</p>
+<p>The JSON has an object <code>classes</code> with a member for each class, named by its
+full name, with its <code>kind</code>, <code>restriction</code>, source span, <code>hash</code>
+and <code>uses</code>. The hash is computed from the source of the class without the classes
+declared in it, comments and whitespace, so it only changes when the class itself changes.
+<code>uses</code> are the full names of the classes it uses, sorted, including the classes
+that declare the components, constants and enumeration literals it uses and the candidates
+of names looked up through replaceable classes. A class is affected by a change if it or
+a class it uses, directly or not, has another hash or other uses.</p>
+</html>"));
+end getDependencyGraph;
+
+function getDefinitionAt
+  input String fileName "A file of a loaded class.";
+  input Integer line;
+  input Integer column "Starting at 1, counting bytes.";
+  input Boolean prettyPrint = false;
+  output String definition;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the definition of the name at a position in a file as JSON, e.g. for go to
+definition in an editor. The names in the innermost class the position is in are looked
+up like in <code>getDefUseChains</code>, and the positions of the names are found in the
+file on disk.</p>
+<p>The JSON has the <code>file</code>, <code>line</code> and <code>column</code>, the
+<code>definition</code> (as in <code>getDefUseChains</code>, without its uses) or
+<code>null</code> if there's no name at the position or it can't be looked up, the
+<code>use</code> of the name at the position or <code>null</code> if it's the declared
+name of the definition, and the <code>candidates</code> in the classes a replaceable
+class is redeclared as. The uses of the definition are returned by
+<code>getDefUseChains</code> with its name.</p>
+</html>"));
+end getDefinitionAt;
+
+function getClassDiagram
+  input TypeName className;
+  input String fileName = "" "The file to write the diagram to, if not empty.";
+  input String format = "plantuml" "plantuml, mermaid or drawio.";
+  input Integer depth = 1 "How many levels of used classes to include.";
+  input String exclude[:] = {"Modelica.Icons"} "Classes and packages to leave out.";
+  input Boolean showModifiers = true;
+  output String diagram "The diagram, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns a UML class diagram of <code>className</code>, as <a href=\"https://plantuml.com\">PlantUML</a>
+text, as <a href=\"https://mermaid.js.org\">Mermaid</a> text, which GitHub and GitLab show as a
+diagram in a <code>mermaid</code> code block, or as a <a href=\"https://www.drawio.com\">draw.io</a>
+(diagrams.net) file that can be edited and rearranged.</p>
+<p>The diagram has the class, the classes it extends, directly or not, and the classes it uses
+up to <code>depth</code> levels: the types of its components, and the classes replaceable
+classes default to, are constrained by or are redeclared as. With <code>depth = 0</code> it only
+has the class and its base classes. Class extends (<code>redeclare model extends</code>) and
+redeclared classes declared in a class in the diagram are also in it, together with the classes
+they replace. The names are looked up like in <code>getDefUseChains</code>, without instantiating
+anything, so it also works for packages and partial classes.</p>
+<p>Every class is shown with its full name, how it's declared as stereotype
+(e.g. <code>&laquo;replaceable package&raquo;</code> or <code>&laquo;redeclare function extends&raquo;</code>)
+and partial classes as abstract, with the components and short class definitions declared in it and
+the replaceable classes declared in it that aren't in the diagram. <code>extends</code> and class
+extends are generalizations, labelled with their modifiers, components of a class in the diagram
+are compositions, labelled with their names and dimensions, and short class definitions, constraining
+classes and redeclares in modifiers are dependencies, labelled with what declares them, and a
+redeclared class that doesn't extend the class it replaces depends on it, labelled
+<code>redeclares</code>. Classes declared in a class are nested in it; Mermaid has no nesting, so
+there they are linked to it, labelled <code>nested</code>.</p>
+<p>In the draw.io file every class links to <code>modelica://</code> and its name, and every line
+in the box of a class links to the line in the file of the element it shows, e.g.
+<code>modelica://P.M?lineNumber=12</code>, and for a component also to its name, e.g.
+<code>modelica://P.M?lineNumber=12&amp;element=c</code>.</p>
+<p>The classes in <code>exclude</code> and in the packages in <code>exclude</code> are left out,
+except <code>className</code> itself.
+With <code>showModifiers = false</code> the modifiers and bindings aren't shown.</p>
+</html>"));
+end getClassDiagram;
 
 function reverseLookup
   input TypeName name;

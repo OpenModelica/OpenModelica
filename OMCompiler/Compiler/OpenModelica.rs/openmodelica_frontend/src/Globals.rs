@@ -34,8 +34,8 @@ thread_local! {
         RefCell::new(openmodelica_util::BaseHashTable::emptyHashTableWork(
             openmodelica_util::Flags::getConfigInt(openmodelica_util::Flags::INST_CACHE_SIZE.clone()).unwrap_or(25343),
             (
-                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathHash, metamodelica::Ref<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<i32> + 'static>),
-                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathEqual, metamodelica::Ref<Absyn::Path>, metamodelica::Ref<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>, metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<bool> + 'static>),
+                (Arc::new(|p: metamodelica::Ref<Absyn::Path>| Ok(AbsynUtil::pathHash(&p))) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<i32> + 'static>),
+                (Arc::new(|a: metamodelica::Ref<Absyn::Path>, b: metamodelica::Ref<Absyn::Path>| Ok(AbsynUtil::pathEqual(&a, &b))) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>, metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<bool> + 'static>),
                 (Arc::new(AbsynUtil::pathStringDefault) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<ArcStr> + 'static>),
                 // `opaqVal` in InstHashTable is a private helper returning the
                 // constant "OPAQUE_VALUE" (used only for debug dumping of cache

@@ -163,6 +163,7 @@ public
     Integer factor;
     Integer shift_value, v2;
     EvalOrder eval;
+    Boolean stop;
   algorithm
     order := match eqn
       case Equation.FOR_EQUATION() algorithm
@@ -175,6 +176,7 @@ public
             subs  := list(ComponentRef.subscriptsAllWithWholeFlat(cref) for cref in occ_lst);
             subs  := List.transposeList(subs);
             subs_to_solve := ComponentRef.subscriptsAllWithWholeFlat(cref_to_solve);
+            stop := false;
             for dim in List.zip(subs, subs_to_solve) loop
               (local_subs, sub_to_solve) := dim;
               ite_occurences := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -183,6 +185,9 @@ public
               end for;
               iterators := UnorderedSet.toList(ite_occurences);
               () := match iterators
+                // literal subscripts in this dimension do not restrict the order
+                case {} then ();
+
                 case {iter} algorithm
                   eval := UnorderedMap.getSafe(iter, order, sourceInfo());
                   if eval < EvalOrder.FAILED then
@@ -223,9 +228,10 @@ public
                   for it in iterators loop
                     UnorderedMap.add(it, EvalOrder.FAILED, order);
                   end for;
-                  break;
+                  stop := true;
                 then ();
               end match;
+              if stop then break; end if;
             end for;
           end if;
         end for;

@@ -145,28 +145,42 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
     Some(cols)
 }
 
-/// `SimVar.index` per array base (the C template's `crefsHT` after `crefStripSubs`).
+/// `SimVar.index` per array base (the C template's `crefsHT` after `crefStripSubs`)
+/// and per single element, which a partially covered array stores on its own
+/// (the C template's `simVarExactFromHT`).
 struct JacArraySlots {
     base: HashMap<String, usize>,
+    exact: HashMap<(String, Vec<usize>), usize>,
 }
 
 impl JacArraySlots {
     fn of(jm: &SimCode::JacobianMatrix) -> Option<JacArraySlots> {
-        let mut base = HashMap::new();
+        let mut base = HashMap::default();
+        let mut exact = HashMap::default();
         for sv in lst(&jm.seedVars).cloned().chain(jac_listed_vars(jm)) {
             let Ok(index) = usize::try_from(sv.index) else { continue };
-            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(sv.name.clone()).ok()?;
-            base.entry(sim_cref_key(&stripped).ok()?).or_insert(index);
+            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&sv.name).ok()?;
+            let key = sim_cref_key(&stripped).ok()?;
+            if let Some(positions) = BoundCref::new(&sv.name, &[]).and_then(|b| b.single_positions()) {
+                exact.entry((key.clone(), positions)).or_insert(index);
+            }
+            base.entry(key).or_insert(index);
         }
-        Some(JacArraySlots { base })
+        Some(JacArraySlots { base, exact })
     }
 
     fn base(&self, cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<usize> {
-        let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(cr.clone()).ok()?;
+        let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&cr).ok()?;
         self.base.get(&sim_cref_key(&stripped).ok()?).copied()
     }
 
     fn offsets(&self, cr: &BoundCref) -> Option<Vec<usize>> {
+        if let Some(positions) = cr.single_positions() {
+            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&cr.cref).ok()?;
+            if let Some(&index) = self.exact.get(&(sim_cref_key(&stripped).ok()?, positions)) {
+                return Some(vec![index]);
+            }
+        }
         let base = self.base(&cr.cref)?;
         let mut offs = vec![0usize];
         for (dim, positions) in &cr.dims {
@@ -231,6 +245,14 @@ impl BoundCref {
             }
         }
         Some(BoundCref { cref: cr.clone(), dims, whole })
+    }
+
+    /// The element positions if the cref is a single element of an array.
+    fn single_positions(&self) -> Option<Vec<usize>> {
+        if self.dims.is_empty() || self.whole.iter().any(|w| *w) {
+            return None;
+        }
+        self.dims.iter().map(|(_, p)| if p.len() == 1 { Some(p[0]) } else { None }).collect()
     }
 
     /// C's `crefSubs(cr) == {WHOLEDIM()}`.
@@ -438,8 +460,8 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
 /// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
 /// the derivative var's unit), for a host to label plotted signals. Empty units
 /// are skipped. Names match [`build_var_map`]'s result-variable names.
-pub(super) fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<HashMap<String, String>> {
-    let mut units = HashMap::new();
+pub(super) fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<std::collections::HashMap<String, String>> {
+    let mut units = std::collections::HashMap::new();
     let mut add = |name: String, sv: &SimCodeVar::SimVar| {
         if !sv.unit.is_empty() {
             units.insert(name, sv.unit.to_string());

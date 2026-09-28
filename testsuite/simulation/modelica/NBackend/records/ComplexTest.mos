@@ -379,7 +379,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Secondary Parameter Binding Equations (1):
 // ****************************************************
-// 	[RECD] (2) $FUN_2 = v; ($RES_BND_30)
+// 	[RECD] (2) $FUN_2 = v; ($RES_BND_24)
 //
 // Created Primary Parameter Binding Equations (0):
 // **************************************************
@@ -413,7 +413,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Secondary Parameter Binding Equations (1):
 // ****************************************************
-// 	[RECD] (2) $FUN_2 = v; ($RES_BND_34)
+// 	[RECD] (2) $FUN_2 = v; ($RES_BND_28)
 //
 // Created Primary Parameter Binding Equations (0):
 // **************************************************

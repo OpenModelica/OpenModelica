@@ -1100,10 +1100,22 @@ public
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
+        elseif not Type.isDiscrete(Type.arrayElementType(exp.ty)) and isSome(derivativeOfPrefix(strippedCref, diff_map)) then
+          // a field of a record input, e.g. s.T -> $Ds.T
+          SOME(derCref) := derivativeOfPrefix(strippedCref, diff_map);
+          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
+          res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
         end if;
       then (res, diffArguments);
+
+      // Types: (SIMPLE)
+      // a record variable is differentiated fieldwise, D(r)/dr.x => R(1, 0, ...)
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
+        guard(Type.isRecord(exp.ty) and not ComponentRef.isEqual(exp.cref, diffArguments.diffCref)
+          and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo()))
+      then differentiateRecordCref(exp, diffArguments);
 
       // -------------------------------------
       //    Generic Rules
@@ -1213,8 +1225,31 @@ public
             UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
         else
-          // Everything that is not in diff_map gets differentiated to zero
-          res := Expression.makeZero(exp.ty);
+          // an array whose elements are in diff_map (e.g. a partially torn array) is differentiated
+          // elementwise, everything else that is not in diff_map gets differentiated to zero
+          hasSetSub := false;
+          elem_crefs := {};
+          if Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+            elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
+            for c in elem_crefs loop
+              if UnorderedMap.contains(c, diff_map) then
+                hasSetSub := true;
+                break;
+              end if;
+            end for;
+          end if;
+          if hasSetSub then
+            elem_exps := {};
+            for c in elem_crefs loop
+              (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
+              elem_exps := elem_res :: elem_exps;
+            end for;
+            res := makeShapedArray(exp.ty, listReverse(elem_exps));
+          elseif Type.isRecord(exp.ty) then
+            (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+          else
+            res := differentiateIteratorElement(exp, diffArguments, diff_map);
+          end if;
         end if;
       then (res, diffArguments);
 
@@ -1244,6 +1279,8 @@ public
             end if;
             UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
+        elseif Type.isRecord(exp.ty) and isMixedRecordDerivative(strippedCref, diff_map) then
+          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
         elseif UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
@@ -1284,7 +1321,7 @@ public
           end for;
           // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
           if not hasSetSub and Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
-            for c in ComponentRef.scalarize(exp.cref, false) loop
+            for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
               if UnorderedMap.contains(c, diff_map) then
                 hasSetSub := true;
                 break;
@@ -1296,9 +1333,13 @@ public
             // matrix cref like Rot_dq): keep the original whole-type zero, since
             // building it element-by-element would flatten its shape and break
             // codegen for multi-dimensional types.
-            res := Expression.makeZero(exp.ty);
+            if Type.isRecord(exp.ty) then
+              (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+            else
+              res := differentiateIteratorElement(exp, diffArguments, diff_map);
+            end if;
           else
-            elem_crefs := ComponentRef.scalarize(exp.cref, false);
+            elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             elem_exps := {};
             for c in elem_crefs loop
               (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
@@ -1349,6 +1390,131 @@ public
       end if;
     end if;
   end makeShapedArray;
+
+  function derivativeOfPrefix
+    "The derivative of a cref whose prefix has a derivative, e.g. s.T -> $Ds.T if s -> $Ds."
+    input ComponentRef cref "without subscripts";
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Option<ComponentRef> derCref;
+  algorithm
+    derCref := match cref
+      local
+        ComponentRef rest, der_rest;
+      case ComponentRef.CREF(restCref = rest as ComponentRef.CREF()) algorithm
+        if UnorderedMap.contains(rest, diff_map) then
+          derCref := SOME(ComponentRef.prepend(UnorderedMap.getOrFail(rest, diff_map), cref));
+        else
+          derCref := match derivativeOfPrefix(rest, diff_map)
+            case SOME(der_rest) then SOME(ComponentRef.prepend(der_rest, cref));
+            else NONE();
+          end match;
+        end if;
+      then derCref;
+      else NONE();
+    end match;
+  end derivativeOfPrefix;
+
+  function isMixedRecordDerivative
+    "true if the fields of a record do not all have derivatives of the same kind as the record itself,
+    e.g. a torn record with seeds and inner variables. It has to be differentiated fieldwise then."
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Boolean b = false;
+  protected
+    Option<ComponentRef> der_opt = UnorderedMap.get(cref, diff_map);
+    String root;
+  algorithm
+    if isSome(der_opt) and BVariable.checkCref(cref, BVariable.isRecord, sourceInfo()) then
+      root := crefRoot(Util.getOption(der_opt));
+      for child in BVariable.getRecordChildrenCref(cref) loop
+        b := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(child), diff_map)
+          local
+            ComponentRef child_der;
+          case SOME(child_der) then crefRoot(child_der) <> root;
+          else true;
+        end match;
+        if b then break; end if;
+      end for;
+    end if;
+  end isMixedRecordDerivative;
+
+  function crefRoot
+    input ComponentRef cref;
+    output String root = listHead(Util.stringSplitAtChar(ComponentRef.toString(cref), "."));
+  end crefRoot;
+
+  function differentiateRecordCref
+    "A record variable whose fields are differentiated on their own: Record(der(field1), ...)."
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  protected
+    list<ComponentRef> children;
+    list<Expression> elements = {};
+    Expression elem;
+    ComponentRef cref;
+    Type ty;
+  algorithm
+    (cref, ty) := match exp
+      case Expression.CREF() then (exp.cref, exp.ty);
+      else (ComponentRef.EMPTY(), Type.UNKNOWN());
+    end match;
+    if Type.isRecord(ty) and BVariable.checkCref(cref, BVariable.isRecord, sourceInfo()) then
+      children := BVariable.getRecordChildrenCref(cref);
+      if List.compareLength(children, Type.recordFields(ty)) == 0 then
+        for child in children loop
+          (elem, diffArguments) := differentiateComponentRef(Expression.fromCref(child), diffArguments);
+          elements := elem :: elements;
+        end for;
+      end if;
+    end if;
+    if listEmpty(elements) then
+      exp := Expression.makeZero(Expression.typeOf(exp));
+    else
+      exp := Expression.makeRecord(InstNode.fullPath(Type.complexNode(ty)), ty, listReverse(elements));
+    end if;
+  end differentiateRecordCref;
+
+  function differentiateIteratorElement
+    "An element of an array with iterator subscripts (e.g. x[i] in a reduction) whose
+    elements are seeds on their own: {der(x[1]), ..., der(x[n])}[i]. Zero otherwise."
+    input Expression exp;
+    input DifferentiationArguments diffArguments;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Expression res;
+  protected
+    ComponentRef base;
+    list<Subscript> subs;
+    list<ComponentRef> elem_crefs;
+    list<Expression> elem_exps = {};
+    Expression elem_res;
+    Type base_ty;
+    DifferentiationArguments args = diffArguments;
+    Boolean found;
+  algorithm
+    res := Expression.makeZero(Expression.typeOf(exp));
+    // subscripts of all parts, e.g. module[i].x for a component array
+    (base, subs) := match exp
+      case Expression.CREF() then (ComponentRef.stripSubscriptsAll(exp.cref), ComponentRef.subscriptsAllFlat(exp.cref));
+      else (ComponentRef.EMPTY(), {});
+    end match;
+    if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
+    base_ty := ComponentRef.getSubscriptedType(base, true);
+    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
+    elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
+    found := false;
+    for c in elem_crefs loop
+      if UnorderedMap.contains(c, diff_map) then
+        found := true;
+        break;
+      end if;
+    end for;
+    if not found then return; end if;
+    for c in elem_crefs loop
+      (elem_res, args) := differentiateComponentRef(Expression.fromCref(c), args);
+      elem_exps := elem_res :: elem_exps;
+    end for;
+    res := Expression.applySubscripts(subs, makeShapedArray(base_ty, listReverse(elem_exps)));
+  end differentiateIteratorElement;
 
   function differentiateComponentRefNoCollect
     input output Expression exp;
@@ -1462,7 +1628,8 @@ public
             isCont := ((diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.containsContinuousVar(arg));
 
             // input type has to be real value or a function pointer, skip if its in the interface diff info
-            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg)));
+            // records are differentiated fieldwise
+            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))) or Type.isRecord(Type.arrayElementType(Expression.typeOf(arg)));
             isFunc    := InstNode.isFunction(inp);
             isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
             if isSkipped or not (isFunc or (isCont and isReal)) then
@@ -1495,9 +1662,15 @@ public
 
           // differentiate type arguments and append to original ones
           (arguments, diffArguments) := List.mapFold(arguments, differentiateExpression, diffArguments);
-          arguments := listAppend(call.arguments, arguments);
-
-          ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
+          if diffArguments.diffType <> DifferentiationType.FUNCTION and List.all(arguments, isZeroDerivative)
+             and not Type.isTuple(Expression.typeOf(exp)) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)))
+             and (not Type.isArray(Expression.typeOf(exp)) or Type.hasKnownSize(Expression.typeOf(exp))) then
+            // no argument depends on the differentiation variable (keeps the arguments out of the derivative)
+            ret := Expression.makeZero(Expression.typeOf(exp));
+          else
+            arguments := listAppend(call.arguments, arguments);
+            ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
+          end if;
         else
           // The function is not in the function tree and not builtin -> error
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -2957,6 +3130,22 @@ public
     iterOut := NBEquation.Iterator.fromFrames(List.zip3(names, listReverse(revRanges), maps));
   end reverseEquationIterator;
 
+  function bothZero
+    "true if both derivatives of a product or quotient are zero, then the derivative is zero as well
+    (keeps the operands out of it, they would make it look nonlinear)"
+    input Expression diffExp1;
+    input Expression diffExp2;
+    input Operator operator;
+    output Boolean b = isZeroDerivative(diffExp1) and isZeroDerivative(diffExp2)
+                       and (not Type.isArray(Operator.typeOf(operator)) or Type.hasKnownSize(Operator.typeOf(operator)));
+  end bothZero;
+
+  function isZeroDerivative
+    "zero after simplification, e.g. a subscripted array of zeros"
+    input Expression exp;
+    output Boolean b = Expression.isZero(exp) or Expression.isZero(SimplifyExp.simplify(exp));
+  end isZeroDerivative;
+
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().
     Will always try to convert to MULTARY whenever possible. (commutativity)"
@@ -3141,7 +3330,8 @@ public
         addOp := Operator.fromClassification(
           (NFOperator.MathClassification.ADDITION, sizeClass),
           operator.ty);
-      then (Expression.MULTARY(
+      then (if not isReverse and bothZero(diffExp1, diffExp2, operator) then Expression.makeZero(Operator.typeOf(operator))
+            else Expression.MULTARY(
               {Expression.BINARY(diffExp1, operator, exp2),       // f'g
                 Expression.BINARY(exp1, operator, diffExp2)},     // fg'
               {},
@@ -3192,7 +3382,8 @@ public
           // the addition in the numerator f'g +/- fg' must be element-wise when the result is an array (same as multiplication case)
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, Operator.classifyAddition(operator)), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-      then (Expression.MULTARY(
+      then (if not isReverse and bothZero(diffExp1, diffExp2, operator) then Expression.makeZero(Operator.typeOf(operator))
+            else Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.BINARY(diffExp1, mulOp, exp2)},              // f'g
                 {Expression.BINARY(exp1, mulOp, diffExp2)},              // - fg'

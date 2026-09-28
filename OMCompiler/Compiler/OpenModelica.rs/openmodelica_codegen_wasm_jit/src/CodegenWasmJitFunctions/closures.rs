@@ -12,7 +12,7 @@
 // `rt_record_release` frees the captured values.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::sync::Arc;
 
 use arcstr::ArcStr;
@@ -62,7 +62,7 @@ struct ClosurePool {
 
 thread_local! {
     static POOL: RefCell<ClosurePool> = RefCell::new(ClosurePool {
-        thunks: Vec::new(), by_key: HashMap::new(), types: Vec::new(), type_base: 0, base_global: 0,
+        thunks: Vec::new(), by_key: HashMap::default(), types: Vec::new(), type_base: 0, base_global: 0,
     });
 }
 
@@ -79,7 +79,7 @@ pub(crate) fn begin(type_base: u32, base_global: u32) {
     POOL.with(|p| {
         *p.borrow_mut() = ClosurePool {
             thunks: Vec::new(),
-            by_key: HashMap::new(),
+            by_key: HashMap::default(),
             types: Vec::new(),
             type_base,
             base_global,
@@ -171,7 +171,7 @@ pub(crate) fn compile_fnref_cref(
     cref: &DAE::ComponentRef,
     ty: &DAE::Type,
 ) -> Result<()> {
-    let path = ComponentReference::crefToPath(metamodelica::Ref::new(cref.clone()))?;
+    let path = ComponentReference::crefToPath(&metamodelica::Ref::new(cref.clone()))?;
     emit_reference(ctx, &mangle(&path)?, &[], ty, ty)
 }
 

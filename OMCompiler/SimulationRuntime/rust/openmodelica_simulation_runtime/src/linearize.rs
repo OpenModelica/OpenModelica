@@ -135,10 +135,10 @@ pub fn frame(data: *mut DATA, datarec: bool) -> String {
 
 /// [`SimMeta::lin`]; the frames come from [`frame`] instead.
 pub fn describe(data: *mut DATA, layout: &Layout) -> Option<LinInfo> {
-    let md = unsafe { &*(*data).modelData };
-    if words(md) == 0 {
+    if !openmodelica_sim_meta::simflags::with_flags(|f| f.linearize.is_some()) {
         return None;
     }
+    let md = unsafe { &*(*data).modelData };
     let (jac_rows, jac_cols) = shapes(md);
     // The flat mirrors of `simulationInfo->inputVars` / `outputVars`.
     let slots = |base: u32, n: u32| {

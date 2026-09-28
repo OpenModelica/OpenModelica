@@ -46,6 +46,7 @@ extern void boolean_array_create(boolean_array *dest, modelica_boolean *data, in
 
 /* Allocation of a vector */
 extern void simple_alloc_1d_boolean_array(boolean_array* dest, int n);
+extern void boolean_array_ensure_size(boolean_array *a, int n);
 
 /* Allocation of a matrix */
 extern void simple_alloc_2d_boolean_array(boolean_array *dest, int r, int c);

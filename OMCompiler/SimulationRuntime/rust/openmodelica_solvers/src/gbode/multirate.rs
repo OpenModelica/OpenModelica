@@ -1148,15 +1148,17 @@ impl Gbode {
                         return Err(super::step::GBODE_MIN_STEP_ERROR);
                     }
                     gbf.cache.invalidate_keep_left();
-                    omclog::info!(
-                        omclog::SOLVER,
-                        false,
-                        "Reject step from {} to {}, error {}, new stepsize {}",
-                        omclog::g(gbf.time, 0, 6),
-                        omclog::g(gbf.time + gbf.last_step_size, 0, 6),
-                        omclog::g(err, 0, 6),
-                        omclog::g(gbf.step_size, 0, 6),
-                    );
+                    if omclog::active(omclog::SOLVER) {
+                        omclog::info!(
+                            omclog::SOLVER,
+                            false,
+                            "Reject step from {} to {}, error {}, new stepsize {}",
+                            omclog::g(gbf.time, 0, 6),
+                            omclog::g(gbf.time + gbf.last_step_size, 0, 6),
+                            omclog::g(err, 0, 6),
+                            omclog::g(gbf.step_size, 0, 6),
+                        );
+                    }
                     continue;
                 }
                 break;
@@ -1264,15 +1266,17 @@ impl Gbode {
                 gbf.kv[..n].copy_from_slice(&kr);
                 let y = gbf.y.clone();
                 gbf.y_old.copy_from_slice(&y);
-                omclog::info!(
-                    omclog::SOLVER,
-                    false,
-                    "Accept step from {} to {}, error {}, new stepsize {}",
-                    omclog::g(gbf.time - gbf.last_step_size, 0, 6),
-                    omclog::g(gbf.time, 0, 6),
-                    omclog::g(err_now, 0, 6),
-                    omclog::g(gbf.step_size, 0, 6),
-                );
+                if omclog::active(omclog::SOLVER) {
+                    omclog::info!(
+                        omclog::SOLVER,
+                        false,
+                        "Accept step from {} to {}, error {}, new stepsize {}",
+                        omclog::g(gbf.time - gbf.last_step_size, 0, 6),
+                        omclog::g(gbf.time, 0, 6),
+                        omclog::g(err_now, 0, 6),
+                        omclog::g(gbf.step_size, 0, 6),
+                    );
+                }
             }
 
             let done = {

@@ -400,7 +400,9 @@ fn nls_ls_backend() -> solverflags::Sparse {
     }
 }
 
-/// Count at `count_addr`, then `HIST_DEPTH` × (time, `n` values) from `base`.
+/// A ring of `HIST_DEPTH` × (time, `n` values) from `base`. The word at
+/// `count_addr` holds the count in its low half and the slot of entry 0 in its
+/// high half, so storing a solution moves no other entry.
 struct MemHistory {
     count_addr: u32,
     base: u32,
@@ -408,14 +410,21 @@ struct MemHistory {
 }
 
 impl MemHistory {
+    fn head(&self) -> usize {
+        (unsafe { load_u32(self.count_addr) } >> 16) as usize % HIST_DEPTH
+    }
     fn entry(&self, k: usize) -> u32 {
-        self.base + (k * (8 + self.n * 8)) as u32
+        let slot = (self.head() + k) % HIST_DEPTH;
+        self.base + (slot * (8 + self.n * 8)) as u32
+    }
+    fn set_word(&self, len: usize, head: usize) {
+        unsafe { store_u32(self.count_addr, len as u32 | (head as u32) << 16) };
     }
 }
 
 impl History for MemHistory {
     fn len(&self) -> usize {
-        (unsafe { load_u32(self.count_addr) } as usize).min(HIST_DEPTH)
+        (unsafe { load_u32(self.count_addr) } as usize & 0xffff).min(HIST_DEPTH)
     }
     fn time(&self, k: usize) -> f64 {
         unsafe { load_f64(self.entry(k)) }
@@ -435,10 +444,15 @@ impl History for MemHistory {
         for (i, v) in x.iter().enumerate() {
             unsafe { store_f64(at + 8 + (i * 8) as u32, *v) };
         }
-        unsafe { store_u32(self.count_addr, len as u32) };
+        self.set_word(len, self.head());
     }
     fn set_len(&mut self, len: usize) {
-        unsafe { store_u32(self.count_addr, len as u32) };
+        self.set_word(len, self.head());
+    }
+    fn push_front(&mut self, time: f64, x: &[f64]) {
+        let len = (self.len() + 1).min(HIST_DEPTH);
+        self.set_word(len, (self.head() + HIST_DEPTH - 1) % HIST_DEPTH);
+        self.put(0, len, time, x);
     }
 }
 
@@ -573,6 +587,7 @@ fn kinsol_sparse_solve(
     has_jacobian: bool,
     colors: &[u32],
     max: &[f64],
+    min: &[f64],
     old_values: &[f64],
     load_guess: &mut dyn FnMut(&mut [f64]),
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -591,14 +606,14 @@ fn kinsol_sparse_solve(
         // `make_assemble`'s dense gather buffer is never needed.
         let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
-        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max };
+        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max, min };
         return crate::sundials::kinsol_solve_selected(
             handle, n, &pat, nominal, guess, old_values, x, eq_index, time, has_jacobian,
             load_guess, eval, &mut assemble,
         );
     }
     // only the KINSOL path names the system it dumps
-    let _ = (eq_index, time, old_values);
+    let _ = (eq_index, time, old_values, min);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
     newton_sparse_solve(
         n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, has_jacobian, colors, max,
@@ -809,7 +824,7 @@ struct WasmModel {
     load_idx: u32,
     jac_idx: u32,
     strict_idx: u32,
-    /// Scratch for the unknowns, residuals and Jacobian; freed by `rt_solve_nls`.
+    /// Scratch for the unknowns, residuals and Jacobian, owned by `rt_solve_nls`.
     x_ptr: u32,
     r_ptr: u32,
     jac_ptr: u32,
@@ -941,7 +956,7 @@ impl NlsBackend for WasmBackend<'_> {
         kinsol_sparse_solve(
             req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
             self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.colors,
-            req.max, req.old_values, load_guess, eval,
+            req.max, req.min, req.old_values, load_guess, eval,
         )
     }
 
@@ -1028,15 +1043,22 @@ pub extern "C" fn rt_solve_nls(
     } else {
         hist_n * size
     };
+    // The model callbacks read and write these through their linear-memory
+    // addresses, which a local array on the shadow stack has too.
+    let words = (size + 1) + size.max(1) + if has_jacobian { jac_len.max(1) } else { 0 };
+    let mut small = core::mem::MaybeUninit::<[f64; 64]>::uninit();
+    let heap = words > 64;
+    let base = if heap { rt_alloc((words * 8) as u32) } else { small.as_mut_ptr() as u32 };
+    let r_ptr = base + ((size + 1) * 8) as u32;
     let mut model = WasmModel {
         sim_data,
         res_idx,
         load_idx,
         jac_idx,
         strict_idx,
-        x_ptr: rt_alloc(((size + 1) * 8) as u32),
-        r_ptr: rt_alloc((size.max(1) * 8) as u32),
-        jac_ptr: if has_jacobian { rt_alloc((jac_len.max(1) * 8) as u32) } else { 0 },
+        x_ptr: base,
+        r_ptr,
+        jac_ptr: if has_jacobian { r_ptr + (size.max(1) * 8) as u32 } else { 0 },
     };
     let mut state =
         WasmState { nls_fail_addr, rel_fresh_addr, rel_addr, n_rel, lambda_addr };
@@ -1100,10 +1122,8 @@ pub extern "C" fn rt_solve_nls(
     unsafe { store_f64(block.last_solved(), last_solved) };
     unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
 
-    rt_free(model.x_ptr);
-    rt_free(model.r_ptr);
-    if has_jacobian {
-        rt_free(model.jac_ptr);
+    if heap {
+        rt_free(base);
     }
     ret
 }

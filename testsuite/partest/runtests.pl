@@ -107,10 +107,7 @@ my %suite_enabled = (
                       # for now); the autotools one never defines it, so this is
                       # opt-in like wasm rather than off-by-build.
   arrow        => 1,  # Needs the Rust result library libomc_result, which reads
-                      # and writes the arrow format (OM_RUST_RESULT_READERS/
-                      # OM_RUST_RESULT_WRITERS). A CMake build has it wherever
-                      # cargo is on PATH, which is what those options default to;
-                      # a build without a Rust toolchain turns this off.
+                      # and writes the arrow format.
   smoke        => 1,  # Also run on their own, where the whole testsuite is too
                       # slow: testsuite/runWindowsTests.sh.
   # Not part of the testsuite: the tests a makefile lists as failing, not

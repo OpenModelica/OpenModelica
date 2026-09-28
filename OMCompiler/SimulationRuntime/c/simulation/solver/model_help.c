@@ -114,6 +114,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    return;
+  }
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
@@ -142,6 +145,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     printZeroCrossings(data, OMC_LOG_EVENTS_V);
 
     data->callback->functionDAE(data, threadData);
+    if (OMC_ERROR_RAISED()) {
+      return;
+    }
 
     numEventIterations++;
     if(numEventIterations > maxEventIterations) {
@@ -1477,11 +1483,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
 #if !defined(OMC_MINIMAL_LOGGING)
   /* initial chattering info */
-  data->simulationInfo->chatteringInfo.numEventLimit = 100;
-  data->simulationInfo->chatteringInfo.lastSteps = (int*) calloc(data->simulationInfo->chatteringInfo.numEventLimit, sizeof(int));
+  data->simulationInfo->chatteringInfo.numEventLimit = 1000;
   data->simulationInfo->chatteringInfo.lastTimes = (modelica_real*) calloc(data->simulationInfo->chatteringInfo.numEventLimit, sizeof(double));
   data->simulationInfo->chatteringInfo.currentIndex = 0;
-  data->simulationInfo->chatteringInfo.lastStepsNumStateEvents = 0;
+  data->simulationInfo->chatteringInfo.stateEventsInARow = 0;
   data->simulationInfo->chatteringInfo.messageEmitted = 0;
 #endif
 
@@ -1658,7 +1663,6 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->extObjs);
 
   /* free chattering info */
-  free(data->simulationInfo->chatteringInfo.lastSteps);
   free(data->simulationInfo->chatteringInfo.lastTimes);
 
   /* free delay structure */

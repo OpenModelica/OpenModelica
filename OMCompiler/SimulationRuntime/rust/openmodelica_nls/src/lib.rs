@@ -48,7 +48,9 @@ use counters::{
 };
 use solverflags::Nls;
 use core::cell::UnsafeCell;
-use core::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
+
+use openmodelica_solvers::atomic64::AtomicU64;
 
 /// The parts of a run that belong to the runtime around this solver: how a model
 /// error ends the evaluation, and where a side file goes.
@@ -299,6 +301,8 @@ pub struct NlsRequest<'a> {
     pub colors: &'a [u32],
     /// C's `nlsData->max`.
     pub max: &'a [f64],
+    /// C's `nlsData->min`.
+    pub min: &'a [f64],
 }
 
 /// The nonlinear solvers a runtime supplies beyond the core's own dense ladder:
@@ -384,7 +388,7 @@ fn context_stores_guess() -> bool {
 /// C's `simulationInfo->stepSize`, which bounds how far back [`solve_nls`] looks in
 /// a system's solution history. Pushed in by the host, which has the model
 /// description it comes from. 0 leaves the window empty.
-static STEP_SIZE: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+static STEP_SIZE: AtomicU64 = AtomicU64::new(0);
 
 /// C's `simulationInfo->stepSize`, pushed in by the driver that has it.
 pub fn set_step_size(h: f64) {
@@ -538,6 +542,12 @@ fn enter_nls_stage() -> StageGuard {
 
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
+
+/// C's `h_function` raises whenever the residual does, whatever the rest of `H`
+/// would cancel it with.
+fn eval_failed(fx: &[f64]) -> bool {
+    fx.iter().any(|v| fmath::fabs(*v) >= ASSERT_RESIDUAL)
+}
 
 /// Whether the last residual evaluation violated a local constraint of a casual
 /// tearing set.
@@ -1182,6 +1192,10 @@ struct NewtonHom<'a, 'b> {
 impl Homotopy for NewtonHom<'_, '_> {
     fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
         (self.eval)(&y[..self.n], &mut self.fx);
+        if eval_failed(&self.fx) {
+            hvec[..self.n].fill(ASSERT_RESIDUAL);
+            return;
+        }
         let lam = y[self.n];
         for i in 0..self.n {
             hvec[i] = self.fx[i] - (1.0 - lam) * self.fx0[i];
@@ -1467,6 +1481,10 @@ struct FixpointHom<'a, 'b> {
 impl Homotopy for FixpointHom<'_, '_> {
     fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
         (self.eval)(&y[..self.n], &mut self.fx);
+        if eval_failed(&self.fx) {
+            hvec[..self.n].fill(ASSERT_RESIDUAL);
+            return;
+        }
         let lam = y[self.n];
         for i in 0..self.n {
             hvec[i] = lam * self.fx[i] + (1.0 - lam) * (y[i] - self.x0[i]);
@@ -2442,6 +2460,14 @@ pub trait History {
     /// Overwrite entry `k` and set the count to `len`.
     fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]);
     fn set_len(&mut self, len: usize);
+    /// Store `(time, x)` as entry 0, the oldest falling off at [`HIST_DEPTH`].
+    fn push_front(&mut self, time: f64, x: &[f64]) {
+        let count = self.len();
+        for k in (0..count.min(HIST_DEPTH - 1)).rev() {
+            self.shift(k, k + 1);
+        }
+        self.put(0, (count + 1).min(HIST_DEPTH), time, x);
+    }
 }
 
 /// Which stored solutions C's `getValues` builds the guess from.
@@ -2507,10 +2533,7 @@ pub fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
         h.put(0, count, time, x);
         return;
     }
-    for k in (0..count.min(HIST_DEPTH - 1)).rev() {
-        h.shift(k, k + 1);
-    }
-    h.put(0, (count + 1).min(HIST_DEPTH), time, x);
+    h.push_front(time, x);
 }
 
 /// `cleanValueListbyTime`: keep only the newest entry at or before `time`.
@@ -2874,8 +2897,8 @@ fn newton_c(
     // C's `xStart`: the retries below vary off this, not off the last varied point.
     // Taken at the first retry; `x` is unchanged until then.
     let mut x_start: Option<alloc::vec::Vec<f64>> = None;
-    let mut work = vec![0.0f64; 5 * n + n * n + n * (n + 1)];
-    let mut rest = work.as_mut_slice();
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 640]>::uninit(), alloc::vec::Vec::new());
+    let mut rest = zeroed(&mut stack, &mut heap, 5 * n + n * n + n * (n + 1));
     let xscaling = carve(&mut rest, n);
     let mut fvec = carve(&mut rest, n);
     let mut rp = carve(&mut rest, n);
@@ -3629,6 +3652,22 @@ fn solve_newton_c(
 }
 
 /// The next `k` values of `rest`.
+/// `len` zeroed f64s, in `stack` when they fit: a system solve is too small and
+/// too frequent for its scratch to go through the allocator.
+fn zeroed<'a, const N: usize>(
+    stack: &'a mut core::mem::MaybeUninit<[f64; N]>,
+    heap: &'a mut alloc::vec::Vec<f64>,
+    len: usize,
+) -> &'a mut [f64] {
+    if len > N {
+        *heap = vec![0.0f64; len];
+        return heap;
+    }
+    let s = unsafe { core::slice::from_raw_parts_mut(stack.as_mut_ptr() as *mut f64, len) };
+    s.fill(0.0);
+    s
+}
+
 fn carve<'a>(rest: &mut &'a mut [f64], k: usize) -> &'a mut [f64] {
     let (head, tail) = core::mem::take(rest).split_at_mut(k);
     *rest = tail;
@@ -3707,8 +3746,8 @@ pub fn solve_nls(
     // Warm start: the current slot values (the fallback guess, and what is
     // restored on failure).
     // The solve's vectors, carved out of one allocation.
-    let mut work = vec![0.0f64; 10 * n + m + mem.res_scaling.len()];
-    let mut rest = work.as_mut_slice();
+    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 192]>::uninit(), alloc::vec::Vec::new());
+    let mut rest = zeroed(&mut work_stack, &mut work_heap, 10 * n + m + mem.res_scaling.len());
     let mut warm = carve(&mut rest, n);
     let mut xbuf = carve(&mut rest, m);
     let mut rbuf = carve(&mut rest, n);
@@ -3779,7 +3818,8 @@ pub fn solve_nls(
     // chose to solve sparsely, a dense column-major `n×m` for the rest.
     let jac_csc = has_jac && spec.jac_csc;
     let jac_len = if jac_csc { nnz as usize } else { n * m };
-    let mut jacbuf = vec![0.0f64; if has_jac || has_hom_jac { jac_len } else { 0 }];
+    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 256]>::uninit(), alloc::vec::Vec::new());
+    let mut jacbuf = zeroed(&mut jac_stack, &mut jac_heap, if has_jac || has_hom_jac { jac_len } else { 0 });
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.
     let pick = solverflags::nls();
@@ -3799,6 +3839,7 @@ pub fn solve_nls(
     let pat: &[u32] = if scatter { spec.pattern } else { &[] };
     let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
     let max = || bounds.chunks_exact(2).map(|b| b[1]).collect::<alloc::vec::Vec<f64>>();
+    let min = || bounds.chunks_exact(2).map(|b| b[0]).collect::<alloc::vec::Vec<f64>>();
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
@@ -3860,7 +3901,8 @@ pub fn solve_nls(
     // branch would re-flip the relation the event set. Newton holds relations
     // (`solveContinuous`); an event primes once live, then holds.
     let discrete_call = saved_rel_fresh == 1;
-    let mixed = spec.mixed && discrete_call;
+    // C's `mixedSystem && discreteCall`, which initialization sets as well.
+    let mixed = spec.mixed && saved_rel_fresh != 0;
     // `functionInitialEquations` sets `discreteCall` too, so an initial system starts
     // from `nlsx`: its extrapolation is still zeroes, and the equidistant homotopy
     // hands each lambda step the previous one's solution through the unknowns.
@@ -4023,7 +4065,7 @@ pub fn solve_nls(
                 backend.solve_kinsol_dense(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max(),
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(), min: &min(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4033,7 +4075,7 @@ pub fn solve_nls(
                 backend.solve_sparse(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max(),
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(), min: &min(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4211,7 +4253,7 @@ pub fn solve_nls(
             if !converged || !mixed || retried {
                 break converged;
             }
-            state.borrow_mut().set_relation_mode(1);
+            state.borrow_mut().set_relation_mode(saved_rel_fresh);
             let uncounted = n_feval.get();
             eval(&x, &mut scratch);
             n_feval.set(uncounted);

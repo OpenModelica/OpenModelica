@@ -1,0 +1,39 @@
+// name: duplicatePattern
+// keywords: NewBackend
+// status: correct
+//
+// The runtime sparsity pattern of a torn loop can list a row twice for the same column
+// (x[i] directly and through s = sum(x)). The columns have to be sorted and unique for KLU.
+
+loadString("
+model DuplicatePattern
+  Real x[3](each start = 1);
+  Real s;
+equation
+  s = sum(x);
+  for i in 1:3 loop
+    x[i] ^ 3 + s * x[i] = i;
+  end for;
+end DuplicatePattern;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --tearingMethod=cellier"); getErrorString();
+echo(false);
+res := simulate(DuplicatePattern, stopTime = 0.1, simflags = "-nls=kinsol -lv=LOG_NLS_DERIVATIVE_TEST");
+msg := res.messages;
+echo(true);
+getErrorString();
+regexBool(msg, "Derivative test failed");
+regexBool(msg, "The simulation finished successfully");
+val(x[3], 0.1);
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// true
+// 0.9716420411847229
+// endResult

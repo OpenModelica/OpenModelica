@@ -2,6 +2,23 @@
 
 use super::*;
 
+std::thread_local! {
+    static UNLIKELY_IFS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// An `if` whose condition almost never holds. The `nop` in front marks it for
+/// `add_branch_hints`, so the compiler lays its body out of the hot path.
+pub(super) fn emit_unlikely_if(ctx: &mut FnCtx, bt: we::BlockType) {
+    UNLIKELY_IFS.with(|c| c.set(true));
+    ctx.emit(we::Instruction::Nop);
+    ctx.emit(we::Instruction::If(bt));
+}
+
+/// Whether an [`emit_unlikely_if`] was emitted since the last call.
+pub(crate) fn take_unlikely_ifs() -> bool {
+    UNLIKELY_IFS.with(|c| c.replace(false))
+}
+
 /// `terminate(msg)`: raise the `SimData` terminate flag, which the drivers poll
 /// after each communication point, and fill C's `TermMsg`/`TermInfo` slots.
 /// Shared by `STMT_TERMINATE` and the `when`-body `TERMINATE`.
@@ -64,7 +81,7 @@ pub(super) fn emit_assert(
     let c = compile_exp(ctx, cond)?;
     coerce(ctx, c, WTy::I32);
     ctx.emit(we::Instruction::I32Eqz);
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     let info = &source.info;
     let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
     if let Some(g) = warn_flag {
@@ -98,20 +115,25 @@ pub(super) fn emit_assert(
     }
     let msg_h = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(msg_h));
-    // Both arms take these; `initial` and `sim_data` follow.
-    let mut report_args = |ctx: &mut FnCtx| -> Result<()> {
+    let file_h = ctx.alloc_temp(WTy::I32);
+    emit_str_literal(ctx, file.as_bytes())?;
+    ctx.emit(we::Instruction::LocalSet(file_h));
+    // The dumped condition, for the report.
+    let cond_h = ctx.alloc_temp(WTy::I32);
+    if !in_function {
+        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?;
+        ctx.emit(we::Instruction::LocalSet(cond_h));
+    }
+    // Only one arm runs, and it consumes the Strings; `initial` and `sim_data` follow.
+    let report_args = |ctx: &mut FnCtx| -> Result<()> {
         ctx.emit(we::Instruction::LocalGet(msg_h));
-        emit_str_literal(ctx, file.as_bytes())?; // file String handle
+        ctx.emit(we::Instruction::LocalGet(file_h));
         ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
         ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
         ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-        if in_function {
-            ctx.emit(we::Instruction::I32Const(0));
-        } else {
-            emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
-        }
+        ctx.emit(we::Instruction::LocalGet(cond_h));
         Ok(())
     };
     // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
@@ -125,13 +147,13 @@ pub(super) fn emit_assert(
         ctx.emit(we::Instruction::I32Eqz);
         ctx.emit(we::Instruction::I32And);
     }
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     report_args(ctx)?;
     emit_initial_flag(ctx);
     emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(we::Instruction::Return);
     ctx.emit(we::Instruction::End);
     report_args(ctx)?;
@@ -159,10 +181,10 @@ pub(super) fn emit_sim_data_or_zero(ctx: &mut FnCtx) {
 /// and return, leaving the outputs at their entry values.
 pub(super) fn emit_nls_recoverable_return(ctx: &mut FnCtx) -> Result<()> {
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(we::Instruction::Return);
     ctx.emit(we::Instruction::End);
     Ok(())
@@ -190,11 +212,11 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
             Ok(())
         };
         ctx.emit(I::Call(rt_index("rt_nls_recovering")?));
-        ctx.emit(I::If(we::BlockType::Empty));
+        emit_unlikely_if(ctx, we::BlockType::Empty);
         report_args(ctx)?;
         ctx.emit(I::Call(rt_index("rt_nls_assert_failed")?));
         release_heap_locals(ctx)?;
-        push_outputs(ctx);
+        push_outputs(ctx)?;
         ctx.emit(I::Return);
         ctx.emit(I::End);
         report_args(ctx)?;
@@ -213,7 +235,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     ctx.emit(I::I32Eq);
     ctx.emit(I::If(we::BlockType::Empty));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(I::Return);
     ctx.emit(I::End);
     // 2 is C's `noThrowAsserts`: fall through and use the out-of-domain value.
@@ -238,16 +260,127 @@ pub(super) fn emit_initial_flag(ctx: &mut FnCtx) {
 
 /// The dumped source form of `e`, for embedding in an assertion message.
 pub(crate) fn dumped_exp(e: &DAE::Exp) -> Result<String> {
-    if let DAE::Exp::CREF { componentRef, .. } = e
-        && !openmodelica_util::Config::typeinfo()?
-    {
+    let e = metamodelica::Ref::new(e.clone());
+    if !openmodelica_util::Config::typeinfo()? {
         let mut s = String::new();
-        if push_dumped_cref(componentRef, openmodelica_util::Config::modelicaOutput()?, &mut s) {
+        if push_dumped_exp(&e, openmodelica_util::Config::modelicaOutput()?, &mut s)? {
             return Ok(s);
         }
     }
-    let e = metamodelica::Ref::new(e.clone());
     Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e, arcstr::literal!("\""))?)?.to_string())
+}
+
+/// `ExpressionDumpTpl.dumpExp` for literals, crefs, scalar arithmetic and calls
+/// of those; false for anything else.
+fn push_dumped_exp(e: &metamodelica::Ref<DAE::Exp>, modelica_output: bool, s: &mut String) -> Result<bool> {
+    use std::fmt::Write;
+    use DAE::Exp as E;
+    use DAE::Operator as O;
+    Ok(match &**e {
+        E::ICONST { integer } => {
+            let _ = write!(s, "{integer}");
+            true
+        }
+        E::RCONST { real } => {
+            s.push_str(&metamodelica::realString(*real));
+            true
+        }
+        E::CREF { componentRef, .. } => push_dumped_cref(componentRef, modelica_output, s),
+        E::BINARY { exp1, operator, exp2 } => {
+            let op = match operator {
+                O::ADD { .. } => " + ",
+                O::SUB { .. } => " - ",
+                O::MUL { .. } => " * ",
+                O::DIV { .. } => " / ",
+                O::POW { .. } => " ^ ",
+                _ => return Ok(false),
+            };
+            push_dumped_operand(exp1, e, true, modelica_output, s)? && {
+                s.push_str(op);
+                push_dumped_operand(exp2, e, false, modelica_output, s)?
+            }
+        }
+        E::UNARY { operator: O::UMINUS { .. }, exp } => {
+            s.push('-');
+            push_dumped_operand(exp, e, false, modelica_output, s)?
+        }
+        E::CALL { path, expLst, .. } => {
+            match &**path {
+                Absyn::Path::FULLYQUALIFIED { path } => push_dumped_path(path, modelica_output, s),
+                _ => push_dumped_path(path, modelica_output, s),
+            }
+            s.push('(');
+            for (i, arg) in expLst.iter().enumerate() {
+                if i > 0 {
+                    s.push_str(", ");
+                }
+                if !push_dumped_exp(arg, modelica_output, s)? {
+                    return Ok(false);
+                }
+            }
+            s.push(')');
+            true
+        }
+        _ => false,
+    })
+}
+
+/// `ExpressionDumpTpl.dumpOperand`, with `ExpressionBasics.shouldParenthesize`.
+fn push_dumped_operand(
+    operand: &metamodelica::Ref<DAE::Exp>,
+    operation: &metamodelica::Ref<DAE::Exp>,
+    lhs: bool,
+    modelica_output: bool,
+    s: &mut String,
+) -> Result<bool> {
+    use std::cmp::Ordering;
+    use DAE::Exp as E;
+    use DAE::Operator as O;
+    let paren = match &**operand {
+        E::UNARY { .. } => true,
+        _ => match openmodelica_frontend_dump::ExpressionBasics::priority(&operand, lhs)?
+            .cmp(&openmodelica_frontend_dump::ExpressionBasics::priority(&operation, lhs)?)
+        {
+            Ordering::Greater => true,
+            Ordering::Less => false,
+            Ordering::Equal => match &**operand {
+                E::BINARY { operator, .. } if lhs => matches!(
+                    operator,
+                    O::POW { .. } | O::POW_ARRAY_SCALAR { .. } | O::POW_SCALAR_ARRAY { .. } | O::POW_ARR { .. } | O::POW_ARR2 { .. }
+                ),
+                E::BINARY { operator, .. } => !matches!(
+                    operator,
+                    O::ADD { .. } | O::MUL { .. } | O::ADD_ARR { .. } | O::MUL_ARRAY_SCALAR { .. } | O::ADD_ARRAY_SCALAR { .. }
+                ),
+                E::LBINARY { .. } => false,
+                _ => !lhs,
+            },
+        },
+    };
+    if paren {
+        s.push('(');
+    }
+    let ok = push_dumped_exp(operand, modelica_output, s)?;
+    if paren {
+        s.push(')');
+    }
+    Ok(ok)
+}
+
+/// `AbsynDumpTpl.dumpPath`.
+fn push_dumped_path(path: &Absyn::Path, modelica_output: bool, s: &mut String) {
+    match path {
+        Absyn::Path::FULLYQUALIFIED { path } => {
+            s.push('.');
+            push_dumped_path(path, modelica_output, s);
+        }
+        Absyn::Path::QUALIFIED { name, path } => {
+            s.push_str(name);
+            s.push_str(if modelica_output { "__" } else { "." });
+            push_dumped_path(path, modelica_output, s);
+        }
+        Absyn::Path::IDENT { name } => s.push_str(name),
+    }
 }
 
 /// `ExpressionDumpTpl.dumpCref` for crefs whose subscripts are all `:` or
@@ -349,7 +482,7 @@ pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &metamode
         ctx.emit(I::I32And);
     }
     ctx.emit(I::I32Eqz);
-    ctx.emit(I::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     let call = format!("{name}({})", dumped_exp(arg)?);
     emit_str_literal(ctx, format!("Model error: Argument of {call} {}", d.head).as_bytes())?;
     ctx.emit(I::LocalGet(t));
@@ -388,7 +521,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::I32Const(0));
     ctx.emit(we::Instruction::I32GtS);
     ctx.emit(we::Instruction::I32Eqz);
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     emit_str_literal(ctx, format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes())?;
     ctx.emit(we::Instruction::LocalGet(nt));
     ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
@@ -407,7 +540,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::F64Ge);
     ctx.emit(we::Instruction::I32Or);
     ctx.emit(we::Instruction::I32Eqz);
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     emit_str_literal(ctx, format!("Model error: First argument of nthRoot({vstr}, {nstr}) must be >= 0 if the second is even, got ").as_bytes())?;
     ctx.emit(we::Instruction::LocalGet(vt));
     ctx.emit(we::Instruction::I32Const(6)); // significant digits

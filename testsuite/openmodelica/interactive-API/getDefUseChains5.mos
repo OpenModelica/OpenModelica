@@ -1,0 +1,149 @@
+// name: getDefUseChains5
+// keywords: def-use, #16931
+// status: correct
+//
+// Tests getDefUseChains with the constructs that MSL 4.1.0 needs: class
+// extends and redeclares of replaceable classes and components, extends of a
+// class in the same package by its full name, external objects, group imports
+// and element-wise operators.
+
+writeFile("getDefUseChains5.mo", "package T
+  package I
+    block SO
+      output Real y;
+    end SO;
+    block Base
+      extends T.I.SO;
+      parameter Real offset = 0;
+    end Base;
+  end I;
+  block St
+    extends T.I.Base;
+  equation
+    y = offset + time;
+    assert(y > -1, \"y too small\");
+  end St;
+  partial package PM
+    replaceable record TS
+    end TS;
+    replaceable partial model BP
+      Real p;
+    end BP;
+  end PM;
+  partial package PMM
+    extends PM;
+    redeclare replaceable record extends TS
+      Real p;
+      Real X;
+    end TS;
+  end PMM;
+  package MA
+    extends PMM;
+    redeclare record extends TS
+    end TS;
+    redeclare model extends BP
+      Real phase;
+    end BP;
+    function g
+      input TS state;
+      output Real x = state.X;
+    end g;
+    model Ext
+      extends BP;
+    equation
+      phase = p;
+    end Ext;
+  end MA;
+  record Data
+    Real a = 1;
+  end Data;
+  record MoreData
+    extends Data;
+    Real b = 2;
+  end MoreData;
+  model Cell
+    replaceable parameter Data data;
+  end Cell;
+  model Stack
+    extends Cell(redeclare MoreData data);
+    Real c[2] = {data.a, data.b} .* {1, 2};
+  end Stack;
+  package LF
+    extends PM(redeclare record TS = MoreData);
+    function mk
+      output TS s = TS(a = 3, b = 4);
+    end mk;
+  end LF;
+  class Table
+    extends ExternalObject;
+    function constructor
+      input String fileName;
+      output Table t;
+      external \"C\" t = openTable(fileName);
+    end constructor;
+    function destructor
+      input Table t;
+      external \"C\" closeTable(t);
+    end destructor;
+  end Table;
+  model UseTable
+    import T.{Table, Data};
+    parameter Table t = Table(fileName = \"x.txt\");
+    Data d;
+  end UseTable;
+end T;
+");
+loadFile("getDefUseChains5.mo"); getErrorString();
+
+// Inherited through a base class that extends a class of the same package by its full name.
+getDefUseChains(T.I.Base.offset, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+// Inherited through a class extends of a class extends.
+getDefUseChains(T.PM.BP.p, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+// A component of a record the class extends of a class extends adds.
+getDefUseChains(T.PMM.TS.X, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+// Of the type a replaceable component is redeclared with, a candidate, also as a named argument.
+getDefUseChains(T.MoreData.b, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+// A named argument of the constructor of an external object.
+getDefUseChains(T.Table.constructor.fileName, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+// Used in a group import.
+getDefUseChains(T.Table, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+// time and the level of assert are not names to look up.
+getDefUseChains(T.St, fileName = "getDefUseChains5.json");
+stringReplace(readFile("getDefUseChains5.json"), cd() + "/", ""); getErrorString();
+
+deleteFile("getDefUseChains5.mo"); deleteFile("getDefUseChains5.json");
+
+// Result:
+// true
+// true
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.I.Base.offset\", \"definitions\":[{\"name\":\"T.I.Base.offset\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":8, \"columnStart\":7, \"lineEnd\":8, \"columnEnd\":32, \"nameLine\":8, \"nameColumnStart\":22, \"nameColumnEnd\":27, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":14, \"columnStart\":9, \"lineEnd\":14, \"columnEnd\":14, \"exact\":true, \"text\":\"offset\", \"in\":\"T.St\", \"role\":\"equation\"}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.PM.BP.p\", \"definitions\":[{\"name\":\"T.PM.BP.p\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":21, \"columnStart\":7, \"lineEnd\":21, \"columnEnd\":13, \"nameLine\":21, \"nameColumnStart\":12, \"nameColumnEnd\":12, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":45, \"columnStart\":15, \"lineEnd\":45, \"columnEnd\":15, \"exact\":true, \"text\":\"p\", \"in\":\"T.MA.Ext\", \"role\":\"equation\"}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.PMM.TS.X\", \"definitions\":[{\"name\":\"T.PMM.TS.X\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":28, \"columnStart\":7, \"lineEnd\":28, \"columnEnd\":13, \"nameLine\":28, \"nameColumnStart\":12, \"nameColumnEnd\":12, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":40, \"columnStart\":29, \"lineEnd\":40, \"columnEnd\":29, \"exact\":true, \"text\":\"state.X\", \"part\":2, \"in\":\"T.MA.g\", \"role\":\"binding\"}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.MoreData.b\", \"definitions\":[{\"name\":\"T.MoreData.b\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":53, \"columnStart\":5, \"lineEnd\":53, \"columnEnd\":15, \"nameLine\":53, \"nameColumnStart\":10, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":60, \"columnStart\":31, \"lineEnd\":60, \"columnEnd\":31, \"exact\":true, \"text\":\"data.b\", \"part\":2, \"in\":\"T.Stack\", \"role\":\"binding\", \"candidate\":true}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":65, \"columnStart\":31, \"lineEnd\":65, \"columnEnd\":31, \"exact\":true, \"text\":\"b\", \"in\":\"T.LF.mk\", \"role\":\"argument\", \"candidate\":true}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.Table.constructor.fileName\", \"definitions\":[{\"name\":\"T.Table.constructor.fileName\", \"kind\":\"component\", \"type\":\"String\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":71, \"columnStart\":7, \"lineEnd\":71, \"columnEnd\":28, \"nameLine\":71, \"nameColumnStart\":20, \"nameColumnEnd\":27, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":73, \"columnStart\":34, \"lineEnd\":73, \"columnEnd\":41, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.Table.constructor\", \"role\":\"external\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":82, \"columnStart\":31, \"lineEnd\":82, \"columnEnd\":38, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.UseTable\", \"role\":\"argument\"}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.Table\", \"definitions\":[{\"name\":\"T.Table\", \"kind\":\"class\", \"restriction\":\"class\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":68, \"columnStart\":3, \"lineEnd\":79, \"columnEnd\":12, \"nameLine\":68, \"nameColumnStart\":9, \"nameColumnEnd\":13, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":72, \"columnStart\":14, \"lineEnd\":72, \"columnEnd\":18, \"exact\":true, \"text\":\"Table\", \"in\":\"T.Table.constructor\", \"role\":\"type\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":76, \"columnStart\":13, \"lineEnd\":76, \"columnEnd\":17, \"exact\":true, \"text\":\"Table\", \"in\":\"T.Table.destructor\", \"role\":\"type\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":79, \"columnStart\":7, \"lineEnd\":79, \"columnEnd\":11, \"exact\":true, \"text\":\"Table\", \"in\":\"T.Table\", \"role\":\"end\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":81, \"columnStart\":15, \"lineEnd\":81, \"columnEnd\":19, \"exact\":true, \"text\":\"T.Table\", \"part\":2, \"in\":\"T.UseTable\", \"role\":\"import\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":82, \"columnStart\":15, \"lineEnd\":82, \"columnEnd\":19, \"exact\":true, \"text\":\"Table\", \"in\":\"T.UseTable\", \"role\":\"type\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":82, \"columnStart\":25, \"lineEnd\":82, \"columnEnd\":29, \"exact\":true, \"text\":\"Table\", \"in\":\"T.UseTable\", \"role\":\"binding\"}]}, {\"name\":\"T.Table.constructor\", \"kind\":\"class\", \"restriction\":\"function\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":70, \"columnStart\":5, \"lineEnd\":74, \"columnEnd\":20, \"nameLine\":70, \"nameColumnStart\":14, \"nameColumnEnd\":24, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":74, \"columnStart\":9, \"lineEnd\":74, \"columnEnd\":19, \"exact\":true, \"text\":\"constructor\", \"in\":\"T.Table.constructor\", \"role\":\"end\"}]}, {\"name\":\"T.Table.constructor.fileName\", \"kind\":\"component\", \"type\":\"String\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":71, \"columnStart\":7, \"lineEnd\":71, \"columnEnd\":28, \"nameLine\":71, \"nameColumnStart\":20, \"nameColumnEnd\":27, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":73, \"columnStart\":34, \"lineEnd\":73, \"columnEnd\":41, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.Table.constructor\", \"role\":\"external\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":82, \"columnStart\":31, \"lineEnd\":82, \"columnEnd\":38, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.UseTable\", \"role\":\"argument\"}]}, {\"name\":\"T.Table.constructor.t\", \"kind\":\"component\", \"type\":\"Table\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":72, \"columnStart\":7, \"lineEnd\":72, \"columnEnd\":21, \"nameLine\":72, \"nameColumnStart\":20, \"nameColumnEnd\":20, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":73, \"columnStart\":20, \"lineEnd\":73, \"columnEnd\":20, \"exact\":true, \"text\":\"t\", \"in\":\"T.Table.constructor\", \"role\":\"external\"}]}, {\"name\":\"T.Table.destructor\", \"kind\":\"class\", \"restriction\":\"function\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":75, \"columnStart\":5, \"lineEnd\":78, \"columnEnd\":19, \"nameLine\":75, \"nameColumnStart\":14, \"nameColumnEnd\":23, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":78, \"columnStart\":9, \"lineEnd\":78, \"columnEnd\":18, \"exact\":true, \"text\":\"destructor\", \"in\":\"T.Table.destructor\", \"role\":\"end\"}]}, {\"name\":\"T.Table.destructor.t\", \"kind\":\"component\", \"type\":\"Table\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":76, \"columnStart\":7, \"lineEnd\":76, \"columnEnd\":20, \"nameLine\":76, \"nameColumnStart\":19, \"nameColumnEnd\":19, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":77, \"columnStart\":31, \"lineEnd\":77, \"columnEnd\":31, \"exact\":true, \"text\":\"t\", \"in\":\"T.Table.destructor\", \"role\":\"external\"}]}], \"unresolved\":[]}"
+// ""
+// "getDefUseChains5.json"
+// "{\"class\":\"T.St\", \"definitions\":[{\"name\":\"T\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":1, \"columnStart\":1, \"lineEnd\":85, \"columnEnd\":6, \"nameLine\":1, \"nameColumnStart\":9, \"nameColumnEnd\":9, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":7, \"columnStart\":15, \"lineEnd\":7, \"columnEnd\":15, \"exact\":true, \"text\":\"T.I.SO\", \"part\":1, \"in\":\"T.I.Base\", \"role\":\"extends\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":12, \"columnStart\":13, \"lineEnd\":12, \"columnEnd\":13, \"exact\":true, \"text\":\"T.I.Base\", \"part\":1, \"in\":\"T.St\", \"role\":\"extends\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":81, \"columnStart\":12, \"lineEnd\":81, \"columnEnd\":12, \"exact\":true, \"text\":\"T.Table\", \"part\":1, \"in\":\"T.UseTable\", \"role\":\"import\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":85, \"columnStart\":5, \"lineEnd\":85, \"columnEnd\":5, \"exact\":true, \"text\":\"T\", \"in\":\"T\", \"role\":\"end\"}]}, {\"name\":\"T.I\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":2, \"columnStart\":3, \"lineEnd\":10, \"columnEnd\":8, \"nameLine\":2, \"nameColumnStart\":11, \"nameColumnEnd\":11, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":7, \"columnStart\":17, \"lineEnd\":7, \"columnEnd\":17, \"exact\":true, \"text\":\"T.I.SO\", \"part\":2, \"in\":\"T.I.Base\", \"role\":\"extends\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":10, \"columnStart\":7, \"lineEnd\":10, \"columnEnd\":7, \"exact\":true, \"text\":\"I\", \"in\":\"T.I\", \"role\":\"end\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":12, \"columnStart\":15, \"lineEnd\":12, \"columnEnd\":15, \"exact\":true, \"text\":\"T.I.Base\", \"part\":2, \"in\":\"T.St\", \"role\":\"extends\"}]}, {\"name\":\"T.I.Base\", \"kind\":\"class\", \"restriction\":\"block\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":6, \"columnStart\":5, \"lineEnd\":9, \"columnEnd\":13, \"nameLine\":6, \"nameColumnStart\":11, \"nameColumnEnd\":14, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":9, \"columnStart\":9, \"lineEnd\":9, \"columnEnd\":12, \"exact\":true, \"text\":\"Base\", \"in\":\"T.I.Base\", \"role\":\"end\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":12, \"columnStart\":17, \"lineEnd\":12, \"columnEnd\":20, \"exact\":true, \"text\":\"T.I.Base\", \"part\":3, \"in\":\"T.St\", \"role\":\"extends\"}]}, {\"name\":\"T.I.Base.offset\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":8, \"columnStart\":7, \"lineEnd\":8, \"columnEnd\":32, \"nameLine\":8, \"nameColumnStart\":22, \"nameColumnEnd\":27, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":14, \"columnStart\":9, \"lineEnd\":14, \"columnEnd\":14, \"exact\":true, \"text\":\"offset\", \"in\":\"T.St\", \"role\":\"equation\"}]}, {\"name\":\"T.I.SO.y\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":4, \"columnStart\":7, \"lineEnd\":4, \"columnEnd\":20, \"nameLine\":4, \"nameColumnStart\":19, \"nameColumnEnd\":19, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":14, \"columnStart\":5, \"lineEnd\":14, \"columnEnd\":5, \"exact\":true, \"text\":\"y\", \"in\":\"T.St\", \"role\":\"equation\"}, {\"file\":\"getDefUseChains5.mo\", \"lineStart\":15, \"columnStart\":12, \"lineEnd\":15, \"columnEnd\":12, \"exact\":true, \"text\":\"y\", \"in\":\"T.St\", \"role\":\"equation\"}]}, {\"name\":\"T.St\", \"kind\":\"class\", \"restriction\":\"block\", \"file\":\"getDefUseChains5.mo\", \"lineStart\":11, \"columnStart\":3, \"lineEnd\":16, \"columnEnd\":9, \"nameLine\":11, \"nameColumnStart\":9, \"nameColumnEnd\":10, \"uses\":[{\"file\":\"getDefUseChains5.mo\", \"lineStart\":16, \"columnStart\":7, \"lineEnd\":16, \"columnEnd\":8, \"exact\":true, \"text\":\"St\", \"in\":\"T.St\", \"role\":\"end\"}]}], \"unresolved\":[]}"
+// ""
+// true
+// true
+// endResult
