@@ -1198,7 +1198,7 @@ public
       output UnorderedMap<ComponentRef, Expression> bindings = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     protected
       Expression key_exp, exp, value;
-      Boolean ok;
+      Boolean ok, negated;
       ComponentRef iter;
       Integer offset;
     algorithm
@@ -1220,9 +1220,11 @@ public
             end match;
           then ();
           case (Subscript.INDEX(index = key_exp), Subscript.INDEX(index = exp)) algorithm
-            (ok, iter, offset) := sparsityIteratorOffset(key_exp);
+            (ok, iter, offset, negated) := sparsityIteratorOffset(key_exp);
             if ok then
-              value := SimplifyExp.simplify(Expression.BINARY(exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(offset)));
+              value := if negated
+                then SimplifyExp.simplify(Expression.BINARY(Expression.INTEGER(offset), Operator.makeSub(Type.INTEGER()), exp))
+                else SimplifyExp.simplify(Expression.BINARY(exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(offset)));
               if UnorderedMap.contains(iter, bindings) and not Expression.isEqual(value, UnorderedMap.getSafe(iter, bindings, sourceInfo())) then
                 status := 2;
               else
@@ -1243,11 +1245,12 @@ public
     end sparsityUnify;
 
     function sparsityIteratorOffset
-      "i + c, c + i, i - c and i as (i, c)"
+      "i + c, c + i, i - c and i as (i, c, false), c - i as (i, c, true)"
       input Expression exp;
       output Boolean ok = true;
       output ComponentRef iter = ComponentRef.EMPTY();
       output Integer offset = 0;
+      output Boolean negated = false;
     algorithm
       () := match exp
         case Expression.CREF() guard(ComponentRef.isIterator(exp.cref)) algorithm
@@ -1260,6 +1263,13 @@ public
         case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.INTEGER(offset))
           guard(ComponentRef.isIterator(iter)) algorithm
           offset := -offset;
+        then ();
+        case Expression.BINARY(exp1 = Expression.INTEGER(offset), operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.CREF(cref = iter))
+          guard(ComponentRef.isIterator(iter)) algorithm
+          negated := true;
+        then ();
+        case Expression.MULTARY(operator = Operator.OPERATOR(op = Op.ADD)) algorithm
+          (ok, iter, offset, negated) := sparsityMultaryOffset(exp.arguments, exp.inv_arguments);
         then ();
         else algorithm
           ok := false;
@@ -1287,6 +1297,39 @@ public
         end for;
       end for;
     end sparsityHasUnbound;
+
+    function sparsityMultaryOffset
+      "a sum of integers and one iterator, which may be subtracted"
+      input list<Expression> arguments;
+      input list<Expression> inv_arguments;
+      output Boolean ok = true;
+      output ComponentRef iter = ComponentRef.EMPTY();
+      output Integer offset = 0;
+      output Boolean negated = false;
+    protected
+      Integer iterators = 0;
+    algorithm
+      for tpl in listAppend(list((e, false) for e in arguments), list((e, true) for e in inv_arguments)) loop
+        () := match tpl
+          local
+            Expression e;
+            Boolean inv;
+            Integer value;
+          case (Expression.INTEGER(value = value), inv) algorithm
+            offset := if inv then offset - value else offset + value;
+          then ();
+          case (e as Expression.CREF(), inv) guard(ComponentRef.isIterator(e.cref)) algorithm
+            iter := e.cref;
+            negated := inv;
+            iterators := iterators + 1;
+          then ();
+          else algorithm
+            ok := false;
+          then ();
+        end match;
+      end for;
+      ok := ok and iterators == 1;
+    end sparsityMultaryOffset;
 
     function sparsityBind
       input output Expression exp;
