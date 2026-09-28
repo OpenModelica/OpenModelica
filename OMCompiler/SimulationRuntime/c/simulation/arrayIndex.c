@@ -128,28 +128,22 @@ void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
   // Variables
   simulationInfo->realVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerVarsReverseIndex = NULL;
-  // simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanVarsReverseIndex = NULL;
-  // simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringVarsReverseIndex = NULL;
-  // simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
 
   // Parameters
   simulationInfo->realParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerParamsReverseIndex = NULL;
-  // simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanParamsReverseIndex = NULL;
-  // simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringParamsReverseIndex = NULL;
-  // simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
 
   // Alias variables
   simulationInfo->realAliasReverseIndex = NULL;
@@ -805,9 +799,15 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 {
   // Variables
   computeVarsReverseIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
+  computeVarsReverseIndex(modelData->integerVarsData, VAR_TYPE_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsReverseIndex);
+  computeVarsReverseIndex(modelData->booleanVarsData, VAR_TYPE_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsReverseIndex);
+  computeVarsReverseIndex(modelData->stringVarsData, VAR_TYPE_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsReverseIndex);
 
   // Parameters
   computeVarsReverseIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsReverseIndex);
+  computeVarsReverseIndex(modelData->integerParameterData, VAR_TYPE_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsReverseIndex);
+  computeVarsReverseIndex(modelData->booleanParameterData, VAR_TYPE_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsReverseIndex);
+  computeVarsReverseIndex(modelData->stringParameterData, VAR_TYPE_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsReverseIndex);
 }
 
 /**

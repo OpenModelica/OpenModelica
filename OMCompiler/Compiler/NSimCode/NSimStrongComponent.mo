@@ -503,7 +503,9 @@ public
       literals and therefore not part of the init XML, e.g. `Real x(min = p)`.
       The attributes are evaluated in updateBoundVariableAttributes. Only
       creates blocks for variables that are SimVars themselves, i.e. array
-      variables if they are not scalarized."
+      variables if they are not scalarized.
+      The indices are consecutive per attribute in the order of the info file:
+      nominal, min, max."
       input list<VariablePointers> vars;
       output list<Block> min_blcks = {};
       output list<Block> max_blcks = {};
@@ -511,20 +513,26 @@ public
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
+      list<Variable> sim_vars = {};
       Variable var;
-      BackendExtension.VariableAttributes attributes;
     algorithm
       for var_ptrs in vars loop
         for var_ptr in VariablePointers.toList(var_ptrs) loop
           var := Pointer.access(var_ptr);
-          if not UnorderedMap.contains(var.name, simcode_map) then
-            continue;
+          if UnorderedMap.contains(var.name, simcode_map) then
+            sim_vars := var :: sim_vars;
           end if;
-          attributes := var.backendinfo.attributes;
-          (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(attributes), min_blcks, simCodeIndices);
-          (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(attributes), max_blcks, simCodeIndices);
-          (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(attributes), nominal_blcks, simCodeIndices);
         end for;
+      end for;
+      sim_vars := listReverse(sim_vars);
+      for var in sim_vars loop
+        (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(var.backendinfo.attributes), nominal_blcks, simCodeIndices);
+      end for;
+      for var in sim_vars loop
+        (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(var.backendinfo.attributes), min_blcks, simCodeIndices);
+      end for;
+      for var in sim_vars loop
+        (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(var.backendinfo.attributes), max_blcks, simCodeIndices);
       end for;
       min_blcks := listReverse(min_blcks);
       max_blcks := listReverse(max_blcks);
