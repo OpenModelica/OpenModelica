@@ -36,8 +36,9 @@
 // Rust-only declarations for Inline; see mmtorust/src/overrides.rs.
 encapsulated package Inline
   // Fresh tables: in this port that is cheaper than clearing the cached ones.
+  // They hold one function's variables, so the smallest size will do.
   protected function getInlineHashTableVarTransform
-    output HashTableCG.HashTable ht = HashTableCG.emptyHashTable();
-    output VarTransform.VariableReplacements repl = VarTransform.emptyReplacements();
+    output HashTableCG.HashTable ht = HashTableCG.emptyHashTableSized(BaseHashTable.lowBucketSize);
+    output VarTransform.VariableReplacements repl = VarTransform.emptyReplacementsSized(BaseHashTable.lowBucketSize);
   end getInlineHashTableVarTransform;
 end Inline;
