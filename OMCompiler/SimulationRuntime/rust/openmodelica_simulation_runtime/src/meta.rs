@@ -654,11 +654,7 @@ pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
     unsafe {
         for a in 0..md.nVariablesRealArray as usize {
             let d = &*md.realVarsData.add(a);
-            let base = *si.realVarsIndex.add(a);
-            for k in 0..d.dimension.scalar_length {
-                let _ = base;
-                v.reals.push(scalar_names(&cstr(d.info.name), &d.dimension, false)[k].clone());
-            }
+            v.reals.extend(scalar_names(&cstr(d.info.name), &d.dimension, false));
         }
         for a in 0..md.nVariablesIntegerArray as usize {
             let d = &*md.integerVarsData.add(a);
