@@ -547,12 +547,12 @@ QVariant EquationTreeItem::data(int column, int role) const
     return QVariant();
   }
 
-  /* If the equation is not profiled then show only index, section and equation columns
+  /* If the equation is not profiled then show only index, section, size and equation columns
    * and hide the rest of the columns by showing empty string in them.
    * This is done to avoid showing 0 and 0% in NCall, MaxTime, Time and Fraction columns for non-profiled equations.
    */
-  if (column > 2 && mpOMEquation->profileBlock < 0) {
-    column = 7;
+  if (column > 4 && mpOMEquation->profileBlock < 0) {
+    column = 8;
   }
 
   switch (column)
@@ -575,7 +575,17 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 2: // Equation
+    case 2: // Size
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return QString::number(mpOMEquation->unknowns);
+        case Qt::ToolTipRole:
+          return QString("Number of unknowns in the equation.");
+        default:
+          return QVariant();
+      }
+    case 3: // Equation
       switch (role)
       {
         case Qt::DisplayRole:
@@ -587,7 +597,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 3: // NCall
+    case 4: // NCall
       switch (role)
       {
         case Qt::DisplayRole:
@@ -595,7 +605,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 4: // MaxTime
+    case 5: // MaxTime
       switch (role)
       {
         case Qt::DisplayRole:
@@ -605,7 +615,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 5: // Time
+    case 6: // Time
       switch (role)
       {
         case Qt::DisplayRole:
@@ -615,7 +625,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 6: // Fraction
+    case 7: // Fraction
       switch (role)
       {
         case Qt::DisplayRole:
@@ -658,7 +668,7 @@ EquationTreeModel::EquationTreeModel(const QList<OMEquation*> &equations, QObjec
 int EquationTreeModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 7;
+    return 8;
 }
 
 /*!
@@ -696,11 +706,12 @@ QVariant EquationTreeModel::headerData(int section, Qt::Orientation orientation,
     switch (section) {
     case 0: return "Index";
     case 1: return "Type";
-    case 2: return "Equation";
-    case 3: return "NCall";
-    case 4: return "MaxTime";
-    case 5: return "Time";
-    case 6: return "Fraction";
+    case 2: return "Size";
+    case 3: return "Equation";
+    case 4: return "NCall";
+    case 5: return "MaxTime";
+    case 6: return "Time";
+    case 7: return "Fraction";
     default: return QVariant();
     }
 }
@@ -771,7 +782,7 @@ QVariant EquationTreeModel::data(const QModelIndex &index, int role) const
     return QVariant();
   }
 
-  if (index.column() == 2) { /* equation column */
+  if (index.column() == 3) { /* equation column */
     switch (role)
     {
       case Qt::DisplayRole:
