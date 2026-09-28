@@ -46,9 +46,10 @@ use counters::{
     STAT_NLS_GUESS_HIT, STAT_NLS_ITER, STAT_NLS_JAC, STAT_NLS_NEWTON_FAIL, STAT_NLS_RES,
     STAT_NLS_RETRY, STAT_NLS_SOLVE, STAT_NLS_STALE, STAT_NLS_STORE_BACK, STAT_NLS_VARY_START,
 };
+use openmodelica_solvers::simflags::NewtonStrategy;
 use solverflags::Nls;
 use core::cell::UnsafeCell;
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 
 use openmodelica_solvers::atomic64::AtomicU64;
 
@@ -3042,6 +3043,9 @@ fn newton_c(
     let mut neg_steps = 0i32;
     let mut increases = 0i32;
     let mut small_steps = 0i32;
+    // C's `lambda` as `-nlsInfo` reports it: only the no-damping and cubic
+    // branches set it.
+    let mut info_lambda = 1.0f64;
     // C's `solverinfo == 1`, which its first iteration cannot see: the entry phase's
     // total-pivot solve reports a vanishing determinant only to the log.
     let mut vanishing = false;
@@ -3151,6 +3155,7 @@ fn newton_c(
                     }
                 }
                 lam = lam.max(LAMBDA_MIN_C);
+                info_lambda = lam;
                 if trace.is_some() {
                     omclog::debug_double(omclog::NLS_V, "Need to damp this!! lambda = ", lam);
                 }
@@ -3171,6 +3176,8 @@ fn newton_c(
                     omclog::debug_double(omclog::NLS_V, "Need to damp, error_f1 = ", fmath::sqrt(nsq(&fvec)));
                 }
             }
+        } else {
+            info_lambda = lambda1;
         }
 
         if trace.is_some() {
@@ -3207,6 +3214,16 @@ fn newton_c(
             d("error_f_scaled =", fmath::sqrt(error_f_sqrd_scaled));
             d("newtonFTol          =", fmath::sqrt(ftol_sq));
         }
+        newton_iter_stat(&NewtonIterStat {
+            iteration: iter + 1,
+            x: &x[..n],
+            f: &fvec,
+            delta_x_sqrd,
+            delta_x_sqrd_scaled,
+            error_f_sqrd,
+            error_f_sqrd_scaled,
+            lambda: info_lambda,
+        });
         if neg_steps > 20 || increases > 20 {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
@@ -3446,9 +3463,8 @@ fn newton_res_scaling(n: usize, jac: &[f64], scaling: &mut [f64]) {
     }
 }
 
-/// C's `wrapper_fvec_newton(fj = 0)`: the analytic Jacobian, else forward differences
-/// stepped by `sqrt(DBL_EPSILON)·max(|x_i|, |f_i|)`, signed by `f_i`.
-#[allow(clippy::too_many_arguments)]
+/// C's `wrapper_fvec_newton(fj = 0)` without an analytic Jacobian: forward
+/// differences stepped by `sqrt(DBL_EPSILON)·max(|x_i|, |f_i|)`, signed by `f_i`.
 fn newton_jacobian(
     n: usize,
     x: &mut [f64],
@@ -3456,13 +3472,7 @@ fn newton_jacobian(
     jac: &mut [f64],
     rwork: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
-    jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
-    has_jac: bool,
 ) {
-    if has_jac {
-        jaceval(x, jac);
-        return;
-    }
     for i in 0..n {
         let mut dhh = fmath::fmax(
             SQRT_EPS * fmath::fmax(fmath::fabs(x[i]), fmath::fabs(fvec[i])),
@@ -3483,10 +3493,14 @@ fn newton_jacobian(
     }
 }
 
-/// C's `damping_heuristic2` (the default `NEWTON_DAMPED2`): shrink by 3/4 until the
-/// residual improves; below `1e-4` take the full step, or the tiny one after five tries.
+/// C's `damping_heuristic` (`-newton=damped`: factor 1/2, threshold `1e-2`) and
+/// `damping_heuristic2` (the default `damped2`: 3/4, `1e-4`): shrink the step until
+/// the residual improves; below the threshold take the full step, or the tiny one
+/// after five tries.
 #[allow(clippy::too_many_arguments)]
-fn damping_heuristic2(
+fn damping_heuristic(
+    factor: f64,
+    threshold: f64,
     n: usize,
     x: &[f64],
     x_incr: &[f64],
@@ -3496,16 +3510,15 @@ fn damping_heuristic2(
     k: &mut i32,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) {
-    const TRESHOLD: f64 = 1.0e-4;
     let mut lambda = 1.0f64;
     eval(x_new, fvec);
     while minpack::enorm(fvec) >= current {
-        lambda *= 0.75;
+        lambda *= factor;
         for i in 0..n {
             x_new[i] = x[i] - lambda * x_incr[i];
         }
         eval(x_new, fvec);
-        if lambda <= TRESHOLD {
+        if lambda <= threshold {
             if *k < 5 {
                 for i in 0..n {
                     x_new[i] = x[i] - x_incr[i];
@@ -3515,6 +3528,123 @@ fn damping_heuristic2(
             *k += 1;
             return;
         }
+    }
+}
+
+/// C's `LineSearch` (`-newton=damped_ls`): the best of five points along the step.
+/// With none better, `f` stays at the last probe while the step is 1 (1/8 after
+/// five tries).
+#[allow(clippy::too_many_arguments)]
+fn line_search(
+    n: usize,
+    x: &[f64],
+    x_incr: &[f64],
+    x_new: &mut [f64],
+    current: f64,
+    fvec: &mut [f64],
+    k: &mut i32,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    let mut enorm_min = current;
+    let mut lambda_min = 0.0;
+    let mut fvec_min = vec![0.0f64; n];
+    for lambda in [1.25, 1.0, 0.75, 0.5, 0.25] {
+        for i in 0..n {
+            x_new[i] = x[i] - lambda * x_incr[i];
+        }
+        eval(x_new, fvec);
+        let e = minpack::enorm(fvec);
+        if e < enorm_min {
+            enorm_min = e;
+            lambda_min = lambda;
+            fvec_min.copy_from_slice(fvec);
+        }
+    }
+    if lambda_min == 0.0 {
+        lambda_min = if *k >= 5 { 0.125 } else { 1.0 };
+        eval(x_new, fvec);
+        *k += 1;
+    } else {
+        fvec.copy_from_slice(&fvec_min);
+    }
+    for i in 0..n {
+        x_new[i] = x[i] - lambda_min * x_incr[i];
+    }
+}
+
+/// C's `Backtracking` (`-newton=damped_bt`), a golden-section search on the
+/// damping. C's probes index past the last unknown, so each one sees the full step
+/// and only the bracket moves. Its `f_old` is the increment the linear solve left
+/// in `fvec`.
+#[allow(clippy::too_many_arguments)]
+fn backtracking(
+    n: usize,
+    x: &[f64],
+    x_incr: &[f64],
+    x_new: &mut [f64],
+    current: f64,
+    fvec: &mut [f64],
+    f_old: &mut [f64],
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    f_old.copy_from_slice(x_incr);
+    eval(x_new, fvec);
+    let full = minpack::enorm(fvec);
+    if full < current {
+        return;
+    }
+    const TAU: f64 = 0.618033988749894848;
+    let g = 0.5 * full * full;
+    let (mut a, mut b) = (0.0f64, 1.0f64);
+    let mut a1 = a + (1.0 - TAU) * (b - a);
+    let mut b1 = a + TAU * (b - a);
+    let (mut g1, mut g2) = (g, g);
+    while b - a > 1e-3 {
+        if g1 < g2 {
+            b = b1;
+            b1 = a1;
+            a1 = a + (1.0 - TAU) * (b - a);
+            g2 = g1;
+            g1 = g;
+        } else {
+            a = a1;
+            a1 = b1;
+            b1 = a + TAU * (b - a);
+            g1 = g2;
+            g2 = g;
+        }
+    }
+    let lambda = (a + b) / 2.0;
+    for i in 0..n {
+        x_new[i] = x[i] - lambda * x_incr[i];
+    }
+    eval(x_new, fvec);
+}
+
+/// One iteration of the homotopy solver's Newton, as C's `-nlsInfo` writes it to
+/// `<prefix>_NLS<eq>StatsIter.csv`: `x` before the step, `f` after it.
+pub struct NewtonIterStat<'a> {
+    pub iteration: i32,
+    pub x: &'a [f64],
+    pub f: &'a [f64],
+    pub delta_x_sqrd: f64,
+    pub delta_x_sqrd_scaled: f64,
+    pub error_f_sqrd: f64,
+    pub error_f_sqrd_scaled: f64,
+    pub lambda: f64,
+}
+
+static NEWTON_ITER_HOOK: AtomicUsize = AtomicUsize::new(0);
+
+pub fn set_newton_iter_hook(f: Option<fn(&NewtonIterStat)>) {
+    NEWTON_ITER_HOOK.store(f.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+
+fn newton_iter_stat(stat: &NewtonIterStat) {
+    let p = NEWTON_ITER_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&NewtonIterStat) = unsafe { core::mem::transmute(p) };
+        f(stat);
     }
 }
 
@@ -3550,6 +3680,15 @@ fn omc_newton(
     let mut k = 0i32;
     let mut l = 0usize;
 
+    // C's `evalJacobian` reads the model where the last residual left it, which a
+    // line search leaves at a probe rather than at `x`.
+    let last_eval = core::cell::RefCell::new(x.to_vec());
+    let mut tracked = |xs: &[f64], r: &mut [f64]| {
+        last_eval.borrow_mut().copy_from_slice(xs);
+        eval(xs, r)
+    };
+    let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut tracked;
+
     eval(x, fvec);
     f_old.copy_from_slice(fvec);
     let mut error_f = minpack::enorm(fvec);
@@ -3564,7 +3703,12 @@ fn omc_newton(
     while error_f > eps && scaled_error_f > eps && delta_x > eps && delta_f > eps && delta_x_scaled > eps {
         nls_stat_inc(STAT_NLS_ITER);
         if calc_jac {
-            newton_jacobian(n, x, fvec, &mut jac, &mut rwork, eval, jaceval, has_jac);
+            if has_jac {
+                let at = last_eval.borrow().clone();
+                jaceval(&at, &mut jac);
+            } else {
+                newton_jacobian(n, x, fvec, &mut jac, &mut rwork, eval);
+            }
             factorized = false;
             calc_jac = every_jac;
         }
@@ -3577,7 +3721,19 @@ fn omc_newton(
         for i in 0..n {
             x_new[i] = x[i] - x_incr[i];
         }
-        damping_heuristic2(n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval);
+        match openmodelica_solvers::solverflags::newton_strategy() {
+            NewtonStrategy::Damped => {
+                damping_heuristic(0.5, 1e-2, n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval)
+            }
+            NewtonStrategy::Damped2 => {
+                damping_heuristic(0.75, 1e-4, n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval)
+            }
+            NewtonStrategy::DampedLs => line_search(n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval),
+            NewtonStrategy::DampedBt => {
+                backtracking(n, x, &x_incr, &mut x_new, current, fvec, &mut f_old, eval)
+            }
+            NewtonStrategy::Pure => eval(&x_new, fvec),
+        }
 
         // C's `calculatingErrors`.
         for i in 0..n {

@@ -331,7 +331,15 @@ pub struct Layout {
     pub removed_init_res_off: u32,
     pub removed_init_idx_off: u32,
     pub total: u32,
+    /// `-cpu` / `-steps` ([`EXTRA_CPU_TIME`], [`EXTRA_SOLVER_STEPS`]): result
+    /// columns after the String block. Set per run by [`SimMeta::apply_flags`].
+    pub extra_cols: u32,
 }
+
+/// `$cpuTime` in [`Layout::extra_cols`].
+pub const EXTRA_CPU_TIME: u32 = 1;
+/// `$solverSteps` in [`Layout::extra_cols`].
+pub const EXTRA_SOLVER_STEPS: u32 = 2;
 
 impl Layout {
     /// Compute the `SimData` layout from a model's variable/solver counts. The
@@ -442,6 +450,7 @@ impl Layout {
             n_attr_log, attr_log_off,
             n_removed_init, removed_init_res_off, removed_init_idx_off,
             sym_solver, inline_dt_off, alg_old_off, total,
+            extra_cols: 0,
         }
     }
 
@@ -507,10 +516,14 @@ impl Layout {
         (self.sparam_off - self.str_off) / 4
     }
     /// Total f64 columns in a result row: the real part, the integer and boolean
-    /// algebraics (captured per row as f64), the sensitivities, then the String
-    /// algebraics as interned ids ([`crate::strings`]).
+    /// algebraics (captured per row as f64), the sensitivities, the String
+    /// algebraics as interned ids ([`crate::strings`]), then the extra columns.
     pub fn n_row_total(&self) -> u32 {
-        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens + self.n_str_alg()
+        self.extra_col0() + self.extra_cols.count_ones()
+    }
+    /// First result-row column of the `-cpu` / `-steps` block.
+    pub fn extra_col0(&self) -> u32 {
+        self.str_col0() + self.n_str_alg()
     }
     /// First result-row column of the String block.
     pub fn str_col0(&self) -> u32 {
@@ -1328,8 +1341,11 @@ impl SimMeta {
             .vars
             .iter()
             .map(|v| {
-                if matches!(v.kind, MetaKind::Time) {
-                    return true; // never filtered
+                let extra = |col: u32| self.layout.extra_cols != 0 && col >= self.layout.extra_col0();
+                match v.kind {
+                    MetaKind::Time => return true, // never filtered
+                    MetaKind::Column { col, .. } if extra(col) => return true,
+                    _ => {}
                 }
                 // C's `shouldFilterOutput`: either flag *clears* the verdict both
                 // reasons set, so `-emit_protected` alone emits a variable that is
@@ -1422,6 +1438,42 @@ impl SimMeta {
     /// `numSteps`, which the output grid is cut from, so a moved step size lands there.
     ///
     /// Called once per run by whichever entry point owns the driver.
+    /// C's `$cpuTime` / `$solverSteps` result signals, right after `time`.
+    fn add_extra_columns(&mut self, f: &crate::simflags::SimFlags) {
+        let want = if f.cpu_time { EXTRA_CPU_TIME } else { 0 }
+            | if f.solver_steps { EXTRA_SOLVER_STEPS } else { 0 };
+        if want == 0 || self.layout.extra_cols != 0 {
+            return;
+        }
+        self.layout.extra_cols = want;
+        let mut col = self.layout.extra_col0();
+        let at = self.vars.iter().position(|v| matches!(v.kind, MetaKind::Time)).map_or(0, |i| i + 1);
+        let mut added = Vec::new();
+        for (bit, name, comment, unit) in [
+            (EXTRA_CPU_TIME, "$cpuTime", "cpu time", "s"),
+            (EXTRA_SOLVER_STEPS, "$solverSteps", "number of steps taken by the integrator", ""),
+        ] {
+            if want & bit == 0 {
+                continue;
+            }
+            added.push(MetaVar {
+                name: String::from(name),
+                comment: String::from(comment),
+                unit: String::from(unit),
+                display_unit: String::new(),
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: MetaKind::Column { col, negate: Neg::None },
+                filter: 0,
+                unvarying: false,
+                enumeration: None,
+            });
+            col += 1;
+        }
+        self.vars.splice(at..at, added);
+    }
+
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
         use crate::omclog::{self, STDOUT};
         let translated = self.translated_step_size();
@@ -1482,6 +1534,7 @@ impl SimMeta {
         if let Some(t) = f.tolerance {
             self.tolerance = t;
         }
+        self.add_extra_columns(f);
         if let Some(fmt) = &f.output_format {
             self.output_format = fmt.clone();
         }
@@ -2116,6 +2169,7 @@ impl<'a> Reader<'a> {
             has_init_lambda0: false,
             has_history_ops: false,
             has_old_real: false,
+            extra_cols: 0,
         };
         l.sym_solver = self.u8()?;
         l.has_when = self.u8()? != 0;

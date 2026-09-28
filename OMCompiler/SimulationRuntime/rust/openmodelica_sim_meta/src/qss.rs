@@ -164,6 +164,7 @@ impl Driver for Qss {
             }
             did_step = true;
             self.curr_step_no += 1;
+            crate::driver::publish_steps(|| self.curr_step_no);
 
             let ind = min_step(&self.tqp);
 

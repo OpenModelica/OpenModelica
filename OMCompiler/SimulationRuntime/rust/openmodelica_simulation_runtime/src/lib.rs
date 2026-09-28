@@ -20,6 +20,8 @@ mod fmi;
 mod fmi_host;
 mod fmi_vrs;
 #[cfg(feature = "standalone")]
+mod help;
+#[cfg(feature = "standalone")]
 mod iif;
 mod info_json;
 mod linearize;

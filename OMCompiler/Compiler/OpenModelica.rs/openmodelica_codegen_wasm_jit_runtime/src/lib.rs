@@ -110,6 +110,12 @@ pub extern "C" fn rt_set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f6
     openmodelica_solvers::solverflags::set_newton_tuning(ftol, xtol, max_step_factor);
 }
 
+/// `-newton` / `-noScaling` / `-stopAtSystem`, as `simflags::nls_option_codes`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_nls_options(newton_strategy: u32, no_scaling: u32, stop_at_system: i32) {
+    openmodelica_solvers::solverflags::set_nls_options(newton_strategy, no_scaling, stop_at_system);
+}
+
 /// `-lvMaxWarn`, which caps warnings printed in-wasm.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_set_max_warn(n: u32) {

@@ -112,6 +112,7 @@ pub const NLS_SVD: Stream = 40;
 pub const NLS_SVD_V: Stream = 41;
 pub const NLS_RES: Stream = 42;
 pub const NLS_EXTRAPOLATE: Stream = 43;
+pub const RT: Stream = 45;
 pub const SIMULATION: Stream = 46;
 pub const SOLVER: Stream = 47;
 pub const SOLVER_V: Stream = 48;
@@ -544,10 +545,8 @@ pub fn message_text_used(ty: LogType, stream: Stream, indent_next: bool, msg: &s
                 TYPE_DESC[ty as usize]
             };
             out.push_str(&format!("{name:<17} | {ty_col:<7} | "));
-            if !subline {
-                for _ in 0..s.level[i] {
-                    out.push_str("| ");
-                }
+            for _ in 0..s.level[i] {
+                out.push_str("| ");
             }
             out.push_str(line);
             out.push('\n');
@@ -873,6 +872,22 @@ mod tests {
         assert_eq!(
             out,
             "LOG_ASSERT        | info    | first\n|                 | |       | second\n"
+        );
+    }
+
+    #[test]
+    fn a_subline_keeps_the_block_indentation() {
+        set_mask(ALWAYS_ON);
+        let out = capture(|| {
+            info(ASSERT, true, "head");
+            info(ASSERT, false, "first\nsecond");
+            close(ASSERT);
+        });
+        assert_eq!(
+            out,
+            "LOG_ASSERT        | info    | head\n\
+             |                 | |       | | first\n\
+             |                 | |       | | second\n"
         );
     }
 

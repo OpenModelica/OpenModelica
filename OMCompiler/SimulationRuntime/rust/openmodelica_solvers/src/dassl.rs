@@ -377,16 +377,14 @@ unsafe fn root(
     }
 }
 
-/// C's `numericalDifferentiationDeltaXsolver`: `sqrt(DBL_EPSILON)`.
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
-
-/// C's difference step for the DASSL Jacobian: scaled by the state, its rate of
-/// change and its nominal, and signed like `h*y'`.
-fn difference_step(yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
+/// C's difference step for the DASSL Jacobian: `delta_x` (C's
+/// `numericalDifferentiationDeltaXsolver`) scaled by the state, its rate of change
+/// and its nominal, and signed like `h*y'`.
+fn difference_step(delta_x: f64, yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let weight = tol * (yi.abs() + nominal);
     let step = if scale > weight { scale } else { weight.max(nominal) };
-    let magnitude = DELTA_X_SOLVER * step;
+    let magnitude = delta_x * step;
     if hyp >= 0.0 { magnitude } else { -magnitude }
 }
 
@@ -444,14 +442,15 @@ unsafe fn jacobian(
         return;
     }
     ctx.ode.set_context_jacobian();
+    let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
     for group in &colors {
         for &col in group {
             let ci = col as usize;
             let nominal = ctx.nominals.get(ci).copied().unwrap_or(1.0).abs().max(1e-32);
-            let mut step = difference_step(y[ci], h * yprime[ci], ctx.tolerance, nominal);
+            let mut step = difference_step(delta_x, y[ci], h * yprime[ci], ctx.tolerance, nominal);
             step = y[ci] + step - y[ci]; // the step the addition actually took
             if step == 0.0 {
-                step = DELTA_X_SOLVER;
+                step = delta_x;
             }
             ctx.saved[ci] = y[ci];
             ctx.step[ci] = step;

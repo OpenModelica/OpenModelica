@@ -221,8 +221,8 @@ fn main() {
         }
     }
     // The `enum _FLAG` indices `omc_flag`/`omc_flagValue` are addressed with, the
-    // `errorStage` values `threadData->currentErrorStage` takes, and the solver
-    // enumerations `simulationInfo` holds.
+    // `errorStage` values `threadData->currentErrorStage` takes, the solver
+    // enumerations `simulationInfo` holds and the table sizes `-help` reads.
     for line in src.lines() {
         let t = line.trim();
         for (prefix, ty) in [
@@ -231,6 +231,12 @@ fn main() {
             ("pub const LS_", ": c_int = "),
             ("pub const LSS_", ": c_int = "),
             ("pub const NLS_", ": c_int = "),
+            ("pub const S_", ": c_int = "),
+            ("pub const IIM_", ": c_int = "),
+            ("pub const NEWTON_", ": c_int = "),
+            ("pub const JAC_", ": c_int = "),
+            ("pub const IDA_LS_", ": c_int = "),
+            ("pub const OMC_SIM_LOG_", ": c_int = "),
         ] {
             let Some(rest) = t.strip_prefix(prefix) else { continue };
             let Some((name, value)) = rest.split_once(ty) else { continue };
