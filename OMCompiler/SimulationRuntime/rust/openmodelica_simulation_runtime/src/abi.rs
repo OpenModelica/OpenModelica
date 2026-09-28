@@ -91,24 +91,30 @@ pub type boolean_array = base_array_t;
 pub type string_array = base_array_t;
 
 impl base_array_t {
-    /// Element `i` of a one-dimensional attribute array. An attribute with a
-    /// single element (`each`) holds the value of every array element.
-    /// `fallback` if the array is unallocated or `i` out of range.
-    pub fn elem_at<T: Copy>(&self, i: usize, fallback: T) -> T {
+    /// C's `base_array_nr_of_elements`; 0 if the array is unallocated.
+    pub fn n_elements(&self) -> usize {
         if self.data.is_null() || self.dim_size.is_null() || self.ndims < 1 {
-            return fallback;
+            return 0;
         }
-        let n = unsafe { *self.dim_size }.max(0) as usize;
+        (0..self.ndims as usize).map(|d| unsafe { *self.dim_size.add(d) }.max(0) as usize).product()
+    }
+    /// Index of the attribute element that holds scalar element `i` of the
+    /// variable: an attribute with a single element (`each`) holds the value of
+    /// every array element. `None` if the array is unallocated or `i` out of range.
+    pub fn elem_index(&self, i: usize) -> Option<usize> {
+        let n = self.n_elements();
         let j = if n == 1 { 0 } else { i };
-        if j >= n { fallback } else { unsafe { *(self.data as *const T).add(j) } }
+        (j < n).then_some(j)
     }
-    /// The scalar (or first) element of a real attribute array; C's attributes are
-    /// `real_array` so an array variable can carry one value per element.
-    pub fn first_real(&self, fallback: f64) -> f64 {
-        if self.data.is_null() { fallback } else { unsafe { *(self.data as *const f64) } }
+    /// Element `i` of an attribute array, see [`Self::elem_index`]. `fallback` if
+    /// there is no such element.
+    pub fn elem_at<T: Copy>(&self, i: usize, fallback: T) -> T {
+        self.elem_index(i).map_or(fallback, |j| unsafe { *(self.data as *const T).add(j) })
     }
+    /// Element `i` of a real attribute array; C's attributes are `real_array` so
+    /// an array variable can carry one value per element.
     pub fn real_at(&self, i: usize, fallback: f64) -> f64 {
-        if self.data.is_null() { fallback } else { unsafe { *(self.data as *const f64).add(i) } }
+        self.elem_at(i, fallback)
     }
 }
 

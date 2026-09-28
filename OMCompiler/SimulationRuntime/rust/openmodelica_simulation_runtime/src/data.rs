@@ -973,9 +973,9 @@ pub fn build_regions(rt: &mut RtData) {
             let data = v.attribute.start.data as *mut f64;
             for k in 0..v.dimension.scalar_length {
                 if let Some(slot) = table.get_mut(base + k)
-                    && !data.is_null()
+                    && let Some(j) = v.attribute.start.elem_index(k)
                 {
-                    *slot = unsafe { data.add(k) };
+                    *slot = unsafe { data.add(j) };
                 }
             }
         }
