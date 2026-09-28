@@ -175,6 +175,10 @@ void omc_result_writer_emit(omc_result_writer *w, const double *row);
 /* Finishes and frees the writer. Returns 1 if every write succeeded. */
 int omc_result_writer_close(omc_result_writer *w);
 
+/* Writes this library's coverage profile now, in a coverage build (see
+ * EXIT() in openmodelica.h). Does nothing in any other build. */
+void omc_result_coverage_dump(void);
+
 #ifdef __cplusplus
 } /* extern "C" */
 

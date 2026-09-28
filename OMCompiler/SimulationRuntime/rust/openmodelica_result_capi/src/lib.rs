@@ -424,3 +424,22 @@ pub extern "C" fn omc_result_tube_free(t: *mut omc_result_tube) {
         drop(unsafe { Box::from_raw(t.cast::<TubeOwner>()) });
     }
 }
+
+/// Write the coverage profile of this library now, in a coverage build of
+/// OpenModelica (`-C instrument-coverage --cfg omc_coverage`, see
+/// cmake/modules/OpenModelicaCoverage.cmake): the C runtime's EXIT() ends omc
+/// and the simulations with _exit(), which skips the atexit handler that would
+/// write it. Once written, it is not written again at exit. Does nothing in any
+/// other build.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_result_coverage_dump() {
+    #[cfg(omc_coverage)]
+    {
+        unsafe extern "C" {
+            fn __llvm_profile_dump() -> c_int;
+        }
+        unsafe {
+            __llvm_profile_dump();
+        }
+    }
+}
