@@ -634,6 +634,43 @@ impl SimEngine for CEngine {
         unsafe { core::ptr::copy_nonoverlapping(self.rt.local(0).stringVars, self.rt.info().stringVarsPre, n) };
     }
 
+    fn set_discrete_start(&mut self, boolean: bool, i: usize, value: i32) {
+        use crate::model_data::{boolean_array_ensure_size, integer_array_ensure_size};
+        let md = self.rt.model();
+        let si = self.rt.info();
+        // The initial equations of a non-scalarized array read `attribute.start`,
+        // which then needs one value per element.
+        unsafe {
+            if boolean {
+                if i >= md.nVariablesBoolean.max(0) as usize {
+                    return;
+                }
+                let ix = &*si.booleanVarsReverseIndex.add(i);
+                let v = &mut *md.booleanVarsData.add(ix.array_idx);
+                let n = v.dimension.scalar_length;
+                if v.attribute.start.n_elements() != n {
+                    boolean_array_ensure_size(&mut v.attribute.start, n as c_int);
+                }
+                if ix.dim_idx < v.attribute.start.n_elements() {
+                    *(v.attribute.start.data as *mut modelica_boolean).add(ix.dim_idx) = value as modelica_boolean;
+                }
+            } else {
+                if i >= md.nVariablesInteger.max(0) as usize {
+                    return;
+                }
+                let ix = &*si.integerVarsReverseIndex.add(i);
+                let v = &mut *md.integerVarsData.add(ix.array_idx);
+                let n = v.dimension.scalar_length;
+                if v.attribute.start.n_elements() != n {
+                    integer_array_ensure_size(&mut v.attribute.start, n as c_int);
+                }
+                if ix.dim_idx < v.attribute.start.n_elements() {
+                    *(v.attribute.start.data as *mut modelica_integer).add(ix.dim_idx) = value as modelica_integer;
+                }
+            }
+        }
+    }
+
     fn update_static_system_data(&mut self, linear: bool) {
         let (data, td) = (self.rt.data, self.rt.thread_data);
         let md = self.rt.model();
