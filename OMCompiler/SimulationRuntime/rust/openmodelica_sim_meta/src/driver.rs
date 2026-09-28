@@ -5448,7 +5448,7 @@ struct ResCtx {
     /// A wasm trap / memory error captured inside the callback, surfaced after
     /// `ddaskr` returns (the C-style callback cannot return a `Result`).
     err: Option<&'static str>,
-    /// What `dassl_jac` / `ida_jac` assemble from; null ⇒ the analytic path is off
+    /// What `dassl_jac` / `ida_jac` / `cvode_jac` assemble from; null ⇒ the analytic path is off
     /// and the integrator differences its own.
     jac: *const JacAInfo,
     /// C's `dasslData->dasslJacobian` / `idaData->jacobianMethod`.
@@ -5498,8 +5498,8 @@ impl Default for SensPush {
     }
 }
 
-/// The IDA memory block (for the step size the difference quotient scales by)
-/// and the CSC layout its sparse Jacobian is filled in, both owned by the driver
+/// The IDA or CVODE memory block (for the step size the difference quotient
+/// scales by) and the CSC layout its sparse Jacobian is filled in, both owned by the driver
 /// and outliving the `ResCtx` that points at them.
 #[cfg(sundials)]
 #[derive(Clone, Copy)]
@@ -7132,20 +7132,101 @@ struct CvodeState {
     rtol: f64,
     atol: Vec<f64>,
     n_roots: usize,
-    /// `cvodeGetConfig`'s two picks, resolved when the run's flags were parsed.
-    config: CvodeConfig,
+    setup: CvodeSetup,
     work_retries: u32,
     /// Whether building the block still logs the banner; an FMU already did, at
     /// `fmi2Instantiate`.
     banner: bool,
+    /// An FMU's `doStep`: never integrate past the communication point.
+    stop_at_target: bool,
 }
 
 #[cfg(sundials)]
 type CvodeConfig = (CvodeLmm, CvodeIter);
 
+/// The model's ODE Jacobian as CVODE takes it; `None` under
+/// `OMC_WASM_NO_ANALYTIC_JAC`, as for IDA.
+#[cfg(sundials)]
+fn cvode_jac_a(model: &SimModel) -> Option<&JacAInfo> {
+    model.jac_a.as_ref().filter(|_| env_var("OMC_WASM_NO_ANALYTIC_JAC").is_none())
+}
+
+/// How [`cvode_jac`] assembles `∂f/∂y` for KLU, or `None` for CVODE's own dense
+/// difference quotient: without a sparsity pattern, or under `-jacobian=internalNumerical`.
+/// Over a sparse pattern the uncolored methods only cost more, so they are colored.
+#[cfg(sundials)]
+fn cvode_jacobian_method(jac: Option<&JacAInfo>) -> Option<JacobianMethod> {
+    use JacobianMethod as M;
+    match set_jacobian_method(jac, false) {
+        M::InternalNumJac => None,
+        M::SymJac => Some(M::ColoredSymJac),
+        M::NumJac => Some(M::ColoredNumJac),
+        m => Some(m),
+    }
+}
+
+/// `cvodeGetConfig`'s picks and the iteration matrix they run with.
+#[cfg(sundials)]
+struct CvodeSetup {
+    config: CvodeConfig,
+    jac_a: Option<JacAInfo>,
+    /// `None` ⇒ dense, differenced by CVODE itself.
+    jac_method: Option<JacobianMethod>,
+    /// Present exactly when `jac_method` is.
+    pattern: Option<IdaPattern>,
+}
+
+#[cfg(sundials)]
+impl CvodeSetup {
+    fn new(model: &SimModel) -> CvodeSetup {
+        let jac_a = cvode_jac_a(model).cloned();
+        let jac_method = cvode_jacobian_method(jac_a.as_ref());
+        let pattern = jac_method.and(jac_a.as_ref()).map(|j| IdaPattern::new(j, true));
+        CvodeSetup {
+            config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+            jac_a,
+            jac_method,
+            pattern,
+        }
+    }
+
+    fn build(
+        &self,
+        t: f64,
+        y: &[f64],
+        rtol: f64,
+        atol: &[f64],
+        n_roots: usize,
+        root: Option<crate::sundials::RootFn>,
+    ) -> Result<crate::sundials::Cvode> {
+        let jac = self.pattern.as_ref().map(|p| (p.nnz(), cvode_jac as crate::sundials::CvodeJacFn));
+        crate::sundials::Cvode::new(t, y, rtol, atol, n_roots, cvode_rhs, root, self.config, jac)
+            .ok_or("##CVODE## Initialization of CVODE solver failed!")
+    }
+
+    fn jac(&self) -> *const JacAInfo {
+        match self.pattern {
+            Some(_) => self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
+            None => core::ptr::null(),
+        }
+    }
+
+    fn jac_method(&self) -> JacobianMethod {
+        self.jac_method.unwrap_or(JacobianMethod::InternalNumJac)
+    }
+
+    fn ctx(&self, cv: Option<&crate::sundials::Cvode>) -> IdaCtx {
+        IdaCtx {
+            mem: cv.map_or(core::ptr::null_mut(), |c| c.mem()),
+            pattern: self.pattern.as_ref().map_or(core::ptr::null(), |p| p as *const IdaPattern),
+            ..IdaCtx::default()
+        }
+    }
+}
+
 /// `cvode_solver_initial`'s `LOG_SOLVER` banner.
 #[cfg(sundials)]
-fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
+fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig, jac: Option<JacobianMethod>) {
     // C's compatibility warning, before the banner it belongs to.
     let (lmm, iter) = config;
     if (lmm == CvodeLmm::Adams) != (iter == CvodeIter::FixedPoint) {
@@ -7173,8 +7254,16 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
         omclog::info(omclog::SOLVER, false, &line);
     }
     omclog::info!(omclog::SOLVER, false, "CVODE Using relative error tolerance {}", format_e(rtol));
-    omclog::info(omclog::SOLVER, false, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
-    omclog::info(omclog::SOLVER, false, "CVODE Use internal dense numeric jacobian method.");
+    match jac {
+        Some(m) => {
+            omclog::info(omclog::SOLVER, false, "CVODE Using sparse linear solver SUNLinSol_KLU.");
+            omclog::info!(omclog::SOLVER, false, "CVODE Use sparse Jacobian method {}", m.name());
+        }
+        None => {
+            omclog::info(omclog::SOLVER, false, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
+            omclog::info(omclog::SOLVER, false, "CVODE Use internal dense numeric jacobian method.");
+        }
+    }
     omclog::info!(
         omclog::SOLVER,
         false,
@@ -7187,7 +7276,10 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
         format!("CVODE maximum integration order {}", lmm.max_order()),
         "CVODE maximum number of nonlinear convergence failures permitted during one step 10"
             .to_string(),
-        "CVODE BDF stability limit detection algorithm OFF".to_string(),
+        format!(
+            "CVODE BDF stability limit detection algorithm {}",
+            if lmm == CvodeLmm::Bdf { "ON" } else { "OFF" }
+        ),
     ] {
         omclog::info(omclog::SOLVER, false, &line);
     }
@@ -7203,22 +7295,20 @@ impl CvodeState {
             Some(cv) => cv,
             None => {
                 let root = (self.n_roots > 0).then_some(cvode_root as crate::sundials::RootFn);
-                let cv = crate::sundials::Cvode::new(
-                    *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root, self.config,
-                )
-                .ok_or("##CVODE## Initialization of CVODE solver failed!")?;
+                let cv = self.setup.build(*t, y, self.rtol, &self.atol, self.n_roots, root)?;
                 if self.banner {
-                    log_cvode_configuration(self.rtol, self.n_roots > 0, self.config);
+                    log_cvode_configuration(self.rtol, self.n_roots > 0, self.setup.config, self.setup.jac_method);
                 }
                 self.cv.insert(cv)
             }
         };
+        unsafe { (*ctx).ida = self.setup.ctx(Some(cv)) };
         if !cv.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
         }
         let stop = {
             let _clock = rtclock::Span::new(rtclock::SOLVER);
-            cv.step(t, target)
+            cv.step(t, target, self.stop_at_target)
         };
         y.copy_from_slice(cv.y());
         Ok(match stop {
@@ -7797,9 +7887,10 @@ impl SolverCore {
                         rtol: tol,
                         atol,
                         n_roots: nrt as usize,
-                        config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+                        setup: CvodeSetup::new(model),
                         work_retries: 0,
                         banner: true,
+                        stop_at_target: false,
                     })
                 }
                 "ida" => Solver::Ida(IdaState {
@@ -7855,6 +7946,7 @@ impl SolverCore {
     fn ida_ctx(&self) -> IdaCtx {
         match &self.solver {
             Solver::Ida(s) => s.setup.ctx(s.ida.as_ref()),
+            Solver::Cvode(c) => c.setup.ctx(c.cv.as_ref()),
             _ => IdaCtx::default(),
         }
     }
@@ -8040,6 +8132,7 @@ impl SolverCore {
         #[cfg(sundials)]
         if let Solver::Cvode(c) = &mut self.solver {
             c.banner = false;
+            c.stop_at_target = true;
             if defer != CsDefer::Any {
                 c.n_roots = 0;
             }
@@ -8165,7 +8258,7 @@ impl SolverCore {
             jac: match &self.solver {
                 Solver::Daskr(d) => d.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
                 #[cfg(sundials)]
-                Solver::Cvode(_) => core::ptr::null(),
+                Solver::Cvode(c) => c.setup.jac(),
                 #[cfg(sundials)]
                 Solver::Ida(s) => s.setup.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
                 // gbode differences the ODE Jacobian itself and takes the pattern
@@ -8177,9 +8270,9 @@ impl SolverCore {
                 Solver::Daskr(d) => d.jac_method,
                 #[cfg(sundials)]
                 Solver::Ida(s) => s.setup.jac_method,
-                // None of these reach `dassl_jac`/`ida_jac`.
                 #[cfg(sundials)]
-                Solver::Cvode(_) => JacobianMethod::InternalNumJac,
+                Solver::Cvode(c) => c.setup.jac_method(),
+                // None of these reach `dassl_jac`/`ida_jac`.
                 Solver::Gbode(_) | Solver::Fixed(_) | Solver::Sym(_) => JacobianMethod::InternalNumJac,
             },
             jac_gp: vec![0.0; self.n_unknowns],
@@ -8885,6 +8978,7 @@ pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
             tol,
             defer == CsDefer::Any,
             crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+            cvode_jacobian_method(cvode_jac_a(model)),
         );
         omclog::set_mask(mask);
     }
@@ -9805,18 +9899,17 @@ impl Driver for EventsDriver {
 // ===========================================================================
 //
 // The real SUNDIALS CVODE, configured as `cvode_solver.c` does: BDF + Newton
-// over CVODE's own dense difference-quotient Jacobian, per-state nominal-scaled
-// tolerances, and CVODE's root finding on the zero-crossings. Only linked when
-// the archives are (`cfg(sundials)`); `simflags::check` rejects `-s=cvode`
-// otherwise rather than let it run as DASSL.
+// over KLU and the model's ODE Jacobian (CVODE's own dense difference quotient
+// without one), per-state nominal-scaled tolerances, and CVODE's root finding on
+// the zero-crossings. Only linked when the archives are (`cfg(sundials)`);
+// `simflags::check` rejects `-s=cvode` otherwise rather than let it run as DASSL.
 //
 // The callbacks reach wasm through the same [`ResCtx`] the DASSL ones use, but
 // receive it as CVODE's `user_data` rather than through the `RES_CTX` global.
 
-/// `CVRhsFn`: `ydot := f(t, y)`. Writes `t` and the candidate states into
-/// `SimData`, calls the wasm `functionODE`, reads the derivative slots back.
-/// A wasm trap is unrecoverable (-1); a non-converging nonlinear system is
-/// recoverable (+1), which makes CVODE retry from a smaller step.
+/// `CVRhsFn`: `ydot := f(t, y)` by [`cvode_eval`]. A wasm trap is unrecoverable
+/// (-1); a model error or a non-converging nonlinear system is recoverable (+1),
+/// which makes CVODE retry from a smaller step, as `dassl_res` does.
 #[cfg(sundials)]
 unsafe extern "C" fn cvode_rhs(
     t: f64,
@@ -9827,31 +9920,140 @@ unsafe extern "C" fn cvode_rhs(
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
     let _solver = rtclock::Pause::new(rtclock::SOLVER);
     let e = unsafe { &mut *ctx.engine };
-    let n = ctx.n_states;
-    let run = (|| -> Result<()> {
-        write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
-        write_time(e, ctx.sim_data, t)?;
-        let y_bytes = unsafe { core::slice::from_raw_parts(crate::sundials::nv_data(y) as *const u8, n * 8) };
-        e.write_bytes(ctx.states_base, y_bytes)?;
-        set_context(e, ctx.ctx_addr, CONTEXT_ODE);
-        e.call1("functionODE", ctx.sim_data)?;
-        set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
-        let out = unsafe { core::slice::from_raw_parts_mut(crate::sundials::nv_data(ydot) as *mut u8, n * 8) };
-        e.read_bytes(ctx.ders_base, out)
-    })();
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
+    set_context(e, ctx.ctx_addr, CONTEXT_ODE);
+    let run = unsafe { cvode_eval(ctx, t, crate::sundials::nv_data(y), crate::sundials::nv_data(ydot)) };
+    set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+    let model_error = took_error_stage(e, ctx.err_stage_addr, save);
     ctx.nfe += 1;
     match run {
+        Err(err) if residual_model_throw(e, err, t) => 1,
         Err(err) => {
             ctx.err = Some(err);
             -1
         }
         Ok(()) => {
-            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) == 0 {
-                return 0;
+            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0 {
+                report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
+                return 1;
             }
-            report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
-            1
+            model_error as core::ffi::c_int
         }
+    }
+}
+
+/// `out := f(t, y)`: `t` and the states into `SimData`, the wasm `functionODE`,
+/// the derivative slots back out.
+#[cfg(sundials)]
+unsafe fn cvode_eval(ctx: &mut ResCtx, t: f64, y: *const f64, out: *mut f64) -> Result<()> {
+    let e = unsafe { &mut *ctx.engine };
+    let n = ctx.n_states;
+    write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+    write_time(e, ctx.sim_data, t)?;
+    e.write_bytes(ctx.states_base, unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) })?;
+    e.call1("functionODE", ctx.sim_data)?;
+    e.read_bytes(ctx.ders_base, unsafe { core::slice::from_raw_parts_mut(out as *mut u8, n * 8) })
+}
+
+/// `CVLsJacFn`: `J = ∂f/∂y` into the pattern, from the symbolic column equations
+/// or a colored FD of `functionODE` (`ida_jac` without the `-cj·I`). A model error
+/// or a failed nonlinear system in a probe is recoverable: CVODE retries a smaller step.
+#[cfg(sundials)]
+#[allow(clippy::too_many_arguments)]
+unsafe extern "C" fn cvode_jac(
+    t: f64,
+    y: crate::sundials::NVector,
+    fy: crate::sundials::NVector,
+    j: crate::sundials::SunMatrix,
+    user_data: *mut core::ffi::c_void,
+    _t1: crate::sundials::NVector,
+    _t2: crate::sundials::NVector,
+    _t3: crate::sundials::NVector,
+) -> core::ffi::c_int {
+    let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    if ctx.jac.is_null() || ctx.ida.pattern.is_null() {
+        return -1;
+    }
+    let _solver = rtclock::Pause::new(rtclock::SOLVER);
+    let _jac = rtclock::Span::new(rtclock::JACOBIAN);
+    let jac = unsafe { &*ctx.jac };
+    let p = unsafe { &*ctx.ida.pattern };
+    let e = unsafe { &mut *ctx.engine };
+    let n = ctx.n_states;
+    let yv = crate::sundials::nv_data(y);
+    let f = unsafe { core::slice::from_raw_parts(crate::sundials::nv_data(fy), n) };
+    let vals = unsafe {
+        let (data, colptr, rowidx) = crate::sundials::sparse_arrays(j);
+        core::ptr::copy_nonoverlapping(p.colptr.as_ptr(), colptr, n + 1);
+        core::ptr::copy_nonoverlapping(p.rowidx.as_ptr(), rowidx, p.nnz());
+        core::slice::from_raw_parts_mut(data, p.nnz())
+    };
+    vals.fill(0.0);
+    ctx.nje += 1;
+    // SimData holds the linearization point: CVODE's last `f` call was at `(t, y)`.
+    if jac_method_symbolic(ctx.jac_method) {
+        let method = ctx.jac_method;
+        let run = eval_ode_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, method, true, &mut |_, col, k, v| {
+            vals[p.slots[col][k]] = v;
+        });
+        return match run {
+            Err(err) => {
+                ctx.err = Some(err);
+                -1
+            }
+            Ok(()) => 0,
+        };
+    }
+    let h = crate::sundials::cvode_current_step(ctx.ida.mem);
+    let delta_x = delta_x_solver();
+    ctx.jac_gp.resize(n, 0.0);
+    set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
+    let run = (|| -> Result<bool> {
+        for color in &jac.colors {
+            for &col in color {
+                let ci = col as usize;
+                let yi = unsafe { *yv.add(ci) };
+                let nom = unsafe { *ctx.nominals.add(ci) };
+                let ewt_inv = ctx.tol * yi.abs() + nom * ctx.tol;
+                let mut del = fd_step_ewt(delta_x, yi, h * f[ci], ewt_inv, ctx.nominal_factor * nom);
+                del = yi + del - yi;
+                ctx.jac_ysave[ci] = yi;
+                ctx.jac_del[ci] = 1.0 / del;
+                unsafe { *yv.add(ci) = yi + del };
+            }
+            let mut gp = core::mem::take(&mut ctx.jac_gp);
+            let r = unsafe { cvode_eval(ctx, t, yv, gp.as_mut_ptr()) };
+            ctx.jac_gp = gp;
+            for &col in color {
+                unsafe { *yv.add(col as usize) = ctx.jac_ysave[col as usize] };
+            }
+            match r {
+                Err(err) if residual_model_throw(e, err, t) => return Ok(false),
+                Err(err) => return Err(err),
+                Ok(()) if read_i32(e, ctx.sim_data + ctx.nls_fail_off)? != 0 => return Ok(false),
+                Ok(()) => {}
+            }
+            for &col in color {
+                let ci = col as usize;
+                let inv = ctx.jac_del[ci];
+                for (k, &row) in jac.rows_by_col[ci].iter().enumerate() {
+                    let ri = row as usize;
+                    vals[p.slots[ci][k]] = (ctx.jac_gp[ri] - f[ri]) * inv;
+                }
+            }
+        }
+        Ok(true)
+    })();
+    let model_error = took_error_stage(e, ctx.err_stage_addr, save);
+    set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+    match run {
+        Err(err) => {
+            ctx.err = Some(err);
+            -1
+        }
+        Ok(true) if !model_error => 0,
+        Ok(_) => 1,
     }
 }
 
@@ -9898,8 +10100,8 @@ unsafe extern "C" fn cvode_root(
 }
 
 /// How many times one interval may be resumed after `CV_TOO_MUCH_WORK` (1000
-/// internal steps per call, as in C). C aborts the run instead; resuming continues
-/// the same trajectory, it only allows more work.
+/// internal steps per call, as in C). C warns and calls `CVode` again with no
+/// limit; resuming continues the same trajectory, this only bounds it.
 #[cfg(sundials)]
 const CVODE_WORK_RETRIES: u32 = 10_000;
 
@@ -9918,6 +10120,7 @@ struct CvodeDriver {
     row: u32,
     /// `None` when the model has no states (nothing to integrate).
     cv: Option<crate::sundials::Cvode>,
+    setup: CvodeSetup,
     t: f64,
     dss: StateSelection,
     rows: Vec<f64>,
@@ -9955,17 +10158,8 @@ impl CvodeDriver {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let (_, atol) = dassl_tolerances(tol, &nominals);
-        let cv = if y.is_empty() {
-            None
-        } else {
-            Some(
-                crate::sundials::Cvode::new(
-                    start, &y, tol, &atol, 0, cvode_rhs, None,
-                    crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
-                )
-                .ok_or("##CVODE## Initialization of CVODE solver failed!")?,
-            )
-        };
+        let setup = CvodeSetup::new(model);
+        let cv = if y.is_empty() { None } else { Some(setup.build(start, &y, tol, &atol, 0, None)?) };
 
         // C's `storeOldValues` in `solver_main`.
         let mut retry = StepRetry::default();
@@ -9979,6 +10173,7 @@ impl CvodeDriver {
             ders_base: states_base + layout.n_states * 8,
             row: 1,
             cv,
+            setup,
             t: start,
             dss,
             rows,
@@ -10062,11 +10257,11 @@ impl Driver for CvodeDriver {
             zc_off: 0,
             n_zc: 0,
             err: None,
-            jac: core::ptr::null(),
-            jac_method: JacobianMethod::InternalNumJac,
+            jac: self.setup.jac(),
+            jac_method: self.setup.jac_method(),
             jac_gp: Vec::new(),
-            jac_ysave: Vec::new(),
-            jac_del: Vec::new(),
+            jac_ysave: vec![0.0; n_states],
+            jac_del: vec![0.0; n_states],
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: 0,
@@ -10076,8 +10271,7 @@ impl Driver for CvodeDriver {
             nominal_factor: nominal_factor(),
             tol: self.tol,
             state_names: core::ptr::null(),
-            #[cfg(sundials)]
-            ida: IdaCtx::default(),
+            ida: self.setup.ctx(Some(cv)),
         };
         if !cv.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
             return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
@@ -10114,7 +10308,7 @@ impl Driver for CvodeDriver {
             }
             let stop_reason = {
                 let _clock = rtclock::Span::new(rtclock::SOLVER);
-                cv.step(&mut self.t, tout)
+                cv.step(&mut self.t, tout, false)
             };
             publish_steps(|| cv.counters().steps);
             if let Some(err) = ctx.err.take() {
