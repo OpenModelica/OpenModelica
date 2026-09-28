@@ -759,29 +759,26 @@ algorithm
     case (DAE.CREF(componentRef = cr,ty = t),cond)
         guard replaceExpCond(cond, inExp)
       algorithm
-        (cr,_) := replaceCrefSubs(cr,inVariableReplacements,cond);
-        e1 := getReplacement(inVariableReplacements, cr);
-        e2 := avoidDoubleHashLookup(e1,t);
-      then
-        (e2,true);
-    case (DAE.CREF(componentRef = cr, ty = t),cond)
-        guard replaceExpCond(cond, inExp)
-      algorithm
-        // only expand cref if dimensions are fixed
-        (_, dims) := TypesDump.flattenArrayType(t);
-        true := List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
+        (cr,c) := replaceCrefSubs(cr,inVariableReplacements,cond);
+        try
+          e1 := getReplacement(inVariableReplacements, cr);
+          e := avoidDoubleHashLookup(e1,t);
+        else
+          try
+            // only expand cref if dimensions are fixed
+            (_, dims) := TypesDump.flattenArrayType(t);
+            true := List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
 
-        (cr,_) := replaceCrefSubs(cr,inVariableReplacements,cond);
-        true := hasExtendReplacement(inVariableReplacements, cr);
-        (e2,true) := Expression.extendArrExp(inExp,false);
-        (e3,_) := replaceExp(e2,inVariableReplacements,cond);
+            true := hasExtendReplacement(inVariableReplacements, cr);
+            (e2,true) := Expression.extendArrExp(inExp,false);
+            (e,_) := replaceExp(e2,inVariableReplacements,cond);
+          else
+            true := c;
+            e := DAE.CREF(cr,t);
+          end try;
+        end try;
       then
-        (e3,true);
-    case (DAE.CREF(componentRef = cr,ty = t),cond)
-        guard replaceExpCond(cond, inExp)
-      algorithm
-        (cr,true) := replaceCrefSubs(cr,inVariableReplacements,cond);
-      then (DAE.CREF(cr,t),true);
+        (e,true);
     case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),cond)
         guard replaceExpCond(cond, inExp)
       algorithm
