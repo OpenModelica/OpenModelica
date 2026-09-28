@@ -3040,6 +3040,7 @@ fn newton_c(
     }
     let mut iter = 0i32;
     let mut neg_steps = 0i32;
+    let mut increases = 0i32;
     let mut small_steps = 0i32;
     // C's `solverinfo == 1`, which its first iteration cannot see: the entry phase's
     // total-pivot solve reports a vanishing determinant only to the log.
@@ -3191,9 +3192,11 @@ fn newton_c(
         }
         let delta_x_sqrd_scaled = dxs;
         let error_f_old = error_f_sqrd;
+        let error_f_old_scaled = error_f_sqrd_scaled;
         error_f_sqrd = nsq(&fvec);
         error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
         neg_steps += (error_f_sqrd > 10.0 * error_f_old) as i32;
+        increases += (error_f_sqrd > error_f_old) as i32;
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             omclog::debug_string(omclog::NLS_V, "error measurements:");
@@ -3204,7 +3207,7 @@ fn newton_c(
             d("error_f_scaled =", fmath::sqrt(error_f_sqrd_scaled));
             d("newtonFTol          =", fmath::sqrt(ftol_sq));
         }
-        if neg_steps > 20 {
+        if neg_steps > 20 || increases > 20 {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
                 omclog::debug_int(omclog::NLS_V, "UPS! Something happened, NegativeSteps = ", neg_steps);
@@ -3233,6 +3236,16 @@ fn newton_c(
         if vanishing {
             omclog::debug_string(omclog::DT, "It is not the solution.");
             return (false, false);
+        }
+        // The residual stopped decreasing at an `x` that meets the tolerance: further steps are round-off.
+        if last_was_good && (error_f_old < ftol_sq || error_f_old_scaled < ftol_sq) {
+            if trace.is_some() {
+                omclog::debug_string(
+                    omclog::NLS_V,
+                    "Note: newton solver rejected last x because previous was as good",
+                );
+            }
+            return (true, false);
         }
         iter += 1;
         // C's `maxNumberOfIterations = size*100`.
