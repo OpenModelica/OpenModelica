@@ -6643,15 +6643,18 @@ public
   end isComponentExpression;
 
   function clone
+    "Clones an expression to make it and any expression it contains unique,
+     such that e.g. arrays don't share their internal arrays."
     input output Expression exp;
   algorithm
-    () := match exp
+    exp := match exp
       case ARRAY()
         algorithm
-          exp.elements := arrayCopy(exp.elements);
+          exp.elements := Array.map(exp.elements, clone);
         then
-          ();
-      else ();
+          exp;
+
+      else mapShallow(exp, clone);
     end match;
   end clone;
 
