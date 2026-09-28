@@ -930,6 +930,8 @@ public
           UnorderedSet<ComponentRef> own_iters;
           UnorderedMap<ComponentRef, Dependencies> seed_elements = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedSet<ComponentRef> no_iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, SliceAliases> slice_map = UnorderedMap.new<SliceAliases>(ComponentRef.hash, ComponentRef.isEqual);
+          list<ComponentRef> alias_deps;
 
         case FULL() algorithm
           // create the equation name -> index map
@@ -971,7 +973,11 @@ public
                     // Guard prevents outer seed elements (which strip to the same base key
                     // that may be in inner_map) from being misclassified as inner deps.
                     inner_deps := {dep_cref};
-                    if not filterSet(dep_cref, seed_set) then
+                    alias_deps := if filterSet(dep_cref, seed_set) then {} else sparsitySliceAliasDeps(dep_cref, slice_map);
+                    if not listEmpty(alias_deps) then
+                      inner_deps := dep_cref :: alias_deps;
+                      changed := true;
+                    elseif not filterSet(dep_cref, seed_set) then
                       inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
                       if isSome(inner_opt) then
                         // keep the cref itself, other elements of the same array might be seeds.
@@ -1090,6 +1096,7 @@ public
                 for cref in tmp_crefs loop
                   sparsityAddInner(cref, inner_deps, inner_map);
                 end for;
+                sparsityAddSliceAlias(Pointer.access(eqn), tmp_crefs, seed_set, slice_map);
               end if;
             end for;
           end for;
@@ -1117,6 +1124,144 @@ public
         print(toString(sparsity) + "\n");
       end if;
     end fullToSparsity;
+
+    type SliceAlias = tuple<Integer, Integer, ComponentRef, Integer> "solved start, solved stop, seed, seed start";
+    type SliceAliases = list<SliceAlias>;
+
+    function sparsityAddSliceAlias
+      "remembers x[a:b] = y[c:d] (or whole arrays) of an inner equation solved for x,
+      so that x[e] can be resolved to y[e - a + c] instead of all of y"
+      input Equation eqn;
+      input list<ComponentRef> tmp_crefs;
+      input UnorderedSet<ComponentRef> seed_set;
+      input UnorderedMap<ComponentRef, SliceAliases> slice_map;
+    protected
+      ComponentRef lhs, rhs;
+    algorithm
+      () := match eqn
+        case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = lhs), rhs = Expression.CREF(cref = rhs)) algorithm
+          sparsityAddSliceAlias2(lhs, rhs, tmp_crefs, seed_set, slice_map);
+          sparsityAddSliceAlias2(rhs, lhs, tmp_crefs, seed_set, slice_map);
+        then ();
+        else ();
+      end match;
+    end sparsityAddSliceAlias;
+
+    function sparsityAddSliceAlias2
+      input ComponentRef solved;
+      input ComponentRef seed;
+      input list<ComponentRef> tmp_crefs;
+      input UnorderedSet<ComponentRef> seed_set;
+      input UnorderedMap<ComponentRef, SliceAliases> slice_map;
+    protected
+      ComponentRef solved_base = ComponentRef.stripSubscriptsAll(solved);
+      ComponentRef seed_base = ComponentRef.stripSubscriptsAll(seed);
+      Boolean ok1, ok2;
+      Integer start1, stop1, start2, stop2;
+    algorithm
+      if not List.any(tmp_crefs, function sparsitySameBase(base = solved_base)) or not UnorderedSet.contains(seed_base, seed_set) then
+        return;
+      end if;
+      (ok1, start1, stop1) := sparsitySliceBounds(solved);
+      (ok2, start2, stop2) := sparsitySliceBounds(seed);
+      if ok1 and ok2 and stop1 - start1 == stop2 - start2 then
+        UnorderedMap.add(solved_base, (start1, stop1, seed_base, start2) :: UnorderedMap.getOrDefault(solved_base, slice_map, {}), slice_map);
+      end if;
+    end sparsityAddSliceAlias2;
+
+    function sparsitySameBase
+      input ComponentRef cref;
+      input ComponentRef base;
+      output Boolean b = ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), base);
+    end sparsitySameBase;
+
+    function sparsitySliceBounds
+      "bounds of a one-dimensional variable or a unit step slice of it"
+      input ComponentRef cref;
+      output Boolean ok = false;
+      output Integer start = 0;
+      output Integer stop = 0;
+    protected
+      Type ty = ComponentRef.getSubscriptedType(ComponentRef.stripSubscriptsAll(cref));
+      list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+      Integer step;
+    algorithm
+      if Type.dimensionCount(ty) <> 1 or not Type.hasKnownSize(ty)
+         or listLength(subs) <> listLength(ComponentRef.getSubscripts(cref)) then
+        return;
+      end if;
+      (ok, start, stop) := match subs
+        local
+          Expression range;
+          list<Subscript> indices;
+        case {} then (true, 1, Type.sizeOf(ty));
+        case {Subscript.WHOLE()} then (true, 1, Type.sizeOf(ty));
+        case {Subscript.SLICE(slice = range as Expression.RANGE())} guard(Expression.isLiteral(range)) algorithm
+          (start, step, stop) := Expression.getIntegerRange(range, false);
+        then (step == 1, start, stop);
+        case {Subscript.SLICE(slice = range as Expression.ARRAY())}
+        then sparsityConsecutive(Expression.arrayElementList(range));
+        case {Subscript.EXPANDED_SLICE(indices = indices)}
+        then sparsityConsecutive(list(Subscript.toExp(sub) for sub in indices));
+        else (false, 0, 0);
+      end match;
+    end sparsitySliceBounds;
+
+    function sparsityConsecutive
+      input list<Expression> indices;
+      output Boolean ok = true;
+      output Integer start = 0;
+      output Integer stop = 0;
+    algorithm
+      for index in indices loop
+        if not Expression.isInteger(index) then
+          ok := false;
+          return;
+        end if;
+        if stop == 0 then
+          start := Expression.integerValue(index);
+        elseif Expression.integerValue(index) <> stop + 1 then
+          ok := false;
+          return;
+        end if;
+        stop := Expression.integerValue(index);
+      end for;
+      ok := stop > 0;
+    end sparsityConsecutive;
+
+    function sparsitySliceAliasDeps
+      "x[e] with a slice alias x[a:b] = y[c:d] -> y[e - a + c]"
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, SliceAliases> slice_map;
+      output list<ComponentRef> deps = {};
+    protected
+      list<SliceAlias> aliases;
+      Integer start1, stop1, start2, value;
+      ComponentRef seed;
+      Expression index;
+    algorithm
+      aliases := UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), slice_map, {});
+      if listEmpty(aliases) or listLength(ComponentRef.subscriptsAllFlat(cref)) <> listLength(ComponentRef.getSubscripts(cref)) then
+        return;
+      end if;
+      _ := match ComponentRef.getSubscripts(cref)
+        case {Subscript.INDEX(index = index)} algorithm
+          for alias in aliases loop
+            (start1, stop1, seed, start2) := alias;
+            if Expression.isInteger(index) then
+              value := Expression.integerValue(index);
+              if value >= start1 and value <= stop1 then
+                deps := ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(value - start1 + start2))}, seed) :: deps;
+              end if;
+            else
+              deps := ComponentRef.setSubscripts({Subscript.INDEX(SimplifyExp.simplify(Expression.BINARY(index,
+                Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(start2 - start1))))}, seed) :: deps;
+            end if;
+          end for;
+        then ();
+        else ();
+      end match;
+    end sparsitySliceAliasDeps;
 
     function sparsityExpandForeignIterators
       "a dependency with iterators of another (inner) equation depends on all its seed elements"
