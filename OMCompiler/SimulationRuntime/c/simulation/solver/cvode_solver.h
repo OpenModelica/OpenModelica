@@ -126,6 +126,10 @@ typedef struct CVODE_SOLVER
   double *ysave;
   double *delta_hh;
   double jacNominalFactor;
+  /* where CVODE starts, with initialization's derivatives there */
+  double startTime;
+  double *yStart;
+  double *fStart;
 #endif
 
   /* Non-linear solver data */

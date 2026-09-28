@@ -5510,6 +5510,18 @@ struct IdaCtx {
     /// `--daeMode` only; null for an explicit ODE.
     dae: *const DaeSolve,
     ramp: LambdaRamp,
+    /// CVODE only: the point it starts from, with initialization's `y'` there.
+    start: *const OdeStart,
+}
+
+/// Where CVODE starts and the derivative initialization left there, which is what
+/// DASSL and IDA start from. It stands in for `f(t0, y0)` when the model fails or
+/// is not finite at exactly that point (a torque `P/w` at `w = 0`).
+#[cfg(sundials)]
+struct OdeStart {
+    t: f64,
+    y: Vec<f64>,
+    f: Vec<f64>,
 }
 
 #[cfg(sundials)]
@@ -5521,6 +5533,7 @@ impl Default for IdaCtx {
             sens: SensPush::default(),
             dae: core::ptr::null(),
             ramp: LambdaRamp::default(),
+            start: core::ptr::null(),
         }
     }
 }
@@ -7133,6 +7146,7 @@ struct CvodeState {
     atol: Vec<f64>,
     n_roots: usize,
     setup: CvodeSetup,
+    start: Option<OdeStart>,
     work_retries: u32,
     /// Whether building the block still logs the banner; an FMU already did, at
     /// `fmi2Instantiate`.
@@ -7215,10 +7229,11 @@ impl CvodeSetup {
         self.jac_method.unwrap_or(JacobianMethod::InternalNumJac)
     }
 
-    fn ctx(&self, cv: Option<&crate::sundials::Cvode>) -> IdaCtx {
+    fn ctx(&self, cv: Option<&crate::sundials::Cvode>, start: Option<&OdeStart>) -> IdaCtx {
         IdaCtx {
             mem: cv.map_or(core::ptr::null_mut(), |c| c.mem()),
             pattern: self.pattern.as_ref().map_or(core::ptr::null(), |p| p as *const IdaPattern),
+            start: start.map_or(core::ptr::null(), |s| s as *const OdeStart),
             ..IdaCtx::default()
         }
     }
@@ -7290,10 +7305,11 @@ impl CvodeState {
     /// The CVODE block is built on the first step, when `y` first holds the state
     /// to start from. `ctx` is the callbacks' `user_data`; it lives on the stack of
     /// one `advance`, so it is rebound on every call rather than stored.
-    fn step(&mut self, t: &mut f64, y: &mut [f64], target: f64, ctx: *mut ResCtx) -> Result<Progress> {
+    fn step(&mut self, t: &mut f64, y: &mut [f64], yp: &[f64], target: f64, ctx: *mut ResCtx) -> Result<Progress> {
         let cv = match self.cv.as_mut() {
             Some(cv) => cv,
             None => {
+                self.start = Some(OdeStart { t: *t, y: y.to_vec(), f: yp[..y.len()].to_vec() });
                 let root = (self.n_roots > 0).then_some(cvode_root as crate::sundials::RootFn);
                 let cv = self.setup.build(*t, y, self.rtol, &self.atol, self.n_roots, root)?;
                 if self.banner {
@@ -7302,7 +7318,7 @@ impl CvodeState {
                 self.cv.insert(cv)
             }
         };
-        unsafe { (*ctx).ida = self.setup.ctx(Some(cv)) };
+        unsafe { (*ctx).ida = self.setup.ctx(Some(cv), self.start.as_ref()) };
         if !cv.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
         }
@@ -7888,6 +7904,7 @@ impl SolverCore {
                         atol,
                         n_roots: nrt as usize,
                         setup: CvodeSetup::new(model),
+                        start: None,
                         work_retries: 0,
                         banner: true,
                         stop_at_target: false,
@@ -7946,7 +7963,7 @@ impl SolverCore {
     fn ida_ctx(&self) -> IdaCtx {
         match &self.solver {
             Solver::Ida(s) => s.setup.ctx(s.ida.as_ref()),
-            Solver::Cvode(c) => c.setup.ctx(c.cv.as_ref()),
+            Solver::Cvode(c) => c.setup.ctx(c.cv.as_ref(), c.start.as_ref()),
             _ => IdaCtx::default(),
         }
     }
@@ -8319,7 +8336,7 @@ impl SolverCore {
             let again = match &mut self.solver {
                 Solver::Daskr(d) => d.step(&mut self.t, &mut self.y, &mut self.yp, target),
                 #[cfg(sundials)]
-                Solver::Cvode(c) => c.step(&mut self.t, &mut self.y, target, ctx as *mut ResCtx)?,
+                Solver::Cvode(c) => c.step(&mut self.t, &mut self.y, &self.yp, target, ctx as *mut ResCtx)?,
                 #[cfg(sundials)]
                 Solver::Ida(s) => {
                     let e = unsafe { &mut *ctx.engine };
@@ -9918,6 +9935,29 @@ unsafe extern "C" fn cvode_rhs(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    match unsafe { cvode_rhs_eval(ctx, t, y, ydot) } {
+        0 => 0,
+        failed => match unsafe { ctx.ida.start.as_ref() } {
+            Some(s)
+                if t == s.t
+                    && unsafe { core::slice::from_raw_parts(crate::sundials::nv_data(y), ctx.n_states) } == &s.y[..] =>
+            {
+                unsafe { core::slice::from_raw_parts_mut(crate::sundials::nv_data(ydot), ctx.n_states) }
+                    .copy_from_slice(&s.f);
+                0
+            }
+            _ => failed,
+        },
+    }
+}
+
+#[cfg(sundials)]
+unsafe fn cvode_rhs_eval(
+    ctx: &mut ResCtx,
+    t: f64,
+    y: crate::sundials::NVector,
+    ydot: crate::sundials::NVector,
+) -> core::ffi::c_int {
     let _solver = rtclock::Pause::new(rtclock::SOLVER);
     let e = unsafe { &mut *ctx.engine };
     let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
@@ -9937,7 +9977,8 @@ unsafe extern "C" fn cvode_rhs(
                 report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
                 return 1;
             }
-            model_error as core::ffi::c_int
+            let f = unsafe { core::slice::from_raw_parts(crate::sundials::nv_data(ydot), ctx.n_states) };
+            (model_error || !f.iter().all(|v| v.is_finite())) as core::ffi::c_int
         }
     }
 }
@@ -10121,6 +10162,7 @@ struct CvodeDriver {
     /// `None` when the model has no states (nothing to integrate).
     cv: Option<crate::sundials::Cvode>,
     setup: CvodeSetup,
+    start: Option<OdeStart>,
     t: f64,
     dss: StateSelection,
     rows: Vec<f64>,
@@ -10160,6 +10202,9 @@ impl CvodeDriver {
         let (_, atol) = dassl_tolerances(tol, &nominals);
         let setup = CvodeSetup::new(model);
         let cv = if y.is_empty() { None } else { Some(setup.build(start, &y, tol, &atol, 0, None)?) };
+        let ders_base = states_base + layout.n_states * 8;
+        let f = (0..y.len()).map(|i| read_f64(e, ders_base + (i as u32) * 8)).collect::<Result<_>>()?;
+        let ode_start = OdeStart { t: start, y: y.clone(), f };
 
         // C's `storeOldValues` in `solver_main`.
         let mut retry = StepRetry::default();
@@ -10170,10 +10215,11 @@ impl CvodeDriver {
             nominals,
             tol,
             states_base,
-            ders_base: states_base + layout.n_states * 8,
+            ders_base,
             row: 1,
             cv,
             setup,
+            start: Some(ode_start),
             t: start,
             dss,
             rows,
@@ -10271,7 +10317,7 @@ impl Driver for CvodeDriver {
             nominal_factor: nominal_factor(),
             tol: self.tol,
             state_names: core::ptr::null(),
-            ida: self.setup.ctx(Some(cv)),
+            ida: self.setup.ctx(Some(cv), self.start.as_ref()),
         };
         if !cv.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
             return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
@@ -10721,6 +10767,7 @@ impl IdaSetup {
             },
             dae: self.dae.as_deref().map_or(core::ptr::null(), |d| d as *const DaeSolve),
             ramp: self.ramp,
+            start: core::ptr::null(),
         }
     }
 
