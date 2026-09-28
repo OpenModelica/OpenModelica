@@ -7147,6 +7147,8 @@ struct CvodeState {
     n_roots: usize,
     setup: CvodeSetup,
     start: Option<OdeStart>,
+    /// Restarted after an event: the next step starts with [`restart_step`].
+    restarted: bool,
     work_retries: u32,
     /// Whether building the block still logs the banner; an FMU already did, at
     /// `fmi2Instantiate`.
@@ -7157,6 +7159,19 @@ struct CvodeState {
 
 #[cfg(sundials)]
 type CvodeConfig = (CvodeLmm, CvodeIter);
+
+/// DASSL's and IDA's first step, `min(0.001·|tout - t|, 0.5/‖y'‖)` in the weighted
+/// RMS norm. CVODE's own estimate differences `f` over the step, which after an event
+/// straddles the discontinuity and comes out tiny: an ideal diode on the edge of
+/// conducting then switches back within it, restart after restart.
+#[cfg(sundials)]
+fn restart_step(t: f64, tout: f64, y: &[f64], yp: &[f64], rtol: f64, atol: &[f64]) -> f64 {
+    let n = y.len();
+    let sum: f64 = (0..n).map(|i| (yp[i] / (rtol * y[i].abs() + atol[i])).powi(2)).sum();
+    let norm = (sum / n.max(1) as f64).sqrt();
+    let h = 0.001 * (tout - t).abs();
+    if norm * h > 0.5 { 0.5 / norm } else { h }
+}
 
 /// The model's ODE Jacobian as CVODE takes it; `None` under
 /// `OMC_WASM_NO_ANALYTIC_JAC`, as for IDA.
@@ -7287,7 +7302,10 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig, j
     );
     for line in [
         "CVODE maximum absolut step size 0".to_string(),
-        "CVODE initial step size is set automatically".to_string(),
+        match crate::simflags::with_flags(|f| f.initial_step_size) {
+            Some(h) => format!("CVODE initial step size {}", format_g(h, 6)),
+            None => "CVODE initial step size is set automatically".to_string(),
+        },
         format!("CVODE maximum integration order {}", lmm.max_order()),
         "CVODE maximum number of nonlinear convergence failures permitted during one step 10"
             .to_string(),
@@ -7319,6 +7337,12 @@ impl CvodeState {
             }
         };
         unsafe { (*ctx).ida = self.setup.ctx(Some(cv), self.start.as_ref()) };
+        if core::mem::take(&mut self.restarted)
+            && crate::simflags::with_flags(|f| f.initial_step_size).is_none()
+            && !cv.set_init_step(restart_step(*t, target, y, yp, self.rtol, &self.atol))
+        {
+            return Err("##CVODE## CV_MEM_NULL In function CVodeSetInitStep: The cvode mem argument was NULL.");
+        }
         if !cv.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
         }
@@ -7905,6 +7929,7 @@ impl SolverCore {
                         n_roots: nrt as usize,
                         setup: CvodeSetup::new(model),
                         start: None,
+                        restarted: false,
                         work_retries: 0,
                         banner: true,
                         stop_at_target: false,
@@ -8177,6 +8202,7 @@ impl SolverCore {
                     if !cv.reinit(self.t) {
                         return Err("##CVODE## CVodeReInit failed");
                     }
+                    c.restarted = true;
                 }
             }
             #[cfg(sundials)]
