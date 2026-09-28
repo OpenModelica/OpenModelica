@@ -6108,7 +6108,7 @@ match sparsity
     // and its inner dimension is the adjoint seed count (primal rows).
     let patternCols = if isAdjoint then '<%sizeRows%>' else '<%nCols%>'
     let patternRows = if isAdjoint then '<%nCols%>' else '<%sizeRows%>'
-    let tmpvarsSize = (columns |> JAC_COLUMN() => listLength(columnVars); separator="\n")
+    let tmpvarsSize = (columns |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
     let constantEqns = (columns |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
@@ -7090,7 +7090,7 @@ match sparsepattern
     let sizeleadindex = listLength(sparsepattern)
     let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
-    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => listLength(columnVars); separator="\n")
+    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
