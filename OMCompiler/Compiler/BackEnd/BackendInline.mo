@@ -760,15 +760,12 @@ algorithm
   (outVariables,inlined) := matchcontinue(inVariables,inElementList)
     local
       Inline.Functiontuple fns;
-      array<list<BackendDAE.CrefIndex>> crefind;
-      array<list<BackendDAE.PrefixIndex>> prefind;
-      Integer i1,i2,i3;
       array<Option<BackendDAE.Var>> vararr;
-    case(BackendDAE.VARIABLES(crefind,prefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),fns)
+    case(BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = vararr)),fns)
       algorithm
         inlined := inlineVarOptArray(vararr,fns);
       then
-        (BackendDAE.VARIABLES(crefind,prefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),inlined);
+        (inVariables,inlined);
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
