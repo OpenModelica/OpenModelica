@@ -105,6 +105,10 @@ set(OMEDIT_TEST_TRANSFORMATION_SOURCES Transformation/TransformationTest.cpp
                                        Transformation/TransformationTest.h)
 add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
 
+set(OMEDIT_TEST_VARIABLESBROWSER_SOURCES VariablesBrowser/VariablesBrowserTest.cpp
+                                         VariablesBrowser/VariablesBrowserTest.h)
+add_omedit_test(VariablesBrowser "${OMEDIT_TEST_VARIABLESBROWSER_SOURCES}")
+
 set(OMEDIT_TEST_UTILITIES_SOURCES Utilities/UtilitiesTest.cpp
                                   Utilities/UtilitiesTest.h)
 add_omedit_test(Utilities "${OMEDIT_TEST_UTILITIES_SOURCES}")
