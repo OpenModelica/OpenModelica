@@ -5275,7 +5275,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
                  static const char *res[] = {<%resDesc%>};
                  <%zeroCrossings |> ZERO_CROSSING(__) =>
                    'static const int occurEqs<%index%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
-                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) => 'occurEqs<%index%>' ; separator = ","%>};
+                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) => occurEqsString(index, iter) ; separator = ","%>};
                  *out_EquationIndexes = (int*) occurEqs[i];
                  return res[i];
                }
@@ -5321,6 +5321,14 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   }
   >>
 end functionZeroCrossing;
+
+template occurEqsString(Integer index, Option<list<SimIterator>> iter)
+::=
+  match iter
+    case SOME(iter_) then (List.intRange(BackendDAE.getSimIteratorSize(iter_)) |> idx =>
+      'occurEqs<%index%>';separator=",")
+    else 'occurEqs<%index%>'
+end occurEqsString;
 
 template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
 ::=
