@@ -5359,6 +5359,17 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     else crefToCStr(componentRef, ix, true, isStart, &sub))
   case CREF_QUAL(ident = "$START") then
     crefToCStr(componentRef, ix, isPre, true, &sub)
+  else if boolAnd(boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))),
+                  boolAnd(boolAnd(crefIsScalarWithAllConstSubs(cr), stringEq(&sub, "")),
+                          boolAnd(boolNot(listEmpty(crefSubs(crefArrayGetFirstCref(cr)))),
+                                  intEq(listLength(crefDims(cr)), listLength(crefSubs(crefArrayGetFirstCref(cr))))))) then
+    // without scalarization cref2simvar resolves an element to its array, add the offset
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &varFrees = buffer ""
+    let &auxFunction = buffer ""
+    let &elemSub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>'
+    crefToCStr(crefStripSubs(cr), ix, isPre, isStart, &elemSub)
   else match cref2simvar(cr, getSimCode())
     case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
