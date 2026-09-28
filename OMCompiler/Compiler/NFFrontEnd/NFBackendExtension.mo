@@ -911,6 +911,30 @@ public
       end match;
     end getTearingSelect;
 
+    function getMin
+      input VariableAttributes attr;
+      output Option<Expression> min;
+    algorithm
+      min := match attr
+        case VAR_ATTR_REAL() then Util.applyOption(attr.min, Binding.getTypedExp);
+        case VAR_ATTR_INT() then Util.applyOption(attr.min, Binding.getTypedExp);
+        case VAR_ATTR_ENUMERATION() then Util.applyOption(attr.min, Binding.getTypedExp);
+        else NONE();
+      end match;
+    end getMin;
+
+    function getMax
+      input VariableAttributes attr;
+      output Option<Expression> max;
+    algorithm
+      max := match attr
+        case VAR_ATTR_REAL() then Util.applyOption(attr.max, Binding.getTypedExp);
+        case VAR_ATTR_INT() then Util.applyOption(attr.max, Binding.getTypedExp);
+        case VAR_ATTR_ENUMERATION() then Util.applyOption(attr.max, Binding.getTypedExp);
+        else NONE();
+      end match;
+    end getMax;
+
     function getNominal
       input VariableAttributes attr;
       output Option<Expression> nominal;

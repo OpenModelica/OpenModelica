@@ -1,0 +1,82 @@
+// name: array_bound_attributes
+// keywords: NewBackend array min max nominal
+// status: correct
+// suite: cSources
+//
+// Checks the C runtime log of the updated attributes.
+//
+// min, max and nominal attributes that depend on parameters are evaluated in
+// updateBoundVariableAttributes, for scalar variables as well as for
+// non-scalarized array variables with one value per element or `each`.
+
+loadString("
+model array_bound_attributes
+  parameter Real p = 2;
+  parameter Real n[3] = {1, 2, 3};
+  parameter Integer q = 4;
+  Real x[3](each min = -p, max = n*10, nominal = n*p, each start = 1, each fixed = true);
+  Real y(min = -p, nominal = 10*p, start = 1, fixed = true);
+  discrete Integer k[2](min = {-q, 0}, each max = q, each start = 0, each fixed = true);
+equation
+  der(x) = -x;
+  der(y) = -y;
+  when sample(0.5, 0.5) then
+    k = pre(k) + {1, 1};
+  end when;
+end array_bound_attributes;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+simulate(array_bound_attributes, stopTime=1.0, simflags="-lv=LOG_INIT_V"); getErrorString();
+
+val(x[3], 1.0);
+val(k[2], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "array_bound_attributes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'array_bound_attributes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT_V        | info    | x(min={-2, -2, -2})
+// LOG_INIT_V        | info    | y(min=-2)
+// LOG_INIT_V        | info    | k(min={-4, 0})
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT_V        | info    | x(max={10, 20, 30})
+// LOG_INIT_V        | info    | k(max={4, 4})
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT_V        | info    | x(nominal={2, 4, 6})
+// LOG_INIT_V        | info    | y(nominal=20)
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p(start=2, fixed=true) = 2
+// |                 | |       | | | [2] parameter Real n(start={1, 2, 3}, fixed=true) = 1
+// |                 | |       | | integer parameters
+// |                 | |       | | | [1] parameter Integer q(start=4, fixed=true) = 4
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start={1}, nominal={2, 4, 6}) = 1 (pre: 1)
+// |                 | |       | | | [2] Real y(start=1, nominal=20) = 1 (pre: 1)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = 1 (pre: 1)
+// |                 | |       | | | [4] Real der(y) = 1 (pre: 1)
+// |                 | |       | | integer variables
+// |                 | |       | | | [1] Integer k(start={0}) = 0 (pre: 0)
+// |                 | |       | | boolean variables
+// |                 | |       | | | [1] Boolean $TEV_0(start=false) = false (pre: false)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.36788379788965164
+// 2.0
+// endResult
