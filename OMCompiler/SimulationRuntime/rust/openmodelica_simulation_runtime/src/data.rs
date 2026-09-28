@@ -104,10 +104,12 @@ enum Backing {
     /// the same fields in a different order, with C's `stats` nested.
     BaseClocks(*mut BASECLOCK_DATA),
     SubClocks(*mut SUBCLOCK_DATA),
-    /// One `f64` per 8-byte slot, each at its own address: the real `start`
-    /// attributes, which C keeps per variable in `attribute.start.data`. A null
-    /// entry reads zero and drops writes.
-    Scattered(*const *mut f64),
+    /// One `f64` per 8-byte slot: the real `start` attributes, which C keeps per
+    /// variable in `attribute.start`, reached through `realVarsReverseIndex`.
+    /// Looked up on each access, as the generated code may reallocate the array.
+    /// An attribute holding a single value (`each`) reads it for every element and
+    /// grows to one value per element on the first write.
+    RealStart(*mut STATIC_REAL_DATA, *const array_index_t),
     /// No C counterpart (a `modelica_string` / external-object handle, which the
     /// numeric driver never interprets): reads zero, writes are dropped.
     Opaque,
@@ -305,13 +307,13 @@ impl RtData {
                 Backing::SubClocks(base) => {
                     clock_io(buf.as_mut_ptr(), buf.len(), off, true, |o| sub_clock_field(base, o))
                 }
-                Backing::Scattered(table) => {
+                Backing::RealStart(vars, rev) => {
                     if buf.len() % 8 != 0 || off % 8 != 0 {
-                        return Err("SimData scattered read is not a whole number of 8-byte slots");
+                        return Err("SimData start read is not a whole number of 8-byte slots");
                     }
                     for (k, out) in buf.chunks_exact_mut(8).enumerate() {
-                        let p = unsafe { *table.add(off as usize / 8 + k) };
-                        let v = if p.is_null() { 0.0 } else { unsafe { *p } };
+                        let ix = unsafe { &*rev.add(off as usize / 8 + k) };
+                        let v = unsafe { &*vars.add(ix.array_idx) }.attribute.start.real_at(ix.dim_idx, 0.0);
                         out.copy_from_slice(&v.to_ne_bytes());
                     }
                     Ok(())
@@ -387,14 +389,20 @@ impl RtData {
                         sub_clock_field(base, o)
                     })
                 }
-                Backing::Scattered(table) => {
+                Backing::RealStart(vars, rev) => {
                     if buf.len() % 8 != 0 || off % 8 != 0 {
-                        return Err("SimData scattered write is not a whole number of 8-byte slots");
+                        return Err("SimData start write is not a whole number of 8-byte slots");
                     }
                     for (k, src) in buf.chunks_exact(8).enumerate() {
-                        let p = unsafe { *table.add(off as usize / 8 + k) };
-                        if !p.is_null() {
-                            unsafe { *p = f64::from_ne_bytes(src.try_into().unwrap()) };
+                        let ix = unsafe { &*rev.add(off as usize / 8 + k) };
+                        let v = unsafe { &mut *vars.add(ix.array_idx) };
+                        let n = v.dimension.scalar_length;
+                        if v.attribute.start.n_elements() != n {
+                            unsafe { crate::model_data::real_array_ensure_size(&mut v.attribute.start, n as c_int) };
+                        }
+                        if ix.dim_idx < v.attribute.start.n_elements() {
+                            let data = v.attribute.start.data as *mut f64;
+                            unsafe { *data.add(ix.dim_idx) = f64::from_ne_bytes(src.try_into().unwrap()) };
                         }
                     }
                     Ok(())
@@ -1013,23 +1021,10 @@ pub fn build_regions(rt: &mut RtData) {
     // The real `start` attributes: C's `input_function_updateStartValues` and the
     // driver's `-csvInput`/`-iif` imports both write them, so there is one copy.
     if n_real > 0 {
-        let mut table: Vec<*mut f64> = vec![core::ptr::null_mut(); n_real as usize];
-        for a in 0..md.nVariablesRealArray as usize {
-            let v = unsafe { &*md.realVarsData.add(a) };
-            let base = unsafe { *si.realVarsIndex.add(a) };
-            let data = v.attribute.start.data as *mut f64;
-            for k in 0..v.dimension.scalar_length {
-                if let Some(slot) = table.get_mut(base + k)
-                    && let Some(j) = v.attribute.start.elem_index(k)
-                {
-                    *slot = unsafe { data.add(j) };
-                }
-            }
-        }
         regions.push(Region {
             start: l.start_off,
             end: l.start_off + n_real * 8,
-            backing: Backing::Scattered(Box::leak(table.into_boxed_slice()).as_ptr()),
+            backing: Backing::RealStart(md.realVarsData, si.realVarsReverseIndex),
         });
     }
     // String and external-object handles: a `modelica_string` is a pointer here

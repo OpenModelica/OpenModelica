@@ -21,7 +21,7 @@ equation
 end array_init_file;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C.old"); getErrorString();
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
 simulate(array_init_file, stopTime=1.0, simflags="-r=array_init_file_first.mat"); getErrorString();
 
@@ -57,9 +57,9 @@ val(b[2], 1.0);
 // "
 // end SimulationResult;
 // ""
-// 1.9999999999999998
-// 2.9999999999999996
-// 3.999999999999999
+// 2.0
+// 3.0
+// 4.0
 // 5.0
 // 11.0
 // 22.0
