@@ -175,11 +175,11 @@ while read -r d; do
 done < <({ echo "$LIBDIR"; [ -n "$QT" ] && find "$QTOUT" -type d; } | sort -u)
 
 # Simulating a model links the generated code against this very directory:
-#   -L<tree>/lib/<triple>/omc ... -llapack -lblas -lgfortran
+#   -L<tree>/lib/<triple>/omc ... -llapack -lblas
 # and ld will not accept a bare .so.<n>, only the unversioned symlink a -dev
-# package ships. Without these three the target needs gfortran and liblapack-dev
-# installed to simulate anything; with them it needs neither.
-for stem in lapack blas gfortran quadmath; do
+# package ships. Without these the target needs liblapack-dev installed to
+# simulate anything.
+for stem in lapack blas; do
   for cand in "$LIBDIR/lib$stem".so.*; do
     [ -e "$cand" ] || continue
     ln -sfn "$(basename "$cand")" "$LIBDIR/lib$stem.so"

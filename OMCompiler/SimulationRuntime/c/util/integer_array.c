@@ -1704,3 +1704,26 @@ void integer_vector_to_string(const integer_array *source, modelica_boolean isSc
 {
     base_vector_to_string(source, isScalar, integer_element_to_string, buffer, bufsize);
 }
+
+/**
+ * @brief Grow a start attribute array to n elements, repeating its values.
+ *
+ * The start attribute of an array variable can hold a single broadcast value
+ * or the values of an inner dimension only. Writing the start values of the
+ * whole array needs one element per array element.
+ */
+void integer_array_ensure_size(integer_array *a, int n)
+{
+    int m = (int) base_array_nr_of_elements(*a);
+    integer_array tmp;
+    int i;
+    if (m >= n) {
+        return;
+    }
+    simple_alloc_1d_integer_array(&tmp, n);
+    for (i = 0; i < n; ++i) {
+        ((modelica_integer*) tmp.data)[i] = m > 0 ? ((modelica_integer*) a->data)[i % m] : 0;
+    }
+    omc_array_release(a);
+    *a = tmp;
+}

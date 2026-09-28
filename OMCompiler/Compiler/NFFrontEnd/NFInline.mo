@@ -214,7 +214,7 @@ protected
 algorithm
   if not InstNode.refEqual(node, ComponentRef.node(cref)) then
     value := replaceCrefNode2(ComponentRef.rest(cref), node, value);
-    value := Expression.recordElement(InstNode.name(ComponentRef.node(cref)), value);
+    value := Expression.recordElement(ComponentRef.nodeName(cref), value);
   end if;
 
   value := Expression.applySubscripts(ComponentRef.getSubscripts(cref), value);

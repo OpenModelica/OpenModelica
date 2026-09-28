@@ -39,14 +39,69 @@ endif()
 if(OM_FETCH_BOOST)
   # Built into this project by cmake/OMCBoost.cmake.
   set(Boost_FOUND TRUE)
-elseif(APPLE)
-  # MacPorts installs the Boost configuration file in a non-standard location,
-  # keep using the old FindBoost module for now.
-  find_package(Boost COMPONENTS program_options filesystem REQUIRED)
-elseif(CMAKE_VERSION VERSION_LESS "3.30")
-  find_package(Boost COMPONENTS program_options filesystem REQUIRED)
 else()
-  find_package(Boost CONFIG COMPONENTS program_options filesystem REQUIRED)
+  # FindBoost was removed in CMake 4.0, Boost >= 1.70 ships its own
+  # BoostConfig.cmake. Try CONFIG first (works everywhere when a config
+  # exists, e.g. Homebrew/MacPorts), fall back to the FindBoost module on
+  # older CMake/Boost combos. Do not branch on CMAKE_VERSION or APPLE:
+  # whether CONFIG mode succeeds depends on the Boost installation, not
+  # on the CMake version.
+  find_package(Boost CONFIG COMPONENTS program_options filesystem QUIET)
+  if(NOT Boost_FOUND)
+    find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+  endif()
+  # BoostConfig.cmake (CONFIG mode) does not set Boost_INCLUDE_DIR /
+  # Boost_LIBRARY_DIRS, while the FindBoost module does. Normalize both
+  # cases by extracting the dirs from the imported targets whenever the
+  # variables are still empty, so the generated ModelicaConfig_gcc.inc can
+  # always pass -I/-L to model builds.
+  if(NOT Boost_INCLUDE_DIR)
+    foreach(_t IN ITEMS Boost::headers Boost::boost Boost::filesystem)
+      if(TARGET ${_t})
+        get_target_property(_boost_inc ${_t} INTERFACE_INCLUDE_DIRECTORIES)
+        if(_boost_inc AND NOT _boost_inc STREQUAL "_boost_inc-NOTFOUND")
+          list(GET _boost_inc 0 Boost_INCLUDE_DIR)
+          if(Boost_INCLUDE_DIR)
+            break()
+          endif()
+        endif()
+      endif()
+    endforeach()
+  endif()
+  if(Boost_INCLUDE_DIR AND NOT Boost_INCLUDE_DIRS)
+    set(Boost_INCLUDE_DIRS "${Boost_INCLUDE_DIR}")
+  endif()
+  if(NOT Boost_LIBRARY_DIRS)
+    foreach(_comp IN ITEMS filesystem program_options)
+      if(TARGET Boost::${_comp})
+        foreach(_cfg IN ITEMS RELEASE "" DEBUG RELWITHDEBINFO MINSIZEREL)
+          # On Windows a shared Boost target's IMPORTED_LOCATION is the DLL
+          # in bin/; the link -L dir must come from IMPORTED_IMPLIB (lib/).
+          if(_cfg STREQUAL "")
+            get_target_property(_loc Boost::${_comp} IMPORTED_IMPLIB)
+            if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
+              get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION)
+            endif()
+          else()
+            get_target_property(_loc Boost::${_comp} IMPORTED_IMPLIB_${_cfg})
+            if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
+              get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION_${_cfg})
+            endif()
+          endif()
+          if(_loc AND NOT _loc STREQUAL "_loc-NOTFOUND")
+            get_filename_component(Boost_LIBRARY_DIRS "${_loc}" DIRECTORY)
+            break()
+          endif()
+        endforeach()
+        if(Boost_LIBRARY_DIRS)
+          break()
+        endif()
+      endif()
+    endforeach()
+  endif()
+  if(Boost_LIBRARY_DIRS AND NOT Boost_LIBRARY_DIR)
+    set(Boost_LIBRARY_DIR "${Boost_LIBRARY_DIRS}")
+  endif()
 endif()
 
 find_package(Threads REQUIRED)

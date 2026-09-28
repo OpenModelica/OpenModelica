@@ -93,6 +93,18 @@ pub(crate) struct FnCtx<'a> {
     /// [`ctrl_depth`](Self::ctrl_depth) of the block a failed solve branches out of,
     /// to hand the component to the strict set instead of reporting it unsolved.
     pub(super) dt_fallback: Option<u32>,
+    /// Record variables held as one wasm local per field (see `flat`).
+    pub(super) flat: HashMap<String, FlatVar>,
+    /// Per output: the name of its [`FlatVar`], if it is one.
+    pub(super) flat_outs: Vec<Option<String>>,
+    /// Flat outputs are returned field by field (a `$flat` variant), not boxed.
+    pub(super) flat_results: bool,
+}
+
+#[derive(Clone)]
+pub(crate) struct FlatVar {
+    pub(super) fields: FlatFields,
+    pub(super) locals: Vec<u32>,
 }
 
 /// Resolver for model variables when lowering simulation equations. Component
@@ -486,9 +498,30 @@ impl<'a> FnCtx<'a> {
             we::Instruction::End => {
                 self.ctrl_depth = self.ctrl_depth.saturating_sub(1);
             }
+            we::Instruction::Call(f) if Some(f) == set_dim_index() && self.set_dim_inline() => return,
             _ => {}
         }
         self.instrs.push(i);
+    }
+
+    /// `i32.const axis; <push size>; call rt_array_set_dim` as a store into the
+    /// dim word, the array handle being below both on the stack.
+    fn set_dim_inline(&mut self) -> bool {
+        let n = self.instrs.len();
+        let (Some(we::Instruction::I32Const(axis)), Some(size)) = (self.instrs.get(n.wrapping_sub(2)), self.instrs.get(n.wrapping_sub(1)))
+        else {
+            return false;
+        };
+        let simple = matches!(size, we::Instruction::LocalGet(_) | we::Instruction::I32Const(_) | we::Instruction::GlobalGet(_));
+        if !simple || *axis < 0 {
+            return false;
+        }
+        let off = ARR_DIMS_OFF + *axis as u32 * 4;
+        let size = self.instrs.pop().unwrap();
+        self.instrs.pop();
+        self.instrs.push(size);
+        self.instrs.push(we::Instruction::I32Store(mem_arg(off, 2)));
+        true
     }
     pub(super) fn ctrl_depth(&self) -> u32 {
         self.ctrl_depth
@@ -546,7 +579,7 @@ impl<'a> FnCtx<'a> {
         n_params: u32,
     ) -> Self {
         FnCtx {
-            locals: HashMap::new(),
+            locals: HashMap::default(),
             extra_locals: Vec::new(),
             n_params, // local 0 = SimData pointer
             outputs: Vec::new(),
@@ -562,6 +595,9 @@ impl<'a> FnCtx<'a> {
             sim: Some(sim),
             dt_local_cons: false,
             dt_fallback: None,
+            flat: HashMap::default(),
+            flat_outs: Vec::new(),
+            flat_results: false,
         }
     }
 
@@ -1164,4 +1200,9 @@ impl<'a> FnCtx<'a> {
         self.emit(we::Instruction::End);
         (self.extra_locals, self.instrs)
     }
+}
+
+fn set_dim_index() -> Option<u32> {
+    static INDEX: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
+    *INDEX.get_or_init(|| rt_index("rt_array_set_dim").ok())
 }

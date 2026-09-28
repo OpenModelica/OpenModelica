@@ -32,6 +32,7 @@ openmodelica_frontend_base.workspace = true
 openmodelica_tpl.workspace = true
 openmodelica_util.workspace = true
 arcstr.workspace = true
+foldhash.workspace = true
 ordered-float.workspace = true
 # `wasmparser` feature enables wasm-encoder's `reencode` (model→dylink transform).
 wasm-encoder = { workspace = true, features = ["wasmparser"] }

@@ -22,7 +22,7 @@ fn link_runtime_c() {
         for lib in libs.split('|').filter(|s| !s.is_empty()) {
             println!("cargo:rustc-cdylib-link-arg={lib}");
         }
-        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C+Rust
+        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C
         // links this cdylib rather than SimulationRuntimeC.dll. reexport_def.cmake
         // derives /EXPORT: switches from the archive; they have to be a response
         // file because rustc writes the cdylib's own .def and ours would replace it.
@@ -34,8 +34,19 @@ fn link_runtime_c() {
     let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
     println!("cargo:rustc-link-search=native={dir}");
     println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
-    if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "ios")) {
-        println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined");
+    match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        Ok("windows") => {}
+        // It is installed beside the dylib, which links it as @rpath/.
+        Ok("macos" | "ios") => println!("cargo:rustc-cdylib-link-arg=-Wl,-rpath,@loader_path"),
+        _ => println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined"),
+    }
+}
+
+/// ld64 defaults a dylib's install name to its output path in the cargo target
+/// directory, which every simulation linking it would then load from.
+fn macos_install_name() {
+    if matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("macos" | "ios")) {
+        println!("cargo:rustc-cdylib-link-arg=-Wl,-install_name,@rpath/libSimulationRuntimeRust.dylib");
     }
 }
 
@@ -140,6 +151,7 @@ fn main() {
         export_shim_entry_points();
     }
     link_runtime_c();
+    macos_install_name();
     link_blas();
     println!("cargo:rerun-if-changed=src/abi.rs");
     println!("cargo:rerun-if-env-changed=OMC_SIMRT_INCLUDE_DIRS");
@@ -209,8 +221,8 @@ fn main() {
         }
     }
     // The `enum _FLAG` indices `omc_flag`/`omc_flagValue` are addressed with, the
-    // `errorStage` values `threadData->currentErrorStage` takes, and the solver
-    // enumerations `simulationInfo` holds.
+    // `errorStage` values `threadData->currentErrorStage` takes, the solver
+    // enumerations `simulationInfo` holds and the table sizes `-help` reads.
     for line in src.lines() {
         let t = line.trim();
         for (prefix, ty) in [
@@ -219,6 +231,12 @@ fn main() {
             ("pub const LS_", ": c_int = "),
             ("pub const LSS_", ": c_int = "),
             ("pub const NLS_", ": c_int = "),
+            ("pub const S_", ": c_int = "),
+            ("pub const IIM_", ": c_int = "),
+            ("pub const NEWTON_", ": c_int = "),
+            ("pub const JAC_", ": c_int = "),
+            ("pub const IDA_LS_", ": c_int = "),
+            ("pub const OMC_SIM_LOG_", ": c_int = "),
         ] {
             let Some(rest) = t.strip_prefix(prefix) else { continue };
             let Some((name, value)) = rest.split_once(ty) else { continue };

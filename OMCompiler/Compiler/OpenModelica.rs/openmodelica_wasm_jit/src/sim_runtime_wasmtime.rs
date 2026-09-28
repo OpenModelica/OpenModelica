@@ -77,6 +77,12 @@ fn host_libm() -> bool {
     !matches!(std::env::var("OMC_WASM_HOST_LIBM").as_deref(), Ok("0"))
 }
 
+/// `OMC_WASM_HOST_LIN_SOLVE=0`: solve the linear systems in-wasm, as the browser
+/// does, in a runtime that links both solvers.
+fn host_lin_solve() -> bool {
+    !matches!(std::env::var("OMC_WASM_HOST_LIN_SOLVE").as_deref(), Ok("0"))
+}
+
 fn shadow_math_with_host_libm(
     linker: &mut wasmtime::Linker<HostState>,
     store: &mut wasmtime::Store<HostState>,
@@ -216,6 +222,8 @@ fn build_engine_cfg(inlining: bool, extra: impl FnOnce(&mut wasmtime::Config)) -
     // A model with external "C" carries the `model_error` tag its `ext` call sites
     // catch, so the module does not validate without this.
     cfg.wasm_exceptions(true);
+    // Lays the model's error paths out of line (`emit_unlikely_if`).
+    cfg.wasm_branch_hinting(true);
     // Compile module functions across threads (off by default with
     // default-features=false) — ~4x faster module compilation here.
     cfg.parallel_compilation(!crate::model::single_threaded());
@@ -385,8 +393,9 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         ("lib-libc.so".to_string(), crate::LIBC_PIC()),
         ("lib-usertab".to_string(), crate::USERTAB_DYLINK()),
     ];
+    // Tagged with the file name, as `library_module` is called with it.
     for (file, bytes) in crate::EXT_FAMILY {
-        blobs.push((format!("lib-{}", file.trim_end_matches(".wasm")), bytes()));
+        blobs.push((format!("lib-{file}"), bytes()));
     }
     blobs.retain(|(_, b)| !b.is_empty());
     // Every engine a run can land on: the inliner is off for a model with one
@@ -2245,6 +2254,11 @@ fn push_runtime_flags(
         });
         wts(set.call(&mut *store, t))?;
     }
+    // `-newton` / `-noScaling` / `-stopAtSystem`: the solvers they tune run in-wasm.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, i32), ()>(&mut *store, "rt_set_nls_options") {
+        let codes = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::nls_option_codes);
+        wts(set.call(&mut *store, codes))?;
+    }
     // `-lvMaxWarn`: the warnings it caps are printed in-wasm.
     if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut *store, "rt_set_max_warn") {
         let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
@@ -2301,7 +2315,7 @@ fn push_runtime_flags(
     // solver on ScalableTestSuite's large sparse systems. A host without it (the
     // browser) leaves this unset and the module solves in-wasm.
     if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut *store, "rt_set_host_lin_solve") {
-        wts(set.call(&mut *store, 1))?;
+        wts(set.call(&mut *store, host_lin_solve() as u32))?;
     }
     // Same for `-lv`: the nonlinear solver logs from inside the module. The
     // effective mask, which `-lv_time` may hold shut until its window.

@@ -435,6 +435,44 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
 }
 
 /**
+ * @brief Write the name of one scalar element of a variable into `buffer`.
+ *
+ * For an array variable the one-based subscripts of element `linear_address`
+ * follow the name in one pair of brackets, e.g. "x[2,3]". A scalar variable
+ * keeps its name.
+ *
+ * @param name           Name of the (array) variable.
+ * @param dimension_info Dimensions of the variable.
+ * @param linear_address Flattened (row-major) index of the element.
+ * @param buffer         Destination buffer.
+ * @param buffer_size    Size of `buffer` in bytes.
+ */
+void printScalarName(const char *name,
+                     DIMENSION_INFO *dimension_info,
+                     size_t linear_address,
+                     char *buffer,
+                     size_t buffer_size)
+{
+  size_t written;
+  size_t dim;
+  size_t *array_index;
+
+  written = snprintf(buffer, buffer_size, "%s", name);
+  if (dimension_info->numberOfDimensions == 0) {
+    return;
+  }
+
+  array_index = linearToMultiDimArrayIndex(dimension_info, linear_address);
+  for (dim = 0; dim < dimension_info->numberOfDimensions && written < buffer_size; dim++) {
+    written += snprintf(buffer + written, buffer_size - written, "%c%zu", dim == 0 ? '[' : ',', array_index[dim] + 1);
+  }
+  if (written < buffer_size) {
+    snprintf(buffer + written, buffer_size - written, "]");
+  }
+  free(array_index);
+}
+
+/**
  * @brief Convert index from lexicographical access order to linear.
  *
  * The linear storage assumes row-major-order representation, see
@@ -721,10 +759,30 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 }
 
 /**
- * @brief Get element `dim_idx` of a real attribute.
+ * @brief Index of the attribute element that holds element `dim_idx` of an
+ * array variable.
  *
  * An attribute with a single element (`each` or no attribute given in the
  * init XML) holds the value for all elements of the array variable.
+ *
+ * @param attribute  Attribute array of any element type.
+ * @param dim_idx    Index inside array variable as 1D representation.
+ * @return size_t    Index into the data of `attribute`.
+ */
+size_t attributeElementIndex(const base_array_t *attribute, size_t dim_idx)
+{
+  const size_t n = (size_t) base_array_nr_of_elements(*attribute);
+
+  if (n == 1) {
+    return 0;
+  }
+  assertStreamPrint(NULL, dim_idx < n,
+                    "attributeElementIndex: dim_idx %zu out of bounds [0, %zu)", dim_idx, n);
+  return dim_idx;
+}
+
+/**
+ * @brief Get element `dim_idx` of a real attribute, see attributeElementIndex.
  *
  * @param attribute       Attribute array.
  * @param dim_idx         Index inside array variable as 1D representation.
@@ -732,14 +790,7 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
  */
 static modelica_real real_attribute_get(const real_array *attribute, size_t dim_idx)
 {
-  const size_t n = (size_t) base_array_nr_of_elements(*attribute);
-
-  if (n == 1) {
-    return real_get(*attribute, 0);
-  }
-  assertStreamPrint(NULL, dim_idx < n,
-                    "real_attribute_get: dim_idx %zu out of bounds [0, %zu)", dim_idx, n);
-  return real_get(*attribute, dim_idx);
+  return real_get(*attribute, attributeElementIndex(attribute, dim_idx));
 }
 
 /**

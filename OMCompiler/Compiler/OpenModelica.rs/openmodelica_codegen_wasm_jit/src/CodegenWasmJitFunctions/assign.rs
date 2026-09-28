@@ -29,6 +29,15 @@ pub(super) fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) ->
     if compile_sim_cref_assign(ctx, componentRef, RhsSource::Exp(rhs))? {
         return Ok(());
     }
+    if let Some(v) = flat_var_ref(ctx, lhs).cloned() {
+        return assign_flat(ctx, &v, rhs);
+    }
+    if let Some((v, i)) = flat_field_ref(ctx, componentRef) {
+        let w = compile_exp(ctx, rhs)?;
+        coerce(ctx, w, v.fields[i].1.wty());
+        ctx.emit(we::Instruction::LocalSet(v.locals[i]));
+        return Ok(());
+    }
     // A qualified-cref assignment `base[..].f1[..].….fn[..] := rhs`: navigate to
     // the record holding the final field, then store into it.
     if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
@@ -151,6 +160,15 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
     // `false` means an ordinary local, handled below.
     if compile_sim_cref_assign(ctx, cref, RhsSource::Temp { local: vt, wty })? {
         return Ok(());
+    }
+    if let Some((v, i)) = flat_field_ref(ctx, cref) {
+        ctx.emit(we::Instruction::LocalGet(vt));
+        coerce(ctx, wty, v.fields[i].1.wty());
+        ctx.emit(we::Instruction::LocalSet(v.locals[i]));
+        return Ok(());
+    }
+    if let Some(v) = flat_cref(ctx, cref).cloned() {
+        return store_fresh_into_flat(ctx, &v, vt);
     }
     if let DAE::ComponentRef::CREF_QUAL { .. } = cref {
         let (rec, fields, leaf, lsubs) = navigate_qual(ctx, cref)?;
@@ -346,6 +364,10 @@ pub(super) fn compile_private_value(ctx: &mut FnCtx, e: &DAE::Exp, sty: &SigTy) 
     let Some((copy_fn, rel_fn)) = value_copy_fns(sty) else {
         return compile_exp(ctx, e);
     };
+    // Boxing already makes a private copy.
+    if flat_var_ref(ctx, e).is_some() {
+        return compile_exp(ctx, e);
+    }
     if let DAE::Exp::IFEXP { expCond, expThen, expElse } = e
         && !shared_lits::is_shared(e)
     {

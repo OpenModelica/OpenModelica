@@ -1,4 +1,4 @@
-//! `libSimulationRuntimeRust`: the simulation runtime behind `--simCodeTarget=C+Rust`.
+//! `libSimulationRuntimeRust`: the simulation runtime behind `--simCodeTarget=C`.
 //!
 //! The C code generator's output is unchanged; this library provides the runtime
 //! half of its ABI. Simulation itself is the same Rust the `wasm-jit` target runs:
@@ -20,6 +20,8 @@ mod fmi;
 mod fmi_host;
 mod fmi_vrs;
 #[cfg(feature = "standalone")]
+mod help;
+#[cfg(feature = "standalone")]
 mod iif;
 mod info_json;
 mod linearize;
@@ -29,6 +31,8 @@ mod model_data;
 mod operators;
 mod parmod;
 mod optimization;
+#[cfg(feature = "standalone")]
+mod port;
 #[cfg(feature = "standalone")]
 mod run;
 mod nls;

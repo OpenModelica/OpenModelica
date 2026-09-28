@@ -443,7 +443,7 @@ public
     output String name;
   algorithm
     name := match cref
-      case CREF() then InstNode.name(node(cref));
+      case CREF() then nodeName(cref);
       case WILD() then if baseModelica then "" else "_";
       else "";
     end match;
@@ -1406,7 +1406,7 @@ public
     acref := match cref
       case CREF()
         algorithm
-          acref := Absyn.ComponentRef.CREF_IDENT(InstNode.name(node(cref)),
+          acref := Absyn.ComponentRef.CREF_IDENT(nodeName(cref),
             list(Subscript.toAbsyn(s) for s in cref.subscripts));
         then
           toAbsyn_impl(cref.restCref, acref);
@@ -1425,7 +1425,7 @@ public
 
       case CREF()
         algorithm
-          acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(node(cref)),
+          acref := Absyn.ComponentRef.CREF_QUAL(nodeName(cref),
             list(Subscript.toAbsyn(s) for s in cref.subscripts), accumCref);
         then
           toAbsyn_impl(cref.restCref, acref);
@@ -1440,7 +1440,7 @@ public
     dcref := match cref
       case CREF()
         algorithm
-          dcref := DAE.ComponentRef.CREF_IDENT(InstNode.name(node(cref)), Type.toDAE(cref.ty),
+          dcref := DAE.ComponentRef.CREF_IDENT(nodeName(cref), Type.toDAE(cref.ty),
             list(Subscript.toDAE(s) for s in cref.subscripts));
         then
           toDAE_impl(cref.restCref, dcref);
@@ -1469,7 +1469,7 @@ public
           // So instead we just fetch the type of the node if the type is unknown.
           ty := if Type.isUnknown(cref.ty) then InstNode.getType(node(cref)) else cref.ty;
           dty := Type.toDAE(ty, makeTypeVars = false);
-          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(node(cref)), dty,
+          dcref := DAE.ComponentRef.CREF_QUAL(nodeName(cref), dty,
             list(Subscript.toDAE(s) for s in cref.subscripts), accumCref);
         then
           toDAE_impl(cref.restCref, dcref);
@@ -1493,7 +1493,7 @@ public
 
       case CREF()
         algorithm
-          str := InstNode.name(node(cref)) + Subscript.toStringList(cref.subscripts);
+          str := nodeName(cref) + Subscript.toStringList(cref.subscripts);
         then
           toString_impl(cref.restCref, str :: strl);
 
@@ -1629,7 +1629,7 @@ public
       case CREF()
         algorithm
           obj := JSON.emptyListObject();
-          obj := JSON.addPair("name", JSON.makeString(InstNode.name(node(cref))), obj);
+          obj := JSON.addPair("name", JSON.makeString(nodeName(cref)), obj);
 
           if not listEmpty(cref.subscripts) then
             obj := JSON.addPair("subscripts", Subscript.toJSONList(cref.subscripts), obj);
@@ -1697,7 +1697,7 @@ public
   algorithm
     path := match cref
       case CREF()
-        then toPath_impl(cref.restCref, Absyn.IDENT(InstNode.name(node(cref))));
+        then toPath_impl(cref.restCref, Absyn.IDENT(nodeName(cref)));
     end match;
   end toPath;
 
@@ -1709,7 +1709,7 @@ public
     path := match cref
       case CREF()
         then toPath_impl(cref.restCref,
-          Absyn.QUALIFIED(InstNode.name(node(cref)), accumPath));
+          Absyn.QUALIFIED(nodeName(cref), accumPath));
       else accumPath;
     end match;
   end toPath_impl;

@@ -45,7 +45,7 @@ fn run() -> i32 {
         .next_back()
         .map(ArcStr::from)
         .unwrap_or_default();
-    match TplMain::main(file, out_dir) {
+    match TplMain::main(file, &out_dir) {
         Ok(()) => 0,
         Err(_) => {
             // `translateFile` prints the Print-module buffer, which Susan's own

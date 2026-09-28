@@ -5,9 +5,10 @@
 // suite: cSources
 
 // #16458: NB must select the sparse solver for this system's torn loop (density
-// well below the 0.2 linear threshold), same as OB does.
+// well below the 0.2 linear threshold), same as OB does. Minimal tearing keeps the loop big.
 
 loadModel(ScalableTestSuite); getErrorString();
+setCommandLineOptions("--tearingMethod=minimalTearing"); getErrorString();
 
 translateModel(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10); getErrorString();
 
@@ -15,6 +16,8 @@ system("grep -c 'matrixFormat = OMC_MATRIX_SPARSE' ScalableTestSuite.Electrical.
 readFile("sparse_count.txt");
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

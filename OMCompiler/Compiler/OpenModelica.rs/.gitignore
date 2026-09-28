@@ -326,6 +326,7 @@ openmodelica_nf_frontend/src/NFCardinalityTable.rs
 openmodelica_nf_frontend/src/NFCeval.rs
 openmodelica_nf_frontend/src/NFCheckModel.rs
 openmodelica_nf_frontend/src/NFClass.rs
+openmodelica_nf_frontend/src/NFClassDiagram.rs
 openmodelica_nf_frontend/src/NFClassTree.rs
 openmodelica_nf_frontend/src/NFClockKind.rs
 openmodelica_nf_frontend/src/NFComplexType.rs
@@ -338,6 +339,7 @@ openmodelica_nf_frontend/src/NFConnectionSets.rs
 openmodelica_nf_frontend/src/NFConnections.rs
 openmodelica_nf_frontend/src/NFConnector.rs
 openmodelica_nf_frontend/src/NFConvertDAE.rs
+openmodelica_nf_frontend/src/NFDefUseChains.rs
 openmodelica_nf_frontend/src/NFDimension.rs
 openmodelica_nf_frontend/src/NFDuplicateTree.rs
 openmodelica_nf_frontend/src/NFEquation.rs

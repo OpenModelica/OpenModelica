@@ -438,6 +438,11 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::libzmq)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
+# FMUWrapper.h (fmilib.h) and the result file readers (omc_result.h).
+target_link_libraries(OMEditLib PUBLIC omc::3rd::fmilib)
+if(TARGET omc::result)
+  target_link_libraries(OMEditLib PUBLIC omc::result)
+endif()
 if(OM_OMEDIT_ENABLE_ANIMATION)
   target_link_libraries(OMEditLib PUBLIC
     Qt6::Quick Qt6::Quick3D

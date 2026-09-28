@@ -44,7 +44,7 @@ Install `homebrew` by following the instructions on <https://brew.sh/>, then ins
 dependencies for OpenModelica:
 
 ```sh
-brew install openjdk pkg-config cmake make ccache boost
+brew install openjdk pkg-config cmake make ccache boost qtwebengine qt5compat qtsvg qthttpserver qtquick3d
 echo "export PATH=\"$(brew --prefix openjdk)/bin:\$PATH\"" >> ~/.zshrc
 ```
 
@@ -118,7 +118,7 @@ cmake -S . -B build_cmake \
   -DCMAKE_C_FLAGS="-I/opt/local/include/libomp" \
   -DCMAKE_CXX_FLAGS="-I/opt/local/include/libomp"
 
-# With homebrew, you also need to disable the graphical clients.
+# With homebrew.
 # brew --prefix is /opt/homebrew on Apple Silicon and /usr/local on Intel.
 cmake -S . -B build_cmake \
   -DCMAKE_C_COMPILER=clang \
@@ -126,7 +126,6 @@ cmake -S . -B build_cmake \
   -DOM_OMC_ENABLE_FORTRAN=OFF \
   -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
   -DOM_OMC_ENABLE_MOO=OFF \
-  -DOM_ENABLE_GUI_CLIENTS=OFF \
   -DCMAKE_PREFIX_PATH="$(brew --prefix)"
 ```
 

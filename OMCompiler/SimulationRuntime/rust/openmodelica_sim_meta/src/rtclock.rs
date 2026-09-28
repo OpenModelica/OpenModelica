@@ -10,6 +10,24 @@
 
 use crate::driver::now_ms_host;
 
+/// C's `-clock`: what the timers read, in ms. Unset is the run's wall clock.
+static TIMER: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+pub fn set_timer(f: fn() -> f64) {
+    TIMER.store(f as usize, core::sync::atomic::Ordering::Relaxed);
+}
+
+#[inline]
+fn now() -> f64 {
+    match TIMER.load(core::sync::atomic::Ordering::Relaxed) {
+        0 => now_ms_host(),
+        p => {
+            let f: fn() -> f64 = unsafe { core::mem::transmute(p) };
+            f()
+        }
+    }
+}
+
 pub const TOTAL: usize = 0;
 pub const INIT: usize = 1;
 pub const STEP: usize = 2;
@@ -86,7 +104,7 @@ pub fn enabled() -> bool {
 pub fn tick(ix: usize) {
     let c = clocks();
     if c.on {
-        c.tick[ix] = now_ms_host();
+        c.tick[ix] = now();
         c.ncall[ix] += 1;
     }
 }
@@ -96,7 +114,7 @@ pub fn tick(ix: usize) {
 pub fn accumulate(ix: usize) {
     let c = clocks();
     if c.on {
-        c.acc[ix] += now_ms_host() - c.tick[ix];
+        c.acc[ix] += now() - c.tick[ix];
     }
 }
 

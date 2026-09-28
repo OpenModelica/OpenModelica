@@ -14,8 +14,8 @@ if not loadFile("ExtLib/package.mo") then
 end if;
 
 platforms := {
-  "x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0",
-  "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.27.0"};
+  "x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0",
+  "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.28.0"};
 if "" == buildModelFMU(ExtLib.Test, version="2.0", fmuType="me_cs", fileNamePrefix="ExternalDependency", platforms=platforms) then
   print(getErrorString());
   exit(1);
@@ -32,7 +32,7 @@ if not setCommandLineOptions("--fmiFlags=s:cvode") then
 end if;
 
 if "" == buildModelFMU(ExtLib.Test, version="2.0", fmuType="cs", fileNamePrefix="ExternalDependencyCVode",
-                       platforms={"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0"}) then
+                       platforms={"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0"}) then
   print(getErrorString());
   exit(1);
 end if;

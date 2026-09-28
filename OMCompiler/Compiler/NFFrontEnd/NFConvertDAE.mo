@@ -129,6 +129,8 @@ function convertVariables
   input output list<DAE.Element> elements;
 protected
   VariableConversionSettings settings;
+  ComponentRef rest, last_rest = ComponentRef.EMPTY();
+  Boolean encrypted, rest_encrypted = false;
 algorithm
   settings := VariableConversionSettings.VARIABLE_CONVERSION_SETTINGS(
     isFunctionParameter = false,
@@ -136,13 +138,26 @@ algorithm
   );
 
   for var in listReverse(variables) loop
-  elements := convertVariable(var, settings) :: elements;
+    // The variables of an instance share its name as their prefix.
+    if ComponentRef.isCref(var.name) then
+      rest := ComponentRef.rest(var.name);
+      if not referenceEq(rest, last_rest) then
+        last_rest := rest;
+        rest_encrypted := Variable.isEncryptedName(rest);
+      end if;
+      encrypted := rest_encrypted or Variable.isEncryptedNode(ComponentRef.node(var.name));
+    else
+      encrypted := false;
+    end if;
+
+    elements := convertVariable(var, settings, encrypted) :: elements;
   end for;
 end convertVariables;
 
 function convertVariable
   input Variable var;
   input VariableConversionSettings settings;
+  input Boolean encrypted;
   output DAE.Element daeVar;
 protected
   Option<DAE.VariableAttributes> var_attr;
@@ -151,7 +166,7 @@ algorithm
   binding_exp := Binding.toDAEExp(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
-    var.visibility, var_attr, var.comment, settings, var.info, Variable.isEncrypted(var));
+    var.visibility, var_attr, var.comment, settings, var.info, encrypted);
 end convertVariable;
 
 function makeDAEVar
@@ -541,7 +556,7 @@ protected
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF() then InstNode.name(ComponentRef.node(exp.cref));
+    case Expression.CREF() then ComponentRef.nodeName(exp.cref);
     case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then getStateSelectName(e);
     else
       algorithm
@@ -580,7 +595,7 @@ protected
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
+    case Expression.CREF(cref = ComponentRef.CREF()) then ComponentRef.nodeName(exp.cref);
     else
       algorithm
         Error.terminate(getInstanceName() +

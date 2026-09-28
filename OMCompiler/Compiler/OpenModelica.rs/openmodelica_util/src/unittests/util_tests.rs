@@ -412,9 +412,9 @@ fn test_real_range_size_single_element() {
 
 #[test]
 fn test_is_not_empty_string() {
-    assert!(!U::isNotEmptyString(literal!("")));
-    assert!(U::isNotEmptyString(literal!("x")));
-    assert!(U::isNotEmptyString(literal!("hello world")));
+    assert!(!U::isNotEmptyString(&literal!("")));
+    assert!(U::isNotEmptyString(&literal!("x")));
+    assert!(U::isNotEmptyString(&literal!("hello world")));
 }
 
 // ── removeLast3Char / removeLast4Char / removeLastNChar ───────────────────────
@@ -497,29 +497,29 @@ fn test_get_option_or_default() {
 fn test_option_equal_both_none() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(U::optionEqual(None::<i32>, None::<i32>, eq_fn).unwrap());
+    assert!(U::optionEqual(None::<i32>, None::<i32>, &*eq_fn).unwrap());
 }
 
 #[test]
 fn test_option_equal_both_some_equal() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(U::optionEqual(Some(5i32), Some(5i32), eq_fn).unwrap());
+    assert!(U::optionEqual(Some(5i32), Some(5i32), &*eq_fn).unwrap());
 }
 
 #[test]
 fn test_option_equal_both_some_not_equal() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(!U::optionEqual(Some(5i32), Some(6i32), eq_fn).unwrap());
+    assert!(!U::optionEqual(Some(5i32), Some(6i32), &*eq_fn).unwrap());
 }
 
 #[test]
 fn test_option_equal_one_none() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(!U::optionEqual(Some(5i32), None, eq_fn.clone()).unwrap());
-    assert!(!U::optionEqual(None, Some(5i32), eq_fn).unwrap());
+    assert!(!U::optionEqual(Some(5i32), None, &*eq_fn).unwrap());
+    assert!(!U::optionEqual(None, Some(5i32), &*eq_fn).unwrap());
 }
 
 // ── applyOption ───────────────────────────────────────────────────────────────
@@ -527,13 +527,13 @@ fn test_option_equal_one_none() {
 #[test]
 fn test_apply_option_some() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOption(Some(5i32), double).unwrap(), Some(10));
+    assert_eq!(U::applyOption(Some(5i32), &*double).unwrap(), Some(10));
 }
 
 #[test]
 fn test_apply_option_none() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOption(None::<i32>, double).unwrap(), None);
+    assert_eq!(U::applyOption(None::<i32>, &*double).unwrap(), None);
 }
 
 // ── applyOptionOrDefault ──────────────────────────────────────────────────────
@@ -541,25 +541,25 @@ fn test_apply_option_none() {
 #[test]
 fn test_apply_option_or_default_some() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOptionOrDefault(Some(5i32), double, -1).unwrap(), 10);
+    assert_eq!(U::applyOptionOrDefault(Some(5i32), &*double, -1).unwrap(), 10);
 }
 
 #[test]
 fn test_apply_option_or_default_none() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOptionOrDefault(None::<i32>, double, -1i32).unwrap(), -1);
+    assert_eq!(U::applyOptionOrDefault(None::<i32>, &*double, -1i32).unwrap(), -1);
 }
 
 // ── stringNotEqual ────────────────────────────────────────────────────────────
 
 #[test]
 fn test_string_not_equal_same() {
-    assert!(!U::stringNotEqual(literal!("hello"), literal!("hello")));
+    assert!(!U::stringNotEqual(&literal!("hello"), &literal!("hello")));
 }
 
 #[test]
 fn test_string_not_equal_different() {
-    assert!(U::stringNotEqual(literal!("hello"), literal!("world")));
+    assert!(U::stringNotEqual(&literal!("hello"), &literal!("world")));
 }
 
 // ── stringPadLeft / stringPadRight ────────────────────────────────────────────
@@ -593,24 +593,24 @@ fn test_string_pad_right_no_pad_needed() {
 #[test]
 fn test_select_first_non_empty_string_basic() {
     let lst = list![literal!(""), literal!(""), literal!("found"), literal!("other")];
-    assert_eq!(U::selectFirstNonEmptyString(lst), literal!("found"));
+    assert_eq!(U::selectFirstNonEmptyString(&lst), literal!("found"));
 }
 
 #[test]
 fn test_select_first_non_empty_string_first() {
     let lst = list![literal!("first"), literal!("second")];
-    assert_eq!(U::selectFirstNonEmptyString(lst), literal!("first"));
+    assert_eq!(U::selectFirstNonEmptyString(&lst), literal!("first"));
 }
 
 #[test]
 fn test_select_first_non_empty_string_all_empty() {
     let lst = list![literal!(""), literal!(""), literal!("")];
-    assert_eq!(U::selectFirstNonEmptyString(lst), literal!(""));
+    assert_eq!(U::selectFirstNonEmptyString(&lst), literal!(""));
 }
 
 #[test]
 fn test_select_first_non_empty_nil() {
-    assert_eq!(U::selectFirstNonEmptyString(nil()), literal!(""));
+    assert_eq!(U::selectFirstNonEmptyString(&nil()), literal!(""));
 }
 
 // ── flagValue ─────────────────────────────────────────────────────────────────
@@ -621,14 +621,14 @@ fn test_flag_value_found() -> Result<()> {
         literal!("-d"), literal!("debug"),
         literal!("-s"), literal!("output.mo")
     ];
-    assert_eq!(U::flagValue(literal!("-s"), args)?, literal!("output.mo"));
+    assert_eq!(U::flagValue(&literal!("-s"), args)?, literal!("output.mo"));
     Ok(())
 }
 
 #[test]
 fn test_flag_value_not_found() -> Result<()> {
     let args = list![literal!("-d"), literal!("debug")];
-    assert_eq!(U::flagValue(literal!("-s"), args)?, literal!(""));
+    assert_eq!(U::flagValue(&literal!("-s"), args)?, literal!(""));
     Ok(())
 }
 
@@ -636,7 +636,7 @@ fn test_flag_value_not_found() -> Result<()> {
 fn test_flag_value_flag_is_last() -> Result<()> {
     // Flag is present but there's no value after it
     let args = list![literal!("-d"), literal!("debug"), literal!("-s")];
-    assert_eq!(U::flagValue(literal!("-s"), args)?, literal!(""));
+    assert_eq!(U::flagValue(&literal!("-s"), args)?, literal!(""));
     Ok(())
 }
 
@@ -645,18 +645,18 @@ fn test_flag_value_flag_is_last() -> Result<()> {
 #[test]
 fn test_int_product_basic() {
     let lst = list![2i32, 3i32, 4i32];
-    assert_eq!(U::intProduct(lst).unwrap(), 24);
+    assert_eq!(U::intProduct(&lst).unwrap(), 24);
 }
 
 #[test]
 fn test_int_product_empty() {
     // fold over empty list with identity 1
-    assert_eq!(U::intProduct(nil()).unwrap(), 1);
+    assert_eq!(U::intProduct(&nil()).unwrap(), 1);
 }
 
 #[test]
 fn test_int_product_single() {
-    assert_eq!(U::intProduct(list![7i32]).unwrap(), 7);
+    assert_eq!(U::intProduct(&list![7i32]).unwrap(), 7);
 }
 
 // ── mulListIntegerOpt ─────────────────────────────────────────────────────────
@@ -664,7 +664,7 @@ fn test_int_product_single() {
 #[test]
 fn test_mul_list_integer_opt_all_some() -> Result<()> {
     let lst = list![Some(2i32), Some(3i32), Some(4i32)];
-    assert_eq!(U::mulListIntegerOpt(lst, 1)?, 24);
+    assert_eq!(U::mulListIntegerOpt(&lst, 1)?, 24);
     Ok(())
 }
 
@@ -672,14 +672,14 @@ fn test_mul_list_integer_opt_all_some() -> Result<()> {
 fn test_mul_list_integer_opt_with_none() -> Result<()> {
     // None values are skipped (don't multiply by zero)
     let lst = list![Some(2i32), None, Some(3i32)];
-    assert_eq!(U::mulListIntegerOpt(lst, 1)?, 6);
+    assert_eq!(U::mulListIntegerOpt(&lst, 1)?, 6);
     Ok(())
 }
 
 #[test]
 fn test_mul_list_integer_opt_empty() -> Result<()> {
     let lst: metamodelica::List<Option<i32>> = nil();
-    assert_eq!(U::mulListIntegerOpt(lst, 1)?, 1);
+    assert_eq!(U::mulListIntegerOpt(&lst, 1)?, 1);
     Ok(())
 }
 

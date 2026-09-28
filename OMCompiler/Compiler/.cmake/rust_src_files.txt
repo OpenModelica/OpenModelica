@@ -54,6 +54,7 @@ metamodelica_derive/Cargo.toml
 metamodelica_derive/src/lib.rs
 mmtorust/Cargo.toml
 mmtorust/src/MM.rs
+mmtorust/src/borrow_params.rs
 mmtorust/src/codegen.rs
 mmtorust/src/const_patterns.rs
 mmtorust/src/dep_analysis.rs
@@ -193,6 +194,7 @@ openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/errors.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/expressions.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/external_calls.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/externals.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/flat.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/function.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/generic_calls.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/imports.rs
@@ -439,6 +441,7 @@ openmodelica_util/build.rs
 openmodelica_util/src/Autoconf.rs
 openmodelica_util/src/FMIExt.rs
 openmodelica_util/src/File.rs
+openmodelica_util/src/Flags.handwritten.rs
 openmodelica_util/src/Global.rs
 openmodelica_util/src/Globals.rs
 openmodelica_util/src/IOStreamExt.rs

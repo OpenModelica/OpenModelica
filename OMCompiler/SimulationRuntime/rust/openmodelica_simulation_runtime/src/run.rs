@@ -42,7 +42,11 @@ impl RunCell {
 
 /// `-lv` lines and the model's own `print` share this stream, in call order.
 fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
-    print_line(s);
+    if crate::port::xmltcp() {
+        crate::port::log(s);
+    } else {
+        print_line(s);
+    }
 }
 
 /// Through C's `stdout` buffer: the generated code, libOpenModelicaRuntimeC and
@@ -56,23 +60,31 @@ fn print_line(s: &str) {
     unsafe { libc::fwrite(s.as_ptr().cast(), 1, s.len(), omr_stdout()) };
 }
 
+/// A `LOG_SUCCESS` line, past any capture `omclog` has open.
+fn success(msg: &str) {
+    if omclog::is_xml() {
+        let element = omclog::xml_element(omclog::INFO, omclog::SUCCESS, false, msg, &[]);
+        log_sink(omclog::SUCCESS, omclog::INFO, &element);
+    } else {
+        print_line(&format!("LOG_SUCCESS       | info    | {msg}\n"));
+    }
+}
+
 /// C's line at the end of `initializeModel`, naming the homotopy steps it took.
 fn init_done() {
     let steps = driver::init_homotopy_steps();
     if steps == 0 {
-        print_line("LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\n");
+        success("The initialization finished successfully without homotopy method.");
     } else {
         let local = if driver::init_homotopy_local() { "local " } else { "" };
-        print_line(&format!(
-            "LOG_SUCCESS       | info    | The initialization finished successfully with {steps} {local}homotopy steps.\n"
-        ));
+        success(&format!("The initialization finished successfully with {steps} {local}homotopy steps."));
     }
 }
 
 /// C prints this before the external objects are destroyed, so their own output
 /// follows it.
 fn teardown() {
-    print_line("LOG_SUCCESS       | info    | The simulation finished successfully.\n");
+    success("The simulation finished successfully.");
 }
 
 fn argv_strings(argc: c_int, argv: *mut *mut c_char) -> Vec<String> {
@@ -148,8 +160,12 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     driver::set_log_sink_is_stdout(true);
     driver::set_init_done_hook(init_done);
     driver::set_teardown_hook(teardown);
+    if let Some(code) = crate::help::serve(&args) {
+        std::process::exit(code);
+    }
     fill_omc_flags(&args);
 
+    simflags::serve_executable();
     let flags = match simflags::parse(&args) {
         Ok(f) => f,
         Err(e) => {
@@ -157,6 +173,17 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
             return 1;
         }
     };
+    if let Some(port) = flags.port
+        && !crate::port::connect(port, flags.log_xmltcp)
+        && flags.log_xmltcp
+    {
+        omclog::error(
+            omclog::STDOUT,
+            false,
+            "xmltcp log format requires a TCP-port to be passed (and successfully open)",
+        );
+        return 1;
+    }
     // `-abortSlowSimulation`: without this a chattering model runs to the stop time.
     driver::set_abort_slow(flags.abort_slow);
     // `-nls`, `-ls`, `-newton*`, `-hom*`, ... for the shared solvers.
@@ -169,9 +196,15 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
     let prefix = cstr(md.modelFilePrefix);
 
-    // C reads `<prefix>_init.xml` from the working directory unless `-f` names
-    // another file; the model may also carry the contents compiled in.
-    let xml_path = flag_value(FLAG_F).unwrap_or_else(|| format!("{prefix}_init.xml"));
+    // C reads `<prefix>_init.xml` from `-inputPath` (else the working directory)
+    // unless `-f` names another file; the model may also carry the contents
+    // compiled in.
+    let xml_path = simflags::with_flags(|f| f.init_xml.clone()).unwrap_or_else(|| {
+        match flag_value(FLAG_INPUT_PATH) {
+            Some(dir) => format!("{dir}/{prefix}_init.xml"),
+            None => format!("{prefix}_init.xml"),
+        }
+    });
     let xml = if !md.initXMLData.is_null() {
         model_data::parse_str(&cstr(md.initXMLData))
     } else {
@@ -205,13 +238,20 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     crate::nls::install_hooks(data, thread_data, &prefix);
     // The per-system clocks cost two clock reads per solve, so they are only armed
     // where `LOG_STATS_V` will print them (C's `measure_time_flag` equivalent).
-    openmodelica_solvers::sysstat::enable(omclog::active(omclog::STATS_V));
+    // `-nlsInfo` reports the same per-system totals.
+    openmodelica_solvers::sysstat::enable(
+        omclog::active(omclog::STATS_V) || simflags::with_flags(|f| f.nls_info),
+    );
     crate::nls::warn_once_unsupported_nls();
     // C's `modelInfoInit` under `+profiling`: the generated code indexes its block
     // clocks past `nProfileBlocks`, which only the `_info.json` knows.
     crate::info_json::init_profiling(md);
     let rt = crate::data::initialize(data, thread_data);
     si.minStepSize = 4.0 * f64::EPSILON * si.startTime.abs().max(si.stopTime.abs());
+    if crate::port::is_open() && output_format != "ia" {
+        crate::port::watch(data);
+        crate::port::status("Starting", 0.0, si.startTime, 0.0);
+    }
     RUN.set(Box::new(Run { rt, xml, prefix }));
     0
 }
@@ -245,6 +285,7 @@ pub extern "C" fn _main_SimulationRuntime(
     let ok = crate::support::protected_global(thread_data, || {
         ret = start_non_interactive_simulation(argc, argv, data, thread_data);
     });
+    crate::port::close();
     // C's `MMC_CATCH_INTERNAL` leaves the run here without the frees below it.
     if !ok {
         unsafe { (*(*data).simulationInfo).simulationSuccess = 1 };
@@ -268,8 +309,11 @@ fn start_non_interactive_simulation(
     };
     let Run { rt, xml, prefix } = *run;
     let layout = rt.layout;
-    let mut meta = crate::meta::build(data, &xml, &layout, &prefix);
+    let mut meta = crate::meta::build(data, rt.thread_data, &xml, &layout, &prefix);
     simflags::with_flags(|f| meta.apply_flags(f));
+    if let Some(clock) = simflags::with_flags(|f| f.clock.clone()) {
+        select_clock(&clock);
+    }
 
     let mut engine = CEngine::new(rt);
     // What `-saveInitialGuess_system` writes out from inside a solve.
@@ -288,7 +332,16 @@ fn start_non_interactive_simulation(
         simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
     openmodelica_sim_meta::result::file::arm(meta.output_keep(None), precision, path.clone());
     let method = meta.method.clone();
-    let (result, _label) = match driver::drive(&mut engine, &meta, 0, &method, false, false) {
+    let drove = driver::drive(&mut engine, &meta, 0, &method, false, false);
+    driver::rt_sync::finish();
+    if crate::port::is_open() && meta.output_format != "ia" {
+        let (completion, time) = crate::port::position();
+        match &drove {
+            Ok(_) => crate::port::status("Finished", 1.0, time, 0.0),
+            Err(_) => crate::port::status("Simulation aborted", completion, time, 0.0),
+        }
+    }
+    let (result, _label) = match drove {
         Ok(v) => v,
         Err(e) => {
             openmodelica_sim_meta::result::file::finish();
@@ -389,9 +442,42 @@ pub extern "C" fn _main_OptimizationRuntime(
     omclog::error(
         omclog::STDOUT,
         false,
-        "the Rust simulation runtime does not serve -moo yet; build with --simCodeTarget=C",
+        "the Rust simulation runtime does not serve -moo yet; build with --simCodeTarget=C.old",
     );
     1
+}
+
+/// C's `rt_set_clock` for `-clock`.
+fn select_clock(name: &str) {
+    let timer: Option<fn() -> f64> = match name {
+        "RT" => return,
+        #[cfg(unix)]
+        "CPU" => Some(|| {
+            let mut ts = libc::timespec { tv_sec: 0, tv_nsec: 0 };
+            unsafe { libc::clock_gettime(libc::CLOCK_PROCESS_CPUTIME_ID, &mut ts) };
+            ts.tv_sec as f64 * 1e3 + ts.tv_nsec as f64 * 1e-6
+        }),
+        // C reports cycles where the other clocks report seconds.
+        #[cfg(target_arch = "x86_64")]
+        "CYC" => Some(|| unsafe { core::arch::x86_64::_rdtsc() } as f64 * 1e3),
+        "CPU" | "CYC" => None,
+        _ => {
+            omclog::warning!(
+                omclog::STDOUT,
+                false,
+                "[unknown clock-type] got {name}, expected CPU|RT|CYC. Defaulting to RT."
+            );
+            return;
+        }
+    };
+    match timer {
+        Some(f) => openmodelica_sim_meta::rtclock::set_timer(f),
+        None => omclog::warning!(
+            omclog::STDOUT,
+            false,
+            "Chosen clock-type: {name} not available for the current platform. Defaulting to real-time."
+        ),
+    }
 }
 
 /// `-r` names the result file, else `modelData`'s `resultFileName`, else

@@ -51,12 +51,68 @@ struct Scratch {
     /// The same as the shared solver wants it, `colptr ++ rowidx`, for the dense
     /// ladder's scatter.
     pattern: Vec<u32>,
+    /// The pattern is the full one KINSOL gets for a system without its own, which
+    /// the model does not fill.
+    full_pattern: bool,
     /// C's `oldValueList`, as the depth the shared solver bounds it to.
     history: VecHistory,
     /// `solveHomotopy`'s residual scaling, which survives between calls.
     res_scaling: Vec<f64>,
     /// C's `hybrdData->useXScaling`, which `solveHybrd` carries between calls.
     use_xscaling: bool,
+    csv: Option<NlsCsv>,
+}
+
+/// `-nlsInfo`: C's `<prefix>_NLS<eq>StatsCall.csv` and `…StatsIter.csv`, written a
+/// line at a time because the system data is never freed.
+struct NlsCsv {
+    call: std::fs::File,
+    iter: std::fs::File,
+}
+
+/// C's `omc_write_csv`, which quotes every field.
+fn csv_line(file: &mut std::fs::File, fields: &[String]) {
+    use std::io::Write;
+    let quoted: Vec<String> = fields.iter().map(|f| format!("\"{}\"", f.replace('"', "\"\""))).collect();
+    let _ = file.write_all(format!("{}\n", quoted.join(",")).as_bytes());
+}
+
+fn open_nls_csv(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) -> Option<NlsCsv> {
+    let prefix = crate::model_data::cstr(unsafe { (*(*data).modelData).modelFilePrefix });
+    let eq = sys.equationIndex;
+    let open = |kind: &str| std::fs::File::create(format!("{prefix}_NLS{eq}Stats{kind}.csv")).ok();
+    let mut csv = NlsCsv { call: open("Call")?, iter: open("Iter")? };
+    let head = |names: &[&str]| names.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    csv_line(
+        &mut csv.call,
+        &head(&["numberOfCall", "simulationTime", "iterations", "numberOfFunctionCall", "solvingTime", "solvedSystem"]),
+    );
+    let vars = crate::info_json::equation_vars(data, eq as u32);
+    let mut iter = head(&["numberOfCall", "iteration"]);
+    iter.extend(vars.iter().cloned());
+    iter.extend((1..=vars.len()).map(|j| format!("r{j}")));
+    iter.extend(head(&["delta_x", "delta_x_scaled", "error_f", "error_f_scaled", "lambda"]));
+    csv_line(&mut csv.iter, &iter);
+    Some(csv)
+}
+
+std::thread_local! {
+    /// The system being solved and its call number, for [`write_iter_row`].
+    static CSV_TARGET: core::cell::Cell<(*mut NlsCsv, i64)> =
+        const { core::cell::Cell::new((core::ptr::null_mut(), 0)) };
+}
+
+fn write_iter_row(st: &nls::NewtonIterStat) {
+    let (csv, num) = CSV_TARGET.with(|c| c.get());
+    let Some(csv) = (unsafe { csv.as_mut() }) else { return };
+    let g = |v: f64| openmodelica_solvers::format_g(v, 6);
+    let mut row = vec![num.to_string(), st.iteration.to_string()];
+    row.extend(st.x.iter().map(|&v| g(v)));
+    row.extend(st.f.iter().map(|&v| g(v)));
+    row.extend(
+        [st.delta_x_sqrd, st.delta_x_sqrd_scaled, st.error_f_sqrd, st.error_f_sqrd_scaled, st.lambda].map(g),
+    );
+    csv_line(&mut csv.iter, &row);
 }
 
 /// [`nls::History`] over a plain `Vec`: C's list is unbounded and reaches 40+, but
@@ -202,7 +258,9 @@ impl nls::NlsModel for CModel {
             },
             (None, None) => return,
         };
-        if rc == -1 {
+        // An external function's `ModelicaError` returns with the error raised
+        // rather than jumping.
+        if rc == -1 || crate::support::error_raised(self.thread_data) {
             // The message is already on the log, from the assert itself. Recording
             // the hit is what turns this trial into a rejected one, exactly as the
             // wasm model's `rt_nls_note_assert` does.
@@ -274,10 +332,14 @@ impl nls::NlsState for CState {
 
     fn set_relation_mode(&mut self, mode: u32) {
         // The pair `relationhysteresis` branches on: held relations are
-        // `solveContinuous`, fresh ones `discreteCall`.
+        // `solveContinuous`, fresh ones `discreteCall`. Holding them leaves
+        // `discreteCall` alone, as C's solve does: a `when` body inside the
+        // system is gated on it and still runs at an event.
         let si = self.info();
         si.solveContinuous = (mode == 0) as modelica_boolean;
-        si.discreteCall = (mode != 0) as modelica_boolean;
+        if mode != 0 {
+            si.discreteCall = 1;
+        }
     }
 
     fn relations(&self, out: &mut [i32]) {
@@ -322,11 +384,18 @@ struct CBackend<'a> {
     colptr: &'a [i32],
     rowidx: &'a [i32],
     nnz: usize,
+    /// The codegen chose the sparse format.
+    sparse_format: bool,
 }
 
 impl nls::NlsBackend for CBackend<'_> {
+    /// C's `initializeNonlinearSystemData`: a sparse-format system goes to KINSOL,
+    /// and `-nls=kinsol` takes every system with its pattern.
     fn has_sparse(&self) -> bool {
-        nls::kinsol::AVAILABLE && !self.colptr.is_empty()
+        nls::kinsol::AVAILABLE
+            && !self.colptr.is_empty()
+            && (self.sparse_format
+                || matches!(solverflags::nls(), solverflags::Nls::Kinsol | solverflags::Nls::KinsolB))
     }
 
     fn has_kinsol(&self) -> bool {
@@ -350,6 +419,7 @@ impl nls::NlsBackend for CBackend<'_> {
             rowidx: self.rowidx,
             colors: req.colors,
             max: req.max,
+            min: req.min,
         };
         nls::kinsol::solve_selected(
             self.handle, req.n, &pat, req.nominal, req.guess, req.old_values, req.x, req.eq_index,
@@ -384,6 +454,10 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     let si = unsafe { &mut *(*data).simulationInfo };
     omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
     omclog::info!(omclog::NLS, false, "{} non-linear systems", md.nNonLinearSystems);
+    let nls_info = openmodelica_sim_meta::simflags::with_flags(|f| f.nls_info);
+    if nls_info {
+        nls::set_newton_iter_hook(Some(write_iter_row));
+    }
     for i in 0..md.nNonLinearSystems as usize {
         let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
         let size = sys.size.max(0) as usize;
@@ -392,6 +466,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.lastTimeSolved = 0.0;
         sys.totalTime = 0.0;
         sys.solved = NLS_SOLVED;
+        sys.logActive = 1;
 
         if sys.residualFunc.is_none() && sys.strictTearingFunctionCall.is_none() {
             crate::throw(thread_data, "residual function pointer is invalid");
@@ -446,6 +521,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             crate::support::freeSparsePattern(sys.sparsePattern);
             sys.sparsePattern = core::ptr::null_mut();
             unsafe { crate::support::omc_flag[crate::abi::FLAG_NO_SCALING] = 1 };
+            openmodelica_solvers::solverflags::set_no_scaling();
         }
 
         register_names(data, sys);
@@ -462,9 +538,11 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             colptr,
             rowidx,
             pattern,
+            full_pattern: false,
             history: VecHistory::default(),
             res_scaling: vec![0.0; size.max(1)],
             use_xscaling: true,
+            csv: nls_info.then(|| open_nls_csv(data, sys)).flatten(),
         })) as *mut c_void;
     }
     omclog::close(omclog::NLS);
@@ -505,11 +583,11 @@ fn register_names(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) {
 }
 
 /// The system's `SPARSE_PATTERN` as CSC plus its colouring, or empty where the
-/// backend chose a dense factorization or the pattern does not survive C's
+/// model has none, it reaches past the system's rows, or it does not survive C's
 /// `sparsitySanityCheck`. A missing `analyticalJacobianColumn` is not a reason to
 /// drop it -- `nlsSparseJac` differences the pattern instead.
 fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>, Vec<u32>) {
-    if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() {
+    if sys.sparsePattern.is_null() {
         return (Vec::new(), Vec::new(), Vec::new());
     }
     let sp = unsafe { &*sys.sparsePattern };
@@ -523,7 +601,12 @@ fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i
         colptr[c] = colptr[cols];
     }
     let nnz = colptr[size] as usize;
-    let rowidx = (0..nnz).map(|k| unsafe { *sp.index.add(k) } as i32).collect();
+    let rowidx: Vec<i32> = (0..nnz).map(|k| unsafe { *sp.index.add(k) } as i32).collect();
+    // A torn system's Jacobian may carry residual rows past the system's own,
+    // which only the dense evaluation knows to leave out.
+    if rowidx.iter().any(|&r| r as usize >= size) {
+        return (Vec::new(), Vec::new(), Vec::new());
+    }
     // C's `colorCols` counts from 1; a column past `sizeCols` gets its own colour.
     let mut next = sp.maxColors;
     let colors = (0..size)
@@ -584,6 +667,7 @@ pub extern "C" fn solve_nonlinear_system(
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let sys = unsafe { &mut *si.nonlinearSystemData.add(sys_number as usize) };
+    let _quiet = crate::support::QuietSystem::new(sys.logActive);
     let size = sys.size.max(0) as usize;
     let time = unsafe { (**(*data).localData).timeValue };
 
@@ -610,7 +694,7 @@ pub extern "C" fn solve_nonlinear_system(
     let sd: &mut Scratch = unsafe { &mut *scratch(sys) };
     // The homotopy solvers drive an `n x (n+1)` Jacobian, which no sparse pattern
     // describes; such a system fills the dense shape whatever its format says.
-    let csc = !sd.colptr.is_empty() && !lambda_unknown && has_jacobian;
+    let csc = !sd.colptr.is_empty() && !sd.full_pattern && !lambda_unknown && has_jacobian;
     // C's `initKinsolMemory` on a system without a pattern: `nnz = size*size`, a
     // full CSC whose value order is the dense column-major one the model fills.
     if sd.colptr.is_empty()
@@ -620,6 +704,7 @@ pub extern "C" fn solve_nonlinear_system(
         sd.colptr = (0..=size).map(|c| (c * size) as i32).collect();
         sd.rowidx = (0..size * size).map(|k| (k % size) as i32).collect();
         sd.pattern = sd.colptr.iter().chain(&sd.rowidx).map(|&v| v as u32).collect();
+        sd.full_pattern = true;
     }
     let full_pattern = !csc && !sd.colptr.is_empty();
     let outer_stage = unsafe { (*thread_data).currentErrorStage };
@@ -630,6 +715,7 @@ pub extern "C" fn solve_nonlinear_system(
         colptr: &sd.colptr,
         rowidx: &sd.rowidx,
         nnz: sd.rowidx.len(),
+        sparse_format: sys.matrixFormat == OMC_MATRIX_SPARSE,
     };
 
     let nominal = unsafe { core::slice::from_raw_parts(sys.nominal, size) }.to_vec();
@@ -672,7 +758,11 @@ pub extern "C" fn solve_nonlinear_system(
             last_solved: &mut sys.lastTimeSolved,
             use_xscaling: &mut sd.use_xscaling,
         };
-        nls::solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
+        let csv = sd.csv.as_mut().map_or(core::ptr::null_mut(), |c| c as *mut NlsCsv);
+        CSV_TARGET.with(|c| c.set((csv, sys.numberOfCall as i64 + 1)));
+        let ret = nls::solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend);
+        CSV_TARGET.with(|c| c.set((core::ptr::null_mut(), 0)));
+        ret
     };
 
     // C's solvers leave the answer in `nlsx`, and that -- not the unknown slots --
@@ -684,6 +774,24 @@ pub extern "C" fn solve_nonlinear_system(
     }
     sys.solved = if ret == 1 { NLS_FAILED } else { NLS_SOLVED };
     sys.numberOfCall += 1;
+    if let Some(csv) = sd.csv.as_mut() {
+        let stat = openmodelica_solvers::sysstat::systems()
+            .iter()
+            .find(|s| s.nonlinear && s.eq_index == sys.equationIndex as i32)
+            .copied()
+            .unwrap_or_default();
+        csv_line(
+            &mut csv.call,
+            &[
+                sys.numberOfCall.to_string(),
+                openmodelica_solvers::format_g(time, 6),
+                stat.iters.to_string(),
+                stat.res_evals.to_string(),
+                format!("{:.6}", stat.total),
+                (if ret == 1 { "FALSE" } else { "TRUE" }).to_string(),
+            ],
+        );
+    }
     if ret == 1 {
         sys.numberOfFailures += 1;
     }

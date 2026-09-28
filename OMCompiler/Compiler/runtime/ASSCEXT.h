@@ -41,19 +41,20 @@
 #include <vector>
 #include <cassert>
 #include "../../SimulationRuntime/c/util/list.h"
+#include "../../SimulationRuntime/c/omc_dll.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-LIST** ASSC_fromDense(int* dense, int nv_, int ne_, int* nnz);
-void* allocAsscElement(const void* data);
-bool isEqualAsscMatrixDebug(LIST **mref, int *mappingref, int ne);
-void ASSC_setMatrixDebug(int* dense, int nv_, int ne_);
-void bareiss();
-int getNumberOfOperations();
-LIST* getOperations();
-void ASSC_printMatrix();
+DLLExport LIST** ASSC_fromDense(int* dense, int nv_, int ne_, int* nnz);
+DLLExport void* allocAsscElement(const void* data);
+DLLExport bool isEqualAsscMatrixDebug(LIST **mref, int *mappingref, int ne);
+DLLExport void ASSC_setMatrixDebug(int* dense, int nv_, int ne_);
+DLLExport void bareiss();
+DLLExport int getNumberOfOperations();
+DLLExport LIST* getOperations();
+DLLExport void ASSC_printMatrix();
 
 typedef struct{
   int index;

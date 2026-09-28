@@ -136,7 +136,7 @@ pub(super) fn register_jac_slots(
     // map only keeps the last; lowering a body binds these back over it.
     let mut registered: Vec<(String, SimSlot)> = Vec::new();
     // The new backend lists an array's base beside its elements.
-    let mut bases: HashSet<String> = HashSet::new();
+    let mut bases: HashSet<String> = HashSet::default();
     for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
         if let Some((base, _)) = array_element_of(&sv.name)? {
             bases.insert(base);
@@ -201,7 +201,7 @@ pub(super) fn build_lin_info(
     // A compile-time-constant input/output has no slot to perturb or read, so the
     // model cannot be linearized (nor can C's); `-l` reports it rather than
     // translation failing.
-    let slots = |list: &List<SimCodeVar::SimVar>| -> Result<Option<Vec<LinVar>>> {
+    let slots = |list: &List<metamodelica::Ref<SimCodeVar::SimVar>>| -> Result<Option<Vec<LinVar>>> {
         let mut out = Vec::new();
         for sv in lst(list) {
             let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else { return Ok(None) };
@@ -385,7 +385,7 @@ fn lin_n_res(lsystem: &SimCode::LinearSystem) -> Option<usize> {
 /// and `build_lin_jac_infos` (register) both call this so they agree on the set.
 fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<metamodelica::Ref<SimCode::LinearSystem>> {
     use SimCode::SimEqSystem as E;
-    let mut seen: HashSet<i32> = HashSet::new();
+    let mut seen: HashSet<i32> = HashSet::default();
     let mut out: Vec<metamodelica::Ref<SimCode::LinearSystem>> = Vec::new();
     let mut scan = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
@@ -453,7 +453,7 @@ pub(super) fn build_lin_jac_infos(
         let column_vars = jac_column_vars(jm);
         // As in `register_jac_slots`: an array base listed beside its elements gets
         // no slot, an access to it reaches the elements' through `array_acc`.
-        let mut bases: HashSet<String> = HashSet::new();
+        let mut bases: HashSet<String> = HashSet::default();
         for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
             if let Some((base, _)) = array_element_of(&sv.name)? {
                 bases.insert(base);
@@ -545,11 +545,11 @@ pub(super) fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> 
     use openmodelica_backend_types::BackendDAE::VarKind;
     let jm = lsystem.jacobianMatrix.as_ref()?;
     let col = lst(&jm.columns).next()?;
-    let mut seed_col: HashMap<String, usize> = HashMap::new();
+    let mut seed_col: HashMap<String, usize> = HashMap::default();
     for sv in lst(&jm.seedVars) {
         seed_col.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
     }
-    let mut dep: HashMap<String, Vec<usize>> = HashMap::new();
+    let mut dep: HashMap<String, Vec<usize>> = HashMap::default();
     for eq in lst(&col.constantEqns) {
         csc_accum_dep(eq, &seed_col, &mut dep)?;
     }

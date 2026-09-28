@@ -2936,6 +2936,7 @@ algorithm
         SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
         makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         fnCode := SimCodeFunction.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
+        SimCodeFunctionUtil.setTrivialRecords(extraRecordDecls);
 
         if Config.simCodeTarget() == "wasm-jit" then
           CodegenWasmJitFunctions.translateFunctions(fnCode);
@@ -2959,6 +2960,7 @@ algorithm
         fns := removeThreadDataFunction(fns, {});
         extraRecordDecls := removeThreadDataRecord(extraRecordDecls, {});
         fnCode := SimCodeFunction.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
+        SimCodeFunctionUtil.setTrivialRecords(extraRecordDecls);
 
         if Config.simCodeTarget() == "MidC" then
           Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);

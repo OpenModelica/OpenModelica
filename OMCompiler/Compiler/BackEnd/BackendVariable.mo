@@ -2388,7 +2388,7 @@ algorithm
   buckets := bucketCount(arr_size);
   indices := arrayCreate(buckets, {});
   arr := vararrayEmpty(arr_size);
-  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0);
+  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0, false);
 end emptyVars;
 
 protected function bucketCount
@@ -3063,7 +3063,8 @@ algorithm
   indices := arrayGet(inVariables.crefIndices, hash_idx);
 
   try
-    BackendDAE.CREFINDEX(index=arr_idx) := List.getMemberOnTrue(inVar.varName, indices, crefIndexEqualCref);
+    arr_idx := findCrefIndex(inVar.varName, indices);
+    true := arr_idx >= 0;
     outVariables.varArr := vararraySetnth(inVariables.varArr, arr_idx+1, inVar);
   else
     if outVariables.numberOfVars >= outVariables.bucketSize then
@@ -3075,6 +3076,9 @@ algorithm
     arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
     updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables);
     outVariables.numberOfVars := outVariables.numberOfVars + 1;
+    if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
+      outVariables.hasStartVars := true;
+    end if;
   end try;
 end addVar;
 
@@ -3118,6 +3122,9 @@ algorithm
   updatePrefixIndices(inVar.varName, num_vars, outVariables);
   outVariables.varArr := varr;
   outVariables.numberOfVars := num_vars + 1;
+  if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
+    outVariables.hasStartVars := true;
+  end if;
 end addNewVar;
 
 public function addVariables
@@ -3830,32 +3837,27 @@ protected function getVarHashed
   input BackendDAE.Variables inVariables;
   output BackendDAE.Var outVar;
   output Integer outIndex;
-protected
-  array<list<BackendDAE.CrefIndex>> indices;
-  BackendDAE.VariableArray arr;
-  Integer buckets, hash_idx;
-  list<BackendDAE.CrefIndex> cr_indices;
-  DAE.ComponentRef cr;
 algorithm
-  BackendDAE.VARIABLES(crefIndices=indices, varArr=arr, bucketSize=buckets) := inVariables;
-  hash_idx := intMod(hash, buckets) + 1;
-  cr_indices := indices[hash_idx];
-  BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
+  outIndex := findCrefIndex(inCref, arrayGet(inVariables.crefIndices, intMod(hash, inVariables.bucketSize) + 1));
+  true := outIndex >= 0;
   outIndex := outIndex + 1;
-  outVar as BackendDAE.VAR(varName = cr) := vararrayNth(arr, outIndex);
-  true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
+  outVar := vararrayNth(inVariables.varArr, outIndex);
+  true := ComponentReferenceBasics.crefEqualNoStringCompare(outVar.varName, inCref);
 end getVarHashed;
 
-protected function crefIndexEqualCref
-  input DAE.ComponentRef inCref;
-  input BackendDAE.CrefIndex inIndex;
-  output Boolean outMatch;
-protected
-  DAE.ComponentRef cr;
+protected function findCrefIndex
+  "The index stored for cr in a crefIndices bucket, or -1."
+  input DAE.ComponentRef cr;
+  input list<BackendDAE.CrefIndex> indices;
+  output Integer index = -1;
 algorithm
-  BackendDAE.CREFINDEX(cref = cr) := inIndex;
-  outMatch := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
-end crefIndexEqualCref;
+  for ci in indices loop
+    if ComponentReferenceBasics.crefEqualNoStringCompare(ci.cref, cr) then
+      index := ci.index;
+      return;
+    end if;
+  end for;
+end findCrefIndex;
 
 public function getVarIndexFromVars
   input list<BackendDAE.Var> inVars;
@@ -4183,17 +4185,8 @@ protected function traversingVarCrefFinder
   output BackendDAE.Var outVar;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  (outVar,outCrefs) := matchcontinue (inVar,inCrefs)
-    local
-      BackendDAE.Var v;
-      list<DAE.ComponentRef> cr_lst;
-      DAE.ComponentRef cr;
-    case (v,cr_lst)
-      algorithm
-        cr := varCref(v);
-      then (v,cr::cr_lst);
-    else (inVar,inCrefs);
-  end matchcontinue;
+  outVar := inVar;
+  outCrefs := varCref(inVar) :: inCrefs;
 end traversingVarCrefFinder;
 
 public function collectVarKindVarinVariables

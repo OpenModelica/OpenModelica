@@ -57,4 +57,4 @@ arguments. Both come from `openmodelica_result_cli`, a thin front over
 `openmodelica_result_files::ResultFile`, which also backs `libomc_result`, the
 C ABI (`openmodelica_result_capi/include/omc_result.h`, namespace `omc` for
 C++) that OMEdit and OMPlot open `.arrow`, `.mat`, `.csv` and `.plt` files
-through (cmake option `OM_RUST_RESULT_READERS`, on by default).
+through.

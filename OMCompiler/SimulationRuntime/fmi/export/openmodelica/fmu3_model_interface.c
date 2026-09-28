@@ -1528,7 +1528,7 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
    * copy the ring buffer data to INTERNAL_FMU_STATE
   */
   SIMULATION_DATA tmpSimData = {0};
-  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++)
+  for (int i = 0; i < SIZERINGBUFFER; i++)
   {
     tmpSimData.timeValue = fmudata->localData[i]->timeValue;
     /* allocate memory for all Real variables */
@@ -1847,7 +1847,7 @@ fmi3Status omcDeSerializeFMUstate(ModelInstance* c, const fmi3Byte serializedSta
   fmi3Byte *currElement = (fmi3Byte *) serializedState;
 
   SIMULATION_DATA tmpSimData = {0};
-  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++) {
+  for (int i = 0; i < SIZERINGBUFFER; i++) {
 
     /* timeValue */
     memcpy(&(tmpSimData.timeValue), currElement, sizeof(modelica_real));

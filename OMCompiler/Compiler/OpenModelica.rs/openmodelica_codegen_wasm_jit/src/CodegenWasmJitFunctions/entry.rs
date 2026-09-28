@@ -102,7 +102,7 @@ fn native_fallbacks(
     notes: &mut Vec<String>,
 ) -> Vec<String> {
     let missing = crate::CodegenWasmJit::missing_ext_symbols(ext_imports, wasm_libs);
-    if missing.is_empty() {
+    if missing.is_empty() || !crate::CodegenWasmJit::native_externals_allowed() {
         return Vec::new();
     }
     let mp = &fn_code.makefileParams;

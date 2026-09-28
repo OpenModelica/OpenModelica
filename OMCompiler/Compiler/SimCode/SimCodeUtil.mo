@@ -6003,18 +6003,8 @@ protected function traversingisVarDiscreteCrefFinder
   output BackendDAE.Var outVar;
   output list<DAE.ComponentRef> outTpl;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      BackendDAE.Var v;
-      list<DAE.ComponentRef> cr_lst;
-      DAE.ComponentRef cr;
-    case (v, cr_lst)
-      algorithm
-        true := BackendVariable.isVarDiscrete(v);
-        cr := BackendVariable.varCref(v);
-      then (v, cr::cr_lst);
-    else (inVar,inTpl);
-  end matchcontinue;
+  outVar := inVar;
+  outTpl := if BackendVariable.isVarDiscrete(inVar) then BackendVariable.varCref(inVar) :: inTpl else inTpl;
 end traversingisVarDiscreteCrefFinder;
 
 protected function jacToSimjac
@@ -11563,6 +11553,24 @@ algorithm
   oeqs := listReverse(racc);
 end traverseExpsEqSystems;
 
+protected function traverseStmtExp
+  input DAE.Exp inExp;
+  input DAE.Statement inStmt;
+  input A inArg;
+  input Func func;
+  output DAE.Exp outExp;
+  output A outArg;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end Func;
+algorithm
+  (outExp, outArg) := func(inExp, inArg);
+end traverseStmtExp;
+
 protected function traverseExpsEqSystem
   input SimCode.SimEqSystem eq;
   input Func func;
@@ -11587,6 +11595,7 @@ algorithm
       Integer index, res_index;
       BackendDAE.Constraints cons;
       BackendDAE.EquationAttributes eqAttr;
+      list<DAE.Statement> stmts;
 
     case (SimCode.SES_RESIDUAL(index, res_index, exp, source, eqAttr), a) algorithm
       (exp_, a) := func(exp, a);
@@ -11643,12 +11652,16 @@ algorithm
     then (eq, a);
 
     case (SimCode.SES_ALGORITHM(), a)
-      /* TODO: Me */
-    then (eq, a);
+      algorithm
+        (stmts, a) := DAEUtil.traverseDAEStmts(eq.statements, function traverseStmtExp(func = func), a);
+        eq_ := SimCode.SES_ALGORITHM(eq.index, stmts, eq.eqAttr);
+    then (eq_, a);
 
     case (SimCode.SES_INVERSE_ALGORITHM(), a)
-      /* TODO: Me */
-    then (eq, a);
+      algorithm
+        (stmts, a) := DAEUtil.traverseDAEStmts(eq.statements, function traverseStmtExp(func = func), a);
+        eq_ := SimCode.SES_INVERSE_ALGORITHM(eq.index, stmts, eq.knownOutputCrefs, eq.insideNonLinearSystem, eq.eqAttr);
+    then (eq_, a);
 
     case (SimCode.SES_LINEAR(), a)
       /* TODO: Me */

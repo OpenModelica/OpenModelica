@@ -23,6 +23,8 @@ pub struct Pattern<'a> {
     pub colors: &'a [u32],
     /// C's `nlsData->max`; empty leaves the columns unbounded.
     pub max: &'a [f64],
+    /// C's `nlsData->min`; empty sets no sign constraints.
+    pub min: &'a [f64],
 }
 
 /// The SUNDIALS-facing half: KINSOL over the sparse Jacobian with KLU as its
@@ -69,6 +71,7 @@ pub mod sun {
         fn KINSetNoInitSetup(kinmem: *mut c_void, no_init_setup: c_int) -> c_int;
         fn KINSetMaxSetupCalls(kinmem: *mut c_void, msbset: c_long) -> c_int;
         fn KINSetMaxNewtonStep(kinmem: *mut c_void, mxnewtstep: f64) -> c_int;
+        fn KINSetConstraints(kinmem: *mut c_void, constraints: NVector) -> c_int;
         fn KINSetLinearSolver(kinmem: *mut c_void, ls: SunLinSol, a: SunMatrix) -> c_int;
         fn KINSetJacFn(kinmem: *mut c_void, jac: JacFn) -> c_int;
         fn KINGetFuncNorm(kinmem: *mut c_void, fnorm: *mut f64) -> c_int;
@@ -286,6 +289,8 @@ pub mod sun {
         xscale: NVector,
         fscale: NVector,
         ftmp: NVector,
+        /// C's `kinsolData->constraints`, the signs kept from min/max.
+        constraints: NVector,
         j: SunMatrix,
         ls: SunLinSol,
         n: usize,
@@ -317,6 +322,7 @@ pub mod sun {
                 xscale: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
                 fscale: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
                 ftmp: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
+                constraints: unsafe { N_VNew_Serial(n as SunIndex, ctx) },
                 j: unsafe { SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx) },
                 ls: core::ptr::null_mut(),
                 n,
@@ -330,7 +336,7 @@ pub mod sun {
             };
             if s.kin.is_null()
                 || s.j.is_null()
-                || [s.u, s.xscale, s.fscale, s.ftmp].iter().any(|v| v.is_null())
+                || [s.u, s.xscale, s.fscale, s.ftmp, s.constraints].iter().any(|v| v.is_null())
             {
                 return None;
             }
@@ -361,6 +367,10 @@ pub mod sun {
         /// `xScale[i] = 1/max(nominal_i, |x_i|)` at the start point (C's
         /// `SCALING_NOMINALSTART`).
         fn x_scaling(&mut self, nominal: &[f64]) {
+            if openmodelica_solvers::solverflags::no_scaling() {
+                data(self.xscale, self.n).fill(1.0);
+                return;
+            }
             let start = data(self.u, self.n);
             for (s, (nom, x)) in data(self.xscale, self.n).iter_mut().zip(nominal.iter().zip(start.iter())) {
                 *s = 1.0 / fmath::fmax(*nom, fmath::fabs(*x));
@@ -372,6 +382,10 @@ pub mod sun {
         /// The Jacobian is re-evaluated unless the last solve reached full accuracy,
         /// where C scales the one still in memory.
         fn f_scaling(&mut self, ud: &mut Ud) {
+            if openmodelica_solvers::solverflags::no_scaling() {
+                data(self.fscale, self.n).fill(1.0);
+                return;
+            }
             let vals = &mut self.vals;
             if !self.solved {
                 // C assembles this one through `nlsSparseSymJac`/`nlsSparseJac`, so
@@ -402,6 +416,25 @@ pub mod sun {
             for s in fscale.iter_mut() {
                 *s = 1.0 / *s;
             }
+        }
+
+        /// C's `nlsKinsolSetConstraints`: keep the sign of a variable with a
+        /// non-negative min or non-positive max, if the start point has it.
+        fn set_constraints(&mut self, min: &[f64], max: &[f64]) {
+            let x = data(self.u, self.n);
+            let c = data(self.constraints, self.n);
+            for i in 0..self.n {
+                let (lo, hi) = (min.get(i).copied().unwrap_or(f64::MIN), max.get(i).copied().unwrap_or(f64::MAX));
+                // a variable on the bound would block every step that points outside
+                c[i] = if lo >= 0.0 && x[i] > 0.0 {
+                    if lo > 0.0 { 2.0 } else { 1.0 }
+                } else if hi <= 0.0 && x[i] < 0.0 {
+                    if hi < 0.0 { -2.0 } else { -1.0 }
+                } else {
+                    0.0
+                };
+            }
+            unsafe { KINSetConstraints(self.kin, self.constraints) };
         }
 
         /// `mxnewtstep = maxstepfactor * ‖xScale‖₂` (C's `nlsKinsolSetMaxNewtonStep`).
@@ -438,12 +471,14 @@ pub mod sun {
                 // A Jacobian KLU cannot factorize (all-zero at the start point, say):
                 // difference it from here on, as C re-points `KINSetJacFn`.
                 KIN_LSETUP_FAIL => self.numeric_jac = true,
-                KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
+                // the step got too small but the residual is not (checked by the caller)
+                KIN_STEP_LT_STPTOL | KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
                 _ => return false,
             }
             let mut fnorm = 0.0;
             unsafe { KINGetFuncNorm(self.kin, &mut fnorm) };
-            if fnorm < FTOL_LESS_ACCURACY {
+            // a stalled step was checked already
+            if code != KIN_STEP_LT_STPTOL && fnorm < FTOL_LESS_ACCURACY {
                 // C's "move forward with a less accurate solution".
                 unsafe {
                     KINSetFuncNormTol(self.kin, FTOL_LESS_ACCURACY);
@@ -509,13 +544,25 @@ pub mod sun {
                 self.x_scaling(nominal);
                 self.f_scaling(&mut ud);
                 self.max_newton_step();
+                self.set_constraints(pat.min, pat.max);
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 let mut iters: c_long = 0;
                 unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
                 crate::note_nls_iters((iters - self.iters_seen).max(0) as u64);
                 self.iters_seen = iters;
-                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
-                let retry = flag < 0 && self.handle_error(flag, &mut retries, &mut reset_tol);
+                // a step below the tolerance without any iteration only solves the system if the residual
+                // is small (KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual)
+                let mut stalled = false;
+                if flag == KIN_STEP_LT_STPTOL && iters == 0 {
+                    let x = data(self.u, self.n).to_vec();
+                    let mut f = vec![0.0f64; self.n];
+                    (ud.eval)(&x, &mut f);
+                    let fscale = data(self.fscale, self.n);
+                    let fnorm = fmath::sqrt(f.iter().zip(fscale.iter()).map(|(fi, si)| fi * si * fi * si).sum::<f64>());
+                    stalled = !(fnorm < FTOL_LESS_ACCURACY);
+                }
+                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK) || (flag == KIN_STEP_LT_STPTOL && !stalled);
+                let retry = (flag < 0 || stalled) && self.handle_error(flag, &mut retries, &mut reset_tol);
                 ud.numeric = self.numeric_jac;
                 retries += 1;
                 passes += 1;
@@ -550,7 +597,7 @@ pub mod sun {
                 if !self.j.is_null() {
                     SUNMatDestroy(self.j);
                 }
-                for v in [self.u, self.xscale, self.fscale, self.ftmp] {
+                for v in [self.u, self.xscale, self.fscale, self.ftmp, self.constraints] {
                     if !v.is_null() {
                         N_VDestroy(v);
                     }
@@ -883,6 +930,7 @@ pub mod sun {
 
         /// C's `B_nlsKinsolXScaling`.
         fn x_scaling(&self, ud: &mut BUd, nominal: &[f64], mode: BScaling) {
+            let mode = if openmodelica_solvers::solverflags::no_scaling() { BScaling::Ones } else { mode };
             let start = data(self.u, self.n);
             match mode {
                 BScaling::NominalStart => {
@@ -898,6 +946,7 @@ pub mod sun {
         /// C's `1e-12` floor. The Jacobian is re-evaluated unless the last solve
         /// reached full accuracy.
         fn f_scaling(&mut self, ud: &mut BUd, mode: BScaling) {
+            let mode = if openmodelica_solvers::solverflags::no_scaling() { BScaling::Ones } else { mode };
             ud.scaling = false;
             if mode != BScaling::Jacobian {
                 ud.fscale.fill(1.0);
@@ -1156,6 +1205,19 @@ pub mod sun {
             }
             openmodelica_solvers::omclog::close(v);
             unsafe { KINSetUserData(self.kin, core::ptr::null_mut()) };
+            // C's `B_check_stop_at_system` throws, which fails the solve and so the run.
+            if openmodelica_solvers::solverflags::stop_at_system() == Some(eq_index as i64) {
+                use openmodelica_solvers::omclog;
+                if omclog::active(omclog::NLS) {
+                    omclog::debug!(
+                        omclog::ASSERT,
+                        false,
+                        "Success: Finished solving specified NLS system with index {eq_index}. The program will terminate now.",
+                    );
+                }
+                crate::host::note_runtime_error_flag();
+                return false;
+            }
             success
         }
     }

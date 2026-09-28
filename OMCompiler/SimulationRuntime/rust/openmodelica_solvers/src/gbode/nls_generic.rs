@@ -23,6 +23,26 @@ const NEWTON_FTOL_DEFAULT: f64 = 1e-12;
 /// C's `DEFAULT_FLAG_NEWTON_MAX_STEPS`.
 const NEWTON_MAX_STEPS: u32 = 20;
 
+/// `-gbnls=kinsol`'s phases in C's `solveNLS_gb`: `-newtonMaxSteps` and the
+/// `-newtonJacUpdates` refresh interval of each phase (0 skips it).
+#[derive(Clone, Copy)]
+pub(super) struct KinsolLadder {
+    pub max_steps: u32,
+    pub jac_updates: [u32; 4],
+    /// `max(newtonFTol, newtonXTol)`.
+    pub tol: f64,
+}
+
+impl KinsolLadder {
+    pub(super) fn from_flags() -> Self {
+        crate::simflags::with_flags(|f| {
+            let (max_steps, jac_updates) = crate::simflags::gb_kinsol_tuning(f);
+            let (ftol, xtol, _) = crate::simflags::newton_tuning(f);
+            KinsolLadder { max_steps, jac_updates, tol: ftol.max(xtol) }
+        })
+    }
+}
+
 /// One residual evaluation: fill `res` at the iterate `x`, leaving the stage
 /// derivatives wherever the caller wants them.
 pub(super) trait GbResidual {
@@ -135,10 +155,11 @@ pub(super) struct GbNlsGeneric {
     factored: Option<super::linsol::GbLu>,
     fbase: Vec<f64>,
     pub n_jac_evals: u64,
+    kinsol: Option<KinsolLadder>,
 }
 
 impl GbNlsGeneric {
-    pub(super) fn new(t: &Tableau, n_states: usize, sym_jac: bool) -> Self {
+    pub(super) fn new(t: &Tableau, n_states: usize, sym_jac: bool, kinsol: Option<KinsolLadder>) -> Self {
         let size = match t.gm_type {
             super::tableau::GmType::Implicit => t.n_stages * n_states,
             _ => n_states,
@@ -155,6 +176,7 @@ impl GbNlsGeneric {
             factored: None,
             fbase: vec![0.0; n_states],
             n_jac_evals: 0,
+            kinsol,
         }
     }
 
@@ -260,11 +282,11 @@ impl GbNlsGeneric {
         nominals: &[f64],
         x: &mut [f64],
     ) -> Result<Solved> {
+        if let Some(ladder) = self.kinsol {
+            return Ok(self.solve_kinsol(ode, res, jac_time, starts, x, ladder));
+        }
         let size = self.size;
         let n = self.n_states;
-        let mut r = vec![0.0; size];
-        let mut r_new = vec![0.0; size];
-        let mut x_try = vec![0.0; size];
         // C's retries: the start vectors, then +1% nominal, then the nominals.
         let mut attempts: Vec<Vec<f64>> = starts.iter().map(|s| s.to_vec()).collect();
         if let Some(base) = starts.last() {
@@ -280,59 +302,127 @@ impl GbNlsGeneric {
             let tol = self.ftol * pow(10.0, relax as f64);
             for start in &attempts {
                 x.copy_from_slice(start);
-                if res.eval(ode, x, &mut r).is_err() {
-                    continue;
-                }
-                let mut nrm = enorm(&r);
-                if !nrm.is_finite() {
-                    continue;
-                }
-                if self.factor_at(ode, res, jac_time, &x[..n.min(size)]).is_err() {
-                    continue;
-                }
-                let mut converged = nrm <= tol || self.scaled_norm(&r) <= tol;
-                let mut stale = false;
-                'newton: for _ in 0..NEWTON_MAX_STEPS {
-                    if converged {
-                        break;
-                    }
-                    // C recomputes the Jacobian only when the iteration struggles.
-                    if stale && self.factor_at(ode, res, jac_time, &x[..n.min(size)]).is_err() {
-                        break 'newton;
-                    }
-                    stale = false;
-                    let mut dx = r.clone();
-                    self.factored.as_mut().expect("solve before factor").solve(&mut dx);
-                    // The Newton step is `x - jac⁻¹·res` with this Jacobian's sign
-                    // convention (as the internal solver's); damp it while the
-                    // residual grows.
-                    let mut lambda = 1.0;
-                    loop {
-                        for i in 0..size {
-                            x_try[i] = x[i] - lambda * dx[i];
-                        }
-                        let ok = res.eval(ode, &x_try, &mut r_new).is_ok();
-                        let nrm_new = if ok { enorm(&r_new) } else { f64::INFINITY };
-                        if nrm_new.is_finite() && (nrm_new < nrm || lambda <= 1.0 / 1024.0) {
-                            x.copy_from_slice(&x_try);
-                            r.copy_from_slice(&r_new);
-                            nrm = nrm_new;
-                            break;
-                        }
-                        lambda /= 2.0;
-                        stale = true;
-                        if lambda < 1e-10 {
-                            break 'newton;
-                        }
-                    }
-                    converged = nrm <= tol || self.scaled_norm(&r) <= tol;
-                }
-                if converged {
+                if self.newton(ode, res, jac_time, x, tol, NEWTON_MAX_STEPS, u32::MAX, true) {
                     return Ok(Solved::Ok);
                 }
             }
         }
         Ok(Solved::Failed)
+    }
+
+    /// C's `solveNLS_gb` for `-gbnls=kinsol`: from the extrapolation reusing the
+    /// last Jacobian, then with a fresh one, then from `yOld`, then from the last
+    /// iterate at a tenfold tolerance.
+    fn solve_kinsol(
+        &mut self,
+        ode: &mut dyn Ode,
+        res: &mut dyn GbResidual,
+        jac_time: f64,
+        starts: &[&[f64]],
+        x: &mut [f64],
+        ladder: KinsolLadder,
+    ) -> Solved {
+        let later_steps = ladder.max_steps.max(10 * self.size as u32);
+        let first = starts[0];
+        let old = starts[starts.len() - 1];
+        let phases: [(Option<&[f64]>, u32, bool, f64); 4] = [
+            (Some(first), ladder.max_steps, false, ladder.tol),
+            (Some(first), later_steps, true, ladder.tol),
+            (Some(old), later_steps, true, ladder.tol),
+            (None, later_steps, true, 10.0 * ladder.tol),
+        ];
+        let mut ran = false;
+        for (&(start, steps, fresh, tol), &every) in phases.iter().zip(ladder.jac_updates.iter()) {
+            if every == 0 {
+                continue;
+            }
+            match start {
+                Some(s) => x.copy_from_slice(s),
+                None if !ran => x.copy_from_slice(first),
+                None => {}
+            }
+            ran = true;
+            if self.newton(ode, res, jac_time, x, tol, steps, every, fresh) {
+                return Solved::Ok;
+            }
+        }
+        Solved::Failed
+    }
+
+    /// Damped Newton from `x` to `tol`, refreshing the Jacobian at the start when
+    /// `fresh`, after a damped step and every `refresh_every` iterations.
+    #[allow(clippy::too_many_arguments)]
+    fn newton(
+        &mut self,
+        ode: &mut dyn Ode,
+        res: &mut dyn GbResidual,
+        jac_time: f64,
+        x: &mut [f64],
+        tol: f64,
+        max_steps: u32,
+        refresh_every: u32,
+        fresh: bool,
+    ) -> bool {
+        let size = self.size;
+        let n = self.n_states;
+        let mut r = vec![0.0; size];
+        let mut r_new = vec![0.0; size];
+        let mut x_try = vec![0.0; size];
+        if res.eval(ode, x, &mut r).is_err() {
+            return false;
+        }
+        let mut nrm = enorm(&r);
+        if !nrm.is_finite() {
+            return false;
+        }
+        if (fresh || self.factored.is_none())
+            && self.factor_at(ode, res, jac_time, &x[..n.min(size)]).is_err()
+        {
+            return false;
+        }
+        let mut converged = nrm <= tol || self.scaled_norm(&r) <= tol;
+        let mut stale = false;
+        let mut since_refresh = 0u32;
+        'newton: for _ in 0..max_steps {
+            if converged {
+                break;
+            }
+            // C recomputes the Jacobian only when the iteration struggles.
+            if stale || since_refresh >= refresh_every {
+                if self.factor_at(ode, res, jac_time, &x[..n.min(size)]).is_err() {
+                    break 'newton;
+                }
+                since_refresh = 0;
+            }
+            stale = false;
+            let mut dx = r.clone();
+            self.factored.as_mut().expect("solve before factor").solve(&mut dx);
+            // The Newton step is `x - jac⁻¹·res` with this Jacobian's sign
+            // convention (as the internal solver's); damp it while the
+            // residual grows.
+            let mut lambda = 1.0;
+            loop {
+                for i in 0..size {
+                    x_try[i] = x[i] - lambda * dx[i];
+                }
+                let ok = res.eval(ode, &x_try, &mut r_new).is_ok();
+                let nrm_new = if ok { enorm(&r_new) } else { f64::INFINITY };
+                if nrm_new.is_finite() && (nrm_new < nrm || lambda <= 1.0 / 1024.0) {
+                    x.copy_from_slice(&x_try);
+                    r.copy_from_slice(&r_new);
+                    nrm = nrm_new;
+                    break;
+                }
+                lambda /= 2.0;
+                stale = true;
+                if lambda < 1e-10 {
+                    break 'newton;
+                }
+            }
+            since_refresh += 1;
+            converged = nrm <= tol || self.scaled_norm(&r) <= tol;
+        }
+        converged
     }
 
     /// C's `fvecScaled`: the residual against the Jacobian's row maxima.

@@ -911,6 +911,30 @@ public
       end match;
     end getTearingSelect;
 
+    function getMin
+      input VariableAttributes attr;
+      output Option<Expression> min;
+    algorithm
+      min := match attr
+        case VAR_ATTR_REAL() then Util.applyOption(attr.min, Binding.getTypedExp);
+        case VAR_ATTR_INT() then Util.applyOption(attr.min, Binding.getTypedExp);
+        case VAR_ATTR_ENUMERATION() then Util.applyOption(attr.min, Binding.getTypedExp);
+        else NONE();
+      end match;
+    end getMin;
+
+    function getMax
+      input VariableAttributes attr;
+      output Option<Expression> max;
+    algorithm
+      max := match attr
+        case VAR_ATTR_REAL() then Util.applyOption(attr.max, Binding.getTypedExp);
+        case VAR_ATTR_INT() then Util.applyOption(attr.max, Binding.getTypedExp);
+        case VAR_ATTR_ENUMERATION() then Util.applyOption(attr.max, Binding.getTypedExp);
+        else NONE();
+      end match;
+    end getMax;
+
     function getNominal
       input VariableAttributes attr;
       output Option<Expression> nominal;
@@ -1557,7 +1581,7 @@ public
     algorithm
       name := match exp
         case Expression.ENUM_LITERAL() then exp.name;
-        case Expression.CREF(cref = ComponentRef.CREF()) then InstNode.name(ComponentRef.node(exp.cref));
+        case Expression.CREF(cref = ComponentRef.CREF()) then ComponentRef.nodeName(exp.cref);
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
         case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
           guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")

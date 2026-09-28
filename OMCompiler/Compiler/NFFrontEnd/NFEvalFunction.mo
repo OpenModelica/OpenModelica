@@ -334,8 +334,7 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isBound(binding) then
-    bindingExp := Binding.getExp(binding);
-    bindingExp := Expression.map(bindingExp, Expression.clone);
+    bindingExp := Expression.clone(Binding.getExp(binding));
   else
     bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
@@ -713,23 +712,10 @@ function assertAssignedOutput
 protected
   list<Record.Field> fields;
   list<Expression> expl;
+  String name_str;
+  Option<String> opt_indices;
 algorithm
   value := match value
-    case Expression.EMPTY()
-      algorithm
-        if error then
-          Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
-            {stringDelimitList(listReverse(name), ".")}, info);
-          fail();
-        else
-          Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
-            {stringDelimitList(listReverse(name), ".")}, info);
-        end if;
-      then
-        // This will fail if the type is one that makeZero doesn't handle,
-        // but this should really be an error anyway so that's fine.
-        Expression.makeZero(value.ty);
-
     case Expression.RECORD()
       algorithm
         fields := Type.recordFields(value.ty);
@@ -745,9 +731,64 @@ algorithm
       then
         value;
 
+    case _
+      algorithm
+        // Check if the value is uninitialized or contains an uninitialized array element.
+        opt_indices := findUnassignedElement(value);
+
+        if isNone(opt_indices) then
+          return;
+        end if;
+
+        name_str := stringDelimitList(listReverse(name), ".");
+        name_str := name_str + Util.getOption(opt_indices);
+
+        if error then
+          Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {name_str}, info);
+          fail();
+        else
+          Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {name_str}, info);
+        end if;
+      then
+        // This will fail if the type is one that makeZero doesn't handle,
+        // but this should really be an error anyway so that's fine.
+        Expression.makeZero(Expression.typeOf(value));
+
     else value;
   end match;
 end assertAssignedOutput;
+
+function findUnassignedElement
+  "Checks if an expression contains uninitialized values and returns a string
+   option with either the position of the uninitialized value or an empty
+   string if the expression is a scalar."
+  input Expression value;
+  input list<Integer> indices = {};
+  output Option<String> indicesStr;
+algorithm
+  indicesStr := match value
+    case Expression.EMPTY()
+      then SOME(List.toStringCustom(listReverse(indices), intString, "", "[", ", ", "]", inPrintEmpty = false));
+
+    case Expression.ARRAY()
+      algorithm
+        indicesStr := NONE();
+
+        for i in 1:arrayLength(value.elements) loop
+          indicesStr := findUnassignedElement(arrayGetNoBoundsChecking(value.elements, i), i :: indices);
+
+          if isSome(indicesStr) then
+            break;
+          end if;
+        end for;
+      then
+        indicesStr;
+
+    else NONE();
+  end match;
+end findUnassignedElement;
 
 function evaluateStatements
   input list<Statement> stmts;

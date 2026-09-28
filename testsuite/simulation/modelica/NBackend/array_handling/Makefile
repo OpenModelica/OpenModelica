@@ -1,10 +1,12 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+arrayZeroDivisionInitial.mos \
 resizableConnectFor.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_each_attribute_ida.mos\
+array_bound_attributes.mos\
 integerComprehensionParameter.mos\
 arrayResultFile.mos\
 simple_for.mos\
@@ -47,7 +49,8 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder2_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder3_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
-BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos\
+BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
+arrayStartSlice.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

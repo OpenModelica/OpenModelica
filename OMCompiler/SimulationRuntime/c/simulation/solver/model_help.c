@@ -114,6 +114,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    return;
+  }
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
@@ -142,6 +145,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     printZeroCrossings(data, OMC_LOG_EVENTS_V);
 
     data->callback->functionDAE(data, threadData);
+    if (OMC_ERROR_RAISED()) {
+      return;
+    }
 
     numEventIterations++;
     if(numEventIterations > maxEventIterations) {
@@ -254,10 +260,11 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 void printParameters(DATA *data, int stream)
 {
   long i;
+  size_t k, idx;
   MODEL_DATA *mData = data->modelData;
+  SIMULATION_INFO *sInfo = data->simulationInfo;
 
-  const size_t buff_size = 2048;
-  char *start_buffer;
+  char name[2048];
 
   if (!OMC_ACTIVE_STREAM(stream)) {
     return;
@@ -267,73 +274,70 @@ void printParameters(DATA *data, int stream)
 
   if (0 < mData->nParametersRealArray)
   {
-    start_buffer = (char*) malloc(buff_size * sizeof(char));
-    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
-
     infoStreamPrint(stream, 1, "real parameters");
     for(i=0; i<mData->nParametersRealArray; ++i) {
-      real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%s, fixed=%s) = %g", i+1,
-                                 mData->realParameterData[i].info.name,
-                                 start_buffer,
-                                 mData->realParameterData[i].attribute.fixed ? "true" : "false",
-                                 data->simulationInfo->realParameter[data->simulationInfo->realParamsIndex[i]]);
+      STATIC_REAL_DATA *var = &mData->realParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->realParamsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(stream, 0, "[%zu] parameter Real %s(start=%g, fixed=%s) = %g", idx+1, name,
+                        real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        var->attribute.fixed ? "true" : "false",
+                        sInfo->realParameter[idx]);
+      }
     }
     messageClose(stream);
-    free(start_buffer);
   }
 
   if (0 < mData->nParametersIntegerArray)
   {
-    start_buffer = (char*) malloc(buff_size * sizeof(char));
-    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
-
     infoStreamPrint(stream, 1, "integer parameters");
     for(i=0; i<mData->nParametersIntegerArray; ++i) {
-      integer_vector_to_string(&mData->integerParameterData[i].attribute.start, mData->integerParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=%s, fixed=%s) = " OMC_INT_FORMAT, i+1,
-                                 mData->integerParameterData[i].info.name,
-                                 start_buffer,
-                                 mData->integerParameterData[i].attribute.fixed ? "true" : "false",
-                                 data->simulationInfo->integerParameter[data->simulationInfo->integerParamsIndex[i]]);
+      STATIC_INTEGER_DATA *var = &mData->integerParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->integerParamsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(stream, 0, "[%zu] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, idx+1, name,
+                        integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        var->attribute.fixed ? "true" : "false",
+                        sInfo->integerParameter[idx]);
+      }
     }
     messageClose(stream);
-    free(start_buffer);
   }
 
   if (0 < mData->nParametersBooleanArray)
   {
-    start_buffer = (char*) malloc(buff_size * sizeof(char));
-    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
-
     infoStreamPrint(stream, 1, "boolean parameters");
     for(i=0; i<mData->nParametersBooleanArray; ++i) {
-      boolean_vector_to_string(&mData->booleanParameterData[i].attribute.start, mData->booleanParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(stream, 0, "[%ld] parameter Boolean %s(start=%s, fixed=%s) = %s", i+1,
-                                 mData->booleanParameterData[i].info.name,
-                                 start_buffer,
-                                 mData->booleanParameterData[i].attribute.fixed ? "true" : "false",
-                                 data->simulationInfo->booleanParameter[data->simulationInfo->booleanParamsIndex[i]] ? "true" : "false");
+      STATIC_BOOLEAN_DATA *var = &mData->booleanParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->booleanParamsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(stream, 0, "[%zu] parameter Boolean %s(start=%s, fixed=%s) = %s", idx+1, name,
+                        boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
+                        var->attribute.fixed ? "true" : "false",
+                        sInfo->booleanParameter[idx] ? "true" : "false");
+      }
     }
     messageClose(stream);
-    free(start_buffer);
   }
 
   if (0 < mData->nParametersStringArray)
   {
-    start_buffer = (char*) malloc(buff_size * sizeof(char));
-    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
-
     infoStreamPrint(stream, 1, "string parameters");
     for(i=0; i<mData->nParametersStringArray; ++i) {
-      string_vector_to_string(&mData->stringParameterData[i].attribute.start, mData->stringParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(stream, 0, "[%ld] parameter String %s(start=%s) = \"%s\"", i+1,
-                                 mData->stringParameterData[i].info.name,
-                                 start_buffer,
-                                 omc_string_data(data->simulationInfo->stringParameter[data->simulationInfo->stringParamsIndex[i]]));
+      STATIC_STRING_DATA *var = &mData->stringParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        modelica_string start = string_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k));
+        idx = sInfo->stringParamsIndex[i] + k;
+        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        infoStreamPrint(stream, 0, "[%zu] parameter String %s(start=\"%s\") = \"%s\"", idx+1, name,
+                        start ? omc_string_data(start) : "",
+                        omc_string_data(sInfo->stringParameter[idx]));
+      }
     }
     messageClose(stream);
-    free(start_buffer);
   }
 
   messageClose(stream);
@@ -1477,11 +1481,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
 #if !defined(OMC_MINIMAL_LOGGING)
   /* initial chattering info */
-  data->simulationInfo->chatteringInfo.numEventLimit = 100;
-  data->simulationInfo->chatteringInfo.lastSteps = (int*) calloc(data->simulationInfo->chatteringInfo.numEventLimit, sizeof(int));
+  data->simulationInfo->chatteringInfo.numEventLimit = 1000;
   data->simulationInfo->chatteringInfo.lastTimes = (modelica_real*) calloc(data->simulationInfo->chatteringInfo.numEventLimit, sizeof(double));
   data->simulationInfo->chatteringInfo.currentIndex = 0;
-  data->simulationInfo->chatteringInfo.lastStepsNumStateEvents = 0;
+  data->simulationInfo->chatteringInfo.stateEventsInARow = 0;
   data->simulationInfo->chatteringInfo.messageEmitted = 0;
 #endif
 
@@ -1658,7 +1661,6 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->extObjs);
 
   /* free chattering info */
-  free(data->simulationInfo->chatteringInfo.lastSteps);
   free(data->simulationInfo->chatteringInfo.lastTimes);
 
   /* free delay structure */

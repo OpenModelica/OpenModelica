@@ -28,7 +28,7 @@ static int rml_execution_failed()
   return 1;
 }
 
-int __omc_main(int argc, char **argv)
+DLLExport int __omc_main(int argc, char **argv)
 {
   MMC_INIT(0);
   {

@@ -235,28 +235,19 @@ else
   OPTIMIZATION_HFILES=
 endif
 
-RESULTS_OBJS_MINIMAL=MatVer4$(OBJ_EXT) \
-                     simulation_result_csv$(OBJ_EXT) \
-                     simulation_result_mat4$(OBJ_EXT) \
+RESULTS_OBJS_MINIMAL=simulation_result_rust$(OBJ_EXT) \
                      simulation_result$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL) \
-               simulation_result_ia$(OBJ_EXT) \
-               simulation_result_plt$(OBJ_EXT)
+               simulation_result_ia$(OBJ_EXT)
 else
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL)
 endif
-RESULTS_HFILES = MatVer4.h \
-                 simulation_result_csv.h \
-                 simulation_result_ia.h \
-                 simulation_result_mat4.h \
-                 simulation_result_plt.h \
+RESULTS_HFILES = simulation_result_ia.h \
+                 simulation_result_rust.h \
                  simulation_result.h
-RESULTS_FILES = MatVer4.cpp \
-                simulation_result_csv.cpp \
-                simulation_result_ia.cpp \
-                simulation_result_mat4.cpp \
-                simulation_result_plt.cpp
+RESULTS_FILES = simulation_result_ia.cpp \
+                simulation_result_rust.cpp
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
            ../linearization/linearize$(OBJ_EXT) \
@@ -375,7 +366,7 @@ FMI_ME_OBJS = $(GCOBJSPATH_MINIMAL:$(BUILDPATH)/%=%) $(UTILOBJSPATH:$(BUILDPATH)
   $(LIBF2C_OBJS:%=./external_solvers/%$(OBJ_EXT))
 FMI_ME_OBJS_BUILDPATH = $(FMI_ME_OBJS:./external_solvers/%=$(BUILDPATH)/external_solvers/%)
 # The libOpenModelicaRuntimeC half of FMI_ME_OBJS, which is all a
-# --simCodeTarget=C+Rust FMU compiles from C; the Rust runtime replaces the rest.
+# --simCodeTarget=C FMU compiles from C; the Rust runtime replaces the rest.
 FMI_ME_RUNTIME_C_OBJS = $(GCOBJSPATH_MINIMAL:$(BUILDPATH)/%=%) $(UTILOBJSPATH:$(BUILDPATH)/%=%) \
   meta/meta_modelica_catch$(OBJ_EXT)
 

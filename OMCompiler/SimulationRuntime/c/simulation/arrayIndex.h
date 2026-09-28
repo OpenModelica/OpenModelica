@@ -68,6 +68,15 @@ extern "C"
                                char* buffer,
                                size_t buffer_size);
 
+  void printScalarName(const char *name,
+                       DIMENSION_INFO *dimension_info,
+                       size_t linear_address,
+                       char *buffer,
+                       size_t buffer_size);
+
+  size_t attributeElementIndex(const base_array_t *attribute,
+                               size_t dim_idx);
+
   void calculateAllScalarLength(MODEL_DATA *modelData);
 
   void computeVarIndices(SIMULATION_INFO *simulationInfo,

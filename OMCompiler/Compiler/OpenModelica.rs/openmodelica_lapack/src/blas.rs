@@ -5,11 +5,12 @@ use crate::{abs, opt, sqrt, SAFMIN};
 
 /// Index of the first element of largest magnitude (0-based; `x` is contiguous).
 /// `IDAMAX` returns the *first* maximum, which is what makes LU pivoting
-/// reproducible.
+/// reproducible, and starts from the first element, so a leading NaN is kept.
 pub fn idamax(x: &[f64]) -> usize {
+    let Some(first) = x.first() else { return 0 };
     let mut k = 0;
-    let mut best = -1.0;
-    for (i, v) in x.iter().enumerate() {
+    let mut best = abs(*first);
+    for (i, v) in x.iter().enumerate().skip(1) {
         let a = abs(*v);
         if a > best {
             best = a;
@@ -135,7 +136,27 @@ pub fn dtrsm_ref(
     let lower = upper == trans;
     // op(A)[i,k].
     let opa = |i: usize, k: usize| if trans { at(a, lda, k, i) } else { at(a, lda, i, k) };
-    if left {
+    if left && !trans {
+        // Reference DTRSM's column form, which skips a zero right-hand side
+        // rather than multiply it by a NaN.
+        for j in 0..n {
+            for step in 0..m {
+                let k = if lower { step } else { m - 1 - step };
+                let mut bk = at(b, ldb, k, j);
+                if bk == 0.0 {
+                    continue;
+                }
+                if !unit {
+                    bk /= at(a, lda, k, k);
+                    set(b, ldb, k, j, bk);
+                }
+                let rows = if lower { k + 1..m } else { 0..k };
+                for i in rows {
+                    set(b, ldb, i, j, at(b, ldb, i, j) - bk * at(a, lda, i, k));
+                }
+            }
+        }
+    } else if left {
         for j in 0..n {
             for step in 0..m {
                 // Forward substitution over a lower triangle, back substitution

@@ -493,9 +493,13 @@ template recordDeclaration(RecordDeclaration recDecl)
     <%recordCreateFromVarsDef(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
+    <%if boolNot(SimCodeFunctionUtil.isTrivialRecord(r.name)) then
+    <<
     <%recordReleaseDef(r.name, r.variables)%>
     <%recordRetainDef(r.name, r.variables)%>
     <%recordDisownDef(r.name, r.variables)%>
+    >>
+    %>
     <%if r.usedExternally then recordCopyExternalDefs(r.name, r.variables)%>
     >>
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
@@ -653,13 +657,22 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%wrap_vars_func_name%>(threadData_t *threadData , void* v_dst <%wrap_vars_func_inputs%>);
       #define <%wrap_vars_macro_name%>(td, dst <%wrap_vars_macro_inputs%>) <%wrap_vars_func_name%>(td, &dst <%wrap_vars_macro_inputs%>)
 
-      /* Counting of what the members own; empty for a record of scalars. */
+      <%if SimCodeFunctionUtil.isTrivialRecord(rec_name) then
+      <<
+      #define <%release_macro_name%>(ths) ((void)0)
+      #define <%retain_macro_name%>(ths) ((void)0)
+      #define <%disown_macro_name%>(ths) ((void)0)
+      >>
+      else
+      <<
       void <%release_func_name%>(void* v_ths);
       #define <%release_macro_name%>(ths) <%release_func_name%>(&ths)
       void <%retain_func_name%>(void* v_ths);
       #define <%retain_macro_name%>(ths) <%retain_func_name%>(&ths)
       void <%disown_func_name%>(void* v_ths);
       #define <%disown_macro_name%>(ths) <%disown_func_name%>(&ths)
+      >>
+      %>
 
       // This function is not needed anymore. If you want to know how a record
       // is 'assigned to' in simulation context see assignRhsExpToRecordCrefSimContext and
@@ -676,7 +689,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       #define <%rec_name%>_array_get1(src,ndims,dim1) (((<%rec_name%>*)(src).data)[omc_array_index1((src), (dim1))])
       #define <%rec_name%>_array_get2(src,ndims,dim1,dim2) (((<%rec_name%>*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
       #define <%rec_name%>_set(dst,val,...)           generic_array_set(&dst, &val, <%cpy_func_name%>, sizeof(<%rec_name%>), __VA_ARGS__)
-      #define <%rec_name%>_array_release(dst)         omc_record_array_release(&dst, <%release_func_name%>, sizeof(<%rec_name%>))
+      #define <%rec_name%>_array_release(dst)         <%if SimCodeFunctionUtil.isTrivialRecord(rec_name) then 'omc_array_release(&dst)' else 'omc_record_array_release(&dst, <%release_func_name%>, sizeof(<%rec_name%>))'%>
       >>
 end recordDeclarationFullHeader;
 
@@ -5349,6 +5362,17 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     else crefToCStr(componentRef, ix, true, isStart, &sub))
   case CREF_QUAL(ident = "$START") then
     crefToCStr(componentRef, ix, isPre, true, &sub)
+  else if boolAnd(boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))),
+                  boolAnd(boolAnd(crefIsScalarWithAllConstSubs(cr), stringEq(&sub, "")),
+                          boolAnd(boolNot(listEmpty(crefSubs(crefArrayGetFirstCref(cr)))),
+                                  intEq(listLength(crefDims(cr)), listLength(crefSubs(crefArrayGetFirstCref(cr))))))) then
+    // without scalarization cref2simvar resolves an element to its array, add the offset
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &varFrees = buffer ""
+    let &auxFunction = buffer ""
+    let &elemSub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>'
+    crefToCStr(crefStripSubs(cr), ix, isPre, isStart, &elemSub)
   else match cref2simvar(cr, getSimCode())
     case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
@@ -5541,7 +5565,8 @@ template rcKindCounted(String ty)
     // ParModelica's device arrays are OpenCL buffers, not counted.
     else if intEq(0, System.stringFind(ty, "device_")) then ""
     else if stringEq(ty, System.stringReplace(ty, "_array", "") + "_array")
-      then "recordArray"
+      then (if SimCodeFunctionUtil.isTrivialRecord(System.stringReplace(ty, "_array", "")) then "array" else "recordArray")
+      else if SimCodeFunctionUtil.isTrivialRecord(ty) then ""
       else if isRecordCType(ty) then "record" else ""
 end rcKindCounted;
 
@@ -6672,6 +6697,12 @@ case BINARY(__) then
     (match context
       case FUNCTION_CONTEXT(__) then
         rcSpillArray(type, 'div_alloc_<%type%>_scalar(<%e1%>, <%e2%>)', &preExp, &varDecls, &varFrees)
+      // same checks as DIVISION_SIM, e.g. 0/0 is 0 during initialization
+      case SIMULATION_CONTEXT() then
+        if stringEq(type, "real_array") then
+          rcSpillArray(type, 'division_alloc_real_array_scalar_sim(threadData,<%e1%>,<%e2%>,"<%e2str%>",equationIndexes,data->simulationInfo->noThrowDivZero,data->localData[0]->timeValue,initial())', &preExp, &varDecls, &varFrees)
+        else
+          rcSpillArray(type, 'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")', &preExp, &varDecls, &varFrees)
       else
         rcSpillArray(type, 'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")', &preExp, &varDecls, &varFrees)
     )
@@ -8914,6 +8945,27 @@ template startArrayScatter(ComponentRef cr, Text type, Text arr, Text &varDecls,
   }<%\n%>
   >>
 end startArrayScatter;
+
+template startArrayEnsureSize(ComponentRef cr)
+ "The start attribute of an array variable might only hold a broadcast value or
+  the values of an inner dimension. Before start values of the whole array are
+  written into it, it has to hold one element per array element."
+::=
+  match getDimensionSizes(crefTypeFull(crefStripSubs(popCref(cr))))
+  case sizes as _::_ then
+    match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+    case var as SIMVAR(__) then
+      let ty = crefShortType(name)
+      match ty
+        case "real"
+        case "integer"
+        case "boolean" then
+          let &nosub = buffer ""
+          '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%sizes ; separator="*"%>);'
+        else ""
+    else ""
+  else ""
+end startArrayEnsureSize;
 
 template startArrayElement(ComponentRef cr, Text type, Text idx)
  "Element `idx`'s start attribute. With --simCodeScalarize the array's elements

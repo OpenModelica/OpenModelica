@@ -1,8 +1,8 @@
 //! The `### STATISTICS ###` block a run prints at the end (`solver_main.c`).
 //!
 //! Pure formatting over [`SolveStats`], shared by every host that finishes a run:
-//! the wasm-jit backend, which folds it into the simulation log, and the C+Rust
-//! simulation runtime, which writes it to the executable's stdout.
+//! the wasm-jit backend, which folds it into the simulation log, and
+//! libSimulationRuntimeRust, which writes it to the executable's stdout.
 
 use alloc::format;
 use alloc::string::String;

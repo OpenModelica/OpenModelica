@@ -58,6 +58,7 @@ enum { OMR_JMP_NONE = 0, OMR_JMP_SIMULATION = 1, OMR_JMP_GLOBAL = 2 };
 
 /* Rust: the message no jump buffer could carry; ends the process. */
 extern void omr_fatal(const char *msg);
+extern void *omc_external_jump_buffer(void *threadData);
 
 /* Leave through one of `threadData`'s jump buffers. Does not return unless the
  * caller asked for no jump at all.
@@ -76,6 +77,11 @@ void omr_jump(void *threadData, int where) {
       break;
     default: return;
   }
+  /* An external function's wrapper takes the jump first, as C's
+   * `getBestJumpBuffer` has it; skipping it leaves the wrapper's buffer installed
+   * after its frame is gone. */
+  void *ext = omc_external_jump_buffer(threadData);
+  if (ext) buf = ext;
   if (!buf) {
     omr_fatal("an assertion fired with no jump buffer installed");
     abort();

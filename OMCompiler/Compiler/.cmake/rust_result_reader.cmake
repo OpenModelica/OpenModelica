@@ -1,16 +1,14 @@
 # libomc_result (SimulationRuntime/rust/openmodelica_result_capi): the result
-# readers of the GUI clients (OM_RUST_RESULT_READERS) and the result writers of
-# the C simulation runtime (OM_RUST_RESULT_WRITERS). Built from the runtime
-# workspace root like libSimulationRuntimeRust, so a stable cargo suffices.
+# readers of omc and the GUI clients and the result writers of the C simulation
+# runtime. Built from the runtime workspace root like libSimulationRuntimeRust,
+# so a stable cargo suffices.
 # Defines the IMPORTED target omc::result and the rust_omc_result target.
 function(omc_result_reader_library)
   find_program(CARGO_EXECUTABLE cargo)
   if(NOT CARGO_EXECUTABLE)
     message(FATAL_ERROR
-      "OM_RUST_RESULT_READERS/OM_RUST_RESULT_WRITERS was turned on explicitly, but cargo was "
-      "not found (both default to OFF without one). Install a stable Rust toolchain, or "
-      "configure with -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF to use the C "
-      "result readers and writers, which can not handle .arrow.")
+      "cargo was not found. OpenModelica reads and writes result files through the Rust "
+      "library libomc_result; install a stable Rust toolchain.")
   endif()
   set(_workspace ${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/SimulationRuntime/rust)
   set(_crate ${_workspace}/openmodelica_result_capi)
@@ -69,7 +67,7 @@ function(omc_result_reader_library)
     ${OMC_JOB_SERVER_AWARE}
     COMMAND ${_env} ${CARGO_EXECUTABLE} ${_cargo_cmd} --release --target-dir ${_target_dir} ${_target_flag} -p openmodelica_result_capi
     DEPENDS ${_rust_srcs}
-    COMMENT "Rust: building libomc_result (result-file readers for OMEdit/OMPlot)"
+    COMMENT "Rust: building libomc_result"
     VERBATIM)
   add_custom_target(rust_omc_result ALL DEPENDS ${_lib})
 

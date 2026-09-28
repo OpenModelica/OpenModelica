@@ -32,6 +32,10 @@ pub const UNAVAILABLE: &str = "Ipopt is needed but not available.";
 /// Whether this build can run `method="optimization"`.
 pub const AVAILABLE: bool = cfg!(all(ipopt, feature = "std"));
 
+/// What C's generated goal functions throw for a model translated without Optimica.
+pub const NOT_COMPILED: &str = "The model was not compiled with -g=Optimica and the corresponding goal \
+                                function. The optimization solver cannot be used.";
+
 #[cfg(all(ipopt, feature = "std"))]
 pub use run::run_optimizer;
 
@@ -269,9 +273,7 @@ mod run {
         sim_data: u32,
     ) -> Result<Vec<f64>> {
         let Some(opt) = meta.opt.clone() else {
-            // C's generated stubs when the model was translated without Optimica.
-            return Err("The model was not compiled with -g=Optimica and the corresponding goal \
-                        function. The optimization solver cannot be used.");
+            return Err(super::NOT_COMPILED);
         };
         // C sets `noThrowDivZero` for the whole optimization: a division by zero at a
         // trial point must not abort the solve.

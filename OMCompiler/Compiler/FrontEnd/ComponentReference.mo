@@ -1907,11 +1907,14 @@ public function crefRenameSeedRoot
   output DAE.ComponentRef outCref;
 algorithm
   outCref := match inCref
-    case DAE.CREF_IDENT()
+    // only seed crefs, e.g. $DER.x must not become the seed of x
+    case DAE.CREF_IDENT() guard(StringUtil.startsWith(inCref.ident, "$SEED_"))
       then ComponentReferenceBasics.makeCrefIdent("$SEED_" + newJacName, inCref.identType, inCref.subscriptLst);
 
-    case DAE.CREF_QUAL()
+    case DAE.CREF_QUAL() guard(StringUtil.startsWith(inCref.ident, "$SEED_"))
       then ComponentReferenceBasics.makeCrefQual("$SEED_" + newJacName, inCref.identType, inCref.subscriptLst, inCref.componentRef);
+
+    else inCref;
   end match;
 end crefRenameSeedRoot;
 

@@ -217,6 +217,8 @@ uniontype Variables
     VariableArray varArr "Array of variables";
     Integer bucketSize "bucket size";
     Integer numberOfVars "no. of vars";
+    Boolean hasStartVars "Set once a $START. variable is added, never cleared:
+      false means getVar of a $START. cref cannot succeed.";
   end VARIABLES;
 end Variables;
 

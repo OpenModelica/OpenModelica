@@ -12,7 +12,7 @@ thread_local! {
     //
     // The current SimCode structure, set during SimCode generation.
     // None when not in a SimCode generation pass.
-    pub static optionSimCode: RefCell<Option<openmodelica_simcode_types::SimCode::SimCode>> =
+    pub static optionSimCode: RefCell<Option<metamodelica::Ref<openmodelica_simcode_types::SimCode::SimCode>>> =
         const { RefCell::new(None) };
 
     // Index 34 — fmi3VariableAliasCache
@@ -21,6 +21,6 @@ thread_local! {
     // with that value reference. Live only while one modelDescription.xml is
     // being written; source: SimCodeCodegenUtil.cacheFMI3VariableAliases.
     pub static fmi3VariableAliasCache: RefCell<
-        Option<metamodelica::Array<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>,
+        Option<metamodelica::Array<metamodelica::List<metamodelica::Ref<openmodelica_simcode_types::SimCodeVar::SimVar>>>>,
     > = const { RefCell::new(None) };
 }

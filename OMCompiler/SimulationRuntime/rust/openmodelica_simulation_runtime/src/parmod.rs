@@ -11,11 +11,12 @@
 
 use core::ffi::{c_char, c_int, c_void};
 use core::ptr;
-use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
 use openmodelica_sim_meta::ParmodInfo;
 use openmodelica_sim_meta::parmod::Plan;
+use openmodelica_solvers::atomic64::AtomicU64;
 
 use crate::abi::{DATA, threadData_t};
 
@@ -285,7 +286,7 @@ static POOL: OnceLock<Arc<Pool>> = OnceLock::new();
 /// evaluation, and the flags it reads do not change during a run.
 pub fn can_parallel() -> bool {
     static CAN: OnceLock<bool> = OnceLock::new();
-    *CAN.get_or_init(|| openmodelica_sim_meta::parmod::num_threads() > 1)
+    *CAN.get_or_init(|| cfg!(target_has_atomic = "64") && openmodelica_sim_meta::parmod::num_threads() > 1)
 }
 
 /// The pool, started on its first use: `-parmodNumThreads - 1` workers, the caller

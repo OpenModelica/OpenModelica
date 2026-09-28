@@ -134,8 +134,16 @@ if [ ! -s "${list}" ]; then
   exit 1
 fi
 
+# Under MSYS2, the msys perl: a UCRT64 login shell puts /ucrt64/bin first, and an
+# OMDev with the native perl installed there would run the tests with a perl that
+# hands every command to cmd.exe and starts runtest.pl through the .pl file
+# association instead of its #!/usr/bin/perl, where they no longer found gcc.
+perl=perl
+if [ -x /usr/bin/perl ] && [ "$(uname -o 2>/dev/null)" = "Msys" ]; then
+  perl=/usr/bin/perl
+fi
 cd "${TESTSUITE_DIR}/partest" &&
-  perl ./runtests.pl -nocolour -j"${jobs}" -file="${list}"
+  "${perl}" ./runtests.pl -nocolour -j"${jobs}" -file="${list}"
 status=$?
 if [ "${status}" -ne 0 ]; then
   while read -r test_path; do

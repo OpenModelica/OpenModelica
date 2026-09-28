@@ -808,7 +808,6 @@ list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST=${RT_LDFLAGS_GENERATED_CODE_SIM_RUST}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
-     "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
      "OMC_HDF5_LDFLAGS=${OMC_HDF5_LDFLAGS}"
      "OMC_FMILIB_LDFLAGS=${OMC_FMILIB_LDFLAGS}"
      # The runtime headers openmodelica_simulation_runtime's ABI test compiles;
@@ -1225,6 +1224,9 @@ function(omc_rust_setup_codegen)
   file(GLOB_RECURSE MMTORUST_SOURCES CONFIGURE_DEPENDS
        ${RUST_OMC_DIR}/mmtorust/src/*.rs)
   list(APPEND MMTORUST_SOURCES ${RUST_OMC_DIR}/mmtorust/Cargo.toml)
+  # A `<Package>.handwritten.rs` decides which of its package's items are generated.
+  file(GLOB MMTORUST_HANDWRITTEN CONFIGURE_DEPENDS ${RUST_OMC_SRC_DIR}/*/src/*.handwritten.rs)
+  list(APPEND MMTORUST_SOURCES ${MMTORUST_HANDWRITTEN})
   if(RUST_OMC_PREBUILT_GENERATED_SRC)
     # Stamp completion with no dependency on the transpile chain, so mmtorust /
     # susan / the templates are never built; the .rs are already in the tree.
@@ -1344,6 +1346,12 @@ function(omc_rust_setup_codegen)
   option(RUST_OMC_ENGINE_WASMER "Build the native omc with the wasmer wasm-jit host (the web target's) instead of wasmtime." OFF)
   if(RUST_OMC_ENGINE_WASMER)
     list(APPEND _rust_omc_features engine-wasmer)
+  endif()
+  # Link the web's in-wasm driver and solvers into the native runtime as well, so
+  # OMC_WASM_INWASM_DRIVER=1 and OMC_WASM_HOST_LIN_SOLVE=0 can run the web's path.
+  option(RUST_OMC_WASM_INWASM_DRIVER "Build the native wasm-jit runtime with the web's in-wasm driver and solvers." OFF)
+  if(RUST_OMC_WASM_INWASM_DRIVER)
+    list(APPEND _rust_omc_features openmodelica_wasm_jit/inwasm_driver)
   endif()
   # --no-default-features makes sundials off by default; enable it only when
   # the wasm cross-compile is enabled.
@@ -1628,6 +1636,7 @@ function(omc_rust_setup_omedit)
   # Windows links a DLL through its import library (cargo emits <dll>.lib).
   if(RUST_OMC_TARGET MATCHES "windows")
     set_target_properties(OpenModelicaCompiler PROPERTIES IMPORTED_IMPLIB "${_cdylib}.lib")
+    set_property(TARGET OpenModelicaCompiler APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS IMPORT_INTO=1)
   endif()
   # Deps the clients inherited transitively from the C OpenModelicaCompiler but
   # which the cdylib does not carry, so propagate the targets here:

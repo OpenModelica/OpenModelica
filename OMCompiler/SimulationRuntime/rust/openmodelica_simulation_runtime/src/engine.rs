@@ -76,11 +76,14 @@ pub struct CEngine {
     /// C's `omc_assert_simulation` does for that phase. Republished from the
     /// driver's own stage word on every call (see [`CEngine::publish`]).
     pub stage: c_int,
+    /// C's `initialization(…, "fmi", …)`: the parameters are what the FMI
+    /// interface set, not the start attributes.
+    pub keep_params: bool,
 }
 
 impl CEngine {
     pub fn new(rt: RtData) -> Self {
-        CEngine { rt, stage: error_stage::SIMULATION }
+        CEngine { rt, stage: error_stage::SIMULATION, keep_params: false }
     }
 
     /// Flat address of the driver's `[stage, hit]` pair.
@@ -103,15 +106,11 @@ impl CEngine {
 
     /// Whether a model error raised now is one of the open region's to absorb.
     /// Outside every region it is what C's outermost `MMC_TRY_INTERNAL` would not
-    /// catch either, and ends the run.
+    /// catch either, and ends the run. So does one in event handling, which has
+    /// nothing left to retry from.
     fn error_absorbed(stage: i32) -> bool {
         use openmodelica_nls as nls;
-        [
-            nls::ERROR_INTEGRATOR,
-            nls::ERROR_NONLINEARSOLVER,
-            nls::ERROR_SIMULATION_STEP,
-            nls::ERROR_EVENTHANDLING,
-        ]
+        [nls::ERROR_INTEGRATOR, nls::ERROR_NONLINEARSOLVER, nls::ERROR_SIMULATION_STEP]
         .contains(&(stage as u32))
     }
 
@@ -167,7 +166,7 @@ impl CEngine {
             si.needToReThrow = 0;
             driver::note_no_throw_assert();
         }
-        if rc != -1 {
+        if rc != -1 && !crate::support::error_raised(self.rt.thread_data) {
             return Ok(());
         }
         if Self::error_absorbed(self.driver_stage()) {
@@ -200,6 +199,10 @@ impl SimEngine for CEngine {
 
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.rt.write(addr, buf)
+    }
+
+    fn copy_bytes(&mut self, from: u32, to: u32, len: usize) -> Result<()> {
+        self.rt.copy(from, to, len)
     }
 
     /// C's `currentContext`, mapped past the layout's end (`data::CONTEXT_OFF`).
@@ -367,7 +370,9 @@ impl SimEngine for CEngine {
             // A C model has no generated function for either: the start values
             // come from the init XML, which this runtime read into `modelData`.
             "functionParameters" => {
-                self.set_all_params_to_start();
+                if !self.keep_params {
+                    self.set_all_params_to_start();
+                }
                 Ok(())
             }
             "functionInitStartValues" => Ok(()),
@@ -379,10 +384,14 @@ impl SimEngine for CEngine {
             }
             // C's `analyticJacobians[INDEX_JAC_A]` column evaluation; the driver
             // seeds and reads it through the flat window `build_regions` maps.
-            "functionJacA_column" | "functionJacA_constantEqns" => {
-                let jac = crate::data::jac_a_ptr(self.rt.data);
+            "functionJacA_column" | "functionJacA_constantEqns" | "functionJacADJ_column"
+            | "functionJacADJ_constantEqns" => {
+                let jac = match name.starts_with("functionJacADJ") {
+                    true => crate::data::jac_adj_ptr(self.rt.data),
+                    false => crate::data::jac_a_ptr(self.rt.data),
+                };
                 let Some(j) = (unsafe { jac.as_ref() }) else { return Ok(()) };
-                let f = if name == "functionJacA_column" { j.evalColumn } else { j.constantEqns };
+                let f = if name.ends_with("_column") { j.evalColumn } else { j.constantEqns };
                 let Some(f) = f else { return Ok(()) };
                 self.publish();
                 let ok = crate::support::protected(self.rt.thread_data, self.stage, || {
@@ -704,7 +713,8 @@ impl CEngine {
                 let p = &*md.stringParameterData.add(a);
                 let base = *si.stringParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.stringParameter.add(base + k) = p.attribute.start.elem_at(k, core::ptr::null_mut());
+                    let start = p.attribute.start.elem_at(k, core::ptr::null_mut());
+                    crate::model_data::string_store(si.stringParameter.add(base + k), start);
                 }
             }
         }
@@ -722,7 +732,8 @@ impl CEngine {
                 let v = &*md.stringVarsData.add(a);
                 let base = *si.stringVarsIndex.add(a);
                 for k in 0..v.dimension.scalar_length {
-                    *sd.stringVars.add(base + k) = v.attribute.start.elem_at(k, core::ptr::null_mut());
+                    let start = v.attribute.start.elem_at(k, core::ptr::null_mut());
+                    crate::model_data::string_store(sd.stringVars.add(base + k), start);
                 }
             }
         }

@@ -8,7 +8,7 @@ use super::*;
 /// `runSimulation` (during `simulate`) in the same process.
 pub(super) fn sim_models() -> &'static Mutex<HashMap<String, Arc<SimModel>>> {
     static MODELS: OnceLock<Mutex<HashMap<String, Arc<SimModel>>>> = OnceLock::new();
-    MODELS.get_or_init(|| Mutex::new(HashMap::new()))
+    MODELS.get_or_init(|| Mutex::new(HashMap::default()))
 }
 
 /// A model kernel a wasm FMU can be built around. Only kernels an export can
@@ -24,7 +24,7 @@ pub(super) struct FmuKernel {
 /// than lowering it again. Keyed by file-name prefix.
 pub(super) fn fmu_kernels() -> &'static Mutex<HashMap<String, Arc<FmuKernel>>> {
     static KERNELS: OnceLock<Mutex<HashMap<String, Arc<FmuKernel>>>> = OnceLock::new();
-    KERNELS.get_or_init(|| Mutex::new(HashMap::new()))
+    KERNELS.get_or_init(|| Mutex::new(HashMap::default()))
 }
 
 /// Where a captured signal's values come from: the result file under the
@@ -157,11 +157,11 @@ pub(super) fn capture_last_sim(
     // aliasing — several names, one stored column). Distinct columns are distinct
     // signals even when an equation keeps them near-equal (`der(h) = v` differs at
     // event rows), so both are plotted. First occurrence is canonical.
-    let mut seen_cols = HashSet::new();
-    let mut seen_param_offs = HashSet::new();
-    let mut param_value_by_off: HashMap<u32, f64> = HashMap::new();
+    let mut seen_cols = HashSet::default();
+    let mut seen_param_offs = HashSet::default();
+    let mut param_value_by_off: HashMap<u32, f64> = HashMap::default();
     // Row 0 of every signal, for the start values of the editable parameters.
-    let mut row0_by_name: HashMap<&str, f64> = HashMap::new();
+    let mut row0_by_name: HashMap<&str, f64> = HashMap::default();
     for (v, &kept) in model.result_vars.iter().zip(keep) {
         let (alias, row0, data) = match &v.kind {
             ResultKind::Time => continue,

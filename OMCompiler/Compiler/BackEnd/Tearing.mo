@@ -625,6 +625,9 @@ algorithm
     case BackendDAE.RESIDUAL_EQUATION() algorithm
       exp := dEqn.exp;
       for i in 1:3 loop
+        if Expression.isScalarConst(exp) then
+          break;
+        end if;
         (exp, _) := Expression.traverseExpBottomUp(exp, substituteKnownVar, globalKnownVars);
         (exp, _) := ExpressionSimplify.simplify(exp);
       end for;

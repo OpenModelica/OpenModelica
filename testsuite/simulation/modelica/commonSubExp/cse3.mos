@@ -166,12 +166,12 @@ simulate(testCSE); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (6)
 // ========================================
-// 1: $res_NLSJac1_1:VARIABLE()  type: Real
-// 2: $res_NLSJac1_2:VARIABLE()  type: Real
-// 3: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
-// 4: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
-// 5: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
-// 6: input z.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 1: input z.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 3: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: $res_NLSJac1_2:VARIABLE()  type: Real
+// 6: $res_NLSJac1_1:VARIABLE()  type: Real
 //
 //
 // ########### CSE Replacements (2/46)

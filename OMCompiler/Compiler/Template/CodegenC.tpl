@@ -3829,16 +3829,26 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         >>
 
       let ty = crefShortType(cref)
+      // An array expression sets one value per array element, a scalar
+      // expression (e.g. `each min = p`) the value of all elements.
+      let attr = '<%crefAttributes(cref)%>.<%attribute%>'
+      let len = if isArrayType(typeof(exp)) then 'base_array_nr_of_elements(<%expPart%>)' else '1'
+      let setAttribute =
+        <<
+        if (base_array_nr_of_elements(<%attr%>) != <%len%>) {
+          omc_array_release(&<%attr%>);
+          simple_alloc_1d_<%ty%>_array(&<%attr%>, <%len%>);
+        }
+        <%if isArrayType(typeof(exp))
+          then 'copy_<%ty%>_array_data_mem(<%expPart%>, (modelica_<%ty%>*) <%attr%>.data);'
+          else 'put_<%ty%>_element(<%expPart%>, 0, &<%attr%>);'%>
+        >>
       let updateEqs = match attribute
         case "nominal"
         case "min"
         case "max" then
           <<
-          if (<%crefVarDimension(cref)%>.numberOfDimensions == 0) {
-            put_<%ty%>_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
-          } else {
-            throwStreamPrint(NULL, "Not yet implemented for array <%attribute%>.");
-          }
+          <%setAttribute%>
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char <%attribute%>_buffer[2048];
@@ -5275,7 +5285,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
                  static const char *res[] = {<%resDesc%>};
                  <%zeroCrossings |> ZERO_CROSSING(__) =>
                    'static const int occurEqs<%index%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
-                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) => 'occurEqs<%index%>' ; separator = ","%>};
+                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) => occurEqsString(index, iter) ; separator = ","%>};
                  *out_EquationIndexes = (int*) occurEqs[i];
                  return res[i];
                }
@@ -5321,6 +5331,14 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   }
   >>
 end functionZeroCrossing;
+
+template occurEqsString(Integer index, Option<list<SimIterator>> iter)
+::=
+  match iter
+    case SOME(iter_) then (List.intRange(BackendDAE.getSimIteratorSize(iter_)) |> idx =>
+      'occurEqs<%index%>';separator=",")
+    else 'occurEqs<%index%>'
+end occurEqsString;
 
 template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
 ::=
@@ -6090,7 +6108,7 @@ match sparsity
     // and its inner dimension is the adjoint seed count (primal rows).
     let patternCols = if isAdjoint then '<%sizeRows%>' else '<%nCols%>'
     let patternRows = if isAdjoint then '<%nCols%>' else '<%sizeRows%>'
-    let tmpvarsSize = (columns |> JAC_COLUMN() => listLength(columnVars); separator="\n")
+    let tmpvarsSize = (columns |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
     let constantEqns = (columns |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
@@ -7054,7 +7072,7 @@ match sparsepattern
     let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
-    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => listLength(columnVars); separator="\n")
+    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
@@ -7797,7 +7815,7 @@ template equationGenericAssign(SimEqSystem eq, Context context,
  "Generate a call for a generic for-loop structure with an index-list."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
 <<
 <%modelicaLine(eqInfo(eq))%>
 <%match eq
@@ -7879,7 +7897,7 @@ template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
 <%match eq
 case eqn as SES_GENERIC_ASSIGN() then
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
   <<
     case <%i0%>:
       genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
@@ -8900,7 +8918,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
   (genericCalls |> call =>
     let comment = escapeCComments(simGenericCallString(call))
     let &sub = buffer ""
@@ -8983,6 +9001,8 @@ template genericCallLhsRhs(DAE.Exp lhs, DAE.Exp rhs, Context context, Text &preE
     case CREF(componentRef=cr, ty = T_ARRAY()) then
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)
       let start_ = if isStartCref(cr) then algStmtAssignArrWithRhsExpStr(makeCrefExp(popCref(cr), crefTypeFull(cr)), rhs_, context, &preExp, &varDecls, &varFrees, &auxFunction) else ""
+      // the start attribute has to be large enough before a view on it is created
+      let &preExp += if isStartCref(cr) then startArrayEnsureSize(cr) + "\n" else ""
       <<
       <%algStmtAssignArrWithRhsExpStr(lhs, rhs_, context, &preExp, &varDecls, &varFrees, &auxFunction)%>
       <%start_%>
@@ -9128,7 +9148,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL()
     case IF_GENERIC_CALL()

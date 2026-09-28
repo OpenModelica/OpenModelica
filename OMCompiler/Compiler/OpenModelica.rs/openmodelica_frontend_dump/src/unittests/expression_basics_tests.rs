@@ -73,21 +73,21 @@ fn make_unary(op: DAE::Operator, e: metamodelica::Ref<DAE::Exp>) -> metamodelica
 
 #[test]
 fn compare_same_iconst_returns_zero() -> Result<()> {
-    let result = ExpressionBasics::compare(iconst(5), iconst(5))?;
+    let result = ExpressionBasics::compare(&iconst(5), iconst(5))?;
     assert_eq!(result, 0);
     Ok(())
 }
 
 #[test]
 fn compare_iconst_less_than() -> Result<()> {
-    let result = ExpressionBasics::compare(iconst(3), iconst(7))?;
+    let result = ExpressionBasics::compare(&iconst(3), iconst(7))?;
     assert!(result < 0, "expected negative, got {}", result);
     Ok(())
 }
 
 #[test]
 fn compare_iconst_greater_than() -> Result<()> {
-    let result = ExpressionBasics::compare(iconst(7), iconst(3))?;
+    let result = ExpressionBasics::compare(&iconst(7), iconst(3))?;
     assert!(result > 0, "expected positive, got {}", result);
     Ok(())
 }
@@ -99,7 +99,7 @@ fn compare_iconst_greater_than() -> Result<()> {
 /// and the code falls into the ICONST match arm while inExp2 is RCONST.
 #[test]
 fn compare_different_constructors_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(iconst(1), rconst(1.0))?;
+    let result = ExpressionBasics::compare(&iconst(1), rconst(1.0))?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -107,7 +107,7 @@ fn compare_different_constructors_should_return_nonzero_not_error() -> Result<()
 /// Same bug, different direction.
 #[test]
 fn compare_rconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(rconst(1.0), iconst(1))?;
+    let result = ExpressionBasics::compare(&rconst(1.0), iconst(1))?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -115,7 +115,7 @@ fn compare_rconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
 /// compare(BCONST, ICONST) — different constructors should give non-zero.
 #[test]
 fn compare_bconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(bconst(true), iconst(0))?;
+    let result = ExpressionBasics::compare(&bconst(true), iconst(0))?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -123,7 +123,7 @@ fn compare_bconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
 /// compare(SCONST, RCONST) — different constructors should give non-zero.
 #[test]
 fn compare_sconst_vs_rconst_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(sconst("hello"), rconst(1.0))?;
+    let result = ExpressionBasics::compare(&sconst("hello"), rconst(1.0))?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -134,25 +134,25 @@ fn compare_sconst_vs_rconst_should_return_nonzero_not_error() -> Result<()> {
 
 #[test]
 fn exp_equal_same_iconst() -> Result<()> {
-    assert_eq!(ExpressionBasics::expEqual(iconst(5), iconst(5))?, true);
+    assert_eq!(ExpressionBasics::expEqual(&iconst(5), iconst(5))?, true);
     Ok(())
 }
 
 #[test]
 fn exp_equal_different_iconst() -> Result<()> {
-    assert_eq!(ExpressionBasics::expEqual(iconst(5), iconst(6))?, false);
+    assert_eq!(ExpressionBasics::expEqual(&iconst(5), iconst(6))?, false);
     Ok(())
 }
 
 #[test]
 fn exp_equal_same_rconst() -> Result<()> {
-    assert_eq!(ExpressionBasics::expEqual(rconst(3.14), rconst(3.14))?, true);
+    assert_eq!(ExpressionBasics::expEqual(&rconst(3.14), rconst(3.14))?, true);
     Ok(())
 }
 
 #[test]
 fn exp_equal_different_rconst() -> Result<()> {
-    assert_eq!(ExpressionBasics::expEqual(rconst(1.0), rconst(2.0))?, false);
+    assert_eq!(ExpressionBasics::expEqual(&rconst(1.0), rconst(2.0))?, false);
     Ok(())
 }
 
@@ -166,7 +166,7 @@ fn exp_equal_different_rconst() -> Result<()> {
 /// and therefore produce the same hash.
 #[test]
 fn operator_compare_add_vs_sub_should_return_nonzero() -> Result<()> {
-    let result = ExpressionBasics::operatorCompare(add_op(), sub_op())?;
+    let result = ExpressionBasics::operatorCompare(&add_op(), &sub_op())?;
     assert_ne!(result, 0, "ADD and SUB should compare as unequal");
     Ok(())
 }
@@ -177,14 +177,14 @@ fn operator_compare_add_vs_sub_should_return_nonzero() -> Result<()> {
 fn compare_binary_add_vs_binary_sub_should_return_nonzero() -> Result<()> {
     let lhs = make_binary(iconst(1), add_op(), iconst(2));
     let rhs = make_binary(iconst(1), sub_op(), iconst(2));
-    let result = ExpressionBasics::compare(lhs, rhs)?;
+    let result = ExpressionBasics::compare(&lhs, rhs)?;
     assert_ne!(result, 0, "BINARY(ADD) and BINARY(SUB) should compare as unequal");
     Ok(())
 }
 
 #[test]
 fn operator_compare_same_add_returns_zero() -> Result<()> {
-    let result = ExpressionBasics::operatorCompare(add_op(), add_op())?;
+    let result = ExpressionBasics::operatorCompare(&add_op(), &add_op())?;
     assert_eq!(result, 0, "same operator should compare as equal");
     Ok(())
 }
@@ -196,21 +196,21 @@ fn operator_compare_same_add_returns_zero() -> Result<()> {
 #[test]
 fn dimension_string_unknown_is_colon() -> Result<()> {
     let dim = metamodelica::Ref::new(DAE::Dimension::DIM_UNKNOWN);
-    assert_eq!(ExpressionBasics::dimensionString(dim)?, ":");
+    assert_eq!(ExpressionBasics::dimensionString(&dim)?, ":");
     Ok(())
 }
 
 #[test]
 fn dimension_string_integer() -> Result<()> {
     let dim = metamodelica::Ref::new(DAE::Dimension::DIM_INTEGER { integer: 5 });
-    assert_eq!(ExpressionBasics::dimensionString(dim)?, "5");
+    assert_eq!(ExpressionBasics::dimensionString(&dim)?, "5");
     Ok(())
 }
 
 #[test]
 fn dimension_string_boolean() -> Result<()> {
     let dim = metamodelica::Ref::new(DAE::Dimension::DIM_BOOLEAN);
-    assert_eq!(ExpressionBasics::dimensionString(dim)?, "Boolean");
+    assert_eq!(ExpressionBasics::dimensionString(&dim)?, "Boolean");
     Ok(())
 }
 
@@ -220,36 +220,36 @@ fn dimension_string_boolean() -> Result<()> {
 
 #[test]
 fn priority_iconst_is_zero() -> Result<()> {
-    assert_eq!(ExpressionBasics::priority(iconst(5), true)?, 0);
-    assert_eq!(ExpressionBasics::priority(iconst(5), false)?, 0);
+    assert_eq!(ExpressionBasics::priority(&iconst(5), true)?, 0);
+    assert_eq!(ExpressionBasics::priority(&iconst(5), false)?, 0);
     Ok(())
 }
 
 #[test]
 fn priority_rconst_positive_is_zero() -> Result<()> {
     // positive real — not caught by the negative-real guard, so priority is 0
-    assert_eq!(ExpressionBasics::priority(rconst(1.0), true)?, 0);
+    assert_eq!(ExpressionBasics::priority(&rconst(1.0), true)?, 0);
     Ok(())
 }
 
 #[test]
 fn priority_rconst_negative_is_four() -> Result<()> {
     // negative real has same priority as unary minus
-    assert_eq!(ExpressionBasics::priority(rconst(-1.0), true)?, 4);
+    assert_eq!(ExpressionBasics::priority(&rconst(-1.0), true)?, 4);
     Ok(())
 }
 
 #[test]
 fn priority_binary_add_lhs() -> Result<()> {
     let e = make_binary(iconst(1), add_op(), iconst(2));
-    assert_eq!(ExpressionBasics::priority(e, true)?, 5);
+    assert_eq!(ExpressionBasics::priority(&e, true)?, 5);
     Ok(())
 }
 
 #[test]
 fn priority_binary_add_rhs() -> Result<()> {
     let e = make_binary(iconst(1), add_op(), iconst(2));
-    assert_eq!(ExpressionBasics::priority(e, false)?, 6);
+    assert_eq!(ExpressionBasics::priority(&e, false)?, 6);
     Ok(())
 }
 
@@ -257,7 +257,7 @@ fn priority_binary_add_rhs() -> Result<()> {
 fn priority_unary_is_four() -> Result<()> {
     let uminus = DAE::Operator::UMINUS { ty: DAE::T_REAL_DEFAULT().clone() };
     let e = make_unary(uminus, iconst(1));
-    assert_eq!(ExpressionBasics::priority(e, true)?, 4);
+    assert_eq!(ExpressionBasics::priority(&e, true)?, 4);
     Ok(())
 }
 
@@ -268,7 +268,7 @@ fn priority_unary_is_four() -> Result<()> {
 #[test]
 fn subscript_int_from_index() -> Result<()> {
     let sub = index_sub(iconst(3));
-    assert_eq!(ExpressionBasics::subscriptInt(sub)?, 3);
+    assert_eq!(ExpressionBasics::subscriptInt(&sub)?, 3);
     Ok(())
 }
 
@@ -288,21 +288,21 @@ fn subscripts_int_list() -> Result<()> {
 
 #[test]
 fn subscript_equal_empty_lists() -> Result<()> {
-    assert_eq!(ExpressionBasics::subscriptEqual(metamodelica::nil(), metamodelica::nil())?, true);
+    assert_eq!(ExpressionBasics::subscriptEqual(&metamodelica::nil(), &metamodelica::nil())?, true);
     Ok(())
 }
 
 #[test]
 fn subscript_equal_wholedim_wholedim() -> Result<()> {
     let s = list![wholedim()];
-    assert_eq!(ExpressionBasics::subscriptEqual(s.clone(), s.clone())?, true);
+    assert_eq!(ExpressionBasics::subscriptEqual(&s, &s)?, true);
     Ok(())
 }
 
 #[test]
 fn subscript_equal_same_index() -> Result<()> {
     let s = list![index_sub(iconst(1))];
-    assert_eq!(ExpressionBasics::subscriptEqual(s.clone(), s.clone())?, true);
+    assert_eq!(ExpressionBasics::subscriptEqual(&s, &s)?, true);
     Ok(())
 }
 
@@ -310,7 +310,7 @@ fn subscript_equal_same_index() -> Result<()> {
 fn subscript_equal_different_index() -> Result<()> {
     let s1 = list![index_sub(iconst(1))];
     let s2 = list![index_sub(iconst(2))];
-    assert_eq!(ExpressionBasics::subscriptEqual(s1, s2)?, false);
+    assert_eq!(ExpressionBasics::subscriptEqual(&s1, &s2)?, false);
     Ok(())
 }
 
@@ -318,7 +318,7 @@ fn subscript_equal_different_index() -> Result<()> {
 fn subscript_equal_mixed_kinds() -> Result<()> {
     let s1 = list![wholedim()];
     let s2 = list![index_sub(iconst(1))];
-    assert_eq!(ExpressionBasics::subscriptEqual(s1, s2)?, false);
+    assert_eq!(ExpressionBasics::subscriptEqual(&s1, &s2)?, false);
     Ok(())
 }
 
@@ -329,7 +329,7 @@ fn subscript_equal_mixed_kinds() -> Result<()> {
 #[test]
 fn print_subscript_str_wholedim() -> Result<()> {
     init_flags();
-    assert_eq!(ExpressionBasics::printSubscriptStr(wholedim())?, ":");
+    assert_eq!(ExpressionBasics::printSubscriptStr(&wholedim())?, ":");
     Ok(())
 }
 
@@ -337,7 +337,7 @@ fn print_subscript_str_wholedim() -> Result<()> {
 fn print_subscript_str_index_iconst() -> Result<()> {
     init_flags();
     let sub = index_sub(iconst(3));
-    assert_eq!(ExpressionBasics::printSubscriptStr(sub)?, "3");
+    assert_eq!(ExpressionBasics::printSubscriptStr(&sub)?, "3");
     Ok(())
 }
 
@@ -349,7 +349,7 @@ fn print_subscript_str_index_iconst() -> Result<()> {
 fn print_list_str_empty() -> Result<()> {
     let result = ExpressionBasics::printListStr::<metamodelica::Ref<DAE::Subscript>>(
         metamodelica::nil(),
-        Arc::new(|s| ExpressionBasics::printSubscriptStr(s)),
+        &|s| ExpressionBasics::printSubscriptStr(&s),
         literal!(","),
     )?;
     assert_eq!(result, "");
@@ -363,7 +363,7 @@ fn print_list_str_multiple() -> Result<()> {
         list![index_sub(iconst(3)), index_sub(iconst(5))];
     let result = ExpressionBasics::printListStr(
         subs,
-        Arc::new(|s| ExpressionBasics::printSubscriptStr(s)),
+        &|s| ExpressionBasics::printSubscriptStr(&s),
         literal!(","),
     )?;
     assert_eq!(result, "3,5");

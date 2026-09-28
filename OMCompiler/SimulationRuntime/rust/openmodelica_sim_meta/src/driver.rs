@@ -418,6 +418,12 @@ pub trait SimEngine {
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()>;
     /// Write `buf` to linear memory starting at byte address `addr`.
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()>;
+    /// Copy `len` bytes of linear memory from address `from` to `to`.
+    fn copy_bytes(&mut self, from: u32, to: u32, len: usize) -> Result<()> {
+        let mut buf = vec![0u8; len];
+        self.read_bytes(from, &mut buf)?;
+        self.write_bytes(to, &buf)
+    }
     /// Call the exported `fn(u32) -> ()` `name` (an equation function). Backends
     /// cache the resolved function; a missing export is an error.
     fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()>;
@@ -1271,7 +1277,18 @@ static CANCEL_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_cancel_hook(f: fn() -> bool) {
     CANCEL_HOOK.store(f as usize, Ordering::Relaxed);
 }
+// Fires once per step, where the step loops poll for cancellation: C's
+// `communicateStatus("Running", ...)`.
+static STEP_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_step_hook(f: fn()) {
+    STEP_HOOK.store(f as usize, Ordering::Relaxed);
+}
 pub(crate) fn cancel_requested() -> bool {
+    let p = STEP_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
     let p = CANCEL_HOOK.load(Ordering::Relaxed);
     if p == 0 {
         return false;
@@ -2928,27 +2945,40 @@ fn run_homotopy_continuation(
     omclog::info(omclog::INIT_HOMOTOPY, true, "homotopy process\n---------------------------");
     // C runs every step unconditionally and checks the systems once at the end
     // (`check_nonlinear_solutions`), so a system that misses at lambda = 1/3 and
-    // lands at lambda = 1 is not a failure. A model assert still aborts.
-    for step in 0..=steps {
-        let lambda = (step as f64 / steps as f64).min(1.0);
-        write_f64(e, sim_data + layout.lambda_off, lambda)?;
-        omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
-        if step == 0 {
-            call_initial_equations_lambda0(e, sim_data, layout)?;
-        } else {
-            write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-            e.call1("functionInitialEquations", sim_data)?;
+    // lands at lambda = 1 is not a failure. A model assert or a raised error
+    // still aborts, after the block is closed.
+    let steps_run = (|| {
+        for step in 0..=steps {
+            let lambda = (step as f64 / steps as f64).min(1.0);
+            write_f64(e, sim_data + layout.lambda_off, lambda)?;
+            omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
+            if step == 0 {
+                call_initial_equations_lambda0(e, sim_data, layout)?;
+            } else {
+                write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+                e.call1("functionInitialEquations", sim_data)?;
+            }
+            omclog::info!(
+                omclog::INIT_HOMOTOPY,
+                false,
+                "homotopy parameter lambda = {} done\n---------------------------",
+                format_g(lambda, 6),
+            );
+            path.row(e, sim_data, layout, lambda);
         }
-        omclog::info!(
-            omclog::INIT_HOMOTOPY,
-            false,
-            "homotopy parameter lambda = {} done\n---------------------------",
-            format_g(lambda, 6),
-        );
-        path.row(e, sim_data, layout, lambda);
-    }
+        Ok(())
+    })();
     omclog::close(omclog::INIT_HOMOTOPY);
     path.finish();
+    if let Err(err) = steps_run {
+        omclog::error(
+            omclog::ASSERT,
+            false,
+            "Failed to solve the initialization problem with global homotopy with equidistant step size.",
+        );
+        omclog::debug(omclog::ASSERT, false, "Unable to solve initialization problem.");
+        return Err(err);
+    }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
     if check_nls(e, sim_data, layout).is_err() {
         omclog::error(
@@ -2957,7 +2987,9 @@ fn run_homotopy_continuation(
             "Failed to solve the initialization problem with global homotopy with equidistant step size.",
         );
         init_report::set_failed_step(steps);
-        return Err("CodegenWasmJit: homotopy initialization did not converge at lambda");
+        omclog::debug(omclog::ASSERT, false, "Unable to solve initialization problem.");
+        log_init_assert_notice();
+        return Err(ASSERT_ERR);
     }
     Ok(())
 }
@@ -3042,24 +3074,136 @@ pub fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout
 }
 
 fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    for i in 0..layout.n_reals_row() {
-        rows.push(read_f64(e, sim_data + i * 8)?);
-    }
-    for i in 0..layout.n_int_alg() {
-        rows.push(read_i32(e, sim_data + layout.int_off + i * 4)? as f64);
-    }
-    for j in 0..layout.n_bool_alg() {
-        rows.push(read_i32(e, sim_data + layout.bool_off + j * 4)? as f64);
-    }
+    let push_f64s = |rows: &mut Vec<f64>, addr: u32, n: u32| -> Result<()> {
+        let at = rows.len();
+        rows.resize(at + n as usize, 0.0);
+        read_f64s(e, addr, &mut rows[at..])
+    };
+    rows.push(read_f64(e, sim_data + TIME_OFF)?);
+    push_f64s(rows, sim_data + REAL_OFF, layout.n_reals_row() - 1)?;
+    let mut ints = vec![0u8; ((layout.n_int_alg() + layout.n_bool_alg()) * 4) as usize];
+    let (int_bytes, bool_bytes) = ints.split_at_mut((layout.n_int_alg() * 4) as usize);
+    e.read_bytes(sim_data + layout.int_off, int_bytes)?;
+    e.read_bytes(sim_data + layout.bool_off, bool_bytes)?;
+    rows.extend(ints.chunks_exact(4).map(|b| i32::from_le_bytes(b.try_into().unwrap()) as f64));
     // Zero for every solver but IDA, which refreshes it from `IDAGetSens`.
-    for k in 0..layout.n_sens {
-        rows.push(read_f64(e, sim_data + layout.sens_off + k * 8)?);
-    }
+    push_f64s(rows, sim_data + layout.sens_off, layout.n_sens)?;
     for i in 0..layout.n_str_alg() {
         let s = e.string_at(sim_data + layout.str_off + i * 4)?;
         rows.push(crate::strings::intern(&s) as f64);
     }
+    if layout.extra_cols & crate::EXTRA_CPU_TIME != 0 {
+        rtclock::accumulate(rtclock::TOTAL);
+        rows.push(rtclock::accumulated(rtclock::TOTAL));
+        rtclock::tick(rtclock::TOTAL);
+    }
+    if layout.extra_cols & crate::EXTRA_SOLVER_STEPS != 0 {
+        rows.push(SOLVER_STEPS.load(Ordering::Relaxed) as f64);
+    }
+    #[cfg(feature = "std")]
+    rt_sync::row(read_f64(e, sim_data + TIME_OFF)?);
     Ok(())
+}
+
+/// `-rt`: C's `real_time_sync`, which paces the output rows to the wall clock.
+#[cfg(feature = "std")]
+pub mod rt_sync {
+    use super::{format_g, now_ms};
+    use crate::omclog;
+    use std::cell::Cell;
+
+    #[derive(Clone, Copy)]
+    struct State {
+        scaling: f64,
+        t0: f64,
+        start_ms: f64,
+        step: f64,
+        max_late_ns: i64,
+    }
+
+    std::thread_local! {
+        static STATE: Cell<Option<State>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn arm(t0: f64, step: f64) {
+        let scaling = crate::simflags::with_flags(|f| f.real_time).unwrap_or(0.0);
+        let state = (scaling != 0.0).then(|| State {
+            scaling,
+            t0,
+            start_ms: now_ms(),
+            step,
+            max_late_ns: i64::MIN,
+        });
+        STATE.with(|s| s.set(state));
+    }
+
+    pub(super) fn row(time: f64) {
+        let Some(mut st) = STATE.with(|s| s.get()) else { return };
+        // The rows at the start time come from initialization, which C does not pace.
+        if time <= st.t0 {
+            return;
+        }
+        let target_ns = (st.scaling * (time - st.t0) * 1e9) as u64 as i64;
+        let late = ((now_ms() - st.start_ms) * 1e6) as i64 - target_ns;
+        if late < 0 {
+            std::thread::sleep(std::time::Duration::from_nanos(late.unsigned_abs()));
+        }
+        let max_late = (st.step * 1e9 * 0.1 * st.scaling) as i64;
+        if late > max_late {
+            let (t, unit) = pretty_ns(late);
+            let (t2, unit2) = pretty_ns(max_late);
+            omclog::error!(
+                omclog::RT,
+                false,
+                "Missed deadline at time {}; delta was {t} {unit} (maxLate={t2} {unit2})",
+                format_g(time, 6),
+            );
+        }
+        st.max_late_ns = st.max_late_ns.max(late);
+        STATE.with(|s| s.set(Some(st)));
+    }
+
+    /// C's closing `LOG_RT` line.
+    pub fn finish() {
+        if let Some(st) = STATE.with(|s| s.take()) {
+            let (t, unit) = pretty_ns(st.max_late_ns);
+            omclog::info!(
+                omclog::RT,
+                false,
+                "Maximum real-time latency was (positive=missed dealine, negative is slack): {t} {unit}",
+            );
+        }
+    }
+
+    /// C's `prettyPrintNanoSec`.
+    fn pretty_ns(ns: i64) -> (i64, &'static str) {
+        if !(-100_000_000_000..=100_000_000_000).contains(&ns) {
+            (ns / 1_000_000_000, "s")
+        } else if !(-100_000_000..=100_000_000).contains(&ns) {
+            (ns / 1_000_000, "ms")
+        } else if !(-100_000..=100_000).contains(&ns) {
+            (ns / 1000, "µs")
+        } else {
+            (ns, "ns")
+        }
+    }
+}
+
+/// `-steps`: the integrator steps taken so far (C's `simulationInfo->solverSteps`),
+/// which each driver publishes after a step and the next result row reports.
+static TRACK_STEPS: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+static SOLVER_STEPS: openmodelica_solvers::atomic64::AtomicU64 =
+    openmodelica_solvers::atomic64::AtomicU64::new(0);
+
+fn track_solver_steps(on: bool) {
+    TRACK_STEPS.store(on, Ordering::Relaxed);
+    SOLVER_STEPS.store(0, Ordering::Relaxed);
+}
+
+pub(crate) fn publish_steps(steps: impl FnOnce() -> u64) {
+    if TRACK_STEPS.load(Ordering::Relaxed) {
+        SOLVER_STEPS.store(steps(), Ordering::Relaxed);
+    }
 }
 
 /// Whether the run stops here rather than at `stopTime`: `terminate()` raised the
@@ -3466,9 +3610,7 @@ fn save_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     if !layout.has_old_real {
         return Ok(());
     }
-    let mut buf = vec![0u8; layout.real_bytes()];
-    e.read_bytes(sim_data + REAL_OFF, &mut buf)?;
-    e.write_bytes(sim_data + layout.old_real_off, &buf)
+    e.copy_bytes(sim_data + REAL_OFF, sim_data + layout.old_real_off, layout.real_bytes())
 }
 
 /// Copy the live real/integer/boolean regions into their `pre()` mirrors (C's
@@ -3484,9 +3626,7 @@ fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
         if bytes == 0 {
             continue;
         }
-        let mut buf = vec![0u8; bytes as usize];
-        e.read_bytes(sim_data + live, &mut buf)?;
-        e.write_bytes(sim_data + pre, &buf)?;
+        e.copy_bytes(sim_data + live, sim_data + pre, bytes as usize)?;
     }
     e.store_pre_strings();
     Ok(())
@@ -4068,8 +4208,8 @@ fn locate_zc_root(
     Ok((a, b))
 }
 
-/// Snapshot of the discrete state — boolean/integer algebraics and held relations
-/// — used to detect when an event's discrete update has reached a fixed point.
+/// Snapshot of the discrete state — boolean/integer algebraics, held relations and
+/// discrete Reals — used to detect when an event's discrete update has reached a fixed point.
 pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
     let mut buf = vec![0u8; ((layout.n_bool_alg() + layout.n_int_alg()) * 4 + layout.n_rel * 4) as usize];
     let (bools, rest) = buf.split_at_mut((layout.n_bool_alg() * 4) as usize);
@@ -4077,6 +4217,13 @@ pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -
     e.read_bytes(sim_data + layout.bool_off, bools)?;
     e.read_bytes(sim_data + layout.int_off, ints)?;
     e.read_bytes(sim_data + layout.relations_off, rels)?;
+    // C's `checkForDiscreteChanges` walks the discrete Reals first.
+    event_dump_store::with(|d| {
+        for (_, live, _) in &d.reals {
+            buf.extend_from_slice(&read_f64(e, sim_data + live)?.to_bits().to_ne_bytes());
+        }
+        Ok(())
+    })?;
     Ok(buf)
 }
 
@@ -4628,10 +4775,10 @@ fn alloc_gbode(
     };
     let colors = jac_a.map_or(0, |j| j.colors.len());
     let sym = jac_a.is_some_and(|j| j.sym.is_some());
+    let adj = jac_a.and_then(|j| j.sym.as_ref()).is_some_and(|s| s.adj.is_some());
     let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-    let gb =
-        crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors, sym)
-            .map_err(leak_error)?;
+    let gb = crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors, sym, adj)
+        .map_err(leak_error)?;
     Ok(Some(alloc::boxed::Box::new(gb)))
 }
 
@@ -4787,6 +4934,8 @@ pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> R
             format_g(model.stop_time, 6),
         );
     }
+    #[cfg(feature = "std")]
+    rt_sync::finish();
     signal_teardown();
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
     read_params(e, model, sim_data)
@@ -4834,8 +4983,17 @@ pub fn drive(
     // C's `measure_time_flag`: the clocks run only when the block that renders
     // them will be printed.
     // `+profiling` is C's other `measure_time_flag` source.
-    rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
+    // `-cpu` too: its column reads the total clock.
+    rtclock::reset(
+        omclog::active(omclog::STATS)
+            || omclog::active(omclog::STATS_V)
+            || model.prof.is_some()
+            || layout.extra_cols & crate::EXTRA_CPU_TIME != 0,
+    );
     rtclock::tick(rtclock::TOTAL);
+    track_solver_steps(layout.extra_cols & crate::EXTRA_SOLVER_STEPS != 0);
+    #[cfg(feature = "std")]
+    rt_sync::arm(model.start_time, model.step_size());
     let lv_time = crate::simflags::with_flags(|f| f.lv_time);
     if let Some((t0, t1)) = lv_time {
         omclog::info!(
@@ -4897,6 +5055,24 @@ pub fn drive(
                 run_initialization_model(e, sim_data, model)
                     .map_err(|err| enrich_trap_init(e, err, start))?;
                 open_result(e, model, sim_data)?;
+                // What `runOptimizer` throws before it starts, which `solver_main`'s
+                // catch retries once before the run ends.
+                let setup_error = match &model.opt {
+                    None => Some(crate::optimization::NOT_COMPILED),
+                    Some(o) => o.setup_error.as_deref(),
+                };
+                if let Some(msg) = setup_error {
+                    omclog::debug(omclog::ASSERT, false, msg);
+                    omclog::warning(omclog::STDOUT, false, "Integrator attempt to handle a problem with a called assert.");
+                    omclog::debug(omclog::ASSERT, false, msg);
+                    omclog::info!(
+                        omclog::STDOUT,
+                        false,
+                        "model terminate | Simulation terminated by an assert at time: {}",
+                        format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
+                    );
+                    return Err(ASSERT_ERR);
+                }
                 return crate::optimization::run_optimizer(e, model, sim_data)
                     .map_err(|err| enrich_trap(e, err));
             }
@@ -5152,6 +5328,7 @@ impl Driver for EulerDriver {
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
+            publish_steps(|| self.row as u64);
             let emitted = if self.row == 0 {
                 emit_initial_row(e, &mut self.rows, sim_data, layout, time)
             } else {
@@ -5514,12 +5691,8 @@ enum JacAvail {
     Available,
 }
 
-/// What the model carries for the requested method. The adjoint Jacobian is a matrix
-/// of its own, which this backend never emits, so asking for it finds nothing.
-fn jac_availability(jac: Option<&JacAInfo>, requested: Option<JacobianMethod>) -> JacAvail {
-    if requested == Some(JacobianMethod::ColoredSymJacAdj) {
-        return JacAvail::NotAvailable;
-    }
+/// What the model carries for the requested method.
+fn jac_availability(jac: Option<&JacAInfo>) -> JacAvail {
     match jac {
         None => JacAvail::NotAvailable,
         Some(j) if j.sym.is_some() => JacAvail::Available,
@@ -5538,7 +5711,29 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
             omclog::warning(omclog::STDOUT, false, m);
         }
     };
-    let method = match jac_availability(jac, requested) {
+    // C's `initSymbolicOdeJacobian`: either direction the adjoint takes part in
+    // needs one, and without it the forward Jacobian stands in.
+    let has_adj = jac.and_then(|j| j.sym.as_ref()).is_some_and(|s| s.adj.is_some());
+    let requested = match requested {
+        Some(M::ColoredSymJacAdj) if !has_adj => {
+            warn(
+                "No adjoint symbolic Jacobian was generated (compile with \
+                 --generateDynamicJacobian=symbolicAdjoint or =bidirectional). Switching to the \
+                 forward symbolic Jacobian.",
+            );
+            None
+        }
+        Some(M::BicoloredSymJac) if !has_adj => {
+            warn(
+                "No bidirectional symbolic Jacobian was generated (compile with \
+                 --generateDynamicJacobian=bidirectional). Switching to the forward symbolic \
+                 Jacobian.",
+            );
+            None
+        }
+        r => r,
+    };
+    let method = match jac_availability(jac) {
         JacAvail::NotAvailable => {
             if !matches!(requested, None | Some(M::InternalNumJac)) {
                 warn("Jacobian not available, switching to internal numerical Jacobian.");
@@ -5562,26 +5757,18 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
     if log {
         omclog::info!(omclog::JAC, false, "Using Jacobian method: {}", method.desc());
     }
-    // Without an adjoint C's `evalJacobian` degenerates to the colored evaluation.
-    match method {
-        M::BicoloredSymJac if jac.and_then(|j| j.sym.as_ref()).is_none_or(|s| s.adj.is_none()) => {
-            if log {
-                omclog::warning(
-                    omclog::SOLVER,
-                    false,
-                    "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; \
-                     falling back to standard colored symbolic evaluation.",
-                );
-            }
-            M::ColoredSymJac
-        }
-        m => m,
-    }
+    method
 }
 
 /// Whether the method assembles from the symbolic column equations.
 fn jac_method_symbolic(m: JacobianMethod) -> bool {
-    matches!(m, JacobianMethod::SymJac | JacobianMethod::ColoredSymJac | JacobianMethod::BicoloredSymJac)
+    matches!(
+        m,
+        JacobianMethod::SymJac
+            | JacobianMethod::ColoredSymJac
+            | JacobianMethod::ColoredSymJacAdj
+            | JacobianMethod::BicoloredSymJac
+    )
 }
 
 /// Whether the method evaluates once per colour rather than once per column.
@@ -5714,19 +5901,17 @@ unsafe fn dassl_jac(
     };
     let run = (|| -> Result<()> {
         write_time(e, ctx.sim_data, unsafe { *t })?;
-        if ctx.jac_method == JacobianMethod::BicoloredSymJac {
-            eval_bicolored_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, &mut |row, col, v| {
-                unsafe { *pd.add(col * n + row) = 0.0 - v };
-            })?;
-        } else if jac_method_symbolic(ctx.jac_method) {
+        if jac_method_symbolic(ctx.jac_method) {
             // C's `jacA_symColored` / `jacA_sym`. This residual is G = y' − f, the
             // negative of C's F = f − y', so ∂f/∂y enters negated (and the `cj·I`
             // below is added where C subtracts it).
-            eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, colored, &mut |row, col, _, v| {
+            let method = ctx.jac_method;
+            eval_ode_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, method, colored, &mut |row, col, _, v| {
                 unsafe { *pd.add(col * n + row) = 0.0 - v };
             })?;
         } else {
             set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+            let delta_x = delta_x_solver();
             let groups: &[Vec<u32>] = if colored { &jac.colors } else { &per_column };
             for group in groups {
                 // Perturb every column in this colour; record del and the base value.
@@ -5735,13 +5920,14 @@ unsafe fn dassl_jac(
                     let yi = unsafe { *y.add(ci) };
                     let hyp = h * unsafe { *yprime.add(ci) };
                     let nom = unsafe { *ctx.nominals.add(ci) };
-                    let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
+                    let ewt_inv = (1.0 / unsafe { *wt.add(ci) }).abs();
+                    let mut del = fd_step_ewt(delta_x, yi, hyp, ewt_inv, ctx.nominal_factor * nom);
                     del = yi + del - yi; // floating-point rounding, as in the C runtime
                     if del == 0.0 {
-                        del = DELTA_X_SOLVER;
+                        del = delta_x;
                     }
                     ctx.jac_ysave[ci] = yi;
-                    ctx.jac_del[ci] = del;
+                    ctx.jac_del[ci] = 1.0 / del;
                     unsafe { *y.add(ci) = yi + del };
                 }
                 // One residual evaluation at the perturbed point. No `IRES` here: a
@@ -5763,12 +5949,12 @@ unsafe fn dassl_jac(
                     // Scatter the finite difference into the affected rows.
                     for &col in group {
                         let ci = col as usize;
-                        let del = ctx.jac_del[ci];
+                        let inv = ctx.jac_del[ci];
                         let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
                         for &row in rows {
                             let ri = row as usize;
                             let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
-                            unsafe { *pd.add(ci * n + ri) = d / del };
+                            unsafe { *pd.add(ci * n + ri) = d * inv };
                         }
                     }
                 }
@@ -5798,30 +5984,21 @@ unsafe fn dassl_jac(
     }
 }
 
-/// C's `numericalDifferentiationDeltaXsolver`: `sqrt(DBL_EPSILON)` unless
-/// `-numericalDifferentiationDeltaXsolver` says otherwise (`simulation_runtime.cpp`).
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
+/// C's `numericalDifferentiationDeltaXsolver`, `-deltaXSolver`.
+fn delta_x_solver() -> f64 {
+    crate::simflags::with_flags(crate::simflags::delta_x_solver)
+}
 
 /// Give a step the sign of `h*y'`, as both runtimes do.
 fn signed(mag: f64, hyp: f64) -> f64 {
     if hyp >= 0.0 { mag } else { -mag }
 }
 
-/// The Jacobian's step for a column, C's `numericalJacobianStep` (`model_help.h`):
-/// the relative step, or the nominal where the state is inside its own absolute
-/// tolerance and so is no scale of its own to difference over.
-fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64, factor: f64) -> f64 {
-    let scale = yi.abs().max(hyp.abs());
-    let ewt_inv = tol * (yi.abs() + nominal);
-    let step = if scale > ewt_inv { scale } else { ewt_inv.max(factor * nominal) };
-    signed(DELTA_X_SOLVER * step, hyp)
-}
-
 /// C's `numericalJacobianStep` as `jacA_num` calls it.
-fn fd_step_ewt(yi: f64, hyp: f64, ewt_inv: f64, nominal: f64) -> f64 {
+fn fd_step_ewt(delta_x: f64, yi: f64, hyp: f64, ewt_inv: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
-    signed(DELTA_X_SOLVER * step, hyp)
+    signed(delta_x * step, hyp)
 }
 
 /// C's `LOG_JAC` block: `printJacobianMatrix`, then the largest differences against
@@ -5868,12 +6045,13 @@ unsafe fn dassl_log_jacobian(
     omclog::close(omclog::JAC);
     let mut numerical = vec![0.0f64; n * n];
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    let delta_x = delta_x_solver();
     for col in (0..n).rev() {
         let yi = unsafe { *y.add(col) };
         let hyp = h * unsafe { *yprime.add(col) };
         let ewt_inv = (1.0 / unsafe { *wt.add(col) }).abs();
         let nom = unsafe { *ctx.nominals.add(col) };
-        let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
+        let mut del = fd_step_ewt(delta_x, yi, hyp, ewt_inv, ctx.nominal_factor * nom);
         del = yi + del - yi;
         let inv = 1.0 / del;
         unsafe { *y.add(col) = yi + del };
@@ -5939,16 +6117,44 @@ unsafe fn dassl_log_jacobian(
     Ok(())
 }
 
-/// C's `evalJacobianBidirectional`: a column phase over A's coloring and a row
-/// phase over the adjoint's, each entry taken from the phase that recovers it alone
-/// (`initBidirectionalRecovery`).
-pub fn eval_bicolored_jacobian(
+/// The ODE Jacobian through the method [`set_jacobian_method`] chose: C's
+/// `evalJacobian`, which dispatches on the selected Jacobian's properties.
+/// `set(row, col, k, value)` as in [`eval_sym_jacobian`].
+pub fn eval_ode_jacobian(
     e: &mut dyn SimEngine,
     sim_data: u32,
     jac: &JacAInfo,
     ctx_addr: u32,
+    method: JacobianMethod,
+    colored: bool,
+    set: &mut dyn FnMut(usize, usize, usize, f64),
+) -> Result<()> {
+    let (forward, adjoint) = match method {
+        JacobianMethod::BicoloredSymJac => (true, true),
+        JacobianMethod::ColoredSymJacAdj => (false, true),
+        _ => return eval_sym_jacobian(e, sim_data, jac, ctx_addr, colored, set),
+    };
+    let rows_by_col = &jac.rows_by_col;
+    eval_directions(e, sim_data, jac, ctx_addr, forward, adjoint, &mut |row, col, v| {
+        let k = rows_by_col[col].iter().position(|&r| r as usize == row).unwrap_or(usize::MAX);
+        set(row, col, k, v)
+    })
+}
+
+/// The column phase, the row phase (C's `evalJacobianRow`), or both (C's
+/// `evalJacobianBidirectional`), where each entry is taken from the phase that
+/// recovers it alone (`initBidirectionalRecovery`). Alone, a phase's own coloring
+/// recovers every entry.
+fn eval_directions(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    jac: &JacAInfo,
+    ctx_addr: u32,
+    forward: bool,
+    adjoint: bool,
     set: &mut dyn FnMut(usize, usize, f64),
 ) -> Result<()> {
+    let both = forward && adjoint;
     let sym = jac.sym.as_ref().ok_or("CodegenWasmJit: no symbolic Jacobian to evaluate")?;
     let adj = sym.adj.as_ref().ok_or("CodegenWasmJit: no adjoint Jacobian to evaluate")?;
     let n = jac.n as usize;
@@ -5971,23 +6177,26 @@ pub fn eval_bicolored_jacobian(
         }
     }
     let fwd_ok = |row: usize, col: usize| {
-        cols_by_row[row].iter().all(|&c2| c2 == col || col_color[c2] != col_color[col])
+        !both || cols_by_row[row].iter().all(|&c2| c2 == col || col_color[c2] != col_color[col])
     };
     let adj_ok = |row: usize, col: usize| {
-        jac.rows_by_col[col].iter().all(|&r2| r2 as usize == row || row_color[r2 as usize] != row_color[row])
+        !both
+            || jac.rows_by_col[col].iter().all(|&r2| r2 as usize == row || row_color[r2 as usize] != row_color[row])
     };
     set_context(e, ctx_addr, CONTEXT_SYM_JACOBIAN);
     let run = (|| -> Result<()> {
         for &off in sym.seed_offs.iter().chain(adj.seed_offs.iter()) {
             write_f64(e, sim_data + off, 0.0)?;
         }
-        if sym.has_constant {
+        if forward && sym.has_constant {
             e.call1("functionJacA_constantEqns", sim_data)?;
         }
-        if adj.has_constant {
+        if adjoint && adj.has_constant {
             e.call1("functionJacADJ_constantEqns", sim_data)?;
         }
-        for group in &jac.colors {
+        let forward_colors: &[Vec<u32>] = if forward { &jac.colors } else { &[] };
+        let adjoint_colors: &[Vec<u32>] = if adjoint { &adj.row_colors } else { &[] };
+        for group in forward_colors {
             for &c in group {
                 write_f64(e, sim_data + sym.seed_offs[c as usize], 1.0)?;
             }
@@ -6010,7 +6219,7 @@ pub fn eval_bicolored_jacobian(
         for &off in &adj.zero_offs {
             write_f64(e, sim_data + off, 0.0)?;
         }
-        for group in &adj.row_colors {
+        for group in adjoint_colors {
             for &r in group {
                 write_f64(e, sim_data + adj.seed_offs[r as usize], 1.0)?;
             }
@@ -6281,7 +6490,7 @@ struct DasslDriver {
 
 /// DASKR zeroes its IWORK counters on a fresh start, so the run totals are folded
 /// in here before each restart.
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 struct DaskrCounters {
     steps: u64,
     err_test_fails: u64,
@@ -6596,6 +6805,11 @@ impl Driver for DasslDriver {
                 );
             }
             e.set_rhs_final(true); // ... and set for the output evaluation
+            publish_steps(|| {
+                let mut total = self.past;
+                total.fold(&self.iwork);
+                total.steps
+            });
             // C's `dassl_step` logs the statistics once its `while (idid == 1)` loop is done.
             if logging && self.idid != -1 && self.idid != 1 {
                 log_dassl_stats(self.idid, self.t, &self.rwork, &self.iwork);
@@ -7167,6 +7381,7 @@ struct SolverCore {
     dae_alg_offs: Vec<u32>,
     /// The model was translated with `--daeMode`, so `y'` is a solver result.
     dae: bool,
+    rel_fresh_off: u32,
     states_base: u32,
     ders_base: u32,
     y: Vec<f64>,
@@ -7186,12 +7401,11 @@ struct SolverCore {
     maxs: Vec<f64>,
     /// Relative tolerance, for the numerical Jacobian's first step.
     tol: f64,
-    /// C's `chatteringInfo`: a ring over the last [`CHATTER_LIMIT`] events, whether
-    /// each was a state event and when. Fires once.
+    /// C's `chatteringInfo`: a ring of the last [`CHATTER_LIMIT`] state event times
+    /// and how many state events came in a row. Fires once.
     chatter_times: [f64; CHATTER_LIMIT],
-    chatter_steps: [bool; CHATTER_LIMIT],
     chatter_idx: usize,
-    chatter_count: usize,
+    chatter_in_a_row: usize,
     chatter_emitted: bool,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
@@ -7204,9 +7418,8 @@ struct SolverCore {
     jac_a: Option<JacAInfo>,
 }
 
-/// C's `numEventLimit`: state events in a row within one output step that count
-/// as chattering.
-const CHATTER_LIMIT: usize = 100;
+/// C's `numEventLimit`: the longest run in [`crate::CHATTER_LIMITS`].
+const CHATTER_LIMIT: usize = 1000;
 
 /// The model-call handle the hand-written solvers (gbode, the fixed-step ones)
 /// evaluate through, built from the `ResCtx` the integrator already has.
@@ -7345,6 +7558,23 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
             Ok(())
         })();
         set_context(self.e, self.ctx_addr, CONTEXT_ALGEBRAIC);
+        run.is_ok()
+    }
+
+    fn jacobian_matrix(&mut self, t: f64, y: &[f64], method: JacobianMethod, j: &mut [f64]) -> bool {
+        let Some(jac) = self.jac_a else { return false };
+        let n = jac.n as usize;
+        let run = (|| -> Result<()> {
+            write_time(self.e, self.sim_data, t)?;
+            let mut bytes = vec![0u8; y.len() * 8];
+            for (i, v) in y.iter().enumerate() {
+                bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
+            }
+            self.e.write_bytes(self.states_base, &bytes)?;
+            eval_ode_jacobian(self.e, self.sim_data, jac, self.ctx_addr, method, true, &mut |row, col, _, v| {
+                j[col * n + row] = v;
+            })
+        })();
         run.is_ok()
     }
 
@@ -7529,34 +7759,6 @@ impl SolverCore {
         let nominals = read_state_nominals(e, sim_data, layout)?;
         let maxs = read_state_maxs(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
-        let _ = method;
-        #[cfg(sundials)]
-        let solver = match method {
-            "cvode" => {
-                Solver::Cvode(CvodeState {
-                    cv: None,
-                    rtol: tol,
-                    atol,
-                    n_roots: nrt as usize,
-                    config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
-                    work_retries: 0,
-                    banner: true,
-                })
-            }
-            "ida" => Solver::Ida(IdaState {
-                ida: None,
-                rtol: tol,
-                atol,
-                n_roots: nrt as usize,
-                work_retries: 0,
-                restarted: false,
-                setup: IdaSetup::new(model)?,
-                stop_time: model.stop_time,
-            }),
-            _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
-        };
-        #[cfg(not(sundials))]
-        let solver = Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol));
         let solver = if let Some(kind) = fixed_kind(method) {
             Solver::Fixed(crate::fixedstep::FixedStep::new(kind, n_states, layout.n_zc as usize))
         } else if let Some(kind) = sym_kind(method, layout) {
@@ -7572,7 +7774,33 @@ impl SolverCore {
             g.set_nominals(&nominals);
             Solver::Gbode(g)
         } else {
-            solver
+            #[cfg(sundials)]
+            match method {
+                "cvode" => {
+                    Solver::Cvode(CvodeState {
+                        cv: None,
+                        rtol: tol,
+                        atol,
+                        n_roots: nrt as usize,
+                        config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+                        work_retries: 0,
+                        banner: true,
+                    })
+                }
+                "ida" => Solver::Ida(IdaState {
+                    ida: None,
+                    rtol: tol,
+                    atol,
+                    n_roots: nrt as usize,
+                    work_retries: 0,
+                    restarted: false,
+                    setup: IdaSetup::new(model)?,
+                    stop_time: model.stop_time,
+                }),
+                _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
+            }
+            #[cfg(not(sundials))]
+            Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol))
         };
         Ok(SolverCore {
             sim_data,
@@ -7580,6 +7808,7 @@ impl SolverCore {
             n_unknowns: n_states + layout.n_dae_alg as usize,
             dae_alg_offs: model.dae.as_ref().map(|d| d.alg_offs.clone()).unwrap_or_default(),
             dae: layout.dae_mode(),
+            rel_fresh_off: layout.rel_fresh_off,
             states_base,
             ders_base,
             y: Vec::new(),
@@ -7595,9 +7824,8 @@ impl SolverCore {
             maxs,
             tol,
             chatter_times: [0.0; CHATTER_LIMIT],
-            chatter_steps: [false; CHATTER_LIMIT],
             chatter_idx: 0,
-            chatter_count: 0,
+            chatter_in_a_row: 0,
             chatter_emitted: false,
             step_emit: StepEmit::new(),
             sample_limit: f64::INFINITY,
@@ -7631,7 +7859,16 @@ impl SolverCore {
             if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
                 return Err("CodegenWasmJit: IDA setup failed");
             }
-            dae_calc_ic(ida, self.t, self.tol)?;
+            // C sets `discreteCall` only around the two discrete evaluations, so
+            // `IDACalcIC`'s residuals read the held relations.
+            let mode_addr = self.sim_data + self.rel_fresh_off;
+            let mode = read_i32(e, mode_addr)?;
+            if mode == 1 {
+                write_i32(e, mode_addr, 0)?;
+            }
+            let r = dae_calc_ic(ida, self.t, self.tol);
+            write_i32(e, mode_addr, mode)?;
+            r?;
             self.y.copy_from_slice(ida.y());
             self.yp.copy_from_slice(ida.yp());
         }
@@ -7721,18 +7958,22 @@ impl SolverCore {
         Ok(())
     }
 
-    /// Record a state event at `time` (C's `handleEvents`). `Some((t0, time))` once
-    /// the whole ring is state events spanning less than `step_size`.
-    fn note_chatter_event(&mut self, time: f64, step_size: f64) -> Option<(f64, f64)> {
-        self.chatter_count -= self.chatter_steps[self.chatter_idx] as usize;
-        self.chatter_steps[self.chatter_idx] = true;
-        self.chatter_count += 1;
+    /// Record a state event at `time` (C's `handleEvents`). Once a run in
+    /// [`crate::CHATTER_LIMITS`] trips: `(events, t0, time, limit, fraction)`.
+    fn note_chatter_event(&mut self, model: &SimModel, time: f64) -> Option<(usize, f64, f64, f64, f64)> {
         self.chatter_times[self.chatter_idx] = time;
-        let hit = if !self.chatter_emitted && self.chatter_count == CHATTER_LIMIT {
-            let t0 = self.chatter_times[(self.chatter_idx + 1) % CHATTER_LIMIT];
-            (time - t0 < step_size).then_some((t0, time))
-        } else {
+        self.chatter_in_a_row = (self.chatter_in_a_row + 1).min(CHATTER_LIMIT);
+        let hit = if self.chatter_emitted {
             None
+        } else {
+            crate::CHATTER_LIMITS.iter().find_map(|&(events, fraction)| {
+                if self.chatter_in_a_row < events {
+                    return None;
+                }
+                let t0 = self.chatter_times[(self.chatter_idx + CHATTER_LIMIT - (events - 1)) % CHATTER_LIMIT];
+                let limit = model.chatter_time_limit(fraction);
+                (time - t0 < limit).then_some((events, t0, time, limit, fraction))
+            })
         };
         if hit.is_some() {
             self.chatter_emitted = true;
@@ -7742,28 +7983,27 @@ impl SolverCore {
     }
 
     /// A time event with no state event: C's `handleEvents` enters it as a break in
-    /// the run. A step with no event at all leaves the ring alone.
+    /// the run. A step with no event at all leaves the count alone.
     fn note_time_event(&mut self) {
-        self.chatter_count -= self.chatter_steps[self.chatter_idx] as usize;
-        self.chatter_steps[self.chatter_idx] = false;
-        self.chatter_idx = (self.chatter_idx + 1) % CHATTER_LIMIT;
+        self.chatter_in_a_row = 0;
     }
 
     /// Record a state event for chattering detection, reporting the run once it
     /// trips (C's `chatteringInfo`). `-abortSlowSimulation` makes it a failure.
     fn note_chatter(&mut self, model: &SimModel, zc: usize) -> Result<()> {
-        let step_size = model.step_size();
-        let Some((t0, t1)) = self.note_chatter_event(self.t, step_size) else {
+        let Some((events, t0, t1, limit, fraction)) = self.note_chatter_event(model, self.t) else {
             return Ok(());
         };
         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
+        let (t0, t1, limit) = (format_g(t0, 12), format_g(t1, 12), format_g(limit, 12));
+        let fraction = format_g(fraction, 6);
         omclog::info!(
             omclog::STDOUT,
             false,
-            "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
-             with a total time delta less than the step size {step_size}). This can be a \
-             performance bottleneck. Use -lv LOG_EVENTS for more information. The \
-             zero-crossing was: {desc}",
+            "Chattering detected around time {t0}..{t1} ({events} state events in a row \
+             with a total time delta less than {limit}, the smaller of the step size and \
+             {fraction} times the simulation interval). This can be a performance bottleneck. \
+             Use -lv LOG_EVENTS for more information. The zero-crossing was: {desc}",
         );
         if chatter_store::abort() {
             omclog::debug(
@@ -8007,6 +8247,7 @@ impl SolverCore {
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
             *did_step = true;
+            publish_steps(|| self.steps_taken());
             // A wasm error in a callback outranks whatever the solver reported.
             let err = ctx.err.take();
             if let Progress::RootThrew = again {
@@ -8034,6 +8275,12 @@ impl SolverCore {
                 Progress::Root => return Ok(Solved::Root),
             }
         }
+    }
+
+    fn steps_taken(&self) -> u64 {
+        let mut stats = SolveStats::default();
+        self.fill_stats(&mut stats);
+        stats.steps
     }
 
     /// Steps, evaluations and failure counts from the integrator (run totals, so
@@ -8811,11 +9058,13 @@ impl CsDriver {
                     // The bisection left `SimData` at its last trial point.
                     update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                     self.core.t = tr;
-                    log_state_event(tr, &zc_crossed_idx(&self.zc0, &scratch), model);
+                    let crossed = zc_crossed_idx(&self.zc0, &scratch);
+                    log_state_event(tr, &crossed, model);
                     if defers(tr) {
                         write_time(e, sim_data, tr)?;
                         return Ok(CsStep::Event { time: tr });
                     }
+                    self.core.note_chatter(model, crossed.first().copied().unwrap_or(usize::MAX))?;
                     event_update(e, sim_data, layout, None, tr)?;
                     self.core.state_events += 1;
                     if terminated(e, sim_data, layout)? {
@@ -8835,6 +9084,7 @@ impl CsDriver {
                     fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                     e.clean_nls_history(te);
                     self.core.time_events += 1;
+                    self.core.note_time_event();
                     if terminated(e, sim_data, layout)? {
                         return Ok(CsStep::Terminated);
                     }
@@ -9238,6 +9488,7 @@ impl Driver for EventsDriver {
                 let mut evaluated = false;
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
+                    check_alarm()?;
                     rotate_old_real(e, sim_data, layout)?;
                     let te = self.samp.next_time();
                     let tc = self.sync.next_time();
@@ -9263,7 +9514,10 @@ impl Driver for EventsDriver {
                         supersede(e, &mut evaluated);
                         // The bisection left `SimData` at its last trial point.
                         update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
-                        log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
+                        let crossed = zc_crossed_idx(&zc0, &scratch);
+                        log_state_event(tr, &crossed, model);
+                        self.core.t = tr;
+                        self.core.note_chatter(model, crossed.first().copied().unwrap_or(usize::MAX))?;
                         eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                         write_time(e, sim_data, tr)?;
                         if !no_event_emit() {
@@ -9272,6 +9526,7 @@ impl Driver for EventsDriver {
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
                         self.core.walk_steps += 1;
+                        publish_steps(|| self.core.steps_taken());
                         event_step = true;
                         if emit_post_event_row(model, tr) {
                             capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
@@ -9281,7 +9536,6 @@ impl Driver for EventsDriver {
                             self.finished = true;
                             return Ok(Advance::Terminated);
                         }
-                        self.core.t = tr;
                         // The discrete update may have fired an event clock.
                         if fire_clocks(e, &mut self.sync, model, sim_data, tr, SYNC_EPS, Some(&mut self.rows))?
                             && terminated(e, sim_data, layout)?
@@ -9315,7 +9569,9 @@ impl Driver for EventsDriver {
                         fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
+                        self.core.note_time_event();
                         self.core.walk_steps += 1;
+                        publish_steps(|| self.core.steps_taken());
                         if emit_post_event_row(model, te) {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
@@ -9382,6 +9638,7 @@ impl Driver for EventsDriver {
                     }
                     self.core.t = tout;
                     self.core.walk_steps += 1;
+                    publish_steps(|| self.core.steps_taken());
                 } else {
                     close_assert_window(e, sim_data)?;
                 }
@@ -9838,6 +10095,7 @@ impl Driver for CvodeDriver {
                 let _clock = rtclock::Span::new(rtclock::SOLVER);
                 cv.step(&mut self.t, tout)
             };
+            publish_steps(|| cv.counters().steps);
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }
@@ -10370,6 +10628,7 @@ unsafe extern "C" fn ida_res(
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
     let _solver = rtclock::Pause::new(rtclock::SOLVER);
     let e = unsafe { &mut *ctx.engine };
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
@@ -10379,6 +10638,7 @@ unsafe extern "C" fn ida_res(
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         r
     })();
+    let model_error = took_error_stage(e, ctx.err_stage_addr, save);
     ctx.nfe += 1;
     match run {
         Err(err) if residual_model_throw(e, err, t) => 1,
@@ -10387,11 +10647,11 @@ unsafe extern "C" fn ida_res(
             -1
         }
         Ok(()) => {
-            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) == 0 {
-                return 0;
+            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0 {
+                report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
+                return 1;
             }
-            report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
-            1
+            model_error as core::ffi::c_int
         }
     }
 }
@@ -10465,7 +10725,8 @@ unsafe extern "C" fn ida_jac(
     // is F = f − y', so a column result is `∂F/∂y` already.
     if jac_method_symbolic(ctx.jac_method) {
         let run = (|| -> Result<()> {
-            eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, true, &mut |row, col, k, v| {
+            let method = ctx.jac_method;
+            eval_ode_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, method, true, &mut |row, col, k, v| {
                 vals[match pattern {
                     Some(p) => p.slots[col][k],
                     None => col * n + row,
@@ -10489,6 +10750,8 @@ unsafe extern "C" fn ida_jac(
         };
     }
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
+    let delta_x = delta_x_solver();
     let run = (|| -> Result<()> {
         for color in &jac.colors {
             for &col in color {
@@ -10496,10 +10759,12 @@ unsafe extern "C" fn ida_jac(
                 let yi = unsafe { *y.add(ci) };
                 let hyp = h * unsafe { *ypv.add(ci) };
                 let nom = unsafe { *ctx.nominals.add(ci) };
-                let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
+                // C's `rtol*fabs(states[ii]) + abstol[ii]`, `abstol = nominal*tolerance`.
+                let ewt_inv = ctx.tol * yi.abs() + nom * ctx.tol;
+                let mut del = fd_step_ewt(delta_x, yi, hyp, ewt_inv, ctx.nominal_factor * nom);
                 del = yi + del - yi; // floating-point rounding, as in the C runtime
                 ctx.jac_ysave[ci] = yi;
-                ctx.jac_del[ci] = del;
+                ctx.jac_del[ci] = 1.0 / del;
                 unsafe { *y.add(ci) = yi + del };
                 // In DAE mode the same difference carries `cj·∂F/∂y'`, so there is
                 // no `-cj·I` term to add afterwards.
@@ -10523,14 +10788,14 @@ unsafe extern "C" fn ida_jac(
             }
             for &col in color {
                 let ci = col as usize;
-                let del = ctx.jac_del[ci];
+                let inv = ctx.jac_del[ci];
                 for (k, &row) in jac.rows_by_col[ci].iter().enumerate() {
                     let ri = row as usize;
                     let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
                     vals[match pattern {
                         Some(p) => p.slots[ci][k],
                         None => ci * n + ri,
-                    }] = d / del;
+                    }] = d * inv;
                 }
                 unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
                 if dae.is_some() {
@@ -10547,6 +10812,7 @@ unsafe extern "C" fn ida_jac(
         // Restore the base point; the last colour left a perturbed one.
         unsafe { ida_push_unknowns(ctx, y, ypv) }
     })();
+    took_error_stage(e, ctx.err_stage_addr, save);
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     match run {
         Err(err) => {
@@ -10792,6 +11058,7 @@ impl Driver for IdaDriver {
                 let _clock = rtclock::Span::new(rtclock::SOLVER);
                 ida.step(&mut self.t, tout, no_grid)
             };
+            publish_steps(|| ida.counters().steps);
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }

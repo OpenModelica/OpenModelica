@@ -20,6 +20,15 @@ set(OMC_SIMRT_MOO_HEADERS
   "streamlog.h"
 )
 
+# Install headers
+install(
+  FILES ${OMC_SIMRT_MOO_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/moo)
+
+if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+  return()
+endif()
+
 add_library(OpenModelicaRuntimeCMoo OBJECT ${OMC_SIMRT_MOO_SOURCES})
 add_library(omc::simrt::simruntime::moo ALIAS OpenModelicaRuntimeCMoo)
 
@@ -37,8 +46,3 @@ target_link_libraries(OpenModelicaRuntimeCMoo
 )
 
 target_compile_definitions(OpenModelicaRuntimeCMoo PUBLIC OMC_HAVE_MOO)
-
-# Install headers
-install(
-  FILES ${OMC_SIMRT_MOO_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/moo)

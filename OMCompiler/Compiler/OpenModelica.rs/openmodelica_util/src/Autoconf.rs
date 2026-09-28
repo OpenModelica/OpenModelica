@@ -195,7 +195,7 @@ pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
     } else if cfg!(target_os = "macos") {
         " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
     } else {
-        " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
+        " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
     },
 };
 
@@ -217,7 +217,7 @@ pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GEN
     } else if cfg!(target_os = "macos") {
         " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
     } else {
-        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
+        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
     },
 };
 
@@ -233,21 +233,6 @@ pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
         " -llapack -lblas -lm"
     } else {
         " -llapack -lblas -lm -lpthread -rdynamic "
-    },
-};
-
-/// `@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC@` (CMake-configured via
-/// OMC_RT_LDFLAGS_*; the fallback matches the C runtime build per platform).
-pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC") {
-    Some(s) => s,
-    None => if msvc_is_target {
-        "SimulationRuntimeFMI.lib libopenblas.lib pthreadVC3.lib"
-    } else if cfg!(windows) {
-        const_str::concat!(" -lSimulationRuntimeFMI ", win_ldflags_runtime_fmu)
-    } else if cfg!(target_os = "macos") {
-        " -lSimulationRuntimeFMI -llapack -lblas -lm"
-    } else {
-        "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
     },
 };
 

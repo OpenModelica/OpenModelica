@@ -578,9 +578,9 @@ size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
     int d2;
     size_t index = 0;
 
+    /* index_spec_fit_base_array is O(size of spec); the callers check it once */
     assert(base_array_ok(arr));
     assert(index_spec_ok(spec));
-    assert(index_spec_fit_base_array(spec, arr));
     assert((ndims == arr->ndims) && (ndims == spec->ndims));
 
     index = 0;

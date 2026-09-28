@@ -9,11 +9,17 @@
 //! into the log sink. The drain also runs at the top of every Ipopt callback, which
 //! is what keeps the order the C target has: the banner (written before the first
 //! callback) precedes the `LOG_IPOPT_ERROR` lines the callbacks emit.
+//!
+//! Only on unix: Windows has no `pipe` and no non-blocking read of one (`fcntl`), so
+//! there Ipopt's output goes to `stdout` as with the C target.
 
+#[cfg(unix)]
 use alloc::string::String;
+#[cfg(unix)]
 use alloc::vec;
 
 /// The redirected `stdout`, restored on drop.
+#[cfg_attr(not(unix), allow(dead_code))]
 pub(crate) struct Capture {
     /// Read end of the pipe.
     read: i32,
@@ -21,6 +27,7 @@ pub(crate) struct Capture {
     saved: i32,
 }
 
+#[cfg(unix)]
 unsafe extern "C" {
     fn pipe(fds: *mut i32) -> i32;
     fn dup(fd: i32) -> i32;
@@ -33,9 +40,21 @@ unsafe extern "C" {
 
 /// `F_SETFL` / `O_NONBLOCK` on Linux and macOS; the drain must never block on an
 /// empty pipe.
+#[cfg(unix)]
 const F_SETFL: i32 = 4;
+#[cfg(unix)]
 const O_NONBLOCK: i32 = 0o4000;
 
+#[cfg(not(unix))]
+impl Capture {
+    pub(crate) fn begin() -> Option<Capture> {
+        None
+    }
+
+    pub(crate) fn drain(&self) {}
+}
+
+#[cfg(unix)]
 impl Capture {
     /// Redirect `stdout`. `None` if the platform refuses, in which case Ipopt's
     /// output goes where it always did.
@@ -90,6 +109,7 @@ impl Capture {
     }
 }
 
+#[cfg(unix)]
 impl Drop for Capture {
     fn drop(&mut self) {
         self.drain();

@@ -85,7 +85,13 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
     let text = if !xml.infoXMLData.is_null() {
         unsafe { core::ffi::CStr::from_ptr(xml.infoXMLData) }.to_string_lossy().into_owned()
     } else if !xml.fileName.is_null() {
-        let name = unsafe { core::ffi::CStr::from_ptr(xml.fileName) }.to_string_lossy().into_owned();
+        let mut name = unsafe { core::ffi::CStr::from_ptr(xml.fileName) }.to_string_lossy().into_owned();
+        unsafe {
+            if crate::support::omc_flag[crate::abi::FLAG_INPUT_PATH] != 0 {
+                let dir = core::ffi::CStr::from_ptr(crate::support::omc_flagValue[crate::abi::FLAG_INPUT_PATH]);
+                name = format!("{}/{name}", dir.to_string_lossy());
+            }
+        }
         match std::fs::read_to_string(&name) {
             Ok(s) => s,
             Err(e) => {
