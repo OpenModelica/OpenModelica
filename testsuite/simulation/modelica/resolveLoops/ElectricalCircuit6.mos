@@ -32,8 +32,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 171
 //  * Number of variables: 171
-// [Modelica 3.2.1+maint.om/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter sineVoltage.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.2.1+maint.om/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter sineVoltage.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1+maint.om/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter sineVoltage.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
@@ -54,7 +54,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 7 systems
-//    {(1,10,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%)}
+//    {(1,2,100.0%), (1,2,100.0%), (1,2,100.0%), (1,10,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1

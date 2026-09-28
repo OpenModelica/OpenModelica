@@ -3855,7 +3855,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"torque\"/>
+//           <exp:QualifiedNamePart name=\"loadTorque\"/>
 //           <exp:QualifiedNamePart name=\"phi_support\"/>
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
@@ -3864,6 +3864,16 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"speedSensor\"/>
+//           <exp:QualifiedNamePart name=\"flange\"/>
+//           <exp:QualifiedNamePart name=\"tau\"/>
+//         </exp:Identifier>
+//               <exp:RealLiteral>0.0</exp:RealLiteral>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//           <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"aux1\">
 //             <exp:ArraySubscripts>
@@ -3872,7 +3882,7 @@ readFile("Bug3857.xml"); getErrorString();
 //               </exp:IndexExpression>
 //             </exp:ArraySubscripts>
 //           </exp:QualifiedNamePart>
-//         </exp:Identifier>
+//           </exp:Identifier>
 //         <exp:Div>
 //           <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -3884,7 +3894,7 @@ readFile("Bug3857.xml"); getErrorString();
 //               </exp:ArraySubscripts>
 //             </exp:QualifiedNamePart>
 //           </exp:Identifier>
-//           <exp:Identifier>
+//         <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //             <exp:QualifiedNamePart name=\"p_qd_max\">
 //               <exp:ArraySubscripts>
@@ -3893,20 +3903,20 @@ readFile("Bug3857.xml"); getErrorString();
 //                 </exp:IndexExpression>
 //               </exp:ArraySubscripts>
 //             </exp:QualifiedNamePart>
-//           </exp:Identifier>
+//         </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//         <exp:Identifier>
+//             <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"sd_max\"/>
-//         </exp:Identifier>
+//             </exp:Identifier>
 //         <exp:Div>
 //           <exp:RealLiteral>1.0</exp:RealLiteral>
 //           <exp:Abs>
-//             <exp:Identifier>
+//         <exp:Identifier>
 //               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //               <exp:QualifiedNamePart name=\"aux1\">
 //                 <exp:ArraySubscripts>
@@ -3915,14 +3925,14 @@ readFile("Bug3857.xml"); getErrorString();
 //                   </exp:IndexExpression>
 //                 </exp:ArraySubscripts>
 //               </exp:QualifiedNamePart>
-//             </exp:Identifier>
+//         </exp:Identifier>
 //           </exp:Abs>
 //         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//         <exp:Identifier>
+//           <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"aux2\">
 //             <exp:ArraySubscripts>
@@ -3931,7 +3941,7 @@ readFile("Bug3857.xml"); getErrorString();
 //               </exp:IndexExpression>
 //             </exp:ArraySubscripts>
 //           </exp:QualifiedNamePart>
-//         </exp:Identifier>
+//           </exp:Identifier>
 //         <exp:Div>
 //           <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -3943,7 +3953,7 @@ readFile("Bug3857.xml"); getErrorString();
 //               </exp:ArraySubscripts>
 //             </exp:QualifiedNamePart>
 //           </exp:Identifier>
-//           <exp:Identifier>
+//         <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //             <exp:QualifiedNamePart name=\"p_qdd_max\">
 //               <exp:ArraySubscripts>
@@ -3952,20 +3962,20 @@ readFile("Bug3857.xml"); getErrorString();
 //                 </exp:IndexExpression>
 //               </exp:ArraySubscripts>
 //             </exp:QualifiedNamePart>
-//           </exp:Identifier>
+//         </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//         <exp:Identifier>
+//             <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"sdd_max\"/>
-//         </exp:Identifier>
+//             </exp:Identifier>
 //         <exp:Div>
 //           <exp:RealLiteral>1.0</exp:RealLiteral>
 //           <exp:Abs>
-//             <exp:Identifier>
+//         <exp:Identifier>
 //               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //               <exp:QualifiedNamePart name=\"aux2\">
 //                 <exp:ArraySubscripts>
@@ -3974,46 +3984,28 @@ readFile("Bug3857.xml"); getErrorString();
 //                   </exp:IndexExpression>
 //                 </exp:ArraySubscripts>
 //               </exp:QualifiedNamePart>
-//             </exp:Identifier>
+//         </exp:Identifier>
 //           </exp:Abs>
 //         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Ta2\"/>
-//         </exp:Identifier>
-//         <exp:Div>
 //           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"sd_max\"/>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Ta1\"/>
 //           </exp:Identifier>
+//         <fun:Assertion>
+//           <fun:Condition>
+//             <exp:LogGeq>
+//         <exp:Div>
+//                 <exp:RealLiteral>1.0</exp:RealLiteral>
 //           <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //             <exp:QualifiedNamePart name=\"sdd_max\"/>
 //           </exp:Identifier>
 //         </exp:Div>
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Ta1\"/>
-//         </exp:Identifier>
-//         <fun:Assertion>
-//           <fun:Condition>
-//             <exp:LogGeq>
-//               <exp:Div>
-//                 <exp:RealLiteral>1.0</exp:RealLiteral>
-//                 <exp:Identifier>
-//                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                   <exp:QualifiedNamePart name=\"sdd_max\"/>
-//                 </exp:Identifier>
-//               </exp:Div>
-//               <exp:RealLiteral>0.0</exp:RealLiteral>
+//         <exp:RealLiteral>0.0</exp:RealLiteral>
 //             </exp:LogGeq>
 //           </fun:Condition>
 //           <fun:Message>
@@ -4024,48 +4016,56 @@ readFile("Bug3857.xml"); getErrorString();
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"speedSensor\"/>
-//           <exp:QualifiedNamePart name=\"flange\"/>
-//           <exp:QualifiedNamePart name=\"tau\"/>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Ta2\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>0.0</exp:RealLiteral>
+//               <exp:Div>
+//                 <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sd_max\"/>
+//                 </exp:Identifier>
+//         <exp:Identifier>
+//                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                   <exp:QualifiedNamePart name=\"sdd_max\"/>
+//         </exp:Identifier>
+//               </exp:Div>
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//
+//       </exp:Sub>
+//     </equ:Equation>
+//     <equ:Equation>
+//       <exp:Sub>
+//
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"loadTorque\"/>
+//           <exp:QualifiedNamePart name=\"torque\"/>
 //           <exp:QualifiedNamePart name=\"phi_support\"/>
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>

@@ -160,6 +160,8 @@ public function removeSimpleEquations "
   causal systems."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  Boolean rebuilt;
 algorithm
   if BackendDAEUtil.hasDAEMatching(inDAE) then
     // This case performs "remove simple equations" on a causal system.
@@ -172,8 +174,8 @@ algorithm
       else inDAE;
     end match;
 
-    outDAE := fixAliasVars(outDAE) "workaround for #3323";
-    outDAE := fixAliasAndKnownVarsCausal(inDAE, outDAE);
+    (outDAE, rebuilt) := fixAliasVars(outDAE) "workaround for #3323";
+    outDAE := fixAliasAndKnownVarsCausal(inDAE, outDAE, not rebuilt);
     outDAE := fixAliasVarsVariablity(outDAE) "workaround for #5673";
   else
     // This case performs "remove simple equations" on an acausal system.
@@ -292,26 +294,33 @@ protected function fixAliasVars "author: lochel
   This module traverses all alias variables and double-checks if they are alias or known variables."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+  output Boolean rebuilt = false "Whether the sets were rebuilt, which reverses the known variables.";
 protected
   BackendDAE.Variables aliasVars;
   list<BackendDAE.Var> aliasVarList = {};
-  list<BackendDAE.Var> knownVarList;
+  list<BackendDAE.Var> movedVars = {};
   DAE.Exp binding;
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
-  knownVarList := BackendVariable.varList(BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE));
 
   for var in BackendVariable.varList(aliasVars) loop
     binding := BackendVariable.varBindExp(var);
     if Expression.isConst(binding) then
-      knownVarList := var::knownVarList;
+      movedVars := var::movedVars;
     else
       aliasVarList := var::aliasVarList;
     end if;
   end for;
 
+  if listEmpty(movedVars) then
+    outDAE := inDAE;
+    return;
+  end if;
+
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
-  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, BackendVariable.listVar(knownVarList));
+  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, BackendVariable.listVar(
+    listAppend(movedVars, BackendVariable.varList(BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE)))));
+  rebuilt := true;
 end fixAliasVars;
 
 protected function fixKnownVars "author: lochel
@@ -360,8 +369,10 @@ protected function fixAliasAndKnownVarsCausal "author: lochel
   This module moves back all newly introduced alias variables to the correct partition."
   input BackendDAE.BackendDAE inDAE1 "original dae";
   input BackendDAE.BackendDAE inDAE2 "transformed dae";
+  input Boolean visitReversed "Visit the known variables last to first.";
   output BackendDAE.BackendDAE outDAE = inDAE2;
 protected
+  list<BackendDAE.Var> knownVars;
   BackendDAE.Variables aliasVars1, knownVars1;
   BackendDAE.Variables aliasVars2, knownVars2;
   list<BackendDAE.Var> aliasVarList = {};
@@ -386,7 +397,11 @@ algorithm
   outDAE := BackendDAEUtil.setAliasVars(outDAE, BackendVariable.listVar(aliasVarList));
 
   //BackendDump.dumpVarList(knownVarList, "knownVarList in");
-  for var in BackendVariable.varList(knownVars2) loop
+  // Placing a variable decides where the ones referring to it can go, so the
+  // partitioning depends on the order: visit them as fixAliasVars' rebuild
+  // would have ordered them.
+  knownVars := BackendVariable.varList(knownVars2);
+  for var in (if visitReversed then listReverse(knownVars) else knownVars) loop
     cref := BackendVariable.varCref(var);
     if not BackendVariable.existsVar(cref, knownVars1, false) and
        not (BackendVariable.isInput(var) or BackendVariable.isAlgebraicOldState(var)) then
@@ -397,7 +412,7 @@ algorithm
     end if;
   end for;
   //BackendDump.dumpVarList(knownVarList, "knownVarList out");
-  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, BackendVariable.listVar(knownVarList));
+  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, BackendVariable.listVar(if visitReversed then listReverse(knownVarList) else knownVarList));
 end fixAliasAndKnownVarsCausal;
 
 protected function fixAliasVarsCausal2
