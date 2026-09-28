@@ -315,7 +315,8 @@ impl Cvode {
                 }
                 // The remaining settings are `cvodeGetConfig`'s defaults.
                 && CVodeSetMaxStep(cv.mem, 0.0) == CV_SUCCESS
-                && CVodeSetInitStep(cv.mem, 0.0) == CV_SUCCESS
+                && CVodeSetInitStep(cv.mem, crate::simflags::with_flags(|f| f.initial_step_size).unwrap_or(0.0))
+                    == CV_SUCCESS
                 && CVodeSetMaxOrd(cv.mem, lmm.max_order()) == CV_SUCCESS
                 && CVodeSetMaxConvFails(cv.mem, 10) == CV_SUCCESS
                 && CVodeSetStabLimDet(cv.mem, (lmm == CvodeLmm::Bdf) as c_int) == CV_SUCCESS
@@ -353,6 +354,11 @@ impl Cvode {
 
     pub fn mem(&self) -> *mut c_void {
         self.mem
+    }
+
+    /// The first step after the next (re)start; 0 lets CVODE estimate it.
+    pub fn set_init_step(&mut self, h: f64) -> bool {
+        unsafe { CVodeSetInitStep(self.mem, h) == CV_SUCCESS }
     }
 
     /// Rebind the pointer handed to the `rhs`/`root` callbacks. The driver's

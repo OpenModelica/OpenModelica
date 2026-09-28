@@ -998,6 +998,38 @@ void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData
 }
 
 /**
+ * @brief DASSL's and IDA's first step, min(0.001*tdist, 0.5/||der||) in the
+ * weighted RMS norm.
+ *
+ * CVODE's own estimate differences f over the step, which after an event
+ * straddles the discontinuity and comes out tiny: an ideal diode on the edge of
+ * conducting then switches back within it, restart after restart.
+ *
+ * @param data        Runtime data struct, holding the post-event states and derivatives.
+ * @param cvodeData   CVODE solver data struct.
+ * @param tdist       Distance to the next output point.
+ * @return double     Initial step size.
+ */
+static double cvodeRestartStep(DATA *data, CVODE_SOLVER *cvodeData, double tdist)
+{
+  const double *states = data->localData[0]->realVars;
+  const double *ders = states + cvodeData->N;
+  const double *abstol = N_VGetArrayPointer(cvodeData->absoluteTolerance);
+  const double rtol = data->simulationInfo->tolerance;
+  double sum = 0.0, w, norm, h;
+  long int i;
+
+  for (i = 0; i < cvodeData->N; i++)
+  {
+    w = ders[i] / (rtol * fabs(states[i]) + abstol[i]);
+    sum += w * w;
+  }
+  norm = sqrt(sum / fmax(cvodeData->N, 1));
+  h = 0.001 * fabs(tdist);
+  return norm * h > 0.5 ? 0.5 / norm : h;
+}
+
+/**
  * @brief Main CVODE function to make a step.
  *
  * Integrates on current time interval.
@@ -1077,6 +1109,12 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   /* No stop time: CVODE may step past tout and interpolates back to it */
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
+
+  if (solverInfo->didEventStep && !omc_flag[FLAG_INITIAL_STEP_SIZE])
+  {
+    flag = CVodeSetInitStep(cvodeData->cvode_mem, cvodeRestartStep(data, cvodeData, tout - solverInfo->currentTime));
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetInitStep");
+  }
   /* Integrator loop */
   do
   {
