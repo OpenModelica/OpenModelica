@@ -317,7 +317,8 @@ impl Cvode {
                 && CVodeSetMaxStep(cv.mem, 0.0) == CV_SUCCESS
                 && CVodeSetInitStep(cv.mem, crate::simflags::with_flags(|f| f.initial_step_size).unwrap_or(0.0))
                     == CV_SUCCESS
-                && CVodeSetMaxOrd(cv.mem, lmm.max_order()) == CV_SUCCESS
+                && CVodeSetMaxOrd(cv.mem, crate::simflags::with_flags(|f| f.max_order).unwrap_or(lmm.max_order()))
+                    == CV_SUCCESS
                 && CVodeSetMaxConvFails(cv.mem, 10) == CV_SUCCESS
                 && CVodeSetStabLimDet(cv.mem, (lmm == CvodeLmm::Bdf) as c_int) == CV_SUCCESS
                 && CVodeSetMaxNonlinIters(cv.mem, 5) == CV_SUCCESS
