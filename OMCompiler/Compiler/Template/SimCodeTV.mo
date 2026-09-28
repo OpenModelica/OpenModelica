@@ -1963,6 +1963,11 @@ package SimCodeFunctionUtil
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
 
+  function isTrivialRecord
+    input String name;
+    output Boolean b;
+  end isTrivialRecord;
+
   function codegenPushTryThrowIndex
     input Integer i;
   end codegenPushTryThrowIndex;

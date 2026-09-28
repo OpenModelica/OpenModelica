@@ -493,9 +493,13 @@ template recordDeclaration(RecordDeclaration recDecl)
     <%recordCreateFromVarsDef(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
+    <%if boolNot(SimCodeFunctionUtil.isTrivialRecord(r.name)) then
+    <<
     <%recordReleaseDef(r.name, r.variables)%>
     <%recordRetainDef(r.name, r.variables)%>
     <%recordDisownDef(r.name, r.variables)%>
+    >>
+    %>
     <%if r.usedExternally then recordCopyExternalDefs(r.name, r.variables)%>
     >>
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
@@ -653,13 +657,22 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%wrap_vars_func_name%>(threadData_t *threadData , void* v_dst <%wrap_vars_func_inputs%>);
       #define <%wrap_vars_macro_name%>(td, dst <%wrap_vars_macro_inputs%>) <%wrap_vars_func_name%>(td, &dst <%wrap_vars_macro_inputs%>)
 
-      /* Counting of what the members own; empty for a record of scalars. */
+      <%if SimCodeFunctionUtil.isTrivialRecord(rec_name) then
+      <<
+      #define <%release_macro_name%>(ths) ((void)0)
+      #define <%retain_macro_name%>(ths) ((void)0)
+      #define <%disown_macro_name%>(ths) ((void)0)
+      >>
+      else
+      <<
       void <%release_func_name%>(void* v_ths);
       #define <%release_macro_name%>(ths) <%release_func_name%>(&ths)
       void <%retain_func_name%>(void* v_ths);
       #define <%retain_macro_name%>(ths) <%retain_func_name%>(&ths)
       void <%disown_func_name%>(void* v_ths);
       #define <%disown_macro_name%>(ths) <%disown_func_name%>(&ths)
+      >>
+      %>
 
       // This function is not needed anymore. If you want to know how a record
       // is 'assigned to' in simulation context see assignRhsExpToRecordCrefSimContext and
@@ -676,7 +689,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       #define <%rec_name%>_array_get1(src,ndims,dim1) (((<%rec_name%>*)(src).data)[omc_array_index1((src), (dim1))])
       #define <%rec_name%>_array_get2(src,ndims,dim1,dim2) (((<%rec_name%>*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
       #define <%rec_name%>_set(dst,val,...)           generic_array_set(&dst, &val, <%cpy_func_name%>, sizeof(<%rec_name%>), __VA_ARGS__)
-      #define <%rec_name%>_array_release(dst)         omc_record_array_release(&dst, <%release_func_name%>, sizeof(<%rec_name%>))
+      #define <%rec_name%>_array_release(dst)         <%if SimCodeFunctionUtil.isTrivialRecord(rec_name) then 'omc_array_release(&dst)' else 'omc_record_array_release(&dst, <%release_func_name%>, sizeof(<%rec_name%>))'%>
       >>
 end recordDeclarationFullHeader;
 
@@ -5538,7 +5551,8 @@ template rcKindCounted(String ty)
     // ParModelica's device arrays are OpenCL buffers, not counted.
     else if intEq(0, System.stringFind(ty, "device_")) then ""
     else if stringEq(ty, System.stringReplace(ty, "_array", "") + "_array")
-      then "recordArray"
+      then (if SimCodeFunctionUtil.isTrivialRecord(System.stringReplace(ty, "_array", "")) then "array" else "recordArray")
+      else if SimCodeFunctionUtil.isTrivialRecord(ty) then ""
       else if isRecordCType(ty) then "record" else ""
 end rcKindCounted;
 
