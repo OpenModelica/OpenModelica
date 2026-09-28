@@ -549,11 +549,11 @@ pub trait SimEngine {
     /// `nominal`/`min`/`max` from the attributes once those are final. A wasm model
     /// reads the attributes live and has nothing to do. Default: nothing.
     fn update_static_system_data(&mut self, _linear: bool) {}
-    /// C's `importStartValues` for a discrete variable: `-iif` also sets the
-    /// `start` attribute of Integer (or Boolean) variable `i` (its scalar index),
-    /// which a host whose initial equations read the attribute keeps beside the
-    /// model. Default: nothing, the live slot the import writes is all.
-    fn set_discrete_start(&mut self, _boolean: bool, _i: usize, _value: i32) {}
+    /// C's `importStartValues`: `-iif` also sets the `start` attribute of
+    /// quantity `i` (its scalar index) of [`crate::IMPORT_GROUP`] `group`, which a
+    /// host whose initial equations read the attribute keeps beside the model.
+    /// Default: nothing, the slot the import writes is all.
+    fn set_imported_start(&mut self, _group: usize, _i: usize, _value: f64) {}
     /// The part of C's `storePreValues` the layout has no region for: a host whose
     /// model keeps `pre()` of its String variables copies them here. Default:
     /// nothing.
@@ -1749,7 +1749,7 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
     // `values` is in roster order, so one cursor walks both.
     let mut next = 0usize;
     let mut flat = 0u32;
-    for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
+    for (g, (group, entries)) in crate::IMPORT_GROUP.iter().zip(model.import_roster()).enumerate() {
         omclog::info!(omclog::INIT, false, "import {group}");
         // C's headers are plural, its per-quantity lines singular.
         let one = group.trim_end_matches('s');
@@ -1779,6 +1779,7 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
                 }
                 continue;
             };
+            e.set_imported_start(g, i, v);
             match wty {
                 WTy::F64 => {
                     write_f64(e, sim_data + off, v)?;
@@ -1786,17 +1787,11 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
                 }
                 WTy::I32 if group.starts_with("boolean") => {
                     write_i32(e, sim_data + off, (v != 0.0) as i32)?;
-                    if variables {
-                        e.set_discrete_start(true, i, (v != 0.0) as i32);
-                    }
                     let b = if v != 0.0 { "true" } else { "false" };
                     omclog::info!(omclog::INIT_V, false, "| {name}(start={b})");
                 }
                 WTy::I32 => {
                     write_i32(e, sim_data + off, v as i32)?;
-                    if variables {
-                        e.set_discrete_start(false, i, v as i32);
-                    }
                     omclog::info!(omclog::INIT_V, false, "| {name}(start={})", v as i32);
                 }
             }

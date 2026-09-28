@@ -634,39 +634,54 @@ impl SimEngine for CEngine {
         unsafe { core::ptr::copy_nonoverlapping(self.rt.local(0).stringVars, self.rt.info().stringVarsPre, n) };
     }
 
-    fn set_discrete_start(&mut self, boolean: bool, i: usize, value: i32) {
-        use crate::model_data::{boolean_array_ensure_size, integer_array_ensure_size};
+    fn set_imported_start(&mut self, group: usize, i: usize, value: f64) {
+        use crate::model_data::{boolean_array_ensure_size, integer_array_ensure_size, real_array_ensure_size};
         let md = self.rt.model();
         let si = self.rt.info();
-        // The initial equations of a non-scalarized array read `attribute.start`,
-        // which then needs one value per element.
+        // The scalar index maps and variable data of each group of `IMPORT_GROUP`.
+        let (n, rev) = match group {
+            0 => (md.nVariablesReal, si.realVarsReverseIndex),
+            1 => (md.nVariablesInteger, si.integerVarsReverseIndex),
+            2 => (md.nVariablesBoolean, si.booleanVarsReverseIndex),
+            3 => (md.nParametersReal, si.realParamsReverseIndex),
+            4 => (md.nParametersInteger, si.integerParamsReverseIndex),
+            5 => (md.nParametersBoolean, si.booleanParamsReverseIndex),
+            _ => return,
+        };
+        if i >= n.max(0) as usize || rev.is_null() {
+            return;
+        }
+        let ix = unsafe { &*rev.add(i) };
+        macro_rules! start_of {
+            ($data:expr) => {{
+                let v = unsafe { &mut *$data.add(ix.array_idx) };
+                (&mut v.attribute.start, v.dimension.scalar_length)
+            }};
+        }
+        let (start, len): (&mut base_array_t, usize) = match group {
+            0 => start_of!(md.realVarsData),
+            1 => start_of!(md.integerVarsData),
+            2 => start_of!(md.booleanVarsData),
+            3 => start_of!(md.realParameterData),
+            4 => start_of!(md.integerParameterData),
+            _ => start_of!(md.booleanParameterData),
+        };
+        // A start attribute holding a single value (`each`) gets one per element.
         unsafe {
-            if boolean {
-                if i >= md.nVariablesBoolean.max(0) as usize {
-                    return;
+            if start.n_elements() != len {
+                match group % 3 {
+                    0 => real_array_ensure_size(start, len as c_int),
+                    1 => integer_array_ensure_size(start, len as c_int),
+                    _ => boolean_array_ensure_size(start, len as c_int),
                 }
-                let ix = &*si.booleanVarsReverseIndex.add(i);
-                let v = &mut *md.booleanVarsData.add(ix.array_idx);
-                let n = v.dimension.scalar_length;
-                if v.attribute.start.n_elements() != n {
-                    boolean_array_ensure_size(&mut v.attribute.start, n as c_int);
-                }
-                if ix.dim_idx < v.attribute.start.n_elements() {
-                    *(v.attribute.start.data as *mut modelica_boolean).add(ix.dim_idx) = value as modelica_boolean;
-                }
-            } else {
-                if i >= md.nVariablesInteger.max(0) as usize {
-                    return;
-                }
-                let ix = &*si.integerVarsReverseIndex.add(i);
-                let v = &mut *md.integerVarsData.add(ix.array_idx);
-                let n = v.dimension.scalar_length;
-                if v.attribute.start.n_elements() != n {
-                    integer_array_ensure_size(&mut v.attribute.start, n as c_int);
-                }
-                if ix.dim_idx < v.attribute.start.n_elements() {
-                    *(v.attribute.start.data as *mut modelica_integer).add(ix.dim_idx) = value as modelica_integer;
-                }
+            }
+            if ix.dim_idx >= start.n_elements() {
+                return;
+            }
+            match group % 3 {
+                0 => *(start.data as *mut modelica_real).add(ix.dim_idx) = value,
+                1 => *(start.data as *mut modelica_integer).add(ix.dim_idx) = value as modelica_integer,
+                _ => *(start.data as *mut modelica_boolean).add(ix.dim_idx) = (value != 0.0) as modelica_boolean,
             }
         }
     }
