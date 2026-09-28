@@ -1007,16 +1007,14 @@ public
   algorithm
     subscripts := match cref
       local
-        list<Expression> sizes_;
         list<Subscript> subs;
 
       case CREF(subscripts = {}) algorithm
-        sizes_ := sizes_local_exp(cref, false);
+        // one slice per array dimension of this node, so that the subscripts
+        // stay aligned with the dimensions
         subs := {};
-        for size in listReverse(sizes_) loop
-          if not Expression.isOne(size) then
-            subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), size)) :: subs;
-          end if;
+        for dim in listReverse(Type.arrayDims(cref.ty)) loop
+          subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim))) :: subs;
         end for;
       then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
 
