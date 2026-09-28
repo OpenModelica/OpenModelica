@@ -1857,12 +1857,14 @@ public
     list<Subscript> subs;
   algorithm
     Subscript.INDEX(index = index_exp) := index;
+    RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
 
-    if isScalarLiteral(index_exp) then
-      RANGE(start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
+    if isScalarLiteral(index_exp) and isScalarLiteral(start_exp) and
+       Util.applyOptionOrDefault(step_exp, isScalarLiteral, true) then
       outExp := applyIndexSubscriptRange2(start_exp, step_exp, stop_exp, toInteger(index_exp));
+    elseif isScalarLiteral(index_exp) and toInteger(index_exp) == 1 then
+      outExp := start_exp;
     else
-      RANGE(ty = ty) := rangeExp;
       subs := {index};
       ty := Type.subscript(ty, subs);
       outExp := SUBSCRIPTED_EXP(rangeExp, subs, ty, false);
