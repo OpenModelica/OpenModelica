@@ -182,8 +182,18 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
             unsafe { f(data, thread_data, ls, 1) };
         }
     }
+    unsafe {
+        omc_ls_inline = !(omclog::active(omclog::LS)
+            || omclog::active(omclog::LS_V)
+            || openmodelica_solvers::sysstat::enabled()) as c_int;
+    }
     omclog::close(omclog::LS);
 }
+
+/// `solve_linear_system_small` in `linearSystem.h` solves a torn system of size 1
+/// itself unless this is 0: the log and the per-system statistics need this path.
+#[unsafe(no_mangle)]
+pub static mut omc_ls_inline: c_int = 0;
 
 /// `linearSystemData->A[row + col*size] = value`.
 unsafe extern "C" fn set_a_element(
