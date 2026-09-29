@@ -135,7 +135,24 @@ struct boundaryConditionData
 void copyReferenceFile(DATA * data, const std::string & filename)
 {
   std::string outputPath = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + std::string(data->modelData->modelFilePrefix) + filename;
-  std::string referenceFile = string(data->modelData->modelFilePrefix) + filename; // current directory
+
+  // Read the reference file from -inputPath when it's given -- that's what
+  // OMEdit passes, since the model isn't necessarily run from its build
+  // directory -- falling back to the current directory otherwise.
+  std::string inputDir = omc_flag[FLAG_INPUT_PATH] ? std::string(omc_flagValue[FLAG_INPUT_PATH]) : std::string(".");
+  std::string referenceFile = inputDir + "/" + std::string(data->modelData->modelFilePrefix) + filename;
+
+  // If the output directory is the same as the input directory, the file is
+  // already there -- skip the copy. ofstream truncates on open, so opening
+  // the same file for both reading and writing here would wipe it out
+  // instead of copying it.
+  char resolvedOutputDir[PATH_MAX];
+  char resolvedInputDir[PATH_MAX];
+  if (realpath(omc_flagValue[FLAG_OUTPUT_PATH], resolvedOutputDir) && realpath(inputDir.c_str(), resolvedInputDir)
+      && std::string(resolvedOutputDir) == std::string(resolvedInputDir))
+  {
+    return;
+  }
 
   ifstream ifstreamfile;
   ifstreamfile.open(referenceFile);
@@ -346,7 +363,16 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   csvfile.open(tmpcsv.c_str());
 
   // check for nonReconciledVars.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
-  std::string nonReconciledVarsFilename = string(data->modelData->modelFilePrefix) +  "_NonReconcilcedVars.txt";
+  std::string nonReconciledVarsFilename;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    nonReconciledVarsFilename = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + std::string(data->modelData->modelFilePrefix) + "_NonReconcilcedVars.txt";
+    copyReferenceFile(data, "_NonReconcilcedVars.txt");
+  }
+  else
+  {
+    nonReconciledVarsFilename = string(data->modelData->modelFilePrefix) +  "_NonReconcilcedVars.txt";
+  }
   vector<std::string> nonReconciledVars;
 
   ifstream nonreconcilevarsip(nonReconciledVarsFilename);
@@ -918,7 +944,7 @@ void updateReconciledMo(DATA * data, threadData_t * threadData, vector<string> h
   }
   infile.close();
   outfile.close();
-  omc_unlink(reconciledMoFile.c_str());
+  //omc_unlink(reconciledMoFile.c_str());
   logfile << "|  info    |   " << "Reconciled modelica file updated successfully " << reconciledValuesMoFile << "\n";
 }
 
