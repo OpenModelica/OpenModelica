@@ -206,7 +206,7 @@ static void printRealVars(DATA *data, int ringSegment, int stream, long first, l
     STATIC_REAL_DATA *var = &data->modelData->realVarsData[i];
     for (k = 0; k < var->dimension.scalar_length; ++k) {
       idx = sInfo->realVarsIndex[i] + k;
-      printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
       infoStreamPrint(stream, 0, "%zu: %s = %g (pre: %g)", idx+1, name, sData->realVars[idx], sInfo->realVarsPre[idx]);
     }
   }
@@ -252,7 +252,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
     STATIC_INTEGER_DATA *var = &mData->integerVarsData[i];
     for (k = 0; k < var->dimension.scalar_length; ++k) {
       idx = sInfo->integerVarsIndex[i] + k;
-      printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
       infoStreamPrint(stream, 0, "%zu: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name, sData->integerVars[idx], sInfo->integerVarsPre[idx]);
     }
   }
@@ -263,7 +263,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
     STATIC_BOOLEAN_DATA *var = &mData->booleanVarsData[i];
     for (k = 0; k < var->dimension.scalar_length; ++k) {
       idx = sInfo->booleanVarsIndex[i] + k;
-      printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
       infoStreamPrint(stream, 0, "%zu: %s = %s (pre: %s)", idx+1, name, sData->booleanVars[idx] ? "true" : "false", sInfo->booleanVarsPre[idx] ? "true" : "false");
     }
   }
@@ -275,7 +275,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
     STATIC_STRING_DATA *var = &mData->stringVarsData[i];
     for (k = 0; k < var->dimension.scalar_length; ++k) {
       idx = sInfo->stringVarsIndex[i] + k;
-      printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
       infoStreamPrint(stream, 0, "%zu: %s = %s (pre: %s)", idx+1, name,
           omc_string_data(sData->stringVars[idx]),
           omc_string_data(sInfo->stringVarsPre[idx]));
@@ -317,7 +317,7 @@ void printParameters(DATA *data, int stream)
       STATIC_REAL_DATA *var = &mData->realParameterData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->realParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter Real %s(start=%g, fixed=%s) = %g", idx+1, name,
                         real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
                         var->attribute.fixed ? "true" : "false",
@@ -334,7 +334,7 @@ void printParameters(DATA *data, int stream)
       STATIC_INTEGER_DATA *var = &mData->integerParameterData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->integerParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, idx+1, name,
                         integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
                         var->attribute.fixed ? "true" : "false",
@@ -351,7 +351,7 @@ void printParameters(DATA *data, int stream)
       STATIC_BOOLEAN_DATA *var = &mData->booleanParameterData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->booleanParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter Boolean %s(start=%s, fixed=%s) = %s", idx+1, name,
                         boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
                         var->attribute.fixed ? "true" : "false",
@@ -369,7 +369,7 @@ void printParameters(DATA *data, int stream)
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         modelica_string start = string_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k));
         idx = sInfo->stringParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter String %s(start=\"%s\") = \"%s\"", idx+1, name,
                         start ? omc_string_data(start) : "",
                         omc_string_data(sInfo->stringParameter[idx]));

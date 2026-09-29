@@ -315,6 +315,10 @@ unsafe extern "C" {
     pub(crate) fn simple_alloc_1d_integer_array(dest: *mut base_array_t, n: c_int);
     pub(crate) fn simple_alloc_1d_boolean_array(dest: *mut base_array_t, n: c_int);
     pub(crate) fn simple_alloc_1d_string_array(dest: *mut base_array_t, n: c_int);
+    /// Resize a start attribute to `n` elements, repeating its values.
+    pub(crate) fn real_array_ensure_size(a: *mut base_array_t, n: c_int);
+    pub(crate) fn integer_array_ensure_size(a: *mut base_array_t, n: c_int);
+    pub(crate) fn boolean_array_ensure_size(a: *mut base_array_t, n: c_int);
 }
 
 unsafe extern "C" {

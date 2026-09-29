@@ -1095,6 +1095,44 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function numScalarElemsBefore
+  "Total number of scalar elements of the first n SimVars of a list. The
+   scalar offset of the n-th variable (zero-based) when rolling out arrays."
+  input list<SimCodeVar.SimVar> vars;
+  input Integer n;
+  output Integer numScalars = 0;
+algorithm
+  for v in List.firstN(vars, n) loop
+    numScalars := numScalars + SimCodeUtilShared.getNumElems(v);
+  end for;
+end numScalarElemsBefore;
+
+public function numScalarElemsVar
+  "Number of scalar elements of a SimVar, rolling out arrays."
+  input SimCodeVar.SimVar var;
+  output Integer n = SimCodeUtilShared.getNumElems(var);
+end numScalarElemsVar;
+
+public function arrayElementSubscripts
+  "Subscripts of all elements of an array SimVar in row-major order, e.g.
+   {\"1,1\", \"1,2\", \"2,1\", \"2,2\"} for a 2x2 matrix. Empty for scalars."
+  input SimCodeVar.SimVar var;
+  output list<String> subscripts = {};
+protected
+  list<Integer> dims;
+  list<list<String>> acc = {{}};
+algorithm
+  subscripts := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
+      dims := list(stringInt(d) for d in var.numArrayElement);
+      for d in listReverse(dims) loop
+        acc := List.flatten(list(list(intString(i) :: rest for rest in acc) for i in 1:d));
+      end for;
+    then list(stringDelimitList(sub, ",") for sub in acc);
+    else {};
+  end match;
+end arrayElementSubscripts;
+
 public function getFMI3ArrayStart
   "Space separated list of scalar start values for an FMI 3.0 array variable
    (length = number of scalar elements). Element-wise start values (e.g.
