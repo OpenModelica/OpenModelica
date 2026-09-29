@@ -204,6 +204,15 @@ void generic_array_copy_data(const base_array_t src_cp, base_array_t* dst, copy_
     }
 }
 
+void simple_array_copy_to(const base_array_t src, void* dst, size_t n, size_t sze)
+{
+    if (base_array_nr_of_elements(src) != n) {
+        raiseStreamPrint(NULL, "Failed to copy array. Dimension sizes are not equal.");
+        return;
+    }
+    memmove(dst, src.data, n*sze);
+}
+
 void simple_array_copy_data(const base_array_t src_cp, base_array_t* dst, size_t sze)
 {
     const base_array_t* src = &src_cp;

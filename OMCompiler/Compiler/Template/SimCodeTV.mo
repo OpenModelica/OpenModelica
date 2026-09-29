@@ -1726,6 +1726,18 @@ package SimCodeCodegenUtil
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
+  function contiguousSliceOffset
+    input list<DAE.Subscript> subs;
+    input list<DAE.Dimension> dims;
+    output Integer offset;
+  end contiguousSliceOffset;
+
+  function contiguousSliceDims
+    input list<DAE.Subscript> subs;
+    input list<DAE.Dimension> dims;
+    output list<Integer> wholeDims;
+  end contiguousSliceDims;
+
   function simVarExactFromHT
     input DAE.ComponentRef inCref;
     input HashTableCrefSimVar.HashTable crefToSimVarHT;

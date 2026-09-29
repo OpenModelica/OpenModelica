@@ -1914,6 +1914,73 @@ algorithm
   end for;
 end isContiguousArrayCref;
 
+public function contiguousSliceOffset
+  "The element offset of a slice whose subscripts are integer literals followed
+   by whole dimensions, over constant dimensions: one contiguous block. -1 for
+   any other slice."
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output Integer offset = 0;
+protected
+  Integer i, d, nIndex = 0, nWhole = 0;
+  list<DAE.Subscript> rest = subs;
+algorithm
+  for dim in dims loop
+    d := match dim case DAE.DIM_INTEGER() then dim.integer; else -1; end match;
+    if d < 1 then
+      offset := -1;
+      return;
+    end if;
+    if listEmpty(rest) then
+      nWhole := nWhole + 1;
+      offset := offset * d;
+    else
+      _ := match listHead(rest)
+        case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard nWhole == 0 and i >= 1 and i <= d
+          algorithm
+            nIndex := nIndex + 1;
+            offset := offset * d + i - 1;
+          then ();
+        case DAE.WHOLEDIM()
+          algorithm
+            nWhole := nWhole + 1;
+            offset := offset * d;
+          then ();
+        else
+          algorithm
+            offset := -1;
+            return;
+          then ();
+      end match;
+      rest := listRest(rest);
+    end if;
+  end for;
+  if not listEmpty(rest) or nIndex == 0 or nWhole == 0 then
+    offset := -1;
+  end if;
+end contiguousSliceOffset;
+
+public function contiguousSliceDims
+  "The dimensions a slice accepted by contiguousSliceOffset keeps."
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output list<Integer> wholeDims = {};
+protected
+  list<DAE.Subscript> rest = subs;
+algorithm
+  for dim in dims loop
+    if listEmpty(rest) then
+      wholeDims := Expression.dimensionSize(dim) :: wholeDims;
+    else
+      if Expression.isWholeDim(listHead(rest)) then
+        wholeDims := Expression.dimensionSize(dim) :: wholeDims;
+      end if;
+      rest := listRest(rest);
+    end if;
+  end for;
+  wholeDims := listReverse(wholeDims);
+end contiguousSliceDims;
+
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
    Jacobian only has the elements that depend on the seeds; the others are zero."
