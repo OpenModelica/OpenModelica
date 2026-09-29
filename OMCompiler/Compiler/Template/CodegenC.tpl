@@ -7945,22 +7945,22 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       case "boolean" then
       <<
       <%preExp%>
-      boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "integer" then
       <<
       <%preExp%>
-      integer_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) integer_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "real" then
       <<
       <%preExp%>
-      real_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) real_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "string" then
       <<
       <%preExp%>
-      string_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) string_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
   else

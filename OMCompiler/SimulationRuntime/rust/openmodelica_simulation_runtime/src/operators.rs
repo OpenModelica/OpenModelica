@@ -66,10 +66,10 @@ pub fn set_from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> bool
     true
 }
 
-/// The buffers' `throwStreamPrint`, on the `threadData` the entry point below
-/// recorded. Does not return, so the caller's value never stands in.
+/// The buffers' `raiseStreamPrint`, on the `threadData` the entry point below
+/// recorded; the caller's value stands in.
 fn report(msg: &str) {
-    crate::throw(TD.get(), msg)
+    crate::support::raise_stream(TD.get(), msg)
 }
 
 fn state(data: *mut DATA, threadData: *mut threadData_t) -> &'static mut DelayState {
