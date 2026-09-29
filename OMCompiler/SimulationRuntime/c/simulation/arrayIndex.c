@@ -303,38 +303,14 @@ void printFlattenedNames(FILE *stream,
   assertStreamPrint(NULL, stream != NULL, "Invalid stream.");
   assertStreamPrint(NULL, separator != NULL, "Invalid separator.");
 
-  /* Temporary index array */
-  size_t *idx = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t)); // FIXME allocate once, outside this function
-  assertStreamPrint(NULL, idx != NULL, "Out of memory");
-
-  /* initialize with all ones (Modelica subscripts are one-based) */
-  for (size_t k = 0; k < dimension_info->numberOfDimensions; k++) {
-    idx[k] = 1;
-  }
-
   for (size_t linear = 0; linear < dimension_info->scalar_length; linear++) {
-    /* write indices */
-    fprintf(stream, "%s\"%s[%zu", separator, name, idx[0]);
-    for (size_t k = 1; k < dimension_info->numberOfDimensions; ++k) {
-      fprintf(stream, ",%zu", idx[k]);
-    }
-    fprintf(stream, "]\"");
-
-    /* increment multi-dimensional indices (row-major) */
-    for (size_t k = dimension_info->numberOfDimensions - 1; k < dimension_info->numberOfDimensions; --k) {
-      if (idx[k] < (size_t)dimension_info->dimensions[k].start) {
-        idx[k]++;   /* increment minor index if possible */
-        break;      /* done */
-      } else {
-        idx[k] = 1; /* go back to start, carry to major index */
-        if (k == 0) {
-          break;    /* we are back at all ones, outer for-loop should be done */
-        }
-      }
-    }
+    int length = printArrayElementName(NULL, 0, name, dimension_info, linear, FALSE);
+    char *element_name = (char *)malloc(length + 1);
+    assertStreamPrint(NULL, element_name != NULL, "Out of memory");
+    printArrayElementName(element_name, length + 1, name, dimension_info, linear, FALSE);
+    fprintf(stream, "%s\"%s\"", separator, element_name);
+    free(element_name);
   }
-
-  free(idx);
 }
 
 /**
@@ -436,9 +412,13 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
  * Uses the Modelica structured naming `"<name>[i,j,...]"` with 1-based
  * indices. For scalar variables `name` is written.
  *
- * A state derivative named `"der(<name>)"` gets `"der(<name>[i,j,...])"`, like
- * in the result files, if `derivativeSubscriptInside` is set, and
- * `"der(<name>)[i,j,...]"` otherwise.
+ * If the dimensions belong to several components, the name of the array
+ * variable has a `:` for each dimension, e.g. `"a[:].b.c[:,:]"`. The indices
+ * replace the `:` in order, giving `"a[1].b.c[2,3]"`.
+ *
+ * Otherwise the indices are appended. A state derivative named `"der(<name>)"`
+ * gets `"der(<name>[i,j,...])"`, like in the result files, if
+ * `derivativeSubscriptInside` is set, and `"der(<name>)[i,j,...]"` otherwise.
  *
  * @param buffer                     Buffer to write into.
  * @param buffer_size                Size of `buffer`.
@@ -448,6 +428,48 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
  * @param derivativeSubscriptInside  Put the subscripts of a state derivative inside `der()`.
  * @return int                       Number of characters written, like snprintf.
  */
+/**
+ * @brief Test if `c` points to a `:` marker for a dimension in `name`.
+ *
+ * A marker is a `:` subscript, i.e. preceded by `[` or `,` and followed by
+ * `,` or `]`, outside of a quoted identifier.
+ */
+static int isSubscriptMarker(const char *name, const char *c)
+{
+  int quoted = 0;
+  if (*c != ':' || c == name || !(c[-1] == '[' || c[-1] == ',') || !(c[1] == ',' || c[1] == ']'))
+  {
+    return 0;
+  }
+  for (const char *p = name; p < c; p++)
+  {
+    if (quoted && *p == '\\' && p + 1 < c)
+    {
+      p++; /* escaped character in a quoted identifier */
+    }
+    else if (*p == '\'')
+    {
+      quoted = !quoted;
+    }
+  }
+  return !quoted;
+}
+
+/**
+ * @brief Test if array variable `name` has `:` markers for its dimensions.
+ */
+static int hasSubscriptMarkers(const char *name)
+{
+  for (const char *c = name; *c != '\0'; c++)
+  {
+    if (isSubscriptMarker(name, c))
+    {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int printArrayElementName(char *buffer,
                           size_t buffer_size,
                           const char *name,
@@ -465,9 +487,34 @@ int printArrayElementName(char *buffer,
     return snprintf(buffer, buffer_size, "%s", name);
   }
 
+  rem = linear_address;
+  if (hasSubscriptMarkers(name))
+  {
+    written = 0;
+    k = 0;
+    for (const char *c = name; *c != '\0'; c++)
+    {
+      if (isSubscriptMarker(name, c) && k < dimension_info->numberOfDimensions)
+      {
+        stride = 1;
+        for (j = k + 1; j < dimension_info->numberOfDimensions; j++)
+        {
+          stride *= (size_t)dimension_info->dimensions[j].start;
+        }
+        written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0, "%zu", rem / stride + 1);
+        rem = rem % stride;
+        k++;
+      }
+      else
+      {
+        written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0, "%c", *c);
+      }
+    }
+    return written;
+  }
+
   written = snprintf(buffer, buffer_size, "%.*s", (int)(isDerivative ? name_length - 1 : name_length), name);
 
-  rem = linear_address;
   for (k = 0; k < dimension_info->numberOfDimensions; k++)
   {
     stride = 1;

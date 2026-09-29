@@ -48,6 +48,15 @@ int main(void)
   test_success &= check("der(x)", &scalar, 0, TRUE, "der(x)");
   test_success &= check("der(x)", &scalar, 0, FALSE, "der(x)");
 
+  /* Dimensions of several components: indices replace the ':' in order */
+  test_success &= check("a[:].b.c[:]", &matrix, 0, FALSE, "a[1].b.c[1]");
+  test_success &= check("a[:].b.c[:]", &matrix, 5, FALSE, "a[2].b.c[3]");
+  test_success &= check("a[:,:].b", &matrix, 4, FALSE, "a[2,2].b");
+  test_success &= check("der(a[:].x[:])", &matrix, 3, TRUE, "der(a[2].x[1])");
+  test_success &= check("der(a[:].x[:])", &matrix, 3, FALSE, "der(a[2].x[1])");
+  test_success &= check("'a[:]'[:].x", &vector, 1, FALSE, "'a[:]'[2].x");
+  test_success &= check("'a\\'[:]'[:].x", &vector, 1, FALSE, "'a\\'[:]'[2].x");
+
   if (test_success)
   {
     printf("All tests passed!\n");

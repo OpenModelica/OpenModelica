@@ -1,0 +1,65 @@
+// name: arrayComponentElementNames
+// keywords: NewBackend, array, result file, init xml
+// status: correct
+// teardown_command: rm -f *ArrayComponentElementNames*
+//
+// Element names of non-scalarized array variables whose dimensions belong to
+// several components. init.xml marks each dimension with ':', e.g.
+// s[:].p.v[:], and the result file has s[1].p.v[2] instead of s.p.v[1,2].
+
+loadString("
+model ArrayComponentElementNames
+  model Source
+    Real v[2];
+    Real u[2] = v \"alias of v\";
+    parameter Real k = 1;
+  equation
+    v = {k*time, 2*k};
+  end Source;
+  Source s[2](k = {1, 3});
+  Real w[2, 2] = s.v \"alias of s.v\";
+end ArrayComponentElementNames;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+simulate(ArrayComponentElementNames, stopTime = 1, numberOfIntervals = 2); getErrorString();
+
+system("grep -o 'name = \"[^\"]*\"' ArrayComponentElementNames_init.xml | grep '\\[' > ArrayComponentElementNames_names.txt"); getErrorString();
+readFile("ArrayComponentElementNames_names.txt"); getErrorString();
+readSimulationResultVars("ArrayComponentElementNames_res.mat"); getErrorString();
+val(s[2].v[1], 1); getErrorString();
+val(s[2].v[2], 1); getErrorString();
+val(w[2,2], 1); getErrorString();
+val(s[2].u[2], 1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayComponentElementNames_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayComponentElementNames', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// "name = \"s[:].k\"
+// name = \"s[:].v[:]\"
+// name = \"s[:].u[:]\"
+// "
+// ""
+// {"s[1].k", "s[1].u[1]", "s[1].u[2]", "s[1].v[1]", "s[1].v[2]", "s[2].k", "s[2].u[1]", "s[2].u[2]", "s[2].v[1]", "s[2].v[2]", "time", "w[1,1]", "w[1,2]", "w[2,1]", "w[2,2]"}
+// ""
+// 3.0
+// ""
+// 6.0
+// ""
+// 6.0
+// ""
+// 6.0
+// ""
+// endResult

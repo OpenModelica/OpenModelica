@@ -23,9 +23,12 @@ fn cstr(p: *const c_char) -> String {
     unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
 }
 
-/// C's `printArrayName`: one name per scalar element, row-major subscripts inside
-/// one pair of brackets. A state derivative keeps its `der(...)` parentheses
-/// around the subscript.
+/// C's `printArrayElementName`: one name per scalar element, row-major subscripts
+/// inside one pair of brackets. A state derivative keeps its `der(...)`
+/// parentheses around the subscript.
+///
+/// If the dimensions belong to several components, the name has a `:` for each
+/// dimension, e.g. `a[:].b.c[:,:]`, and the subscripts replace them in order.
 fn scalar_names(name: &str, dim: &DIMENSION_INFO, is_state_derivative: bool) -> Vec<String> {
     if dim.numberOfDimensions == 0 || dim.dimensions.is_null() {
         return vec![name.to_string()];
@@ -33,25 +36,72 @@ fn scalar_names(name: &str, dim: &DIMENSION_INFO, is_state_derivative: bool) -> 
     let sizes: Vec<usize> = (0..dim.numberOfDimensions)
         .map(|k| unsafe { (*dim.dimensions.add(k)).start.max(0) as usize })
         .collect();
+    (0..dim.scalar_length).map(|linear| element_name(name, &sizes, linear, is_state_derivative)).collect()
+}
+
+/// Name of element `linear` (row-major) of array variable `name` with dimension `sizes`.
+fn element_name(name: &str, sizes: &[usize], linear: usize, is_state_derivative: bool) -> String {
+    let mut rem = linear;
+    let mut indices = (0..sizes.len()).map(|k| {
+        let stride: usize = sizes[k + 1..].iter().product();
+        let ix = rem / stride + 1;
+        rem %= stride;
+        ix
+    });
+    let markers = subscript_markers(name);
+    if !markers.is_empty() {
+        let mut out = String::with_capacity(name.len() + 4 * markers.len());
+        let mut last = 0;
+        for m in markers {
+            out.push_str(&name[last..m]);
+            match indices.next() {
+                Some(ix) => out.push_str(&ix.to_string()),
+                None => out.push(':'),
+            }
+            last = m + 1;
+        }
+        out.push_str(&name[last..]);
+        return out;
+    }
     let base = if is_state_derivative { name.strip_suffix(')').unwrap_or(name) } else { name };
-    (0..dim.scalar_length)
-        .map(|linear| {
-            let mut rem = linear;
-            let mut out = base.to_string();
-            for k in 0..sizes.len() {
-                let stride: usize = sizes[k + 1..].iter().product();
-                let ix = rem / stride + 1;
-                rem %= stride;
-                out.push(if k == 0 { '[' } else { ',' });
-                out.push_str(&ix.to_string());
+    let mut out = base.to_string();
+    for (k, ix) in indices.enumerate() {
+        out.push(if k == 0 { '[' } else { ',' });
+        out.push_str(&ix.to_string());
+    }
+    out.push(']');
+    if is_state_derivative {
+        out.push(')');
+    }
+    out
+}
+
+/// Byte positions of the `:` subscripts in `name`, i.e. a `:` preceded by `[` or
+/// `,` and followed by `,` or `]`, outside of a quoted identifier.
+fn subscript_markers(name: &str) -> Vec<usize> {
+    let b = name.as_bytes();
+    let mut quoted = false;
+    let mut escaped = false;
+    let mut out = Vec::new();
+    for i in 0..b.len() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        match b[i] {
+            b'\\' if quoted => escaped = true,
+            b'\'' => quoted = !quoted,
+            b':' if !quoted
+                && i > 0
+                && matches!(b[i - 1], b'[' | b',')
+                && matches!(b.get(i + 1), Some(b',') | Some(b']')) =>
+            {
+                out.push(i)
             }
-            out.push(']');
-            if is_state_derivative {
-                out.push(')');
-            }
-            out
-        })
-        .collect()
+            _ => {}
+        }
+    }
+    out
 }
 
 /// C's `printArrayDescription`: the comment, with the unit appended in brackets.
@@ -735,4 +785,29 @@ fn input_vars(data: *mut DATA, md: &MODEL_DATA, si: &SIMULATION_INFO, layout: &L
             })
         })
         .collect()
+}
+
+#[cfg(test)]
+mod element_name_tests {
+    use super::element_name;
+
+    #[test]
+    fn appends_subscripts_without_markers() {
+        assert_eq!(element_name("x", &[2, 3], 4, false), "x[2,2]");
+        assert_eq!(element_name("der(x)", &[2], 1, true), "der(x[2])");
+    }
+
+    #[test]
+    fn fills_markers_in_order() {
+        let name = "Trafo_HV[:,:].terminal_n.v[:]";
+        assert_eq!(element_name(name, &[1, 2, 2], 0, false), "Trafo_HV[1,1].terminal_n.v[1]");
+        assert_eq!(element_name(name, &[1, 2, 2], 3, false), "Trafo_HV[1,2].terminal_n.v[2]");
+        assert_eq!(element_name("der(a[:].x)", &[3], 2, true), "der(a[3].x)");
+    }
+
+    #[test]
+    fn ignores_colon_in_quoted_identifier() {
+        assert_eq!(element_name("'a[:]'[:].x", &[2], 1, false), "'a[:]'[2].x");
+        assert_eq!(element_name("'a\\'[:]'[:].x", &[2], 1, false), "'a\\'[:]'[2].x");
+    }
 }

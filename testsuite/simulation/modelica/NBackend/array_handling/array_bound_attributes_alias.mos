@@ -44,7 +44,7 @@ setCommandLineOptions("--newBackend -d=arrayConnect --simCodeScalarize=false"); 
 
 simulate(array_bound_attributes_alias.M, stopTime=1.0, simflags="-lv=LOG_INIT_V"); getErrorString();
 
-val(cap.T[1], 1.0);
+val(cap[1].T, 1.0);
 
 // Result:
 // true
@@ -56,9 +56,9 @@ val(cap.T[1], 1.0);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'array_bound_attributes_alias.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
-// LOG_INIT_V        | info    | cap.T(min={1, 2, 3, 4})
+// LOG_INIT_V        | info    | cap[:].T(min={1, 2, 3, 4})
 // LOG_INIT          | info    | updating max-values
-// LOG_INIT_V        | info    | cap.T(max={500, 500, 500, 500})
+// LOG_INIT_V        | info    | cap[:].T(max={500, 500, 500, 500})
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
@@ -67,32 +67,32 @@ val(cap.T[1], 1.0);
 // |                 | |       | | | [1] parameter Integer N(start=4, fixed=true) = 4
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | states variables
-// |                 | |       | | | [1] Real cap.T[1](start=293.15, nominal=300) = 293.15 (pre: 293.15)
-// |                 | |       | | | [2] Real cap.T[2](start=293.15, nominal=300) = 293.15 (pre: 293.15)
-// |                 | |       | | | [3] Real cap.T[3](start=293.15, nominal=300) = 293.15 (pre: 293.15)
-// |                 | |       | | | [4] Real cap.T[4](start=293.15, nominal=300) = 293.15 (pre: 293.15)
+// |                 | |       | | | [1] Real cap[1].T(start=293.15, nominal=300) = 293.15 (pre: 293.15)
+// |                 | |       | | | [2] Real cap[2].T(start=293.15, nominal=300) = 293.15 (pre: 293.15)
+// |                 | |       | | | [3] Real cap[3].T(start=293.15, nominal=300) = 293.15 (pre: 293.15)
+// |                 | |       | | | [4] Real cap[4].T(start=293.15, nominal=300) = 293.15 (pre: 293.15)
 // |                 | |       | | derivatives variables
-// |                 | |       | | | [5] Real der(cap.T)[1] = -0 (pre: 0)
-// |                 | |       | | | [6] Real der(cap.T)[2] = 0 (pre: 0)
-// |                 | |       | | | [7] Real der(cap.T)[3] = 0 (pre: 0)
-// |                 | |       | | | [8] Real der(cap.T)[4] = 0 (pre: 0)
+// |                 | |       | | | [5] Real der(cap[1].T) = -0 (pre: 0)
+// |                 | |       | | | [6] Real der(cap[2].T) = 0 (pre: 0)
+// |                 | |       | | | [7] Real der(cap[3].T) = 0 (pre: 0)
+// |                 | |       | | | [8] Real der(cap[4].T) = 0 (pre: 0)
 // |                 | |       | | other real variables
-// |                 | |       | | | [9] Real cap.port.Q[1](start=0, nominal=1) = -0 (pre: 0)
-// |                 | |       | | | [10] Real cap.port.Q[2](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [11] Real cap.port.Q[3](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [12] Real cap.port.Q[4](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [13] Real cond.a.T[1](start=288.15, nominal=300) = 293.15 (pre: 288.15)
-// |                 | |       | | | [14] Real cond.a.T[2](start=288.15, nominal=300) = 293.15 (pre: 288.15)
-// |                 | |       | | | [15] Real cond.a.T[3](start=288.15, nominal=300) = 293.15 (pre: 288.15)
-// |                 | |       | | | [16] Real cond.a.Q[1](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [17] Real cond.a.Q[2](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [18] Real cond.a.Q[3](start=0, nominal=1) = 0 (pre: 0)
-// |                 | |       | | | [19] Real cond.b.T[1](start=288.15, nominal=300) = 293.15 (pre: 288.15)
-// |                 | |       | | | [20] Real cond.b.T[2](start=288.15, nominal=300) = 293.15 (pre: 288.15)
-// |                 | |       | | | [21] Real cond.b.T[3](start=288.15, nominal=300) = 293.15 (pre: 288.15)
-// |                 | |       | | | [22] Real cond.b.Q[1](start=0, nominal=1) = -0 (pre: 0)
-// |                 | |       | | | [23] Real cond.b.Q[2](start=0, nominal=1) = -0 (pre: 0)
-// |                 | |       | | | [24] Real cond.b.Q[3](start=0, nominal=1) = -0 (pre: 0)
+// |                 | |       | | | [9] Real cap[1].port.Q(start=0, nominal=1) = -0 (pre: 0)
+// |                 | |       | | | [10] Real cap[2].port.Q(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [11] Real cap[3].port.Q(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [12] Real cap[4].port.Q(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [13] Real cond[1].a.T(start=288.15, nominal=300) = 293.15 (pre: 288.15)
+// |                 | |       | | | [14] Real cond[2].a.T(start=288.15, nominal=300) = 293.15 (pre: 288.15)
+// |                 | |       | | | [15] Real cond[3].a.T(start=288.15, nominal=300) = 293.15 (pre: 288.15)
+// |                 | |       | | | [16] Real cond[1].a.Q(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [17] Real cond[2].a.Q(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [18] Real cond[3].a.Q(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [19] Real cond[1].b.T(start=288.15, nominal=300) = 293.15 (pre: 288.15)
+// |                 | |       | | | [20] Real cond[2].b.T(start=288.15, nominal=300) = 293.15 (pre: 288.15)
+// |                 | |       | | | [21] Real cond[3].b.T(start=288.15, nominal=300) = 293.15 (pre: 288.15)
+// |                 | |       | | | [22] Real cond[1].b.Q(start=0, nominal=1) = -0 (pre: 0)
+// |                 | |       | | | [23] Real cond[2].b.Q(start=0, nominal=1) = -0 (pre: 0)
+// |                 | |       | | | [24] Real cond[3].b.Q(start=0, nominal=1) = -0 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

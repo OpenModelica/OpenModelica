@@ -31,6 +31,7 @@
 #include "util/omc_error.h"
 #include "util/rtclock.h"
 #include "simulation/options.h"
+#include "simulation/arrayIndex.h"
 
 #include <cstring>
 #include <string>
@@ -54,28 +55,12 @@ struct rust_result_data
   std::vector<double> params;
 };
 
+/* Name of element `linear` of an array variable, see printArrayElementName. */
 static std::string arrayName(const char *name, const DIMENSION_INFO *dimension, size_t linear, modelica_boolean isStateDerivative)
 {
-  std::string out = name;
-  if (dimension == NULL || dimension->numberOfDimensions == 0) {
-    return out;
-  }
-  if (isStateDerivative) {
-    out.pop_back(); /* the ")" of der(x): the subscripts go inside it */
-  }
-  size_t rem = linear;
-  for (size_t k = 0; k < dimension->numberOfDimensions; k++) {
-    size_t stride = 1;
-    for (size_t j = k + 1; j < dimension->numberOfDimensions; j++) {
-      stride *= (size_t)dimension->dimensions[j].start;
-    }
-    out += (k == 0 ? "[" : ",") + std::to_string(rem / stride + 1);
-    rem = rem % stride;
-  }
-  out += "]";
-  if (isStateDerivative) {
-    out += ")";
-  }
+  int length = printArrayElementName(NULL, 0, name, dimension, linear, isStateDerivative);
+  std::string out(length, '\0');
+  printArrayElementName(&out[0], length + 1, name, dimension, linear, isStateDerivative);
   return out;
 }
 

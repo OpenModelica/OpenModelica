@@ -47,6 +47,7 @@ import BackendDAE.VarKind;
 import ClassInf;
 import CR=ComponentReference;
 import Config;
+import DAE;
 import DAE.{Exp,Type};
 import DAEUtil;
 import Dump;
@@ -334,6 +335,73 @@ algorithm
   File.write(file, "\n  </" + type_name + ">\n");
 end scalarVariable;
 
+function arrayVariableName
+  "Name of an array variable for init.xml. If dimensions belong to a component
+   other than the last one, every array component gets ':' for each of its
+   dimensions, e.g. a[:].b.c[:,:]. The runtimes put the element indices in
+   place of the ':' in the order of the <Dimension> elements. Otherwise the
+   indices are appended to the name and it stays unchanged, e.g. x for x[i]."
+  input DAE.ComponentRef cref;
+  input DAE.Type ty;
+  output DAE.ComponentRef name;
+protected
+  Integer n;
+  Boolean hasInnerDims;
+algorithm
+  (name, n, hasInnerDims) := addWholeDims(cref);
+  if not hasInnerDims or n <> listLength(Expression.arrayDimension(ty)) then
+    name := cref;
+  end if;
+end arrayVariableName;
+
+function addWholeDims
+  "Adds ':' subscripts for the dimensions of every unsubscripted component of a cref."
+  input DAE.ComponentRef cref;
+  output DAE.ComponentRef outCref;
+  output Integer nDims "number of ':' added";
+  output Boolean innerDims "true if a component other than the last one has dimensions";
+protected
+  DAE.ComponentRef rest;
+  list<DAE.Subscript> subs;
+  Integer n;
+algorithm
+  (outCref, nDims, innerDims) := match cref
+    // der(...) and previous(...) are printed around the rest of the cref
+    case DAE.CREF_QUAL() guard stringEq(cref.ident, DAE.derivativeNamePrefix) or stringEq(cref.ident, DAE.previousNamePrefix)
+      algorithm
+        (rest, nDims, innerDims) := addWholeDims(cref.componentRef);
+        cref.componentRef := rest;
+      then (cref, nDims, innerDims);
+
+    case DAE.CREF_QUAL(subscriptLst = {})
+      algorithm
+        (rest, nDims, innerDims) := addWholeDims(cref.componentRef);
+        (subs, n) := wholeDims(cref.identType);
+        cref.subscriptLst := subs;
+        cref.componentRef := rest;
+      then (cref, nDims + n, innerDims or n > 0);
+
+    case DAE.CREF_IDENT(subscriptLst = {})
+      algorithm
+        (subs, n) := wholeDims(cref.identType);
+        cref.subscriptLst := subs;
+      then (cref, n, false);
+
+    else (cref, 0, false);
+  end match;
+end addWholeDims;
+
+function wholeDims
+  input DAE.Type ty;
+  output list<DAE.Subscript> subs = {};
+  output Integer n = 0;
+algorithm
+  for dim in Expression.arrayDimension(ty) loop
+    subs := DAE.WHOLEDIM() :: subs;
+    n := n + 1;
+  end for;
+end wholeDims;
+
 function scalarVariableAttribute "Generates code for ScalarVariable Attribute file for FMU target."
   input File.File file;
   input SimVar simVar;
@@ -346,7 +414,7 @@ protected
 algorithm
 
   File.write(file, "    name = \"");
-  CR.writeCref(file, simVar.name, XML);
+  CR.writeCref(file, arrayVariableName(simVar.name, simVar.type_), XML);
   File.write(file, "\"\n");
 
   File.write(file, "    valueReference = \"");
@@ -580,7 +648,7 @@ algorithm
   case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.ALIAS())
     algorithm
       File.write(file, "\"alias\" aliasVariable=\"");
-      CR.writeCref(file, aliasvar.varName, XML);
+      CR.writeCref(file, arrayVariableName(aliasvar.varName, simVar.type_), XML);
       File.write(file, "\" aliasVariableId=\"");
       File.write(file, SimCodeCodegenUtil.getValueReference(simVar, SimCodeCodegenUtil.getSimCode(), true));
       File.write(file, "\"");
@@ -588,7 +656,7 @@ algorithm
   case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.NEGATEDALIAS())
     algorithm
       File.write(file, "\"negatedAlias\" aliasVariable=\"");
-      CR.writeCref(file, aliasvar.varName, XML);
+      CR.writeCref(file, arrayVariableName(aliasvar.varName, simVar.type_), XML);
       File.write(file, "\" aliasVariableId=\"");
       File.write(file, SimCodeCodegenUtil.getValueReference(simVar, SimCodeCodegenUtil.getSimCode(), true));
       File.write(file, "\"");

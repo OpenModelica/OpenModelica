@@ -12,6 +12,7 @@ array_bound_attributes.mos\
 array_bound_attributes_alias.mos\
 print_array_var_names.mos\
 integerComprehensionParameter.mos\
+arrayComponentElementNames.mos\
 arrayResultFile.mos\
 simple_for.mos\
 simple_nested_for.mos\
