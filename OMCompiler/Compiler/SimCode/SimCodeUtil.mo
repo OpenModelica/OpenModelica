@@ -810,8 +810,8 @@ algorithm
       fmiFigures                  = {}
     );
 
-    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literalsAcc);
-    simCode := setSimCodeLiterals(simCode, listReverse(lits));
+    (simCode, lits) := findSimCodeLiterals(simCode, literalsAcc);
+    simCode := setSimCodeLiterals(simCode, lits);
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
     // print("*** SimCode -> collect all files started: " + realString(clock()) + "\n");
@@ -11407,6 +11407,19 @@ algorithm
   (_, i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 1 /* Each system has cost 1 even if it's as simple as der(x)=1.0 */, {});
   prio := (i, eqs);
 end calcPriority;
+
+public function findSimCodeLiterals
+  "Replaces the literals in simCode by shared literals and returns them all."
+  input output SimCode.SimCode simCode;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inLiterals;
+  output list<DAE.Exp> literals;
+protected
+  HashTableExpToIndex.HashTable uses;
+algorithm
+  (_, uses) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.countStringUses, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize));
+  (simCode, (_, _, literals)) := traverseExpsSimCode(simCode, function SimCodeFunctionUtil.findLiteralsHelperKeepSingle(uses = uses), inLiterals);
+  literals := listReverse(literals);
+end findSimCodeLiterals;
 
 public function traverseExpsSimCode
   input SimCode.SimCode simCode;

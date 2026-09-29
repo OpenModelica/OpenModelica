@@ -201,6 +201,14 @@ static inline int sign(double v)
 #endif
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#define OMC_LIKELY(x) __builtin_expect(!!(x), 1)
+#define OMC_COLD __attribute__((cold, noinline))
+#else
+#define OMC_LIKELY(x) (x)
+#define OMC_COLD
+#endif
+
 #if defined(__cplusplus)
 } /* end extern "C" */
 #endif

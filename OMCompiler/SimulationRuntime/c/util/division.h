@@ -29,6 +29,7 @@
 #ifndef DIVISION_H
 #define DIVISION_H
 
+#include <math.h>
 #include "../openmodelica.h"
 #include "omc_error.h"
 
@@ -49,25 +50,16 @@ modelica_real division_error(threadData_t*,modelica_real b, const char* division
 modelica_real isnan_error(threadData_t*,modelica_real b, const char* division_str, const char* file, long line);
 int valid_number(double a);
 
+modelica_real __OMC_DIV_SIM_SLOW(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int *equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_) OMC_COLD;
+
 static inline modelica_real __OMC_DIV_SIM(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int *equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_)
 {
-  modelica_real res;
-  if(b != 0.0)
-    res = a/b;
-  else if(initial_ && a == 0.0)
-    res = 0.0;
-  else
-    res = a / division_error_equation_time(threadData, a, b, msg, equationIndexes, time_, noThrowDivZero);
-
-  if(!valid_number(res)){
-    if(noThrowDivZero) {
-      warningStreamPrintWithEquationIndexes(OMC_LOG_DIVISION, omc_dummyFileInfo, 0, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
-    }
-    else {
-      throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
-    }
+  if(OMC_LIKELY(b != 0.0)) {
+    const modelica_real res = a/b;
+    if(OMC_LIKELY(isfinite(res)))
+      return res;
   }
-  return res;
+  return __OMC_DIV_SIM_SLOW(threadData, a, b, msg, equationIndexes, noThrowDivZero, time_, initial_);
 }
 
 #endif
