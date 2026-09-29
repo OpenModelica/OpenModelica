@@ -8878,7 +8878,7 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
         case SIMVAR(varKind=OPT_TGRID()) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           let ty = crefShortType(name)
-          '(<%arr%>data->simulationInfo-><%ty%>Parameter[data->simulationInfo-><%ty%>ParamsIndex[<%index%>]]<%c_comment%>)<%&sub%>'
+          '(<%arr%>data->simulationInfo-><%ty%>Parameter[<%simVarIndex(ty, "Params", '<%index%>')%>]<%c_comment%>)<%&sub%>'
         case SIMVAR(varKind=EXTOBJ()) then
           '(<%arr%>data->simulationInfo->extObjs[<%index%>])<%&sub%>'
         case SIMVAR(__) then
@@ -8912,10 +8912,19 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           else if isPre then
             '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
           else
-            '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'
+            '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[<%simVarIndex(ty, "Vars", '<%index%>')%>]<%c_comment%>)<%sub%>'
       end match
   end match
 end varArrayNameValues;
+
+template simVarIndex(String ty, String kind, String index)
+ "Where a variable starts in its values array. Scalarized code has only scalar
+  variables, so the index maps are the identity there."
+::=
+  match getSimCode()
+  case SIMCODE(scalarized=true) then index
+  else 'data->simulationInfo-><%ty%><%kind%>Index[<%index%>]'
+end simVarIndex;
 
 template startArrayGather(ComponentRef cr, Text type, Text arr, Text ndims, Text dims, Text &varDecls, Text &varFrees)
  "A whole-array start attribute whose dimension is not constant, so it was not

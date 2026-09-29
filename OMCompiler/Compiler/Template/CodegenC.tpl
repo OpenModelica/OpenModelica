@@ -5730,7 +5730,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
     };
     for (int i = 0; i < <%listLength(algAndEqAssertsEquations)%>; i++) {
       if (asserts[i].var >= 0) {
-        const modelica_real v = data->localData[0]->realVars[data->simulationInfo->realVarsIndex[asserts[i].var]];
+        const modelica_real v = data->localData[0]->realVars[<%simVarIndex("real", "Vars", "asserts[i].var")%>];
         if (v >= asserts[i].lo && v <= asserts[i].hi) continue;
       }
       asserts[i].eq(data, threadData);
@@ -5778,7 +5778,7 @@ template assertTableBounds(DAE.Exp e, String lo, String hi)
         let &auxFunction = buffer ""
         let &sub = buffer ""
         let access = contextCref(componentRef, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
-        if boolAnd(intGt(index, -1), boolAnd(stringEq(&sub, ""), intEq(System.stringFind(access, '(data->localData[0]->realVars[data->simulationInfo->realVarsIndex[<%index%>]]'), 0))) then
+        if boolAnd(intGt(index, -1), boolAnd(stringEq(&sub, ""), intEq(System.stringFind(access, '(data->localData[0]->realVars[<%simVarIndex("real", "Vars", '<%index%>')%>]'), 0))) then
           '<%index%>, <%lo%>, <%hi%>'
       else ''
     else ''
