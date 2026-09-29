@@ -1914,72 +1914,87 @@ algorithm
   end for;
 end isContiguousArrayCref;
 
-public function contiguousSliceOffset
-  "The element offset of a slice whose subscripts are integer literals followed
-   by whole dimensions, over constant dimensions: one contiguous block. -1 for
-   any other slice."
+public function contiguousSliceStart
+  "The subscripts of the first element of a slice that is one block of its
+   variable's storage, {} for any other slice. Such a slice has scalar
+   subscripts, then optionally one literal range with step 1, then whole
+   dimensions, over constant dimensions."
   input list<DAE.Subscript> subs;
   input list<DAE.Dimension> dims;
-  output Integer offset = 0;
+  output list<DAE.Subscript> start;
+algorithm
+  (start, _) := contiguousSlice(subs, dims);
+end contiguousSliceStart;
+
+public function contiguousSliceDims
+  "The dimensions of a slice accepted by contiguousSliceStart."
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output list<Integer> sliceDims;
+algorithm
+  (_, sliceDims) := contiguousSlice(subs, dims);
+end contiguousSliceDims;
+
+protected function contiguousSlice
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output list<DAE.Subscript> start = {};
+  output list<Integer> sliceDims = {};
 protected
-  Integer i, d, nIndex = 0, nWhole = 0;
+  Integer i, j, d;
+  Option<DAE.Exp> step;
+  DAE.Exp e;
+  DAE.Subscript sub;
   list<DAE.Subscript> rest = subs;
+  Boolean inBlock = false, sliced = false, ok;
 algorithm
   for dim in dims loop
     d := match dim case DAE.DIM_INTEGER() then dim.integer; else -1; end match;
-    if d < 1 then
-      offset := -1;
+    if listEmpty(rest) then
+      sub := DAE.WHOLEDIM();
+    else
+      sub :: rest := rest;
+    end if;
+    ok := if d < 1 then false else match sub
+      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and i <= d
+        algorithm
+          start := sub :: start;
+        then true;
+      case DAE.INDEX(exp = e) guard not inBlock and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
+        algorithm
+          start := sub :: start;
+        then true;
+      case DAE.SLICE(exp = DAE.RANGE(start = DAE.ICONST(integer = i), step = step, stop = DAE.ICONST(integer = j)))
+        guard not inBlock and i >= 1 and j >= i and j <= d and Util.applyOptionOrDefault(step, Expression.isConstOne, true)
+        algorithm
+          inBlock := true;
+          sliced := true;
+          start := DAE.INDEX(DAE.ICONST(i)) :: start;
+          sliceDims := (j - i + 1) :: sliceDims;
+        then true;
+      case DAE.WHOLEDIM()
+        algorithm
+          inBlock := true;
+          start := DAE.INDEX(DAE.ICONST(1)) :: start;
+          sliceDims := d :: sliceDims;
+        then true;
+      else false;
+    end match;
+    if not ok then
+      start := {};
+      sliceDims := {};
       return;
     end if;
-    if listEmpty(rest) then
-      nWhole := nWhole + 1;
-      offset := offset * d;
-    else
-      _ := match listHead(rest)
-        case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard nWhole == 0 and i >= 1 and i <= d
-          algorithm
-            nIndex := nIndex + 1;
-            offset := offset * d + i - 1;
-          then ();
-        case DAE.WHOLEDIM()
-          algorithm
-            nWhole := nWhole + 1;
-            offset := offset * d;
-          then ();
-        else
-          algorithm
-            offset := -1;
-            return;
-          then ();
-      end match;
-      rest := listRest(rest);
-    end if;
+    sliced := sliced or not inBlock;
   end for;
-  if not listEmpty(rest) or nIndex == 0 or nWhole == 0 then
-    offset := -1;
+  if not listEmpty(rest) or not sliced or listEmpty(sliceDims) then
+    start := {};
+    sliceDims := {};
+  else
+    start := listReverse(start);
+    sliceDims := listReverse(sliceDims);
   end if;
-end contiguousSliceOffset;
-
-public function contiguousSliceDims
-  "The dimensions a slice accepted by contiguousSliceOffset keeps."
-  input list<DAE.Subscript> subs;
-  input list<DAE.Dimension> dims;
-  output list<Integer> wholeDims = {};
-protected
-  list<DAE.Subscript> rest = subs;
-algorithm
-  for dim in dims loop
-    if listEmpty(rest) then
-      wholeDims := Expression.dimensionSize(dim) :: wholeDims;
-    else
-      if Expression.isWholeDim(listHead(rest)) then
-        wholeDims := Expression.dimensionSize(dim) :: wholeDims;
-      end if;
-      rest := listRest(rest);
-    end if;
-  end for;
-  wholeDims := listReverse(wholeDims);
-end contiguousSliceDims;
+end contiguousSlice;
 
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The

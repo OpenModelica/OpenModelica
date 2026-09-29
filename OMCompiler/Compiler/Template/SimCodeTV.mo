@@ -1726,16 +1726,16 @@ package SimCodeCodegenUtil
     output Boolean outContiguous;
   end isContiguousArrayCref;
 
-  function contiguousSliceOffset
+  function contiguousSliceStart
     input list<DAE.Subscript> subs;
     input list<DAE.Dimension> dims;
-    output Integer offset;
-  end contiguousSliceOffset;
+    output list<DAE.Subscript> start;
+  end contiguousSliceStart;
 
   function contiguousSliceDims
     input list<DAE.Subscript> subs;
     input list<DAE.Dimension> dims;
-    output list<Integer> wholeDims;
+    output list<Integer> sliceDims;
   end contiguousSliceDims;
 
   function simVarExactFromHT
