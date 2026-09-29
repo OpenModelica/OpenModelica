@@ -111,11 +111,13 @@ impl FixedStep {
         }
         self.steps += 1;
 
-        let end = self.br.close(ode, t_left, target, &self.y_new)?;
+        let (end, accepted) = self.br.close(ode, t_left, target, &self.y_new, yp)?;
         let reached = end.unwrap_or(target);
         *t = reached;
         y[..n].copy_from_slice(self.br.right());
-        ode.eval(reached, &y[..n], yp)?;
+        if !accepted {
+            ode.eval(reached, &y[..n], yp)?;
+        }
         Ok(match end {
             Some(troot) => StepEnd::Root(troot),
             None => StepEnd::Reached,
