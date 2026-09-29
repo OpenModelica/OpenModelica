@@ -53,6 +53,7 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QDesktopServices>
 
 //IAEX Headers
 #include "celldocument.h"
@@ -996,6 +997,16 @@ namespace IAEX
     // 2006-02-10 AF, check if path is empty
     //fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
     //fflush(stderr); fflush(stdout);
+
+    // Web links (http/https) are opened in the default browser instead of
+    // being treated as a local notebook file.
+    const QString scheme = link->scheme().toLower();
+    if( scheme == QLatin1String("http") || scheme == QLatin1String("https") )
+    {
+      QDesktopServices::openUrl( *link );
+      return;
+    }
+
     if( !link->path().isEmpty() )
     {
       // 2005-12-05 AF, check if filename exists, otherwise use work dir
