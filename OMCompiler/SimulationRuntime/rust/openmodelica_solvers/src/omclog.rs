@@ -111,6 +111,7 @@ pub const NLS_DERIVATIVE_TEST: Stream = 39;
 pub const NLS_SVD: Stream = 40;
 pub const NLS_SVD_V: Stream = 41;
 pub const NLS_RES: Stream = 42;
+pub const GBODE_NLS: Stream = 16;
 pub const NLS_EXTRAPOLATE: Stream = 43;
 pub const RT: Stream = 45;
 pub const SIMULATION: Stream = 46;

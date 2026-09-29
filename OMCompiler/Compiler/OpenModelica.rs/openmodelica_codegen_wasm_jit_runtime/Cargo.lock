@@ -827,6 +827,7 @@ dependencies = [
  "openmodelica_arrow_writer",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_nls",
  "openmodelica_plt_writer",
  "openmodelica_solvers",
 ]

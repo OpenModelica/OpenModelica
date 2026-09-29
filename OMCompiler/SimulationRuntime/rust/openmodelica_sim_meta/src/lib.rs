@@ -266,6 +266,8 @@ pub struct Layout {
     /// Base of the per-state `max` attribute, written the same way; C's
     /// `functionJacAC_num` flips its difference quotient at the bound.
     pub state_max_off: u32,
+    /// Base of the per-state `min` attribute, for gbode's KINSOL sign constraints.
+    pub state_min_off: u32,
     /// Base of the linearization scratch (f64): the symbolic `A|B|C|D` the
     /// `linearJac*` fill (column-major), then their seed/`$pDER` slots.
     pub linz_off: u32,
@@ -420,7 +422,8 @@ impl Layout {
         let real_nom_off = start_off + n_real * 8;
         let state_nom_off = real_nom_off + n_real * 8;
         let state_max_off = state_nom_off + n_states * 8;
-        let sens_off = state_max_off + n_states * 8;
+        let state_min_off = state_max_off + n_states * 8;
+        let sens_off = state_min_off + n_states * 8;
         let dae_res_off = sens_off + n_sens * 8;
         let dae_aux_off = dae_res_off + n_dae_res * 8;
         let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
@@ -443,7 +446,7 @@ impl Layout {
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off, zc_probe_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
+            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, state_min_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
             n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
             n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
@@ -1596,7 +1599,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.zc_probe_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.real_nom_off, l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
+        l.real_nom_off, l.state_nom_off, l.state_max_off, l.state_min_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
         l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
         l.linz_off, l.n_linz,
@@ -2134,6 +2137,7 @@ impl<'a> Reader<'a> {
             real_nom_off: self.u32()?,
             state_nom_off: self.u32()?,
             state_max_off: self.u32()?,
+            state_min_off: self.u32()?,
             n_sens: self.u32()?,
             sens_off: self.u32()?,
             n_dae_res: self.u32()?,

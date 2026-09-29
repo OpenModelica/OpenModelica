@@ -19,6 +19,7 @@ use alloc::vec::Vec;
 
 use super::conf::{CtrlMethod, GbfConf, Interpolation, NlsMethod};
 use super::tableau::{Estimator, GmType, SvpType, Tableau};
+use super::nls_generic::Starts;
 use super::{ctrl, interp, Gbode, GB_MINIMAL_STEP_SIZE, Solved};
 use crate::gbode::math::{abs, pow, sqrt};
 use crate::omclog;
@@ -128,6 +129,9 @@ pub(super) struct GbfNls {
     ftol: f64,
     pub n_jac_evals: u64,
     kinsol: Option<super::nls_generic::KinsolLadder>,
+    method: NlsMethod,
+    /// C's `sparsePattern_NLS` of the fast states it was built for.
+    pattern: Option<(Vec<usize>, super::nls_hook::NlsPattern)>,
 }
 
 impl GbfNls {
@@ -136,8 +140,10 @@ impl GbfNls {
         tol: f64,
         sym_jac: bool,
         internal: bool,
-        kinsol: Option<super::nls_generic::KinsolLadder>,
+        method: NlsMethod,
     ) -> Self {
+        let kinsol = matches!(method, NlsMethod::Kinsol | NlsMethod::KinsolB)
+            .then(super::nls_generic::KinsolLadder::from_flags);
         // C's Newton convergence target, as in `gbInternalNlsAllocate`.
         let alpha_default: f64 = 3e-2;
         let alpha_maximal: f64 = 5e-2;
@@ -173,6 +179,8 @@ impl GbfNls {
             ftol: crate::simflags::with_flags(|f| f.newton_ftol).unwrap_or(NEWTON_FTOL_DEFAULT),
             n_jac_evals: 0,
             kinsol,
+            method,
+            pattern: None,
         }
     }
 
@@ -411,7 +419,7 @@ impl GbfNls {
         first_implicit: bool,
         event_happened: bool,
         nominals: &[f64],
-        starts: &[&[f64]],
+        starts: &Starts,
         x: &mut [f64],
         f_full: &mut [f64],
     ) -> Result<Solved> {
@@ -485,30 +493,33 @@ impl GbfNls {
         Ok(Solved::Failed)
     }
 
-    /// The generic damped Newton over one packed stage, C's `solveNLS_gb` with
-    /// `-gbnls=newton`/`kinsol` on `residual_DIRK_MR`/`residual_MS_MR`.
+    /// C's `solveNLS_gb` on `residual_DIRK_MR`/`residual_MS_MR`.
     fn solve_stage_generic(
         &mut self,
         ode: &mut dyn Ode,
         st: &mut MrStage<'_>,
         nominals: &[f64],
-        starts: &[&[f64]],
+        starts: &Starts,
         x: &mut [f64],
         f_full: &mut [f64],
     ) -> Result<Solved> {
+        if let Some(hook) = super::nls_hook::nls_hook() {
+            return self.solve_stage_hooked(hook, ode, st, nominals, starts, x, f_full);
+        }
         if let Some(ladder) = self.kinsol {
             return self.solve_stage_kinsol(ode, st, nominals, starts, x, f_full, ladder);
         }
         let nf = self.n_fast;
-        let mut attempts: Vec<Vec<f64>> = starts.iter().map(|s| s.to_vec()).collect();
-        if let Some(base) = starts.last() {
-            let mut v = base.to_vec();
-            for i in 0..nf {
-                v[i] += nominals[st.fast_idx[i]] * 0.01;
-            }
-            attempts.push(v);
-            attempts.push(st.fast_idx.iter().map(|&i| nominals[i]).collect());
+        let mut attempts: Vec<Vec<f64>> = vec![starts.extrapolation.to_vec()];
+        if starts.old != starts.extrapolation {
+            attempts.push(starts.old.to_vec());
         }
+        let mut v = starts.old.to_vec();
+        for i in 0..nf {
+            v[i] += nominals[st.fast_idx[i]] * 0.01;
+        }
+        attempts.push(v);
+        attempts.push(st.fast_idx.iter().map(|&i| nominals[i]).collect());
         for relax in 0..5 {
             let tol = self.ftol * pow(10.0, relax as f64);
             for start in &attempts {
@@ -521,6 +532,127 @@ impl GbfNls {
         Ok(Solved::Failed)
     }
 
+    #[allow(clippy::too_many_arguments)]
+    fn solve_stage_hooked(
+        &mut self,
+        hook: super::nls_hook::GbNlsHook,
+        ode: &mut dyn Ode,
+        st: &mut MrStage<'_>,
+        nominals: &[f64],
+        starts: &Starts,
+        x: &mut [f64],
+        f_full: &mut [f64],
+    ) -> Result<Solved> {
+        use super::nls_hook::{GbNlsRequest, KinsolParams, NlsPattern};
+        let nf = self.n_fast;
+        let n = st.base_full.len();
+        if self.pattern.as_ref().is_none_or(|(idx, _)| idx.as_slice() != st.fast_idx) {
+            let full = super::nls_hook::ode_rows_by_col(ode.jac_rows_by_col(), n);
+            let mut packed = vec![usize::MAX; n];
+            for (i, &fi) in st.fast_idx.iter().enumerate() {
+                packed[fi] = i;
+            }
+            let rows: Vec<Vec<usize>> = st
+                .fast_idx
+                .iter()
+                .map(|&fc| full[fc].iter().filter_map(|&r| (packed[r] != usize::MAX).then_some(packed[r])).collect())
+                .collect();
+            self.pattern = Some((st.fast_idx.to_vec(), NlsPattern::with_diagonal(&rows, &[])));
+        }
+        let pat = &self.pattern.as_ref().expect("built above").1;
+        let fast = |v: &[f64], fallback: f64| -> Vec<f64> {
+            st.fast_idx.iter().map(|&i| v.get(i).copied().unwrap_or(fallback)).collect()
+        };
+        let nominal = fast(nominals, 1.0);
+        let min = fast(ode.mins(), -f64::MAX);
+        let max = fast(ode.maxs(), f64::MAX);
+        let sym = self.sym_jac && ode.has_jacobian_vector();
+        let (stage_time, fac) = (st.stage_time, st.fac);
+        let fast_idx = st.fast_idx.to_vec();
+        let jac_evals = core::cell::Cell::new(0u64);
+        let solved = {
+            let failed = core::cell::Cell::new(false);
+            let cell = core::cell::RefCell::new((&mut *ode, &mut *st, &mut *f_full));
+            let mut eval = |xs: &[f64], r: &mut [f64]| {
+                if !failed.get() {
+                    let (ode, st, f_full) = &mut *cell.borrow_mut();
+                    failed.set(st.residual(&mut **ode, xs, r, f_full).is_err());
+                }
+                if failed.get() {
+                    r.fill(f64::NAN);
+                }
+            };
+            // C's `jacobian_MR_column`: the full ODE Jacobian where the model stands,
+            // seeded on the fast states.
+            let mut jac = |xs: &[f64], vals: &mut [f64]| {
+                let (ode, st, _) = &mut *cell.borrow_mut();
+                for (i, &fi) in fast_idx.iter().enumerate() {
+                    st.base_full[fi] = xs[i];
+                }
+                let mut seed_full = vec![0.0; n];
+                let mut seed = vec![0.0; nf];
+                let mut out = vec![0.0; n];
+                for group in &pat.groups {
+                    seed_full.fill(0.0);
+                    seed.fill(0.0);
+                    for &c in group {
+                        seed[c] = 1.0;
+                        seed_full[fast_idx[c]] = 1.0;
+                    }
+                    if !ode.jacobian_vector(stage_time, st.base_full, &seed_full, &mut out) {
+                        failed.set(true);
+                        vals.fill(f64::NAN);
+                        return;
+                    }
+                    for &c in group {
+                        for k in pat.colptr[c] as usize..pat.colptr[c + 1] as usize {
+                            let r = pat.rowidx[k] as usize;
+                            vals[k] = fac * out[fast_idx[r]] - seed[r];
+                        }
+                    }
+                }
+            };
+            let method = self.method;
+            let mut run = |start: &[f64], kinsol: KinsolParams, x: &mut [f64]| -> bool {
+                failed.set(false);
+                let mut req = GbNlsRequest {
+                    method,
+                    handle: 1,
+                    n: nf,
+                    colptr: &pat.colptr,
+                    rowidx: &pat.rowidx,
+                    colors: &pat.colors,
+                    nominal: &nominal,
+                    min: &min,
+                    max: &max,
+                    start,
+                    old: starts.old,
+                    x,
+                    kinsol,
+                    time: stage_time,
+                    eval: &mut eval,
+                    jacobian: if sym { Some(&mut jac as &mut dyn FnMut(&[f64], &mut [f64])) } else { None },
+                    jac_evals: 0,
+                };
+                let ok = hook(&mut req) && !failed.get();
+                jac_evals.set(jac_evals.get() + req.jac_evals);
+                ok
+            };
+            x.copy_from_slice(starts.nlsx);
+            match self.kinsol {
+                None => run(
+                    starts.extrapolation,
+                    KinsolParams { max_iters: 0, no_init_setup: false, max_setup_calls: 0, fnorm_tol: 0.0 },
+                    x,
+                ),
+                Some(ladder) => super::nls_generic::kinsol_ladder(&ladder, nf, starts, x, &mut run),
+            }
+        };
+        self.n_jac_evals += jac_evals.get();
+        // The last residual evaluation left `f_full` at the accepted iterate.
+        Ok(if solved { Solved::Ok } else { Solved::Failed })
+    }
+
     /// [`super::nls_generic::GbNlsGeneric`]'s `-gbnls=kinsol` ladder on the fast stage.
     #[allow(clippy::too_many_arguments)]
     fn solve_stage_kinsol(
@@ -528,31 +660,23 @@ impl GbfNls {
         ode: &mut dyn Ode,
         st: &mut MrStage<'_>,
         nominals: &[f64],
-        starts: &[&[f64]],
+        starts: &Starts,
         x: &mut [f64],
         f_full: &mut [f64],
         ladder: super::nls_generic::KinsolLadder,
     ) -> Result<Solved> {
         let later_steps = ladder.max_steps.max(10 * self.n_fast as u32);
-        let first = starts[0];
-        let old = starts[starts.len() - 1];
-        let phases: [(Option<&[f64]>, u32, bool, f64); 4] = [
-            (Some(first), ladder.max_steps, false, ladder.tol),
-            (Some(first), later_steps, true, ladder.tol),
-            (Some(old), later_steps, true, ladder.tol),
-            (None, later_steps, true, 10.0 * ladder.tol),
+        let phases: [(&[f64], u32, bool, f64); 4] = [
+            (starts.extrapolation, ladder.max_steps, false, ladder.tol),
+            (starts.extrapolation, later_steps, true, ladder.tol),
+            (starts.old, later_steps, true, ladder.tol),
+            (starts.nlsx, later_steps, true, 10.0 * ladder.tol),
         ];
-        let mut ran = false;
         for (&(start, steps, fresh, tol), &every) in phases.iter().zip(ladder.jac_updates.iter()) {
             if every == 0 {
                 continue;
             }
-            match start {
-                Some(s) => x.copy_from_slice(s),
-                None if !ran => x.copy_from_slice(first),
-                None => {}
-            }
-            ran = true;
+            x.copy_from_slice(start);
             if self.newton_generic(ode, st, nominals, x, f_full, tol, steps, every, fresh)? {
                 return Ok(Solved::Ok);
             }
@@ -901,9 +1025,7 @@ impl GbodeF {
             "Step control factor is set to {}",
             omclog::g(t.fac, 0, 6),
         );
-        let kinsol = matches!(conf.nls_method, NlsMethod::Kinsol | NlsMethod::KinsolB)
-            .then(super::nls_generic::KinsolLadder::from_flags);
-        let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal, kinsol));
+        let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal, conf.nls_method));
         // C demotes dense output to Hermite when the method has no formula.
         let interpolation = match (conf.interpolation, t.with_dense_output) {
             (Interpolation::DenseOutput, false) => Interpolation::Hermite,
@@ -1698,6 +1820,7 @@ impl Gbode {
             }
             let mut x = guess.clone();
             let mut f_full = vec![0.0; n];
+            let y_old_fast: Vec<f64> = self.fast_states_idx[..n_fast].iter().map(|&i| y_old_full[i]).collect();
             let fac = step_size * a_ss;
             let event_happened = self.event_happened;
             let nominals = self.nominals.clone();
@@ -1726,7 +1849,7 @@ impl Gbode {
                     first_implicit,
                     event_happened,
                     &nominals,
-                    &[&extrap, &guess],
+                    &Starts { extrapolation: &extrap, old: &guess, nlsx: &y_old_fast },
                     &mut x,
                     &mut f_full,
                 )?
@@ -1970,7 +2093,7 @@ impl Gbode {
                 true,
                 event_happened,
                 &nominals,
-                &[&start],
+                &Starts { extrapolation: &start, old: &start, nlsx: &start },
                 &mut x,
                 &mut f_full,
             )?

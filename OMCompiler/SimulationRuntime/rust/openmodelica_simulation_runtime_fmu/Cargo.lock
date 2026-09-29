@@ -92,6 +92,7 @@ dependencies = [
  "libm",
  "openmodelica_arrow_writer",
  "openmodelica_lapack",
+ "openmodelica_nls",
  "openmodelica_solvers",
 ]
 

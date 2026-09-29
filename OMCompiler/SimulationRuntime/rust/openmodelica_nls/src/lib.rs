@@ -28,6 +28,7 @@ extern crate alloc;
 
 #[cfg(sundials)]
 pub mod jacobian_analysis;
+pub mod gbode;
 pub mod kinsol;
 pub mod newton_diagnostics;
 #[cfg(test)]
@@ -2586,6 +2587,11 @@ fn note_jac_eval() {
     flags().jac_evals.fetch_add(1, Ordering::Relaxed);
 }
 
+/// The Jacobian evaluations so far, C's `numberOfJEval` summed over the systems.
+pub(crate) fn jac_evals() -> u64 {
+    flags().jac_evals.load(Ordering::Relaxed)
+}
+
 /// The iterations a KINSOL solve took, which SUNDIALS counts rather than
 /// [`nls_stat_inc`] (C reads them back with `KINGetNumNonlinSolvIters`).
 fn note_nls_iters(n: u64) {
@@ -3473,6 +3479,7 @@ fn newton_jacobian(
     rwork: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) {
+    note_jac_eval();
     for i in 0..n {
         let mut dhh = fmath::fmax(
             SQRT_EPS * fmath::fmax(fmath::fabs(x[i]), fmath::fabs(fvec[i])),
@@ -3769,7 +3776,7 @@ fn omc_newton(
 /// refreshes the Jacobian every iteration, then relaxes the acceptance bound. `warm` is
 /// C's `nlsxOld`.
 #[allow(clippy::too_many_arguments)]
-fn solve_newton_c(
+pub(crate) fn solve_newton_c(
     n: usize,
     x: &mut [f64],
     warm: &[f64],
