@@ -112,6 +112,14 @@ pub trait Ode {
     /// on is current.
     fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> Result<()>;
 
+    /// C's `updateContinuousSystem` then `saveZeroCrossings` at the accepted end of
+    /// a step: `f` and `zc` there, after the model recorded the point (`delay`,
+    /// `spatialDistribution`), which the crossings then see. `false`: nothing was
+    /// done, and the caller evaluates both itself.
+    fn accept(&mut self, _t: f64, _y: &[f64], _f: &mut [f64], _zc: &mut [f64]) -> Result<bool> {
+        Ok(false)
+    }
+
     /// State nominals, for the error norm and the finite-difference step. One
     /// per state; an empty slice means "one".
     fn nominals(&self) -> &[f64] {

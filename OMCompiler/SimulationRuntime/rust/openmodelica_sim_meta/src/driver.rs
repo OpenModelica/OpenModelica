@@ -3359,8 +3359,9 @@ fn store_operators_at(
 }
 
 /// C's `findRoot` tail: evaluate at the bracket's left end, record the operator
-/// history and freeze `relationsPre` there. The caller restores the right end
-/// without re-evaluating, so the pre-event row carries the left end's algebraics.
+/// history (unless `store` is off) and freeze `relationsPre` there. The caller
+/// restores the right end without re-evaluating, so the pre-event row carries the
+/// left end's algebraics.
 fn eval_event_left(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -3368,6 +3369,7 @@ fn eval_event_left(
     states_base: u32,
     time: f64,
     y: &[f64],
+    store: bool,
 ) -> Result<()> {
     write_time(e, sim_data, time)?;
     if !y.is_empty() {
@@ -3379,7 +3381,7 @@ fn eval_event_left(
     } else {
         eval_ode(e, sim_data, layout)?;
     }
-    if layout.has_history_ops {
+    if store && layout.has_history_ops {
         store_operators(e, sim_data, layout)?;
     }
     update_relations_pre(e, sim_data, layout)
@@ -5498,6 +5500,15 @@ struct ResCtx {
     tol: f64,
     /// For `LOG_JAC`; null when the driver keeps none.
     state_names: *const Vec<String>,
+    /// The layout [`EngineOde`]'s `accept` evaluates and stores over; null where
+    /// no fixed-step solver brackets events.
+    layout: *const SimLayout,
+    /// Where `accept` last evaluated the model and stored its operators, NaN for
+    /// nowhere: the point's `updateContinuousSystem` is done.
+    accepted_at: core::cell::Cell<f64>,
+    /// `accept` runs: a simulation run's `simulationUpdate` order. Off for CS,
+    /// where C's `fmi2DoStep` checks the crossings before it stores.
+    accept_on: bool,
     /// What IDA's Jacobian callback needs on top of the above; all-null otherwise.
     #[cfg(sundials)]
     ida: IdaCtx,
@@ -6785,6 +6796,9 @@ impl Driver for DasslDriver {
             nominal_factor: nominal_factor(),
             tol: self.tol,
             state_names: &self.state_names,
+            layout: core::ptr::null(),
+            accepted_at: core::cell::Cell::new(f64::NAN),
+            accept_on: false,
             #[cfg(sundials)]
             ida: IdaCtx::default(),
         };
@@ -7612,6 +7626,9 @@ pub struct EngineOde<'a> {
     pub zc_off: u32,
     /// `functionODE` calls made through this handle, for the solver statistics.
     pub calls: u64,
+    /// What [`openmodelica_solvers::Ode::accept`] runs over and where it records
+    /// the point; `None` leaves the accepted point to the driver.
+    pub accept: Option<(&'a SimLayout, &'a core::cell::Cell<f64>)>,
 }
 
 impl openmodelica_solvers::Ode for EngineOde<'_> {
@@ -7654,6 +7671,37 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         })();
         set_context_algebraic(self.e, self.ctx_addr);
         run
+    }
+
+    /// Only for a model with `delay`/`spatialDistribution`: without one, storing
+    /// first changes nothing a crossing reads.
+    fn accept(&mut self, t: f64, y: &[f64], f: &mut [f64], zc: &mut [f64]) -> Result<bool> {
+        let Some((layout, at)) = self.accept else { return Ok(false) };
+        if !layout.has_history_ops || zc.is_empty() {
+            return Ok(false);
+        }
+        write_time(self.e, self.sim_data, t)?;
+        write_f64s(self.e, self.states_base, y)?;
+        write_i32(self.e, self.sim_data + self.nls_fail_off, 0)?;
+        write_i32(self.e, self.sim_data + layout.rel_fresh_off, 0)?;
+        eval_continuous(self.e, self.sim_data, layout)?;
+        self.calls += 1;
+        store_operators(self.e, self.sim_data, layout)?;
+        for (i, v) in f.iter_mut().enumerate() {
+            *v = read_f64(self.e, self.ders_base + 8 * i as u32)?;
+        }
+        // The point's own evaluation decides its NLS verdict, not the crossings'.
+        let nls_fail = read_i32(self.e, self.sim_data + self.nls_fail_off)?;
+        set_context_events(self.e, self.ctx_addr);
+        let run = self.e.call2(MODEL_FN_ZC, self.sim_data, self.sim_data + self.zc_off);
+        set_context_algebraic(self.e, self.ctx_addr);
+        run?;
+        write_i32(self.e, self.sim_data + self.nls_fail_off, nls_fail)?;
+        for (i, v) in zc.iter_mut().enumerate() {
+            *v = read_f64(self.e, self.sim_data + self.zc_off + 8 * i as u32)?;
+        }
+        at.set(t);
+        Ok(true)
     }
 
     fn nominals(&self) -> &[f64] {
@@ -7800,6 +7848,7 @@ fn model_ode<'a>(
         nominal_factor: ctx.nominal_factor,
         zc_off: ctx.zc_off,
         calls: 0,
+        accept: unsafe { ctx.layout.as_ref() }.filter(|_| ctx.accept_on).map(|l| (l, &ctx.accepted_at)),
     }
 }
 
@@ -8357,6 +8406,9 @@ impl SolverCore {
             nominal_factor: nominal_factor(),
             tol: self.tol,
             state_names: core::ptr::null(),
+            layout: layout as *const SimLayout,
+            accepted_at: core::cell::Cell::new(f64::NAN),
+            accept_on: false,
             #[cfg(sundials)]
             ida: self.ida_ctx(),
         }
@@ -8611,6 +8663,7 @@ impl SolverCore {
         let layout = &model.layout;
         let sim_data = self.sim_data;
         let t = self.t;
+        ctx.accepted_at.set(f64::NAN);
         self.state_events += 1;
         log_state_event(t, flips, model);
         self.note_chatter(model, flips[0])?;
@@ -8671,6 +8724,7 @@ impl SolverCore {
         let step_eps = small_step_eps(span);
         let mut grid_covered = false;
         let mut event_step = false;
+        ctx.accept_on = rows.is_some();
         let defers = |t: f64| match defer {
             CsDefer::None => false,
             CsDefer::AtTarget => t >= tout - eps,
@@ -8784,18 +8838,20 @@ impl SolverCore {
                 // A zero-crossing root at `t` (< target): the integrator stopped
                 // on a sign change of its own root probes.
                 if rooted {
+                    ctx.accepted_at.set(f64::NAN);
                     let troot = self.t;
                     let left = self.event_left();
                     if let Some((t_l, y_l)) = &left {
-                        eval_event_left(e, sim_data, layout, self.states_base, *t_l, y_l)?;
+                        eval_event_left(e, sim_data, layout, self.states_base, *t_l, y_l, rows.is_some())?;
                         // C restores `time_right`/`states_right`.
                         write_time(e, sim_data, troot)?;
                         self.write_states(e)?;
                     }
                     // gbode re-evaluates at the root before the pre-event row (C's
                     // `simulationUpdate`); a fixed-step method's `findRoot` tail does not.
+                    // CS stores there instead, as `fmi2DoStep`'s completed step does.
                     let bisected = left.is_some() && !self.solver_root_finding();
-                    if self.solver_root_finding() {
+                    if self.solver_root_finding() || rows.is_none() {
                         store_operators_at(e, sim_data, layout, troot)?;
                     }
                     // C's `simulationUpdate` at the root: `updateContinuousSystem`,
@@ -8886,12 +8942,20 @@ impl SolverCore {
                 *did_step = true;
                 event_step = true;
                 log_time_event(e, te, samp, model);
+                let accepted = ctx.accepted_at.replace(f64::NAN) == te;
                 if let Some(r) = rows.as_deref_mut()
                     && !no_event_emit()
                 {
-                    emit_row(e, r, sim_data, layout, te, model.stop_time)?; // pre-event row (held)
+                    // pre-event row (held)
+                    if accepted {
+                        emit_row_evaluated(e, r, sim_data, layout, te, model.stop_time)?;
+                    } else {
+                        emit_row(e, r, sim_data, layout, te, model.stop_time)?;
+                    }
                 }
-                store_operators_at(e, sim_data, layout, te)?;
+                if !accepted {
+                    store_operators_at(e, sim_data, layout, te)?;
+                }
                 let _ = save_zero_crossings(e, sim_data, layout)?;
                 if defers(te) {
                     self.t = te;
@@ -8929,8 +8993,13 @@ impl SolverCore {
             if sync.next_time() <= target + SYNC_EPS {
                 *did_step = true;
                 event_step = true;
-                write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-                eval_continuous(e, sim_data, layout)?;
+                // C's `simulationUpdate`: the point's `updateContinuousSystem`, stores
+                // included, before `handleTimers` runs a partition.
+                if ctx.accepted_at.replace(f64::NAN) != target {
+                    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                    eval_continuous(e, sim_data, layout)?;
+                    store_operators(e, sim_data, layout)?;
+                }
                 if fire_clocks(e, sync, model, sim_data, target, SYNC_EPS, rows.as_deref_mut())? {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
@@ -8951,7 +9020,9 @@ impl SolverCore {
                 // the algebraic loop the extrapolation exists to avoid. `rows` is Some
                 // exactly when the caller writes that row and stores after it.
                 if rows.is_none() {
-                    store_operators_at(e, sim_data, layout, self.t)?;
+                    if ctx.accepted_at.get() != self.t {
+                        store_operators_at(e, sim_data, layout, self.t)?;
+                    }
                     // `fmi2DoStep`'s own detection: the only one an FMU without
                     // root finding has, and it lands on the communication point.
                     let flips = save_zero_crossings(e, sim_data, layout)?;
@@ -9285,7 +9356,7 @@ impl CsDriver {
                     }
                 }
                 if let Some((tleft, tr)) = troot {
-                    eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                    eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[], true)?;
                     // The bisection left `SimData` at its last trial point.
                     update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                     self.core.t = tr;
@@ -9334,6 +9405,7 @@ impl CsDriver {
                     }
                     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                     eval_continuous(e, sim_data, layout)?;
+                    store_operators(e, sim_data, layout)?;
                     if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, SYNC_EPS, None)? {
                         if terminated(e, sim_data, layout)? {
                             return Ok(CsStep::Terminated);
@@ -9424,6 +9496,7 @@ impl CsDriver {
         if clock_due {
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             eval_continuous(e, sim_data, layout)?;
+            store_operators(e, sim_data, layout)?;
             ticked = fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
         }
         let mut up = self.event_update_master(e, layout, time)?;
@@ -9749,7 +9822,7 @@ impl Driver for EventsDriver {
                         log_state_event(tr, &crossed, model);
                         self.core.t = tr;
                         self.core.note_chatter(model, crossed.first().copied().unwrap_or(usize::MAX))?;
-                        eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                        eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[], true)?;
                         write_time(e, sim_data, tr)?;
                         if !no_event_emit() {
                             capture_row(e, &mut self.rows, sim_data, layout)?; // pre-event row
@@ -9831,6 +9904,7 @@ impl Driver for EventsDriver {
                         self.core.t = subtarget;
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                         eval_continuous(e, sim_data, layout)?;
+                        store_operators(e, sim_data, layout)?;
                         if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, SYNC_EPS, Some(&mut self.rows))? {
                             if terminated(e, sim_data, layout)? {
                                 self.finished = true;
@@ -9943,10 +10017,19 @@ impl Driver for EventsDriver {
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
-                let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
+                // The solver's own event check already ran this point's
+                // `updateContinuousSystem`, stores included.
+                let accepted = ctx.accepted_at.replace(f64::NAN) == tout && self.core.t == tout;
+                let emitted = if accepted {
+                    emit_row_evaluated(e, &mut self.rows, sim_data, layout, tout, model.stop_time)
+                } else {
+                    emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)
+                };
                 close_assert_window(e, sim_data).and(emitted)?;
                 // The row's evaluation is this point's `updateContinuousSystem`.
-                store_operators(e, sim_data, layout)?;
+                if !accepted {
+                    store_operators(e, sim_data, layout)?;
+                }
                 let flips = save_zero_crossings(e, sim_data, layout)?;
                 if !flips.is_empty()
                     && self.core.handle_zc_flips(e, model, &mut ctx, &mut self.sync, Some(&mut self.rows), &flips)?
@@ -10416,6 +10499,9 @@ impl Driver for CvodeDriver {
             nominal_factor: nominal_factor(),
             tol: self.tol,
             state_names: core::ptr::null(),
+            layout: core::ptr::null(),
+            accepted_at: core::cell::Cell::new(f64::NAN),
+            accept_on: false,
             ida: self.setup.ctx(Some(cv), self.start.as_ref()),
         };
         if !cv.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
@@ -11390,6 +11476,9 @@ impl Driver for IdaDriver {
             nominal_factor: nominal_factor(),
             tol: self.tol,
             state_names: core::ptr::null(),
+            layout: core::ptr::null(),
+            accepted_at: core::cell::Cell::new(f64::NAN),
+            accept_on: false,
             ida: self.setup.ctx(Some(ida)),
         };
         if !ida.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
