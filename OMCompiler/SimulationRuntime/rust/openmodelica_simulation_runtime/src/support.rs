@@ -90,6 +90,8 @@ mod jump {
     pub const NONE: i32 = 0;
     pub const SIMULATION: i32 = 1;
     pub const GLOBAL: i32 = 2;
+    /// Raise the error for the caller's check instead of jumping.
+    pub const RAISE: i32 = 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,18 +123,25 @@ fn with_position(info: &FILE_INFO, msg: &str) -> String {
     )
 }
 
-/// Run `f` under `threadData`'s simulation jump buffer, at error stage `stage`.
-/// `false` = the model left through the jump.
+/// Run `f` at error stage `stage`; `false` = the model raised an error or left
+/// through the jump.
 ///
-/// Every model callback called from inside a Rust frame goes through this: a
-/// `longjmp` past those frames would skip the solver's own bookkeeping and land at
-/// whatever catch is open further out -- not where C's would land, since C's frames
-/// there are the ones being skipped.
+/// Every model callback called from inside a Rust frame goes through this. A
+/// stage that still jumps gets `threadData`'s simulation jump buffer: a `longjmp`
+/// past Rust frames would skip the solver's own bookkeeping.
 pub(crate) fn protected<F: FnMut()>(
     thread_data: *mut threadData_t,
     stage: c_int,
     mut f: F,
 ) -> bool {
+    if stage_raises(stage) {
+        let td = unsafe { &mut *thread_data };
+        let saved = td.currentErrorStage;
+        td.currentErrorStage = stage;
+        f();
+        td.currentErrorStage = saved;
+        return !error_raised(thread_data);
+    }
     unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
         unsafe { (*(p as *mut F))() }
     }
@@ -152,6 +161,17 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
         omr_protected_global(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data)
     };
     rc != -1 && !error_raised(thread_data)
+}
+
+/// The stages whose model errors are raised, not jumped (`omr_stage_raises`).
+fn stage_raises(stage: c_int) -> bool {
+    matches!(
+        stage,
+        error_stage::SIMULATION
+            | error_stage::INTEGRATOR
+            | error_stage::NONLINEARSOLVER
+            | error_stage::EVENTSEARCH
+    )
 }
 
 /// Generated code returns a raised error (`OMC_ERROR_RAISE`) rather than
@@ -176,6 +196,7 @@ unsafe extern "C" {
     /// `util/omc_error.h`: whether an error was raised, clearing it. The mirror
     /// stops at `parent`, so the field itself is out of reach here.
     fn omc_error_take(threadData: *mut threadData_t) -> c_int;
+    fn omc_error_raise(threadData: *mut threadData_t);
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.
@@ -189,7 +210,7 @@ unsafe extern "C" {
         indexes: *const c_int,
         msg: *const c_char,
         ...
-    ) -> !;
+    );
     #[cfg_attr(
         shim_trampolines,
         link_name = "omr_shim_assert_warning_simulation_withEquationIndexes"
@@ -231,7 +252,7 @@ pub fn set_fmu_assert_report(f: FmuAssertReport) {
 }
 
 /// C's `va_omc_assert_simulation_withEquationIndexes`, less the formatting the
-/// shim already did: report, and say which jump buffer the error stage takes.
+/// shim already did: report, and say whether the error stage raises or jumps.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_report(
     threadData: *mut threadData_t,
@@ -256,6 +277,10 @@ pub extern "C" fn omr_assert_report(
         None => {}
     }
     match stage {
+        error_stage::EVENTSEARCH
+        | error_stage::SIMULATION
+        | error_stage::NONLINEARSOLVER
+        | error_stage::INTEGRATOR => jump::RAISE,
         error_stage::EVENTHANDLING | error_stage::OPTIMIZE => jump::GLOBAL,
         _ => jump::SIMULATION,
     }
@@ -308,7 +333,7 @@ pub static mut omc_assert_withEquationIndexes: unsafe extern "C" fn(
     *const c_int,
     *const c_char,
     ...
-) -> ! = omc_assert_simulation_withEquationIndexes;
+) = omc_assert_simulation_withEquationIndexes;
 
 #[unsafe(no_mangle)]
 pub static mut omc_assert_warning_withEquationIndexes: unsafe extern "C" fn(
@@ -339,6 +364,17 @@ pub(crate) fn throw_stream(threadData: *mut threadData_t, msg: &str) -> ! {
         omclog::debug(omclog::ASSERT, false, msg);
     }
     rethrow(threadData)
+}
+
+/// C's `raiseStreamPrint`: report as [`throw_stream`] does and raise the error
+/// for the caller's check.
+pub(crate) fn raise_stream(threadData: *mut threadData_t, msg: &str) {
+    if throw_prints_message(current_stage(threadData)) {
+        omclog::debug(omclog::ASSERT, false, msg);
+    }
+    if !threadData.is_null() {
+        unsafe { omc_error_raise(threadData) };
+    }
 }
 
 /// [`throw_stream`] for an error that has already been reported.

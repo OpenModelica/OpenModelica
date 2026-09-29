@@ -1590,6 +1590,7 @@ real_array division_alloc_real_array_scalar_sim(threadData_t *threadData, const 
     nr_of_elements = base_array_nr_of_elements(a);
     for (i = 0; i < nr_of_elements; ++i) {
         real_set(&dest, i, __OMC_DIV_SIM(threadData, real_get(a, i), b, division_str, equationIndexes, noThrowDivZero, time, initial));
+        if (OMC_ERROR_RAISED()) break;
     }
     return dest;
 }

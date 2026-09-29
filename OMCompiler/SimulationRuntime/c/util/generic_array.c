@@ -91,10 +91,8 @@ static size_t check_copy_sanity(const base_array_t* src, base_array_t* dst, size
 
     // Shape not equal and destination is not flexible array.
     generic_array_dimsizes_eq(src, dst, 1 /*print error*/); // Just to print more info.
-    throwStreamPrint(NULL, "Failed to copy array. Dimension sizes are not equal and destination array is not flexible.");
-    // omc_assert_macro(0 && "Failed to copy array. Dimension sizes are not equal and destination array is not flexible.");
-
-    return -1;
+    raiseStreamPrint(NULL, "Failed to copy array. Dimension sizes are not equal and destination array is not flexible.");
+    return 0;
 }
 
 void generic_array_create_flexible(base_array_t* dst, int ndims)

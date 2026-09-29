@@ -5513,6 +5513,11 @@ template errorCheck(Context context)
   else if metaModelicaRuntime() then "" else 'OMC_ERROR_CHECK();<%\n%>'
 end errorCheck;
 
+template raiseOrThrow()
+ "MetaModelica unwinds by jumping; everything else raises for the caller to check."
+::= if metaModelicaRuntime() then "throwStreamPrint" else "raiseStreamPrint"
+end raiseOrThrow;
+
 template litDefString()
 ::= if metaModelicaRuntime() then "MMC_DEFSTRINGLIT" else "OMC_DEFSTRINGLIT"
 end litDefString;
@@ -6541,7 +6546,7 @@ case BINARY(__) then
         if(<%tmp%> < 0.0) {
           <%if metaModelicaRuntime()
             then '<%generateThrow()%>;<%\n%>'
-            else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp%>, 0.5);<%\n%>'%>
+            else 'raiseStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp%>, 0.5);<%\n%>'%>
         }
         >>
       'sqrt(<%tmp%>)'
@@ -6613,7 +6618,7 @@ case BINARY(__) then
               {
                 <%if metaModelicaRuntime()
                   then '<%generateThrow()%>;<%\n%>'
-                  else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
+                  else 'raiseStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
               }
             }
           }
@@ -6625,7 +6630,7 @@ case BINARY(__) then
           {
             <%if metaModelicaRuntime()
               then '<%generateThrow()%>;<%\n%>'
-              else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
+              else 'raiseStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
           }
           >>
         '<%tmp3%>'
@@ -7500,7 +7505,7 @@ let &sub = buffer ""
               <<
                 <%tvarc%>=0;
               <%dims%>if (<%tvarc%> > 1) {
-                throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");
+                <%raiseOrThrow()%>(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");
               }
               <%nElts%> = base_array_nr_of_elements(<%val%>);
               <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
@@ -8123,13 +8128,14 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpModelica(exp),&varDecls, &varFrees)
     let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let outOfBounds = '<%raiseOrThrow()%>(threadData, "Index %ld out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>", (long) <%idx1%>);'
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &caseVarFrees = buffer ""
       let &casePreExp = buffer ""
       let v = daeExp(e, context, &casePreExp, &caseVarDecls, &caseVarFrees, &auxFunction)
       <<
-      case <%i1%>: {
+      <%if intEq(i1, 1) then 'default:<%\n%>  <%outOfBounds%><%\n%>'%>case <%i1%>: {
         <%&caseVarDecls%>
         <%&casePreExp%>
         <%rcAssignRetain(expTypeFromExpModelica(exp), res, v)%><%&caseVarFrees%>
@@ -8141,8 +8147,6 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     switch(<%idx1%>)
     { /* ASUB */
     <%expl%>
-    default:
-      throwStreamPrint(threadData, "Index %ld out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>", (long) <%idx1%>);
     }
     <%\n%>
     >>
@@ -8156,7 +8160,8 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     let &preExp += <<
     <%res%> = <%idx1%> + <%start%> - 1;
     if (<%res%> > <%stop%>) {
-      throwStreamPrint(threadData, "Value %ld out of bounds for range <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(range,"\""))%>", (long) <%res%>);
+      <%raiseOrThrow()%>(threadData, "Value %ld out of bounds for range <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(range,"\""))%>", (long) <%res%>);
+      <%res%> = <%stop%>;
     }
     >>
     res
