@@ -1739,26 +1739,6 @@ modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nomi
   return !LessZC(a, b, a_nominal, b_nominal, !direction);
 }
 
-modelica_boolean Less(double a, double b)
-{
-  return a < b;
-}
-
-modelica_boolean LessEq(double a, double b)
-{
-  return a <= b;
-}
-
-modelica_boolean Greater(double a, double b)
-{
-  return a > b;
-}
-
-modelica_boolean GreaterEq(double a, double b)
-{
-  return a >= b;
-}
-
 
 /*! \fn _event_integer
  *

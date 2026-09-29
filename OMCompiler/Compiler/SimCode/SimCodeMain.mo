@@ -2564,8 +2564,8 @@ algorithm
       fmiFigures                  = {}
     );
 
-    (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
-    simCode.literals := listReverse(lits);
+    (simCode, lits) := SimCodeUtil.findSimCodeLiterals(simCode, literals);
+    simCode.literals := lits;
 
     timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
     ExecStat.execStat("SimCode");
