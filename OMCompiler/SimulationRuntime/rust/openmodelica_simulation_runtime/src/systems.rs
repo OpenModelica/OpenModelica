@@ -31,6 +31,7 @@ struct LapackData {
     /// The previous iterate, for a `method == 1` (torn) system.
     work: Vec<f64>,
     b: Vec<f64>,
+    jac: Vec<f64>,
 }
 
 /// C's `DATA_KLU`: the compressed matrix the generated `setA` fills through
@@ -172,6 +173,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
                 lu: vec![0.0; (size * size).max(1)],
                 work: vec![0.0; size.max(1)],
                 b: vec![0.0; size.max(1)],
+                jac: vec![0.0; size * size],
             });
             ls.solverData[0] = Box::into_raw(scratch) as *mut c_void;
         }
@@ -694,10 +696,6 @@ fn solve_lapack(
     // C ends `jacobianTime` where the generated `setA`/`setb` are done.
     sysstat::mark_assembly_done();
     let sd: &mut LapackData = unsafe { &mut *solver_data(ls) };
-    sd.b.resize(size.max(1), 0.0);
-    sd.work.resize(size.max(1), 0.0);
-    sd.lu.resize((size * size).max(1), 0.0);
-    sd.ipiv.resize(size.max(1), 0);
 
     if ls.method == 0 {
         if !reuse {
@@ -718,14 +716,13 @@ fn solve_lapack(
             if ls.jacobianIndex == -1 {
                 crate::throw(thread_data, "jacobian function pointer is invalid");
             }
-            let mut jac = vec![0.0f64; size * size];
             if let Err(e) =
-                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut jac, true)
+                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut sd.jac, true)
             {
                 lapack_err = Some(e);
             }
             // C negates the Jacobian into A (`getAnalyticalJacobianLapack`).
-            for (dst, src) in sd.lu.iter_mut().zip(&jac) {
+            for (dst, src) in sd.lu.iter_mut().zip(&sd.jac) {
                 *dst = -*src;
             }
         }
@@ -750,10 +747,7 @@ fn solve_lapack(
         openmodelica_lapack::lu::dgetrs("N", size, 1, &sd.lu, size, &sd.ipiv, &mut sd.b, size);
         0
     } else {
-        let mut lu = sd.lu.clone();
-        let info = openmodelica_lapack::lu::dgesv(size, 1, &mut lu, size, &mut sd.ipiv, &mut sd.b, size);
-        sd.lu = lu;
-        info
+        openmodelica_lapack::lu::dgesv(size, 1, &mut sd.lu, size, &mut sd.ipiv, &mut sd.b, size)
     };
     if info != 0 {
         ls.numberOfFailures += 1;
@@ -774,14 +768,13 @@ fn solve_lapack(
         for i in 0..size {
             unsafe { *aux_x.add(i) = sd.work[i] + sd.b[i] };
         }
-        let x = unsafe { core::slice::from_raw_parts(aux_x, size) }.to_vec();
         sd.work.fill(0.0);
         let flag: c_int = 1;
         let mut user =
             RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
         let residual = ls.residualFunc;
         if let Some(f) = residual {
-            unsafe { f(&mut user, x.as_ptr(), sd.work.as_mut_ptr(), &flag) };
+            unsafe { f(&mut user, aux_x as *const f64, sd.work.as_mut_ptr(), &flag) };
         }
         let norm = sd.work.iter().map(|v| v * v).sum::<f64>().sqrt();
         if norm.is_nan() || norm > 1e-4 {
