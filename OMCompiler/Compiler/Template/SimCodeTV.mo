@@ -557,6 +557,7 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
       Option<OMSIData> omsiData;
+      Boolean scalarized;
       list<FmiFigure> fmiFigures;
     end SIMCODE;
   end SimCode;

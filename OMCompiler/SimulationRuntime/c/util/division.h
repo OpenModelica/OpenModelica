@@ -40,7 +40,15 @@
 #define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error_time(threadData, b, c, data->localData[0]->timeValue, __FILE__, __LINE__,data->simulationInfo->noThrowDivZero?1:0)))
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+/* The slow path's arguments are only loaded on it. */
+#define DIVISION_SIM(a,b,msg,equation) ({ \
+  const modelica_real omc_div_a_ = (a), omc_div_b_ = (b), omc_div_r_ = omc_div_a_ / omc_div_b_; \
+  OMC_LIKELY(isfinite(omc_div_r_)) ? omc_div_r_ : __OMC_DIV_SIM_SLOW(threadData, omc_div_a_, omc_div_b_, msg, equationIndexes, \
+    data->simulationInfo->noThrowDivZero, data->localData[0]->timeValue, initial()); })
+#else
 #define DIVISION_SIM(a,b,msg,equation) (__OMC_DIV_SIM(threadData, a, b, msg, equationIndexes, data->simulationInfo->noThrowDivZero, data->localData[0]->timeValue, initial()))
+#endif
 
 #define DIVISIONNOTIME(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(threadData, b, c, __FILE__, __LINE__)))
 
@@ -54,11 +62,9 @@ modelica_real __OMC_DIV_SIM_SLOW(threadData_t *threadData, const modelica_real a
 
 static inline modelica_real __OMC_DIV_SIM(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int *equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_)
 {
-  if(OMC_LIKELY(b != 0.0)) {
-    const modelica_real res = a/b;
-    if(OMC_LIKELY(isfinite(res)))
-      return res;
-  }
+  const modelica_real res = a/b;
+  if(OMC_LIKELY(isfinite(res)))
+    return res;
   return __OMC_DIV_SIM_SLOW(threadData, a, b, msg, equationIndexes, noThrowDivZero, time_, initial_);
 }
 
