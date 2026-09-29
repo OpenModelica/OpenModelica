@@ -295,7 +295,7 @@ impl GbfNls {
                 }
                 if !ode.jacobian_vector(time, y_full, &seed, &mut out) {
                     return Err(
-                        "CodegenWasmJit: gbode: the model could not multiply by its Jacobian",
+                        "##GBODE## the model could not multiply by its Jacobian",
                     );
                 }
                 for &cf in group {
@@ -1312,7 +1312,7 @@ impl Gbode {
                     gbf.convergence_test_failures += 1;
                     gbf.step_size *= 0.5;
                     if gbf.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(super::step::GBODE_MIN_STEP_ERROR);
+                        return Err(super::step::min_step_failed("error still to large"));
                     }
                     gbf.cache.invalidate_keep_left();
                     continue;
@@ -1338,7 +1338,7 @@ impl Gbode {
                     gbf.err_test_failures += 1;
                     gbf.step_size *= 0.5;
                     if gbf.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(super::step::GBODE_MIN_STEP_ERROR);
+                        return Err(super::step::min_step_failed("error still to large"));
                     }
                     gbf.cache.invalidate_keep_left();
                     if omclog::active(omclog::SOLVER) {
@@ -2219,7 +2219,7 @@ impl Gbode {
                     .tableau
                     .contractive_dt_a
                     .clone()
-                    .ok_or("CodegenWasmJit: gbode: contractive defect without dT_A")?;
+                    .ok_or("##GBODE## contractive defect without dT_A")?;
                 (dt_a, gbf.tableau.n_stages, gbf.tableau.k_right, gbf.extrapolation_valid)
             };
             {
@@ -2258,9 +2258,12 @@ impl Gbode {
             .t_transform
             .as_ref()
             .and_then(|tr| tr.gamma.first().copied())
-            .ok_or("CodegenWasmJit: gbode: contractive estimate without a real eigenvalue")?;
+            .ok_or("##GBODE## contractive estimate without a real eigenvalue")?;
         let g = gamma / gbf.step_size;
-        let nls = gbf.nls.as_mut().ok_or("CodegenWasmJit: gbode: contractive estimate without an internal NLS")?;
+        let nls = gbf.nls.as_mut().ok_or(match filter {
+            true => "Selected contractive filter error estimator is only available with -gbnls=internal.",
+            false => "Selected contractive defect error estimator is only available with -gbnls=internal.",
+        })?;
         let mut lu = nls.contract_factor(g)?;
         lu.solve(&mut err);
         if filter {

@@ -289,7 +289,7 @@ impl GbNlsGeneric {
                 }
                 if !ode.jacobian_vector(time, y, &seed, &mut out) {
                     return Err(
-                        "CodegenWasmJit: gbode: the model could not multiply by its Jacobian",
+                        "##GBODE## the model could not multiply by its Jacobian",
                     );
                 }
                 for &c in group {

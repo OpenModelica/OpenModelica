@@ -90,6 +90,9 @@ pub const IDA: bool = cfg!(sundials);
 /// Solver errors are the C runtime's messages, which are all static.
 pub type Result<T> = core::result::Result<T, &'static str>;
 
+/// C's `retValIntegrator != 0`: the solver has logged why it gave up.
+pub const SOLVER_FAILED_ERR: &str = "integrator failed";
+
 /// C's `MINIMAL_STEP_SIZE` (`simulation/solver/epsilon.h`), the bisection's
 /// absolute tolerance.
 pub const MINIMAL_STEP_SIZE: f64 = 1e-12;

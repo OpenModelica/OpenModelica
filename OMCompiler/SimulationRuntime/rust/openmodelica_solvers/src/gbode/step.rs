@@ -628,11 +628,11 @@ impl Gbode {
                         omclog::g(self.step_size, 0, 6),
                     );
                     if const_step {
-                        return Err(GBODE_CONST_STEP_FAILED);
+                        return Err(const_step_failed(self.time, self.step_size));
                     }
                     self.step_size *= if self.event_happened { 0.1 } else { 0.5 };
                     if self.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(GBODE_MIN_STEP_ERROR);
+                        return Err(min_step_failed("error still to large"));
                     }
                     continue;
                 }
@@ -641,11 +641,11 @@ impl Gbode {
                 if est_order.is_none() {
                     self.stats.convergence_test_failures += 1;
                     if const_step {
-                        return Err(GBODE_CONST_STEP_FAILED);
+                        return Err(const_step_failed(self.time, self.step_size));
                     }
                     self.step_size *= 0.5;
                     if self.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(GBODE_MIN_STEP_ERROR);
+                        return Err(min_step_failed("error still to large"));
                     }
                     continue;
                 }
@@ -721,7 +721,7 @@ impl Gbode {
                         self.stats.err_test_failures += 1;
                         self.step_size *= 0.5;
                         if self.step_size < GB_MINIMAL_STEP_SIZE {
-                            return Err(GBODE_MIN_INTERP_ERROR);
+                            return Err(min_step_failed("interpolation error still too large"));
                         }
                         if omclog::active(omclog::SOLVER) {
                             omclog::info!(
@@ -908,12 +908,26 @@ impl Gbode {
     }
 }
 
-const GBODE_CONST_STEP_FAILED: &str = "CodegenWasmJit: gbode is running with a fixed step size and \
-                                       the step calculation failed";
-pub(super) const GBODE_MIN_STEP_ERROR: &str =
-    "CodegenWasmJit: gbode reached the minimum step size, but the error is still too large";
-const GBODE_MIN_INTERP_ERROR: &str = "CodegenWasmJit: gbode reached the minimum step size, but the \
-                                      interpolation error is still too large";
+fn const_step_failed(time: f64, step_size: f64) -> &'static str {
+    omclog::error!(
+        omclog::STDOUT,
+        false,
+        "Simulation aborted since gbode is running with fixed step size and step calculation has failed at time = {} with step size h = {}.",
+        omclog::g(time, 5, 6),
+        omclog::g(step_size, 5, 6),
+    );
+    crate::SOLVER_FAILED_ERR
+}
+
+pub(super) fn min_step_failed(what: &str) -> &'static str {
+    omclog::error!(
+        omclog::STDOUT,
+        false,
+        "Simulation aborted! Minimum step size {} reached, but {what}.",
+        omclog::g(GB_MINIMAL_STEP_SIZE, 0, 6),
+    );
+    crate::SOLVER_FAILED_ERR
+}
 
 #[cfg(test)]
 mod tests {
