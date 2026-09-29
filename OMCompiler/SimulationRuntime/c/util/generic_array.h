@@ -41,6 +41,8 @@ void simple_array_create(threadData_t* td, base_array_t* dst, int ndims, size_t 
 
 void generic_array_copy_data(const base_array_t src, base_array_t* dst, copy_func cper, size_t sze);
 void simple_array_copy_data(const base_array_t src, base_array_t* dst, size_t sze);
+/* Copy the n elements of src to dst, a block of an array's storage. */
+void simple_array_copy_to(const base_array_t src, void* dst, size_t n, size_t sze);
 
 #define real_array_copy_data(src,dst)               simple_array_copy_data(src, &dst, sizeof(modelica_real));
 #define integer_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_integer));
