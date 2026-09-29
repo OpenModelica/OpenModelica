@@ -149,6 +149,9 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y,
 void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
 {
   int i;
+  char name[2048];
+  const array_index_t *ix;
+  const STATIC_REAL_DATA *var;
 
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i<dasslData->N; ++i)
@@ -157,7 +160,12 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
     dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
     dasslData->rtol[i] = data->simulationInfo->tolerance;
     dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
-    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
+      ix = &data->simulationInfo->realVarsReverseIndex[i];
+      var = &data->modelData->realVarsData[ix->array_idx];
+      printScalarName(var->info.name, (DIMENSION_INFO*) &var->dimension, ix->dim_idx, name, sizeof(name));
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, name, dasslData->atol[i]);
+    }
   }
   messageClose(OMC_LOG_SOLVER);
 }
