@@ -7,6 +7,7 @@ array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_each_attribute_ida.mos\
 array_bound_attributes.mos\
+array_bound_attributes_alias.mos\
 integerComprehensionParameter.mos\
 arrayResultFile.mos\
 simple_for.mos\
