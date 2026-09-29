@@ -163,7 +163,7 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
       ix = &data->simulationInfo->realVarsReverseIndex[i];
       var = &data->modelData->realVarsData[ix->array_idx];
-      printScalarName(var->info.name, (DIMENSION_INFO*) &var->dimension, ix->dim_idx, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, ix->dim_idx, FALSE);
       infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, name, dasslData->atol[i]);
     }
   }

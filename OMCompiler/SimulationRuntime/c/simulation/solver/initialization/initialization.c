@@ -95,7 +95,7 @@ static void dumpRealVars(DATA *simData, long from, long to, modelica_boolean wit
     STATIC_REAL_DATA *var = &mData->realVarsData[i];
     for (k = 0; k < var->dimension.scalar_length; ++k) {
       idx = sInfo->realVarsIndex[i] + k;
-      printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
       if (withAttributes) {
         infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Real %s(start=%g, nominal=%g) = %g (pre: %g)", idx+1, name,
                         real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
@@ -161,7 +161,7 @@ void dumpInitialSolution(DATA *simData)
       STATIC_INTEGER_DATA *var = &mData->integerVarsData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->integerVarsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name,
                         integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
                         simData->localData[0]->integerVars[idx],
@@ -178,7 +178,7 @@ void dumpInitialSolution(DATA *simData)
       STATIC_BOOLEAN_DATA *var = &mData->booleanVarsData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->booleanVarsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] Boolean %s(start=%s) = %s (pre: %s)", idx+1, name,
                         boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
                         simData->localData[0]->booleanVars[idx] ? "true" : "false",
@@ -196,7 +196,7 @@ void dumpInitialSolution(DATA *simData)
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         modelica_string start = string_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k));
         idx = sInfo->stringVarsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(OMC_LOG_SOTI, 0, "[%zu] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", idx+1, name,
                         start ? omc_string_data(start) : "",
                         omc_string_data(simData->localData[0]->stringVars[idx]),
@@ -635,7 +635,7 @@ static void importStartValue(ModelicaMatReader *reader,
   }
 
   for (k = 0; k < n; k++) {
-    printArrayElementName(name, IMPORT_NAME_LENGTH, info->name, dimension, k);
+    printArrayElementName(name, IMPORT_NAME_LENGTH, info->name, dimension, k, TRUE);
     pVar = findImportVariable(reader, name);
 
     if (!pVar) {

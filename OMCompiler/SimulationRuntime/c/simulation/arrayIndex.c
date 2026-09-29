@@ -431,68 +431,34 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
 }
 
 /**
- * @brief Write the name of one scalar element of a variable into `buffer`.
- *
- * For an array variable the one-based subscripts of element `linear_address`
- * follow the name in one pair of brackets, e.g. "x[2,3]". A scalar variable
- * keeps its name.
- *
- * @param name           Name of the (array) variable.
- * @param dimension_info Dimensions of the variable.
- * @param linear_address Flattened (row-major) index of the element.
- * @param buffer         Destination buffer.
- * @param buffer_size    Size of `buffer` in bytes.
- */
-void printScalarName(const char *name,
-                     DIMENSION_INFO *dimension_info,
-                     size_t linear_address,
-                     char *buffer,
-                     size_t buffer_size)
-{
-  size_t written;
-  size_t dim;
-  size_t *array_index;
-
-  written = snprintf(buffer, buffer_size, "%s", name);
-  if (dimension_info->numberOfDimensions == 0) {
-    return;
-  }
-
-  array_index = linearToMultiDimArrayIndex(dimension_info, linear_address);
-  for (dim = 0; dim < dimension_info->numberOfDimensions && written < buffer_size; dim++) {
-    written += snprintf(buffer + written, buffer_size - written, "%c%zu", dim == 0 ? '[' : ',', array_index[dim] + 1);
-  }
-  if (written < buffer_size) {
-    snprintf(buffer + written, buffer_size - written, "]");
-  }
-  free(array_index);
-}
-
-/**
  * @brief Write name of an element of an array variable.
  *
  * Uses the Modelica structured naming `"<name>[i,j,...]"` with 1-based
- * indices, like the result files, and `"der(<name>[i,j,...])"` for state
- * derivatives named `"der(<name>)"`. For scalar variables `name` is written.
+ * indices. For scalar variables `name` is written.
  *
- * @param buffer          Buffer to write into.
- * @param buffer_size     Size of `buffer`.
- * @param name            Name of array variable.
- * @param dimension_info  Dimensions of array variable, may be NULL for scalars.
- * @param linear_address  Flattened (row-major) index of element.
- * @return int            Number of characters written, like snprintf.
+ * A state derivative named `"der(<name>)"` gets `"der(<name>[i,j,...])"`, like
+ * in the result files, if `derivativeSubscriptInside` is set, and
+ * `"der(<name>)[i,j,...]"` otherwise.
+ *
+ * @param buffer                     Buffer to write into.
+ * @param buffer_size                Size of `buffer`.
+ * @param name                       Name of array variable.
+ * @param dimension_info             Dimensions of array variable, may be NULL for scalars.
+ * @param linear_address             Flattened (row-major) index of element.
+ * @param derivativeSubscriptInside  Put the subscripts of a state derivative inside `der()`.
+ * @return int                       Number of characters written, like snprintf.
  */
 int printArrayElementName(char *buffer,
                           size_t buffer_size,
                           const char *name,
                           const DIMENSION_INFO *dimension_info,
-                          size_t linear_address)
+                          size_t linear_address,
+                          modelica_boolean derivativeSubscriptInside)
 {
   int written;
   size_t k, rem, stride, j;
   size_t name_length = strlen(name);
-  /* state derivative "der(x)" has elements "der(x[i])" */
-  const int isDerivative = name_length > 5 && strncmp(name, "der(", 4) == 0 && name[name_length - 1] == ')';
+  const int isDerivative = derivativeSubscriptInside && name_length > 5 && strncmp(name, "der(", 4) == 0 && name[name_length - 1] == ')';
 
   if (dimension_info == NULL || dimension_info->numberOfDimensions == 0)
   {

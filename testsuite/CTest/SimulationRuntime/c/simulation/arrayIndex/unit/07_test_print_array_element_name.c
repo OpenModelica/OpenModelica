@@ -9,10 +9,10 @@
 /**
  * @brief Compare name of element `linear` with `expected`.
  */
-static int check(const char *name, const DIMENSION_INFO *dimension, size_t linear, const char *expected)
+static int check(const char *name, const DIMENSION_INFO *dimension, size_t linear, modelica_boolean derivativeSubscriptInside, const char *expected)
 {
   char buffer[256];
-  printArrayElementName(buffer, sizeof(buffer), name, dimension, linear);
+  printArrayElementName(buffer, sizeof(buffer), name, dimension, linear, derivativeSubscriptInside);
   if (strcmp(buffer, expected) != 0)
   {
     fprintf(stderr, "Test failed: Expected '%s', got '%s'\n", expected, buffer);
@@ -37,14 +37,16 @@ int main(void)
   DIMENSION_INFO vector = {.numberOfDimensions = 1, .dimensions = dims, .scalar_length = 2};
   DIMENSION_INFO scalar = {.numberOfDimensions = 0, .dimensions = NULL, .scalar_length = 1};
 
-  test_success &= check("x", &scalar, 0, "x");
-  test_success &= check("x", NULL, 0, "x");
-  test_success &= check("v", &vector, 1, "v[2]");
-  test_success &= check("A", &matrix, 0, "A[1,1]");
-  test_success &= check("A", &matrix, 2, "A[1,3]");
-  test_success &= check("A", &matrix, 4, "A[2,2]");
-  test_success &= check("der(A)", &matrix, 5, "der(A[2,3])");
-  test_success &= check("der(x)", &scalar, 0, "der(x)");
+  test_success &= check("x", &scalar, 0, TRUE, "x");
+  test_success &= check("x", NULL, 0, TRUE, "x");
+  test_success &= check("v", &vector, 1, TRUE, "v[2]");
+  test_success &= check("A", &matrix, 0, TRUE, "A[1,1]");
+  test_success &= check("A", &matrix, 2, TRUE, "A[1,3]");
+  test_success &= check("A", &matrix, 4, FALSE, "A[2,2]");
+  test_success &= check("der(A)", &matrix, 5, TRUE, "der(A[2,3])");
+  test_success &= check("der(A)", &matrix, 5, FALSE, "der(A)[2,3]");
+  test_success &= check("der(x)", &scalar, 0, TRUE, "der(x)");
+  test_success &= check("der(x)", &scalar, 0, FALSE, "der(x)");
 
   if (test_success)
   {

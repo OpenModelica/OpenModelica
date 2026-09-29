@@ -61,7 +61,8 @@ extern "C"
                             size_t buffer_size,
                             const char *name,
                             const DIMENSION_INFO *dimension_info,
-                            size_t linear_address);
+                            size_t linear_address,
+                            modelica_boolean derivativeSubscriptInside);
 
   size_t multiDimArrayToLinearIndex(DIMENSION_INFO *dimension,
                                     size_t *array_index);
@@ -73,12 +74,6 @@ extern "C"
                                size_t linear_address,
                                char* buffer,
                                size_t buffer_size);
-
-  void printScalarName(const char *name,
-                       DIMENSION_INFO *dimension_info,
-                       size_t linear_address,
-                       char *buffer,
-                       size_t buffer_size);
 
   size_t attributeElementIndex(const base_array_t *attribute,
                                size_t dim_idx);
