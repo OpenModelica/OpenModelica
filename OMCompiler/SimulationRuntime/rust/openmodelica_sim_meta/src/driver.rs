@@ -166,7 +166,7 @@ fn state_selection_set(
             false,
             "Error, singular Jacobian for dynamic state selection at time {t:.6}\nUse -lv LOG_DSS_JAC to get the Jacobian",
         );
-        return Err("CodegenWasmJit: singular Jacobian for dynamic state selection");
+        return Err("singular Jacobian for dynamic state selection");
     }
 
     // comparePivot: enable = 1 for the first nd pivot columns (dummy), 2 for the
@@ -635,7 +635,7 @@ pub trait SimEngine {
     /// Assign a runtime String holding `bytes` to the String-handle slot at `addr`,
     /// releasing what was there. Only an `-override` of a String parameter needs it.
     fn set_string(&mut self, _addr: u32, _bytes: &[u8]) -> Result<()> {
-        Err("CodegenWasmJit: this backend cannot set a String")
+        Err("this backend cannot set a String")
     }
 }
 
@@ -1840,9 +1840,9 @@ fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
 }
 
 /// Returned to abort a run on detected chattering (`-abortSlowSimulation`).
-pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to chattering";
+pub const CHATTER_ABORT_ERR: &str = "aborting simulation due to chattering";
 /// Returned when the `-alarm` deadline expires.
-pub const ALARM_ABORT_ERR: &str = "CodegenWasmJit: simulation aborted (-alarm)";
+pub const ALARM_ABORT_ERR: &str = "simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
 
@@ -1859,7 +1859,7 @@ pub const INIT_FAILED_ERR: &str = "initialization failed";
 
 /// C's `retValIntegrator != 0`: the reason is logged, and [`drive`] still owes C's
 /// `performSimulation` tail.
-pub const SOLVER_FAILED_ERR: &str = "integrator failed";
+pub use openmodelica_solvers::SOLVER_FAILED_ERR;
 
 /// Where the integrator gave up (C's `solverInfo->currentTime`), for the tail
 /// [`drive`] runs; the driver can only return a `&'static str`.
@@ -4849,7 +4849,11 @@ fn make_driver_resolved(
     };
     #[cfg(sundials)]
     if method == "ida" {
-        ida_jacobian_method(jac_a_avail, ida_linear_solver(layout), true);
+        let ls = ida_linear_solver(layout);
+        if ls == crate::sundials::IdaLs::Klu && ida_matrix_pattern(model, ls).is_none() {
+            return Err(IDA_NO_SPARSE_PATTERN);
+        }
+        ida_jacobian_method(jac_a_avail, ls, true);
     }
     if is_dassl(method) {
         set_jacobian_method(jac_a_avail, true);
@@ -4907,16 +4911,16 @@ fn csv_input_given() -> bool {
     false
 }
 
-const NO_SYM_SOLVER: &str = "CodegenWasmJit: the model was not translated with \
+const NO_SYM_SOLVER: &str = "the model was not translated with \
 --symSolver=impEuler or --symSolver=expEuler, so it has no symbolic inline system to step";
 
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
-    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `cvode`, `ida`, `gbode`, \
+    "unsupported integration method (supported: `dassl`, `cvode`, `ida`, `gbode`, \
      `euler`, `rungekutta`, `qss`)"
 } else {
-    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `gbode`, `euler`, \
+    "unsupported integration method (supported: `dassl`, `gbode`, `euler`, \
      `rungekutta`, `qss`)"
 };
 
@@ -5034,7 +5038,7 @@ pub fn drive(
                 loop {
                     match driver.advance(e, model, f64::INFINITY).map_err(|err| enrich_trap(e, err))? {
                         Advance::Done | Advance::Terminated => break,
-                        Advance::Cancelled => return Err("CodegenWasmJit: simulation cancelled"),
+                        Advance::Cancelled => return Err("simulation cancelled"),
                         Advance::Running => continue,
                     }
                 }
@@ -5151,7 +5155,7 @@ pub fn drive(
             };
             match advanced {
                 Advance::Done | Advance::Terminated => break,
-                Advance::Cancelled => return Err("CodegenWasmJit: simulation cancelled"),
+                Advance::Cancelled => return Err("simulation cancelled"),
                 Advance::Running => continue,
             }
         }
@@ -5796,10 +5800,10 @@ pub fn eval_sym_jacobian(
     colored: bool,
     set: &mut dyn FnMut(usize, usize, usize, f64),
 ) -> Result<()> {
-    let sym = jac.sym.as_ref().ok_or("CodegenWasmJit: no symbolic Jacobian to evaluate")?;
+    let sym = jac.sym.as_ref().ok_or("no symbolic Jacobian to evaluate")?;
     let n = jac.n as usize;
     if sym.seed_offs.len() != n || sym.result_offs.len() != n {
-        return Err("CodegenWasmJit: symbolic Jacobian seed/result count does not match the states");
+        return Err("symbolic Jacobian seed/result count does not match the states");
     }
     // C's `setContext(CONTEXT_SYM_JACOBIAN)`: lets a linear system inside a column
     // reuse its matrix across one assembly.
@@ -6156,8 +6160,8 @@ fn eval_directions(
     set: &mut dyn FnMut(usize, usize, f64),
 ) -> Result<()> {
     let both = forward && adjoint;
-    let sym = jac.sym.as_ref().ok_or("CodegenWasmJit: no symbolic Jacobian to evaluate")?;
-    let adj = sym.adj.as_ref().ok_or("CodegenWasmJit: no adjoint Jacobian to evaluate")?;
+    let sym = jac.sym.as_ref().ok_or("no symbolic Jacobian to evaluate")?;
+    let adj = sym.adj.as_ref().ok_or("no adjoint Jacobian to evaluate")?;
     let n = jac.n as usize;
     let mut col_color = vec![0usize; n];
     for (c, cols) in jac.colors.iter().enumerate() {
@@ -7195,7 +7199,7 @@ impl CvodeState {
                 let cv = crate::sundials::Cvode::new(
                     *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root, self.config,
                 )
-                .ok_or("CodegenWasmJit: CVODE initialization failed")?;
+                .ok_or("##CVODE## Initialization of CVODE solver failed!")?;
                 if self.banner {
                     log_cvode_configuration(self.rtol, self.n_roots > 0, self.config);
                 }
@@ -7203,7 +7207,7 @@ impl CvodeState {
             }
         };
         if !cv.set_user_data(ctx as *mut core::ffi::c_void) {
-            return Err("CodegenWasmJit: CVODE setup failed");
+            return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
         }
         let stop = {
             let _clock = rtclock::Span::new(rtclock::SOLVER);
@@ -7218,7 +7222,7 @@ impl CvodeState {
                 Progress::WorkQuota
             }
             crate::sundials::Stop::Failed(crate::sundials::CV_RTFUNC_FAIL) => Progress::RootThrew,
-            crate::sundials::Stop::Failed(_) => Progress::Failed("CodegenWasmJit: CVODE failed"),
+            crate::sundials::Stop::Failed(flag) => Progress::Failed(sundials_step_failed("CVODE", flag, *t)),
             other => {
                 self.work_retries = 0;
                 match other {
@@ -7268,7 +7272,7 @@ impl IdaState {
         // `IDACalcIC` below calls them, so bind `user_data` first.
         unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
-            return Err("CodegenWasmJit: IDA setup failed");
+            return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
         }
         if self.setup.dae.is_some() {
             dae_calc_ic(ida, t, self.rtol)?;
@@ -7299,7 +7303,7 @@ impl IdaState {
         self.setup.finish_ramp(e, sim_data, ida, *t)?;
         unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
-            return Err("CodegenWasmJit: IDA setup failed");
+            return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
         }
         let stop = {
             let _clock = rtclock::Span::new(rtclock::SOLVER);
@@ -7345,16 +7349,7 @@ impl IdaState {
                 Progress::WorkQuota
             }
             crate::sundials::Stop::Failed(crate::sundials::IDA_RTFUNC_FAIL) => Progress::RootThrew,
-            crate::sundials::Stop::Failed(flag) => {
-                // C's last word before it gives up (`ida_solver.c`).
-                omclog::info!(
-                    omclog::STDOUT,
-                    false,
-                    "##IDA## {flag} error occurred at time = {}",
-                    format_g(*t, 15),
-                );
-                Progress::Failed("CodegenWasmJit: IDA failed")
-            }
+            crate::sundials::Stop::Failed(flag) => Progress::Failed(sundials_step_failed("IDA", flag, *t)),
             other => {
                 self.work_retries = 0;
                 self.restarted = false;
@@ -7871,7 +7866,7 @@ impl SolverCore {
             && let Some(ida) = s.ida.as_mut()
         {
             if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
-                return Err("CodegenWasmJit: IDA setup failed");
+                return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
             }
             // C sets `discreteCall` only around the two discrete evaluations, so
             // `IDACalcIC`'s residuals read the held relations.
@@ -7965,7 +7960,7 @@ impl SolverCore {
                 if let Some(ida) = s.ida.as_mut()
                     && !ida.set_tolerances(t, s.rtol, &atol)
                 {
-                    return Err("CodegenWasmJit: IDA tolerances failed");
+                    return Err("##IDA## IDASVtolerances failed");
                 }
                 s.atol = atol;
             }
@@ -8063,7 +8058,7 @@ impl SolverCore {
                 if let Some(cv) = c.cv.as_mut() {
                     cv.y_mut().copy_from_slice(&self.y);
                     if !cv.reinit(self.t) {
-                        return Err("CodegenWasmJit: CVODE re-initialization failed");
+                        return Err("##CVODE## CVodeReInit failed");
                     }
                 }
             }
@@ -8073,7 +8068,7 @@ impl SolverCore {
                     ida.y_mut().copy_from_slice(&self.y);
                     ida.yp_mut().copy_from_slice(&self.yp);
                     if !ida.reinit(self.t) {
-                        return Err("CodegenWasmJit: IDA re-initialization failed");
+                        return Err("##IDA## IDAReInit failed");
                     }
                 }
             }
@@ -8251,7 +8246,11 @@ impl SolverCore {
                     let e = unsafe { &mut *ctx.engine };
                     let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, (&self.maxs, &self.mins));
                     let limit = self.sample_limit;
-                    match g.step(&mut ode, target, limit, &mut self.t, &mut self.y)? {
+                    let stepped = g.step(&mut ode, target, limit, &mut self.t, &mut self.y);
+                    if matches!(stepped, Err(err) if err == SOLVER_FAILED_ERR) {
+                        solver_fail_store::set(self.t);
+                    }
+                    match stepped? {
                         crate::gbode::GbStep::Reached => Progress::Reached,
                         crate::gbode::GbStep::Stepped => Progress::Stepped,
                         crate::gbode::GbStep::Root(_) => Progress::Root,
@@ -8912,7 +8911,7 @@ impl CsDriver {
         // QSS runs a whole simulation of its own; C's `solver_main_step` throws
         // "Unhandled case" for it rather than stepping it.
         if method == "qss" {
-            return Err("CodegenWasmJit: method=\"qss\" cannot step to a communication point");
+            return Err("method=\"qss\" cannot step to a communication point");
         }
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout, t)?;
@@ -9149,7 +9148,7 @@ impl CsDriver {
             Step::Terminated => return Ok(CsStep::Terminated),
             Step::Event { time } => return Ok(CsStep::Event { time }),
             // `deadline` is +inf and CS does not cancel.
-            Step::Yielded | Step::Cancelled => return Err("CodegenWasmJit: CS step yielded unexpectedly"),
+            Step::Yielded | Step::Cancelled => return Err("CS step yielded unexpectedly"),
             Step::Reached { .. } => {}
         }
         // Refresh the outputs at the communication point, and re-select states there
@@ -9321,7 +9320,7 @@ impl CsDriver {
             }
             if self.core.t <= t_before {
                 return Err(leak_error(alloc::format!(
-                    "CodegenWasmJit: the integrator made no progress at t={} toward {t_target}",
+                    "the integrator made no progress at t={} toward {t_target}",
                     self.core.t
                 )));
             }
@@ -9957,7 +9956,7 @@ impl CvodeDriver {
                     start, &y, tol, &atol, 0, cvode_rhs, None,
                     crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
                 )
-                .ok_or("CodegenWasmJit: CVODE initialization failed")?,
+                .ok_or("##CVODE## Initialization of CVODE solver failed!")?,
             )
         };
 
@@ -10074,7 +10073,7 @@ impl Driver for CvodeDriver {
             ida: IdaCtx::default(),
         };
         if !cv.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
-            return Err("CodegenWasmJit: CVODE setup failed");
+            return Err("##CVODE## CV_MEM_NULL In function CVodeSetUserData: The cvode mem argument was NULL.");
         }
 
         let mut did_step = false;
@@ -10126,7 +10125,7 @@ impl Driver for CvodeDriver {
                     self.retry.close(e)?;
                     continue;
                 }
-                crate::sundials::Stop::Failed(_) => return Err("CodegenWasmJit: CVODE failed"),
+                crate::sundials::Stop::Failed(flag) => return Err(sundials_step_failed("CVODE", flag, self.t)),
             }
             self.work_retries = 0;
             for (i, v) in cv.y().iter().enumerate() {
@@ -10149,7 +10148,7 @@ impl Driver for CvodeDriver {
                     cv.y_mut()[i] = read_f64(e, states_base + (i as u32) * 8)?;
                 }
                 if !cv.reinit(self.t) {
-                    return Err("CodegenWasmJit: CVODE re-initialization failed");
+                    return Err("##CVODE## CVodeReInit failed");
                 }
             }
             self.row += 1;
@@ -10179,7 +10178,7 @@ impl Driver for CvodeDriver {
                 cv.y_mut()[i] = read_f64(e, self.states_base + (i as u32) * 8)?;
             }
             if !cv.reinit(t) {
-                return Err("CodegenWasmJit: CVODE re-initialization failed");
+                return Err("##CVODE## CVodeReInit failed");
             }
         }
         Ok(true)
@@ -10314,7 +10313,7 @@ fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64, tol: f64) -> Result<()> {
     omclog::info!(omclog::SOLVER, false, "##IDA## do event update at {}", format_g(t, 15));
     match ida.calc_ic_at(t, tol) {
         true => Ok(()),
-        false => Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)"),
+        false => Err("##IDA## IDACalcIC failed"),
     }
 }
 
@@ -10383,7 +10382,7 @@ impl IdaSetup {
         let dae = match layout.dae_mode() {
             false => None,
             true => {
-                let info = model.dae.as_ref().ok_or("CodegenWasmJit: DAE-mode model without DAE metadata")?;
+                let info = model.dae.as_ref().ok_or("DAE-mode model without DAE metadata")?;
                 let n_states = layout.n_states as usize;
                 let mut id = vec![1.0; n_states];
                 id.resize(layout.n_dae_res as usize, 0.0);
@@ -10396,14 +10395,7 @@ impl IdaSetup {
                 }))
             }
         };
-        // The Krylov solvers assemble no matrix (C pins them to INTERNALNUMJAC).
-        // In DAE mode the pattern is the residual Jacobian's, not the ODE `A`'s
-        // (which the backend leaves empty there).
-        let jac_a = match () {
-            _ if ls.matrix_free() || env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() => None,
-            _ if dae.is_some() => model.dae.as_ref().and_then(|d| d.sparsity.clone()),
-            _ => model.jac_a.clone(),
-        };
+        let jac_a = ida_matrix_pattern(model, ls).cloned();
         let pattern = match (&jac_a, ls) {
             // C throws here rather than fall back: KLU has nothing to factorize.
             (None, IdaLs::Klu) => return Err(IDA_NO_SPARSE_PATTERN),
@@ -10451,7 +10443,7 @@ impl IdaSetup {
             return Ok(());
         }
         if !ida.sens_values(&mut self.sens_scratch) {
-            return Err("CodegenWasmJit: IDAGetSens failed");
+            return Err("##IDA## IDAGetSens failed");
         }
         for (i, x) in self.sens_scratch.iter().enumerate() {
             write_f64(e, sim_data + self.sens_off + (i as u32) * 8, *x)?;
@@ -10488,18 +10480,18 @@ impl IdaSetup {
                 .then_some(ida_jac as crate::sundials::IdaJacFn),
             &self.opts,
         )
-        .ok_or("CodegenWasmJit: IDA initialization failed")?;
+        .ok_or("##IDA## Initialization of IDA solver failed!")?;
         if !self.sens_offs.is_empty() {
             let p0: Vec<f64> =
                 self.sens_offs.iter().map(|&off| read_f64(e, sim_data + off)).collect::<Result<_>>()?;
             if !ida.init_sensitivities(&p0) {
-                return Err("CodegenWasmJit: IDA sensitivity initialization failed");
+                return Err("##IDA## IDASensInit failed");
             }
         }
         if let Some(d) = self.dae.as_deref() {
             let suppress_alg = crate::simflags::with_flags(|f| f.ida_no_suppress_alg);
             if !ida.set_id(&d.id, suppress_alg) {
-                return Err("CodegenWasmJit: IDASetId failed");
+                return Err("##IDA## IDASetId failed");
             }
         }
         Ok(ida)
@@ -10575,8 +10567,27 @@ impl IdaSetup {
 }
 
 #[cfg(sundials)]
-const IDA_NO_SPARSE_PATTERN: &str = "CodegenWasmJit: -s=ida with the KLU linear solver needs the model's \
-     Jacobian sparsity pattern, which this model has none of (use -idaLS=dense)";
+const IDA_NO_SPARSE_PATTERN: &str =
+    "##IDA## Internal Numerical Jacobians require a sparse pattern for the jacobian but no sparse pattern is generated.";
+
+/// C's `ida_solver_step` giving up, and so `retValIntegrator`.
+#[cfg(sundials)]
+fn sundials_step_failed(solver: &str, flag: i32, t: f64) -> &'static str {
+    omclog::info!(omclog::STDOUT, false, "##{solver}## {flag} error occurred at time = {}", format_g(t, 15));
+    solver_fail_store::set(t);
+    SOLVER_FAILED_ERR
+}
+
+/// The pattern KLU factorizes: the residual Jacobian's in DAE mode (the backend
+/// leaves the ODE `A` empty there). The Krylov solvers assemble no matrix.
+#[cfg(sundials)]
+fn ida_matrix_pattern(model: &SimModel, ls: crate::sundials::IdaLs) -> Option<&JacAInfo> {
+    match () {
+        _ if ls.matrix_free() || env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() => None,
+        _ if model.layout.dae_mode() => model.dae.as_ref().and_then(|d| d.sparsity.as_ref()),
+        _ => model.jac_a.as_ref(),
+    }
+}
 
 /// The unknown vector into `SimData` without evaluating anything.
 #[cfg(sundials)]
@@ -11035,7 +11046,7 @@ impl Driver for IdaDriver {
             ida: self.setup.ctx(Some(ida)),
         };
         if !ida.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
-            return Err("CodegenWasmJit: IDA setup failed");
+            return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
         }
 
         let mut did_step = false;
@@ -11090,7 +11101,7 @@ impl Driver for IdaDriver {
                     self.retry.close(e)?;
                     continue;
                 }
-                crate::sundials::Stop::Failed(_) => return Err("CodegenWasmJit: IDA failed"),
+                crate::sundials::Stop::Failed(flag) => return Err(sundials_step_failed("IDA", flag, self.t)),
             }
             self.work_retries = 0;
             // One-step mode: the step that just ended is an output point of its own
@@ -11135,7 +11146,7 @@ impl Driver for IdaDriver {
                     ida.yp_mut()[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
                 }
                 if !ida.reinit(self.t) {
-                    return Err("CodegenWasmJit: IDA re-initialization failed");
+                    return Err("##IDA## IDAReInit failed");
                 }
             }
             self.row += 1;
@@ -11166,7 +11177,7 @@ impl Driver for IdaDriver {
                 ida.yp_mut()[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
             }
             if !ida.reinit(t) {
-                return Err("CodegenWasmJit: IDA re-initialization failed");
+                return Err("##IDA## IDAReInit failed");
             }
         }
         Ok(true)
@@ -11249,7 +11260,7 @@ impl GuessStepper {
                 Ok(Solved::Reached | Solved::Stepped | Solved::Root | Solved::Yielded) => {
                     frac = 1.0;
                 }
-                Ok(Solved::Cancelled) => return Err("CodegenWasmJit: simulation cancelled"),
+                Ok(Solved::Cancelled) => return Err("simulation cancelled"),
                 Ok(Solved::RootThrew(err)) | Err(err) => {
                     iter += 1;
                     if iter > 10 {
@@ -11296,7 +11307,7 @@ pub fn dae_solve_explicit(
         return Ok(());
     }
     if dae.alg_offs.len() + ns != n {
-        return Err("CodegenWasmJit: DAE-mode metadata disagrees with the layout");
+        return Err("DAE-mode metadata disagrees with the layout");
     }
     let offs: Vec<u32> = (0..ns)
         .map(|i| REAL_OFF + ((ns + i) as u32) * 8)
@@ -11411,7 +11422,7 @@ pub fn dae_solve_explicit(
 }
 
 const DAE_EXPLICIT_FAILED: &str =
-    "CodegenWasmJit: the derivatives of the DAE-mode model could not be solved for (the Newton iteration over the residual did not converge)";
+    "the derivatives of the DAE-mode model could not be solved for (the Newton iteration over the residual did not converge)";
 
 /// Gaussian elimination with partial pivoting on the row-major `a`, `b` becoming
 /// the solution. `false` on a singular matrix.
