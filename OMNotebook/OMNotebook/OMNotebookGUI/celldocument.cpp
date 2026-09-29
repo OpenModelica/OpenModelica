@@ -642,6 +642,17 @@ namespace IAEX
   }
 
   /*!
+   * \brief Insert (or change) a link to a web page (http/https)
+   *
+   * \param url The web address
+   * \param text The link text, if empty the selected text (or the url) is used
+   */
+  void CellDocument::textcursorInsertWebLink( QString url, QString text, QTextCursor& cursor )
+  {
+    executeCommand(std::make_unique<TextCursorInsertWebLink>( url, text, cursor ));
+  }
+
+  /*!
    * \author Ingemar Axelsson and Anders Fernström
    */
   bool CellDocument::hasChanged() const

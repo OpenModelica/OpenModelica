@@ -154,6 +154,7 @@ private slots:
 
   void insertImage();
   void insertLink();
+  void insertWebLink();
   void openOldFile();
   void pureText();
 
@@ -257,6 +258,7 @@ private:
 
   QAction *insertImageAction;
   QAction *insertLinkAction;
+  QAction *insertWebLinkAction;
 
 #if USE_OMSKETCH
   Tools *window;
