@@ -707,7 +707,8 @@ protected
 
     // create seed vars in deterministic cref order to keep Jacobian column order
     // aligned with solver state ordering.
-    seed_vars_sorted := List.sort(VariablePointers.toList(seedCandidates), varPtrNameIsLess);
+    //seed_vars_sorted := List.sort(VariablePointers.toList(seedCandidates), varPtrNameIsLess);
+    seed_vars_sorted := VariablePointers.toList(seedCandidates);
     for v in seed_vars_sorted loop
       makeVarTraverse(v, name, seed_vars_ptr, diff_map, BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous);
     end for;
@@ -723,7 +724,7 @@ protected
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    res_vars := List.sort(res_vars, varPtrNameIsLess);
+    //res_vars := List.sort(res_vars, varPtrNameIsLess);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     for v in res_vars loop
@@ -1505,7 +1506,8 @@ protected
 
     // create seed vars in deterministic cref order to keep Jacobian row/column
     // ordering aligned with the forward Jacobian and solver ordering.
-    seed_vars_sorted := List.sort(VariablePointers.toList(seedCandidates), varPtrNameIsLess);
+    // seed_vars_sorted := List.sort(VariablePointers.toList(seedCandidates), varPtrNameIsLess);
+    seed_vars_sorted := VariablePointers.toList(seedCandidates);
     for v in seed_vars_sorted loop
       makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
 
@@ -1517,7 +1519,7 @@ protected
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    old_res_vars := List.sort(old_res_vars, varPtrNameIsLess);
+    //old_res_vars := List.sort(old_res_vars, varPtrNameIsLess);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     for v in old_res_vars loop
