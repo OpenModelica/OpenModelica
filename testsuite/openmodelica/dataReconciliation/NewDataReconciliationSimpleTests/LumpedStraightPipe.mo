@@ -1,14 +1,14 @@
 within NewDataReconciliationSimpleTests;
 model LumpedStraightPipe "Lumped straight pipe (circular duct)"
- parameter Modelica.SIunits.Length L=10. "Pipe length";
-  parameter Modelica.SIunits.Diameter D=0.2 "Pipe internal diameter";
+ parameter Modelica.Units.SI.Length L=10. "Pipe length";
+  parameter Modelica.Units.SI.Diameter D=0.2 "Pipe internal diameter";
   parameter Integer ntubes=1 "Number of pipes in parallel";
   parameter Real lambda=0.03
     "Friction pressure loss coefficient (active if lambda_fixed=true)";
   parameter Real rugosrel=0.0001
     "Pipe roughness (active if lambda_fixed=false)";
-  parameter Modelica.SIunits.Position z1=0 "Inlet altitude";
-  parameter Modelica.SIunits.Position z2=0 "Outlet altitude";
+  parameter Modelica.Units.SI.Position z1=0 "Inlet altitude";
+  parameter Modelica.Units.SI.Position z2=0 "Outlet altitude";
   parameter Boolean lambda_fixed=true
     "true: lambda given by parameter - false: lambde computed using Idel'Cik correlation";
   parameter Boolean inertia=false
@@ -16,35 +16,35 @@ model LumpedStraightPipe "Lumped straight pipe (circular duct)"
   parameter Boolean continuous_flow_reversal=false
     "true: continuous flow reversal - false: discontinuous flow reversal";
   parameter Integer fluid=1 "1: water/steam - 2: C3H3F5";
-  parameter Modelica.SIunits.Density p_rho=0 "If > 0, fixed fluid density";
+  parameter Modelica.Units.SI.Density p_rho=0 "If > 0, fixed fluid density";
   parameter Integer mode=0
     "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic";
 
 protected
-  constant Modelica.SIunits.Acceleration g=Modelica.Constants.g_n
+  constant Modelica.Units.SI.Acceleration g=Modelica.Constants.g_n
     "Gravity constant";
   constant Real pi=Modelica.Constants.pi "pi";
   parameter Real eps=1.e-3 "Small number for pressure loss equation";
-  parameter Modelica.SIunits.MassFlowRate Qeps=1.e-3
+  parameter Modelica.Units.SI.MassFlowRate Qeps=1.e-3
     "Small mass flow for continuous flow reversal";
-  parameter Modelica.SIunits.Area A=ntubes*pi*D^2/4
+  parameter Modelica.Units.SI.Area A=ntubes*pi*D^2/4
     "Pipes cross-sectional area (circular duct is assumed)";
-  parameter Modelica.SIunits.Area Pw=ntubes*pi*D
+  parameter Modelica.Units.SI.Area Pw=ntubes*pi*D
     "Pipes wetted perimeter (circular duct is assumed)";
 
 public
   Real khi "Hydraulic pressure loss coefficient";
-  ThermoSysPro.Units.DifferentialPressure deltaPf "Friction pressure loss";
-  ThermoSysPro.Units.DifferentialPressure deltaP "Total pressure loss";
-  Modelica.SIunits.MassFlowRate Q(start=100) "Mass flow rate";
-  Modelica.SIunits.ReynoldsNumber Re "Reynolds number";
-  Modelica.SIunits.ReynoldsNumber Relim "Limit Reynolds number";
+  ThermoSysPro.Units.SI.PressureDifference deltaPf "Friction pressure loss";
+  ThermoSysPro.Units.SI.PressureDifference deltaP "Total pressure loss";
+  Modelica.Units.SI.MassFlowRate Q(start=100) "Mass flow rate";
+  Modelica.Units.SI.ReynoldsNumber Re "Reynolds number";
+  Modelica.Units.SI.ReynoldsNumber Relim "Limit Reynolds number";
   Real lam "Friction pressure loss coefficient";
-  Modelica.SIunits.Density rho "Fluid density";
-  Modelica.SIunits.DynamicViscosity mu "Fluid dynamic viscosity";
-  Modelica.SIunits.Temperature T "Fluid temperature";
-  Modelica.SIunits.AbsolutePressure Pm "Fluid average pressure";
-  Modelica.SIunits.SpecificEnthalpy h "Fluid specific enthalpy";
+  Modelica.Units.SI.Density rho "Fluid density";
+  Modelica.Units.SI.DynamicViscosity mu "Fluid dynamic viscosity";
+  Modelica.Units.SI.Temperature T "Fluid temperature";
+  Modelica.Units.SI.AbsolutePressure Pm "Fluid average pressure";
+  Modelica.Units.SI.SpecificEnthalpy h "Fluid specific enthalpy";
 
 public
   ThermoSysPro.WaterSteam.Connectors.FluidInlet C1 annotation (Placement(transformation(extent={{-110,

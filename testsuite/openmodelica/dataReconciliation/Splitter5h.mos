@@ -3,6 +3,7 @@
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Outputs.csv
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Reconciled_Sx.csv
+// teardown_command: rm -rf NewDataReconciliationSimpleTests.Splitter5h NewDataReconciliationSimpleTests.Splitter5h.* NewDataReconciliationSimpleTests.Splitter5h_* Reconciled_NewDataReconciliationSimpleTests_Splitter5h.mo
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliationBoundaryConditions");
@@ -22,10 +23,10 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
 // ModelInfo: NewDataReconciliationSimpleTests.Splitter5h
