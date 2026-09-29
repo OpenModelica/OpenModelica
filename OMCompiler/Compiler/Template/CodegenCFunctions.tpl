@@ -3538,8 +3538,8 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
         'indexed_assign_<%arrayType%>(<%exp%>, &<%cref%>, &<%ispec%>);'
       else if contiguousSlice(cr, expTypeShort(aty), context) then
         let type = expTypeShort(aty)
-        let base = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
-        'simple_array_copy_to(<%exp%>, ((modelica_<%type%>*)&<%base%>) + <%contiguousSliceOffset(crefSubs(cr), crefDims(cr))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => d ;separator="*"%>, sizeof(modelica_<%type%>));'
+        let data = contiguousSliceData(cr, type, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        'simple_array_copy_to(<%exp%>, <%data%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => d ;separator="*"%>, sizeof(modelica_<%type%>));'
       else
         let ispec = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction)
         let type = expTypeShort(aty)
@@ -6164,9 +6164,8 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
       let &preExp += t
     wrapperArray
     else if contiguousSlice(cr, type, context) then
-      let &sub = buffer ""
-      let base = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&<%base%>) + <%contiguousSliceOffset(crefSubs(cr), crefDims(cr))%>, <%listLength(contiguousSliceDims(crefSubs(cr), crefDims(cr)))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => '(_index_t)<%d%>' ;separator=", "%>);<%\n%>'
+      let data = contiguousSliceData(cr, type, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, <%data%>, <%listLength(contiguousSliceDims(crefSubs(cr), crefDims(cr)))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => '(_index_t)<%d%>' ;separator=", "%>);<%\n%>'
       wrapperArray
     else
       let &sub = buffer ""
@@ -8928,12 +8927,20 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
 end varArrayNameValues;
 
 template contiguousSlice(ComponentRef cr, String type, Context context)
- "Whether cr is one block of a variable's storage (contiguousSliceOffset)."
+ "Whether cr is one block of a variable's storage (contiguousSliceStart)."
 ::=
-  if boolAnd(intGt(contiguousSliceOffset(crefSubs(cr), crefDims(cr)), -1),
+  if boolAnd(boolNot(listEmpty(contiguousSliceDims(crefSubs(cr), crefDims(cr)))),
              boolAnd(boolNot(stringEq(type, "string")), isContiguousArrayCref(crefStripSubs(cr), context)))
   then "true"
 end contiguousSlice;
+
+template contiguousSliceData(ComponentRef cr, String type, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  let &sub = buffer ""
+  let base = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+  let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(cr))), listReverse(contiguousSliceStart(crefSubs(cr), crefDims(cr))), context, &preExp, &varDecls, &varFrees, &auxFunction)
+  '(((modelica_<%type%>*)&<%base%>) + (<%offset%>))'
+end contiguousSliceData;
 
 template simVarIndex(String ty, String kind, String index)
  "Where a variable starts in its values array. Scalarized code has only scalar
