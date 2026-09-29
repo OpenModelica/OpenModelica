@@ -896,6 +896,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, comp->threadData);
     storePreValues(comp->fmuData);
     *callEventUpdate  = fmiFalse;
     /******** check state selection ********/
