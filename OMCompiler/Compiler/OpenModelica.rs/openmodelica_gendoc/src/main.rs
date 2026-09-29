@@ -265,6 +265,16 @@ fn graphics_jobs(options: &Options) -> usize {
         .unwrap_or_else(physical_cores)
 }
 
+/// omc's stack: rayon's 2 MiB default overflows in instantiation.
+const STACK_SIZE: usize = 64 * 1024 * 1024;
+
+fn thread_pool(options: &Options, name: &'static str) -> rayon::ThreadPoolBuilder {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(graphics_jobs(options))
+        .stack_size(STACK_SIZE)
+        .thread_name(move |i| format!("{name}-{i}"))
+}
+
 fn physical_cores() -> usize {
     let mut cores = std::collections::HashSet::new();
     if let Ok(entries) = std::fs::read_dir("/sys/devices/system/cpu") {
@@ -310,8 +320,7 @@ fn render_graphics(
 
     let icon_dir = store.dir().to_path_buf();
     let store = std::sync::Mutex::new(store);
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(graphics_jobs(options))
+    let pool = thread_pool(options, "graphics")
         .start_handler(|_| {
             if let Err(e) = init_compiler() {
                 eprintln!("omgendoc: {e}");
@@ -810,9 +819,7 @@ fn write_resources(output_dir: &Path, resources: &HashMap<String, PathBuf>) {
 
 fn run() -> Result<(), String> {
     let options = parse_args()?;
-    let _ = rayon::ThreadPoolBuilder::new()
-        .num_threads(graphics_jobs(&options))
-        .build_global();
+    let _ = thread_pool(&options, "omgendoc").build_global();
     init_compiler().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&options.output_dir).map_err(|e| e.to_string())?;
 
@@ -833,8 +840,7 @@ fn run() -> Result<(), String> {
     // between libraries and for the many libraries too small to fill them on
     // their own. `par_iter().collect()` keeps the order, so what lands in the
     // arena does not depend on which thread finished first.
-    let loading = rayon::ThreadPoolBuilder::new()
-        .num_threads(graphics_jobs(&options))
+    let loading = thread_pool(&options, "loading")
         .start_handler(|_| {
             if let Err(e) = init_compiler() {
                 eprintln!("omgendoc: {e}");
