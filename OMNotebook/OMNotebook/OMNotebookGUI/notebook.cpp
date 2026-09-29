@@ -3499,44 +3499,65 @@ void NotebookWindow::insertWebLink()
 
   QString url;
 
-  // no selection, but the cursor is in a web link: select the whole link
-  if( !cursor.hasSelection() && cursor.charFormat().isAnchor() )
+  bool editing = false;
+
+  // If the cursor is in (or at the border of) a web link, or the selection
+  // lies inside one, select the whole link to change its text and/or url.
   {
-    const QString href = cursor.charFormat().anchorHref();
-    const QString scheme = QUrl( href ).scheme().toLower();
-    if( scheme == QLatin1String("http") || scheme == QLatin1String("https") )
+    const int selStart = cursor.selectionStart();
+    const int selEnd = cursor.selectionEnd();
+    QString runHref;
+    int runStart = -1, runEnd = -1;
+    bool found = false;
+
+    auto isWeb = []( const QString &href )
     {
-      const int pos = cursor.position();
-      int runStart = -1, runEnd = -1;
-      bool found = false;
-      for( QTextBlock::iterator it = cursor.block().begin(); !it.atEnd(); ++it )
+      const QString scheme = QUrl( href ).scheme().toLower();
+      return scheme == QLatin1String("http") || scheme == QLatin1String("https");
+    };
+    auto runContains = [&]()
+    {
+      return runStart >= 0 && runStart <= selStart && selEnd <= runEnd;
+    };
+
+    const QTextBlock block = cursor.document()->findBlock( selStart );
+    for( QTextBlock::iterator it = block.begin(); !it.atEnd(); ++it )
+    {
+      const QTextFragment f = it.fragment();
+      const QTextCharFormat fmt = f.charFormat();
+      const bool web = fmt.isAnchor() && isWeb( fmt.anchorHref() );
+
+      if( web && runStart >= 0 && fmt.anchorHref() == runHref )
       {
-        QTextFragment f = it.fragment();
-        if( f.charFormat().isAnchor() && f.charFormat().anchorHref() == href )
+        // same link continues (e.g. partly bold text)
+        runEnd = f.position() + f.length();
+      }
+      else
+      {
+        if( runContains() )
         {
-          if( runStart < 0 )
-            runStart = f.position();
+          found = true;
+          break;
+        }
+        if( web )
+        {
+          runStart = f.position();
           runEnd = f.position() + f.length();
+          runHref = fmt.anchorHref();
         }
         else
-        {
-          if( runStart >= 0 && pos > runStart && pos <= runEnd )
-          {
-            found = true;
-            break;
-          }
           runStart = -1;
-        }
       }
-      if( !found && runStart >= 0 && pos > runStart && pos <= runEnd )
-        found = true;
+    }
+    if( !found && runContains() )
+      found = true;
 
-      if( found )
-      {
-        cursor.setPosition( runStart );
-        cursor.setPosition( runEnd, QTextCursor::KeepAnchor );
-        url = href;
-      }
+    if( found )
+    {
+      cursor.setPosition( runStart );
+      cursor.setPosition( runEnd, QTextCursor::KeepAnchor );
+      url = runHref;
+      editing = true;
     }
   }
 
@@ -3545,7 +3566,7 @@ void NotebookWindow::insertWebLink()
   text.replace( QChar::LineSeparator, QLatin1Char(' ') );
 
   QDialog dialog( this );
-  dialog.setWindowTitle( tr("Insert Web Link") );
+  dialog.setWindowTitle( editing ? tr("Edit Web Link") : tr("Insert Web Link") );
   QFormLayout *form = new QFormLayout( &dialog );
   // let the input fields use the full width of the dialog (some styles
   // keep them at their small size hint otherwise)

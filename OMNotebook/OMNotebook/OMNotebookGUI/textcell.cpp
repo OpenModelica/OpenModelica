@@ -102,6 +102,36 @@ namespace IAEX
   }
 
   /*!
+   * \brief Context menu, adds "Edit web link..." when right-clicking a
+   * link to a web page (http/https).
+   */
+  void MyTextBrowser::contextMenuEvent(QContextMenuEvent *event)
+  {
+    const QString scheme = QUrl( anchorAt( event->pos() ) ).scheme().toLower();
+    if( scheme != QLatin1String("http") && scheme != QLatin1String("https") )
+    {
+      QTextBrowser::contextMenuEvent( event );
+      return;
+    }
+
+    // put the cursor into the link, unless the user right-clicked a selection
+    if( !textCursor().hasSelection() )
+      setTextCursor( cursorForPosition( event->pos() ) );
+
+    QMenu *menu = createStandardContextMenu( event->pos() );
+    menu->addSeparator();
+    QAction *editAction = menu->addAction( tr("Edit web link...") );
+    editAction->setEnabled( !isReadOnly() );
+
+    QAction *chosen = menu->exec( event->globalPos() );
+    delete menu;
+
+    // the notebook window owns the dialog
+    if( chosen == editAction )
+      QMetaObject::invokeMethod( window(), "insertWebLink", Qt::QueuedConnection );
+  }
+
+  /*!
    * \author Anders Fernström
    * \date 2005-11-28
    *
