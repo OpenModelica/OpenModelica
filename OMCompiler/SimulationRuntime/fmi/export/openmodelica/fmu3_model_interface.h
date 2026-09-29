@@ -146,6 +146,9 @@ typedef struct {
   modelica_integer* integerParameter;
   modelica_boolean* booleanParameter;
   modelica_string* stringParameter;
+  /* delay() and spatialDistribution() histories, see delayStateWords */
+  double* history;
+  size_t nHistory;
 } INTERNAL_FMU_STATE;
 
 fmi3Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);

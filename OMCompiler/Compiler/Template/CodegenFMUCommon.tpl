@@ -220,7 +220,7 @@ template ScalarVariableAttribute(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
-  let variability_ = getVariability(variability)
+  let variability_ = getVariabilityFMI1(variability, type_)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
@@ -254,6 +254,19 @@ match variability_
   case SOME(CONTINUOUS(__)) then "continuous"
   else "continuous"
 end getVariability;
+
+template getVariabilityFMI1(Option<Variability> variability_, DAE.Type type_)
+ "getVariability of an FMI 1.0 ScalarVariable: continuous is for Real only, as
+  in FMI 2.0 (see getVariabilityFMI2)."
+::=
+match type_
+  case T_REAL(__) then getVariability(variability_)
+  else
+    match variability_
+      case SOME(CONTINUOUS(__)) then "discrete"
+      case NONE() then "discrete"
+      else getVariability(variability_)
+end getVariabilityFMI1;
 
 template getAliasVar(AliasVariable aliasvar)
  "Returns the alias Attribute of ScalarVariable."
