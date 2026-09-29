@@ -8159,7 +8159,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
      'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = jacobian;'
   %>
 
-  retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
+  retValue = <%if intEq(listLength(ls.vars), 1) then "solve_linear_system_small" else "solve_linear_system"%>(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
 
   /* check if solution process was successful */
   if (retValue > 0){
