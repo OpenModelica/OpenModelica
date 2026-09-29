@@ -80,7 +80,9 @@ add_omedit_test(LanguageServer "${OMEDIT_TEST_LANGUAGESERVER_SOURCES}")
 # Real editor navigation against the same server staged for OMEdit. Builds that
 # deliberately omit the server can supply one with MODELICA_LS_DIR.
 if(MODELICA_LS_STAGE_EXE AND NOT CMAKE_CROSSCOMPILING)
-  add_omedit_test(LanguageServerNavigation "LanguageServer/LanguageServerNavigationTest.cpp")
+  set(OMEDIT_TEST_LANGUAGESERVERNAVIGATION_SOURCES LanguageServer/LanguageServerNavigationTest.cpp
+                                                LanguageServer/LanguageServerNavigationTest.h)
+  add_omedit_test(LanguageServerNavigation "${OMEDIT_TEST_LANGUAGESERVERNAVIGATION_SOURCES}")
   add_executable(OMEditDefinitionTestServer LanguageServer/DefinitionTestServer.cpp)
   target_link_libraries(OMEditDefinitionTestServer PRIVATE Qt6::Core)
   add_dependencies(LanguageServerNavigation OMEditDefinitionTestServer)
