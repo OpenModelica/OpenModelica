@@ -8204,6 +8204,20 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     >>
     res
 
+  case ASUB(exp=range as RANGE(ty=T_ARRAY(ty = T_REAL()),step=NONE()), sub={idx}) then
+    let res = tempDecl("modelica_real", &varDecls, &varFrees)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let start = daeExp(range.start, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let stop = daeExp(range.stop, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let &preExp += <<
+    <%res%> = <%idx1%> + <%start%> - 1;
+    if (<%res%> > <%stop%> + 0.5) {
+      <%raiseOrThrow()%>(threadData, "Value %f out of bounds for range <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(range,"\""))%>", <%res%>);
+      <%res%> = <%stop%>;
+    }
+    >>
+    res
+
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
     error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%ExpressionDumpTpl.dumpExp(exp,"\"")%> index:<%ExpressionDumpTpl.dumpSubscript(idx)%>')
 

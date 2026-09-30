@@ -122,12 +122,12 @@ algorithm
     case Expression.LUNARY()            then simplifyLogicUnary(exp);
     case Expression.RELATION()          then simplifyRelation(exp);
     case Expression.IF()                then simplifyIf(exp);
-    case Expression.CAST()              then simplifyCast(simplify(exp.exp), exp.ty);
-    case Expression.UNBOX()             then Expression.UNBOX(simplify(exp.exp), exp.ty);
+    case Expression.CAST()              then Expression.typeCast(simplify(exp.exp), exp.ty);
+    case Expression.UNBOX()             then Expression.unbox(simplify(exp.exp));
     case Expression.SUBSCRIPTED_EXP()   then simplifySubscriptedExp(exp);
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
-    case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
+    case Expression.BOX()               then Expression.box(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
@@ -1376,30 +1376,6 @@ algorithm
 
   end match;
 end simplifyIf;
-
-function simplifyCast
-  input Expression exp;
-  input Type ty;
-  output Expression castExp;
-algorithm
-  castExp := match (ty, exp)
-    local
-      Type ety;
-
-    case (Type.REAL(), Expression.INTEGER())
-      then Expression.REAL(intReal(exp.value));
-
-    case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
-      algorithm
-        ety := Type.unliftArray(ty);
-        exp.elements := Array.map(exp.elements, function simplifyCast(ty = ety));
-        exp.ty := Type.setArrayElementType(exp.ty, Type.arrayElementType(ty));
-      then
-        exp;
-
-    else Expression.CAST(ty, exp);
-  end match;
-end simplifyCast;
 
 function isEvaluableLiteral
   "literals that can be combined by constant evaluation, records need their operator functions"
