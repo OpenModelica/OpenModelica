@@ -6498,6 +6498,21 @@ template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, C
   else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
 end resizableColCountRegular;
 
+template allWholeSubs(list<Subscript> subs)
+ "non empty if all subscripts are whole dimensions"
+::=
+  match subs
+  case {} then 'true'
+  case WHOLEDIM() :: rest then allWholeSubs(rest)
+  else ''
+end allWholeSubs;
+
+template wholeDimsSize(list<Dimension> dims, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "product of the sizes of all dimensions"
+::=
+  (dims |> dim => '(unsigned int)(<%dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)' ;separator=" * ")
+end wholeDimsSize;
+
 template resizableColCount(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
@@ -6606,6 +6621,21 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             }
           }
           >>
+        case WHOLEDIM() :: WHOLEDIM() :: WHOLEDIM() :: _ then
+          // 3 or more whole dims (e.g. element[:, :, :].T): all elements of the variable
+          match allWholeSubs(crefSubs(seed))
+          case "" then error(sourceInfo(), 'unsupported mix of whole and other subscripts in seed <%crefStrNoUnderscore(seed)%>')
+          else
+            let total = wholeDimsSize(crefDims(seed), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wa<%v.index%>;
+              for (_wa<%v.index%> = 0; _wa<%v.index%> < (unsigned int)(<%total%>); _wa<%v.index%>++) {
+                col_counts[<%v.index%> + _wa<%v.index%>]++;
+              }
+            }
+            >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
@@ -7079,6 +7109,21 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             }
           }
           >>
+        case WHOLEDIM() :: WHOLEDIM() :: WHOLEDIM() :: _ then
+          // 3 or more whole dims (e.g. element[:, :, :].T): all elements of the variable
+          match allWholeSubs(crefSubs(seed))
+          case "" then error(sourceInfo(), 'unsupported mix of whole and other subscripts in seed <%crefStrNoUnderscore(seed)%>')
+          else
+            let total = wholeDimsSize(crefDims(seed), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wa<%v.index%>;
+              for (_wa<%v.index%> = 0; _wa<%v.index%> < (unsigned int)(<%total%>); _wa<%v.index%>++) {
+                <%spPattern%>->index[col_fill[<%v.index%> + _wa<%v.index%>]++] = <%rowExpr%>;
+              }
+            }
+            >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
