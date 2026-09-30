@@ -1996,6 +1996,55 @@ algorithm
   end if;
 end contiguousSlice;
 
+public function stackArrayLength
+  "The number of elements of a function's array variable that can be stored on
+   the stack: not an output, not bound from outside or to a shared literal,
+   Real, Integer or Boolean elements, constant dimensions and at most 256
+   elements. 0 for any other variable."
+  input SimCodeFunction.Variable var;
+  input SimCodeFunction.Function fn;
+  output Integer n = 0;
+protected
+  list<SimCodeFunction.Variable> outVars = match fn case SimCodeFunction.FUNCTION() then fn.outVars; else {}; end match;
+algorithm
+  _ := match var
+    case SimCodeFunction.VARIABLE(parallelism = DAE.NON_PARALLEL(), bind_from_outside = false)
+      algorithm
+        if listEmpty(var.instDims) then
+          return;
+        end if;
+        _ := match var.value
+          case SOME(DAE.SHARED_LITERAL()) algorithm return; then ();
+          else ();
+        end match;
+        _ := match Types.arrayElementType(var.ty)
+          case DAE.T_REAL() then ();
+          case DAE.T_INTEGER() then ();
+          case DAE.T_BOOL() then ();
+          else algorithm return; then ();
+        end match;
+        for v in outVars loop
+          _ := match v
+            case SimCodeFunction.VARIABLE() guard ComponentReferenceBasics.crefEqual(v.name, var.name)
+              algorithm return; then ();
+            else ();
+          end match;
+        end for;
+        n := 1;
+        for d in var.instDims loop
+          n := match d
+            case DAE.DIM_INTEGER() guard d.integer > 0 then n * d.integer;
+            else 0;
+          end match;
+        end for;
+        if n > 256 then
+          n := 0;
+        end if;
+      then ();
+    else ();
+  end match;
+end stackArrayLength;
+
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
    Jacobian only has the elements that depend on the seeds; the others are zero."
