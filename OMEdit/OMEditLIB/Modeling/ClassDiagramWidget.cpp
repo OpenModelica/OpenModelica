@@ -136,10 +136,7 @@ ClassDiagramWidget::ClassDiagramWidget(QWidget *pParent)
   connect(mpLayoutComboBox, SIGNAL(currentIndexChanged(int)), SLOT(refresh()));
   connect(mpDepthSpinBox, SIGNAL(valueChanged(int)), SLOT(refresh()));
   connect(mpShowModifiersCheckBox, SIGNAL(toggled(bool)), SLOT(refresh()));
-  mpClassDiagramView = new QWebEngineView;
-  ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(mpClassDiagramView);
-  mpClassDiagramView->setPage(pClassDiagramPage);
-  connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
+  mpClassDiagramView = createClassDiagramView();
   // layout
   QHBoxLayout *pToolsLayout = new QHBoxLayout;
   pToolsLayout->setContentsMargins(0, 0, 0, 0);
@@ -152,11 +149,25 @@ ClassDiagramWidget::ClassDiagramWidget(QWidget *pParent)
   pToolsLayout->addWidget(mpRefreshToolButton);
   pToolsLayout->addWidget(mpSaveAsToolButton);
   pToolsLayout->addWidget(mpDockToolButton);
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addLayout(pToolsLayout);
-  pMainLayout->addWidget(mpClassDiagramView, 1);
-  setLayout(pMainLayout);
+  mpMainLayout = new QVBoxLayout;
+  mpMainLayout->setContentsMargins(0, 0, 0, 0);
+  mpMainLayout->addLayout(pToolsLayout);
+  mpMainLayout->addWidget(mpClassDiagramView, 1);
+  setLayout(mpMainLayout);
+}
+
+QWebEngineView* ClassDiagramWidget::createClassDiagramView()
+{
+  QWebEngineView *pClassDiagramView = new QWebEngineView;
+  ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(pClassDiagramView);
+  pClassDiagramView->setPage(pClassDiagramPage);
+  connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
+  return pClassDiagramView;
+}
+
+QString ClassDiagramWidget::pageFileName() const
+{
+  return QString("%1/classdiagram.html").arg(Utilities::tempDirectory());
 }
 
 /*!
@@ -210,10 +221,24 @@ void ClassDiagramWidget::toggleDocked()
  * \brief ClassDiagramWidget::floatingChanged
  * A floating dock gets the frame of the window manager, which moves it; Qt's own frame is moved
  * by Qt, which some window managers (WSLg) don't allow, so the window couldn't be moved at all.
+ * Only on X11/Wayland: on Windows changing the flags recreates the native window under the web
+ * view, which loses its D3D11 device when it is docked again, and the diagram stays blank.
  * \param floating
  */
 void ClassDiagramWidget::floatingChanged(bool floating)
 {
+  mpDockToolButton->setToolTip(floating ? tr("Dock in the main window") : tr("Float in a window of its own"));
+  /* On Windows the web view stays black once the dock floats or docks, as its native window is
+   * recreated, so a new view shows the page again; the diagram isn't asked from omc again.
+   */
+  QWebEngineView *pClassDiagramView = createClassDiagramView();
+  delete mpMainLayout->replaceWidget(mpClassDiagramView, pClassDiagramView);
+  mpClassDiagramView->deleteLater();
+  mpClassDiagramView = pClassDiagramView;
+  if (!mClassName.isEmpty()) {
+    mpClassDiagramView->setUrl(QUrl::fromLocalFile(pageFileName()));
+  }
+#if !defined(Q_OS_WIN) && !defined(Q_OS_MAC)
   QDockWidget *pDockWidget = dockWidget();
   if (!pDockWidget) {
     return;
@@ -230,7 +255,7 @@ void ClassDiagramWidget::floatingChanged(bool floating)
     // Explicitly, or it is shown with the main window.
     pDockWidget->setVisible(visible);
   }
-  mpDockToolButton->setToolTip(floating ? tr("Dock in the main window") : tr("Float in a window of its own"));
+#endif
 }
 
 /*!
@@ -255,7 +280,7 @@ void ClassDiagramWidget::refresh()
     QFile::remove(viewerFileName);
     viewerFile.copy(viewerFileName);
   }
-  QString fileName = QString("%1/classdiagram.html").arg(Utilities::tempDirectory());
+  QString fileName = pageFileName();
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     file.write(htmlPage(mDiagram).toUtf8());
