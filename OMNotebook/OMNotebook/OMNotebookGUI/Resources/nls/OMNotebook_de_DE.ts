@@ -39,7 +39,7 @@
     <message>
         <location filename="../../cellapplication.cpp" line="181"/>
         <source>Could not find installation directory path. Please make sure OpenModelica is installed properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Installationsverzeichnis konnte nicht gefunden werden. Bitte stellen Sie sicher, dass OpenModelica korrekt installiert ist.</translation>
     </message>
     <message>
         <location filename="../../cellapplication.cpp" line="246"/>
@@ -75,13 +75,14 @@ Rückgabe:
     <message>
         <location filename="../../celldocument.cpp" line="1020"/>
         <source>Error</source>
-        <translation type="unfinished">Fehler</translation>
+        <translation>Fehler</translation>
     </message>
     <message>
         <location filename="../../celldocument.cpp" line="1021"/>
         <source>Could not open the link in the default web browser:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Link konnte nicht im Standard-Webbrowser geöffnet werden:
+%1</translation>
     </message>
 </context>
 <context>
@@ -152,7 +153,7 @@ Rückgabe:
     <message>
         <location filename="../../latexcell.cpp" line="949"/>
         <source>Error: unable to write to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler: Schreiben nach %1 nicht möglich</translation>
     </message>
     <message>
         <location filename="../../latexcell.cpp" line="970"/>
@@ -168,7 +169,7 @@ The script generates more than 1 page.</source>
     <message>
         <location filename="../../latexcell.cpp" line="1045"/>
         <source>LaTeX rendering is not available in the web build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die LaTeX-Darstellung ist in der Web-Version nicht verfügbar.</translation>
     </message>
     <message>
         <location filename="../../latexcell.cpp" line="1054"/>
@@ -202,7 +203,7 @@ The script generates more than 1 page.</source>
     <message>
         <location filename="../../textcell.cpp" line="127"/>
         <source>Edit web link...</source>
-        <translation type="unfinished"></translation>
+        <translation>Weblink bearbeiten...</translation>
     </message>
 </context>
 <context>
@@ -659,12 +660,12 @@ The script generates more than 1 page.</source>
     <message>
         <location filename="../../notebook.cpp" line="1293"/>
         <source>&amp;Web link...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Weblink...</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="1295"/>
         <source>Insert or change a link to a web page (http/https)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt einen Link auf eine Webseite (http/https) ein oder ändert ihn</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2136"/>
@@ -713,13 +714,15 @@ The script generates more than 1 page.</source>
         <location filename="../../notebook.cpp" line="2399"/>
         <source>In OpenFile(), Exception: 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>In OpenFile(), Ausnahme: 
+</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2582"/>
         <source>In HelpText(), Exception: 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>In HelpText(), Ausnahme: 
+</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2459"/>
@@ -739,12 +742,12 @@ The script generates more than 1 page.</source>
     <message>
         <location filename="../../notebook.cpp" line="2611"/>
         <source>Save As</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichern unter</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2611"/>
         <source>File name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateiname:</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2646"/>
@@ -771,7 +774,7 @@ The script generates more than 1 page.</source>
     <message>
         <location filename="../../notebook.cpp" line="2760"/>
         <source>The document %1 has been printed to %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Dokument %1 wurde in die Datei %2 gedruckt.</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2786"/>
@@ -817,32 +820,32 @@ The script generates more than 1 page.</source>
     <message>
         <location filename="../../notebook.cpp" line="3569"/>
         <source>Edit Web Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Weblink bearbeiten</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="3569"/>
         <source>Insert Web Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Weblink einfügen</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="3579"/>
         <source>Text:</source>
-        <translation type="unfinished"></translation>
+        <translation>Text:</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="3580"/>
         <source>URL:</source>
-        <translation type="unfinished"></translation>
+        <translation>URL:</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="3598"/>
         <source>Error</source>
-        <translation type="unfinished">Fehler</translation>
+        <translation>Fehler</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="3599"/>
         <source>Please enter a valid web address starting with http:// or https://</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte eine gültige Webadresse eingeben, die mit http:// oder https:// beginnt.</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="3764"/>
