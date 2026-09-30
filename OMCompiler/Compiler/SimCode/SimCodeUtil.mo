@@ -13070,7 +13070,7 @@ algorithm
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
-          fmi3ArrayGroups(inModelInfo)));
+          fmi3ArrayGroups(inModelInfo, derivatives)));
 else
   // create empty model structure
   try
@@ -14108,14 +14108,19 @@ end createMinimalFMIModelStructure;
 protected function fmi3ArrayGroups
   "The arrays the FMI 3.0 modelDescription.xml lists as one variable each:
    all elements exported, consecutive in row-major order and alike but for the
-   start value; a state array only together with its derivative array."
+   start value; a state array only together with its derivative array, and
+   only if that loses none of the derivatives' dependencies."
   input SimCode.ModelInfo modelInfo;
+  input list<SimCode.FmiUnknown> derivatives = {};
   output list<SimCode.FmiArray> arrays = {};
 protected
   SimCodeVar.SimVars vars = modelInfo.vars;
   UnorderedSet<DAE.ComponentRef> aliasTargets;
   UnorderedMap<DAE.ComponentRef, SimCode.FmiArray> ders;
   list<SimCode.FmiArray> stateArrays;
+  list<tuple<SimCode.FmiArray, SimCode.FmiArray>> pairs = {};
+  UnorderedSet<Integer> lossy;
+  SimCode.FmiArray a, d;
 algorithm
   if not FMI.isFMIVersion30() or Config.simCodeTarget() == "Cpp" or Flags.getConfigBool(Flags.DAE_MODE) then
     return;
@@ -14133,12 +14138,18 @@ algorithm
   for a in fmi3ArraysOfList(vars.derivativeVars, aliasTargets) loop
     UnorderedMap.add(a.first, a, ders);
   end for;
-  for a in stateArrays loop
-    arrays := match UnorderedMap.get(ComponentReference.crefPrefixDer(a.first), ders)
-      local SimCode.FmiArray d;
-      case SOME(d) then d :: a :: arrays;
-      else arrays;
+  for sa in stateArrays loop
+    pairs := match UnorderedMap.get(ComponentReference.crefPrefixDer(sa.first), ders)
+      case SOME(d) then (sa, d) :: pairs;
+      else pairs;
     end match;
+  end for;
+  lossy := fmi3LossyStateArrays(pairs, derivatives);
+  for p in listReverse(pairs) loop
+    (a, d) := p;
+    if not UnorderedSet.contains(a.fmiIndex, lossy) then
+      arrays := d :: a :: arrays;
+    end if;
   end for;
   for lst in {vars.algVars, vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
               vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars} loop
@@ -14146,6 +14157,66 @@ algorithm
   end for;
   arrays := listReverse(arrays);
 end fmi3ArrayGroups;
+
+protected function fmi3LossyStateArrays
+  "The state arrays, by first FMI index, that listed as one variable would look
+   denser than they are: <ModelStructure> can only say that an array's derivative
+   depends on whole arrays."
+  input list<tuple<SimCode.FmiArray, SimCode.FmiArray>> pairs "state and derivative array";
+  input list<SimCode.FmiUnknown> derivatives;
+  output UnorderedSet<Integer> lossy = UnorderedSet.new(Util.id, intEq);
+protected
+  UnorderedMap<Integer, Integer> stateOf = UnorderedMap.new<Integer>(Util.id, intEq);
+  UnorderedMap<Integer, Integer> sizeOf = UnorderedMap.new<Integer>(Util.id, intEq);
+  UnorderedMap<Integer, Integer> derOf = UnorderedMap.new<Integer>(Util.id, intEq);
+  type Deps = list<Integer>;
+  UnorderedMap<Integer, Deps> depsOf = UnorderedMap.new<Deps>(Util.id, intEq);
+  UnorderedMap<Integer, Integer> hits;
+  SimCode.FmiArray a, d;
+  list<Integer> ds;
+  Integer s, n;
+algorithm
+  for p in pairs loop
+    (a, d) := p;
+    UnorderedMap.add(a.fmiIndex, a.numElements, sizeOf);
+    for k in 0:a.numElements - 1 loop
+      UnorderedMap.add(a.fmiIndex + k, a.fmiIndex, stateOf);
+      UnorderedMap.add(d.fmiIndex + k, a.fmiIndex, derOf);
+    end for;
+  end for;
+  for u in derivatives loop
+    ds := List.sortedUnique(List.sort(u.dependencies, intGt), intEq);
+    hits := UnorderedMap.new<Integer>(Util.id, intEq);
+    for dep in ds loop
+      s := UnorderedMap.getOrDefault(dep, stateOf, 0);
+      if s > 0 then
+        UnorderedMap.add(s, UnorderedMap.getOrDefault(s, hits, 0) + 1, hits);
+      end if;
+    end for;
+    for h in UnorderedMap.toList(hits) loop
+      (s, n) := h;
+      if n <> UnorderedMap.getOrFail(s, sizeOf) then
+        UnorderedSet.add(s, lossy);
+      end if;
+    end for;
+    s := UnorderedMap.getOrDefault(u.index, derOf, 0);
+    if s > 0 then
+      _ := match UnorderedMap.get(s, depsOf)
+        local list<Integer> first;
+        case SOME(first)
+          algorithm
+            if not List.isEqualOnTrue(first, ds, intEq) then
+              UnorderedSet.add(s, lossy);
+            end if;
+          then ();
+        else
+          algorithm
+            UnorderedMap.add(s, ds, depsOf);
+          then ();
+      end match;
+    end if;
+  end for;
+end fmi3LossyStateArrays;
 
 protected function getAliasVarCref
   input SimCodeVar.SimVar var;
