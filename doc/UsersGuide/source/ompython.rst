@@ -1,3 +1,5 @@
+.. _ompython:
+
 OMPython - OpenModelica Python Interface
 ========================================
 
@@ -239,7 +241,7 @@ doing a plot:
   val(h , 2.0)
 
 Import As Library
-^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~
 
 To use the module from within another python program, simply import the selected :code:`OMCSession*`
 class from within the selected program.
