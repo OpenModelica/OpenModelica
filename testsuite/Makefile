@@ -5,7 +5,6 @@ msl41simulation.log \
 msl41simulation_cpp_mini.log \
 hummod.log \
 ThermoSysPro_simulation.log \
-flatteningExercises.log \
 flatteningPlanarMechanics.log \
 TestMedia.log \
 cppruntime.log \
@@ -89,7 +88,6 @@ simulationBuiltin_delay.log \
 simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 msl41simulation.log \
-flatteningExercises.log \
 simulation-start-value-selection.log \
 simulationinitialization.log \
 simulationqss.log \
@@ -604,9 +602,6 @@ flatteningPlanarMechanics.log: omc-diff
 	@echo $@ done
 simulationPlanarMechanics.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile test > $@
-	@echo $@ done
-flatteningExercises.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/Exercises -f Makefile test > $@
 	@echo $@ done
 simulation-start-value-selection.log: omc-diff
 	$(MAKE) -C simulation/modelica/start_value_selection -f Makefile test > $@
