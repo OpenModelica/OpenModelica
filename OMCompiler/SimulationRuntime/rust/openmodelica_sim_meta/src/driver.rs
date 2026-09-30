@@ -1317,6 +1317,25 @@ static TEARDOWN_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_teardown_hook(f: fn()) {
     TEARDOWN_HOOK.store(f as usize, Ordering::Relaxed);
 }
+/// Takes the run's `### STATISTICS ###` where C's `finishSimulation` prints it,
+/// ahead of the teardown. A host without it logs [`RunResult::stats`] itself.
+static STATS_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_stats_hook(f: fn(&SolveStats)) {
+    STATS_HOOK.store(f as usize, Ordering::Relaxed);
+}
+fn signal_stats(e: &mut dyn SimEngine, stats: &SolveStats) {
+    let p = STATS_HOOK.load(Ordering::Relaxed);
+    if p == 0 {
+        return;
+    }
+    let f: fn(&SolveStats) = unsafe { core::mem::transmute(p) };
+    let mut now = stats.clone();
+    rtclock::accumulate(rtclock::TOTAL);
+    (now.timers, now.tcalls) = rtclock::snapshot();
+    rtclock::tick(rtclock::TOTAL);
+    now.systems = e.sys_stats();
+    f(&now);
+}
 fn signal_teardown() {
     let p = TEARDOWN_HOOK.load(Ordering::Relaxed);
     if p != 0 {
@@ -5236,6 +5255,7 @@ pub fn drive(
     if !out_names.is_empty() {
         write_output_vars(e, model, sim_data, &rows, n_reals as usize, &out_names)?;
     }
+    signal_stats(e, &stats);
 
     // C runs the `-reconcile*` procedures between the solver and `linearize`, and
     // prints their output after the run's success line — which is where the
