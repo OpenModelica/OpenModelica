@@ -11,16 +11,18 @@ runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start);
 compareVars :=
 {
    "aims.idq_rr[1]",
    "aims.idq_rr[2]",
-   "aims.lssigma.i_[1]",
-   "aims.lssigma.i_[2]",
-   "aims.lszero.i",
-   "aims.lrzero.i",
+   "aims.idq_sr[1]",
+   "aims.idq_sr[2]",
+   "aims.ir[1]",
+   "aims.ir[2]",
+   "aims.is[1]",
+   "aims.is[2]",
    "loadInertia.phi",
    "loadInertia.w"
 };
@@ -34,13 +36,13 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start
-// {"aims.idq_rr[1]", "aims.idq_rr[2]", "aims.lssigma.i_[1]", "aims.lssigma.i_[2]", "aims.lszero.i", "aims.lrzero.i", "loadInertia.phi", "loadInertia.w"}
+// {"aims.idq_rr[1]", "aims.idq_rr[2]", "aims.idq_sr[1]", "aims.idq_sr[2]", "aims.ir[1]", "aims.ir[2]", "aims.is[1]", "aims.is[2]", "loadInertia.phi", "loadInertia.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start', options = '', outputFormat = 'mat', variableFilter = 'time|aims.idq_rr.1.|aims.idq_rr.2.|aims.lssigma.i_.1.|aims.lssigma.i_.2.|aims.lszero.i|aims.lrzero.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start', options = '', outputFormat = 'mat', variableFilter = 'time|aims.idq_rr.1.|aims.idq_rr.2.|aims.idq_sr.1.|aims.idq_sr.2.|aims.ir.1.|aims.ir.2.|aims.is.1.|aims.is.2.|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start_res.mat
-// Note: Reference file /home/andreas/workdir/OM/OpenModelicaMaster/testsuite/ReferenceFiles/msl41/Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start.mat does not exist. Cannot determine if the result improved!
+// Files Equal!
 // "true
 // "
 // ""

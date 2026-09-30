@@ -90,7 +90,6 @@ simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 msl41simulation.log \
 flatteningExercises.log \
-simulationExercises.log \
 simulation-start-value-selection.log \
 simulationinitialization.log \
 simulationqss.log \
@@ -98,7 +97,6 @@ simulationunitcheck.log \
 simulationtearing.log \
 simulationDrModelica.log \
 simulationPlanarMechanics.log \
-simulationExercises.log \
 simulation-start-value-selection.log \
 TestMediaFrancesco.log \
 ThermoPower.log \
@@ -609,9 +607,6 @@ simulationPlanarMechanics.log: omc-diff
 	@echo $@ done
 flatteningExercises.log: omc-diff
 	$(MAKE) -C flattening/libraries/3rdParty/Exercises -f Makefile test > $@
-	@echo $@ done
-simulationExercises.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/Exercises -f Makefile test > $@
 	@echo $@ done
 simulation-start-value-selection.log: omc-diff
 	$(MAKE) -C simulation/modelica/start_value_selection -f Makefile test > $@
