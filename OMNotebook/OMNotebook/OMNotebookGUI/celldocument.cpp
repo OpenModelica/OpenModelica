@@ -1014,7 +1014,13 @@ namespace IAEX
     const QString scheme = link->scheme().toLower();
     if( scheme == QLatin1String("http") || scheme == QLatin1String("https") )
     {
-      QDesktopServices::openUrl( *link );
+      if( !QDesktopServices::openUrl( *link ) )
+      {
+        // e.g. no default browser configured
+        QMessageBox::warning( QApplication::activeWindow(), tr("Error"),
+          tr("Could not open the link in the default web browser:\n%1")
+            .arg( link->toString() ) );
+      }
       return;
     }
 
