@@ -853,16 +853,40 @@ protected
     // (the part of them that is in the loop), so arrays and records are never split any further.
     // The inner components of minimal tearing are kept as they are.
   protected
-    Tearing strict;
+    Tearing strict, cellier_strict;
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL())
         guard(not listEmpty(strict.iteration_vars) and not listEmpty(strict.residual_eqns)) algorithm
-        comp.strict := cellierTearingSet(strict, full, equations, funcMap);
+        cellier_strict := cellierTearingSet(strict, full, equations, funcMap);
+        // a linear loop is solved directly as linear system if its tearing set allows it, do not
+        // replace such a tearing set by one that has to be solved as nonlinear system
+        if not (comp.linear and linearSystemCapable(strict) and not linearSystemCapable(cellier_strict)) then
+          comp.strict := cellier_strict;
+        end if;
       then comp;
       else comp;
     end match;
   end cellier;
+
+  function linearSystemCapable
+    "true if the linear system codegen can handle the tearing set: no for equations in the inner
+    equations, for equation residuals only if finalize splits them into rows (partial variables)
+    and partial variables only if they are scalarized"
+    input Tearing strict;
+    output Boolean b;
+  protected
+    Boolean partial_vars = List.any(strict.iteration_vars, isPartialVarSlice);
+  algorithm
+    b := not Array.any(strict.innerEquations, isForComponent)
+      and (partial_vars or not List.any(list(Slice.getT(e) for e in strict.residual_eqns), Equation.isForEquation))
+      and (not partial_vars or Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+  end linearSystemCapable;
+
+  function isForComponent
+    input StrongComponent comp;
+    output Boolean b = List.any(StrongComponent.getEquations(comp), Equation.isForEquation);
+  end isForComponent;
 
   function cellierHasRow
     input Pointer<Equation> eqn;
