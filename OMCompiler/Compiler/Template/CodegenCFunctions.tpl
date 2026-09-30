@@ -1628,7 +1628,7 @@ case FUNCTION(__) then
       let &varDecls += 'jmp_buf *old_mmc_jumper = threadData->mmc_jumper;<%\n%>'
       'threadData->mmc_jumper = old_mmc_jumper;<%\n%>'))
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
+      varInitLocal(var, fn, &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
   let bodyPart = funStatement(body, &varDecls, &varFrees, &auxFunction)
   // Captured before the frees run: they null the local it is read from.
@@ -2434,6 +2434,35 @@ case T_COMPLEX(varLst=vl, complexClassType=n) then
   &<%basename%>__desc<%if args then ', <%args%>'%>, TYPE_DESC_NONE
   >>
 end writeOutVarRecordMembers;
+
+template varInitLocal(Variable var, Function fn, Text &varDecls, Text &varInits, Text &varFrees, Text &auxFunction)
+ "varInit, except that a small array of constant size (stackArrayLength) is
+  stored on the stack. Array assignments copy, so its data never outlives the
+  function; temporaries may share it, so the dimensions are an immortal
+  reference-counted block."
+::=
+  match var
+  case VARIABLE(__) then
+    let n = stackArrayLength(var, fn)
+    if intGt(stackArrayLength(var, fn), 0) then
+      let varName = contextCrefNoPrevExp(name, contextFunction, &auxFunction)
+      let type = expTypeShort(ty)
+      let &varDecls +=
+        <<
+        modelica_<%type%> <%varName%>_data[<%n%>];
+        static struct { mmc_uint_t rc; _index_t d[<%listLength(instDims)%>]; } <%varName%>_dims = { OMC_RC_IMMORTAL, {<%instDims |> d => match d case DIM_INTEGER(__) then integer ;separator=", "%>} };
+        <%type%>_array <%varName%> = {.ndims = <%listLength(instDims)%>, .dim_size = <%varName%>_dims.d, .data = <%varName%>_data, .flexible = 0, .owns_data = 0};<%\n%>
+        >>
+      let &varInits += (match value
+        case SOME(rhs_exp) then
+          let &preExp = buffer ""
+          let rhs = daeExp(rhs_exp, contextFunction, &preExp, &varDecls, &varFrees, &auxFunction)
+          '<%preExp%><%type%>_array_copy_data(<%rhs%>, <%varName%>);<%\n%>'
+        else 'memset(<%varName%>_data, 0, sizeof(<%varName%>_data));<%\n%>')
+      ""
+    else varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction)
+  else varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction)
+end varInitLocal;
 
 template varInit(Variable var, String outStruct, Text &varDecls, Text &varInits, Text &varFrees, Text &auxFunction)
  "Generates code to initialize variables.

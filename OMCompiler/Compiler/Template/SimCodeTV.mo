@@ -1738,6 +1738,12 @@ package SimCodeCodegenUtil
     output list<Integer> sliceDims;
   end contiguousSliceDims;
 
+  function stackArrayLength
+    input SimCodeFunction.Variable var;
+    input SimCodeFunction.Function fn;
+    output Integer n;
+  end stackArrayLength;
+
   function simVarExactFromHT
     input DAE.ComponentRef inCref;
     input HashTableCrefSimVar.HashTable crefToSimVarHT;
