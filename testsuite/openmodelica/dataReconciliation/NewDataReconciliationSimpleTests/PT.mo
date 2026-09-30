@@ -1,7 +1,7 @@
 within NewDataReconciliationSimpleTests;
 function PT
-  input Modelica.SIunits.AbsolutePressure P "Pressure";
-  input Modelica.SIunits.Temperature T "Temperature";
+  input Modelica.Units.SI.AbsolutePressure P "Pressure";
+  input Modelica.Units.SI.Temperature T "Temperature";
   input Integer mode = 0 "IF97 region - 0:automatic computation";
   input Integer fluid = 1 "Fluid number - 1: IF97 - 7: SimpleWater";
 

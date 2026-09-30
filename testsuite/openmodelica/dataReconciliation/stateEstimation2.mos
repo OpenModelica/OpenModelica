@@ -1,7 +1,8 @@
-// name:     Splitter5g
+// name:     stateEstimation2
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Inputs.csv
+// teardown_command: rm -rf stateEstimation2_Splitter5g stateEstimation2_Splitter5g.* stateEstimation2_Splitter5g_* Reconciled_stateEstimation2_Splitter5g.mo
 
 
 // set command line options to compute boundaryConditions
@@ -11,10 +12,10 @@ getErrorString();
 loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-simulate(NewDataReconciliationSimpleTests.Splitter5g, simflags="-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Inputs.csv -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.Splitter5g, fileNamePrefix="stateEstimation2_Splitter5g", simflags="-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Inputs.csv -lv=LOG_JAC");
 getErrorString();
 
-readFile("NewDataReconciliationSimpleTests.Splitter5g_Outputs.csv");
+readFile("stateEstimation2_Splitter5g_Outputs.csv");
 getErrorString();
 
 
@@ -22,13 +23,13 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
-// ModelInfo: NewDataReconciliationSimpleTests.Splitter5g
+// ModelInfo: stateEstimation2_Splitter5g
 // ==========================================================================
 //
 //
@@ -1140,7 +1141,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcileState",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5g', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Inputs.csv -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'stateEstimation2_Splitter5g', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Inputs.csv -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | Reconcile State Estimation Starting!

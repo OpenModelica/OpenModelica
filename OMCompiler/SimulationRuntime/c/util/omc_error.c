@@ -676,6 +676,11 @@ void omc_external_error(threadData_t *threadData)
 }
 #endif
 
+void omc_error_raise(threadData_t *threadData)
+{
+  threadData->errorState = 1;
+}
+
 int omc_error_take(threadData_t *threadData)
 {
   int raised = threadData->errorState;

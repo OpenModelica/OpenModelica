@@ -7,8 +7,8 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadModel(ThermoSysPro); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticExchangerWaterSteamFlueGases, stopTime=1000); getErrorString();
 
@@ -33,17 +33,17 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/WaterSteam/BoundaryConditions/Sink.mo:17:3-19:16:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:59:3-60:83:writable] Warning: Connector Cws2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:61:3-63:16:writable] Warning: Connector Cws1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:64:3-65:83:writable] Warning: Connector Cfg1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:66:3-68:16:writable] Warning: Connector Cfg2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/BoundaryConditions/SourcePQ.mo:29:3-30:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:18:3-19:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Sink.mo:15:3-17:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// "[ThermoSysPro 4.2.0/WaterSteam/BoundaryConditions/Sink.mo:10:3-11:80:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:34:3-35:78:writable] Warning: Connector Cws2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:36:3-37:80:writable] Warning: Connector Cws1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:38:3-39:78:writable] Warning: Connector Cfg1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/MultiFluids/HeatExchangers/StaticExchangerWaterSteamFlueGases.mo:40:3-41:80:writable] Warning: Connector Cfg2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/BoundaryConditions/SourcePQ.mo:16:3-17:78:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:15:3-16:78:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/Sink.mo:12:3-13:80:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}

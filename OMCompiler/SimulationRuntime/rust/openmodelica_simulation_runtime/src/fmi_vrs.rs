@@ -6,16 +6,19 @@
 //! from the geometry. What an alias stands for does not; the generated code hands
 //! that over in `callback->fmi*AliasIndexes`.
 //!
-//! String and external-object variables are left out: their `SimData` region is
-//! opaque here (a `modelica_string` is a pointer, not the flat layout's handle),
-//! so the component reports their value references as unresolvable rather than
-//! serving a wrong value.
+//! A String's slot is opaque to the flat layout (a `modelica_string` is a pointer
+//! here), so the component reaches it through `SimEngine::string_at`/`set_string`.
+//! External objects have no value to serve.
 
 use core::ffi::c_int;
 
 use openmodelica_sim_meta::{FmiVr, Layout, Neg, REAL_OFF, WTy};
 
 use crate::abi::*;
+
+fn cstr(p: *const core::ffi::c_char) -> String {
+    if p.is_null() { String::new() } else { unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+}
 
 /// One base type's block of value references.
 struct Block {
@@ -103,6 +106,27 @@ fn elem_lens((index, n_array): (*const usize, u32), n_scalar: u32) -> Vec<u32> {
     out
 }
 
+/// The `$<name>_der` variable `-d=fmuExperimental` adds for a Real output, per
+/// scalar Real variable: C's `mapOutputReference2RealOutputDerivatives`.
+fn output_derivatives(md: &MODEL_DATA, si: &SIMULATION_INFO) -> Vec<Option<u32>> {
+    let n = md.nVariablesRealArray.max(0) as usize;
+    let vars = if md.realVarsData.is_null() { &[][..] } else { unsafe { core::slice::from_raw_parts(md.realVarsData, n) } };
+    let name = |v: &STATIC_REAL_DATA| cstr(v.info.name);
+    let scalar = |a: usize| unsafe { *si.realVarsIndex.add(a) } as u32;
+    let by_name: std::collections::HashMap<String, u32> =
+        vars.iter().enumerate().filter(|(_, v)| v.dimension.scalar_length == 1).map(|(a, v)| (name(v), scalar(a))).collect();
+    let mut out = vec![None; md.nVariablesReal.max(0) as usize];
+    for (a, v) in vars.iter().enumerate() {
+        if v.dimension.scalar_length == 1
+            && let Some(&d) = by_name.get(&format!("${}_der", name(v)))
+            && let Some(slot) = out.get_mut(scalar(a) as usize)
+        {
+            *slot = Some(d);
+        }
+    }
+    out
+}
+
 /// The table, and the fmi-ls-dae `EnableDAEParameter` value reference (0 without
 /// one). The value references are the globally unique FMI 3.0 ones: an FMI 2.0 one
 /// is its base type's block base less than this.
@@ -154,8 +178,23 @@ pub(crate) fn build(data: *mut DATA, layout: &Layout) -> (Vec<FmiVr>, u32) {
             wty: WTy::I32,
             neg: Neg::Not,
         },
+        Block {
+            n_var: md.nVariablesString as u32,
+            n_param: md.nParametersString as u32,
+            n_alias: md.nAliasString as u32,
+            var_index: (si.stringVarsIndex, md.nVariablesStringArray as u32),
+            param_index: (si.stringParamsIndex, md.nParametersStringArray as u32),
+            alias_index: (si.stringAliasIndex, md.nAliasStringArray as u32),
+            table: cb.fmiStringAliasIndexes,
+            var_off: layout.str_off,
+            param_off: layout.sparam_off,
+            stride: 4,
+            wty: WTy::I32,
+            neg: Neg::None,
+        },
     ];
 
+    let ders = output_derivatives(md, si);
     let mut out = Vec::new();
     let mut base = 0u32;
     for (b, blk) in blocks.iter().enumerate() {
@@ -179,22 +218,20 @@ pub(crate) fn build(data: *mut DATA, layout: &Layout) -> (Vec<FmiVr>, u32) {
                 wty: blk.wty,
                 negate: if negate { blk.neg } else { Neg::None },
                 start_off: if b == 0 && i < blk.n_var { layout.real_start_off(i) } else { 0 },
-                is_string: false,
-                der_off: 0,
+                is_string: b == 3,
+                der_off: match (b, ders.get(i as usize)) {
+                    (0, Some(Some(d))) if i < blk.n_var => blk.slot(*d),
+                    _ => 0,
+                },
                 len: lens[section].get(k as usize).copied().unwrap_or(1),
             });
         }
         base += blk.size();
     }
 
-    // The string and external-object blocks hold no resolvable slot, but their
-    // value references still shift everything that follows.
-    let time_vr = base
-        + md.nVariablesString as u32
-        + md.nParametersString as u32
-        + md.nAliasString as u32
-        + md.nExtObjs as u32
-        + layout.n_base_clocks;
+    // External objects hold no resolvable slot, but their value references still
+    // shift everything that follows.
+    let time_vr = base + md.nExtObjs as u32 + layout.n_base_clocks;
     let scalar = |vr: u32, off: u32| FmiVr {
         vr,
         off,

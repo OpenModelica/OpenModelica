@@ -226,7 +226,7 @@ impl Loaded {
                 i.free_instance();
                 i
             }
-            None => DylinkInstance::load(model, ext, *external_c, *lapack, &self.resources())
+            None => DylinkInstance::load(model, compiled_kernel(model), ext, *external_c, *lapack, &self.resources())
                 .map_err(|e| e.to_string())?,
         };
         let out = f(&mut inst);
@@ -366,6 +366,14 @@ fn dylink_model(dir: &Path) -> Option<Vec<u8>> {
     let d = dir.join(super::DYLINK_DIR);
     let entry = std::fs::read_dir(d).ok()?.flatten().map(|e| e.path()).find(|p| p.extension().is_some_and(|e| e == "wasm"))?;
     std::fs::read(entry).ok()
+}
+
+/// The module this omc compiled for `model` when it exported it, so linking the
+/// artifact does not compile the model a second time.
+fn compiled_kernel(model: &[u8]) -> Option<wasmtime::Module> {
+    let models = super::sim_models().lock().unwrap_or_else(|e| e.into_inner());
+    let kept = models.values().find(|m| m.wasm.as_slice() == model)?;
+    kept.prepared.lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 /// Where the artifact is unpacked, beside itself so a second run finds it there.

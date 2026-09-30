@@ -207,6 +207,7 @@ extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_I
 /* OMC_ERROR_RAISED and OMC_ERROR_CLEAR in one, for a caller that cannot see the
    field: the Rust simulation runtime mirrors threadData_t only as far as
    `parent`, because what follows depends on build options. */
+extern void omc_error_raise(threadData_t *threadData);
 extern int omc_error_take(threadData_t *threadData);
 extern jmp_buf *omc_external_jump_buffer(threadData_t *threadData);
 #ifdef HAVE_VA_MACROS

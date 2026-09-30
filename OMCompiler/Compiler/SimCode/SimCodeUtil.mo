@@ -497,7 +497,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars, inInitDAE_lambda0);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -810,8 +810,8 @@ algorithm
       fmiFigures                  = {}
     );
 
-    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literalsAcc);
-    simCode := setSimCodeLiterals(simCode, listReverse(lits));
+    (simCode, lits) := findSimCodeLiterals(simCode, literalsAcc);
+    simCode := setSimCodeLiterals(simCode, lits);
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
     // print("*** SimCode -> collect all files started: " + realString(clock()) + "\n");
@@ -7557,6 +7557,7 @@ public function createModelInfo
   input String fileDir;
   input Integer nSubClock;
   input list<SimCodeVar.SimVar> tempVars;
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0 = NONE() "homotopy initialization at lambda = 0";
   output SimCode.ModelInfo modelInfo;
 protected
   String description, directory, version, author, license, copyright, fileName;
@@ -7580,7 +7581,7 @@ algorithm
 
     // get fileName as the filename and model name can be different which will be used in dataReconciliation Report
     fileName := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(class_, program)));
-    (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
+    (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars, inInitDAE_lambda0);
 
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
@@ -8136,6 +8137,7 @@ protected function createVars
   input BackendDAE.BackendDAE inSimDAE "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
   input list<SimCodeVar.SimVar> tempvars;
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0 = NONE() "homotopy initialization at lambda = 0";
   output SimCodeVar.SimVars outVars;
   output list<SimCode.UnitDefinition> unitDefinitions = {} "list of unitDefintions which are exported in modelDescription.xml";
 protected
@@ -8220,6 +8222,14 @@ algorithm
   // Extract from external object list
   simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list (init)"); end if;
+
+  // ### initialization at lambda = 0 ###
+  // Its loops can be torn differently and introduce helper variables of their own.
+  if isSome(inInitDAE_lambda0) then
+    SOME(BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, aliasVars=aliasVars2))) := inInitDAE_lambda0;
+    simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars), simVars);
+    if debug then execStat("createVars: variable list (init lambda0)"); end if;
+  end if;
 
   addTempVars(simVars, tempvars);
   if debug then execStat("createVars: addTempVars"); end if;
@@ -11398,6 +11408,19 @@ algorithm
   prio := (i, eqs);
 end calcPriority;
 
+public function findSimCodeLiterals
+  "Replaces the literals in simCode by shared literals and returns them all."
+  input output SimCode.SimCode simCode;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inLiterals;
+  output list<DAE.Exp> literals;
+protected
+  HashTableExpToIndex.HashTable uses;
+algorithm
+  (_, uses) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.countStringUses, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize));
+  (simCode, (_, _, literals)) := traverseExpsSimCode(simCode, function SimCodeFunctionUtil.findLiteralsHelperKeepSingle(uses = uses), inLiterals);
+  literals := listReverse(literals);
+end findSimCodeLiterals;
+
 public function traverseExpsSimCode
   input SimCode.SimCode simCode;
   input Func func;
@@ -13047,7 +13070,7 @@ algorithm
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
-          fmi3ArrayGroups(inModelInfo)));
+          fmi3ArrayGroups(inModelInfo, derivatives)));
 else
   // create empty model structure
   try
@@ -14085,14 +14108,19 @@ end createMinimalFMIModelStructure;
 protected function fmi3ArrayGroups
   "The arrays the FMI 3.0 modelDescription.xml lists as one variable each:
    all elements exported, consecutive in row-major order and alike but for the
-   start value; a state array only together with its derivative array."
+   start value; a state array only together with its derivative array, and
+   only if that loses none of the derivatives' dependencies."
   input SimCode.ModelInfo modelInfo;
+  input list<SimCode.FmiUnknown> derivatives = {};
   output list<SimCode.FmiArray> arrays = {};
 protected
   SimCodeVar.SimVars vars = modelInfo.vars;
   UnorderedSet<DAE.ComponentRef> aliasTargets;
   UnorderedMap<DAE.ComponentRef, SimCode.FmiArray> ders;
   list<SimCode.FmiArray> stateArrays;
+  list<tuple<SimCode.FmiArray, SimCode.FmiArray>> pairs = {};
+  UnorderedSet<Integer> lossy;
+  SimCode.FmiArray a, d;
 algorithm
   if not FMI.isFMIVersion30() or Config.simCodeTarget() == "Cpp" or Flags.getConfigBool(Flags.DAE_MODE) then
     return;
@@ -14110,12 +14138,18 @@ algorithm
   for a in fmi3ArraysOfList(vars.derivativeVars, aliasTargets) loop
     UnorderedMap.add(a.first, a, ders);
   end for;
-  for a in stateArrays loop
-    arrays := match UnorderedMap.get(ComponentReference.crefPrefixDer(a.first), ders)
-      local SimCode.FmiArray d;
-      case SOME(d) then d :: a :: arrays;
-      else arrays;
+  for sa in stateArrays loop
+    pairs := match UnorderedMap.get(ComponentReference.crefPrefixDer(sa.first), ders)
+      case SOME(d) then (sa, d) :: pairs;
+      else pairs;
     end match;
+  end for;
+  lossy := fmi3LossyStateArrays(pairs, derivatives);
+  for p in listReverse(pairs) loop
+    (a, d) := p;
+    if not UnorderedSet.contains(a.fmiIndex, lossy) then
+      arrays := d :: a :: arrays;
+    end if;
   end for;
   for lst in {vars.algVars, vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
               vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars} loop
@@ -14123,6 +14157,66 @@ algorithm
   end for;
   arrays := listReverse(arrays);
 end fmi3ArrayGroups;
+
+protected function fmi3LossyStateArrays
+  "The state arrays, by first FMI index, that listed as one variable would look
+   denser than they are: <ModelStructure> can only say that an array's derivative
+   depends on whole arrays."
+  input list<tuple<SimCode.FmiArray, SimCode.FmiArray>> pairs "state and derivative array";
+  input list<SimCode.FmiUnknown> derivatives;
+  output UnorderedSet<Integer> lossy = UnorderedSet.new(Util.id, intEq);
+protected
+  UnorderedMap<Integer, Integer> stateOf = UnorderedMap.new<Integer>(Util.id, intEq);
+  UnorderedMap<Integer, Integer> sizeOf = UnorderedMap.new<Integer>(Util.id, intEq);
+  UnorderedMap<Integer, Integer> derOf = UnorderedMap.new<Integer>(Util.id, intEq);
+  type Deps = list<Integer>;
+  UnorderedMap<Integer, Deps> depsOf = UnorderedMap.new<Deps>(Util.id, intEq);
+  UnorderedMap<Integer, Integer> hits;
+  SimCode.FmiArray a, d;
+  list<Integer> ds;
+  Integer s, n;
+algorithm
+  for p in pairs loop
+    (a, d) := p;
+    UnorderedMap.add(a.fmiIndex, a.numElements, sizeOf);
+    for k in 0:a.numElements - 1 loop
+      UnorderedMap.add(a.fmiIndex + k, a.fmiIndex, stateOf);
+      UnorderedMap.add(d.fmiIndex + k, a.fmiIndex, derOf);
+    end for;
+  end for;
+  for u in derivatives loop
+    ds := List.sortedUnique(List.sort(u.dependencies, intGt), intEq);
+    hits := UnorderedMap.new<Integer>(Util.id, intEq);
+    for dep in ds loop
+      s := UnorderedMap.getOrDefault(dep, stateOf, 0);
+      if s > 0 then
+        UnorderedMap.add(s, UnorderedMap.getOrDefault(s, hits, 0) + 1, hits);
+      end if;
+    end for;
+    for h in UnorderedMap.toList(hits) loop
+      (s, n) := h;
+      if n <> UnorderedMap.getOrFail(s, sizeOf) then
+        UnorderedSet.add(s, lossy);
+      end if;
+    end for;
+    s := UnorderedMap.getOrDefault(u.index, derOf, 0);
+    if s > 0 then
+      _ := match UnorderedMap.get(s, depsOf)
+        local list<Integer> first;
+        case SOME(first)
+          algorithm
+            if not List.isEqualOnTrue(first, ds, intEq) then
+              UnorderedSet.add(s, lossy);
+            end if;
+          then ();
+        else
+          algorithm
+            UnorderedMap.add(s, ds, depsOf);
+          then ();
+      end match;
+    end if;
+  end for;
+end fmi3LossyStateArrays;
 
 protected function getAliasVarCref
   input SimCodeVar.SimVar var;

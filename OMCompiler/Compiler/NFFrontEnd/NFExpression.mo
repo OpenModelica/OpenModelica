@@ -1604,6 +1604,16 @@ public
 
       case IF() then applySubscriptIf(subscript, exp, restSubscripts, applyToScope);
 
+      case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
+        then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
+
+      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator)) and
+                         List.all(subscript :: restSubscripts, isCheapSubscript)
+        algorithm
+          outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
+        then
+          UNARY(Operator.setType(typeOf(outExp), exp.operator), outExp);
+
       case UNBOX()
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
@@ -2004,6 +2014,78 @@ public
       outExp := IF(ty, cond, tb, fb);
     end if;
   end applySubscriptIf;
+
+  function isCheapSubscript
+    "Whether the subscript can be duplicated into the operands of an operator."
+    input Subscript subscript;
+    output Boolean cheap;
+  algorithm
+    cheap := match subscript
+      case Subscript.INDEX() then isCref(subscript.index) or isScalarLiteral(subscript.index);
+      case Subscript.WHOLE() then true;
+      else false;
+    end match;
+  end isCheapSubscript;
+
+  function applySubscriptBinary
+    "Moves the subscripts into the operands of an element-wise operator:
+     (a .* b)[i] = a[i] * b[i], (a * s)[i] = a[i] * s."
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
+    output Expression outExp;
+  protected
+    import NFOperator.Op;
+    Expression e1, e2;
+    Operator op;
+    Op scalar_op;
+    Boolean sub1, sub2;
+  algorithm
+    BINARY(e1, op, e2) := exp;
+
+    (sub1, sub2, scalar_op) := match op.op
+      case Op.ADD guard Type.isArray(op.ty) then (true, true, Op.ADD);
+      case Op.SUB guard Type.isArray(op.ty) then (true, true, Op.SUB);
+      case Op.ADD_EW then (true, true, Op.ADD);
+      case Op.SUB_EW then (true, true, Op.SUB);
+      case Op.MUL_EW then (true, true, Op.MUL);
+      case Op.DIV_EW then (true, true, Op.DIV);
+      case Op.POW_EW then (true, true, Op.POW);
+      case Op.ADD_ARRAY_SCALAR then (true, false, Op.ADD);
+      case Op.SUB_ARRAY_SCALAR then (true, false, Op.SUB);
+      case Op.MUL_ARRAY_SCALAR then (true, false, Op.MUL);
+      case Op.DIV_ARRAY_SCALAR then (true, false, Op.DIV);
+      case Op.POW_ARRAY_SCALAR then (true, false, Op.POW);
+      case Op.ADD_SCALAR_ARRAY then (false, true, Op.ADD);
+      case Op.SUB_SCALAR_ARRAY then (false, true, Op.SUB);
+      case Op.MUL_SCALAR_ARRAY then (false, true, Op.MUL);
+      case Op.DIV_SCALAR_ARRAY then (false, true, Op.DIV);
+      case Op.POW_SCALAR_ARRAY then (false, true, Op.POW);
+      else (false, false, op.op);
+    end match;
+
+    if not (sub1 or sub2) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    if sub1 then
+      e1 := applySubscript(subscript, e1, restSubscripts, applyToScope);
+    end if;
+
+    if sub2 then
+      e2 := applySubscript(subscript, e2, restSubscripts, applyToScope);
+    end if;
+
+    op.ty := typeOf(if sub1 then e1 else e2);
+
+    if Type.isScalar(op.ty) then
+      op.op := scalar_op;
+    end if;
+
+    outExp := BINARY(e1, op, e2);
+  end applySubscriptBinary;
 
   function makeSubscriptedExp
     input list<Subscript> subscripts;

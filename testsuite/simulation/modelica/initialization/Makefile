@@ -49,6 +49,7 @@ parameterWithoutBinding.mos \
 pre1.mos \
 pre2.mos \
 pre3.mos \
+RecursiveTearingLambda0.mos \
 setNumberOfInitLambda.mos \
 scaling1.mos \
 scaling2.mos \

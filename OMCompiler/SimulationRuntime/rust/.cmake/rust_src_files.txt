@@ -38,6 +38,7 @@ openmodelica_mat_writer/Cargo.toml
 openmodelica_mat_writer/src/lib.rs
 openmodelica_nls/Cargo.toml
 openmodelica_nls/build.rs
+openmodelica_nls/src/gbode.rs
 openmodelica_nls/src/jacobian_analysis.rs
 openmodelica_nls/src/kinsol.rs
 openmodelica_nls/src/lib.rs
@@ -124,7 +125,10 @@ openmodelica_simulation_runtime/src/data.rs
 openmodelica_simulation_runtime/src/datarecon.rs
 openmodelica_simulation_runtime/src/engine.rs
 openmodelica_simulation_runtime/src/fmi.rs
+openmodelica_simulation_runtime/src/fmi2_capi.rs
+openmodelica_simulation_runtime/src/fmi3_capi.rs
 openmodelica_simulation_runtime/src/fmi_host.rs
+openmodelica_simulation_runtime/src/fmi_native.rs
 openmodelica_simulation_runtime/src/fmi_vrs.rs
 openmodelica_simulation_runtime/src/help.rs
 openmodelica_simulation_runtime/src/iif.rs
@@ -169,6 +173,7 @@ openmodelica_solvers/src/gbode/mod.rs
 openmodelica_solvers/src/gbode/multirate.rs
 openmodelica_solvers/src/gbode/nls.rs
 openmodelica_solvers/src/gbode/nls_generic.rs
+openmodelica_solvers/src/gbode/nls_hook.rs
 openmodelica_solvers/src/gbode/step.rs
 openmodelica_solvers/src/gbode/tableau.rs
 openmodelica_solvers/src/gbode/tableau_data.rs

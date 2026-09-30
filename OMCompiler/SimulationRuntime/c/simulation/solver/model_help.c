@@ -191,6 +191,27 @@ void copyStartValuestoInitValues(DATA *data)
   overwriteOldSimulationData(data);
 }
 
+/**
+ * @brief Print real variables `first` to `last`-1, one line per scalar element.
+ */
+static void printRealVars(DATA *data, int ringSegment, int stream, long first, long last)
+{
+  long i;
+  size_t k, idx;
+  SIMULATION_INFO *sInfo = data->simulationInfo;
+  SIMULATION_DATA *sData = data->localData[ringSegment];
+  char name[2048];
+
+  for(i=first; i<last; ++i) {
+    STATIC_REAL_DATA *var = &data->modelData->realVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->realVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = %g (pre: %g)", idx+1, name, sData->realVars[idx], sInfo->realVarsPre[idx]);
+    }
+  }
+}
+
 /*! \fn printAllVars
  *
  *  prints all variable values
@@ -204,45 +225,62 @@ void copyStartValuestoInitValues(DATA *data)
 void printAllVars(DATA *data, int ringSegment, int stream)
 {
   long i;
+  size_t k, idx;
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
+  SIMULATION_DATA *sData = data->localData[ringSegment];
+  char name[2048];
 
   if (!OMC_ACTIVE_STREAM(stream)) return;
 
-  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, data->localData[ringSegment]->timeValue);
+  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, sData->timeValue);
 
   infoStreamPrint(stream, 1, "states variables");
-  for(i=0; i<mData->nStates; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  printRealVars(data, ringSegment, stream, 0, mData->nStatesArray);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  printRealVars(data, ringSegment, stream, mData->nStatesArray, 2*mData->nStatesArray);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "other real values");
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  printRealVars(data, ringSegment, stream, 2*mData->nStatesArray, mData->nVariablesRealArray);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+  for(i=0; i<mData->nVariablesIntegerArray; ++i) {
+    STATIC_INTEGER_DATA *var = &mData->integerVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->integerVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name, sData->integerVars[idx], sInfo->integerVarsPre[idx]);
+    }
+  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
+  for(i=0; i<mData->nVariablesBooleanArray; ++i) {
+    STATIC_BOOLEAN_DATA *var = &mData->booleanVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->booleanVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = %s (pre: %s)", idx+1, name, sData->booleanVars[idx] ? "true" : "false", sInfo->booleanVarsPre[idx] ? "true" : "false");
+    }
+  }
   messageClose(stream);
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   infoStreamPrint(stream, 1, "string variables");
-  for(i=0; i<mData->nVariablesString; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1,
-        mData->stringVarsData[i].info.name,
-        omc_string_data(data->localData[ringSegment]->stringVars[i]),
-        omc_string_data(sInfo->stringVarsPre[i]));
+  for(i=0; i<mData->nVariablesStringArray; ++i) {
+    STATIC_STRING_DATA *var = &mData->stringVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->stringVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = %s (pre: %s)", idx+1, name,
+          omc_string_data(sData->stringVars[idx]),
+          omc_string_data(sInfo->stringVarsPre[idx]));
+    }
+  }
   messageClose(stream);
 #endif
   messageClose(stream);
@@ -279,7 +317,7 @@ void printParameters(DATA *data, int stream)
       STATIC_REAL_DATA *var = &mData->realParameterData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->realParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter Real %s(start=%g, fixed=%s) = %g", idx+1, name,
                         real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
                         var->attribute.fixed ? "true" : "false",
@@ -296,7 +334,7 @@ void printParameters(DATA *data, int stream)
       STATIC_INTEGER_DATA *var = &mData->integerParameterData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->integerParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, idx+1, name,
                         integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
                         var->attribute.fixed ? "true" : "false",
@@ -313,7 +351,7 @@ void printParameters(DATA *data, int stream)
       STATIC_BOOLEAN_DATA *var = &mData->booleanParameterData[i];
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         idx = sInfo->booleanParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter Boolean %s(start=%s, fixed=%s) = %s", idx+1, name,
                         boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
                         var->attribute.fixed ? "true" : "false",
@@ -331,7 +369,7 @@ void printParameters(DATA *data, int stream)
       for (k = 0; k < var->dimension.scalar_length; ++k) {
         modelica_string start = string_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k));
         idx = sInfo->stringParamsIndex[i] + k;
-        printScalarName(var->info.name, &var->dimension, k, name, sizeof(name));
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
         infoStreamPrint(stream, 0, "[%zu] parameter String %s(start=\"%s\") = \"%s\"", idx+1, name,
                         start ? omc_string_data(start) : "",
                         omc_string_data(sInfo->stringParameter[idx]));
@@ -1737,26 +1775,6 @@ modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nomina
 modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
   return !LessZC(a, b, a_nominal, b_nominal, !direction);
-}
-
-modelica_boolean Less(double a, double b)
-{
-  return a < b;
-}
-
-modelica_boolean LessEq(double a, double b)
-{
-  return a <= b;
-}
-
-modelica_boolean Greater(double a, double b)
-{
-  return a > b;
-}
-
-modelica_boolean GreaterEq(double a, double b)
-{
-  return a >= b;
 }
 
 

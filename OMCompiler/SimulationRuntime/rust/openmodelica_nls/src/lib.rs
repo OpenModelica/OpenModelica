@@ -28,6 +28,7 @@ extern crate alloc;
 
 #[cfg(sundials)]
 pub mod jacobian_analysis;
+pub mod gbode;
 pub mod kinsol;
 pub mod newton_diagnostics;
 #[cfg(test)]
@@ -2586,6 +2587,11 @@ fn note_jac_eval() {
     flags().jac_evals.fetch_add(1, Ordering::Relaxed);
 }
 
+/// The Jacobian evaluations so far, C's `numberOfJEval` summed over the systems.
+pub(crate) fn jac_evals() -> u64 {
+    flags().jac_evals.load(Ordering::Relaxed)
+}
+
 /// The iterations a KINSOL solve took, which SUNDIALS counts rather than
 /// [`nls_stat_inc`] (C reads them back with `KINGetNumNonlinSolvIters`).
 fn note_nls_iters(n: u64) {
@@ -2861,6 +2867,20 @@ fn log_newton_step(t: &HomotopyTrace, x1: &[f64], step: &[f64], x: &[f64]) {
     omclog::close(omclog::NLS_V);
 }
 
+/// C's `newtonLimitCycleStep`.
+fn newton_limit_cycle_step(hist: &mut [f64; 4], n_hist: &mut usize, e: f64) -> bool {
+    let mut cycle = false;
+    if *n_hist >= 4 && fmath::fabs(e - hist[0]) > 1e-2 * e {
+        for h in &hist[1..] {
+            cycle |= fmath::fabs(e - h) <= 1e-2 * e;
+        }
+    }
+    hist.copy_within(0..3, 1);
+    hist[0] = e;
+    *n_hist += 1;
+    cycle
+}
+
 /// C's `solveHomotopy` entry phase and its `newtonAlgorithm`
 /// (`nonlinearSolverHomotopy.c`): a start point already at tolerance is taken
 /// outright, else the Jacobian formed there feeds a damped Newton with a
@@ -3041,7 +3061,9 @@ fn newton_c(
     }
     let mut iter = 0i32;
     let mut neg_steps = 0i32;
-    let mut increases = 0i32;
+    let mut cycles = 0i32;
+    let mut err_hist = [0.0f64; 4];
+    let mut n_hist = 0usize;
     let mut small_steps = 0i32;
     // C's `lambda` as `-nlsInfo` reports it: only the no-damping and cubic
     // branches set it.
@@ -3203,7 +3225,13 @@ fn newton_c(
         error_f_sqrd = nsq(&fvec);
         error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
         neg_steps += (error_f_sqrd > 10.0 * error_f_old) as i32;
-        increases += (error_f_sqrd > error_f_old) as i32;
+        // A cycle within the less accuracy band is left to the other exits.
+        let cycle = newton_limit_cycle_step(&mut err_hist, &mut n_hist, error_f_sqrd);
+        cycles = if cycle && error_f_sqrd >= ftol_sq * 1e6 && error_f_sqrd_scaled >= ftol_sq * 1e6 {
+            cycles + 1
+        } else {
+            0
+        };
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             omclog::debug_string(omclog::NLS_V, "error measurements:");
@@ -3224,7 +3252,7 @@ fn newton_c(
             error_f_sqrd_scaled,
             lambda: info_lambda,
         });
-        if neg_steps > 20 || increases > 20 {
+        if neg_steps > 20 || cycles > 20 {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
                 omclog::debug_int(omclog::NLS_V, "UPS! Something happened, NegativeSteps = ", neg_steps);
@@ -3473,6 +3501,7 @@ fn newton_jacobian(
     rwork: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) {
+    note_jac_eval();
     for i in 0..n {
         let mut dhh = fmath::fmax(
             SQRT_EPS * fmath::fmax(fmath::fabs(x[i]), fmath::fabs(fvec[i])),
@@ -3769,7 +3798,7 @@ fn omc_newton(
 /// refreshes the Jacobian every iteration, then relaxes the acceptance bound. `warm` is
 /// C's `nlsxOld`.
 #[allow(clippy::too_many_arguments)]
-fn solve_newton_c(
+pub(crate) fn solve_newton_c(
     n: usize,
     x: &mut [f64],
     warm: &[f64],

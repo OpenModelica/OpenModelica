@@ -216,7 +216,7 @@ impl GbNls {
             if let Some(method) = self.whole_jac {
                 return match ode.jacobian_matrix(time, y, method, &mut self.j) {
                     true => Ok(()),
-                    false => Err("CodegenWasmJit: gbode: the model could not evaluate its Jacobian"),
+                    false => Err("##GBODE## the model could not evaluate its Jacobian"),
                 };
             }
             let mut seed = vec![0.0; n];
@@ -228,7 +228,7 @@ impl GbNls {
                 }
                 if !ode.jacobian_vector(time, y, &seed, &mut out) {
                     return Err(
-                        "CodegenWasmJit: gbode: the model could not multiply by its Jacobian",
+                        "##GBODE## the model could not multiply by its Jacobian",
                     );
                 }
                 for &c in group {

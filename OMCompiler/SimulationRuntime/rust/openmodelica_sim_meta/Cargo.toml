@@ -17,10 +17,10 @@ faer = ["openmodelica_lapack/faer-backend"]
 # Host builds enable `std` (native + the wasm32 web omc, both have std). The
 # in-wasm runtime builds `no_std` (`default-features = false`), where the solver
 # math routes through `libm` and daskr is `no_std` too.
-std = ["daskr/std", "openmodelica_solvers/std", "dep:openmodelica_lapack"]
+std = ["daskr/std", "openmodelica_solvers/std", "openmodelica_nls/std", "dep:openmodelica_lapack"]
 # Compile the CVODE/IDA driver paths without linking an archive: the symbols stay
 # undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
-sundials_extern = ["openmodelica_solvers/sundials_extern"]
+sundials_extern = ["openmodelica_solvers/sundials_extern", "openmodelica_nls/sundials_extern"]
 # `result` -- writing a run's rows to a `.mat`/`.csv`/`.plt`/`.arrow` file. An
 # exported FMU hands its rows to the importer and enables none of it, which is
 # what keeps the Arrow crates out of the FMU adapter whether or not LTO would
@@ -38,6 +38,9 @@ plt-writer = ["dep:openmodelica_plt_writer"]
 # a model in wasm linear memory. Their modules are re-exported from this crate's
 # root, so `sim_meta::gbode` and friends still name them.
 openmodelica_solvers = { path = "../openmodelica_solvers", default-features = false }
+# gbode's `-gbnls=kinsol|experimental-kinsol|newton` solve through its KINSOL and
+# Newton, which `alloc_gbode` installs (`openmodelica_solvers` sits below it).
+openmodelica_nls = { path = "../openmodelica_nls", default-features = false }
 # The DAE solver for the DASSL driver. no_std-capable; the host pulls its `std`
 # feature via this crate's `std`.
 daskr = { path = "../daskr", default-features = false }

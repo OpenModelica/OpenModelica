@@ -499,6 +499,12 @@ pub(super) fn build_sim_model(
         if let Ok(k) = sim_cref_key(&sv.name) {
             attr_targets.entry(k).or_default().max_offs.push(off);
         }
+        // gbode's KINSOL keeps the sign a state's `min` asks for.
+        let off = layout.state_min_off + (i as u32) * 8;
+        max_defaults.push((off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
+        if let Ok(k) = sim_cref_key(&sv.name) {
+            attr_targets.entry(k).or_default().raw_min_offs.push(off);
+        }
     }
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
@@ -1447,15 +1453,9 @@ pub(super) fn build_sim_model(
     // --- Shared literals, closure thunks and the module `start`. Both come after
     // every other body — their indices are only known here. ---
     let lits = crate::CodegenWasmJitFunctions::shared_lits::take();
-    let lit_init = lits
-        .iter()
-        .any(|s| s.is_some())
-        .then(|| {
-            crate::CodegenWasmJitFunctions::shared_lits::build_init_fn(
-                &lits, lit_global, &by_name, &mut literals,
-            )
-        })
-        .transpose()?;
+    let lit_init = crate::CodegenWasmJitFunctions::shared_lits::build_init_fns(
+        &lits, lit_global, &by_name, &mut literals,
+    )?;
     let closure_wiring = crate::CodegenWasmJitFunctions::closures::take();
     let mut thunk_indices: Vec<u32> = Vec::new();
     for (type_index, body) in closure_wiring.thunks {
@@ -1466,18 +1466,18 @@ pub(super) fn build_sim_model(
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() || lit_init.is_some() {
+    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() || !lit_init.is_empty() {
         let void_type = types.len();
         types.ty().function([], []);
-        let lit_init_idx = lit_init.map(|f| {
-            let idx = import_base + bodies.len() as u32;
+        let lit_init_base = import_base + bodies.len() as u32;
+        let n_lit_init = lit_init.len() as u32;
+        for f in lit_init {
             functions.function(void_type);
             bodies.push(f);
-            idx
-        });
+        }
         let start_idx = import_base + bodies.len() as u32;
         let mut f = we::Function::new([]);
-        if let Some(i) = lit_init_idx {
+        for i in lit_init_base..lit_init_base + n_lit_init {
             f.instruction(&we::Instruction::Call(i));
         }
         if let Some((fn_indices, _)) = &nls_wiring {

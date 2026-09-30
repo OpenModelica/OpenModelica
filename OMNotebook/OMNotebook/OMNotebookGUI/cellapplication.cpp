@@ -70,6 +70,7 @@
 #include <QLocale>
 #include <QMainWindow>
 #include <QDir>
+#include <QFile>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -249,10 +250,30 @@ namespace IAEX
       }
 #endif
 
-      //  Load stylesheet.xml and commands.xml from the bundled resources, so they
-      //  work regardless of the installation layout and on the web build.
+      //  Load stylesheet.xml and commands.xml from <installation>/share/omnotebook,
+      //  so they can be customized. Fall back to the copies bundled as Qt resources
+      //  if the file is missing or invalid, e.g. on the web build.
+#ifndef __EMSCRIPTEN__
+      const QString xmlDirectory = QString::fromLatin1(installationDirectoryPath) + "/share/omnotebook/";
+#else
+      const QString xmlDirectory;
+#endif
+      auto loadXmlFile = [&xmlDirectory](const QString &name, auto &&load) {
+          const QString file = xmlDirectory + name;
+          if (!xmlDirectory.isEmpty() && QFile::exists(file)) {
+              try {
+                  load(file);
+                  return;
+              } catch (std::exception &e) {
+                  QMessageBox::warning(nullptr, tr("Warning"),
+                                       tr("%1\nUsing the built-in %2 instead.").arg(e.what(), name));
+              }
+          }
+          load(":/" + name);
+      };
+
       try {
-          Stylesheet::instance(":/stylesheet.xml");
+          loadXmlFile("stylesheet.xml", [](const QString &file) { Stylesheet::instance(file); });
       } catch (std::exception &e) {
           QMessageBox::warning(nullptr, tr("Error"), e.what());
           std::exit(-1);
@@ -260,7 +281,7 @@ namespace IAEX
 
       //  Load commands.xml (command completion)
       try {
-          CommandCompletion::instance(":/commands.xml");
+          loadXmlFile("commands.xml", [](const QString &file) { CommandCompletion::instance(file); });
       } catch (std::exception &e) {
           QString msg = e.what();
           msg += "\nCould not create command completion class, exiting OMNotebook";

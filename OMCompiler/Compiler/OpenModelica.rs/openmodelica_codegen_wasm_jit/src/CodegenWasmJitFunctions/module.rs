@@ -196,11 +196,7 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
         bodies.push(body);
     }
     let lits = shared_lits::take();
-    let lit_init = lits
-        .iter()
-        .any(|s| s.is_some())
-        .then(|| shared_lits::build_init_fn(&lits, lit_base_global(false), &by_name, &mut literals))
-        .transpose()?;
+    let lit_init = shared_lits::build_init_fns(&lits, lit_base_global(false), &by_name, &mut literals)?;
     // Closure thunks, then the `start` that builds the literals and appends the
     // thunks to the shared table.
     let closure_wiring = closures::take();
@@ -213,20 +209,20 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_idx = if thunk_indices.is_empty() && lit_init.is_none() {
+    let start_idx = if thunk_indices.is_empty() && lit_init.is_empty() {
         None
     } else {
         let void_type = types.len();
         types.ty().function([], []);
-        let lit_init_idx = lit_init.map(|f| {
-            let idx = base + bodies.len() as u32;
+        let lit_init_base = base + bodies.len() as u32;
+        let n_lit_init = lit_init.len() as u32;
+        for f in lit_init {
             functions.function(void_type);
             bodies.push(f);
-            idx
-        });
+        }
         let idx = base + bodies.len() as u32;
         let mut f = we::Function::new([]);
-        if let Some(i) = lit_init_idx {
+        for i in lit_init_base..lit_init_base + n_lit_init {
             f.instruction(&we::Instruction::Call(i));
         }
         if !thunk_indices.is_empty() {

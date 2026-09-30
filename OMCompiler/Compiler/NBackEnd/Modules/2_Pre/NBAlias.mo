@@ -84,6 +84,7 @@ protected
   import Dimension = NFDimension;
   import Subscript = NFSubscript;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -1206,7 +1207,6 @@ protected
     output Option<Expression> max_exp;
   protected
     list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
-    Expression max_exp_val;
     Real max_val;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
@@ -1214,18 +1214,13 @@ protected
       max_val := List.maxElement(list(Expression.realValue(val) for val in constants), realLt);
       rest := Expression.REAL(max_val) :: rest;
     end if;
+    rest := List.uniqueOnTrue(rest, Expression.isEqual);
     if listEmpty(rest) then // constants and rest are empty
       max_exp := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
       max_exp := SOME(listHead(rest));
     else
-      max_exp_val :=  Expression.CALL(Call.makeTypedCall(
-        fn          = NFBuiltinFuncs.MAX_REAL,
-        args        = rest,
-        variability = NFPrefixes.Variability.PARAMETER,
-        purity      = NFPrefixes.Purity.PURE
-      ));
-      max_exp := SOME(max_exp_val);
+      max_exp := SOME(makeBoundCall(NFBuiltinFuncs.MAX_REAL, rest));
     end if;
   end getMaximum;
 
@@ -1235,7 +1230,6 @@ protected
     output Option<Expression> min_exp;
   protected
     list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
-    Expression min_exp_val;
     Real min_val;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
@@ -1243,20 +1237,48 @@ protected
       min_val := List.minElement(list(Expression.realValue(val) for val in constants), realLt);
       rest := Expression.REAL(min_val) :: rest;
     end if;
+    rest := List.uniqueOnTrue(rest, Expression.isEqual);
     if listEmpty(rest) then // constants and rest are empty
       min_exp := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
       min_exp := SOME(listHead(rest));
     else
-      min_exp_val :=  Expression.CALL(Call.makeTypedCall(
-        fn          = NFBuiltinFuncs.MAX_REAL,
-        args        = rest,
-        variability = NFPrefixes.Variability.PARAMETER,
-        purity      = NFPrefixes.Purity.PURE
-      ));
-      min_exp := SOME(min_exp_val);
+      min_exp := SOME(makeBoundCall(NFBuiltinFuncs.MIN_REAL, rest));
     end if;
   end getMinimum;
+
+  function makeBoundCall
+    "Calls the scalar min or max function, element-wise for array bounds."
+    input Function fn;
+    input list<Expression> args;
+    output Expression exp;
+  protected
+    list<Expression> call_args = args;
+    list<Dimension> dims = {};
+    list<tuple<InstNode, Expression>> iters = {};
+    InstNode iter;
+    Subscript sub;
+  algorithm
+    for arg in args loop
+      if Expression.hasArrayType(arg) then
+        dims := Type.arrayDims(Expression.typeOf(arg));
+        break;
+      end if;
+    end for;
+
+    for dim in dims loop
+      iter := InstNode.newUniqueIterator(sourceInfo());
+      iters := (iter, Expression.RANGE(Type.ARRAY(Type.INTEGER(), {dim}), Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim))) :: iters;
+      sub := Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())));
+      call_args := list(if Expression.hasArrayType(a) then Expression.applySubscript(sub, a) else a for a in call_args);
+    end for;
+
+    exp := Expression.CALL(Call.makeTypedCall(fn, call_args, Variability.PARAMETER, NFPrefixes.Purity.PURE));
+    if not listEmpty(dims) then
+      exp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.liftArrayLeftList(Expression.typeOf(exp), dims),
+        Variability.PARAMETER, NFPrefixes.Purity.PURE, exp, iters));
+    end if;
+  end makeBoundCall;
 
   function setStartFixed
     "Analyses start and fixed values." // case 1: 1 or 0 fixed ; case 2: more than 1 fixed

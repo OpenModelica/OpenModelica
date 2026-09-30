@@ -35,4 +35,56 @@ impl FmiHost for CEngine {
         let si = unsafe { &mut *(*self.rt.data).simulationInfo };
         crate::systems::apply_solver_flags(si, flags);
     }
+
+    /// The string variables of every ring slot, which C's `fmi2GetFMUstate` keeps
+    /// and the layout holds only as handles, then the operator histories.
+    fn opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout) -> Vec<u8> {
+        let mut out = Vec::new();
+        for slot in string_slots(self.rt.data) {
+            let s = crate::model_data::string_bytes(unsafe { *slot });
+            out.extend((s.len() as u64).to_le_bytes());
+            out.extend(s);
+        }
+        let mut words = Vec::new();
+        crate::operators::to_words(self.rt.data, &mut words);
+        crate::spatial::to_words(self.rt.data, &mut words);
+        out.extend(words.iter().flat_map(|w| w.to_le_bytes()));
+        out
+    }
+
+    fn set_opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
+        let mut strings = Vec::new();
+        let mut at = 0;
+        for _ in string_slots(self.rt.data) {
+            let Some(len) = state.get(at..at + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize) else {
+                return false;
+            };
+            let Some(s) = state.get(at + 8..at + 8 + len) else { return false };
+            strings.push(s);
+            at += 8 + len;
+        }
+        let rest = &state[at..];
+        if rest.len() % 8 != 0 {
+            return false;
+        }
+        let mut words = rest.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap()));
+        if !crate::operators::set_from_words(self.rt.data, &mut words)
+            || !crate::spatial::set_from_words(self.rt.data, &mut words)
+            || words.next().is_some()
+        {
+            return false;
+        }
+        for (slot, s) in string_slots(self.rt.data).zip(strings) {
+            unsafe { crate::model_data::string_set_new(slot, s) };
+        }
+        true
+    }
+}
+
+fn string_slots(data: *mut crate::abi::DATA) -> impl Iterator<Item = *mut crate::abi::modelica_string> {
+    let n = unsafe { (*(*data).modelData).nVariablesString }.max(0) as usize;
+    (0..crate::data::RING).flat_map(move |r| {
+        let sd = unsafe { *(*data).localData.add(r) };
+        (0..n).map(move |i| unsafe { (*sd).stringVars.add(i) })
+    })
 }

@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Splitter3_Inputs.csv
+// teardown_command: rm -rf NewDataReconciliationSimpleTests.TSP_Splitter3 NewDataReconciliationSimpleTests.TSP_Splitter3.* NewDataReconciliationSimpleTests.TSP_Splitter3_* Reconciled_NewDataReconciliationSimpleTests_TSP_Splitter3.mo
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
@@ -21,10 +22,10 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
 // ModelInfo: NewDataReconciliationSimpleTests.TSP_Splitter3
@@ -42,7 +43,7 @@ getErrorString();
 // 7: sourceP3.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 8: sourceP3.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 9: sourceP3.IPressure.signal:VARIABLE(flow=false )  type: Real
-// 10: sourceP3.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 10: sourceP3.pro.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 11: sourceP3.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 12: sourceP3.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 13: sourceP3.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -65,7 +66,7 @@ getErrorString();
 // 30: sinkP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 31: sinkP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 32: sinkP1.IPressure.signal:VARIABLE(flow=false )  type: Real
-// 33: sinkP1.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 33: sinkP1.pro.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 34: sinkP1.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 35: sinkP1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 36: sinkP1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -90,7 +91,7 @@ getErrorString();
 // 55: sourceQ2.h:VARIABLE(unit = "J/kg" protected = true )  "Fluid specific enthalpy" type: Real
 // 56: sourceQ2.Q:VARIABLE(unit = "kg/s" protected = true )  "Mass flow rate" type: Real
 // 57: sourceQ2.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 protected = true )  "Fluid pressure" type: Real
-// 58: mixer21.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 58: mixer21.pro.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 59: mixer21.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 60: mixer21.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 61: mixer21.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -124,7 +125,7 @@ getErrorString();
 // 89: mixer21.h:VARIABLE(start = 1e6 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 90: mixer21.P:VARIABLE(min = 0.0 start = 1e6 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 91: mixer21.alpha1:VARIABLE()  "Extraction coefficient for inlet 1 (<=1)" type: Real
-// 92: singularPressureLoss3.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 92: singularPressureLoss3.pro_pT.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 93: singularPressureLoss3.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 94: singularPressureLoss3.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 95: singularPressureLoss3.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
@@ -134,7 +135,7 @@ getErrorString();
 // 99: singularPressureLoss3.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
 // 100: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
 // 101: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
-// 102: singularPressureLoss3.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 102: singularPressureLoss3.pro_ph.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 103: singularPressureLoss3.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 104: singularPressureLoss3.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 105: singularPressureLoss3.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -161,8 +162,8 @@ getErrorString();
 // 126: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 127: singularPressureLoss3.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 128: singularPressureLoss3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 129: singularPressureLoss3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
-// 130: singularPressureLoss2.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 129: singularPressureLoss3.deltaP:VARIABLE(unit = "Pa" )  "Singular pressure loss" type: Real
+// 130: singularPressureLoss2.pro_pT.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 131: singularPressureLoss2.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 132: singularPressureLoss2.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 133: singularPressureLoss2.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
@@ -172,7 +173,7 @@ getErrorString();
 // 137: singularPressureLoss2.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
 // 138: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
 // 139: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
-// 140: singularPressureLoss2.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 140: singularPressureLoss2.pro_ph.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 141: singularPressureLoss2.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 142: singularPressureLoss2.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 143: singularPressureLoss2.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -199,8 +200,8 @@ getErrorString();
 // 164: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 165: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 166: singularPressureLoss2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 167: singularPressureLoss2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
-// 168: singularPressureLoss1.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 167: singularPressureLoss2.deltaP:VARIABLE(unit = "Pa" )  "Singular pressure loss" type: Real
+// 168: singularPressureLoss1.pro_pT.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 169: singularPressureLoss1.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 170: singularPressureLoss1.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 171: singularPressureLoss1.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
@@ -210,7 +211,7 @@ getErrorString();
 // 175: singularPressureLoss1.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
 // 176: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
 // 177: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
-// 178: singularPressureLoss1.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 178: singularPressureLoss1.pro_ph.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 179: singularPressureLoss1.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 180: singularPressureLoss1.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 181: singularPressureLoss1.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -237,7 +238,7 @@ getErrorString();
 // 202: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 203: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 204: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 205: singularPressureLoss1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
+// 205: singularPressureLoss1.deltaP:VARIABLE(unit = "Pa" )  "Singular pressure loss" type: Real
 // 206: sourceQ2.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 207: sourceQ2.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 208: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
@@ -948,7 +949,7 @@ getErrorString();
 // 7: sourceP3.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 8: sourceP3.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 9: sourceP3.IPressure.signal:VARIABLE(flow=false )  type: Real
-// 10: sourceP3.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 10: sourceP3.pro.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 11: sourceP3.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 12: sourceP3.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 13: sourceP3.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -971,7 +972,7 @@ getErrorString();
 // 30: sinkP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 31: sinkP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 32: sinkP1.IPressure.signal:VARIABLE(flow=false )  type: Real
-// 33: sinkP1.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 33: sinkP1.pro.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 34: sinkP1.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 35: sinkP1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 36: sinkP1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -996,7 +997,7 @@ getErrorString();
 // 55: sourceQ2.h:VARIABLE(unit = "J/kg" protected = true )  "Fluid specific enthalpy" type: Real
 // 56: sourceQ2.Q:VARIABLE(unit = "kg/s" protected = true )  "Mass flow rate" type: Real
 // 57: sourceQ2.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 protected = true )  "Fluid pressure" type: Real
-// 58: mixer21.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 58: mixer21.pro.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 59: mixer21.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 60: mixer21.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 61: mixer21.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -1030,7 +1031,7 @@ getErrorString();
 // 89: mixer21.h:VARIABLE(start = 1e6 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 90: mixer21.P:VARIABLE(min = 0.0 start = 1e6 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 91: mixer21.alpha1:VARIABLE()  "Extraction coefficient for inlet 1 (<=1)" type: Real
-// 92: singularPressureLoss3.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 92: singularPressureLoss3.pro_pT.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 93: singularPressureLoss3.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 94: singularPressureLoss3.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 95: singularPressureLoss3.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
@@ -1040,7 +1041,7 @@ getErrorString();
 // 99: singularPressureLoss3.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
 // 100: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
 // 101: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
-// 102: singularPressureLoss3.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 102: singularPressureLoss3.pro_ph.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 103: singularPressureLoss3.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 104: singularPressureLoss3.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 105: singularPressureLoss3.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -1067,8 +1068,8 @@ getErrorString();
 // 126: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 127: singularPressureLoss3.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 128: singularPressureLoss3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 129: singularPressureLoss3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
-// 130: singularPressureLoss2.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 129: singularPressureLoss3.deltaP:VARIABLE(unit = "Pa" )  "Singular pressure loss" type: Real
+// 130: singularPressureLoss2.pro_pT.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 131: singularPressureLoss2.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 132: singularPressureLoss2.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 133: singularPressureLoss2.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
@@ -1078,7 +1079,7 @@ getErrorString();
 // 137: singularPressureLoss2.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
 // 138: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
 // 139: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
-// 140: singularPressureLoss2.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 140: singularPressureLoss2.pro_ph.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 141: singularPressureLoss2.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 142: singularPressureLoss2.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 143: singularPressureLoss2.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -1105,8 +1106,8 @@ getErrorString();
 // 164: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 165: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 166: singularPressureLoss2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 167: singularPressureLoss2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
-// 168: singularPressureLoss1.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 167: singularPressureLoss2.deltaP:VARIABLE(unit = "Pa" )  "Singular pressure loss" type: Real
+// 168: singularPressureLoss1.pro_pT.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 169: singularPressureLoss1.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 170: singularPressureLoss1.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 171: singularPressureLoss1.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
@@ -1116,7 +1117,7 @@ getErrorString();
 // 175: singularPressureLoss1.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
 // 176: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
 // 177: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
-// 178: singularPressureLoss1.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
+// 178: singularPressureLoss1.pro_ph.x:VARIABLE(min = 0.0 max = 1.0 unit = "1" )  "Vapor mass fraction" type: Real
 // 179: singularPressureLoss1.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 180: singularPressureLoss1.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 181: singularPressureLoss1.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
@@ -1143,7 +1144,7 @@ getErrorString();
 // 202: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 203: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 204: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 205: singularPressureLoss1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
+// 205: singularPressureLoss1.deltaP:VARIABLE(unit = "Pa" )  "Singular pressure loss" type: Real
 // 206: sourceQ2.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 207: sourceQ2.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 208: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
@@ -1927,19 +1928,19 @@ getErrorString();
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Mixer2.mo:14:3-16:24:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Mixer2.mo:17:3-18:52:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Mixer2.mo:20:3-22:17:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/Mixer2.mo:10:3-11:81:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/Mixer2.mo:12:3-13:78:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/Mixer2.mo:14:3-15:79:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourceQ.mo:24:3-25:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SinkP.mo:33:3-34:47:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourceP.mo:30:3-31:45:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // "
 // "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
 // singularPressureLoss3.Q,0.97,0.996203,1.91,1.56627,TRUE,0.0239712,
