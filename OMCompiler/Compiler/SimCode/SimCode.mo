@@ -202,6 +202,7 @@ uniontype SimCode
     list<SimEqSystem> inlineEquations;
     Option<OMSIData> omsiData "used for OMSI to generate equations code";
     Boolean scalarized;
+    list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
   end SIMCODE;
 end SimCode;
 

@@ -86,6 +86,52 @@ pub use array::*;
 pub use value::*;
 pub use misc::*;
 
+/// An owned `T` from a value bound either by move (`T`) or through a borrow
+/// (`&T`): moves the former, clones the latter.
+pub trait Own<T> {
+    fn own(self) -> T;
+}
+
+impl<T> Own<T> for T {
+    #[inline(always)]
+    fn own(self) -> T {
+        self
+    }
+}
+
+impl<T: Clone> Own<T> for &T {
+    #[inline(always)]
+    fn own(self) -> T {
+        self.clone()
+    }
+}
+
+/// The callback in an `Arc`, for a `&dyn Fn` parameter. Unlike `&*a` it needs
+/// no known type for `a`, so it works on an inferred closure parameter.
+#[inline(always)]
+pub fn arc_ref<F: ?Sized>(a: &std::sync::Arc<F>) -> &F {
+    a
+}
+
+/// A `&T` from a value bound either by move (`T`) or through a borrow (`&T`).
+pub trait AsArg<T> {
+    fn as_arg(&self) -> &T;
+}
+
+impl<T> AsArg<T> for T {
+    #[inline(always)]
+    fn as_arg(&self) -> &T {
+        self
+    }
+}
+
+impl<T> AsArg<T> for &T {
+    #[inline(always)]
+    fn as_arg(&self) -> &T {
+        self
+    }
+}
+
 /// Wrap an infallible function value so it satisfies a function-pointer type
 /// whose signature expects `Result<T>`.
 ///

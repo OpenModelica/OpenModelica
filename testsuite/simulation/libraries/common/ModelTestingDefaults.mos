@@ -2,7 +2,7 @@ echo(false);
 loadFile(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTesting.mo");
 GC_expand_hp(500*1024*1024); // ~300 MB to load MSL, 200MB more for the smallest models to simulate
 packageName := $TypeName(Modelica);
-packageVersion := "3.2.1";
+packageVersion := "4.1.0";
 setCommandLineOptions("-d=nogen"); // Use and so I don't need to baseline the tests again...
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.C;
@@ -11,7 +11,7 @@ stopTime := 0.0; // 0.0 means to read the stopTime from the experiment annotatio
 relTol := 0.01; // Tolerance for the simulation comparison
 absTol := 0.0001; // Tolerance for the simulation comparison
 compareVars := fill("",0); // Default compares all variables. Not recommended, but is the only reasonable default'
-referenceFileDir := "msl32"; // Default directory of reference files
+referenceFileDir := "msl41"; // Default directory of reference files
 referenceFile := ""; // Default reference file is $REFERENCEFILES/referenceFileDir/modelName.mat
 referenceFileName := ""; // Default reference file name is the model name; set this when the
                          // model was renamed but the reference file kept its old name

@@ -443,7 +443,7 @@ public
     output String name;
   algorithm
     name := match cref
-      case CREF() then InstNode.name(node(cref));
+      case CREF() then nodeName(cref);
       case WILD() then if baseModelica then "" else "_";
       else "";
     end match;
@@ -1007,16 +1007,14 @@ public
   algorithm
     subscripts := match cref
       local
-        list<Expression> sizes_;
         list<Subscript> subs;
 
       case CREF(subscripts = {}) algorithm
-        sizes_ := sizes_local_exp(cref, false);
+        // one slice per array dimension of this node, so that the subscripts
+        // stay aligned with the dimensions
         subs := {};
-        for size in listReverse(sizes_) loop
-          if not Expression.isOne(size) then
-            subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), size)) :: subs;
-          end if;
+        for dim in listReverse(Type.arrayDims(cref.ty)) loop
+          subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim))) :: subs;
         end for;
       then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
 
@@ -1406,7 +1404,7 @@ public
     acref := match cref
       case CREF()
         algorithm
-          acref := Absyn.ComponentRef.CREF_IDENT(InstNode.name(node(cref)),
+          acref := Absyn.ComponentRef.CREF_IDENT(nodeName(cref),
             list(Subscript.toAbsyn(s) for s in cref.subscripts));
         then
           toAbsyn_impl(cref.restCref, acref);
@@ -1425,7 +1423,7 @@ public
 
       case CREF()
         algorithm
-          acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(node(cref)),
+          acref := Absyn.ComponentRef.CREF_QUAL(nodeName(cref),
             list(Subscript.toAbsyn(s) for s in cref.subscripts), accumCref);
         then
           toAbsyn_impl(cref.restCref, acref);
@@ -1440,7 +1438,7 @@ public
     dcref := match cref
       case CREF()
         algorithm
-          dcref := DAE.ComponentRef.CREF_IDENT(InstNode.name(node(cref)), Type.toDAE(cref.ty),
+          dcref := DAE.ComponentRef.CREF_IDENT(nodeName(cref), Type.toDAE(cref.ty),
             list(Subscript.toDAE(s) for s in cref.subscripts));
         then
           toDAE_impl(cref.restCref, dcref);
@@ -1469,7 +1467,7 @@ public
           // So instead we just fetch the type of the node if the type is unknown.
           ty := if Type.isUnknown(cref.ty) then InstNode.getType(node(cref)) else cref.ty;
           dty := Type.toDAE(ty, makeTypeVars = false);
-          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(node(cref)), dty,
+          dcref := DAE.ComponentRef.CREF_QUAL(nodeName(cref), dty,
             list(Subscript.toDAE(s) for s in cref.subscripts), accumCref);
         then
           toDAE_impl(cref.restCref, dcref);
@@ -1493,7 +1491,7 @@ public
 
       case CREF()
         algorithm
-          str := InstNode.name(node(cref)) + Subscript.toStringList(cref.subscripts);
+          str := nodeName(cref) + Subscript.toStringList(cref.subscripts);
         then
           toString_impl(cref.restCref, str :: strl);
 
@@ -1629,7 +1627,7 @@ public
       case CREF()
         algorithm
           obj := JSON.emptyListObject();
-          obj := JSON.addPair("name", JSON.makeString(InstNode.name(node(cref))), obj);
+          obj := JSON.addPair("name", JSON.makeString(nodeName(cref)), obj);
 
           if not listEmpty(cref.subscripts) then
             obj := JSON.addPair("subscripts", Subscript.toJSONList(cref.subscripts), obj);
@@ -1697,7 +1695,7 @@ public
   algorithm
     path := match cref
       case CREF()
-        then toPath_impl(cref.restCref, Absyn.IDENT(InstNode.name(node(cref))));
+        then toPath_impl(cref.restCref, Absyn.IDENT(nodeName(cref)));
     end match;
   end toPath;
 
@@ -1709,7 +1707,7 @@ public
     path := match cref
       case CREF()
         then toPath_impl(cref.restCref,
-          Absyn.QUALIFIED(InstNode.name(node(cref)), accumPath));
+          Absyn.QUALIFIED(nodeName(cref), accumPath));
       else accumPath;
     end match;
   end toPath_impl;
@@ -2071,10 +2069,13 @@ public
   algorithm
     s_lst := match cref
       case CREF() algorithm
-        complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.sizeExp(dim) for dim in Type.arrayDims(cref.ty));
-        if withComplex and isSome(complex_size) then
-          s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
+        // the size of a record can not be determined if it has members with unknown dimensions
+        if withComplex then
+          complex_size := Type.complexSize(cref.ty);
+          if isSome(complex_size) then
+            s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
+          end if;
         end if;
         s_lst := if listEmpty(s_lst) then {Expression.INTEGER(1)} else s_lst;
       then s_lst;
@@ -2110,18 +2111,45 @@ public
   function subscriptsToExpression
     input ComponentRef cref;
     input Boolean addScalar;
-    output list<Expression> e_lst = {};
-  algorithm
-    for subs_tmp in subscriptsAllReverse(cref) loop
-      if addScalar and listEmpty(subs_tmp) then
-        e_lst := Expression.INTEGER(1) :: e_lst;
-      else
-        for sub in subs_tmp loop
-          e_lst := Subscript.toExp(sub) :: e_lst;
-        end for;
-      end if;
-    end for;
+    // reversed, matching the order of sizes()
+    output list<Expression> e_lst = listReverse(subscriptsToExpression2(cref, addScalar, {}));
   end subscriptsToExpression;
+
+  function subscriptsToExpression2
+    input ComponentRef cref;
+    input Boolean addScalar;
+    input list<Expression> accum;
+    output list<Expression> e_lst;
+  protected
+    list<Dimension> dims;
+    list<Expression> local_lst;
+    Expression exp;
+    Dimension whole_dim;
+  algorithm
+    e_lst := match cref
+      case CREF() algorithm
+        if addScalar and listEmpty(cref.subscripts) then
+          local_lst := {Expression.INTEGER(1)};
+        else
+          // a whole subscript is the range over the corresponding dimension of the node
+          dims := Type.arrayDims(cref.ty);
+          local_lst := {};
+          for sub in cref.subscripts loop
+            exp := match (sub, dims)
+              case (Subscript.WHOLE(), whole_dim :: _)
+                then Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(whole_dim));
+              else Subscript.toExp(sub);
+            end match;
+            local_lst := exp :: local_lst;
+            dims := if listEmpty(dims) then dims else listRest(dims);
+          end for;
+          local_lst := listReverse(local_lst);
+        end if;
+      then subscriptsToExpression2(cref.restCref, addScalar, listAppend(local_lst, accum));
+
+      else accum;
+    end match;
+  end subscriptsToExpression2;
 
   function isEmptyArray
     "Returns whether any node in the cref has a dimension that's 0."

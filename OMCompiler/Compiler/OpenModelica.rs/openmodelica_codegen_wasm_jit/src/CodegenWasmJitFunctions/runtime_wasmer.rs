@@ -261,7 +261,7 @@ fn report_pending_assert(store: &mut Store, rt: &RtFns, pa: &openmodelica_wasm_j
         columnNumberEnd: pa.ecol,
         lastModification: metamodelica::OrderedFloat(0.0),
     };
-    Error::addSourceMessage(Error::COMPILER_ERROR.clone(), metamodelica::cons(ArcStr::from(msg), metamodelica::nil()), info)?;
+    Error::addSourceMessage(&Error::COMPILER_ERROR, metamodelica::cons(ArcStr::from(msg), metamodelica::nil()), &info)?;
     Ok(())
 }
 

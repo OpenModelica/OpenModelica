@@ -3692,7 +3692,7 @@ package PlanarMechanicsStandard
 </html>"));
   end Examples;
   annotation (uses(
-        Modelica(version="3.2.1")), Documentation(revisions="<html>
+        Modelica(version="4.1.0")), Documentation(revisions="<html>
 </html>", info="<html>
 <p>
 <b>Licensed by tDirk Zimmer under the Modelica License 2</b><br>

@@ -34,6 +34,8 @@
 #include "arrayIndex.h"
 #include "../util/omc_error.h"
 
+#include <string.h>
+
 /**
  * @brief Allocate memory for index maps.
  *
@@ -126,28 +128,22 @@ void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
   // Variables
   simulationInfo->realVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerVarsReverseIndex = NULL;
-  // simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanVarsReverseIndex = NULL;
-  // simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringVarsReverseIndex = NULL;
-  // simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
 
   // Parameters
   simulationInfo->realParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerParamsReverseIndex = NULL;
-  // simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanParamsReverseIndex = NULL;
-  // simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringParamsReverseIndex = NULL;
-  // simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
 
   // Alias variables
   simulationInfo->realAliasReverseIndex = NULL;
@@ -274,8 +270,11 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
                         "Failed to calculate length of variable.",
                         dimensionAttribute->valueReference);
 
-      dimensionAttribute->start = structuralParameter->attribute.start;
-      length = length * structuralParameter->attribute.start;
+      assertStreamPrint(NULL, structuralParameter->dimension.numberOfDimensions == 0,
+                        "Structural parameter '%s' specifying a dimension has to be a scalar.",
+                        structuralParameter->info.name);
+      dimensionAttribute->start = integer_get(structuralParameter->attribute.start, 0);
+      length = length * dimensionAttribute->start;
       break;
 
     default:
@@ -429,6 +428,60 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
 
   free(array_index);
   return;
+}
+
+/**
+ * @brief Write name of an element of an array variable.
+ *
+ * Uses the Modelica structured naming `"<name>[i,j,...]"` with 1-based
+ * indices. For scalar variables `name` is written.
+ *
+ * A state derivative named `"der(<name>)"` gets `"der(<name>[i,j,...])"`, like
+ * in the result files, if `derivativeSubscriptInside` is set, and
+ * `"der(<name>)[i,j,...]"` otherwise.
+ *
+ * @param buffer                     Buffer to write into.
+ * @param buffer_size                Size of `buffer`.
+ * @param name                       Name of array variable.
+ * @param dimension_info             Dimensions of array variable, may be NULL for scalars.
+ * @param linear_address             Flattened (row-major) index of element.
+ * @param derivativeSubscriptInside  Put the subscripts of a state derivative inside `der()`.
+ * @return int                       Number of characters written, like snprintf.
+ */
+int printArrayElementName(char *buffer,
+                          size_t buffer_size,
+                          const char *name,
+                          const DIMENSION_INFO *dimension_info,
+                          size_t linear_address,
+                          modelica_boolean derivativeSubscriptInside)
+{
+  int written;
+  size_t k, rem, stride, j;
+  size_t name_length = strlen(name);
+  const int isDerivative = derivativeSubscriptInside && name_length > 5 && strncmp(name, "der(", 4) == 0 && name[name_length - 1] == ')';
+
+  if (dimension_info == NULL || dimension_info->numberOfDimensions == 0)
+  {
+    return snprintf(buffer, buffer_size, "%s", name);
+  }
+
+  written = snprintf(buffer, buffer_size, "%.*s", (int)(isDerivative ? name_length - 1 : name_length), name);
+
+  rem = linear_address;
+  for (k = 0; k < dimension_info->numberOfDimensions; k++)
+  {
+    stride = 1;
+    for (j = k + 1; j < dimension_info->numberOfDimensions; j++)
+    {
+      stride *= (size_t)dimension_info->dimensions[j].start;
+    }
+    written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0,
+                        (k == 0) ? "[%zu" : ",%zu", rem / stride + 1);
+    rem = rem % stride;
+  }
+  written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0, isDerivative ? "])" : "]");
+
+  return written;
 }
 
 /**
@@ -712,9 +765,50 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 {
   // Variables
   computeVarsReverseIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
+  computeVarsReverseIndex(modelData->integerVarsData, VAR_TYPE_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsReverseIndex);
+  computeVarsReverseIndex(modelData->booleanVarsData, VAR_TYPE_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsReverseIndex);
+  computeVarsReverseIndex(modelData->stringVarsData, VAR_TYPE_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsReverseIndex);
 
   // Parameters
   computeVarsReverseIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsReverseIndex);
+  computeVarsReverseIndex(modelData->integerParameterData, VAR_TYPE_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsReverseIndex);
+  computeVarsReverseIndex(modelData->booleanParameterData, VAR_TYPE_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsReverseIndex);
+  computeVarsReverseIndex(modelData->stringParameterData, VAR_TYPE_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsReverseIndex);
+}
+
+/**
+ * @brief Index of the attribute element that holds element `dim_idx` of an
+ * array variable.
+ *
+ * An attribute with a single element (`each` or no attribute given in the
+ * init XML) holds the value for all elements of the array variable.
+ *
+ * @param attribute  Attribute array of any element type.
+ * @param dim_idx    Index inside array variable as 1D representation.
+ * @return size_t    Index into the data of `attribute`.
+ */
+size_t attributeElementIndex(const base_array_t *attribute, size_t dim_idx)
+{
+  const size_t n = (size_t) base_array_nr_of_elements(*attribute);
+
+  if (n == 1) {
+    return 0;
+  }
+  assertStreamPrint(NULL, dim_idx < n,
+                    "attributeElementIndex: dim_idx %zu out of bounds [0, %zu)", dim_idx, n);
+  return dim_idx;
+}
+
+/**
+ * @brief Get element `dim_idx` of a real attribute, see attributeElementIndex.
+ *
+ * @param attribute       Attribute array.
+ * @param dim_idx         Index inside array variable as 1D representation.
+ * @return modelica_real  Attribute value of element `dim_idx`.
+ */
+static modelica_real real_attribute_get(const real_array *attribute, size_t dim_idx)
+{
+  return real_get(*attribute, attributeElementIndex(attribute, dim_idx));
 }
 
 /**
@@ -751,21 +845,21 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                             "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nStates);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
 
         case VAR_KIND_VARIABLE:
           assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                             "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nVariablesReal);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
 
         case VAR_KIND_PARAMETER:
           assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                             "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nParametersReal);
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
 
         default:
           throwStreamPrint(NULL,
@@ -807,21 +901,21 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                         "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                         scalar_idx, (size_t)modelData->nStates);
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 
     case VAR_KIND_VARIABLE:
       assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                         "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                         scalar_idx, (size_t)modelData->nVariablesReal);
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 
     case VAR_KIND_PARAMETER:
       assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                         "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                         scalar_idx, (size_t)modelData->nParametersReal);
       revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-      return real_get(modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+      return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 
     default:
       throwStreamPrint(NULL,
@@ -864,21 +958,21 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                             "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nStates);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
 
         case VAR_KIND_VARIABLE:
           assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                             "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nVariablesReal);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
 
         case VAR_KIND_PARAMETER:
           assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                             "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nParametersReal);
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
 
         default:
           throwStreamPrint(NULL,
@@ -926,21 +1020,21 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                             "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nStates);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
 
         case VAR_KIND_VARIABLE:
           assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
                             "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nVariablesReal);
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
 
         case VAR_KIND_PARAMETER:
           assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
                             "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
                             scalar_idx, (size_t)modelData->nParametersReal);
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
-          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+          return real_attribute_get(&modelData->realParameterData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
 
         default:
           throwStreamPrint(NULL,

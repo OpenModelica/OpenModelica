@@ -111,7 +111,9 @@ pub const NLS_DERIVATIVE_TEST: Stream = 39;
 pub const NLS_SVD: Stream = 40;
 pub const NLS_SVD_V: Stream = 41;
 pub const NLS_RES: Stream = 42;
+pub const GBODE_NLS: Stream = 16;
 pub const NLS_EXTRAPOLATE: Stream = 43;
+pub const RT: Stream = 45;
 pub const SIMULATION: Stream = 46;
 pub const SOLVER: Stream = 47;
 pub const SOLVER_V: Stream = 48;
@@ -222,6 +224,8 @@ struct State {
     last_stream: Stream,
     /// `-logFormat=xml`: C's `setStreamPrintXML(1)`.
     xml: bool,
+    /// `<message>` elements left open for [`close`].
+    xml_depth: u32,
 }
 
 impl State {
@@ -234,6 +238,7 @@ impl State {
             last_type: [0; N_STREAMS],
             last_stream: UNKNOWN,
             xml: false,
+            xml_depth: 0,
         }
     }
 }
@@ -311,6 +316,13 @@ pub fn take_capture() -> String {
     capture_store::with(|b| b.take()).unwrap_or_default()
 }
 
+/// What `f` logs, diverted into a string; a capture already open is kept.
+pub fn capture(f: impl FnOnce()) -> String {
+    let outer = capture_store::with(|b| b.replace(String::new()));
+    f();
+    capture_store::with(|b| core::mem::replace(b, outer)).unwrap_or_default()
+}
+
 /// `true` when the line was captured and must not reach the sink.
 pub(crate) fn capture_line(s: &str) -> bool {
     capture_store::with(|b| match b {
@@ -336,6 +348,16 @@ pub fn set_mask(m: Mask) {
 /// C's `setStreamPrintXML`: write every message as a `<message …>` element.
 pub fn set_xml(v: bool) {
     store::with(|s| s.xml = v);
+}
+
+pub fn is_xml() -> bool {
+    store::with(|s| s.xml)
+}
+
+/// How many `<message>` elements are open. C's `xmltcp` sends only complete
+/// top-level elements.
+pub fn xml_depth() -> u32 {
+    store::with(|s| s.xml_depth)
 }
 
 pub fn mask() -> Mask {
@@ -426,16 +448,21 @@ pub fn warning_with_limit(stream: Stream, n_displayed: u64, max_displayed: u64, 
         message_text(WARNING, stream, false, msg);
     }
     if n_displayed == max_displayed {
-        message_text(
-            INFO,
-            stream,
-            false,
-            &format!(
-                "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
-            ),
-        );
-        message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
+        warning_limit_reached(stream, max_displayed);
     }
+}
+
+/// C's `warningStreamPrintLimitReached`.
+pub fn warning_limit_reached(stream: Stream, max_displayed: u64) {
+    message_text(
+        INFO,
+        stream,
+        false,
+        &format!(
+            "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
+        ),
+    );
+    message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
 }
 
 /// C's `va_throwStreamPrint`: unlike [`error`], gated on `-lv`.
@@ -467,7 +494,9 @@ pub fn close(stream: Stream) {
         if !mask_has(s.use_stream, stream) {
             return false;
         }
-        if !s.xml {
+        if s.xml {
+            s.xml_depth = s.xml_depth.saturating_sub(1);
+        } else {
             s.level[stream as usize] -= 1;
         }
         s.xml
@@ -484,7 +513,9 @@ pub fn close_warning(stream: Stream) {
         if !(mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0) {
             return false;
         }
-        if !s.xml {
+        if s.xml {
+            s.xml_depth = s.xml_depth.saturating_sub(1);
+        } else {
             s.level[stream as usize] -= 1;
         }
         s.xml
@@ -497,8 +528,14 @@ pub fn close_warning(stream: Stream) {
 /// C's `messageText`. A newline in `msg` starts a `subline`: `|` in both header
 /// columns and no level indent, as C's recursive call gives.
 pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+    message_text_used(ty, stream, indent_next, msg, &[]);
+}
+
+/// [`message_text`] with the equation indexes C's `messageXML` lists as
+/// `<used index=…>`; the text layout does not show them.
+pub fn message_text_used(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
     if store::with(|s| s.xml) {
-        return message_xml(ty, stream, indent_next, msg);
+        return message_xml(ty, stream, indent_next, msg, used);
     }
     let mut out = String::new();
     // C prints a message that ends in `\n` as it is: no empty sub-line after it.
@@ -516,10 +553,8 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
                 TYPE_DESC[ty as usize]
             };
             out.push_str(&format!("{name:<17} | {ty_col:<7} | "));
-            if !subline {
-                for _ in 0..s.level[i] {
-                    out.push_str("| ");
-                }
+            for _ in 0..s.level[i] {
+                out.push_str("| ");
             }
             out.push_str(line);
             out.push('\n');
@@ -538,7 +573,16 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
 
 /// C's `messageXML`: the whole message as one element's `text` attribute, left
 /// open for [`close`] when `indent_next`.
-fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    let out = xml_element(ty, stream, indent_next, msg, used);
+    if indent_next {
+        store::with(|s| s.xml_depth += 1);
+    }
+    crate::log_line(stream, ty, &out);
+}
+
+/// The element [`message_xml`] writes.
+pub fn xml_element(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) -> String {
     let mut out = format!(
         "<message stream=\"{}\" type=\"{}\" text=\"",
         STREAM_NAME[stream as usize], TYPE_DESC[ty as usize]
@@ -552,8 +596,18 @@ fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             _ => out.push(c),
         }
     }
-    out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
-    crate::log_line(stream, ty, &out);
+    if used.is_empty() {
+        out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
+        return out;
+    }
+    out.push_str("\">\n");
+    for i in used {
+        out.push_str(&format!("<used index=\"{i}\" />\n"));
+    }
+    if !indent_next {
+        out.push_str("</message>\n");
+    }
+    out
 }
 
 /// C's `%<width>.<prec>g`.
@@ -826,6 +880,22 @@ mod tests {
         assert_eq!(
             out,
             "LOG_ASSERT        | info    | first\n|                 | |       | second\n"
+        );
+    }
+
+    #[test]
+    fn a_subline_keeps_the_block_indentation() {
+        set_mask(ALWAYS_ON);
+        let out = capture(|| {
+            info(ASSERT, true, "head");
+            info(ASSERT, false, "first\nsecond");
+            close(ASSERT);
+        });
+        assert_eq!(
+            out,
+            "LOG_ASSERT        | info    | head\n\
+             |                 | |       | | first\n\
+             |                 | |       | | second\n"
         );
     }
 

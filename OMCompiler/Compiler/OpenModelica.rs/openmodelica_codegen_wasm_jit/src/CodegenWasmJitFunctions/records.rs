@@ -21,14 +21,14 @@ std::thread_local! {
     /// its consumer's about a field type, which would give the two ends different
     /// field offsets; the declaration decides for both.
     static RECORD_DECLS: std::cell::RefCell<HashMap<String, Arc<Vec<RecDeclField>>>> =
-        std::cell::RefCell::new(HashMap::new());
+        std::cell::RefCell::new(HashMap::default());
 }
 
 /// Install the module's record declarations (see [`RECORD_DECLS`]).
 pub(crate) fn set_record_decls(
     decls: &List<SimCodeFunction::RecordDeclaration>,
 ) -> Result<()> {
-    let mut map = HashMap::new();
+    let mut map = HashMap::default();
     for d in decls {
         // Only `RECORD_DECL_FULL` declares a layout.
         let SimCodeFunction::RecordDeclaration::RECORD_DECL_FULL { defPath, variables, .. } = d else {
@@ -134,22 +134,8 @@ pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy
     let layout = record_layout(fields);
     let obj = emit_record_alloc(ctx, &layout)?;
     for (i, (_, fty)) in fields.iter().enumerate() {
-        let w = compile_exp(ctx, field_exps[i])?;
+        let w = compile_private_value(ctx, field_exps[i], fty)?;
         coerce(ctx, w, fty.wty());
-        // Value semantics: a record/array field built from a non-fresh source
-        // (a variable, a field read) aliases that source's mutable object — copy
-        // it so the record owns a private value. Fresh constructors/calls/ranges
-        // are already privately owned and move in. (Strings are immutable.)
-        if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
-            if !value_rhs_is_fresh(field_exps[i]) {
-                let t = ctx.alloc_temp(WTy::I32);
-                ctx.emit(we::Instruction::LocalSet(t));
-                ctx.emit(we::Instruction::LocalGet(t));
-                ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-                ctx.emit(we::Instruction::LocalGet(t));
-                ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-            }
-        }
         // Store the owned (private) value into the field: address then value.
         let vt = ctx.alloc_temp(fty.wty());
         ctx.emit(we::Instruction::LocalSet(vt));
@@ -222,17 +208,31 @@ pub(super) fn rec_layout(fields: &[RecField]) -> RecordLayout {
 }
 
 /// Default-construct a record value of type `ty` (the C target's
-/// `<Rec>_construct`), leaving the owned handle on the stack. A declared field
-/// binding is evaluated in the record's own scope (C's `ths->_x`), a
-/// `bind_from_outside` one in this scope; the constructor is inlined here, so
-/// the first scope is made by binding each finished field under its own name.
+/// `<Rec>_construct`), leaving the owned handle on the stack.
 pub(super) fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
+    let (fields, vals) = record_default_values(ctx, ty)?;
+    let layout = rec_layout(&fields);
+    let obj = emit_record_alloc(ctx, &layout)?;
+    for (i, f) in fields.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::LocalGet(vals[i]));
+        field_store(ctx, f.sig.wty(), layout.data_off + layout.field_off[i]);
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// The field values [`emit_record_default`] builds, one owned value per field in
+/// a fresh local. A declared field binding is evaluated in the record's own scope
+/// (C's `ths->_x`), a `bind_from_outside` one in this scope; the constructor is
+/// inlined here, so the first scope is made by binding each finished field under
+/// its own name.
+pub(super) fn record_default_values(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<(Vec<RecField>, Vec<u32>)> {
     let Some(fields) = record_fields(ty)? else {
         return Err("CodegenWasmJit: default construction of a non-record type");
     };
     let decl = record_decl_of(ty)?;
     let decl_of = |name: &ArcStr| decl.as_ref().and_then(|d| d.iter().find(|f| &f.name == name));
-    let layout = rec_layout(&fields);
     // Evaluated before any field name is shadowed below.
     let mut outside: Vec<Option<u32>> = Vec::with_capacity(fields.len());
     for f in &fields {
@@ -246,7 +246,7 @@ pub(super) fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()>
             _ => None,
         });
     }
-    let obj = emit_record_alloc(ctx, &layout)?;
+    let mut vals = Vec::with_capacity(fields.len());
     let mut shadowed: Vec<(String, Option<(u32, SigTy)>)> = Vec::new();
     let result = (|ctx: &mut FnCtx| -> Result<()> {
         for (i, f) in fields.iter().enumerate() {
@@ -266,9 +266,7 @@ pub(super) fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()>
             }
             let vt = ctx.alloc_temp(fty.wty());
             ctx.emit(we::Instruction::LocalSet(vt));
-            ctx.emit(we::Instruction::LocalGet(obj));
-            ctx.emit(we::Instruction::LocalGet(vt));
-            field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+            vals.push(vt);
             let name = f.name.to_string();
             let prev = ctx.locals.insert(name.clone(), (vt, fty));
             shadowed.push((name, prev));
@@ -282,24 +280,13 @@ pub(super) fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()>
         };
     }
     result?;
-    ctx.emit(we::Instruction::LocalGet(obj));
-    Ok(())
+    Ok((fields, vals))
 }
 
 /// One record-field binding, copied if it came from an alias (value semantics).
 fn emit_field_value(ctx: &mut FnCtx, fty: &SigTy, exp: &DAE::Exp) -> Result<()> {
-    let w = compile_exp(ctx, exp)?;
+    let w = compile_private_value(ctx, exp, fty)?;
     coerce(ctx, w, fty.wty());
-    if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
-        if !value_rhs_is_fresh(exp) {
-            let t = ctx.alloc_temp(WTy::I32);
-            ctx.emit(we::Instruction::LocalSet(t));
-            ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-            ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-        }
-    }
     Ok(())
 }
 
@@ -448,7 +435,16 @@ pub(super) fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &List<m
 /// expression is owned (retained if it was a variable) and released after the
 /// field is read; a heap field is retained so the returned value is owned.
 pub(super) fn compile_rsub(ctx: &mut FnCtx, exp: &DAE::Exp, name: &str) -> Result<WTy> {
-    let SigTy::Record { fields, .. } = exp_sigty(exp)? else {
+    let sty = exp_sigty(exp)?;
+    if let Some(flat) = flat_fields(&sty)
+        && let Some(i) = flat.iter().position(|(n, _)| n.as_str() == name)
+    {
+        let flat = flat.clone();
+        let vals = compile_flat(ctx, exp, &flat)?;
+        ctx.emit(we::Instruction::LocalGet(vals[i]));
+        return Ok(flat[i].1.wty());
+    }
+    let SigTy::Record { fields, .. } = sty else {
         return Err("CodegenWasmJit: field access `.` on a non-record expression");
     };
     let (off, fty) = record_field(&fields, name)?;
@@ -484,20 +480,10 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
         return Ok(());
     };
     // Heap field: compute the new owned value into a temp.
-    let w = compile_exp(ctx, rhs)?;
+    let w = compile_private_value(ctx, rhs, &fty)?;
     coerce(ctx, w, fty.wty());
     let val_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(val_t));
-    // Value semantics: a mutable array/record from a non-fresh source aliases it.
-    if let Some((copy_fn, rel_fn)) = value_copy_fns(&fty) {
-        if !value_rhs_is_fresh(rhs) {
-            ctx.emit(we::Instruction::LocalGet(val_t));
-            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-            ctx.emit(we::Instruction::LocalGet(val_t));
-            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-            ctx.emit(we::Instruction::LocalSet(val_t));
-        }
-    }
     // Release the previous field value (now that the new one is computed).
     ctx.emit(we::Instruction::LocalGet(rec_idx));
     field_load(ctx, fty.wty(), off);

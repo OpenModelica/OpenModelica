@@ -1,0 +1,102 @@
+// name: saveTotalModel3
+// keywords: saveTotalModel #5248
+// status: correct
+// teardown_command: rm -f SaveTotalRedeclareFunction_total.mo
+//
+// saveTotalModel uses the new frontend to find the used classes. The old
+// dependency analysis overflowed the stack on a short function declaration
+// redeclaring a package with its own name.
+//
+
+loadString("
+  package P
+    partial package PartialMedium
+      constant Integer nX = 1;
+    end PartialMedium;
+
+    package MyMedium
+      extends PartialMedium(nX = 2);
+    end MyMedium;
+
+    package UnusedMedium
+      extends PartialMedium(nX = 3);
+    end UnusedMedium;
+
+    function f
+      replaceable package Medium = PartialMedium;
+      input Real x;
+      output Real y = x * Medium.nX;
+    end f;
+
+    model M
+      replaceable package Medium = PartialMedium;
+      function g = f(redeclare package Medium = Medium);
+      Real y = g(time);
+    end M;
+
+    model Unused
+      Real x;
+    end Unused;
+  end P;
+
+  model SaveTotalRedeclareFunction
+    P.M m(redeclare package Medium = P.MyMedium);
+  end SaveTotalRedeclareFunction;
+"); getErrorString();
+saveTotalModel("SaveTotalRedeclareFunction_total.mo", SaveTotalRedeclareFunction); getErrorString();
+readFile("SaveTotalRedeclareFunction_total.mo");
+clearProgram();
+setCommandLineOptions("--loadMissingLibraries=false");
+loadFile("SaveTotalRedeclareFunction_total.mo"); getErrorString();
+instantiateModel(SaveTotalRedeclareFunction_total); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "package P
+//   partial package PartialMedium
+//     constant Integer nX = 1;
+//   end PartialMedium;
+//
+//   package MyMedium
+//     extends PartialMedium(nX = 2);
+//   end MyMedium;
+//
+//   function f
+//     replaceable package Medium = PartialMedium;
+//     input Real x;
+//     output Real y = x*Medium.nX;
+//   end f;
+//
+//   model M
+//     replaceable package Medium = PartialMedium;
+//     function g = f(redeclare package Medium = Medium);
+//     Real y = g(time);
+//   end M;
+// end P;
+//
+// model SaveTotalRedeclareFunction
+//   P.M m(redeclare package Medium = P.MyMedium);
+// end SaveTotalRedeclareFunction;
+//
+// model SaveTotalRedeclareFunction_total
+//   extends SaveTotalRedeclareFunction;
+// end SaveTotalRedeclareFunction_total;
+// "
+// true
+// true
+// true
+// ""
+// "function SaveTotalRedeclareFunction_total.m.g
+//   input Real x;
+//   output Real y = x * 2.0;
+// end SaveTotalRedeclareFunction_total.m.g;
+//
+// class SaveTotalRedeclareFunction_total
+//   Real m.y = SaveTotalRedeclareFunction_total.m.g(time);
+// end SaveTotalRedeclareFunction_total;
+// "
+// ""
+// endResult

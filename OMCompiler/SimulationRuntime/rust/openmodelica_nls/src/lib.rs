@@ -28,6 +28,7 @@ extern crate alloc;
 
 #[cfg(sundials)]
 pub mod jacobian_analysis;
+pub mod gbode;
 pub mod kinsol;
 pub mod newton_diagnostics;
 #[cfg(test)]
@@ -46,9 +47,12 @@ use counters::{
     STAT_NLS_GUESS_HIT, STAT_NLS_ITER, STAT_NLS_JAC, STAT_NLS_NEWTON_FAIL, STAT_NLS_RES,
     STAT_NLS_RETRY, STAT_NLS_SOLVE, STAT_NLS_STALE, STAT_NLS_STORE_BACK, STAT_NLS_VARY_START,
 };
+use openmodelica_solvers::simflags::NewtonStrategy;
 use solverflags::Nls;
 use core::cell::UnsafeCell;
-use core::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use core::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
+
+use openmodelica_solvers::atomic64::AtomicU64;
 
 /// The parts of a run that belong to the runtime around this solver: how a model
 /// error ends the evaluation, and where a side file goes.
@@ -299,6 +303,8 @@ pub struct NlsRequest<'a> {
     pub colors: &'a [u32],
     /// C's `nlsData->max`.
     pub max: &'a [f64],
+    /// C's `nlsData->min`.
+    pub min: &'a [f64],
 }
 
 /// The nonlinear solvers a runtime supplies beyond the core's own dense ladder:
@@ -384,7 +390,7 @@ fn context_stores_guess() -> bool {
 /// C's `simulationInfo->stepSize`, which bounds how far back [`solve_nls`] looks in
 /// a system's solution history. Pushed in by the host, which has the model
 /// description it comes from. 0 leaves the window empty.
-static STEP_SIZE: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+static STEP_SIZE: AtomicU64 = AtomicU64::new(0);
 
 /// C's `simulationInfo->stepSize`, pushed in by the driver that has it.
 pub fn set_step_size(h: f64) {
@@ -538,6 +544,12 @@ fn enter_nls_stage() -> StageGuard {
 
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
+
+/// C's `h_function` raises whenever the residual does, whatever the rest of `H`
+/// would cancel it with.
+fn eval_failed(fx: &[f64]) -> bool {
+    fx.iter().any(|v| fmath::fabs(*v) >= ASSERT_RESIDUAL)
+}
 
 /// Whether the last residual evaluation violated a local constraint of a casual
 /// tearing set.
@@ -849,6 +861,14 @@ pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
 /// index of the first zero pivot, straight from `dgetrf`. `A` is copied because
 /// `dgetrf` factors in place and the caller keeps it for the total-pivot fallback.
 pub fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
+    // What `dgetrf`/`dgetrs` compute for 1×1, without the triangular-solve dispatch.
+    if n == 1 {
+        if a[0] == 0.0 {
+            return Some(0);
+        }
+        b[0] /= a[0];
+        return None;
+    }
     let mut lu = a[..n * n].to_vec();
     let mut ipiv = alloc::vec![0i32; n];
     let info = dense_lu::getrf(n, &mut lu, &mut ipiv);
@@ -1174,6 +1194,10 @@ struct NewtonHom<'a, 'b> {
 impl Homotopy for NewtonHom<'_, '_> {
     fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
         (self.eval)(&y[..self.n], &mut self.fx);
+        if eval_failed(&self.fx) {
+            hvec[..self.n].fill(ASSERT_RESIDUAL);
+            return;
+        }
         let lam = y[self.n];
         for i in 0..self.n {
             hvec[i] = self.fx[i] - (1.0 - lam) * self.fx0[i];
@@ -1459,6 +1483,10 @@ struct FixpointHom<'a, 'b> {
 impl Homotopy for FixpointHom<'_, '_> {
     fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
         (self.eval)(&y[..self.n], &mut self.fx);
+        if eval_failed(&self.fx) {
+            hvec[..self.n].fill(ASSERT_RESIDUAL);
+            return;
+        }
         let lam = y[self.n];
         for i in 0..self.n {
             hvec[i] = lam * self.fx[i] + (1.0 - lam) * (y[i] - self.x0[i]);
@@ -2434,6 +2462,14 @@ pub trait History {
     /// Overwrite entry `k` and set the count to `len`.
     fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]);
     fn set_len(&mut self, len: usize);
+    /// Store `(time, x)` as entry 0, the oldest falling off at [`HIST_DEPTH`].
+    fn push_front(&mut self, time: f64, x: &[f64]) {
+        let count = self.len();
+        for k in (0..count.min(HIST_DEPTH - 1)).rev() {
+            self.shift(k, k + 1);
+        }
+        self.put(0, (count + 1).min(HIST_DEPTH), time, x);
+    }
 }
 
 /// Which stored solutions C's `getValues` builds the guess from.
@@ -2499,10 +2535,7 @@ pub fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
         h.put(0, count, time, x);
         return;
     }
-    for k in (0..count.min(HIST_DEPTH - 1)).rev() {
-        h.shift(k, k + 1);
-    }
-    h.put(0, (count + 1).min(HIST_DEPTH), time, x);
+    h.push_front(time, x);
 }
 
 /// `cleanValueListbyTime`: keep only the newest entry at or before `time`.
@@ -2552,6 +2585,11 @@ fn locked<R>(f: impl FnOnce() -> R) -> R {
 
 fn note_jac_eval() {
     flags().jac_evals.fetch_add(1, Ordering::Relaxed);
+}
+
+/// The Jacobian evaluations so far, C's `numberOfJEval` summed over the systems.
+pub(crate) fn jac_evals() -> u64 {
+    flags().jac_evals.load(Ordering::Relaxed)
 }
 
 /// The iterations a KINSOL solve took, which SUNDIALS counts rather than
@@ -2829,6 +2867,20 @@ fn log_newton_step(t: &HomotopyTrace, x1: &[f64], step: &[f64], x: &[f64]) {
     omclog::close(omclog::NLS_V);
 }
 
+/// C's `newtonLimitCycleStep`.
+fn newton_limit_cycle_step(hist: &mut [f64; 4], n_hist: &mut usize, e: f64) -> bool {
+    let mut cycle = false;
+    if *n_hist >= 4 && fmath::fabs(e - hist[0]) > 1e-2 * e {
+        for h in &hist[1..] {
+            cycle |= fmath::fabs(e - h) <= 1e-2 * e;
+        }
+    }
+    hist.copy_within(0..3, 1);
+    hist[0] = e;
+    *n_hist += 1;
+    cycle
+}
+
 /// C's `solveHomotopy` entry phase and its `newtonAlgorithm`
 /// (`nonlinearSolverHomotopy.c`): a start point already at tolerance is taken
 /// outright, else the Jacobian formed there feeds a damped Newton with a
@@ -2864,8 +2916,17 @@ fn newton_c(
     };
 
     // C's `xStart`: the retries below vary off this, not off the last varied point.
-    let x_start = x.to_vec();
-    let mut xscaling = vec![1.0f64; n];
+    // Taken at the first retry; `x` is unchanged until then.
+    let mut x_start: Option<alloc::vec::Vec<f64>> = None;
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 640]>::uninit(), alloc::vec::Vec::new());
+    let mut rest = zeroed(&mut stack, &mut heap, 5 * n + n * n + n * (n + 1));
+    let xscaling = carve(&mut rest, n);
+    let mut fvec = carve(&mut rest, n);
+    let mut rp = carve(&mut rest, n);
+    let mut step = carve(&mut rest, n); // C's dy0 (the full Newton step −J⁻¹f)
+    let mut x1 = carve(&mut rest, n);
+    let mut jac = carve(&mut rest, n * n);
+    let mut aug = carve(&mut rest, n * (n + 1)); // C's `fJac`, whose last column is `fvec`
     for i in 0..n {
         xscaling[i] = nominal[i].abs().max(x[i].abs());
         if xscaling[i] <= 0.0 {
@@ -2877,12 +2938,6 @@ fn newton_c(
         log_homotopy_enter(t, n, x, nominal, &xscaling);
     }
 
-    let mut fvec = vec![0.0f64; n];
-    let mut x1 = vec![0.0f64; n];
-    let mut rp = vec![0.0f64; n];
-    let mut step = vec![0.0f64; n]; // C's dy0 (the full Newton step −J⁻¹f)
-    let mut jac = vec![0.0f64; n * n];
-    let mut aug = vec![0.0f64; n * (n + 1)]; // C's `fJac`, whose last column is `fvec`
 
     // The Jacobian is w.r.t. *scaled* unknowns: both of C's paths scale column `j` by
     // `xScaling[j]`, and the step is unscaled after the solve. `resScaling` is a row
@@ -2982,6 +3037,7 @@ fn newton_c(
                 &alloc::format!("assert handling:\t vary initial guess by +{pct}%."),
             );
         }
+        let x_start = x_start.get_or_insert_with(|| x.to_vec());
         for i in 0..n {
             x[i] = x_start[i] + xscaling[i] * (i as f64) / (n as f64) * vary;
         }
@@ -3005,7 +3061,13 @@ fn newton_c(
     }
     let mut iter = 0i32;
     let mut neg_steps = 0i32;
+    let mut cycles = 0i32;
+    let mut err_hist = [0.0f64; 4];
+    let mut n_hist = 0usize;
     let mut small_steps = 0i32;
+    // C's `lambda` as `-nlsInfo` reports it: only the no-damping and cubic
+    // branches set it.
+    let mut info_lambda = 1.0f64;
     // C's `solverinfo == 1`, which its first iteration cannot see: the entry phase's
     // total-pivot solve reports a vanishing determinant only to the log.
     let mut vanishing = false;
@@ -3115,6 +3177,7 @@ fn newton_c(
                     }
                 }
                 lam = lam.max(LAMBDA_MIN_C);
+                info_lambda = lam;
                 if trace.is_some() {
                     omclog::debug_double(omclog::NLS_V, "Need to damp this!! lambda = ", lam);
                 }
@@ -3135,6 +3198,8 @@ fn newton_c(
                     omclog::debug_double(omclog::NLS_V, "Need to damp, error_f1 = ", fmath::sqrt(nsq(&fvec)));
                 }
             }
+        } else {
+            info_lambda = lambda1;
         }
 
         if trace.is_some() {
@@ -3156,9 +3221,17 @@ fn newton_c(
         }
         let delta_x_sqrd_scaled = dxs;
         let error_f_old = error_f_sqrd;
+        let error_f_old_scaled = error_f_sqrd_scaled;
         error_f_sqrd = nsq(&fvec);
         error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
         neg_steps += (error_f_sqrd > 10.0 * error_f_old) as i32;
+        // A cycle within the less accuracy band is left to the other exits.
+        let cycle = newton_limit_cycle_step(&mut err_hist, &mut n_hist, error_f_sqrd);
+        cycles = if cycle && error_f_sqrd >= ftol_sq * 1e6 && error_f_sqrd_scaled >= ftol_sq * 1e6 {
+            cycles + 1
+        } else {
+            0
+        };
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             omclog::debug_string(omclog::NLS_V, "error measurements:");
@@ -3169,7 +3242,17 @@ fn newton_c(
             d("error_f_scaled =", fmath::sqrt(error_f_sqrd_scaled));
             d("newtonFTol          =", fmath::sqrt(ftol_sq));
         }
-        if neg_steps > 20 {
+        newton_iter_stat(&NewtonIterStat {
+            iteration: iter + 1,
+            x: &x[..n],
+            f: &fvec,
+            delta_x_sqrd,
+            delta_x_sqrd_scaled,
+            error_f_sqrd,
+            error_f_sqrd_scaled,
+            lambda: info_lambda,
+        });
+        if neg_steps > 20 || cycles > 20 {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
                 omclog::debug_int(omclog::NLS_V, "UPS! Something happened, NegativeSteps = ", neg_steps);
@@ -3198,6 +3281,16 @@ fn newton_c(
         if vanishing {
             omclog::debug_string(omclog::DT, "It is not the solution.");
             return (false, false);
+        }
+        // The residual stopped decreasing at an `x` that meets the tolerance: further steps are round-off.
+        if last_was_good && (error_f_old < ftol_sq || error_f_old_scaled < ftol_sq) {
+            if trace.is_some() {
+                omclog::debug_string(
+                    omclog::NLS_V,
+                    "Note: newton solver rejected last x because previous was as good",
+                );
+            }
+            return (true, false);
         }
         iter += 1;
         // C's `maxNumberOfIterations = size*100`.
@@ -3398,9 +3491,8 @@ fn newton_res_scaling(n: usize, jac: &[f64], scaling: &mut [f64]) {
     }
 }
 
-/// C's `wrapper_fvec_newton(fj = 0)`: the analytic Jacobian, else forward differences
-/// stepped by `sqrt(DBL_EPSILON)·max(|x_i|, |f_i|)`, signed by `f_i`.
-#[allow(clippy::too_many_arguments)]
+/// C's `wrapper_fvec_newton(fj = 0)` without an analytic Jacobian: forward
+/// differences stepped by `sqrt(DBL_EPSILON)·max(|x_i|, |f_i|)`, signed by `f_i`.
 fn newton_jacobian(
     n: usize,
     x: &mut [f64],
@@ -3408,13 +3500,8 @@ fn newton_jacobian(
     jac: &mut [f64],
     rwork: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
-    jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
-    has_jac: bool,
 ) {
-    if has_jac {
-        jaceval(x, jac);
-        return;
-    }
+    note_jac_eval();
     for i in 0..n {
         let mut dhh = fmath::fmax(
             SQRT_EPS * fmath::fmax(fmath::fabs(x[i]), fmath::fabs(fvec[i])),
@@ -3435,10 +3522,14 @@ fn newton_jacobian(
     }
 }
 
-/// C's `damping_heuristic2` (the default `NEWTON_DAMPED2`): shrink by 3/4 until the
-/// residual improves; below `1e-4` take the full step, or the tiny one after five tries.
+/// C's `damping_heuristic` (`-newton=damped`: factor 1/2, threshold `1e-2`) and
+/// `damping_heuristic2` (the default `damped2`: 3/4, `1e-4`): shrink the step until
+/// the residual improves; below the threshold take the full step, or the tiny one
+/// after five tries.
 #[allow(clippy::too_many_arguments)]
-fn damping_heuristic2(
+fn damping_heuristic(
+    factor: f64,
+    threshold: f64,
     n: usize,
     x: &[f64],
     x_incr: &[f64],
@@ -3448,16 +3539,15 @@ fn damping_heuristic2(
     k: &mut i32,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) {
-    const TRESHOLD: f64 = 1.0e-4;
     let mut lambda = 1.0f64;
     eval(x_new, fvec);
     while minpack::enorm(fvec) >= current {
-        lambda *= 0.75;
+        lambda *= factor;
         for i in 0..n {
             x_new[i] = x[i] - lambda * x_incr[i];
         }
         eval(x_new, fvec);
-        if lambda <= TRESHOLD {
+        if lambda <= threshold {
             if *k < 5 {
                 for i in 0..n {
                     x_new[i] = x[i] - x_incr[i];
@@ -3467,6 +3557,123 @@ fn damping_heuristic2(
             *k += 1;
             return;
         }
+    }
+}
+
+/// C's `LineSearch` (`-newton=damped_ls`): the best of five points along the step.
+/// With none better, `f` stays at the last probe while the step is 1 (1/8 after
+/// five tries).
+#[allow(clippy::too_many_arguments)]
+fn line_search(
+    n: usize,
+    x: &[f64],
+    x_incr: &[f64],
+    x_new: &mut [f64],
+    current: f64,
+    fvec: &mut [f64],
+    k: &mut i32,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    let mut enorm_min = current;
+    let mut lambda_min = 0.0;
+    let mut fvec_min = vec![0.0f64; n];
+    for lambda in [1.25, 1.0, 0.75, 0.5, 0.25] {
+        for i in 0..n {
+            x_new[i] = x[i] - lambda * x_incr[i];
+        }
+        eval(x_new, fvec);
+        let e = minpack::enorm(fvec);
+        if e < enorm_min {
+            enorm_min = e;
+            lambda_min = lambda;
+            fvec_min.copy_from_slice(fvec);
+        }
+    }
+    if lambda_min == 0.0 {
+        lambda_min = if *k >= 5 { 0.125 } else { 1.0 };
+        eval(x_new, fvec);
+        *k += 1;
+    } else {
+        fvec.copy_from_slice(&fvec_min);
+    }
+    for i in 0..n {
+        x_new[i] = x[i] - lambda_min * x_incr[i];
+    }
+}
+
+/// C's `Backtracking` (`-newton=damped_bt`), a golden-section search on the
+/// damping. C's probes index past the last unknown, so each one sees the full step
+/// and only the bracket moves. Its `f_old` is the increment the linear solve left
+/// in `fvec`.
+#[allow(clippy::too_many_arguments)]
+fn backtracking(
+    n: usize,
+    x: &[f64],
+    x_incr: &[f64],
+    x_new: &mut [f64],
+    current: f64,
+    fvec: &mut [f64],
+    f_old: &mut [f64],
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    f_old.copy_from_slice(x_incr);
+    eval(x_new, fvec);
+    let full = minpack::enorm(fvec);
+    if full < current {
+        return;
+    }
+    const TAU: f64 = 0.618033988749894848;
+    let g = 0.5 * full * full;
+    let (mut a, mut b) = (0.0f64, 1.0f64);
+    let mut a1 = a + (1.0 - TAU) * (b - a);
+    let mut b1 = a + TAU * (b - a);
+    let (mut g1, mut g2) = (g, g);
+    while b - a > 1e-3 {
+        if g1 < g2 {
+            b = b1;
+            b1 = a1;
+            a1 = a + (1.0 - TAU) * (b - a);
+            g2 = g1;
+            g1 = g;
+        } else {
+            a = a1;
+            a1 = b1;
+            b1 = a + TAU * (b - a);
+            g1 = g2;
+            g2 = g;
+        }
+    }
+    let lambda = (a + b) / 2.0;
+    for i in 0..n {
+        x_new[i] = x[i] - lambda * x_incr[i];
+    }
+    eval(x_new, fvec);
+}
+
+/// One iteration of the homotopy solver's Newton, as C's `-nlsInfo` writes it to
+/// `<prefix>_NLS<eq>StatsIter.csv`: `x` before the step, `f` after it.
+pub struct NewtonIterStat<'a> {
+    pub iteration: i32,
+    pub x: &'a [f64],
+    pub f: &'a [f64],
+    pub delta_x_sqrd: f64,
+    pub delta_x_sqrd_scaled: f64,
+    pub error_f_sqrd: f64,
+    pub error_f_sqrd_scaled: f64,
+    pub lambda: f64,
+}
+
+static NEWTON_ITER_HOOK: AtomicUsize = AtomicUsize::new(0);
+
+pub fn set_newton_iter_hook(f: Option<fn(&NewtonIterStat)>) {
+    NEWTON_ITER_HOOK.store(f.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+
+fn newton_iter_stat(stat: &NewtonIterStat) {
+    let p = NEWTON_ITER_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&NewtonIterStat) = unsafe { core::mem::transmute(p) };
+        f(stat);
     }
 }
 
@@ -3502,6 +3709,15 @@ fn omc_newton(
     let mut k = 0i32;
     let mut l = 0usize;
 
+    // C's `evalJacobian` reads the model where the last residual left it, which a
+    // line search leaves at a probe rather than at `x`.
+    let last_eval = core::cell::RefCell::new(x.to_vec());
+    let mut tracked = |xs: &[f64], r: &mut [f64]| {
+        last_eval.borrow_mut().copy_from_slice(xs);
+        eval(xs, r)
+    };
+    let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut tracked;
+
     eval(x, fvec);
     f_old.copy_from_slice(fvec);
     let mut error_f = minpack::enorm(fvec);
@@ -3516,7 +3732,12 @@ fn omc_newton(
     while error_f > eps && scaled_error_f > eps && delta_x > eps && delta_f > eps && delta_x_scaled > eps {
         nls_stat_inc(STAT_NLS_ITER);
         if calc_jac {
-            newton_jacobian(n, x, fvec, &mut jac, &mut rwork, eval, jaceval, has_jac);
+            if has_jac {
+                let at = last_eval.borrow().clone();
+                jaceval(&at, &mut jac);
+            } else {
+                newton_jacobian(n, x, fvec, &mut jac, &mut rwork, eval);
+            }
             factorized = false;
             calc_jac = every_jac;
         }
@@ -3529,7 +3750,19 @@ fn omc_newton(
         for i in 0..n {
             x_new[i] = x[i] - x_incr[i];
         }
-        damping_heuristic2(n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval);
+        match openmodelica_solvers::solverflags::newton_strategy() {
+            NewtonStrategy::Damped => {
+                damping_heuristic(0.5, 1e-2, n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval)
+            }
+            NewtonStrategy::Damped2 => {
+                damping_heuristic(0.75, 1e-4, n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval)
+            }
+            NewtonStrategy::DampedLs => line_search(n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval),
+            NewtonStrategy::DampedBt => {
+                backtracking(n, x, &x_incr, &mut x_new, current, fvec, &mut f_old, eval)
+            }
+            NewtonStrategy::Pure => eval(&x_new, fvec),
+        }
 
         // C's `calculatingErrors`.
         for i in 0..n {
@@ -3565,7 +3798,7 @@ fn omc_newton(
 /// refreshes the Jacobian every iteration, then relaxes the acceptance bound. `warm` is
 /// C's `nlsxOld`.
 #[allow(clippy::too_many_arguments)]
-fn solve_newton_c(
+pub(crate) fn solve_newton_c(
     n: usize,
     x: &mut [f64],
     warm: &[f64],
@@ -3614,6 +3847,29 @@ fn solve_newton_c(
             return false;
         }
     }
+}
+
+/// The next `k` values of `rest`.
+/// `len` zeroed f64s, in `stack` when they fit: a system solve is too small and
+/// too frequent for its scratch to go through the allocator.
+fn zeroed<'a, const N: usize>(
+    stack: &'a mut core::mem::MaybeUninit<[f64; N]>,
+    heap: &'a mut alloc::vec::Vec<f64>,
+    len: usize,
+) -> &'a mut [f64] {
+    if len > N {
+        *heap = vec![0.0f64; len];
+        return heap;
+    }
+    let s = unsafe { core::slice::from_raw_parts_mut(stack.as_mut_ptr() as *mut f64, len) };
+    s.fill(0.0);
+    s
+}
+
+fn carve<'a>(rest: &mut &'a mut [f64], k: usize) -> &'a mut [f64] {
+    let (head, tail) = core::mem::take(rest).split_at_mut(k);
+    *rest = tail;
+    head
 }
 
 /// C's `solve_nonlinear_system`: solve one `SES_NONLINEAR` system in place.
@@ -3687,12 +3943,24 @@ pub fn solve_nls(
 
     // Warm start: the current slot values (the fallback guess, and what is
     // restored on failure).
-    let mut warm = vec![0.0f64; n];
+    // The solve's vectors, carved out of one allocation.
+    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 192]>::uninit(), alloc::vec::Vec::new());
+    let mut rest = zeroed(&mut work_stack, &mut work_heap, 10 * n + m + mem.res_scaling.len());
+    let mut warm = carve(&mut rest, n);
+    let mut xbuf = carve(&mut rest, m);
+    let mut rbuf = carve(&mut rest, n);
+    let mut res_scaling = carve(&mut rest, mem.res_scaling.len());
+    let mut guess = carve(&mut rest, n);
+    let mut nlsx_old = carve(&mut rest, n);
+    let mut scratch = carve(&mut rest, n);
+    let mut x = carve(&mut rest, n);
+    let mut start_point = carve(&mut rest, n);
+    let mut start = carve(&mut rest, n);
+    let mut nlsx = carve(&mut rest, n);
+    let mut best = carve(&mut rest, n);
     load_guess(&mut warm);
 
     stat_inc(STAT_NLS_SOLVE);
-    let mut xbuf = vec![0.0f64; m];
-    let mut rbuf = vec![0.0f64; n];
     let n_feval = core::cell::Cell::new(0u64);
     let iter0 = flags().iters.load(Ordering::Relaxed);
     let jac0 = flags().jac_evals.load(Ordering::Relaxed);
@@ -3748,7 +4016,8 @@ pub fn solve_nls(
     // chose to solve sparsely, a dense column-major `n×m` for the rest.
     let jac_csc = has_jac && spec.jac_csc;
     let jac_len = if jac_csc { nnz as usize } else { n * m };
-    let mut jacbuf = vec![0.0f64; if has_jac || has_hom_jac { jac_len } else { 0 }];
+    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 256]>::uninit(), alloc::vec::Vec::new());
+    let mut jacbuf = zeroed(&mut jac_stack, &mut jac_heap, if has_jac || has_hom_jac { jac_len } else { 0 });
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.
     let pick = solverflags::nls();
@@ -3767,7 +4036,8 @@ pub fn solve_nls(
     let scatter = !sparse && jac_csc;
     let pat: &[u32] = if scatter { spec.pattern } else { &[] };
     let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
-    let max: alloc::vec::Vec<f64> = bounds.chunks_exact(2).map(|b| b[1]).collect();
+    let max = || bounds.chunks_exact(2).map(|b| b[1]).collect::<alloc::vec::Vec<f64>>();
+    let min = || bounds.chunks_exact(2).map(|b| b[0]).collect::<alloc::vec::Vec<f64>>();
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
@@ -3798,12 +4068,12 @@ pub fn solve_nls(
     // list gives the same count.
     let hist = &mut *mem.history;
     let use_xscaling = &mut *mem.use_xscaling;
-    let mut res_scaling: alloc::vec::Vec<f64> = mem.res_scaling.to_vec();
+    res_scaling.copy_from_slice(mem.res_scaling);
 
     // C's `getInitialGuess`: the extrapolation to `time`, and `nlsxOld` = the newest
     // stored solution at or before it.
-    let mut guess = warm.clone();
-    let mut nlsx_old = warm.clone();
+    guess.copy_from_slice(&warm);
+    nlsx_old.copy_from_slice(&warm);
     // C's "if last solving is too long ago use just old values": past five output
     // intervals neither is consulted and the current variable values stand in — a
     // casual tearing set always consults them.
@@ -3824,17 +4094,17 @@ pub fn solve_nls(
         guess.copy_from_slice(mem.extrapolation);
     }
 
-    let mut scratch = vec![0.0f64; n];
     // C's start-point rule, shared by `solveHomotopy` and `solveHybrd`:
     // `discreteCall ? nlsx : nlsxExtrapolation`. Extrapolating past a just-switched
     // branch would re-flip the relation the event set. Newton holds relations
     // (`solveContinuous`); an event primes once live, then holds.
     let discrete_call = saved_rel_fresh == 1;
-    let mixed = spec.mixed && discrete_call;
+    // C's `mixedSystem && discreteCall`, which initialization sets as well.
+    let mixed = spec.mixed && saved_rel_fresh != 0;
     // `functionInitialEquations` sets `discreteCall` too, so an initial system starts
     // from `nlsx`: its extrapolation is still zeroes, and the equidistant homotopy
     // hands each lambda step the previous one's solution through the unknowns.
-    let mut x = if saved_rel_fresh != 0 { nlsx_old.clone() } else { guess.clone() };
+    x.copy_from_slice(if saved_rel_fresh != 0 { &nlsx_old } else { &guess });
     // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`. C gates it on
     // `discreteCall`, which `functionInitialEquations` also sets, so an initial system
     // gets it too — with relations already fresh there, only an event moves the flag.
@@ -3898,7 +4168,6 @@ pub fn solve_nls(
             }
         }
     }
-    let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
     // Last residual eval was at the returned `x`, so the epilogue need not repeat
     // it to leave the slots and torn variables set.
@@ -3906,7 +4175,6 @@ pub fn solve_nls(
     // C's `alreadyTested`: the mixed re-check below fires at most once.
     let mut retried = false;
     // C's `x0`, which the mixed retry restarts from; re-taken per homotopy attempt.
-    let mut start_point;
     // C's `solve_nonlinear_system` homotopy dispatch: only a *local* equidistant
     // approach sweeps here.
     let equidistant_homotopy = saved_rel_fresh == 2
@@ -3981,7 +4249,7 @@ pub fn solve_nls(
         }
         settled = false;
         retried = false;
-        start_point = x.clone();
+        start_point.copy_from_slice(&x);
         let attempt_converged = loop {
             // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
             // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
@@ -3995,7 +4263,7 @@ pub fn solve_nls(
                 backend.solve_kinsol_dense(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max,
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(), min: &min(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4005,7 +4273,7 @@ pub fn solve_nls(
                 backend.solve_sparse(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac, colors, max: &max,
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max(), min: &min(),
                     },
                     &mut load_guess,
                     &mut eval,
@@ -4025,7 +4293,7 @@ pub fn solve_nls(
                 // Both start directions, as C's runHomotopy.
                 let mut ok = false;
                 for &dir in &[1.0f64, -1.0] {
-                    let mut hx = start_point.clone();
+                    let mut hx = start_point.to_vec();
                     if homotopy_solve(n, &mut hx, &nominal, dir, HomVariant::Newton, &mut eval) {
                         x.copy_from_slice(&hx);
                         ok = true;
@@ -4038,12 +4306,12 @@ pub fn solve_nls(
                 // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
                 // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
                 // Both share the retry/homotopy tail below.
-                let start = x.clone();
+                start.copy_from_slice(&x);
                 // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
                 // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
-                let mut nlsx = start.clone();
+                nlsx.copy_from_slice(&start);
                 // The approximation a failed `solveHybrd` leaves in `nlsx` for the next one.
-                let mut best = start.clone();
+                best.copy_from_slice(&start);
                 let mut converged = false;
                 // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
                 // its homotopy runs.
@@ -4105,7 +4373,7 @@ pub fn solve_nls(
                             2 => (HomVariant::Newton, -1.0),
                             _ => (HomVariant::Fixpoint, 1.0),
                         };
-                        let mut hx = start.clone();
+                        let mut hx = start.to_vec();
                         skip_newton = !homotopy_solve(n, &mut hx, &nominal, dir, variant, &mut eval);
                         if skip_newton {
                             if run_homotopy >= 3 {
@@ -4155,11 +4423,11 @@ pub fn solve_nls(
                     }
                     if !converged {
                         stat_inc(STAT_NLS_RETRY);
-                        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                        converged = hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &nominal, maxfev, &mut eval);
                     }
                     if !converged {
                         x.copy_from_slice(&guess);
-                        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                        converged = hybrd_scaled(n, &mut x, &mut vec![0.0f64; n], &nominal, maxfev, &mut eval);
                     }
                     if !converged {
                         x.copy_from_slice(&guess);
@@ -4183,7 +4451,7 @@ pub fn solve_nls(
             if !converged || !mixed || retried {
                 break converged;
             }
-            state.borrow_mut().set_relation_mode(1);
+            state.borrow_mut().set_relation_mode(saved_rel_fresh);
             let uncounted = n_feval.get();
             eval(&x, &mut scratch);
             n_feval.set(uncounted);
@@ -4250,7 +4518,7 @@ pub fn solve_nls(
         );
         if let Some((_, csv)) = hom_csv.as_mut() {
             csv.push_str(&omclog::g((attempt as f64 / hom_steps as f64).min(1.0), 0, 16));
-            for v in &x {
+            for v in x.iter() {
                 csv.push(',');
                 csv.push_str(&omclog::g(*v, 0, 16));
             }
@@ -4277,7 +4545,7 @@ pub fn solve_nls(
             "run along the homotopy path and solve the actual system",
         );
         state.borrow_mut().set_lambda(0.0);
-        let mut y = x.clone();
+        let mut y = x.to_vec();
         y.push(0.0);
         let mut hom_jac = |ys: &[f64], out: &mut [f64]| {
             stat_inc(STAT_NLS_JAC);

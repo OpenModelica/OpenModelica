@@ -20,6 +20,9 @@ pub(crate) struct SimVarMap {
     /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
     /// slot instead of the inline expression.
     pub(super) start_slots: Arc<HashMap<String, u32>>,
+    /// Alias cref key -> (target cref key, negation); `$START.<alias>` reads the
+    /// target's start, as C does.
+    pub(super) start_aliases: Arc<HashMap<String, (String, Neg)>>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
     pub(super) array_groups: Arc<HashMap<String, ArrayGroup>>,
     /// The arrays that are not one contiguous range (see `ScatterGroup`).
@@ -91,23 +94,63 @@ pub(crate) struct SimVarMap {
 /// `info.name`, and with it the result file. `$DER` / `$PRE` qualifiers print as
 /// `der(...)` / `pre(...)`, nesting included (`$DER.$DER.x` -> `der(der(x))`).
 pub(crate) fn cref_display(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Result<String> {
+    let mut s = String::with_capacity(64);
+    push_cref_display(cr, !openmodelica_util::Config::modelicaOutput()?, &mut s)?;
+    Ok(s)
+}
+
+fn push_cref_display(cr: &metamodelica::Ref<DAE::ComponentRef>, brackets: bool, s: &mut String) -> Result<()> {
     use DAE::ComponentRef as C;
-    Ok(match &**cr {
-        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$DER" => {
-            format!("der({})", cref_display(componentRef)?)
+    match &**cr {
+        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$DER" || &**ident == "$PRE" => {
+            s.push_str(if &**ident == "$DER" { "der(" } else { "pre(" });
+            push_cref_display(componentRef, brackets, s)?;
+            s.push(')');
         }
-        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$PRE" => {
-            format!("pre({})", cref_display(componentRef)?)
+        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            push_ident_subs(ident, subscriptLst, brackets, s)?;
+            s.push('.');
+            push_cref_display(componentRef, brackets, s)?;
         }
-        C::CREF_QUAL { componentRef, .. } => format!(
-            "{}.{}",
-            ComponentReferenceBasics::printComponentRefStr(ComponentReferenceBasics::crefFirstCref(
-                cr.clone()
-            )?)?,
-            cref_display(componentRef)?
-        ),
-        _ => ComponentReferenceBasics::printComponentRefStr(cr.clone())?.to_string(),
-    })
+        C::CREF_IDENT { ident, subscriptLst, .. } => push_ident_subs(ident, subscriptLst, brackets, s)?,
+        _ => s.push_str(&ComponentReferenceBasics::printComponentRefStr(&cr)?),
+    }
+    Ok(())
+}
+
+/// `printComponentRef2Str`, with constant indices printed without the expression dumper.
+fn push_ident_subs(
+    ident: &str,
+    subs: &metamodelica::List<metamodelica::Ref<DAE::Subscript>>,
+    brackets: bool,
+    s: &mut String,
+) -> Result<()> {
+    use std::fmt::Write;
+    s.push_str(ident);
+    if subs.is_empty() {
+        return Ok(());
+    }
+    s.push_str(if brackets { "[" } else { "_L" });
+    for (i, sub) in subs.iter().enumerate() {
+        if i > 0 {
+            s.push(',');
+        }
+        let index = match &**sub {
+            DAE::Subscript::INDEX { exp } => match &**exp {
+                DAE::Exp::ICONST { integer } => Some(*integer),
+                _ => None,
+            },
+            _ => None,
+        };
+        match index {
+            Some(i) => {
+                let _ = write!(s, "{i}");
+            }
+            None => s.push_str(&openmodelica_frontend_dump::ExpressionBasics::printSubscriptStr(&sub)?),
+        }
+    }
+    s.push_str(if brackets { "]" } else { "_R" });
+    Ok(())
 }
 
 /// C's `shouldFilterOutput`: protected variables and `HideResult=true`, each
@@ -193,7 +236,7 @@ fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
 /// computed once at initialization, so the `.mat` stores it with the parameters
 /// (`CodegenC.functionUpdateBoundParameters`, `Expression.isSimpleLiteralValue`).
 pub(super) fn mark_unvarying(result_vars: &mut [ResultVar], param_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Result<()> {
-    let mut literal: HashSet<String> = HashSet::new();
+    let mut literal: HashSet<String> = HashSet::default();
     for eq in param_eqs {
         if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq
             && matches!(
@@ -326,8 +369,8 @@ pub(super) fn scalarize_sim_vars(vars: &SimCodeVar::SimVars) -> Result<SimCodeVa
     Ok(out)
 }
 
-fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar::SimVar>> {
-    let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
+fn scalarize_var_list(list: &List<metamodelica::Ref<SimCodeVar::SimVar>>) -> Result<List<metamodelica::Ref<SimCodeVar::SimVar>>> {
+    let mut out: Vec<metamodelica::Ref<SimCodeVar::SimVar>> = Vec::new();
     for sv in &**list {
         let dims = array_dims_of(&sv.numArrayElement)?;
         if dims.is_empty() {
@@ -335,7 +378,7 @@ fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar
             continue;
         }
         for idx in row_major_indices(&dims) {
-            let mut e = sv.clone();
+            let mut e = (**sv).clone();
             e.name = cref_with_indices(&sv.name, &idx);
             e.numArrayElement = metamodelica::nil();
             e.arrayCref = None;
@@ -344,10 +387,10 @@ fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar
             e.nominalValue = index_attr(&sv.nominalValue, &idx);
             e.minValue = index_attr(&sv.minValue, &idx);
             e.maxValue = index_attr(&sv.maxValue, &idx);
-            out.push(e);
+            out.push(metamodelica::Ref::new(e));
         }
     }
-    Ok(out.into_iter().collect::<List<SimCodeVar::SimVar>>())
+    Ok(out.into_iter().collect::<List<metamodelica::Ref<SimCodeVar::SimVar>>>())
 }
 
 /// Parse `numArrayElement` (dimension sizes) to integers; empty for a scalar.
@@ -508,20 +551,21 @@ pub(super) fn build_var_map(
         vars: Arc::default(),
         starts: Arc::default(),
         start_slots: Arc::default(),
+        start_aliases: Arc::default(),
         array_groups: Arc::default(),
         scatter_groups: Arc::default(),
         consts: Arc::default(),
         const_groups: Arc::default(),
-        const_acc: HashMap::new(),
+        const_acc: HashMap::default(),
         extobj_dtors: Arc::default(),
-        array_acc: HashMap::new(),
+        array_acc: HashMap::default(),
         terminate_off: layout.terminate_off,
         terminal_off: layout.terminal_off,
         initial_off: layout.initial_off,
         term_info_off: layout.term_info_off,
         nls_fail_off: layout.nls_fail_off,
-        nls_jobs: Arc::new(HashMap::new()),
-        generic_calls: Arc::new(HashMap::new()),
+        nls_jobs: Arc::new(HashMap::default()),
+        generic_calls: Arc::new(HashMap::default()),
         n_samples: 0,
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
@@ -582,8 +626,8 @@ pub(super) fn build_var_map(
         enumeration: None,
     });
 
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
-    let ders: Vec<&SimCodeVar::SimVar> = lst(&vars.derivativeVars).collect();
+    let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
+    let ders: Vec<&SimCodeVar::SimVar> = svs(&vars.derivativeVars).collect();
 
     // Push a primary (non-alias) variable: register its slot (equations reference
     // even protected ones) and list it as a result signal carrying why a run would
@@ -722,7 +766,7 @@ pub(super) fn build_var_map(
     // value is the binding literal. Emit each to data_1 (the C runtime keeps them
     // in the result too, e.g. visualization colors). Record their values so a
     // constant's aliases resolve below.
-    let mut const_of: HashMap<String, f64> = HashMap::new();
+    let mut const_of: HashMap<String, f64> = HashMap::default();
     let const_lists = [
         (&vars.constVars, Some(WTy::F64)),
         (&vars.intConstVars, Some(WTy::I32)),
@@ -810,6 +854,8 @@ pub(super) fn build_var_map(
             heap: tslot.heap,
         };
         Arc::make_mut(&mut map.vars).insert(sim_cref_key(&av.name)?, slot);
+        let start_neg = if negate { Neg::None.toggle(is_bool) } else { Neg::None };
+        Arc::make_mut(&mut map.start_aliases).insert(sim_cref_key(&av.name)?, (tkey.clone(), start_neg));
         // An alias array is assigned as a whole, so it needs a group over the
         // target's slots.
         for g in array_element_keys(&av.name)? {

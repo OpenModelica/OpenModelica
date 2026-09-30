@@ -73,25 +73,8 @@ goto :Final
 
 REM ----------------------------------------------------------------- MSVC ---
 :MSVC
-REM Already inside a developer command prompt?
-if not "%VCINSTALLDIR%"=="" goto :MSVCCOMPILE
-set VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe
-if not exist "%VSWHERE%" set VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe
-if not exist "%VSWHERE%" goto :NO_MSVC
-set VSPATH=
-for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSPATH=%%I
-if "%VSPATH%"=="" goto :NO_MSVC
-set VCVARS=%VSPATH%\VC\Auxiliary\Build\vcvars64.bat
-if /I "%OM_PLATFORM%"=="msvc32" set VCVARS=%VSPATH%\VC\Auxiliary\Build\vcvars32.bat
-if not exist "%VCVARS%" goto :NO_MSVC
-REM vcvars needs the unrestricted PATH. Its banner goes to NUL, not the log: a
-REM batch called with the log redirected keeps that handle open, and nmake then
-REM cannot write there.
-set PATH=%OLD_PATH%
-call "%VCVARS%" > NUL 2>&1
+call "%~dp0msvc_env.bat" %OM_PLATFORM%
 if errorlevel 1 goto :NO_MSVC
-
-:MSVCCOMPILE
 set MAKE=
 set MAKEFLAGS=
 set OMC_CC=cl

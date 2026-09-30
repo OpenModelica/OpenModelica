@@ -30,6 +30,10 @@
 #
 # See the full OSMC Public License conditions for more details.
 
+# NOTE: Not a build file; OMEdit is built with CMake. `lupdate` reads
+# SOURCES/HEADERS/TRANSLATIONS from here to update the .ts files, see
+# Resources/nls/README.md. Keep the source lists in sync with
+# OMEditLIB/CMakeLists.txt, or new translatable strings will be missed.
 include(../OMEdit.config.pre.pri)
 TARGET = OMEdit
 
@@ -67,8 +71,6 @@ win32 {
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
-} else { # Unix libraries and includes
-  include(OMEditLIB.unix.config.pri)
 }
 
 INCLUDEPATH += . ../ \

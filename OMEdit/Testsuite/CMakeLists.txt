@@ -77,6 +77,10 @@ set(OMEDIT_TEST_LANGUAGESERVER_SOURCES LanguageServer/LanguageServerTest.cpp
                                        LanguageServer/LanguageServerTest.h)
 add_omedit_test(LanguageServer "${OMEDIT_TEST_LANGUAGESERVER_SOURCES}")
 
+set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
+                                              MergeExtendsModifiers/MergeExtendsModifiersTest.h)
+add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")
+
 set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
@@ -100,6 +104,10 @@ add_omedit_test(TabbedView "${OMEDIT_TEST_TABBEDVIEW_SOURCES}")
 set(OMEDIT_TEST_TRANSFORMATION_SOURCES Transformation/TransformationTest.cpp
                                        Transformation/TransformationTest.h)
 add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
+
+set(OMEDIT_TEST_VARIABLESBROWSER_SOURCES VariablesBrowser/VariablesBrowserTest.cpp
+                                         VariablesBrowser/VariablesBrowserTest.h)
+add_omedit_test(VariablesBrowser "${OMEDIT_TEST_VARIABLESBROWSER_SOURCES}")
 
 set(OMEDIT_TEST_UTILITIES_SOURCES Utilities/UtilitiesTest.cpp
                                   Utilities/UtilitiesTest.h)

@@ -428,6 +428,11 @@ public
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
 
+            // min, max and nominal attributes that have to be evaluated after the parameters, they come
+            // before the parameters in the info file, so they need indices in that order
+            (min, max, nominal, simCodeIndices) := SimStrongComponent.Block.createAttributeBlocks(
+              {varData.states, varData.algebraics, varData.discretes, varData.discrete_states}, simCodeIndices, simcode_map);
+
             // the bindings of the primary parameters are solved before the initialization, they come after the
             // equations and before the Jacobians in the info file, so they need indices in that order
             (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
@@ -601,7 +606,8 @@ public
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},
         omsiData                      = NONE(),
-        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
+        fmiFigures                    = {});
     end convert;
 
     function getDirectoryAndLibs

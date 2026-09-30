@@ -5406,7 +5406,7 @@ algorithm
         // TODO: Use foldExp
         //ty = Types.unliftArray(ty);
         ety := Types.simplifyType(ty);
-        values := List.map2(values, replaceIteratorWithExp, expr, iter_name);
+        values := replaceIteratorWithValues(values, expr, iter_name);
         expr := simplifyReductionFoldPhase(path,foldExp,foldName,resultName,ety,values,defaultValue);
       then expr;
 
@@ -5526,6 +5526,190 @@ algorithm
     else (inExp,inTpl);
   end matchcontinue;
 end replaceIteratorWithExpTraverser;
+
+protected function replaceIteratorWithValues
+  "The reduction body instantiated for each iterator value. Each x[iter] where x
+  does not depend on the iterator becomes the selected element of x, so the
+  copies do not each carry (and later simplify) all of x."
+  input list<DAE.Exp> values;
+  input DAE.Exp exp;
+  input String name;
+  output list<DAE.Exp> exps;
+protected
+  DAE.Exp body = exp;
+  list<DAE.Exp> sites = {};
+  array<DAE.Exp> sitesArr;
+algorithm
+  if List.all(values, isIntegerConstant) then
+    (body, (_, sites)) := Expression.traverseExpBottomUp(exp, extractIteratorSubscript, (name, {}));
+  end if;
+  if listEmpty(sites) then
+    exps := List.map2(values, replaceIteratorWithExp, exp, name);
+  else
+    sitesArr := listArray(listReverse(sites));
+    exps := list(Expression.traverseExpBottomUp(replaceIteratorWithExp(v, body, name), fillIteratorSubscript, (sitesArr, v)) for v in values);
+  end if;
+end replaceIteratorWithValues;
+
+protected function isIntegerConstant
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp case DAE.ICONST() then true; else false; end match;
+end isIntegerConstant;
+
+protected function extractIteratorSubscript
+  "Replaces x[iter] by the placeholder $iterSub[n], where n indexes x in the
+  accumulated list."
+  input DAE.Exp inExp;
+  input tuple<String, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<String, list<DAE.Exp>> outTpl;
+algorithm
+  (outExp, outTpl) := match (inExp, inTpl)
+    local
+      String id, name;
+      DAE.Exp arr;
+      list<DAE.Exp> sites;
+      DAE.Type ty;
+    case (DAE.ASUB(exp = arr, sub = {DAE.INDEX(DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id, subscriptLst = {})))}), (name, sites))
+      guard stringEq(id, name) and not iteratorOrPlaceholderOccurs(arr, name)
+      algorithm
+        ty := Expression.typeof(inExp);
+      then (DAE.CREF(DAE.CREF_IDENT("$iterSub", ty, {DAE.INDEX(DAE.ICONST(listLength(sites) + 1))}), ty), (name, arr :: sites));
+    else (inExp, inTpl);
+  end match;
+end extractIteratorSubscript;
+
+protected function iteratorOrPlaceholderOccurs
+  input DAE.Exp exp;
+  input String name;
+  output Boolean occurs;
+algorithm
+  (_, (_, occurs)) := Expression.traverseExpBottomUp(exp, iteratorOrPlaceholderOccursTraverser, (name, false));
+end iteratorOrPlaceholderOccurs;
+
+protected function iteratorOrPlaceholderOccursTraverser
+  input DAE.Exp inExp;
+  input tuple<String, Boolean> inTpl;
+  output DAE.Exp outExp = inExp;
+  output tuple<String, Boolean> outTpl;
+algorithm
+  outTpl := match (inExp, inTpl)
+    local
+      String id, name;
+    case (_, (_, true)) then inTpl;
+    case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (name, _))
+      then (name, stringEq(id, name) or stringEq(id, "$iterSub"));
+    case (DAE.CREF(componentRef = DAE.CREF_QUAL(ident = id)), (name, _))
+      then (name, stringEq(id, name));
+    else inTpl;
+  end match;
+end iteratorOrPlaceholderOccursTraverser;
+
+protected function fillIteratorSubscript
+  input DAE.Exp inExp;
+  input tuple<array<DAE.Exp>, DAE.Exp> inTpl;
+  output DAE.Exp outExp;
+  output tuple<array<DAE.Exp>, DAE.Exp> outTpl = inTpl;
+algorithm
+  outExp := match (inExp, inTpl)
+    local
+      Integer n;
+      array<DAE.Exp> sites;
+      DAE.Exp sub;
+    case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "$iterSub", subscriptLst = {DAE.INDEX(DAE.ICONST(n))})), (sites, sub))
+      then selectElement(arrayGet(sites, n), sub);
+    else inExp;
+  end match;
+end fillIteratorSubscript;
+
+protected function selectElement
+  "exp[sub] for a constant sub, selected the way simplifyAsub does but before
+  the other elements are simplified."
+  input DAE.Exp exp;
+  input DAE.Exp sub;
+  output DAE.Exp outExp;
+protected
+  Integer i = Expression.expInt(sub);
+algorithm
+  outExp := matchcontinue exp
+    local
+      DAE.Exp e1, e2;
+      list<DAE.Exp> exps;
+      list<list<DAE.Exp>> rows;
+      DAE.Type ty;
+      DAE.ComponentRef cr;
+      Operator op;
+
+    case DAE.ARRAY(array = exps) guard i >= 1 and i <= listLength(exps)
+      then listGet(exps, i);
+
+    case DAE.MATRIX(ty = ty, matrix = rows) guard i >= 1 and i <= listLength(rows)
+      then DAE.ARRAY(Expression.unliftArray(ty), true, listGet(rows, i));
+
+    case DAE.CREF(componentRef = cr, ty = ty)
+      guard Types.isArray(ty) and referenceEq(simplifyCref(exp, cr, ty), exp)
+      then Expression.makeCrefExp(simplifyAsubCref(cr, sub), Expression.unliftArray(ty));
+
+    case DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = e1)
+      algorithm
+        e1 := selectElement(e1, sub);
+        ty := Expression.typeof(e1);
+      then DAE.UNARY(if DAEUtil.expTypeArray(ty) then DAE.UMINUS_ARR(ty) else DAE.UMINUS(ty), e1);
+
+    case DAE.BINARY(exp1 = e1, operator = op, exp2 = e2)
+      guard isSelectableOperator(op)
+      algorithm
+        if not Expression.isScalarArrayOp(op) then
+          e1 := selectElement(e1, sub);
+        end if;
+        if not Expression.isArrayScalarOp(op) then
+          e2 := selectElement(e2, sub);
+        end if;
+        ty := Expression.typeof(if Expression.isScalarArrayOp(op) then e2 else e1);
+      then DAE.BINARY(e1, selectedOperator(op, ty, DAEUtil.expTypeArray(ty)), e2);
+
+    else DAE.ASUB(exp, {DAE.INDEX(sub)});
+  end matchcontinue;
+end selectElement;
+
+protected function isSelectableOperator
+  input Operator op;
+  output Boolean b;
+algorithm
+  b := match op
+    case DAE.ADD_ARR() then true;
+    case DAE.SUB_ARR() then true;
+    case DAE.MUL_ARR() then true;
+    case DAE.DIV_ARR() then true;
+    case DAE.POW_ARR2() then true;
+    else Expression.isArrayScalarOp(op) or Expression.isScalarArrayOp(op);
+  end match;
+end isSelectableOperator;
+
+protected function selectedOperator
+  "The operator simplifyAsub gives an element of an array operation."
+  input Operator op;
+  input DAE.Type ty;
+  input Boolean isArray;
+  output Operator outOp;
+algorithm
+  outOp := match op
+    case DAE.ADD_ARR() then if isArray then DAE.ADD_ARR(ty) else DAE.ADD(ty);
+    case DAE.SUB_ARR() then if isArray then DAE.SUB_ARR(ty) else DAE.SUB(ty);
+    case DAE.MUL_ARR() then if isArray then DAE.MUL_ARR(ty) else DAE.MUL(ty);
+    case DAE.DIV_ARR() then if isArray then DAE.DIV_ARR(ty) else DAE.DIV(ty);
+    case DAE.POW_ARR2() then if isArray then DAE.POW_ARR2(ty) else DAE.POW(ty);
+    case DAE.MUL_ARRAY_SCALAR() then if isArray then DAE.MUL_ARRAY_SCALAR(ty) else DAE.MUL(ty);
+    case DAE.ADD_ARRAY_SCALAR() then if isArray then DAE.ADD_ARRAY_SCALAR(ty) else DAE.ADD(ty);
+    case DAE.DIV_ARRAY_SCALAR() then if isArray then DAE.DIV_ARRAY_SCALAR(ty) else DAE.DIV(ty);
+    case DAE.POW_ARRAY_SCALAR() then if isArray then DAE.POW_ARRAY_SCALAR(ty) else DAE.POW(ty);
+    case DAE.SUB_SCALAR_ARRAY() then if isArray then DAE.SUB_SCALAR_ARRAY(ty) else DAE.SUB(ty);
+    case DAE.DIV_SCALAR_ARRAY() then if isArray then DAE.DIV_SCALAR_ARRAY(ty) else DAE.DIV(ty);
+    case DAE.POW_SCALAR_ARRAY() then if isArray then DAE.POW_SCALAR_ARRAY(ty) else DAE.POW(ty);
+  end match;
+end selectedOperator;
 
 protected function simplifyReductionFoldPhase
   input Absyn.Path path;

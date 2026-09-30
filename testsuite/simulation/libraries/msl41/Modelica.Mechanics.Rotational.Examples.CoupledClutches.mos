@@ -22,10 +22,15 @@ compareVars :=
    "clutch2.w_rel",
    "clutch3.phi_rel",
    "clutch3.w_rel",
-   "J1.a",
-   "clutch1.a_rel",
-   "clutch2.a_rel",
-   "clutch3.a_rel"
+   "clutch1.mode",
+   "clutch1.startBackward",
+   "clutch1.startForward",
+   "clutch2.mode",
+   "clutch2.startBackward",
+   "clutch2.startForward",
+   "clutch3.mode",
+   "clutch3.startBackward",
+   "clutch3.startForward"
 };
 
 runScript(modelTesting);getErrorString();
@@ -37,8 +42,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Rotational.Examples.CoupledClutches
-// {"J1.phi", "J1.w", "clutch1.phi_rel", "clutch1.w_rel", "clutch2.phi_rel", "clutch2.w_rel", "clutch3.phi_rel", "clutch3.w_rel", "J1.a", "clutch1.a_rel", "clutch2.a_rel", "clutch3.a_rel"}
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.CoupledClutches', options = '', outputFormat = 'mat', variableFilter = 'time|J1.phi|J1.w|clutch1.phi_rel|clutch1.w_rel|clutch2.phi_rel|clutch2.w_rel|clutch3.phi_rel|clutch3.w_rel|J1.a|clutch1.a_rel|clutch2.a_rel|clutch3.a_rel', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"J1.phi", "J1.w", "clutch1.phi_rel", "clutch1.w_rel", "clutch2.phi_rel", "clutch2.w_rel", "clutch3.phi_rel", "clutch3.w_rel", "clutch1.mode", "clutch1.startBackward", "clutch1.startForward", "clutch2.mode", "clutch2.startBackward", "clutch2.startForward", "clutch3.mode", "clutch3.startBackward", "clutch3.startForward"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.CoupledClutches', options = '', outputFormat = 'mat', variableFilter = 'time|J1.phi|J1.w|clutch1.phi_rel|clutch1.w_rel|clutch2.phi_rel|clutch2.w_rel|clutch3.phi_rel|clutch3.w_rel|clutch1.mode|clutch1.startBackward|clutch1.startForward|clutch2.mode|clutch2.startBackward|clutch2.startForward|clutch3.mode|clutch3.startBackward|clutch3.startForward', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.CoupledClutches_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

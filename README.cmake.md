@@ -77,14 +77,8 @@ an S3 server instead of on disk, so that several machines share it. Select it wi
   cmake -S . -B build_cmake -Wno-dev
   ```
 
-- Your build directory should NOT be a directory named `build` in the root OpenModelica
-  directory.
-
-  The reason for this suggestion is that the `autotools + Makefile` build system we have
-  now uses this `build` directory for _installation_. Therefore, if you plan to fallback
-  to the autotools build at some point or you want to switch back and forth between the
-  CMake and autotools build systems (perhaps to cross check something), then it is
-  probably a good idea to make sure that they do not overwrite eachother's outputs.
+- CMake is the only supported build system for OpenModelica. The `autotools + Makefile`
+  build (`configure`, `Makefile.in`, ...) has been removed.
 
 ### 3.2. Platform specific instructions
 
@@ -110,10 +104,9 @@ OM_ENABLE_OMSIMULATOR=ON
 OM_ENABLE_ENCRYPTION=OFF
 OM_ENABLE_DOCS=OFF
 OM_ENABLE_TESTSUITE=ON             # OFF if there is no testsuite/
-OM_RUST_RESULT_READERS=ON          # OFF if cargo is not found
-OM_RUST_RESULT_WRITERS=ON          # OFF if cargo is not found
 OM_OMC_ENABLE_COMPILER=ON
 OM_OMC_ENABLE_CPP_RUNTIME=ON
+OM_OMC_ENABLE_C_OLD_RUNTIME=ON
 OM_OMC_ENABLE_PARMODELICA=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_OPTIMIZATION=ON
@@ -156,15 +149,12 @@ encryption support. Note that, for this to work, you need an additional module w
 not distributed in the default OpenModelcia source repository. Contact the OpenModelica
 team if you need encryption support.
 
-`OM_RUST_RESULT_WRITERS` makes the C simulation runtime write result files through
-`libomc_result`, the Rust result-file library, and `OM_RUST_RESULT_READERS` makes the GUI
-clients read them back through it. Both need `cargo` on the `PATH` (a stable toolchain of
-version 1.85 or newer) and default to `OFF` if CMake does not find it. Turning them off
-falls back to the C readers and writers, which cannot handle the `.arrow` format.
+The build needs `cargo` on the `PATH` (a stable toolchain of version 1.85 or newer): result
+files are read and written through `libomc_result`, the Rust result-file library, and
+`--simCodeTarget=C` links the Rust simulation runtime, `libSimulationRuntimeRust`.
 
-The Rust port of the compiler itself (`OM_OMC_ENABLE_RUST`) and the Rust simulation runtime
-that `--simCodeTarget=C+Rust` links (`OM_ENABLE_RUST_SIM_RUNTIME`) are separate options,
-both off by default. `OM_OMC_ENABLE_RUST` needs a pinned nightly toolchain; see
+The Rust port of the compiler itself (`OM_OMC_ENABLE_RUST`) is a separate option, off by
+default. It needs a pinned nightly toolchain; see
 [4.1.2](#412-openmodelicaomcompiler-options).
 
 #### 4.1.2. OpenModelica/OMCompiler Options
@@ -172,6 +162,9 @@ both off by default. `OM_OMC_ENABLE_RUST` needs a pinned nightly toolchain; see
 `OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based
 simulation runtime. This requires multiple Boost library components (filesystem,
 program_options, ...)
+
+`OM_OMC_ENABLE_C_OLD_RUNTIME` allows you to enable/disable the building of
+`libSimulationRuntimeC`, the C simulation runtime `--simCodeTarget=C.old` links.
 
 `OM_OMC_ENABLE_PARMODELICA` allows you to enable/disable the ParModelica (`--parmodauto`)
 runtime. It needs the Boost components graph and chrono.
@@ -218,8 +211,8 @@ Note that this is different from the Qt based OMShell GUI application.
 
 #### 4.1.5. Other OpenModelica specific Options
 
-There are also some additional options that are kept as a migration step to maintain the
-similarity with the `autotools` build system.
+There are also some additional options that are left over from the removed `autotools`
+build system.
 
 ```cmake
 OM_OMC_USE_LAPACK=ON
@@ -579,10 +572,10 @@ where opening the file directly would not. Otherwise just open
   `ModelicaConfig_gcc.inc`). Simulations that link the runtime _dynamically_ would not need
   it - libgcov is inside the shared library - but source FMUs link the static runtime, and
   without it they fail with undefined references to `__gcov_*` / `llvm_gcda_*`.
-- Jenkins does all of this on every PR, from the `testsuite-cmake-gcc` shard; see
+- Jenkins does all of this on every PR, from the `testsuite-gcc` shard; see
   `coverageReportStage()` in [.CI/common.groovy](.CI/common.groovy). That shard runs half of
-  the testsuite - the other half runs in the clang shard, on the autotools build, which is
-  not instrumented - so CI's numbers cover roughly half the tests a full local run would.
+  the testsuite - the other half runs in the clang shard, which is not instrumented - so
+  CI's numbers cover roughly half the tests a full local run would.
 
 [gcov]: https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 [gcovr]: https://gcovr.com/

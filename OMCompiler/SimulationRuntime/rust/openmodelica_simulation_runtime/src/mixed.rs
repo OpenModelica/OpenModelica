@@ -89,9 +89,29 @@ fn next_var(b: &mut [bool]) -> bool {
     }
 }
 
+#[cfg(feature = "fmi")]
 /// C's `initializeMixedSystems`. The `iterationVarsPtr` / `iterationPreVarsPtr`
 /// arrays are the model's to fill (`initialMixedSystem`); only the search's own
 /// scratch is allocated here.
+/// What [`initialize_mixed_systems`] allocated per system.
+pub fn free_mixed_systems(data: *mut DATA) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    if si.mixedSystemData.is_null() {
+        return;
+    }
+    for i in 0..md.nMixedSystems.max(0) as usize {
+        let sys = unsafe { &mut *si.mixedSystemData.add(i) };
+        for p in [&mut sys.iterationVarsPtr, &mut sys.iterationPreVarsPtr] {
+            unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut core::ffi::c_void) };
+        }
+        let scratch = core::mem::replace(&mut sys.solverData, core::ptr::null_mut());
+        if !scratch.is_null() {
+            drop(unsafe { Box::from_raw(scratch as *mut Search) });
+        }
+    }
+}
+
 pub fn initialize_mixed_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
@@ -109,6 +129,7 @@ pub fn initialize_mixed_systems(data: *mut DATA, thread_data: *mut threadData_t)
         sys.iterationVarsPtr = crate::model_data::calloc(size.max(1));
         sys.iterationPreVarsPtr = crate::model_data::calloc(size.max(1));
         sys.solved = 1;
+        sys.logActive = 1;
         sys.solverData = Box::into_raw(Box::new(Search {
             before: vec![0; size],
             after: vec![0; size],
@@ -128,6 +149,8 @@ pub extern "C" fn solve_mixed_system(
 ) -> c_int {
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
+    // C reads `system->logActive`, the first system's, whichever is solved.
+    let _quiet = crate::support::QuietSystem::new(unsafe { (*si.mixedSystemData).logActive });
     let sys = unsafe { &mut *si.mixedSystemData.add(sys_number as usize) };
     if si.mixedMethod != MIXED_SEARCH {
         crate::throw(thread_data, "unrecognized mixed solver");

@@ -159,6 +159,18 @@ impl Sync {
         self.clocks.is_empty()
     }
 
+    /// The timer list as `(base, sub or -1, time)` words, for an FMU state.
+    pub fn timer_words(&self) -> Vec<f64> {
+        self.timers.iter().flat_map(|t| [t.base as f64, t.sub.map_or(-1.0, |s| s as f64), t.time]).collect()
+    }
+
+    pub fn set_timer_words(&mut self, w: &[f64]) {
+        self.timers = w
+            .chunks_exact(3)
+            .map(|c| Timer { base: c[0] as u32, sub: (c[1] >= 0.0).then_some(c[1] as u32), time: c[2] })
+            .collect();
+    }
+
     /// C's `checkForSynchronous`: the earliest activation time still scheduled, so
     /// the integrator can cut its step short and land on it. `+inf` when idle.
     pub fn next_time(&self) -> f64 {

@@ -2,7 +2,7 @@
 // keywords: #2352
 // status:   correct
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("Random2.mo"); getErrorString();
 simulate(Random.TestRandom, stopTime=10); getErrorString();
 

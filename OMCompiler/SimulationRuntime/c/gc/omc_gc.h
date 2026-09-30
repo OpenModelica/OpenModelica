@@ -70,7 +70,7 @@ typedef struct {
 } omc_alloc_interface_t;
 
 DLLDataDirection extern omc_alloc_interface_t omc_alloc_interface;
-extern omc_alloc_interface_t omc_alloc_interface_rc;
+DLLDataDirection extern omc_alloc_interface_t omc_alloc_interface_rc;
 
 /*
  * ERROR_STAGE defines different
@@ -173,7 +173,11 @@ typedef threadData_t OpenModelica_threadData_ThreadData;
 #else
 #define OMC_ERROR_RAISE()   ((void) (threadData->errorState = 1))
 #endif
+#if defined(__GNUC__) || defined(__clang__)
+#define OMC_ERROR_RAISED()  (__builtin_expect(threadData->errorState != 0, 0))
+#else
 #define OMC_ERROR_RAISED()  (threadData->errorState != 0)
+#endif
 #define OMC_ERROR_CLEAR()   ((void) (threadData->errorState = 0))
 /* Needs a _return: label in scope. */
 #define OMC_ERROR_CHECK()   do { if (OMC_ERROR_RAISED()) { goto _return; } } while (0)

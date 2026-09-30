@@ -19,6 +19,7 @@ use alloc::vec::Vec;
 
 use super::conf::{CtrlMethod, GbfConf, Interpolation, NlsMethod};
 use super::tableau::{Estimator, GmType, SvpType, Tableau};
+use super::nls_generic::Starts;
 use super::{ctrl, interp, Gbode, GB_MINIMAL_STEP_SIZE, Solved};
 use crate::gbode::math::{abs, pow, sqrt};
 use crate::omclog;
@@ -26,8 +27,6 @@ use crate::{Ode, Result};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
-/// C's `numericalDifferentiationDeltaXsolver` (`sqrt(DBL_EPSILON)`).
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
 /// C's `newtonFTol` default.
 const NEWTON_FTOL_DEFAULT: f64 = 1e-12;
 const NEWTON_MAX_STEPS: u32 = 20;
@@ -129,10 +128,22 @@ pub(super) struct GbfNls {
     fbase: Vec<f64>,
     ftol: f64,
     pub n_jac_evals: u64,
+    kinsol: Option<super::nls_generic::KinsolLadder>,
+    method: NlsMethod,
+    /// C's `sparsePattern_NLS` of the fast states it was built for.
+    pattern: Option<(Vec<usize>, super::nls_hook::NlsPattern)>,
 }
 
 impl GbfNls {
-    fn new(t: &Tableau, tol: f64, sym_jac: bool, internal: bool) -> Self {
+    fn new(
+        t: &Tableau,
+        tol: f64,
+        sym_jac: bool,
+        internal: bool,
+        method: NlsMethod,
+    ) -> Self {
+        let kinsol = matches!(method, NlsMethod::Kinsol | NlsMethod::KinsolB)
+            .then(super::nls_generic::KinsolLadder::from_flags);
         // C's Newton convergence target, as in `gbInternalNlsAllocate`.
         let alpha_default: f64 = 3e-2;
         let alpha_maximal: f64 = 5e-2;
@@ -167,6 +178,9 @@ impl GbfNls {
             fbase: Vec::new(),
             ftol: crate::simflags::with_flags(|f| f.newton_ftol).unwrap_or(NEWTON_FTOL_DEFAULT),
             n_jac_evals: 0,
+            kinsol,
+            method,
+            pattern: None,
         }
     }
 
@@ -281,7 +295,7 @@ impl GbfNls {
                 }
                 if !ode.jacobian_vector(time, y_full, &seed, &mut out) {
                     return Err(
-                        "CodegenWasmJit: gbode: the model could not multiply by its Jacobian",
+                        "##GBODE## the model could not multiply by its Jacobian",
                     );
                 }
                 for &cf in group {
@@ -295,6 +309,7 @@ impl GbfNls {
         let maxs: Vec<f64> = ode.maxs().to_vec();
         let tol = self.integrator_tol;
         ode.set_context_jacobian();
+        let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
         let run = (|| -> Result<()> {
             ode.eval(time, y_full, &mut self.fbase)?;
             let mut probe = y_full.to_vec();
@@ -305,10 +320,10 @@ impl GbfNls {
                     let c = fast_idx[cf];
                     let nominal = nominals.get(c).copied().unwrap_or(1.0);
                     let raw_weight = tol * nominal + tol * abs(y_full[c]);
-                    let mut del = DELTA_X_SOLVER
+                    let mut del = delta_x
                         * abs(y_full[c])
                             .max(1e-3)
-                            .max(abs(DELTA_X_SOLVER * self.fbase[c]))
+                            .max(abs(delta_x * self.fbase[c]))
                             .max(abs(raw_weight));
                     del = y_full[c] + del - y_full[c];
                     if maxs.get(c).is_some_and(|&mx| y_full[c] + del >= mx) {
@@ -404,7 +419,7 @@ impl GbfNls {
         first_implicit: bool,
         event_happened: bool,
         nominals: &[f64],
-        starts: &[&[f64]],
+        starts: &Starts,
         x: &mut [f64],
         f_full: &mut [f64],
     ) -> Result<Solved> {
@@ -478,91 +493,269 @@ impl GbfNls {
         Ok(Solved::Failed)
     }
 
-    /// The generic damped Newton over one packed stage, C's `solveNLS_gb` with
-    /// `-gbnls=newton`/`kinsol` on `residual_DIRK_MR`/`residual_MS_MR`.
+    /// C's `solveNLS_gb` on `residual_DIRK_MR`/`residual_MS_MR`.
     fn solve_stage_generic(
         &mut self,
         ode: &mut dyn Ode,
         st: &mut MrStage<'_>,
         nominals: &[f64],
-        starts: &[&[f64]],
+        starts: &Starts,
         x: &mut [f64],
         f_full: &mut [f64],
     ) -> Result<Solved> {
-        let nf = self.n_fast;
-        let mut attempts: Vec<Vec<f64>> = starts.iter().map(|s| s.to_vec()).collect();
-        if let Some(base) = starts.last() {
-            let mut v = base.to_vec();
-            for i in 0..nf {
-                v[i] += nominals[st.fast_idx[i]] * 0.01;
-            }
-            attempts.push(v);
-            attempts.push(st.fast_idx.iter().map(|&i| nominals[i]).collect());
+        if let Some(hook) = super::nls_hook::nls_hook() {
+            return self.solve_stage_hooked(hook, ode, st, nominals, starts, x, f_full);
         }
-        let mut r = vec![0.0; nf];
-        let mut r_new = vec![0.0; nf];
-        let mut x_try = vec![0.0; nf];
+        if let Some(ladder) = self.kinsol {
+            return self.solve_stage_kinsol(ode, st, nominals, starts, x, f_full, ladder);
+        }
+        let nf = self.n_fast;
+        let mut attempts: Vec<Vec<f64>> = vec![starts.extrapolation.to_vec()];
+        if starts.old != starts.extrapolation {
+            attempts.push(starts.old.to_vec());
+        }
+        let mut v = starts.old.to_vec();
+        for i in 0..nf {
+            v[i] += nominals[st.fast_idx[i]] * 0.01;
+        }
+        attempts.push(v);
+        attempts.push(st.fast_idx.iter().map(|&i| nominals[i]).collect());
         for relax in 0..5 {
             let tol = self.ftol * pow(10.0, relax as f64);
             for start in &attempts {
                 x.copy_from_slice(start);
-                if st.residual(ode, x, &mut r, f_full).is_err() {
-                    continue;
-                }
-                let mut nrm = enorm(&r);
-                if !nrm.is_finite() {
-                    continue;
-                }
-                let mut factored = self
-                    .assemble_generic(ode, st, nominals, x)
-                    .is_ok();
-                if !factored {
-                    continue;
-                }
-                let mut converged = nrm <= tol;
-                let mut stale = false;
-                'newton: for _ in 0..NEWTON_MAX_STEPS {
-                    if converged {
-                        break;
-                    }
-                    if stale {
-                        factored = self.assemble_generic(ode, st, nominals, x).is_ok();
-                        if !factored {
-                            break 'newton;
-                        }
-                        stale = false;
-                    }
-                    let mut dx = r.clone();
-                    self.factored.as_mut().expect("solve before factor").solve(&mut dx);
-                    let mut lambda = 1.0;
-                    loop {
-                        for i in 0..nf {
-                            x_try[i] = x[i] - lambda * dx[i];
-                        }
-                        let ok = st.residual(ode, &x_try, &mut r_new, f_full).is_ok();
-                        let nrm_new = if ok { enorm(&r_new) } else { f64::INFINITY };
-                        if nrm_new.is_finite() && (nrm_new < nrm || lambda <= 1.0 / 1024.0) {
-                            x.copy_from_slice(&x_try);
-                            r.copy_from_slice(&r_new);
-                            nrm = nrm_new;
-                            break;
-                        }
-                        lambda /= 2.0;
-                        stale = true;
-                        if lambda < 1e-10 {
-                            break 'newton;
-                        }
-                    }
-                    converged = nrm <= tol;
-                }
-                if converged {
-                    // Leave `f_full` at the accepted iterate.
-                    st.residual(ode, x, &mut r, f_full)?;
+                if self.newton_generic(ode, st, nominals, x, f_full, tol, NEWTON_MAX_STEPS, u32::MAX, true)? {
                     return Ok(Solved::Ok);
                 }
             }
         }
         Ok(Solved::Failed)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn solve_stage_hooked(
+        &mut self,
+        hook: super::nls_hook::GbNlsHook,
+        ode: &mut dyn Ode,
+        st: &mut MrStage<'_>,
+        nominals: &[f64],
+        starts: &Starts,
+        x: &mut [f64],
+        f_full: &mut [f64],
+    ) -> Result<Solved> {
+        use super::nls_hook::{GbNlsRequest, KinsolParams, NlsPattern};
+        let nf = self.n_fast;
+        let n = st.base_full.len();
+        if self.pattern.as_ref().is_none_or(|(idx, _)| idx.as_slice() != st.fast_idx) {
+            let full = super::nls_hook::ode_rows_by_col(ode.jac_rows_by_col(), n);
+            let mut packed = vec![usize::MAX; n];
+            for (i, &fi) in st.fast_idx.iter().enumerate() {
+                packed[fi] = i;
+            }
+            let rows: Vec<Vec<usize>> = st
+                .fast_idx
+                .iter()
+                .map(|&fc| full[fc].iter().filter_map(|&r| (packed[r] != usize::MAX).then_some(packed[r])).collect())
+                .collect();
+            self.pattern = Some((st.fast_idx.to_vec(), NlsPattern::with_diagonal(&rows, &[])));
+        }
+        let pat = &self.pattern.as_ref().expect("built above").1;
+        let fast = |v: &[f64], fallback: f64| -> Vec<f64> {
+            st.fast_idx.iter().map(|&i| v.get(i).copied().unwrap_or(fallback)).collect()
+        };
+        let nominal = fast(nominals, 1.0);
+        let min = fast(ode.mins(), -f64::MAX);
+        let max = fast(ode.maxs(), f64::MAX);
+        let sym = self.sym_jac && ode.has_jacobian_vector();
+        let (stage_time, fac) = (st.stage_time, st.fac);
+        let fast_idx = st.fast_idx.to_vec();
+        let jac_evals = core::cell::Cell::new(0u64);
+        let solved = {
+            let failed = core::cell::Cell::new(false);
+            let cell = core::cell::RefCell::new((&mut *ode, &mut *st, &mut *f_full));
+            let mut eval = |xs: &[f64], r: &mut [f64]| {
+                if !failed.get() {
+                    let (ode, st, f_full) = &mut *cell.borrow_mut();
+                    failed.set(st.residual(&mut **ode, xs, r, f_full).is_err());
+                }
+                if failed.get() {
+                    r.fill(f64::NAN);
+                }
+            };
+            // C's `jacobian_MR_column`: the full ODE Jacobian where the model stands,
+            // seeded on the fast states.
+            let mut jac = |xs: &[f64], vals: &mut [f64]| {
+                let (ode, st, _) = &mut *cell.borrow_mut();
+                for (i, &fi) in fast_idx.iter().enumerate() {
+                    st.base_full[fi] = xs[i];
+                }
+                let mut seed_full = vec![0.0; n];
+                let mut seed = vec![0.0; nf];
+                let mut out = vec![0.0; n];
+                for group in &pat.groups {
+                    seed_full.fill(0.0);
+                    seed.fill(0.0);
+                    for &c in group {
+                        seed[c] = 1.0;
+                        seed_full[fast_idx[c]] = 1.0;
+                    }
+                    if !ode.jacobian_vector(stage_time, st.base_full, &seed_full, &mut out) {
+                        failed.set(true);
+                        vals.fill(f64::NAN);
+                        return;
+                    }
+                    for &c in group {
+                        for k in pat.colptr[c] as usize..pat.colptr[c + 1] as usize {
+                            let r = pat.rowidx[k] as usize;
+                            vals[k] = fac * out[fast_idx[r]] - seed[r];
+                        }
+                    }
+                }
+            };
+            let method = self.method;
+            let mut run = |start: &[f64], kinsol: KinsolParams, x: &mut [f64]| -> bool {
+                failed.set(false);
+                let mut req = GbNlsRequest {
+                    method,
+                    handle: 1,
+                    n: nf,
+                    colptr: &pat.colptr,
+                    rowidx: &pat.rowidx,
+                    colors: &pat.colors,
+                    nominal: &nominal,
+                    min: &min,
+                    max: &max,
+                    start,
+                    old: starts.old,
+                    x,
+                    kinsol,
+                    time: stage_time,
+                    eval: &mut eval,
+                    jacobian: if sym { Some(&mut jac as &mut dyn FnMut(&[f64], &mut [f64])) } else { None },
+                    jac_evals: 0,
+                };
+                let ok = hook(&mut req) && !failed.get();
+                jac_evals.set(jac_evals.get() + req.jac_evals);
+                ok
+            };
+            x.copy_from_slice(starts.nlsx);
+            match self.kinsol {
+                None => run(
+                    starts.extrapolation,
+                    KinsolParams { max_iters: 0, no_init_setup: false, max_setup_calls: 0, fnorm_tol: 0.0 },
+                    x,
+                ),
+                Some(ladder) => super::nls_generic::kinsol_ladder(&ladder, nf, starts, x, &mut run),
+            }
+        };
+        self.n_jac_evals += jac_evals.get();
+        // The last residual evaluation left `f_full` at the accepted iterate.
+        Ok(if solved { Solved::Ok } else { Solved::Failed })
+    }
+
+    /// [`super::nls_generic::GbNlsGeneric`]'s `-gbnls=kinsol` ladder on the fast stage.
+    #[allow(clippy::too_many_arguments)]
+    fn solve_stage_kinsol(
+        &mut self,
+        ode: &mut dyn Ode,
+        st: &mut MrStage<'_>,
+        nominals: &[f64],
+        starts: &Starts,
+        x: &mut [f64],
+        f_full: &mut [f64],
+        ladder: super::nls_generic::KinsolLadder,
+    ) -> Result<Solved> {
+        let later_steps = ladder.max_steps.max(10 * self.n_fast as u32);
+        let phases: [(&[f64], u32, bool, f64); 4] = [
+            (starts.extrapolation, ladder.max_steps, false, ladder.tol),
+            (starts.extrapolation, later_steps, true, ladder.tol),
+            (starts.old, later_steps, true, ladder.tol),
+            (starts.nlsx, later_steps, true, 10.0 * ladder.tol),
+        ];
+        for (&(start, steps, fresh, tol), &every) in phases.iter().zip(ladder.jac_updates.iter()) {
+            if every == 0 {
+                continue;
+            }
+            x.copy_from_slice(start);
+            if self.newton_generic(ode, st, nominals, x, f_full, tol, steps, every, fresh)? {
+                return Ok(Solved::Ok);
+            }
+        }
+        Ok(Solved::Failed)
+    }
+
+    /// Damped Newton from `x` to `tol`, refreshing the Jacobian as
+    /// `GbNlsGeneric::newton` does. On success `f_full` is left at the iterate.
+    #[allow(clippy::too_many_arguments)]
+    fn newton_generic(
+        &mut self,
+        ode: &mut dyn Ode,
+        st: &mut MrStage<'_>,
+        nominals: &[f64],
+        x: &mut [f64],
+        f_full: &mut [f64],
+        tol: f64,
+        max_steps: u32,
+        refresh_every: u32,
+        fresh: bool,
+    ) -> Result<bool> {
+        let nf = self.n_fast;
+        let mut r = vec![0.0; nf];
+        let mut r_new = vec![0.0; nf];
+        let mut x_try = vec![0.0; nf];
+        if st.residual(ode, x, &mut r, f_full).is_err() {
+            return Ok(false);
+        }
+        let mut nrm = enorm(&r);
+        if !nrm.is_finite() {
+            return Ok(false);
+        }
+        if (fresh || self.factored.is_none()) && self.assemble_generic(ode, st, nominals, x).is_err() {
+            return Ok(false);
+        }
+        let mut converged = nrm <= tol;
+        let mut stale = false;
+        let mut since_refresh = 0u32;
+        'newton: for _ in 0..max_steps {
+            if converged {
+                break;
+            }
+            if stale || since_refresh >= refresh_every {
+                if self.assemble_generic(ode, st, nominals, x).is_err() {
+                    break 'newton;
+                }
+                stale = false;
+                since_refresh = 0;
+            }
+            let mut dx = r.clone();
+            self.factored.as_mut().expect("solve before factor").solve(&mut dx);
+            let mut lambda = 1.0;
+            loop {
+                for i in 0..nf {
+                    x_try[i] = x[i] - lambda * dx[i];
+                }
+                let ok = st.residual(ode, &x_try, &mut r_new, f_full).is_ok();
+                let nrm_new = if ok { enorm(&r_new) } else { f64::INFINITY };
+                if nrm_new.is_finite() && (nrm_new < nrm || lambda <= 1.0 / 1024.0) {
+                    x.copy_from_slice(&x_try);
+                    r.copy_from_slice(&r_new);
+                    nrm = nrm_new;
+                    break;
+                }
+                lambda /= 2.0;
+                stale = true;
+                if lambda < 1e-10 {
+                    break 'newton;
+                }
+            }
+            since_refresh += 1;
+            converged = nrm <= tol;
+        }
+        if converged {
+            // Leave `f_full` at the accepted iterate.
+            st.residual(ode, x, &mut r, f_full)?;
+        }
+        Ok(converged)
     }
 
     fn assemble_generic(
@@ -832,7 +1025,7 @@ impl GbodeF {
             "Step control factor is set to {}",
             omclog::g(t.fac, 0, 6),
         );
-        let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal));
+        let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal, conf.nls_method));
         // C demotes dense output to Hermite when the method has no formula.
         let interpolation = match (conf.interpolation, t.with_dense_output) {
             (Interpolation::DenseOutput, false) => Interpolation::Hermite,
@@ -1119,7 +1312,7 @@ impl Gbode {
                     gbf.convergence_test_failures += 1;
                     gbf.step_size *= 0.5;
                     if gbf.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(super::step::GBODE_MIN_STEP_ERROR);
+                        return Err(super::step::min_step_failed("error still to large"));
                     }
                     gbf.cache.invalidate_keep_left();
                     continue;
@@ -1145,18 +1338,20 @@ impl Gbode {
                     gbf.err_test_failures += 1;
                     gbf.step_size *= 0.5;
                     if gbf.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(super::step::GBODE_MIN_STEP_ERROR);
+                        return Err(super::step::min_step_failed("error still to large"));
                     }
                     gbf.cache.invalidate_keep_left();
-                    omclog::info!(
-                        omclog::SOLVER,
-                        false,
-                        "Reject step from {} to {}, error {}, new stepsize {}",
-                        omclog::g(gbf.time, 0, 6),
-                        omclog::g(gbf.time + gbf.last_step_size, 0, 6),
-                        omclog::g(err, 0, 6),
-                        omclog::g(gbf.step_size, 0, 6),
-                    );
+                    if omclog::active(omclog::SOLVER) {
+                        omclog::info!(
+                            omclog::SOLVER,
+                            false,
+                            "Reject step from {} to {}, error {}, new stepsize {}",
+                            omclog::g(gbf.time, 0, 6),
+                            omclog::g(gbf.time + gbf.last_step_size, 0, 6),
+                            omclog::g(err, 0, 6),
+                            omclog::g(gbf.step_size, 0, 6),
+                        );
+                    }
                     continue;
                 }
                 break;
@@ -1264,15 +1459,17 @@ impl Gbode {
                 gbf.kv[..n].copy_from_slice(&kr);
                 let y = gbf.y.clone();
                 gbf.y_old.copy_from_slice(&y);
-                omclog::info!(
-                    omclog::SOLVER,
-                    false,
-                    "Accept step from {} to {}, error {}, new stepsize {}",
-                    omclog::g(gbf.time - gbf.last_step_size, 0, 6),
-                    omclog::g(gbf.time, 0, 6),
-                    omclog::g(err_now, 0, 6),
-                    omclog::g(gbf.step_size, 0, 6),
-                );
+                if omclog::active(omclog::SOLVER) {
+                    omclog::info!(
+                        omclog::SOLVER,
+                        false,
+                        "Accept step from {} to {}, error {}, new stepsize {}",
+                        omclog::g(gbf.time - gbf.last_step_size, 0, 6),
+                        omclog::g(gbf.time, 0, 6),
+                        omclog::g(err_now, 0, 6),
+                        omclog::g(gbf.step_size, 0, 6),
+                    );
+                }
             }
 
             let done = {
@@ -1623,6 +1820,7 @@ impl Gbode {
             }
             let mut x = guess.clone();
             let mut f_full = vec![0.0; n];
+            let y_old_fast: Vec<f64> = self.fast_states_idx[..n_fast].iter().map(|&i| y_old_full[i]).collect();
             let fac = step_size * a_ss;
             let event_happened = self.event_happened;
             let nominals = self.nominals.clone();
@@ -1651,7 +1849,7 @@ impl Gbode {
                     first_implicit,
                     event_happened,
                     &nominals,
-                    &[&extrap, &guess],
+                    &Starts { extrapolation: &extrap, old: &guess, nlsx: &y_old_fast },
                     &mut x,
                     &mut f_full,
                 )?
@@ -1895,7 +2093,7 @@ impl Gbode {
                 true,
                 event_happened,
                 &nominals,
-                &[&start],
+                &Starts { extrapolation: &start, old: &start, nlsx: &start },
                 &mut x,
                 &mut f_full,
             )?
@@ -2021,7 +2219,7 @@ impl Gbode {
                     .tableau
                     .contractive_dt_a
                     .clone()
-                    .ok_or("CodegenWasmJit: gbode: contractive defect without dT_A")?;
+                    .ok_or("##GBODE## contractive defect without dT_A")?;
                 (dt_a, gbf.tableau.n_stages, gbf.tableau.k_right, gbf.extrapolation_valid)
             };
             {
@@ -2060,9 +2258,12 @@ impl Gbode {
             .t_transform
             .as_ref()
             .and_then(|tr| tr.gamma.first().copied())
-            .ok_or("CodegenWasmJit: gbode: contractive estimate without a real eigenvalue")?;
+            .ok_or("##GBODE## contractive estimate without a real eigenvalue")?;
         let g = gamma / gbf.step_size;
-        let nls = gbf.nls.as_mut().ok_or("CodegenWasmJit: gbode: contractive estimate without an internal NLS")?;
+        let nls = gbf.nls.as_mut().ok_or(match filter {
+            true => "Selected contractive filter error estimator is only available with -gbnls=internal.",
+            false => "Selected contractive defect error estimator is only available with -gbnls=internal.",
+        })?;
         let mut lu = nls.contract_factor(g)?;
         lu.solve(&mut err);
         if filter {

@@ -35,15 +35,15 @@ struct Ctx<'a> {
     /// `f(t, y)`, which IDA's residual subtracts from `y'`.
     f: &'a mut [f64],
     failed: Option<&'static str>,
-    /// IDA with KLU only: the pattern and the scratch [`ode_jac`] assembles through.
+    /// KLU only: the pattern and the scratch [`fill_ode_jac`] assembles through.
     jac: Option<&'a mut OdeJac>,
     mem: *mut c_void,
     tol: f64,
     nominals: &'a [f64],
 }
 
-/// The residual Jacobian of `y' - f(t, y)` as KLU wants it: the ODE's pattern plus
-/// the diagonal, recoloured, in CSC form with the assembly's scratch.
+/// The Jacobian of `f` (CVODE) or of the residual `y' - f(t, y)` (IDA) as KLU wants
+/// it: the ODE's pattern plus the diagonal, recoloured, in CSC form with the assembly's scratch.
 struct OdeJac {
     colptr: Vec<sundials::SunIndex>,
     rowidx: Vec<sundials::SunIndex>,
@@ -107,9 +107,8 @@ impl OdeJac {
     }
 }
 
-/// `cj·I - df/dy` into the sparse matrix, a colour at a time: the model's own
-/// Jacobian-vector product where it has one, else the difference quotient of `f`.
-/// `rr` is the residual at the point, so `f = y' - rr` costs no evaluation.
+/// `cj·I - df/dy` into the sparse matrix. `rr` is the residual at the point, so
+/// `f = y' - rr` costs no evaluation.
 unsafe extern "C" fn ode_jac(
     t: f64,
     cj: f64,
@@ -122,16 +121,54 @@ unsafe extern "C" fn ode_jac(
     _t2: NVector,
     _t3: NVector,
 ) -> c_int {
-    let Ctx { ode, n, failed, jac, mem, tol, nominals, .. } = unsafe { &mut *(user as *mut Ctx) };
+    let c = unsafe { &mut *(user as *mut Ctx) };
+    let n = c.n;
+    let (ypv, base) =
+        unsafe { (core::slice::from_raw_parts(nv_data(yp), n), core::slice::from_raw_parts(nv_data(rr), n)) };
+    let h = sundials::ida_current_step(c.mem);
+    unsafe {
+        fill_ode_jac(c, t, nv_data(yy), &|i| ypv[i] - base[i], &|i| ypv[i], h, j, &|row, col, d| {
+            if row == col { cj - d } else { -d }
+        })
+    }
+}
+
+/// `df/dy` into the sparse matrix, for CVODE.
+unsafe extern "C" fn cvode_jac(
+    t: f64,
+    y: NVector,
+    fy: NVector,
+    j: sundials::SunMatrix,
+    user: *mut c_void,
+    _t1: NVector,
+    _t2: NVector,
+    _t3: NVector,
+) -> c_int {
+    let c = unsafe { &mut *(user as *mut Ctx) };
+    let f = unsafe { core::slice::from_raw_parts(nv_data(fy), c.n) };
+    let h = sundials::cvode_current_step(c.mem);
+    unsafe { fill_ode_jac(c, t, nv_data(y), &|i| f[i], &|i| f[i], h, j, &|_, _, d| d) }
+}
+
+/// Assemble `J` over the pattern a colour at a time: the model's own
+/// Jacobian-vector product where it has one, else the difference quotient of `f`.
+/// `f0` is `f(t, y)`, `dir` the derivative `h·y'` in the step's sign is taken from,
+/// and `entry(row, col, ∂f_row/∂y_col)` the value stored.
+#[allow(clippy::too_many_arguments)]
+unsafe fn fill_ode_jac(
+    c: &mut Ctx,
+    t: f64,
+    y: *mut f64,
+    f0: &dyn Fn(usize) -> f64,
+    dir: &dyn Fn(usize) -> f64,
+    h: f64,
+    j: sundials::SunMatrix,
+    entry: &dyn Fn(usize, usize, f64) -> f64,
+) -> c_int {
+    let Ctx { ode, n, failed, jac, tol, nominals, .. } = c;
     let n = *n;
     let Some(jac) = jac.as_deref_mut() else { return -1 };
-    let (ys, ypv, base) = unsafe {
-        (
-            core::slice::from_raw_parts_mut(nv_data(yy), n),
-            core::slice::from_raw_parts(nv_data(yp), n),
-            core::slice::from_raw_parts(nv_data(rr), n),
-        )
-    };
+    let ys = unsafe { core::slice::from_raw_parts_mut(y, n) };
     let nnz = jac.nnz();
     let vals = unsafe {
         let (data, colptr, rowidx) = sundials::sparse_arrays(j);
@@ -140,7 +177,6 @@ unsafe extern "C" fn ode_jac(
         core::slice::from_raw_parts_mut(data, nnz)
     };
     vals.fill(0.0);
-    let diag = |row: usize, col: usize| if row == col { cj } else { 0.0 };
     if ode.has_jacobian_vector() {
         let mut exact = true;
         for group in &jac.colors {
@@ -155,7 +191,7 @@ unsafe extern "C" fn ode_jac(
             for &col in group {
                 let ci = col as usize;
                 for (slot, &row) in jac.slots[ci].iter().zip(&jac.rows_by_col[ci]) {
-                    vals[*slot] = diag(row as usize, ci) - jac.gp[row as usize];
+                    vals[*slot] = entry(row as usize, ci, jac.gp[row as usize]);
                 }
             }
         }
@@ -164,16 +200,16 @@ unsafe extern "C" fn ode_jac(
         }
         vals.fill(0.0);
     }
-    let h = sundials::ida_current_step(*mem);
+    let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
     for group in &jac.colors {
         for &col in group {
             let ci = col as usize;
             let yi = ys[ci];
             let nom = nominals.get(ci).copied().unwrap_or(1.0);
-            let mut del = fd_step(yi, h * ypv[ci], *tol, nom);
+            let mut del = fd_step(delta_x, yi, h * dir(ci), *tol, nom);
             del = yi + del - yi;
             if del == 0.0 {
-                del = fd_step(0.0, 0.0, *tol, nom);
+                del = fd_step(delta_x, 0.0, 0.0, *tol, nom);
             }
             jac.ysave[ci] = yi;
             jac.del[ci] = del;
@@ -195,8 +231,7 @@ unsafe extern "C" fn ode_jac(
             let del = jac.del[ci];
             for (slot, &row) in jac.slots[ci].iter().zip(&jac.rows_by_col[ci]) {
                 let ri = row as usize;
-                let f0 = ypv[ri] - base[ri];
-                vals[*slot] = diag(ri, ci) - (jac.gp[ri] - f0) / del;
+                vals[*slot] = entry(ri, ci, (jac.gp[ri] - f0(ri)) / del);
             }
         }
     }
@@ -318,6 +353,9 @@ pub struct CvodeOde {
     pending: Pending,
     /// Counters from the memory blocks a rebuild dropped.
     past: Counters,
+    /// KLU over the model's pattern, once it has been asked for; `None` is dense.
+    jac: Option<OdeJac>,
+    asked_sparsity: bool,
 }
 
 impl CvodeOde {
@@ -330,6 +368,8 @@ impl CvodeOde {
             nominals: nominals.to_vec(),
             pending: Pending::Rebuild,
             past: Counters::default(),
+            jac: None,
+            asked_sparsity: false,
         }
     }
 
@@ -365,26 +405,18 @@ impl CvodeOde {
             *t = target;
             return Ok(SunStep::Reached);
         }
-        self.prepare(*t, y)?;
-        let (n, n_zc) = (self.n, self.n_zc);
-        let cv = self.cv.as_mut().expect("prepare built it");
-        let mut ctx = Ctx {
-            ode,
-            n,
-            n_zc,
-            f: &mut [],
-            failed: None,
-            jac: None,
-            mem: core::ptr::null_mut(),
-            tol: 0.0,
-            nominals: &[],
-        };
+        self.prepare(ode, *t, y)?;
+        let (n, n_zc, tol) = (self.n, self.n_zc, self.tolerance);
+        let CvodeOde { cv, jac, nominals, .. } = self;
+        let cv = cv.as_mut().expect("prepare built it");
+        let mem = cv.mem();
+        let mut ctx = Ctx { ode, n, n_zc, f: &mut [], failed: None, jac: jac.as_mut(), mem, tol, nominals };
         if !cv.set_user_data(&mut ctx as *mut Ctx as *mut c_void) {
             return Err("cvode: the context could not be bound");
         }
         let mut retries = 0;
         let stop = loop {
-            match cv.step(t, target) {
+            match cv.step(t, target, false) {
                 Stop::Failed(sundials::CV_TOO_MUCH_WORK) if retries < WORK_RETRIES => retries += 1,
                 other => break other,
             }
@@ -400,7 +432,7 @@ impl CvodeOde {
         }
     }
 
-    fn prepare(&mut self, t: f64, y: &[f64]) -> Result<()> {
+    fn prepare(&mut self, ode: &mut dyn Ode, t: f64, y: &[f64]) -> Result<()> {
         match core::mem::replace(&mut self.pending, Pending::None) {
             Pending::None => Ok(()),
             Pending::Reinit => {
@@ -418,8 +450,13 @@ impl CvodeOde {
                 let atol = abs_tolerances(self.tolerance, self.n, &self.nominals);
                 let root = (self.n_zc > 0).then_some(roots as sundials::RootFn);
                 let config = crate::simflags::with_flags(crate::simflags::cvode_config);
+                if !self.asked_sparsity {
+                    self.asked_sparsity = true;
+                    self.jac = OdeJac::new(ode, self.n);
+                }
+                let jac = self.jac.as_ref().map(|j| (j.nnz(), cvode_jac as sundials::CvodeJacFn));
                 self.cv = Some(
-                    Cvode::new(t, y, self.tolerance, &atol, self.n_zc, rhs, root, config)
+                    Cvode::new(t, y, self.tolerance, &atol, self.n_zc, rhs, root, config, jac)
                         .ok_or("cvode: the integrator could not be created")?,
                 );
                 Ok(())
@@ -684,12 +721,11 @@ impl DaeJac {
 /// (`model_help.h`): a relative step off the larger of the point and the last
 /// step's derivative, floored by the nominal where the unknown is inside its own
 /// absolute tolerance and so carries no scale to difference over.
-fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
-    const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
+fn fd_step(delta_x: f64, yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let ewt_inv = tol * (yi.abs() + nominal);
     let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
-    let mag = DELTA_X_SOLVER * step;
+    let mag = delta_x * step;
     // The step takes the sign of h*y', as both runtimes do.
     if hyp >= 0.0 { mag } else { -mag }
 }
@@ -723,16 +759,17 @@ unsafe extern "C" fn dae_jac(
         core::slice::from_raw_parts_mut(data, nnz)
     };
     vals.fill(0.0);
+    let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
     for c in 0..jac.colors.len() {
         for k in 0..jac.colors[c].len() {
             let ci = jac.colors[c][k] as usize;
             let yi = unsafe { *y.add(ci) };
             let ypi = unsafe { *ypv.add(ci) };
             let nom = nominals.get(ci).copied().unwrap_or(1.0);
-            let mut del = fd_step(yi, h * ypi, *tol, nom);
+            let mut del = fd_step(delta_x, yi, h * ypi, *tol, nom);
             del = yi + del - yi; // floating-point rounding, as in the C runtime
             if del == 0.0 {
-                del = fd_step(0.0, 0.0, *tol, nom);
+                del = fd_step(delta_x, 0.0, 0.0, *tol, nom);
             }
             jac.ysave[ci] = yi;
             jac.ypsave[ci] = ypi;

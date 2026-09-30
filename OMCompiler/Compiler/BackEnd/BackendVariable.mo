@@ -2388,7 +2388,7 @@ algorithm
   buckets := bucketCount(arr_size);
   indices := arrayCreate(buckets, {});
   arr := vararrayEmpty(arr_size);
-  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0);
+  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0, false);
 end emptyVars;
 
 protected function bucketCount
@@ -2413,7 +2413,7 @@ algorithm
   for i in 1:vars.varArr.numberOfElements loop
     if isSome(vars.varArr.varOptArr[i]) then
       SOME(v) := vars.varArr.varOptArr[i];
-      idx := intMod(crefHash(v.varName), buckets) + 1;
+      idx := intMod(ComponentReferenceBasics.hashComponentRef(v.varName), buckets) + 1;
       arrayUpdate(indices, idx, BackendDAE.CREFINDEX(v.varName, i - 1) :: indices[idx]);
       updatePrefixIndices(v.varName, i - 1, vars);
     end if;
@@ -2871,7 +2871,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(crefIndices = indices, varArr = arr, bucketSize = buckets, numberOfVars = num_vars) := inVariables;
   (arr, outVar as BackendDAE.VAR(varName = cr)) := vararrayDelete(arr, inIndex);
-  hash_idx := intMod(crefHash(cr), buckets) + 1;
+  hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(cr), buckets) + 1;
   cr_indices := indices[hash_idx];
   cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1), cr_indices, removeVar2);
   arrayUpdate(indices, hash_idx, cr_indices);
@@ -3058,12 +3058,13 @@ protected
   Integer hash, hash_idx, arr_idx;
   list<BackendDAE.CrefIndex> indices;
 algorithm
-  hash := crefHash(inVar.varName);
+  hash := ComponentReferenceBasics.hashComponentRef(inVar.varName);
   hash_idx := intMod(hash, inVariables.bucketSize) + 1;
   indices := arrayGet(inVariables.crefIndices, hash_idx);
 
   try
-    BackendDAE.CREFINDEX(index=arr_idx) := List.getMemberOnTrue(inVar.varName, indices, crefIndexEqualCref);
+    arr_idx := findCrefIndex(inVar.varName, indices);
+    true := arr_idx >= 0;
     outVariables.varArr := vararraySetnth(inVariables.varArr, arr_idx+1, inVar);
   else
     if outVariables.numberOfVars >= outVariables.bucketSize then
@@ -3075,6 +3076,9 @@ algorithm
     arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
     updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables);
     outVariables.numberOfVars := outVariables.numberOfVars + 1;
+    if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
+      outVariables.hasStartVars := true;
+    end if;
   end try;
 end addVar;
 
@@ -3111,13 +3115,16 @@ protected
 algorithm
   outVariables := if inVariables.numberOfVars >= inVariables.bucketSize then growBuckets(inVariables) else inVariables;
   BackendDAE.VARIABLES(crefIndices = hashvec, varArr = varr, bucketSize = bsize, numberOfVars = num_vars) := outVariables;
-  idx := intMod(crefHash(inVar.varName), bsize) + 1;
+  idx := intMod(ComponentReferenceBasics.hashComponentRef(inVar.varName), bsize) + 1;
   varr := vararrayAdd(varr, inVar);
   indices := hashvec[idx];
   arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(inVar.varName, num_vars)::indices));
   updatePrefixIndices(inVar.varName, num_vars, outVariables);
   outVariables.varArr := varr;
   outVariables.numberOfVars := num_vars + 1;
+  if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
+    outVariables.hasStartVars := true;
+  end if;
 end addNewVar;
 
 public function addVariables
@@ -3248,7 +3255,7 @@ protected
   DAE.Type ty;
   list<DAE.Dimension> dims;
 algorithm
-  hash := crefHash(cr);
+  hash := ComponentReferenceBasics.hashComponentRef(cr);
   try
     (v, indx) := getVarHashed(cr, hash, inVariables);
     outVarLst := {v};
@@ -3477,14 +3484,14 @@ end setPrefixIndices;
 protected function updatePrefixIndices
   "Adds index under every proper prefix of cr that isPrefixQuery
    can name: each qualifier of an array or record type, with each leading part
-   of its subscripts. The hash of a prefix is the crefHash of that prefix, so
+   of its subscripts. The hash of a prefix is the hashComponentRef of that prefix, so
    every qualifier is walked even where nothing is stored."
   input DAE.ComponentRef cr;
   input Integer index;
   input BackendDAE.Variables vars;
 protected
   DAE.ComponentRef c = cr;
-  Integer hash = crefHashSeed, depth = 0, nsubs, count;
+  Integer hash = ComponentReferenceBasics.crefHashSeed, depth = 0, nsubs, count;
   list<DAE.Subscript> subs;
   DAE.Type ty;
   Boolean last, ok, store;
@@ -3499,7 +3506,7 @@ algorithm
       return;
     end if;
     depth := depth + 1;
-    hash := crefHashIdent(ComponentReferenceBasics.crefFirstIdent(c), hash);
+    hash := ComponentReferenceBasics.crefHashIdent(ComponentReferenceBasics.crefFirstIdent(c), hash);
     count := listLength(subs);
     nsubs := 0;
     store := isExpandableType(ty);
@@ -3507,7 +3514,7 @@ algorithm
       updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
     end if;
     for sub in subs loop
-      hash := crefHashSubscript(sub, hash);
+      hash := ComponentReferenceBasics.crefHashSubscript(sub, hash);
       nsubs := nsubs + 1;
       if store and not (last and nsubs == count) then
         updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
@@ -3519,48 +3526,6 @@ algorithm
     c := match c case DAE.CREF_QUAL() then c.componentRef; end match;
   end while;
 end updatePrefixIndices;
-
-protected constant Integer crefHashSeed = 5381;
-
-protected function crefHash
-  "The bucket hash of a variable: djb2 continued over its qualifiers and
-   subscripts in order. ComponentReferenceBasics.hashComponentRef sums the
-   parts, so x1.y2 and x2.y1 share a bucket."
-  input DAE.ComponentRef cr;
-  output Integer hash = crefHashSeed;
-protected
-  DAE.ComponentRef c = cr;
-  Boolean last = false;
-algorithm
-  while not last loop
-    (hash, c, last) := match c
-      case DAE.CREF_IDENT() then (crefHashSubscripts(c.subscriptLst, crefHashIdent(c.ident, hash)), c, true);
-      case DAE.CREF_QUAL() then (crefHashSubscripts(c.subscriptLst, crefHashIdent(c.ident, hash)), c.componentRef, false);
-      else (hash, c, true);
-    end match;
-  end while;
-end crefHash;
-
-protected function crefHashIdent
-  input String ident;
-  input Integer hash;
-  output Integer outHash = stringHashDjb2Continue(ident, stringHashDjb2Continue(".", hash));
-end crefHashIdent;
-
-protected function crefHashSubscripts
-  input list<DAE.Subscript> subs;
-  input output Integer hash;
-algorithm
-  for sub in subs loop
-    hash := crefHashSubscript(sub, hash);
-  end for;
-end crefHashSubscripts;
-
-protected function crefHashSubscript
-  input DAE.Subscript sub;
-  input Integer hash;
-  output Integer outHash = intHashDjb2Continue(ComponentReferenceBasics.hashSubscript(sub), stringHashDjb2Continue("[", hash));
-end crefHashSubscript;
 
 protected function updatePrefixIndex
   input DAE.ComponentRef cr;
@@ -3863,7 +3828,7 @@ public function getVar2
   output BackendDAE.Var outVar;
   output Integer outIndex;
 algorithm
-  (outVar, outIndex) := getVarHashed(inCref, crefHash(inCref), inVariables);
+  (outVar, outIndex) := getVarHashed(inCref, ComponentReferenceBasics.hashComponentRef(inCref), inVariables);
 end getVar2;
 
 protected function getVarHashed
@@ -3872,32 +3837,27 @@ protected function getVarHashed
   input BackendDAE.Variables inVariables;
   output BackendDAE.Var outVar;
   output Integer outIndex;
-protected
-  array<list<BackendDAE.CrefIndex>> indices;
-  BackendDAE.VariableArray arr;
-  Integer buckets, hash_idx;
-  list<BackendDAE.CrefIndex> cr_indices;
-  DAE.ComponentRef cr;
 algorithm
-  BackendDAE.VARIABLES(crefIndices=indices, varArr=arr, bucketSize=buckets) := inVariables;
-  hash_idx := intMod(hash, buckets) + 1;
-  cr_indices := indices[hash_idx];
-  BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
+  outIndex := findCrefIndex(inCref, arrayGet(inVariables.crefIndices, intMod(hash, inVariables.bucketSize) + 1));
+  true := outIndex >= 0;
   outIndex := outIndex + 1;
-  outVar as BackendDAE.VAR(varName = cr) := vararrayNth(arr, outIndex);
-  true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
+  outVar := vararrayNth(inVariables.varArr, outIndex);
+  true := ComponentReferenceBasics.crefEqualNoStringCompare(outVar.varName, inCref);
 end getVarHashed;
 
-protected function crefIndexEqualCref
-  input DAE.ComponentRef inCref;
-  input BackendDAE.CrefIndex inIndex;
-  output Boolean outMatch;
-protected
-  DAE.ComponentRef cr;
+protected function findCrefIndex
+  "The index stored for cr in a crefIndices bucket, or -1."
+  input DAE.ComponentRef cr;
+  input list<BackendDAE.CrefIndex> indices;
+  output Integer index = -1;
 algorithm
-  BackendDAE.CREFINDEX(cref = cr) := inIndex;
-  outMatch := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
-end crefIndexEqualCref;
+  for ci in indices loop
+    if ComponentReferenceBasics.crefEqualNoStringCompare(ci.cref, cr) then
+      index := ci.index;
+      return;
+    end if;
+  end for;
+end findCrefIndex;
 
 public function getVarIndexFromVars
   input list<BackendDAE.Var> inVars;
@@ -4225,17 +4185,8 @@ protected function traversingVarCrefFinder
   output BackendDAE.Var outVar;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  (outVar,outCrefs) := matchcontinue (inVar,inCrefs)
-    local
-      BackendDAE.Var v;
-      list<DAE.ComponentRef> cr_lst;
-      DAE.ComponentRef cr;
-    case (v,cr_lst)
-      algorithm
-        cr := varCref(v);
-      then (v,cr::cr_lst);
-    else (inVar,inCrefs);
-  end matchcontinue;
+  outVar := inVar;
+  outCrefs := varCref(inVar) :: inCrefs;
 end traversingVarCrefFinder;
 
 public function collectVarKindVarinVariables

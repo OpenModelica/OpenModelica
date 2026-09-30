@@ -2,7 +2,7 @@
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem1* _nonlinear_system.problem1* output.log
 // cflags: -d=-newInst
-// win: yes
+// suite: smoke
 
 loadFile("nlsTestPackage.mo"); getErrorString();
 simulate(nonlinear_system.problem1, stopTime=2, simflags="-nls=kinsol"); getErrorString();

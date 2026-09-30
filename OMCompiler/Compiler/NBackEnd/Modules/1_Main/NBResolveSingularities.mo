@@ -118,7 +118,8 @@ public
     list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
     list<Pointer<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns, matched_eqns, unmatched_eqns;
-    list<Pointer<Equation>> new_eqns = {};
+    list<Pointer<Equation>> new_eqns = {}, der_alias_eqns;
+    list<Pointer<Variable>> der_aliases;
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
@@ -181,6 +182,14 @@ public
       for eq in constraint_eqns loop
         UnorderedMap.add(Equation.getEqnName(Slice.getT(eq)), UnorderedSet.fromList(eq.indices, Util.id, intEq), slice_map);
       end for;
+
+      // a state derivative has to stay the derivative of its state, an alias takes its place as candidate
+      (candidate_ptrs, der_aliases, der_alias_eqns) := aliasStateDerivatives(candidate_ptrs, constraint_ptrs, VarData.getUniqueIndex(varData));
+      if not listEmpty(der_aliases) then
+        varData := VarData.addTypedList(varData, der_aliases, NBVariable.VarData.VarType.ALGEBRAIC);
+        variables := VariablePointers.addList(der_aliases, variables);
+        new_eqns := listAppend(der_alias_eqns, new_eqns);
+      end if;
 
       if VariablePointers.scalarSize(candidate_ptrs) < sum(Slice.size(eq, function Equation.size(resize = true)) for eq in constraint_eqns) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
@@ -623,6 +632,52 @@ protected
     end for;
   end resolveClustering;
 
+  function aliasStateDerivatives
+    "replaces state derivative candidates, e.g. $DER.x in v = $DER.x, by an alias a = $DER.x.
+    Otherwise the derivative would become a (dummy) state and stop being the derivative of x."
+    input output VariablePointers candidates;
+    input EquationPointers constraints;
+    input Pointer<Integer> uniqueIndex;
+    output list<Pointer<Variable>> aliases = {};
+    output list<Pointer<Equation>> alias_eqns = {};
+  protected
+    UnorderedMap<ComponentRef, ComponentRef> subst = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    list<Pointer<Variable>> ders;
+    Pointer<Variable> alias_var;
+    ComponentRef der_cref, alias_cref;
+  algorithm
+    ders := list(v for v guard(BVariable.isStateDerivative(v)) in VariablePointers.toList(candidates));
+    if listEmpty(ders) then
+      return;
+    end if;
+    for der_var in ders loop
+      der_cref := BVariable.getVarName(der_var);
+      (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(uniqueIndex), Variable.typeOf(Pointer.access(der_var)), false);
+      Pointer.update(uniqueIndex, Pointer.access(uniqueIndex) + 1);
+      alias_eqns := Equation.makeAssignment(Expression.fromCref(alias_cref), Expression.fromCref(der_cref), uniqueIndex, "DUM", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: alias_eqns;
+      UnorderedMap.add(der_cref, alias_cref, subst);
+      aliases := alias_var :: aliases;
+    end for;
+    candidates := VariablePointers.compress(VariablePointers.addList(aliases, VariablePointers.removeList(ders, candidates)));
+    for constraint in EquationPointers.toList(constraints) loop
+      Pointer.update(constraint, Equation.map(Pointer.access(constraint), function substituteDerivativeAlias(subst = subst)));
+    end for;
+  end aliasStateDerivatives;
+
+  function substituteDerivativeAlias
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, ComponentRef> subst;
+  algorithm
+    exp := match exp
+      local
+        ComponentRef alias_cref;
+      case Expression.CREF() guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), subst)) algorithm
+        alias_cref := UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(exp.cref), subst, sourceInfo());
+      then Expression.fromCref(ComponentRef.copySubscripts(exp.cref, alias_cref));
+      else exp;
+    end match;
+  end substituteDerivativeAlias;
+
   function getConstraintsAndCandidates
     input EquationPointers equations;
     input list<Integer> marked_eqns;
@@ -837,7 +892,8 @@ protected
       // array; convert it back to a per-dimension, one-based subscript.
       loc  := Slice.indexToLocation(idx, sizes);
       subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in loc);
-      elem_cref := ComponentRef.setSubscripts(subs, orig_cref);
+      // the subscripts belong to the array of records if the variable is a member of one
+      elem_cref := ComponentRef.mergeSubscripts(subs, orig_cref, true, true, true);
       elems := Expression.fromCref(elem_cref) :: elems;
 
       alias_elem_cref := if n == 1 then alias_cref else ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(i))}, alias_cref);

@@ -20,11 +20,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 ## Disable colors if you do not want them.
 # set(CMAKE_COLOR_MAKEFILE OFF)
 
-# Variable for signifying that we are using the new CMake configuration.
-# We use this to selectively include some cmake source files
-# e.g. simulationRuntime/c/ has two cmake sources that are conditionally
-# included. The old (cmake 2.8) cmake source in there is used by the legacy
-# standalone Autoconf/Make build.
+# Tells subprojects that can also be configured on their own that they are part
+# of the OpenModelica build, so they reuse its targets (e.g. SUNDIALS) instead of
+# building their own. Read by the OMSimulator submodule.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.
@@ -40,6 +38,9 @@ include(cmake/omc_git_revision.cmake)
 # build tree to survive a wipe, or in-source to bundle for an offline tarball.
 set(OM_DOWNLOADS_DIR "${CMAKE_BINARY_DIR}/downloads" CACHE PATH
     "Cache for everything the configure step downloads.")
+
+## Source hygiene targets (bom-error, utf8-error, tab-error, spellcheck, ...).
+include(cmake/omc_source_checks.cmake)
 
 # Cross-compiling to Windows (xwin toolchain): fetch PThreads4W and OpenBLAS.
 # Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).
@@ -161,28 +162,6 @@ omc_add_to_report(OM_ENABLE_OMNOTEBOOK)
 omc_add_to_report(OM_ENABLE_OMEDIT)
 omc_add_to_report(OM_ENABLE_OMSENS_QT)
 omc_add_to_report(OM_OMOPTIM_ENABLE)
-# libomc_result is built with cargo, which a C-only toolchain does not have (the
-# OMDev Windows build is one), so both options default to whether cargo is on
-# PATH rather than to plain ON. Without it the build falls back to the C readers
-# and writers, which cannot handle .arrow. Turning either option on explicitly
-# without a cargo is still a hard error, see rust_result_reader.cmake.
-find_program(CARGO_EXECUTABLE cargo)
-if(CARGO_EXECUTABLE)
-  set(OM_RUST_RESULT_DEFAULT ON)
-else()
-  set(OM_RUST_RESULT_DEFAULT OFF)
-  message(STATUS "cargo not found: defaulting OM_RUST_RESULT_READERS/OM_RUST_RESULT_WRITERS to OFF. "
-                 "The C result readers and writers can not read or write .arrow result files; "
-                 "install a stable Rust toolchain to get them.")
-endif()
-# The GUI clients read result files through libomc_result (needs cargo); OFF
-# compiles the C readers (OM_LEGACY_RESULT_READERS), which cannot open .arrow.
-cmake_dependent_option(OM_RUST_RESULT_READERS "Read result files in the GUI clients through the Rust omc_result library." ${OM_RUST_RESULT_DEFAULT} "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
-omc_add_to_report(OM_RUST_RESULT_READERS)
-# The C simulation runtime writes its result files through the same library;
-# OFF keeps the C writers, which cannot write .arrow.
-cmake_dependent_option(OM_RUST_RESULT_WRITERS "Write result files from the C simulation runtime through the Rust omc_result library." ${OM_RUST_RESULT_DEFAULT} "NOT OM_OMC_WASM" OFF)
-omc_add_to_report(OM_RUST_RESULT_WRITERS)
 
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
@@ -394,7 +373,7 @@ enable_testing()
 include(cmake/modules/OpenModelicaCoverage.cmake)
 
 # libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
-if(OM_RUST_RESULT_READERS OR OM_RUST_RESULT_WRITERS)
+if(NOT OM_OMC_WASM)
   include(OMCompiler/Compiler/.cmake/rust_result_reader.cmake)
   omc_result_reader_library()
 endif()

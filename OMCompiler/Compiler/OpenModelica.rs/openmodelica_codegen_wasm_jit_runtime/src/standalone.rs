@@ -42,6 +42,8 @@ unsafe extern "C" {
     fn functionInitialEquations_lambda0(sim_data: u32);
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
+    fn functionOutputs(sim_data: u32);
+    fn functionAttrDefaults(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
@@ -56,6 +58,12 @@ unsafe extern "C" {
     fn functionRemovedInitialEquations(sim_data: u32);
     fn functionJacA_constantEqns(sim_data: u32);
     fn functionJacA_column(sim_data: u32);
+    fn functionJacADJ_constantEqns(sim_data: u32);
+    fn functionJacADJ_column(sim_data: u32);
+    fn functionInitSynchronous(sim_data: u32);
+    fn functionUpdateSynchronous(sim_data: u32, clock: u32);
+    fn functionEquationsSynchronous(sim_data: u32, clock: u32);
+    fn evaluateDAEResiduals(sim_data: u32, stage: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn symbolicInlineSystem(sim_data: u32);
@@ -114,6 +122,8 @@ impl SimEngine for StandaloneEngine {
                 "functionInitialEquations_lambda0" => functionInitialEquations_lambda0(arg),
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
+                "functionOutputs" => functionOutputs(arg),
+                "functionAttrDefaults" => functionAttrDefaults(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
@@ -127,6 +137,9 @@ impl SimEngine for StandaloneEngine {
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
                 "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
                 "functionJacA_column" => functionJacA_column(arg),
+                "functionJacADJ_constantEqns" => functionJacADJ_constantEqns(arg),
+                "functionJacADJ_column" => functionJacADJ_column(arg),
+                "functionInitSynchronous" => functionInitSynchronous(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "symbolicInlineSystem" => symbolicInlineSystem(arg),
@@ -135,31 +148,31 @@ impl SimEngine for StandaloneEngine {
                 "linearJacB" => linearJacB(arg),
                 "linearJacC" => linearJacC(arg),
                 "linearJacD" => linearJacD(arg),
-                "functionInitSynchronous" => return Err(SYNC_UNSUPPORTED),
-                _ => return Err("wasm-jit standalone: unknown model function"),
+                _ => return Err(UNKNOWN_FN),
             }
         }
         Ok(())
     }
     fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        // Every entry point is always exported (empty stub if unused), so a plain
-        // call is a no-op when the feature is absent.
-        self.call1_raw(name, arg)
+        // What is imported is always exported (an empty stub if unused); the rest
+        // (parmod, data reconciliation) is exported only by models this command
+        // does not serve.
+        match self.call1_raw(name, arg) {
+            Err(UNKNOWN_FN) => Ok(()),
+            r => r,
+        }
     }
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
-        if name == driver::MODEL_FN_ZC {
-            unsafe { functionZeroCrossings(a, b) };
-            return Ok(());
-        }
-        // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
-        // leave every model without that feature with an unresolved `model.*` import,
-        // so the standalone export supports neither.
-        Err(match name {
-            driver::MODEL_FN_DAE => {
-                "wasm-jit standalone: --daeMode models are not supported by the standalone export"
+        unsafe {
+            match name {
+                driver::MODEL_FN_ZC => functionZeroCrossings(a, b),
+                driver::MODEL_FN_DAE => evaluateDAEResiduals(a, b),
+                driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
+                driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
+                _ => return Err(UNKNOWN_FN),
             }
-            _ => SYNC_UNSUPPORTED,
-        })
+        }
+        Ok(())
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
@@ -200,8 +213,7 @@ impl SimEngine for StandaloneEngine {
     }
 }
 
-const SYNC_UNSUPPORTED: &str =
-    "wasm-jit standalone: synchronous (clocked) models are not supported by the standalone export";
+const UNKNOWN_FN: &str = "wasm-jit standalone: unknown model function";
 
 /// Run the prepared model with the shared driver and write its result file.
 /// A failure traps (the command then exits nonzero).

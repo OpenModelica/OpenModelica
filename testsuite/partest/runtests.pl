@@ -18,9 +18,6 @@
 #
 # NOTE: This script has been tested on Linux, Windows and OSX so far, and will
 #       probably work on all other platforms.
-#
-# TODO: MetaModelicaDev in meta is not run yet, since those tests are organized
-#       a bit differently.
 
 use strict;
 use warnings;
@@ -86,7 +83,7 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow disabled);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow smoke disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -110,10 +107,9 @@ my %suite_enabled = (
                       # for now); the autotools one never defines it, so this is
                       # opt-in like wasm rather than off-by-build.
   arrow        => 1,  # Needs the Rust result library libomc_result, which reads
-                      # and writes the arrow format (OM_RUST_RESULT_READERS/
-                      # OM_RUST_RESULT_WRITERS). A CMake build has it wherever
-                      # cargo is on PATH, which is what those options default to;
-                      # a build without a Rust toolchain turns this off.
+                      # and writes the arrow format.
+  smoke        => 1,  # Also run on their own, where the whole testsuite is too
+                      # slow: testsuite/runWindowsTests.sh.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too
@@ -596,9 +592,6 @@ if ($check_proc_cpu) {
     }
   }
 }
-# Make sure that omc-diff is generated before trying to run any tests.
-system("make --quiet -j$thread_count omc-diff ReferenceFiles > /dev/null 2>&1");
-
 # I really don't think this is needed anymore!
 # symlink('../Compiler', 'Compiler');
 

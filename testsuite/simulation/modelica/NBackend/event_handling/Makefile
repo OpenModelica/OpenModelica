@@ -5,7 +5,10 @@ compositeEvent.mos \
 spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
+whenConditionAssertSplit.mos \
+whenTimeEvents.mos \
 algorithmWhen.mos\
+algorithmWhenPreCondition.mos\
 AssertNoEvent.mos\
 integerIteratorNoEvent.mos\
 

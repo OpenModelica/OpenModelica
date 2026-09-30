@@ -207,57 +207,57 @@ fn direction_symbol_output() -> Result<()> {
 
 #[test]
 fn exp_priority_integer_is_zero() -> Result<()> {
-    assert_eq!(Dump::expPriority(integer_exp(5), true)?, 0);
-    assert_eq!(Dump::expPriority(integer_exp(5), false)?, 0);
+    assert_eq!(Dump::expPriority(&integer_exp(5), true)?, 0);
+    assert_eq!(Dump::expPriority(&integer_exp(5), false)?, 0);
     Ok(())
 }
 
 #[test]
 fn exp_priority_binary_add_lhs() -> Result<()> {
     let e = binary_exp(integer_exp(1), Absyn::Operator::ADD, integer_exp(2));
-    assert_eq!(Dump::expPriority(e, true)?, 5);
+    assert_eq!(Dump::expPriority(&e, true)?, 5);
     Ok(())
 }
 
 #[test]
 fn exp_priority_binary_add_rhs() -> Result<()> {
     let e = binary_exp(integer_exp(1), Absyn::Operator::ADD, integer_exp(2));
-    assert_eq!(Dump::expPriority(e, false)?, 6);
+    assert_eq!(Dump::expPriority(&e, false)?, 6);
     Ok(())
 }
 
 #[test]
 fn exp_priority_binary_sub_lhs() -> Result<()> {
     let e = binary_exp(integer_exp(1), Absyn::Operator::SUB, integer_exp(2));
-    assert_eq!(Dump::expPriority(e, true)?, 5);
+    assert_eq!(Dump::expPriority(&e, true)?, 5);
     Ok(())
 }
 
 #[test]
 fn exp_priority_binary_sub_rhs() -> Result<()> {
     let e = binary_exp(integer_exp(1), Absyn::Operator::SUB, integer_exp(2));
-    assert_eq!(Dump::expPriority(e, false)?, 5);
+    assert_eq!(Dump::expPriority(&e, false)?, 5);
     Ok(())
 }
 
 #[test]
 fn exp_priority_binary_mul_lhs() -> Result<()> {
     let e = binary_exp(integer_exp(1), Absyn::Operator::MUL, integer_exp(2));
-    assert_eq!(Dump::expPriority(e, true)?, 2);
+    assert_eq!(Dump::expPriority(&e, true)?, 2);
     Ok(())
 }
 
 #[test]
 fn exp_priority_binary_pow_lhs() -> Result<()> {
     let e = binary_exp(integer_exp(2), Absyn::Operator::POW, integer_exp(3));
-    assert_eq!(Dump::expPriority(e, true)?, 1);
+    assert_eq!(Dump::expPriority(&e, true)?, 1);
     Ok(())
 }
 
 #[test]
 fn exp_priority_unary_is_four() -> Result<()> {
     let e = unary_exp(Absyn::Operator::UMINUS, integer_exp(1));
-    assert_eq!(Dump::expPriority(e, true)?, 4);
+    assert_eq!(Dump::expPriority(&e, true)?, 4);
     Ok(())
 }
 
@@ -268,7 +268,7 @@ fn exp_priority_unary_is_four() -> Result<()> {
 #[test]
 fn print_component_ref_str_plain_ident() -> Result<()> {
     // CREF_IDENT("x", []) — no Config call, no flags needed
-    assert_eq!(Dump::printComponentRefStr(ident_cref("x"))?, "x");
+    assert_eq!(Dump::printComponentRefStr(&ident_cref("x"))?, "x");
     Ok(())
 }
 
@@ -277,21 +277,21 @@ fn print_component_ref_str_qual_no_subs() -> Result<()> {
     // CREF_QUAL delegates to printSubscriptsStr([], …) which returns "" immediately,
     // then recurses on the inner CREF_IDENT. No Config call needed.
     let q = qual_cref("a", ident_cref("b"));
-    assert_eq!(Dump::printComponentRefStr(q)?, "a.b");
+    assert_eq!(Dump::printComponentRefStr(&q)?, "a.b");
     Ok(())
 }
 
 #[test]
 fn print_component_ref_str_fully_qualified() -> Result<()> {
     let fq = fully_qualified_cref(ident_cref("x"));
-    assert_eq!(Dump::printComponentRefStr(fq)?, ".x");
+    assert_eq!(Dump::printComponentRefStr(&fq)?, ".x");
     Ok(())
 }
 
 #[test]
 fn print_component_ref_str_allwild() -> Result<()> {
     let aw = metamodelica::Ref::new(Absyn::ComponentRef::ALLWILD);
-    assert_eq!(Dump::printComponentRefStr(aw)?, "__");
+    assert_eq!(Dump::printComponentRefStr(&aw)?, "__");
     Ok(())
 }
 
@@ -301,6 +301,6 @@ fn print_component_ref_str_allwild() -> Result<()> {
 fn print_component_ref_str_wild_with_default_flags() -> Result<()> {
     init_flags();
     let wild = metamodelica::Ref::new(Absyn::ComponentRef::WILD);
-    assert_eq!(Dump::printComponentRefStr(wild)?, "");
+    assert_eq!(Dump::printComponentRefStr(&wild)?, "");
     Ok(())
 }

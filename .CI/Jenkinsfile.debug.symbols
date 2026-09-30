@@ -42,8 +42,14 @@ pipeline {
       }
       steps {
         script {
-          common.buildOMC('clang', 'clang++', 'CFLAGS=-g', true, false)
-          common.buildGUI('', 'qt5')
+          // RelWithDebInfo: this job ships the debug symbols. Builds the GUI
+          // clients too.
+          common.buildOMC([
+            "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+            "-DOM_USE_CCACHE=OFF",
+            "-DCMAKE_INSTALL_PREFIX=build",
+            "-DCMAKE_C_COMPILER=clang",
+            "-DCMAKE_CXX_COMPILER=clang++"])
         }
         sh 'tar -zcf omdebug.tar.gz ./build/'
         script {

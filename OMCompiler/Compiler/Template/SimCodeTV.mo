@@ -557,6 +557,8 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
       Option<OMSIData> omsiData;
+      Boolean scalarized;
+      list<FmiFigure> fmiFigures;
     end SIMCODE;
   end SimCode;
 
@@ -1279,6 +1281,8 @@ package SimCodeFunction
       String ctor_name;
       String name;
       list<Variable> variables;
+      Absyn.Path defPath;
+      Boolean usedExternally;
     end RECORD_DECL_ADD_CONSTRCTOR;
     record RECORD_DECL_DEF
       Absyn.Path path;
@@ -1359,7 +1363,7 @@ package SimCodeFunction
   constant list<SimCodeFunction.Variable> boxedRecordOutVars;
 end SimCodeFunction;
 
-package SimCodeUtil
+package SimCodeCodegenUtil
 
   function linearSystemMatrixFormat
     input SimCode.LinearSystem ls;
@@ -1529,6 +1533,22 @@ package SimCodeUtil
     output Integer n;
   end numScalarElems;
 
+  function numScalarElemsBefore
+    input list<SimCodeVar.SimVar> vars;
+    input Integer n;
+    output Integer numScalars;
+  end numScalarElemsBefore;
+
+  function numScalarElemsVar
+    input SimCodeVar.SimVar var;
+    output Integer n;
+  end numScalarElemsVar;
+
+  function arrayElementSubscripts
+    input SimCodeVar.SimVar var;
+    output list<String> subscripts;
+  end arrayElementSubscripts;
+
   function getFMIScalarVRs
     input SimCodeVar.SimVar var;
     input SimCode.SimCode simCode;
@@ -1544,11 +1564,6 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
-
-  function getFMI3Figures
-    input SimCode.SimCode simCode;
-    output list<SimCode.FmiFigure> figures;
-  end getFMI3Figures;
 
   function getFMI3VisualizationResource
     input SimCode.SimCode simCode;
@@ -1700,10 +1715,34 @@ package SimCodeUtil
     output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
 
+  function isJacobianColumnCref
+    input DAE.ComponentRef cr;
+    output Boolean b;
+  end isJacobianColumnCref;
+
   function isContiguousArrayCref
     input DAE.ComponentRef inCref;
+    input SimCodeFunction.Context context;
     output Boolean outContiguous;
   end isContiguousArrayCref;
+
+  function contiguousSliceStart
+    input list<DAE.Subscript> subs;
+    input list<DAE.Dimension> dims;
+    output list<DAE.Subscript> start;
+  end contiguousSliceStart;
+
+  function contiguousSliceDims
+    input list<DAE.Subscript> subs;
+    input list<DAE.Dimension> dims;
+    output list<Integer> sliceDims;
+  end contiguousSliceDims;
+
+  function stackArrayLength
+    input SimCodeFunction.Variable var;
+    input SimCodeFunction.Function fn;
+    output Integer n;
+  end stackArrayLength;
 
   function simVarExactFromHT
     input DAE.ComponentRef inCref;
@@ -1821,7 +1860,7 @@ package SimCodeUtil
     input SimCode.SimGenericCall call;
     output String str;
   end simGenericCallString;
-end SimCodeUtil;
+end SimCodeCodegenUtil;
 
 package SimCodeFunctionUtil
   function varName
@@ -1950,8 +1989,19 @@ package SimCodeFunctionUtil
     output DAE.Exp cRefOut;
   end buildCrefExpFromSubs;
 
+  function padAsubSubscripts
+    input DAE.Exp exp;
+    input list<DAE.Subscript> subs;
+    output list<DAE.Subscript> outSubs;
+  end padAsubSubscripts;
+
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
+
+  function isTrivialRecord
+    input String name;
+    output Boolean b;
+  end isTrivialRecord;
 
   function codegenPushTryThrowIndex
     input Integer i;
@@ -2275,6 +2325,17 @@ package System
     output Boolean success;
   end covertTextFileToCLiteral;
 
+  function openModelicaPlatform
+    output String platform;
+  end openModelicaPlatform;
+
+  function gccDumpMachine
+    output String machine;
+  end gccDumpMachine;
+
+  function gccVersion
+    output String version;
+  end gccVersion;
 end System;
 
 package Autoconf
@@ -3828,6 +3889,14 @@ package SCodeDump
   constant SCodeDumpOptions defaultOptions;
 end SCodeDump;
 
+package StringUtil
+  function endsWith
+    input String str;
+    input String suffix;
+    output Boolean endsWith;
+  end endsWith;
+end StringUtil;
+
 package Util
 
   uniontype DateTime
@@ -3872,12 +3941,6 @@ package Util
     input String delim;
     output Integer i;
   end mulStringDelimit2Int;
-
-  function endsWith
-    input String str;
-    input String suffix;
-    output Boolean b;
-  end endsWith;
 
   function isCIdentifier
     input String str;

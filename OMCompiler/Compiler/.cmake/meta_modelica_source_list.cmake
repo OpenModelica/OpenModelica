@@ -341,6 +341,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCeval.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassDiagram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClockKind.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
@@ -353,6 +354,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDefUseChains.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDimension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEquation.mo
@@ -402,6 +404,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFTyping.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnitCheck.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUsedElements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVariable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVerifyModel.mo
@@ -437,6 +440,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/ReverseLookup.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
@@ -445,6 +449,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
@@ -464,6 +469,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU2.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU3.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSI_common.mo

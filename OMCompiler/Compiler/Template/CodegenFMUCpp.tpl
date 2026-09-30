@@ -85,7 +85,7 @@ import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenCppCommon.*;
-import CodegenFMU.*;
+import CodegenFMUModelDescription;
 import CodegenCppInit;
 import CodegenFMUCommon;
 import CodegenFMU2;
@@ -116,8 +116,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile((if isFMIVersion10(FMUVersion) then CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName) else
-                   CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
-  let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
+                   CodegenFMUModelDescription.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
+  let()= textFile(CodegenFMUCommon.fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", "", extraAnnotations), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, false)
@@ -274,7 +274,7 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
   <%if isFMIVersion30(FMUVersion) then
     // FMI 3.0 uses its own FMU3Wrapper (included above); the FMI 3.0 C API is
     // provided by FMU3Interface.cpp using the per-base-type value-reference
-    // offsets defined here (see SimCodeUtil.getFMI3TypeOffset).
+    // offsets defined here (see SimCodeCodegenUtil.getFMI3TypeOffset).
     (fmi3CppOffsetDefines(simCode) + "\n  #include \"FMU3/FMU3Interface.cpp\"")
   else if isFMIVersion10(FMUVersion) then
     '#include <FMU/FMULibInterface.h>'
@@ -372,14 +372,14 @@ end fmuModelCppFile;
 
 template fmi3CppOffsetDefines(SimCode simCode)
  "Generates the FMI 3.0 per-base-type value-reference offset macros used by
-  FMU3Interface.cpp. They must match SimCodeUtil.getFMI3TypeOffset, i.e. reals
+  FMU3Interface.cpp. They must match SimCodeCodegenUtil.getFMI3TypeOffset, i.e. reals
   first, then integers, booleans and strings."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__), nClocks=numberOfClocks)) then
   // emit the per-base-type counts as C preprocessor expressions (the compiler
   // evaluates them); the offsets are then composed from those, matching
-  // SimCodeUtil.getFMI3TypeOffset.
+  // SimCodeCodegenUtil.getFMI3TypeOffset.
   <<
   #define FMI3_NUMBER_OF_REALS (2*<%varInfo.numStateVars%> + <%varInfo.numDiscreteReal%> + <%varInfo.numAlgVars%> + <%varInfo.numParams%> + <%varInfo.numAlgAliasVars%>)
   #define FMI3_NUMBER_OF_INTEGERS (<%varInfo.numIntAlgVars%> + <%varInfo.numIntParams%> + <%varInfo.numIntAliasVars%>)
@@ -891,7 +891,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  LDFLAGS=-L"$(OMHOME)/lib/$(TRIPLET)/omc/cpp" <%additionalLinkerFlags_GCC%> $(SYSTEM_LDFLAGS) -Wl,--no-undefined
+  LDFLAGS=-L"$(OMHOME)/lib/$(TRIPLET)/omc/cpp" <%additionalLinkerFlags_GCC%> $(SYSTEM_LDFLAGS)
+  ifeq ($(findstring linux,$(PLATFORM)),linux)
+    LDFLAGS+=-Wl,--no-undefined
+  endif
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
 
@@ -925,9 +928,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
-    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))
   else ifeq ($(findstring clang,$(CC)),clang)
-    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))
+  endif
+  ifeq ($(findstring linux,$(PLATFORM))$(findstring darwin,$(PLATFORM)),)
+    $(eval LIBS=$(LIBS) -static)
   endif
 
   CPPFILES=$(CALCHELPERMAINFILE)

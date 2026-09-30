@@ -1,13 +1,13 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 //
-// Reproduces the Jenkins `cmake-rust-clang` stage (see ../../Jenkinsfile and
+// Reproduces the Jenkins `rust-clang` stage (see ../../Jenkinsfile and
 // common.buildRustOMC in ../../.CI/common.groovy). Run ./build-rust-clang.sh
 // inside the container to execute the same configure + build the stage does.
 {
-  "name": "build-deps:ubuntu-26.04-rust (cmake-rust-clang)",
+  "name": "build-deps:ubuntu-26.04-rust (rust-clang)",
 
-  // Thin wrapper over the image the cmake-rust-clang stage pulls, adding a
+  // Thin wrapper over the image the rust-clang stage pulls, adding a
   // non-root user so the build output stays yours on the host.
   "build": {
     "dockerfile": "Dockerfile",

@@ -120,7 +120,7 @@ package HpcOmSimCode
   end MemoryMap;
 end HpcOmSimCode;
 
-package HpcOmScheduler
+package HpcOmCodegenUtil
   function convertFixedLevelScheduleToTaskLists
     input HpcOmSimCode.Schedule iOdeSchedule;
     input HpcOmSimCode.Schedule iDaeSchedule;
@@ -134,15 +134,12 @@ package HpcOmScheduler
     input Integer iNumOfThreads;
     output list<array<list<HpcOmSimCode.Task>>> oLevelThreadLists;
   end convertFixedLevelScheduleToLevelThreadLists;
-end HpcOmScheduler;
-
-package HpcOmTaskGraph
   function getSimCodeEqByIndex
     input list<SimCode.SimEqSystem> iEqs;
     input Integer iIdx;
     output SimCode.SimEqSystem oEq;
   end getSimCodeEqByIndex;
-end HpcOmTaskGraph;
+end HpcOmCodegenUtil;
 
 package FMI
   uniontype Info

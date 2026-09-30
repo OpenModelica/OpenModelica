@@ -130,6 +130,7 @@ protected
     EquationPointers equations      "System equations";
     EquationPointers disc_eqns      "Discrete equations";
     EquationPointers init_eqns      "Initial equations";
+    EquationPointers removed_eqns   "Removed equations";
     VariablePointers unknowns       "Unknowns";
     VariablePointers knowns         "Knowns";
     VariablePointers initials       "Initial unknowns";
@@ -168,6 +169,10 @@ protected
         // collect discrete states from initial equations
         (variables, init_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
           := discreteFunc(variables, eqData.initials, knowns, initials, discretes, discrete_states, clocked_states, previous, "initial equations");
+
+        // collect pre, edge and change from the removed equations, e.g. when equations that only have reinit
+        (variables, removed_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
+          := discreteFunc(variables, eqData.removed, knowns, initials, discretes, discrete_states, clocked_states, previous, "removed equations");
 
         // update variable arrays
         varData.variables         := variables;

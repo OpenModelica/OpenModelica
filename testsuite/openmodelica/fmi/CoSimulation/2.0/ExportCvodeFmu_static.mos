@@ -7,7 +7,7 @@
 // Export Pendulum as 2.0 CS FMU with CVODE solver
 
 // Generate FMU
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadString("model Pendulum
 extends Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum;
 end Pendulum;"); getErrorString();
@@ -53,14 +53,14 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
-// LOG_SOLVER        | info    | CVODE Using dense internal linear solver SUNLinSol_Dense.
-// LOG_SOLVER        | info    | CVODE Use internal dense numeric jacobian method.
+// LOG_SOLVER        | info    | CVODE Using sparse linear solver SUNLinSol_KLU.
+// LOG_SOLVER        | info    | CVODE Use sparse Jacobian method coloredNumerical
 // LOG_SOLVER        | info    | CVODE uses internal root finding method NO
 // LOG_SOLVER        | info    | CVODE maximum absolut step size 0
 // LOG_SOLVER        | info    | CVODE initial step size is set automatically
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
-// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
+// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm ON
 // info: *** FMU Simulation Info ***
 //      - model     : Pendulum (co-simulation)
 //      - fmiVersion: 2.0

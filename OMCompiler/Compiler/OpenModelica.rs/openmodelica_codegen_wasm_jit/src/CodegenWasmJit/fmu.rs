@@ -10,7 +10,7 @@ use super::*;
 /// declares CoSimulation alone; the unused ME exports cost ~38 KB against the
 /// 1.28 MB a fourth adapter blob costs every omc.
 pub fn emitCsFmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
@@ -25,7 +25,7 @@ pub fn emitCsFmu(
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
 /// classic me_cs FMU — a single binary and modelIdentifier).
 pub fn emitMeCsFmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
@@ -111,7 +111,7 @@ fn fmu_directory() -> bool {
 /// MetaModelica side emits. Not a compiler notification: those reach
 /// `getErrorString()`, where a timing makes every FMU test depend on the clock.
 fn export_phase(name: &str) {
-    let _ = openmodelica_util::ExecStat::execStat(ArcStr::from(name));
+    let _ = openmodelica_util::ExecStat::execStat(&ArcStr::from(name));
 }
 
 /// The platforms `platforms={...}` named besides `"wasm"`.
@@ -260,7 +260,7 @@ pub(super) fn fmi_flag(json: &str, name: &str) -> Option<String> {
 /// loader recovers the component's value reference by adding the offset for the
 /// type the call names (`SimCodeUtil.getFMI2ValueReferenceOffsets`).
 fn fmi2_vr_offsets(sim_code: &SimCode::SimCode) -> Result<String> {
-    let offsets = openmodelica_backend::SimCodeUtil::getFMI2ValueReferenceOffsets(sim_code.modelInfo.clone());
+    let offsets = openmodelica_codegen_util::SimCodeCodegenUtil::getFMI2ValueReferenceOffsets(&sim_code.modelInfo);
     let [real, integer, boolean, string] = lst(&offsets).collect::<Vec<_>>()[..] else {
         return Err("CodegenWasmJit: expected four FMI 2.0 value-reference offsets");
     };
@@ -402,7 +402,7 @@ fn keep_fmu_kernel(prefix: &str, model: &Arc<SimModel>) {
 /// the FMU sources without building them. Lower the model once and keep it, both
 /// for the `buildModelFMU` that follows and as the prepared simulation model, so a
 /// run and an export share one kernel.
-pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_flags_json: ArcStr) -> Result<()> {
+pub fn translateFmu(sim_code: metamodelica::Ref<SimCode::SimCode>, fmu_type: ArcStr, simulation_flags_json: ArcStr) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let kind = fmu_kind(&fmu_type);
@@ -472,7 +472,7 @@ const LS_DAE_MANIFEST: &str = "extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn emit_fmu(
-    sim_code: SimCode::SimCode,
+    sim_code: metamodelica::Ref<SimCode::SimCode>,
     fmu_path: ArcStr,
     model_description: ArcStr,
     ls_dae_manifest: ArcStr,

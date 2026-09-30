@@ -834,6 +834,19 @@ uniontype InstNode
     end match;
   end parent;
 
+  function borrowParent
+    "As `parent`, without taking ownership of the parent."
+    input InstNode node;
+    output InstNode parent;
+  algorithm
+    parent := match node
+      case CLASS_NODE() then borrow(node.parentScope);
+      case COMPONENT_NODE() then borrow(node.parent);
+      case IMPLICIT_SCOPE() then node.parentScope;
+      else EMPTY_NODE();
+    end match;
+  end borrowParent;
+
   function explicitParent
     input InstNode node;
     output InstNode parentNode = explicitScope(parent(node));
@@ -865,6 +878,22 @@ uniontype InstNode
       else EMPTY_NODE();
     end match;
   end instanceParent;
+
+  function borrowInstanceParent
+    "As `instanceParent`, without taking ownership of a component's parent:
+     for walking up past scopes that are not kept."
+    input InstNode node;
+    output InstNode parent;
+  protected
+    ScopeRef rdcl_scope;
+  algorithm
+    parent := match node
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
+        then getDerivedNode(borrow(rdcl_scope));
+      case COMPONENT_NODE() then getDerivedNode(borrow(node.parent));
+      else instanceParent(node);
+    end match;
+  end borrowInstanceParent;
 
   function rootParent
     input InstNode node;
@@ -1402,6 +1431,8 @@ uniontype InstNode
   end componentApply;
 
   function scopeList
+    "The instances enclosing a node, outermost first. They are borrowed: see
+     `borrow`."
     input InstNode node;
     input Boolean includeRoot = false "Whether to include the root class name or not.";
     input list<InstNode> accumScopes = {};
@@ -1413,10 +1444,10 @@ uniontype InstNode
         ScopeRef rdcl_scope;
 
       case CLASS_NODE() then scopeListClass(node, node.nodeType, includeRoot, accumScopes);
-      case COMPONENT_NODE() guard isEmpty(fromCell(node.parent)) then accumScopes;
+      case COMPONENT_NODE() guard isEmpty(borrow(node.parent)) then accumScopes;
       case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = rdcl_scope))
-        then scopeList(fromCell(rdcl_scope), includeRoot, node :: accumScopes);
-      case COMPONENT_NODE() then scopeList(fromCell(node.parent), includeRoot, node :: accumScopes);
+        then scopeList(borrow(rdcl_scope), includeRoot, node :: accumScopes);
+      case COMPONENT_NODE() then scopeList(borrow(node.parent), includeRoot, node :: accumScopes);
       case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
       else accumScopes;
     end match;
@@ -1431,9 +1462,9 @@ uniontype InstNode
   algorithm
     scopes := match ty
       case InstNodeType.NORMAL_CLASS()
-        then scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes);
+        then scopeList(borrowParent(clsNode), includeRoot, clsNode :: accumScopes);
       case InstNodeType.BASE_CLASS()
-        then scopeList(fromCell(ty.parent), includeRoot, accumScopes);
+        then scopeList(borrow(ty.parent), includeRoot, accumScopes);
       case InstNodeType.DERIVED_CLASS()
         then scopeListClass(clsNode, ty.ty, includeRoot, accumScopes);
       case InstNodeType.BUILTIN_CLASS()
@@ -1442,13 +1473,13 @@ uniontype InstNode
         then accumScopes;
       case InstNodeType.ROOT_CLASS()
         then if includeRoot then
-            scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes)
+            scopeList(borrowParent(clsNode), includeRoot, clsNode :: accumScopes)
           else
             accumScopes;
       case InstNodeType.REDECLARED_CLASS()
-        then scopeList(fromCell(ty.parent), includeRoot, getDerivedNode(clsNode) :: accumScopes);
+        then scopeList(borrow(ty.parent), includeRoot, getDerivedNode(clsNode) :: accumScopes);
       case InstNodeType.IMPLICIT_SCOPE()
-        then scopeList(parent(clsNode), includeRoot, accumScopes);
+        then scopeList(borrowParent(clsNode), includeRoot, accumScopes);
       else
         algorithm
           Error.terminate(getInstanceName() + " got unknown node type", sourceInfo());
@@ -1477,7 +1508,7 @@ uniontype InstNode
         end if;
       end if;
 
-      scope := instanceParent(scope);
+      scope := borrowInstanceParent(scope);
     end while;
 
     mod := SCode.Mod.NOMOD();
@@ -2273,6 +2304,14 @@ uniontype InstNode
   function cloneComponent
     input InstNode component;
     input InstNode newParent;
+    output InstNode outComponent = cloneComponentInScope(component, identityCell(newParent));
+  end cloneComponent;
+
+  function cloneComponentInScope
+    "As `cloneComponent`, given the parent's `identityCell`: taking it once for
+     all of a parent's components publishes the parent once."
+    input InstNode component;
+    input ScopeRef parent;
     output InstNode outComponent;
   algorithm
     outComponent := match component
@@ -2280,11 +2319,11 @@ uniontype InstNode
         then
           COMPONENT_NODE(component.name, component.definition, component.visibility,
             Pointer.create(Pointer.access(component.component)),
-            identityCell(newParent), component.nodeType);
+            parent, component.nodeType);
 
       else component;
     end match;
-  end cloneComponent;
+  end cloneComponentInScope;
 
   function getComments
     input InstNode node;

@@ -290,19 +290,17 @@ void indexed_assign_string_array(const string_array source,
                                  const index_spec_t* dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         string_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  string_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
     omc_rc_release_inline(idx_vec1);
     omc_rc_release_inline(idx_size);
 }
@@ -340,6 +338,9 @@ void index_string_array(const string_array * source,
         }
     }
     assert(j == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0) {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
@@ -349,7 +350,7 @@ void index_string_array(const string_array * source,
         idx_vec1[i] = 0;
     }
     for(i = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->index[i] != NULL) {
+        if(source_spec->index_type[i] != 'W') {
             idx_size[i] = imax(source_spec->dim_size[i],1);
         } else {
             idx_size[i] = source->dim_size[i];
@@ -911,4 +912,23 @@ void unpack_string_array(const string_array *a, const char **data)
   for (i=0; i<sz; i++) {
     ((void**)a->data)[i] = omc_string_new(data[i]);
   }
+}
+
+static int string_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    modelica_string s = ((const modelica_string *)data)[i];
+    return snprintf(buffer, bufsize, "\"%s\"", s ? omc_string_data(s) : "");
+}
+
+/**
+ * @brief Write string vector into null-terminated string.
+ *
+ * @param source    String vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
+ */
+void string_vector_to_string(const string_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
+{
+    base_vector_to_string(source, isScalar, string_element_to_string, buffer, bufsize);
 }

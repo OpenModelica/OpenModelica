@@ -152,10 +152,10 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
 /* functions used for relation which
  * are not used as zero-crossings
  */
-modelica_boolean Less(double a, double b);
-modelica_boolean LessEq(double a, double b);
-modelica_boolean Greater(double a, double b);
-modelica_boolean GreaterEq(double a, double b);
+static inline modelica_boolean Less(double a, double b) { return a < b; }
+static inline modelica_boolean LessEq(double a, double b) { return a <= b; }
+static inline modelica_boolean Greater(double a, double b) { return a > b; }
+static inline modelica_boolean GreaterEq(double a, double b) { return a >= b; }
 
 /* functions used to evaluate relation in
  * zero-crossing with hysteresis effect

@@ -33,19 +33,21 @@ pub const ERROR_EVENTSEARCH: i32 = 4;
 pub const ERROR_EVENTHANDLING: i32 = 5;
 pub const ERROR_OPTIMIZE: i32 = 6;
 
-/// `util/rtclock.h`, and the one layout the two runtimes' headers disagree about:
-/// an FMU defines `OMC_MINIMAL_RUNTIME`, where the clock is a `typedef int`
-/// against a 16-byte union otherwise. It is the last field of
-/// `NONLINEAR_SYSTEM_DATA`, so the wrong one gives the right offsets and the wrong
-/// stride -- `nonlinearSystemData[1]` then reads `sparsePattern` out of
+/// `util/rtclock.h`: a 16-byte union, `LARGE_INTEGER` on Windows, `uint64_t` on
+/// macOS, and a `typedef int` under an FMU's `OMC_MINIMAL_RUNTIME`. It is the last
+/// field of `NONLINEAR_SYSTEM_DATA`, so the wrong one gives the right offsets and
+/// the wrong stride -- `nonlinearSystemData[1]` then reads `sparsePattern` out of
 /// `eqn_simcode_indices`.
-#[cfg(not(omc_fmi_runtime))]
+#[cfg(all(not(omc_fmi_runtime), not(any(windows, target_vendor = "apple"))))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct rtclock_t {
     pub a: u64,
     pub b: u64,
 }
+
+#[cfg(all(not(omc_fmi_runtime), any(windows, target_vendor = "apple")))]
+pub type rtclock_t = u64;
 
 #[cfg(omc_fmi_runtime)]
 pub type rtclock_t = c_int;
@@ -84,15 +86,35 @@ pub struct base_array_t {
     pub flexible: modelica_boolean,
 }
 pub type real_array = base_array_t;
+pub type integer_array = base_array_t;
+pub type boolean_array = base_array_t;
+pub type string_array = base_array_t;
 
 impl base_array_t {
-    /// The scalar (or first) element of a real attribute array; C's attributes are
-    /// `real_array` so an array variable can carry one value per element.
-    pub fn first_real(&self, fallback: f64) -> f64 {
-        if self.data.is_null() { fallback } else { unsafe { *(self.data as *const f64) } }
+    /// C's `base_array_nr_of_elements`; 0 if the array is unallocated.
+    pub fn n_elements(&self) -> usize {
+        if self.data.is_null() || self.dim_size.is_null() || self.ndims < 1 {
+            return 0;
+        }
+        (0..self.ndims as usize).map(|d| unsafe { *self.dim_size.add(d) }.max(0) as usize).product()
     }
+    /// Index of the attribute element that holds scalar element `i` of the
+    /// variable: an attribute with a single element (`each`) holds the value of
+    /// every array element. `None` if the array is unallocated or `i` out of range.
+    pub fn elem_index(&self, i: usize) -> Option<usize> {
+        let n = self.n_elements();
+        let j = if n == 1 { 0 } else { i };
+        (j < n).then_some(j)
+    }
+    /// Element `i` of an attribute array, see [`Self::elem_index`]. `fallback` if
+    /// there is no such element.
+    pub fn elem_at<T: Copy>(&self, i: usize, fallback: T) -> T {
+        self.elem_index(i).map_or(fallback, |j| unsafe { *(self.data as *const T).add(j) })
+    }
+    /// Element `i` of a real attribute array; C's attributes are `real_array` so
+    /// an array variable can carry one value per element.
     pub fn real_at(&self, i: usize, fallback: f64) -> f64 {
-        if self.data.is_null() { fallback } else { unsafe { *(self.data as *const f64).add(i) } }
+        self.elem_at(i, fallback)
     }
 }
 
@@ -116,10 +138,9 @@ pub struct SAMPLE_INFO {
 #[repr(C)]
 pub struct CHATTERING_INFO {
     pub numEventLimit: c_int,
-    pub lastSteps: *mut c_int,
     pub lastTimes: *mut f64,
     pub currentIndex: c_int,
-    pub lastStepsNumStateEvents: c_int,
+    pub stateEventsInARow: c_int,
     pub messageEmitted: c_int,
 }
 
@@ -232,21 +253,21 @@ pub struct REAL_ATTRIBUTE {
 
 #[repr(C)]
 pub struct INTEGER_ATTRIBUTE {
-    pub min: modelica_integer,
-    pub max: modelica_integer,
+    pub min: integer_array,
+    pub max: integer_array,
     pub fixed: modelica_boolean,
-    pub start: modelica_integer,
+    pub start: integer_array,
 }
 
 #[repr(C)]
 pub struct BOOLEAN_ATTRIBUTE {
     pub fixed: modelica_boolean,
-    pub start: modelica_boolean,
+    pub start: boolean_array,
 }
 
 #[repr(C)]
 pub struct STRING_ATTRIBUTE {
-    pub start: modelica_string,
+    pub start: string_array,
 }
 
 #[repr(C)]
@@ -647,6 +668,8 @@ pub struct SPATIAL_DISTRIBUTION_DATA {
     pub transportedQuantity: *mut c_void,
     pub storedEvents: *mut c_void,
     pub lastStoredEventValue: c_int,
+    pub nWarningsRemovedEvents: c_ulong,
+    pub nWarningsOutputEvents: c_ulong,
 }
 
 #[repr(C)]
@@ -1016,6 +1039,17 @@ pub const LSS_KLU: c_int = 3;
 pub const LSS_UMFPACK: c_int = 4;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
+/// The `*_MAX` sizes of the name/description tables `-help` prints.
+pub const S_MAX: c_int = 11;
+pub const IIM_MAX: c_int = 3;
+pub const LS_MAX: c_int = 7;
+pub const LSS_MAX: c_int = 5;
+pub const NLS_MAX: c_int = 7;
+pub const NLS_LS_MAX: c_int = 5;
+pub const NEWTON_MAX: c_int = 6;
+pub const JAC_MAX: c_int = 8;
+pub const IDA_LS_MAX: c_int = 6;
+pub const OMC_SIM_LOG_MAX: c_int = 57;
 
 /// `omc_alloc_interface_t` (gc/omc_gc.h): the allocator libOpenModelicaRuntimeC
 /// builds Strings with. Arrays that hold `modelica_string`s must come from its

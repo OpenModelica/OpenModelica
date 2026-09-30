@@ -46,9 +46,10 @@ extern "C" {
 #if !defined(_MSC_VER)
 #include <libgen.h>
 #include <unistd.h>
-#endif
-
 #include <dirent.h>
+#else
+#include "toni_ronnko_dirent.h"
+#endif
 
 #include "meta/meta_modelica.h"
 #include <limits.h>
@@ -3044,6 +3045,37 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 int SystemImpl__rename(const char *source, const char *dest)
 {
    return (0 == omc_rename(source, dest));
+}
+
+int SystemImpl__copyPath(const char *source, const char *destination)
+{
+  DIR *dir;
+  struct dirent *ent;
+  int rv = 1;
+  if (!SystemImpl__directoryExists(source)) {
+    return SystemImpl__copyFile(source, destination);
+  }
+  if (!SystemImpl__createDirectory(destination) || !(dir = opendir(source))) {
+    return 0;
+  }
+  while (rv && (ent = readdir(dir))) {
+    size_t lenFrom, lenTo;
+    char *from, *to;
+    if (0 == strcmp(ent->d_name, ".") || 0 == strcmp(ent->d_name, "..")) {
+      continue;
+    }
+    lenFrom = strlen(source) + strlen(ent->d_name) + 2;
+    lenTo = strlen(destination) + strlen(ent->d_name) + 2;
+    from = (char*) malloc(lenFrom);
+    to = (char*) malloc(lenTo);
+    snprintf(from, lenFrom, "%s/%s", source, ent->d_name);
+    snprintf(to, lenTo, "%s/%s", destination, ent->d_name);
+    rv = SystemImpl__copyPath(from, to);
+    free(from);
+    free(to);
+  }
+  closedir(dir);
+  return rv;
 }
 
 /**

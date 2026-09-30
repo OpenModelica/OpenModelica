@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 bug1228.mos \
+divisionByZeroAtEvent.mos \
 bug2667.mos \
 bug2718.mos \
 bug2752.mos \

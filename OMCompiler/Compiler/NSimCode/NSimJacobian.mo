@@ -177,6 +177,59 @@ public
       end if;
     end mergeDuplicateRows;
 
+    function sortByResultVars
+      "Orders the rows like the result variables. The runtime reads row i of the
+      pattern as result variable i, but the rows come in equation order.
+      Leaves the rows unchanged if a solved variable is not a result variable."
+      input list<SparsityRow> rows_in;
+      input list<SimVar> resVars;
+      output list<SparsityRow> rows_out = rows_in;
+    protected
+      UnorderedMap<ComponentRef, Integer> first_index = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      ComponentRef name;
+      list<tuple<Integer, Integer, SparsityRow>> keyed = {};
+      Integer key, pos = 0;
+    algorithm
+      for sv in resVars loop
+        name := ComponentRef.stripSubscriptsAll(sv.name);
+        UnorderedMap.add(name, intMin(sv.index, UnorderedMap.getOrDefault(name, first_index, sv.index)), first_index);
+      end for;
+
+      for row in rows_in loop
+        key := -1;
+        for cref in row.solved_crefs loop
+          () := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), first_index)
+            local
+              Integer idx;
+            case SOME(idx) algorithm
+              key := if key < 0 then idx else intMin(key, idx);
+            then ();
+            else ();
+          end match;
+        end for;
+        if key < 0 then
+          return;
+        end if;
+        keyed := (key, pos, row) :: keyed;
+        pos := pos + 1;
+      end for;
+
+      keyed := List.sort(keyed, rowKeyGreater);
+      rows_out := list(Util.tuple33(t) for t in keyed);
+    end sortByResultVars;
+
+    function rowKeyGreater
+      input tuple<Integer, Integer, SparsityRow> row1;
+      input tuple<Integer, Integer, SparsityRow> row2;
+      output Boolean b;
+    protected
+      Integer key1, key2, pos1, pos2;
+    algorithm
+      (key1, pos1, _) := row1;
+      (key2, pos2, _) := row2;
+      b := key1 > key2 or (key1 == key2 and pos1 > pos2);
+    end rowKeyGreater;
+
     function dependencyCrefEqual
       input tuple<ComponentRef, Dependency, Boolean> dep1;
       input tuple<ComponentRef, Dependency, Boolean> dep2;
@@ -196,13 +249,21 @@ public
 
     function create
       input Adjacency.Matrix mat;
-      input Integer numberOfResultVars;
+      input list<SimVar> resVars;
+      input Boolean isAdjoint;
       output Sparsity sparsity;
+    protected
+      list<SparsityRow> rows;
     algorithm
       sparsity := match mat
-        case Adjacency.SPARSITY() then SPARSITY(SparsityRow.mergeDuplicateRows(
-          list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
-          numberOfResultVars));
+        case Adjacency.SPARSITY() algorithm
+          rows := SparsityRow.mergeDuplicateRows(
+            list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
+            SimVars.numScalarElems(resVars));
+          if not isAdjoint then
+            rows := SparsityRow.sortByResultVars(rows, resVars);
+          end if;
+        then SPARSITY(rows);
         case Adjacency.EMPTY() then EMPTY();
 
         else algorithm
@@ -396,6 +457,12 @@ public
             tmp_lst  := VariablePointers.toList(varData.tmpVars);
           end if;
 
+          // the runtime reads column and row i of the ODE Jacobian as state i
+          if jacobian.jacType == NBJacobian.JacobianType.ODE and not jacobian.isAdjoint then
+            seed_lst := sortByStateIndex(seed_lst, simcode_map);
+            res_lst  := sortByStateIndex(res_lst, simcode_map);
+          end if;
+
           // column and seed var indices always start at 0
           seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
           resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
@@ -473,7 +540,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, SimVars.numScalarElems(resVars)),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
@@ -789,20 +856,71 @@ public
         Type node_ty;
         ComponentRef rest;
         list<tuple<Integer, Integer>> rest_pairs, node_pairs;
+        list<Dimension> dims;
+        Integer own;
       case ComponentRef.CREF(subscripts = subs, restCref = rest)
         algorithm
           rest_pairs := crefSubDimPairsLeafToRoot(rest);
           // Use the node's own declared type (before applying these subscripts)
           // so record-valued fields also expose their array dimensions.
           node_ty := InstNode.getType(ComponentRef.node(cref));
+          // the type of a record field can have the dimensions of its parents lifted in front
+          dims := Type.arrayDims(node_ty);
+          own := listLength(dims) - listLength(ComponentRef.subscriptsAllFlat(rest));
+          if own >= listLength(subs) and own < listLength(dims) then
+            dims := List.lastN(dims, own);
+          end if;
           // Collect this node's pairs outer-first, then reverse to get inner-first.
           // Append rest_pairs (which are from the outer/restCref direction) after.
-          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, Type.arrayDims(node_ty)));
+          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, dims));
         then
           listAppend(node_pairs, rest_pairs);
       else {};
     end match;
   end crefSubDimPairsLeafToRoot;
+
+  protected function sortByStateIndex
+    "Orders seed or result variables like the simulation variables they belong to.
+    Unchanged if one of them is not a simulation variable."
+    input list<Pointer<Variable>> vars;
+    input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    output list<Pointer<Variable>> sorted = vars;
+  protected
+    list<tuple<Integer, Pointer<Variable>>> keyed = {};
+    Option<SimVar> osv;
+    SimVar sv;
+  algorithm
+    for v in vars loop
+      osv := UnorderedMap.get(stripRootNode(BVariable.getVarName(v)), simcode_map);
+      if isNone(osv) then
+        return;
+      end if;
+      SOME(sv) := osv;
+      keyed := (sv.index, v) :: keyed;
+    end for;
+    keyed := List.sort(keyed, indexGreater);
+    sorted := list(Util.tuple22(t) for t in keyed);
+  end sortByStateIndex;
+
+  protected function indexGreater
+    input tuple<Integer, Pointer<Variable>> t1;
+    input tuple<Integer, Pointer<Variable>> t2;
+    output Boolean b = Util.tuple21(t1) > Util.tuple21(t2);
+  end indexGreater;
+
+  protected function stripRootNode
+    "$SEED_ODE_JAC.x -> x"
+    input ComponentRef cref;
+    output ComponentRef stripped;
+  algorithm
+    stripped := match cref
+      case ComponentRef.CREF(restCref = ComponentRef.EMPTY()) then ComponentRef.EMPTY();
+      case ComponentRef.CREF() algorithm
+        cref.restCref := stripRootNode(cref.restCref);
+      then cref;
+      else cref;
+    end match;
+  end stripRootNode;
 
   protected function crefFlatOffset
     "Compute the 0-based flat array index encoded by all integer subscripts in

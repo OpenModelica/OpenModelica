@@ -528,6 +528,11 @@ void print_real_array(const real_array *source)
     }
 }
 
+static int real_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    return snprintf(buffer, bufsize, "%g", ((const modelica_real *)data)[i]);
+}
+
 /**
  * @brief Write real vector into null-terminated string.
  *
@@ -538,69 +543,7 @@ void print_real_array(const real_array *source)
  */
 void real_vector_to_string(const real_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
 {
-    _index_t i;
-    modelica_real *data;
-    size_t pos = 0;
-
-    /* Validate input parameters */
-    if (buffer == NULL || bufsize == 0) {
-        return;
-    }
-    buffer[0] = '\0';
-
-    omc_assert_macro(base_array_ok(source));
-    assert(source->ndims == 1);
-
-    data = (modelica_real *)source->data;
-
-    if (isScalar && source->ndims == 1 && source->dim_size[0] == 1)
-    {
-        /* Write scalar into buffer */
-        snprintf(buffer + pos, bufsize - pos, "%g", data[0]);
-    }
-    else
-    {
-        /* Start brace */
-        int ret = snprintf(buffer + pos, (bufsize > pos) ? bufsize - pos : 0, "{");
-        if (ret < 0) ret = 0;
-        if ((size_t)ret >= bufsize - pos) {
-            return;
-        }
-        pos += (size_t)ret;
-
-        for (i = 0; i < source->dim_size[0]; i++)
-        {
-            size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
-
-            /* If not enough room to write an element, try to append "...}" and stop */
-            if (remaining <= 5) {
-                snprintf(buffer + pos, remaining, "...}");
-                return;
-            }
-
-            /* Format element: use comma+space for non-last elements */
-            if (i < source->dim_size[0] - 1) {
-                ret = snprintf(buffer + pos, remaining, "%g, ", data[i]);
-            } else {
-                ret = snprintf(buffer + pos, remaining, "%g", data[i]);
-            }
-
-            if (ret < 0) ret = 0;
-            if (ret >= remaining - 5) {
-                /* Not enough space for more elements; try to write "...}" instead */
-                remaining = (bufsize > pos) ? bufsize - pos : 0;
-                snprintf(buffer + pos, remaining, "...}");
-                return;
-            }
-            pos += (size_t)ret;
-        }
-
-        /* Append closing brace */
-        size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
-        if (remaining > 0) {
-            snprintf(buffer + pos, remaining, "}");
-        }
-    }
+    base_vector_to_string(source, isScalar, real_element_to_string, buffer, bufsize);
 }
 
 /**
@@ -698,20 +641,17 @@ void indexed_assign_real_array(const real_array source, real_array *dest,
                                const index_spec_t *dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do
-    {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         real_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  real_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while (0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
     omc_rc_release_inline(idx_vec1);
     omc_rc_release_inline(idx_size);
 }
@@ -743,17 +683,18 @@ void index_real_array(const real_array *source,
     omc_assert_macro(index_spec_ok(source_spec));
     omc_assert_macro(index_spec_fit_base_array(source_spec, source));
 
-    if (dest->ndims == 1 && dest->dim_size[0] == 0)
-        return;
-
     for (i = 0, j = 0; i < source_spec->ndims; ++i)
     {
-        if (source_spec->dim_size[i] != 0)
+        if (source_spec->index_type[i] != 'S')
         {
             ++j;
         }
     }
     omc_assert_macro(imax(j, 1) == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0)
+    {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims);
     idx_size = size_alloc(source_spec->ndims);
@@ -764,7 +705,7 @@ void index_real_array(const real_array *source,
     }
     for (i = 0; i < source_spec->ndims; ++i)
     {
-        if (source_spec->index[i] != NULL)
+        if (source_spec->index_type[i] != 'W')
         {                                                    /* is 'S' or 'A' */
             idx_size[i] = imax(source_spec->dim_size[i], 1); /* the imax() is not needed, because there is (idx[d] >= size[d]) in the next_index(), but ... */
         }
@@ -1537,15 +1478,15 @@ void mul_real_vector_matrix(const real_array *a, const real_array *b, real_array
     /* Assert b matrix */
     /* Assert dest vector of correct size */
 
-    i_size = a->dim_size[0];
-    j_size = b->dim_size[1];
+    i_size = b->dim_size[1];
+    j_size = b->dim_size[0];
 
     for (i = 0; i < i_size; ++i)
     {
         tmp = 0;
         for (j = 0; j < j_size; ++j)
         {
-            tmp += real_get(*a, j) * real_get(*b, (j * j_size) + i);
+            tmp += real_get(*a, j) * real_get(*b, (j * i_size) + i);
         }
         real_set(dest, i, tmp);
     }
@@ -1634,6 +1575,23 @@ real_array division_alloc_real_array_scalar(threadData_t *threadData, const real
     clone_real_array_spec(&a, &dest);
     alloc_real_array_data(&dest);
     division_real_array_scalar(threadData, &a, b, &dest, division_str);
+    return dest;
+}
+
+/**
+ * @brief Allocate and perform division with the checks of DIVISION_SIM (0/0 is 0 during initialization).
+ */
+real_array division_alloc_real_array_scalar_sim(threadData_t *threadData, const real_array a, modelica_real b, const char *division_str, const int *equationIndexes, modelica_boolean noThrowDivZero, modelica_real time, modelica_boolean initial)
+{
+    real_array dest;
+    size_t nr_of_elements, i;
+    clone_real_array_spec(&a, &dest);
+    alloc_real_array_data(&dest);
+    nr_of_elements = base_array_nr_of_elements(a);
+    for (i = 0; i < nr_of_elements; ++i) {
+        real_set(&dest, i, __OMC_DIV_SIM(threadData, real_get(a, i), b, division_str, equationIndexes, noThrowDivZero, time, initial));
+        if (OMC_ERROR_RAISED()) break;
+    }
     return dest;
 }
 
@@ -2674,4 +2632,29 @@ void create_real_array_from_range(real_array *dest, modelica_real start, modelic
     {
         real_set(dest, i, start);
     }
+}
+
+/**
+ * @brief Resize a start attribute array to n elements, repeating its values.
+ *
+ * The start attribute of an array variable can hold a single broadcast value
+ * or the values of an inner dimension only. Writing the start values of the
+ * whole array needs one element per array element. If the array has more than
+ * n elements, the first n are kept. Nothing is reallocated if the array
+ * already has n elements.
+ */
+void real_array_ensure_size(real_array *a, int n)
+{
+    int m = (int) base_array_nr_of_elements(*a);
+    real_array tmp;
+    int i;
+    if (m == n) {
+        return;
+    }
+    simple_alloc_1d_real_array(&tmp, n);
+    for (i = 0; i < n; ++i) {
+        ((modelica_real*) tmp.data)[i] = m > 0 ? ((modelica_real*) a->data)[i % m] : 0.0;
+    }
+    omc_array_release(a);
+    *a = tmp;
 }

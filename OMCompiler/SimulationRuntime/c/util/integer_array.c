@@ -308,19 +308,17 @@ void indexed_assign_integer_array(const integer_array source, integer_array* des
                                   const index_spec_t* dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         integer_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  integer_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
     omc_rc_release_inline(idx_vec1);
     omc_rc_release_inline(idx_size);
 }
@@ -358,6 +356,9 @@ void index_integer_array(const integer_array * source,
         }
     }
     omc_assert_macro(j == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0) {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims); /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
@@ -367,7 +368,7 @@ void index_integer_array(const integer_array * source,
         idx_vec1[i] = 0;
     }
     for(i = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->index[i] != NULL) {
+        if(source_spec->index_type[i] != 'W') {
             idx_size[i] = imax(source_spec->dim_size[i],1);
         } else {
             idx_size[i] = source->dim_size[i];
@@ -950,13 +951,13 @@ void mul_integer_vector_matrix(const integer_array * a, const integer_array * b,
     omc_assert_macro(b->ndims == 2);
     /* Assert dest vector of correct size */
 
-    i_size = a->dim_size[0];
-    j_size = b->dim_size[1];
+    i_size = b->dim_size[1];
+    j_size = b->dim_size[0];
 
     for(i = 0; i < i_size; ++i) {
         tmp = 0;
         for(j = 0; j < j_size; ++j) {
-            tmp += integer_get(*a, j) * integer_get(*b, (j * j_size) + i);
+            tmp += integer_get(*a, j) * integer_get(*b, (j * i_size) + i);
         }
         integer_set(dest, i, tmp);
     }
@@ -1684,4 +1685,47 @@ void sizes_of_dimensions_base_array(const base_array_t *a, integer_array *dest)
   while(i--) {
     integer_set(dest, i, a->dim_size[i]);
   }
+}
+
+static int integer_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    return snprintf(buffer, bufsize, OMC_INT_FORMAT, ((const modelica_integer *)data)[i]);
+}
+
+/**
+ * @brief Write integer vector into null-terminated string.
+ *
+ * @param source    Integer vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
+ */
+void integer_vector_to_string(const integer_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
+{
+    base_vector_to_string(source, isScalar, integer_element_to_string, buffer, bufsize);
+}
+
+/**
+ * @brief Resize a start attribute array to n elements, repeating its values.
+ *
+ * The start attribute of an array variable can hold a single broadcast value
+ * or the values of an inner dimension only. Writing the start values of the
+ * whole array needs one element per array element. If the array has more than
+ * n elements, the first n are kept. Nothing is reallocated if the array
+ * already has n elements.
+ */
+void integer_array_ensure_size(integer_array *a, int n)
+{
+    int m = (int) base_array_nr_of_elements(*a);
+    integer_array tmp;
+    int i;
+    if (m == n) {
+        return;
+    }
+    simple_alloc_1d_integer_array(&tmp, n);
+    for (i = 0; i < n; ++i) {
+        ((modelica_integer*) tmp.data)[i] = m > 0 ? ((modelica_integer*) a->data)[i % m] : 0;
+    }
+    omc_array_release(a);
+    *a = tmp;
 }

@@ -90,8 +90,8 @@ buildModel(algebraicLoop); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC.x
-//   (1)[SEED] (1) Real $SEED_ODE_JAC.y
+//   (0)[SEED] (1) Real $SEED_ODE_JAC.y
+//   (1)[SEED] (1) Real $SEED_ODE_JAC.x
 //
 // TmpVars (size = 0)
 // ********************

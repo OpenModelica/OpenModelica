@@ -123,7 +123,7 @@ pub(super) struct AdjJacInfo {
 /// A scratch slot per seed and column variable from `cursor` on; also returns the
 /// non-seed slots.
 pub(super) fn register_jac_slots(
-    jm: &SimCode::JacobianMatrix,
+    jm: &Arc<SimCode::JacobianMatrix>,
     rows: usize,
     cols: usize,
     cursor: &mut u32,
@@ -136,7 +136,7 @@ pub(super) fn register_jac_slots(
     // map only keeps the last; lowering a body binds these back over it.
     let mut registered: Vec<(String, SimSlot)> = Vec::new();
     // The new backend lists an array's base beside its elements.
-    let mut bases: HashSet<String> = HashSet::new();
+    let mut bases: HashSet<String> = HashSet::default();
     for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
         if let Some((base, _)) = array_element_of(&sv.name)? {
             bases.insert(base);
@@ -170,7 +170,7 @@ pub(super) fn register_jac_slots(
     }
     let mut result_offs = vec![None; rows];
     let mut others = Vec::new();
-    for sv in &column_vars {
+    for sv in column_vars.iter() {
         let Some(off) = insert(sv, var_map, cursor)? else { continue };
         others.push(off);
         if matches!(sv.varKind, VarKind::JAC_VAR)
@@ -201,7 +201,7 @@ pub(super) fn build_lin_info(
     // A compile-time-constant input/output has no slot to perturb or read, so the
     // model cannot be linearized (nor can C's); `-l` reports it rather than
     // translation failing.
-    let slots = |list: &List<SimCodeVar::SimVar>| -> Result<Option<Vec<LinVar>>> {
+    let slots = |list: &List<metamodelica::Ref<SimCodeVar::SimVar>>| -> Result<Option<Vec<LinVar>>> {
         let mut out = Vec::new();
         for sv in lst(list) {
             let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else { return Ok(None) };
@@ -385,7 +385,7 @@ fn lin_n_res(lsystem: &SimCode::LinearSystem) -> Option<usize> {
 /// and `build_lin_jac_infos` (register) both call this so they agree on the set.
 fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<metamodelica::Ref<SimCode::LinearSystem>> {
     use SimCode::SimEqSystem as E;
-    let mut seen: HashSet<i32> = HashSet::new();
+    let mut seen: HashSet<i32> = HashSet::default();
     let mut out: Vec<metamodelica::Ref<SimCode::LinearSystem>> = Vec::new();
     let mut scan = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
@@ -453,7 +453,7 @@ pub(super) fn build_lin_jac_infos(
         let column_vars = jac_column_vars(jm);
         // As in `register_jac_slots`: an array base listed beside its elements gets
         // no slot, an access to it reaches the elements' through `array_acc`.
-        let mut bases: HashSet<String> = HashSet::new();
+        let mut bases: HashSet<String> = HashSet::default();
         for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
             if let Some((base, _)) = array_element_of(&sv.name)? {
                 bases.insert(base);
@@ -496,7 +496,7 @@ pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &SlotMap, n
     let seed_offs = jac_seed_offs_by_column(jm, &listed, n)
         .ok_or("CodegenWasmJit: torn-linear Jacobian seed columns are not a permutation")?;
     let mut result_offs = vec![u32::MAX; n];
-    for sv in &jac_column_vars(jm) {
+    for sv in jac_column_vars(jm).iter() {
         if matches!(sv.varKind, VarKind::JAC_VAR) {
             let row = jac_result_row(sv).filter(|&r| r < n)
                 .ok_or("CodegenWasmJit: torn-linear Jacobian result var has no row index")?;
@@ -545,11 +545,11 @@ pub(super) fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> 
     use openmodelica_backend_types::BackendDAE::VarKind;
     let jm = lsystem.jacobianMatrix.as_ref()?;
     let col = lst(&jm.columns).next()?;
-    let mut seed_col: HashMap<String, usize> = HashMap::new();
+    let mut seed_col: HashMap<String, usize> = HashMap::default();
     for sv in lst(&jm.seedVars) {
         seed_col.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
     }
-    let mut dep: HashMap<String, Vec<usize>> = HashMap::new();
+    let mut dep: HashMap<String, Vec<usize>> = HashMap::default();
     for eq in lst(&col.constantEqns) {
         csc_accum_dep(eq, &seed_col, &mut dep)?;
     }
@@ -558,7 +558,7 @@ pub(super) fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> 
     }
     // Column c (iteration var) gets residual row r whenever result r depends on seed c.
     let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n];
-    for sv in &jac_column_vars(jm) {
+    for sv in jac_column_vars(jm).iter() {
         if !matches!(sv.varKind, VarKind::JAC_VAR) {
             continue;
         }
@@ -751,6 +751,7 @@ fn build_residual_fn(
         }
     };
     let budget = nls_chunk_instrs();
+    let all_scalar = nls_residuals_all_scalar(explicit);
     let mut fns: Vec<we::Function> = Vec::new();
     let (mut eq, mut store) = (0usize, 0usize);
     loop {
@@ -767,7 +768,7 @@ fn build_residual_fn(
         }
         if eq == inner.len() {
             while store < explicit.len() {
-                emit_nls_residual_store(&mut ctx, explicit, store)?;
+                emit_nls_residual_store(&mut ctx, explicit, all_scalar, store)?;
                 store += 1;
                 if ctx.instr_len() >= budget {
                     break;

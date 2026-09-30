@@ -131,7 +131,7 @@ int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* ida
   for(i=0; i < data->modelData->nStates; ++i) {
     const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     idaData->nominal[i] = fmax(fabs(nominal), 1e-32);
-    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, idaData->nominal[i]);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[data->simulationInfo->realVarsReverseIndex[i].array_idx].info.name, idaData->nominal[i]);
   }
 
   /* daeMode: set nominal values for algebraic variables */
@@ -1587,30 +1587,6 @@ static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
   return retVal;
 }
 
-/* finish sparse matrix, by fixing colprts */
-/* TODO: Unify with finishSparseColPtr from kinsolSolver.c */
-static void finishSparseColPtr(SUNMatrix A, int nnz)
-{
-  int i;
-
-  /* TODO: Remove this check for performance reasons? */
-  if (SM_SPARSETYPE_S(A) != SUN_CSC_MAT) {
-    errorStreamPrint(
-        OMC_LOG_STDOUT, 0,
-        "In function finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
-  }
-
-  /* Check for empty rows */
-  for (i = 1; i < SM_COLUMNS_S(A) + 1; ++i) {
-    if (SM_INDEXPTRS_S(A)[i] == 0) {
-      SM_INDEXPTRS_S(A)[i] = SM_INDEXPTRS_S(A)[i-1];
-    }
-  }
-
-  /* Set last value of indexptrs to nnz */
-  SM_INDEXPTRS_S(A)[SM_COLUMNS_S(A)] = nnz;
-}
-
 /*
  *  function calculates a jacobian matrix by
  *  numerical method finite differences with coloring
@@ -1727,7 +1703,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
       }
     }
   }
-  finishSparseColPtr(Jac, sparsePattern->nnz);
+  setSundialsSparseColPtrs(sparsePattern, Jac);
 
   /* scale idaData->y and idaData->yp again */
   if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
@@ -1757,9 +1733,6 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   JACOBIAN* jac = getSymbolicOdeJacobian(data);
   jac->dae_cj = cj;
 
-  /* Column oriented pattern of J, also for adjoint / bidirectional Jacobians */
-  const SPARSE_PATTERN* cscPattern = getJacobianCscPattern(jac);
-
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
@@ -1768,7 +1741,6 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   setSundialsSparsePattern(jac, Jac);
   evalJacobian(data, threadData, jac, NULL, SM_DATA_S(Jac), FALSE);
 
-  finishSparseColPtr(Jac, cscPattern->nnz);
   unsetContext(data);
 
   return 0;

@@ -10,6 +10,8 @@ Alias_test4.mos \
 Alias_test5.mos \
 ArrayAlias1.mos \
 ArrayAlias2.mos \
+ArrayAliasSizeOne.mos \
+ForEquationAlias.mos \
 Alias_pre.mos \
 AliasCyclic.mos \
 AliasCyclic1.mos \
@@ -33,6 +35,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+ReferenceFiles \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

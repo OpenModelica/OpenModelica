@@ -7,7 +7,7 @@
 //  tests for counting of algorithm section output variables.
 // This model replaces a variable with a array-element in RemoveSimpleEquations. Do not count the expanded array-var, only the one element.
 
-loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 loadFile("AlgorithmSize.mo");getErrorString();
 simulate(AlgorithmSize);getErrorString();
 // Result:
@@ -22,6 +22,6 @@ simulate(AlgorithmSize);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:561:5-561:73:writable] Warning: Parameter sine.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 4.1.0+maint.om/Blocks/Sources.mo:295:5-295:63:writable] Warning: Parameter sine.f has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // endResult

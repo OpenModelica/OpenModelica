@@ -435,9 +435,9 @@ uniontype InstNode
                            owner, identity, identityCell(parent), InstNodeType.NORMAL_COMP());
   end fromComponent;
 
-  function cloneComponent
+  function cloneComponentInScope
     input InstNode component;
-    input InstNode newParent;
+    input ScopeRef parent;
     output InstNode outComponent;
   algorithm
     outComponent := match component
@@ -451,9 +451,9 @@ uniontype InstNode
         then
           COMPONENT_NODE(component.name, component.definition, component.visibility,
             Pointer.create(Pointer.access(component.component)),
-            owner, identity, identityCell(newParent), component.nodeType);
+            owner, identity, parent, component.nodeType);
     end match;
-  end cloneComponent;
+  end cloneComponentInScope;
 end InstNode;
 
 end NFInstNode;

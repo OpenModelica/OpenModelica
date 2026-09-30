@@ -10,11 +10,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "modelinfo.c"
   "omc_simulation_util.c"
   "options.c"
-  "results/MatVer4.cpp"
-  "results/simulation_result_csv.cpp"
   "results/simulation_result_ia.cpp"
-  "results/simulation_result_mat4.cpp"
-  "results/simulation_result_plt.cpp"
   "results/simulation_result_rust.cpp"
   "results/simulation_result.cpp"
   "simulation_info_json.c"
@@ -86,11 +82,7 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "modelinfo.h"
   "omc_simulation_util.h"
   "options.h"
-  "results/MatVer4.h"
-  "results/simulation_result_csv.h"
   "results/simulation_result_ia.h"
-  "results/simulation_result_mat4.h"
-  "results/simulation_result_plt.h"
   "results/simulation_result_rust.h"
   "results/simulation_result.h"
   "simulation_info_json.h"
@@ -149,15 +141,27 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/synchronous.h"
 )
 
+# Install the header files.
+# This installs the whole directory structure of simulation/ folder which means
+# all headers will be installed keeping the directory structure intact. It might
+# install some unneeded headers but it suffices for now.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.c.inc"
+)
+
+if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+  return()
+endif()
+
 add_library(OpenModelicaRuntimeCSimulation OBJECT ${OMC_SIMRT_SIMULATION_SOURCES})
 add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulation)
 
-# The result files (.mat/.arrow/.csv/.plt) written by the Rust writers in
-# libomc_result instead of the C ones (results/simulation_result_rust.cpp).
-if(OM_RUST_RESULT_WRITERS)
-  target_compile_definitions(OpenModelicaRuntimeCSimulation PUBLIC OM_RUST_RESULT_WRITERS)
-  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::result)
-endif()
+# The result files (.mat/.arrow/.csv/.plt) are written by libomc_result
+# (results/simulation_result_rust.cpp).
+target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::result)
 
 target_include_directories(OpenModelicaRuntimeCSimulation
   PUBLIC
@@ -222,14 +226,3 @@ if(MINGW)
 elseif(MSVC)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::regex)
 endif()
-
-# Install the header files.
-# This installs the whole directory structure of simulation/ folder which means
-# all headers will be installed keeping the directory structure intact. It might
-# install some unneeded headers but it suffices for now.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
-  FILES_MATCHING
-    PATTERN "*.h"
-    PATTERN "*.c.inc"
-)

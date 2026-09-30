@@ -27,8 +27,6 @@
 
 #include "simulation_result_rust.h"
 
-#ifdef OM_RUST_RESULT_WRITERS
-
 #include "omc_result.h"
 #include "util/omc_error.h"
 #include "util/rtclock.h"
@@ -481,5 +479,3 @@ void rust_result_free(simulation_result *self, DATA *data, threadData_t *threadD
 }
 
 } /* extern "C" */
-
-#endif /* OM_RUST_RESULT_WRITERS */

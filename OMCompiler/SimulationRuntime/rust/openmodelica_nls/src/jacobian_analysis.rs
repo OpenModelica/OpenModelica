@@ -109,9 +109,9 @@ pub fn derivative_test(
     );
     omclog::info(stream, true, "Matrix Info");
     omclog::info!(stream, false, "NLS index = {eq_index}");
-    omclog::info!(stream, false, "Columns = {n}");
-    omclog::info!(stream, false, "Rows = {n}");
-    omclog::info!(stream, false, "NNZ = {}", sym.len());
+    omclog::info!(stream, false, "Columns   = {n}");
+    omclog::info!(stream, false, "Rows      = {n}");
+    omclog::info!(stream, false, "NNZ       = {}", sym.len());
     omclog::info!(stream, false, "Curr Time = {:<11}", omclog::e(time, 0, 5));
     omclog::close(stream);
 
@@ -195,7 +195,7 @@ pub fn derivative_test(
     omclog::close(stream);
 
     omclog::info(stream, true, "Summary");
-    omclog::info!(stream, false, "Numerical errors: {numerical} (value mismatch w.r.t. reference)");
+    omclog::info!(stream, false, "Numerical errors:  {numerical} (value mismatch w.r.t. reference)");
     omclog::info!(stream, false, "Structural errors: {structural} (non-zero not in sparsity pattern)");
     omclog::info!(stream, false, "Max relative error: {}", omclog::e(max_error, 0, 3));
     if numerical + structural > 0 {
@@ -246,10 +246,10 @@ fn print_matrix_info(eq_index: u32, time: f64, n: usize, nnz: usize) {
     let s = omclog::NLS_SVD;
     omclog::info(s, true, "Matrix Info");
     omclog::info!(s, false, "NLS eq index = {eq_index}");
-    omclog::info!(s, false, "Columns = {n}");
-    omclog::info!(s, false, "Rows = {n}");
-    omclog::info!(s, false, "NNZ = {nnz}");
-    omclog::info!(s, false, "Curr Time = {:<11}", omclog::e(time, 0, 5));
+    omclog::info!(s, false, "Columns      = {n}");
+    omclog::info!(s, false, "Rows         = {n}");
+    omclog::info!(s, false, "NNZ          = {nnz}");
+    omclog::info!(s, false, "Curr Time    = {:<11}", omclog::e(time, 0, 5));
     omclog::close(s);
 }
 

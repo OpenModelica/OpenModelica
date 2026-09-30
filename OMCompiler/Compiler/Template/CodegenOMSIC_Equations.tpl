@@ -43,7 +43,6 @@ package CodegenOMSIC_Equations
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 
-import CodegenC;
 import CodegenCFunctions;
 import CodegenUtil;
 import CodegenUtilSimulation;

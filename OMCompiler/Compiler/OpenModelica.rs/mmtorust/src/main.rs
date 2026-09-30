@@ -8,6 +8,7 @@ mod MM;
 mod hierarchy;
 mod typedexp;
 mod codegen;
+mod borrow_params;
 mod external_c_calls;
 mod fallibility;
 mod fix;

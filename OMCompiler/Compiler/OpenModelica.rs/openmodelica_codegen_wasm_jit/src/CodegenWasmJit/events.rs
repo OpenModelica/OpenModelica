@@ -192,7 +192,7 @@ pub(super) fn subst_iterator(exp: &metamodelica::Ref<DAE::Exp>, name: &str, valu
         }
         Ok((e, acc))
     };
-    openmodelica_frontend_base::Expression::traverseExpBottomUp(exp.clone(), Arc::new(replace), 0)
+    openmodelica_frontend_base::Expression::traverseExpBottomUp(exp.clone(), &replace, 0)
         .map(|(e, _)| e)
 }
 

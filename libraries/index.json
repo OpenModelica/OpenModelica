@@ -2,15 +2,15 @@
   "libs": {
     "BioChem": {
       "versions": {
-        "1.0.1+msl.3.2.1": {
+        "1.1.3": {
           "path": "BioChem",
-          "sha": "b5f3cb999f3cfad2bbb6fb429b496f61ecf2f628",
-          "support": "obsolete",
+          "sha": "b8040a8b211e2195fe483e5c707eca68c1e82a52",
+          "support": "experimental",
           "uses": {
-            "Modelica": "3.2.1"
+            "Modelica": "4.1.0"
           },
-          "version": "1.0.1+msl.3.2.1",
-          "zipfile": "https://github.com/OpenModelica/BioChem/archive/b5f3cb999f3cfad2bbb6fb429b496f61ecf2f628.zip"
+          "version": "1.1.3",
+          "zipfile": "https://github.com/OpenModelica/BioChem/archive/b8040a8b211e2195fe483e5c707eca68c1e82a52.zip"
         }
       }
     },
@@ -52,42 +52,6 @@
     },
     "Complex": {
       "versions": {
-        "3.2.1+maint.om": {
-          "path": "Complex.mo",
-          "provides": [
-            "1.0.0",
-            "1.1.0"
-          ],
-          "sha": "06af0578789283267a4089fffd8f2fb302e0405a",
-          "support": "obsolete",
-          "version": "3.2.1+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
-        },
-        "3.2.2+maint.om": {
-          "path": "Complex.mo",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "3.2.1"
-          ],
-          "sha": "9578058eff7a3a3d953a37d190a9bafa4e77092e",
-          "support": "obsolete",
-          "version": "3.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9578058eff7a3a3d953a37d190a9bafa4e77092e.zip"
-        },
-        "3.2.3+maint.om": {
-          "path": "Complex.mo",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "sha": "9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece",
-          "support": "fullSupport",
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece.zip"
-        },
         "4.0.0+maint.om": {
           "path": "Complex.mo",
           "provides": [
@@ -121,78 +85,6 @@
     },
     "Modelica": {
       "versions": {
-        "3.2.1+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.2.0"
-          ],
-          "sha": "06af0578789283267a4089fffd8f2fb302e0405a",
-          "support": "obsolete",
-          "uses": {
-            "Complex": "3.2.1",
-            "ModelicaServices": "3.2.1"
-          },
-          "version": "3.2.1+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
-        },
-        "3.2.2+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.2.0",
-            "3.2.1"
-          ],
-          "sha": "9578058eff7a3a3d953a37d190a9bafa4e77092e",
-          "support": "obsolete",
-          "uses": {
-            "Complex": "3.2.2",
-            "ModelicaServices": "3.2.2"
-          },
-          "version": "3.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9578058eff7a3a3d953a37d190a9bafa4e77092e.zip"
-        },
-        "3.2.3+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.2.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "sha": "9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece",
-          "support": "fullSupport",
-          "uses": {
-            "Complex": "3.2.3",
-            "ModelicaServices": "3.2.3"
-          },
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece.zip"
-        },
         "4.0.0+maint.om": {
           "convertFromVersion": [
             "3.0.0",
@@ -269,51 +161,6 @@
     },
     "ModelicaServices": {
       "versions": {
-        "3.2.1+maint.om": {
-          "convertFromVersion": [
-            "1.0.0",
-            "1.1.0",
-            "1.2.0"
-          ],
-          "path": "ModelicaServices",
-          "sha": "06af0578789283267a4089fffd8f2fb302e0405a",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "3.2.1+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
-        },
-        "3.2.2+maint.om": {
-          "convertFromVersion": [
-            "1.0.0",
-            "1.1.0",
-            "1.2.0",
-            "3.2.1"
-          ],
-          "path": "ModelicaServices",
-          "sha": "9578058eff7a3a3d953a37d190a9bafa4e77092e",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.2"
-          },
-          "version": "3.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9578058eff7a3a3d953a37d190a9bafa4e77092e.zip"
-        },
-        "3.2.3+maint.om": {
-          "path": "ModelicaServices",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "1.2.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "sha": "9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece",
-          "support": "fullSupport",
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece.zip"
-        },
         "4.0.0+maint.om": {
           "path": "ModelicaServices",
           "provides": [
@@ -349,16 +196,6 @@
     },
     "ModelicaTest": {
       "versions": {
-        "3.2.3+maint.om": {
-          "path": "ModelicaTest",
-          "sha": "9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece",
-          "support": "fullSupport",
-          "uses": {
-            "Modelica": "3.2.3"
-          },
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9007f49e966dd43bbe24d9aa5bbe9afd3a8bcece.zip"
-        },
         "4.0.0+maint.om": {
           "path": "ModelicaTest",
           "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
@@ -383,31 +220,26 @@
     },
     "Modelica_DeviceDrivers": {
       "versions": {
-        "1.8.2": {
+        "2.2.0": {
           "path": "Modelica_DeviceDrivers",
-          "sha": "61247667adad45a1b769bfa0cd5011e33eafa513",
+          "provides": [
+            "1.6.0",
+            "1.7.0",
+            "1.7.1",
+            "1.8.0",
+            "1.8.1",
+            "1.8.2",
+            "2.0.0",
+            "2.1.0",
+            "2.1.1"
+          ],
+          "sha": "e18a8e9cbb4a7155df11f0590981f9b5cfcc89bc",
           "support": "support",
           "uses": {
-            "Modelica": "3.2.3",
-            "Modelica_Synchronous": "0.92.2"
+            "Modelica": "4.1.0"
           },
-          "version": "1.8.2",
-          "zipfile": "https://github.com/modelica-3rdparty/Modelica_DeviceDrivers/archive/61247667adad45a1b769bfa0cd5011e33eafa513.zip"
-        }
-      }
-    },
-    "Modelica_Synchronous": {
-      "versions": {
-        "0.92.2": {
-          "path": "Modelica_Synchronous",
-          "sha": "477faa09dcd89b98a8728dbdb2c2efc46ec1a4a8",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.3",
-            "ModelicaServices": "3.2.3"
-          },
-          "version": "0.92.2",
-          "zipfile": "https://github.com/modelica/Modelica_Synchronous/archive/477faa09dcd89b98a8728dbdb2c2efc46ec1a4a8.zip"
+          "version": "2.2.0",
+          "zipfile": "https://github.com/modelica-3rdparty/Modelica_DeviceDrivers/archive/e18a8e9cbb4a7155df11f0590981f9b5cfcc89bc.zip"
         }
       }
     },
@@ -449,82 +281,28 @@
         }
       }
     },
-    "SiemensPower": {
-      "versions": {
-        "2.1.0-beta": {
-          "convertFromVersion": [
-            "1.8.0",
-            "2.0.0"
-          ],
-          "path": "SiemensPower 2.1 beta",
-          "support": "noSupport",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "2.1.0-beta",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-2.1-beta.zip"
-        },
-        "2.2.0": {
-          "convertFromVersion": [
-            "1.8.0",
-            "2.0.0",
-            "2.1.0"
-          ],
-          "path": "SiemensPower 2.2",
-          "support": "experimental",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "2.2.0",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-2.2.zip"
-        }
-      }
-    },
     "ThermoPower": {
       "versions": {
-        "3.1.0-master": {
-          "path": "ThermoPower",
-          "sha": "e2b011ac7fd90f9cf5771f29f1aefa160550b6ee",
+        "4.0.0-dev": {
+          "path": "ThermoPower 4.0.0",
+          "sha": "9be3aaf4181c55d99af9c3311e1a4f62a1e2d5ac",
           "support": "experimental",
           "uses": {
-            "Modelica": "3.2.3"
+            "Modelica": "4.0.0"
           },
-          "version": "3.1.0-master",
-          "zipfile": "https://github.com/casella/ThermoPower/archive/e2b011ac7fd90f9cf5771f29f1aefa160550b6ee.zip"
+          "version": "4.0.0-dev",
+          "zipfile": "https://github.com/casella/ThermoPower/archive/9be3aaf4181c55d99af9c3311e1a4f62a1e2d5ac.zip"
         }
       }
     },
     "ThermoSysPro": {
       "versions": {
-        "3.2.0": {
-          "path": "ThermoSysPro 3.2",
-          "provides": [
-            "0.0.0",
-            "3.1.0"
-          ],
+        "4.2.0": {
+          "path": "ThermoSysPro",
+          "sha": "a896ab75ce22162369e7fa4ce79927eeca44ad4a",
           "support": "experimental",
-          "uses": {
-            "Modelica": "3.2.3"
-          },
-          "version": "3.2.0",
-          "zipfile": "https://build.openmodelica.org/libraries/ThermoSysPro/ThermoSysPro-3.2.zip"
-        }
-      }
-    },
-    "WasteWater": {
-      "versions": {
-        "2.1.0": {
-          "convertFromVersion": [
-            "2.0.1"
-          ],
-          "path": "WasteWater 2.1.0",
-          "sha": "b177accad1843da8d257cfa2aee510d7e45105ce",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "2.1.0",
-          "zipfile": "https://github.com/modelica-3rdparty/WasteWater/archive/b177accad1843da8d257cfa2aee510d7e45105ce.zip"
+          "version": "4.2.0",
+          "zipfile": "https://gitlab.pam-retd.fr/thermosysproandco/ThermoSysPro/-/archive/a896ab75ce22162369e7fa4ce79927eeca44ad4a/ThermoSysPro-a896ab75ce22162369e7fa4ce79927eeca44ad4a.zip"
         }
       }
     }

@@ -54,7 +54,7 @@
 #include "real_time_sync.h"
 #endif
 
-/* The Rust simulation runtime (`--simCodeTarget=C+Rust`) drives the model from
+/* The Rust simulation runtime (`--simCodeTarget=C`) drives the model from
  * its own loop, so nothing below is ever entered -- and every runtime function
  * it names would otherwise have to exist twice. Compile it away instead; the
  * two callbacks stay valid function pointers that report if anything calls them.
@@ -152,6 +152,11 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
         rt_tick(SIM_TIMER_EVENT);
       }
       handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+      /* Nothing is left to retry from: an error raised here ends the run. */
+      if (OMC_ERROR_RAISED()) {
+        OMC_ERROR_CLEAR();
+        longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
+      }
       cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
       messageClose(OMC_LOG_EVENTS);
       threadData->currentErrorStage = ERROR_SIMULATION;

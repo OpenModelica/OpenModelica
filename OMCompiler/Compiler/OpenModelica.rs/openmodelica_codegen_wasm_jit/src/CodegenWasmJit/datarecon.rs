@@ -6,7 +6,7 @@
 //! the slots directly, so only the two symbolic Jacobians (`F` and `H`) need code
 //! — built exactly like `-l`'s `linearJac*`, each filling one column-major matrix.
 
-use std::collections::HashMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::sync::Arc;
 
 use metamodelica::{List, Result};
@@ -76,11 +76,11 @@ pub(crate) fn build_plan(sim_code: &SimCode::SimCode, vars: &SimCodeVar::SimVars
 
 /// C's `sizeRows`, as `linearize::matrix_rows`: one past the last row a `JAC_VAR`
 /// result or the sparsity pattern names.
-fn matrix_rows(jm: &SimCode::JacobianMatrix) -> u32 {
+fn matrix_rows(jm: &Arc<SimCode::JacobianMatrix>) -> u32 {
     let results = jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
-        .filter_map(jac_result_row)
+        .filter_map(|v| jac_result_row(v))
         .map(|r| r as u32 + 1)
         .max()
         .unwrap_or(0);
@@ -122,7 +122,7 @@ pub(crate) fn build_jac_infos(
             cursor += 8;
         }
         let mut result_offs = vec![None; rows];
-        for sv in &jac_column_vars(jm) {
+        for sv in jac_column_vars(jm).iter() {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
                 SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },
@@ -234,7 +234,7 @@ pub(crate) fn build_recon_info(
     if !plan.present {
         return Ok(None);
     }
-    let list = |l: &List<SimCodeVar::SimVar>| -> Result<Vec<ReconVar>> {
+    let list = |l: &List<metamodelica::Ref<SimCodeVar::SimVar>>| -> Result<Vec<ReconVar>> {
         let mut out = Vec::new();
         for sv in lst(l) {
             let key = sim_cref_key(&sv.name)?;

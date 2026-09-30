@@ -74,11 +74,12 @@ pub(super) fn build_sim_model(
     fmi_solver_flags: &str,
 ) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
+    let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
     let vars = &scalarized_vars;
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
+    let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
     let n_states = count(&vars.stateVars) as u32;
     let n_real_alg = real_alg_vars(vars).len() as u32;
@@ -97,11 +98,11 @@ pub(super) fn build_sim_model(
     let dae_eqs: Vec<(metamodelica::Ref<SimCode::SimEqSystem>, u32)> =
         dae_mode.map(|d| dae_residual_equations(d)).unwrap_or_default();
     let dae_res_vars: Vec<&SimCodeVar::SimVar> =
-        dae_mode.map(|d| lst(&d.residualVars).collect()).unwrap_or_default();
+        dae_mode.map(|d| svs(&d.residualVars).collect()).unwrap_or_default();
     let dae_aux_vars: Vec<&SimCodeVar::SimVar> =
-        dae_mode.map(|d| lst(&d.auxiliaryVars).collect()).unwrap_or_default();
+        dae_mode.map(|d| svs(&d.auxiliaryVars).collect()).unwrap_or_default();
     let dae_alg_vars: Vec<&SimCodeVar::SimVar> =
-        dae_mode.map(|d| lst(&d.algebraicVars).collect()).unwrap_or_default();
+        dae_mode.map(|d| svs(&d.algebraicVars).collect()).unwrap_or_default();
     if dae_mode.is_some() && dae_res_vars.len() != (n_states as usize + dae_alg_vars.len()) {
         return Err("CodegenWasmJit: DAE mode residual count does not match states + algebraic unknowns");
     }
@@ -122,7 +123,7 @@ pub(super) fn build_sim_model(
     // parameters followed by the `Ns * nStates` `$Sensitivities.<par>.<state>`
     // signals (C's `rSen` init-XML category, split by `numSensitivityParameters`).
     let n_sens_par = vi.numSensitivityParameters.max(0) as usize;
-    let sens_vars: Vec<&SimCodeVar::SimVar> = lst(&mi.vars.sensitivityVars).collect();
+    let sens_vars: Vec<&SimCodeVar::SimVar> = svs(&mi.vars.sensitivityVars).collect();
     let n_sens = sens_vars.len().saturating_sub(n_sens_par) as u32;
     let clocks = collect_clocks(&sim_code.clockedPartitions)?;
     let n_sub_clocks: u32 = clocks.iter().map(|c| c.meta.sub.len() as u32).sum();
@@ -199,8 +200,8 @@ pub(super) fn build_sim_model(
         );
         for (i, sv) in states.iter().enumerate() {
             let old = openmodelica_frontend_base::ComponentReference::appendStringLastIdent(
-                arcstr::literal!("$Old"),
-                sv.name.clone(),
+                &arcstr::literal!("$Old"),
+                &sv.name,
             )?;
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&old)?,
@@ -232,7 +233,7 @@ pub(super) fn build_sim_model(
     // initial equation), or at an equation nested inside a torn linear/nonlinear
     // (or mixed / if-) system, so index every list recursively. `eqFunction_<n>`
     // is emitted once in the C target and shared; here the target is inlined.
-    let mut eq_index: HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>> = HashMap::new();
+    let mut eq_index: HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>> = HashMap::default();
     let index_list = |eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>, idx: &mut HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in lst(eqs) {
             index_eq_recursive(e, idx);
@@ -281,7 +282,7 @@ pub(super) fn build_sim_model(
     // functions, resolved by the host at instantiation (dlopen-self native; a
     // side module on wasm). Models without such externals emit none.
     let mut ext_imports: Vec<ExtCallSig> = Vec::new();
-    let mut ext_seen: HashSet<String> = HashSet::new();
+    let mut ext_seen: HashSet<String> = HashSet::default();
     for f in &model_fns {
         if external_general_why(f).is_ok() {
             let sig = external_import_sig(f)?;
@@ -346,7 +347,7 @@ pub(super) fn build_sim_model(
             ext_native = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
         }
         crate::CodegenWasmJitFunctions::set_native_externals(ext_native.iter().map(|s| s.name.clone()));
-        let want_native = ext_host == ExtHost::Native || !ext_native.is_empty();
+        let want_native = (ext_host == ExtHost::Native || !ext_native.is_empty()) && native_externals_allowed();
         let symbols: Vec<String> = ext_imports.iter().map(|s| s.name.clone()).collect();
         // Built on demand, for a symbol the loaded libraries turn out not to define.
         // The archives are on this link too, not only on their own: a member only
@@ -380,7 +381,7 @@ pub(super) fn build_sim_model(
     // generated equation functions.
     let ext_base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
     let import_base = ext_base + ext_imports.len() as u32;
-    let mut by_name: HashMap<String, FnInfo> = HashMap::new();
+    let mut by_name: HashMap<String, FnInfo> = HashMap::default();
     for (i, sig) in ext_imports.iter().enumerate() {
         by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: ext_import_sig(sig) });
     }
@@ -388,7 +389,12 @@ pub(super) fn build_sim_model(
         let (name, sig) = function_signature(f)?;
         by_name.insert(name, FnInfo { index: import_base + id as u32, sig });
     }
-    let eq_base = import_base + model_fns.len() as u32;
+    let flat_base = import_base + model_fns.len() as u32;
+    let flats = crate::CodegenWasmJitFunctions::flat_variants(&model_fns)?;
+    for (k, (_, key, sig)) in flats.iter().enumerate() {
+        by_name.insert(key.clone(), FnInfo { index: flat_base + k as u32, sig: sig.clone() });
+    }
+    let eq_base = flat_base + flats.len() as u32;
     let eqfn = EqFnIdx {
         parameters: eq_base,
         initial: eq_base + 1,
@@ -452,7 +458,7 @@ pub(super) fn build_sim_model(
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
-    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
+    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::default();
     let dae_only_eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let removed_init_eqs = flatten_eqs(&sim_code.removedInitialEquations);
     let clocked = clocked_eqs(sim_code);
@@ -473,11 +479,11 @@ pub(super) fn build_sim_model(
     // The integrator's per-unknown atol and the Jacobian's FD step floor: the states,
     // then in DAE mode the algebraic unknowns (C's `getAlgebraicDAEVarNominals`).
     let mut nominal_defaults: Vec<(u32, f64)> = Vec::new();
-    for (svs, base) in [
-        (lst(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(), layout.state_nom_off),
+    for (list, base) in [
+        (svs(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(), layout.state_nom_off),
         (dae_alg_vars.clone(), layout.dae_alg_nom_off),
     ] {
-        for (i, sv) in svs.iter().enumerate() {
+        for (i, sv) in list.iter().enumerate() {
             let off = base + (i as u32) * 8;
             nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
             if let Ok(k) = sim_cref_key(&sv.name) {
@@ -492,6 +498,12 @@ pub(super) fn build_sim_model(
         max_defaults.push((off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
         if let Ok(k) = sim_cref_key(&sv.name) {
             attr_targets.entry(k).or_default().max_offs.push(off);
+        }
+        // gbode's KINSOL keeps the sign a state's `min` asks for.
+        let off = layout.state_min_off + (i as u32) * 8;
+        max_defaults.push((off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
+        if let Ok(k) = sim_cref_key(&sv.name) {
+            attr_targets.entry(k).or_default().raw_min_offs.push(off);
         }
     }
     // Register the analytic-Jacobian seed/result crefs before the equation
@@ -550,6 +562,14 @@ pub(super) fn build_sim_model(
     let mut model_fn_type: Vec<u32> = Vec::with_capacity(model_fns.len());
     for f in &model_fns {
         let (_, sig) = function_signature(f)?;
+        let ti = types.len();
+        types.ty().function(
+            sig.params.iter().map(|s| s.wty().val()),
+            sig.results.iter().map(|s| s.wty().val()),
+        );
+        model_fn_type.push(ti);
+    }
+    for (_, _, sig) in &flats {
         let ti = types.len();
         types.ty().function(
             sig.params.iter().map(|s| s.wty().val()),
@@ -642,10 +662,25 @@ pub(super) fn build_sim_model(
     crate::CodegenWasmJitFunctions::set_assert_throw_tag(host_free.then_some(0));
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
-    for f in &model_fns {
+    let mut flat_bodies = Vec::with_capacity(flats.len());
+    for (id, f) in model_fns.iter().enumerate() {
         metamodelica::cancel::bail_if_cancelled()?;
-        bodies.push(compile_function(f, &by_name, &mut literals)?);
+        match flats.iter().position(|(i, ..)| *i == id) {
+            Some(k) => {
+                let (boxed, flat) = crate::CodegenWasmJitFunctions::compile_function_variants(
+                    f,
+                    &by_name,
+                    &mut literals,
+                    import_base + id as u32,
+                    flat_base + k as u32,
+                )?;
+                bodies.push(boxed);
+                flat_bodies.push(flat);
+            }
+            None => bodies.push(compile_function(f, &by_name, &mut literals)?),
+        }
     }
+    bodies.extend(flat_bodies);
     // C's `setAllParamsToStart`: every parameter from its binding, in declaration
     // order (the backend sorts dependent parameters so a binding only references
     // earlier ones). `parameterEquations` belongs to `functionUpdateBoundParameters`
@@ -708,7 +743,7 @@ pub(super) fn build_sim_model(
     let all_reals: Vec<&SimCodeVar::SimVar> = states
         .iter()
         .copied()
-        .chain(lst(&vars.derivativeVars))
+        .chain(svs(&vars.derivativeVars))
         .chain(real_alg_vars(vars))
         .collect();
     bodies.push(build_init_start_values_fn(&all_reals, &layout, &var_map, &by_name, &mut literals)?);
@@ -877,7 +912,7 @@ pub(super) fn build_sim_model(
         let reals: Vec<&SimCodeVar::SimVar> = states
             .iter()
             .copied()
-            .chain(lst(&vars.derivativeVars))
+            .chain(svs(&vars.derivativeVars))
             .chain(real_alg_vars(vars))
             .collect();
         optimization::build_opt_info(sim_code, vars, &reals, jacs, &var_map)?
@@ -956,13 +991,13 @@ pub(super) fn build_sim_model(
     // slot, in `listReverse(extObjInfo.vars)` order as CodegenC's
     // `callExternalObjectDestructors` does — the causalized construction order,
     // a different permutation from the `extObjVars` slot order. ---
-    let extobj_vars: Vec<&SimCodeVar::SimVar> = lst(&vars.extObjVars).collect();
+    let extobj_vars: Vec<&SimCodeVar::SimVar> = svs(&vars.extObjVars).collect();
     let extobj_slot: HashMap<String, u32> = extobj_vars
         .iter()
         .enumerate()
         .map(|(i, sv)| Ok((sim_cref_key(&sv.name)?, layout.eobj_off + (i as u32) * 4)))
         .collect::<Result<_>>()?;
-    let mut destruct_order: Vec<&SimCodeVar::SimVar> = lst(&sim_code.extObjInfo.vars).collect();
+    let mut destruct_order: Vec<&SimCodeVar::SimVar> = svs(&sim_code.extObjInfo.vars).collect();
     if destruct_order.len() != extobj_vars.len()
         || destruct_order.iter().any(|sv| {
             sim_cref_key(&sv.name).is_ok_and(|k| !extobj_slot.contains_key(&k))
@@ -1201,7 +1236,7 @@ pub(super) fn build_sim_model(
             let reals: Vec<&SimCodeVar::SimVar> = states
                 .iter()
                 .copied()
-                .chain(lst(&vars.derivativeVars))
+                .chain(svs(&vars.derivativeVars))
                 .chain(real_alg_vars(vars))
                 .collect();
             optimization::attr_defaults(&reals, &layout, &mut attr_targets)
@@ -1418,15 +1453,9 @@ pub(super) fn build_sim_model(
     // --- Shared literals, closure thunks and the module `start`. Both come after
     // every other body — their indices are only known here. ---
     let lits = crate::CodegenWasmJitFunctions::shared_lits::take();
-    let lit_init = lits
-        .iter()
-        .any(|s| s.is_some())
-        .then(|| {
-            crate::CodegenWasmJitFunctions::shared_lits::build_init_fn(
-                &lits, lit_global, &by_name, &mut literals,
-            )
-        })
-        .transpose()?;
+    let lit_init = crate::CodegenWasmJitFunctions::shared_lits::build_init_fns(
+        &lits, lit_global, &by_name, &mut literals,
+    )?;
     let closure_wiring = crate::CodegenWasmJitFunctions::closures::take();
     let mut thunk_indices: Vec<u32> = Vec::new();
     for (type_index, body) in closure_wiring.thunks {
@@ -1437,18 +1466,18 @@ pub(super) fn build_sim_model(
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() || lit_init.is_some() {
+    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() || !lit_init.is_empty() {
         let void_type = types.len();
         types.ty().function([], []);
-        let lit_init_idx = lit_init.map(|f| {
-            let idx = import_base + bodies.len() as u32;
+        let lit_init_base = import_base + bodies.len() as u32;
+        let n_lit_init = lit_init.len() as u32;
+        for f in lit_init {
             functions.function(void_type);
             bodies.push(f);
-            idx
-        });
+        }
         let start_idx = import_base + bodies.len() as u32;
         let mut f = we::Function::new([]);
-        if let Some(i) = lit_init_idx {
+        for i in lit_init_base..lit_init_base + n_lit_init {
             f.instruction(&we::Instruction::Call(i));
         }
         if let Some((fn_indices, _)) = &nls_wiring {
@@ -1624,6 +1653,9 @@ pub(super) fn build_sim_model(
     for (id, f) in model_fns.iter().enumerate() {
         names.push((import_base + id as u32, function_signature(f)?.0));
     }
+    for (k, (_, key, _)) in flats.iter().enumerate() {
+        names.push((flat_base + k as u32, key.clone()));
+    }
     for (name, idx) in [
         ("functionParameters", eqfn.parameters),
         ("functionInitialEquations", eqfn.initial),
@@ -1759,7 +1791,10 @@ pub(super) fn build_sim_model(
         module.section(&data);
     }
     module.section(&name_section);
-    let wasm = module.finish();
+    let mut wasm = module.finish();
+    if crate::CodegenWasmJitFunctions::take_unlikely_ifs() {
+        wasm = add_branch_hints(&wasm, import_base);
+    }
     // `OMC_WASM_DUMP_DIR=<dir>`: the lowered module as `<dir>/<prefix>.wasm`, for
     // `wasm-objdump` on a trap the backtrace names only by function index.
     #[cfg(not(target_arch = "wasm32"))]
@@ -1901,6 +1936,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         vars: SlotMap::new(var_map.vars.clone()),
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
+        start_aliases: var_map.start_aliases.clone(),
         array_groups: var_map.array_groups.clone(),
         scatter_groups: var_map.scatter_groups.clone(),
         consts: var_map.consts.clone(),

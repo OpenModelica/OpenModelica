@@ -82,7 +82,7 @@ pub fn open_stream(
     out: impl FnOnce() -> Option<Box<dyn ResultOut>>,
 ) -> crate::driver::Result<ResultStream> {
     let out: Box<dyn ResultOut> = match format {
-        "mat" | "csv" | "plt" | "arrow" => out().ok_or("CodegenWasmJit: cannot open the result file")?,
+        "mat" | "csv" | "plt" | "arrow" => out().ok_or("Cannot open the result file for writing")?,
         _ => Box::new(NullOut),
     };
     let params = crate::driver::read_params(e, model, sim_data)?;

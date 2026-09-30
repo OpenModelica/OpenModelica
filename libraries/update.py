@@ -50,31 +50,21 @@ installed = {
 
 # The libraries needed by the testsuite.
 testing = {
-  "BioChem": {"1.0.1+msl.3.2.1"},
+  "BioChem": {"1.1.3"},
   "Buildings": {"12.1.2-maint.12.x"},
   "Complex": {
-    "3.2.1+maint.om",
-    "3.2.2+maint.om",
-    "3.2.3+maint.om",
     "4.0.0+maint.om",
     "4.1.0+maint.om"
   },
   "Modelica": {
-    "3.2.1+maint.om",
-    "3.2.2+maint.om",
-    "3.2.3+maint.om",
     "4.0.0+maint.om",
     "4.1.0+maint.om"
   },
   "ModelicaServices": {
-    "3.2.1+maint.om",
-    "3.2.2+maint.om",
-    "3.2.3+maint.om",
     "4.0.0+maint.om",
     "4.1.0+maint.om"
   },
   "ModelicaTest": {
-    "3.2.3+maint.om",
     "4.0.0+maint.om",
     "4.1.0+maint.om"
   },
@@ -82,32 +72,23 @@ testing = {
     "3.2.0-master"
   },
   "Modelica_DeviceDrivers": {
-    "1.8.2"
-  },
-  "Modelica_Synchronous": {
-    "0.92.2"
+    "2.2.0"
   },
   "ScalableTestSuite": {
     "2.2.0"
   },
-  "SiemensPower": {
-    "2.1.0-beta",
-    "2.2.0"
-  },
   "ThermoPower": {
-    "3.1.0-master"
+    "4.0.0-dev"
   },
   "ThermoSysPro": {
-    "3.2.0"
-  },
-  "WasteWater": {
-    "2.1.0"
+    "4.2.0"
   }
 }
 
-# Everything that is shipped with an installation is tested as well.
+# Everything that is shipped with an installation is tested as well, except MSL 3.x which the
+# testsuite no longer uses.
 for lib, versions in installed.items():
-  testing.setdefault(lib, set()).update(versions)
+  testing.setdefault(lib, set()).update(v for v in versions if not v.startswith("3."))
 
 desired = testing if args.test else installed
 newdata = {}
@@ -139,14 +120,14 @@ if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
   print(getErrorString());
   exit(1);
 end if;
-vers:=OpenModelica.Scripting.getAvailablePackageVersions(Modelica, "3.2.3");
+vers:=OpenModelica.Scripting.getAvailablePackageVersions(Modelica, "4.1.0");
 if size(vers,1) <> 1 then
-  print("getAvailablePackageVersions(Modelica, \\"3.2.3\\") returned " + String(size(vers,1)) + " results\\n");
+  print("getAvailablePackageVersions(Modelica, \\"4.1.0\\") returned " + String(size(vers,1)) + " results\\n");
   print(getErrorString());
   exit(1);
 end if;
-if vers[1] <> "3.2.3+maint.om" then
-  print("getAvailablePackageVersions(Modelica, \\"3.2.3\\") returned " + vers[1] + "\\n");
+if vers[1] <> "4.1.0+maint.om" then
+  print("getAvailablePackageVersions(Modelica, \\"4.1.0\\") returned " + vers[1] + "\\n");
   print(getErrorString());
   exit(1);
 end if;

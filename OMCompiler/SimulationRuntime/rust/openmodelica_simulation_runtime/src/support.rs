@@ -90,6 +90,8 @@ mod jump {
     pub const NONE: i32 = 0;
     pub const SIMULATION: i32 = 1;
     pub const GLOBAL: i32 = 2;
+    /// Raise the error for the caller's check instead of jumping.
+    pub const RAISE: i32 = 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,18 +123,25 @@ fn with_position(info: &FILE_INFO, msg: &str) -> String {
     )
 }
 
-/// Run `f` under `threadData`'s simulation jump buffer, at error stage `stage`.
-/// `false` = the model left through the jump.
+/// Run `f` at error stage `stage`; `false` = the model raised an error or left
+/// through the jump.
 ///
-/// Every model callback called from inside a Rust frame goes through this: a
-/// `longjmp` past those frames would skip the solver's own bookkeeping and land at
-/// whatever catch is open further out -- not where C's would land, since C's frames
-/// there are the ones being skipped.
+/// Every model callback called from inside a Rust frame goes through this. A
+/// stage that still jumps gets `threadData`'s simulation jump buffer: a `longjmp`
+/// past Rust frames would skip the solver's own bookkeeping.
 pub(crate) fn protected<F: FnMut()>(
     thread_data: *mut threadData_t,
     stage: c_int,
     mut f: F,
 ) -> bool {
+    if stage_raises(stage) {
+        let td = unsafe { &mut *thread_data };
+        let saved = td.currentErrorStage;
+        td.currentErrorStage = stage;
+        f();
+        td.currentErrorStage = saved;
+        return !error_raised(thread_data);
+    }
     unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
         unsafe { (*(p as *mut F))() }
     }
@@ -154,9 +163,20 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
     rc != -1 && !error_raised(thread_data)
 }
 
+/// The stages whose model errors are raised, not jumped (`omr_stage_raises`).
+fn stage_raises(stage: c_int) -> bool {
+    matches!(
+        stage,
+        error_stage::SIMULATION
+            | error_stage::INTEGRATOR
+            | error_stage::NONLINEARSOLVER
+            | error_stage::EVENTSEARCH
+    )
+}
+
 /// Generated code returns a raised error (`OMC_ERROR_RAISE`) rather than
 /// jumping, so a completed region may still have failed; consume it here.
-fn error_raised(thread_data: *mut threadData_t) -> bool {
+pub(crate) fn error_raised(thread_data: *mut threadData_t) -> bool {
     !thread_data.is_null() && unsafe { omc_error_take(thread_data) } != 0
 }
 
@@ -176,6 +196,7 @@ unsafe extern "C" {
     /// `util/omc_error.h`: whether an error was raised, clearing it. The mirror
     /// stops at `parent`, so the field itself is out of reach here.
     fn omc_error_take(threadData: *mut threadData_t) -> c_int;
+    fn omc_error_raise(threadData: *mut threadData_t);
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.
@@ -189,7 +210,7 @@ unsafe extern "C" {
         indexes: *const c_int,
         msg: *const c_char,
         ...
-    ) -> !;
+    );
     #[cfg_attr(
         shim_trampolines,
         link_name = "omr_shim_assert_warning_simulation_withEquationIndexes"
@@ -202,11 +223,40 @@ unsafe extern "C" {
     );
 }
 
+#[cfg(unix)]
+unsafe extern "C" {
+    static mmc_thread_data_key: libc::pthread_key_t;
+}
+
+/// C's `pthread_getspecific(mmc_thread_data_key)` fallback, for the runtime's own
+/// `omc_assert(NULL, ...)` calls.
+#[unsafe(no_mangle)]
+pub extern "C" fn omr_thread_data() -> *mut threadData_t {
+    let td = crate::parmod::current_thread_data();
+    #[cfg(unix)]
+    if td.is_null() {
+        return unsafe { libc::pthread_getspecific(mmc_thread_data_key) as *mut threadData_t };
+    }
+    td
+}
+
+/// Where an FMU reports `omc_assert` (`error`) and `omc_assert_warning`, as C's
+/// `omc_assert_fmi` does: `passed_thread_data` is whether the caller had one.
+pub type FmuAssertReport = fn(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: bool);
+
+static mut FMU_ASSERT_REPORT: Option<FmuAssertReport> = None;
+
+#[cfg(feature = "fmi")]
+pub fn set_fmu_assert_report(f: FmuAssertReport) {
+    unsafe { FMU_ASSERT_REPORT = Some(f) };
+}
+
 /// C's `va_omc_assert_simulation_withEquationIndexes`, less the formatting the
-/// shim already did: report, and say which jump buffer the error stage takes.
+/// shim already did: report, and say whether the error stage raises or jumps.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_report(
     threadData: *mut threadData_t,
+    passed_thread_data: c_int,
     info: *const FILE_INFO,
     text: *const c_char,
 ) -> c_int {
@@ -221,10 +271,16 @@ pub extern "C" fn omr_assert_report(
         error_stage::INTEGRATOR => !omclog::active(omclog::SOLVER),
         _ => false,
     };
-    if !quiet {
-        omclog::error(omclog::ASSERT, false, &with_position(&info, &text));
+    match unsafe { FMU_ASSERT_REPORT } {
+        Some(report) => report(true, &info, &text, passed_thread_data != 0),
+        None if !quiet => omclog::error(omclog::ASSERT, false, &with_position(&info, &text)),
+        None => {}
     }
     match stage {
+        error_stage::EVENTSEARCH
+        | error_stage::SIMULATION
+        | error_stage::NONLINEARSOLVER
+        | error_stage::INTEGRATOR => jump::RAISE,
         error_stage::EVENTHANDLING | error_stage::OPTIMIZE => jump::GLOBAL,
         _ => jump::SIMULATION,
     }
@@ -233,6 +289,10 @@ pub extern "C" fn omr_assert_report(
 /// C's `va_omc_assert_warning_simulation`, likewise already formatted.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_warning_report(info: *const FILE_INFO, text: *const c_char) {
+    if let Some(report) = unsafe { FMU_ASSERT_REPORT } {
+        report(false, unsafe { &*info }, &cstr(text), true);
+        return;
+    }
     let text = with_position(unsafe { &*info }, &cstr(text));
     omclog::warning(omclog::ASSERT, false, &text);
 }
@@ -273,7 +333,7 @@ pub static mut omc_assert_withEquationIndexes: unsafe extern "C" fn(
     *const c_int,
     *const c_char,
     ...
-) -> ! = omc_assert_simulation_withEquationIndexes;
+) = omc_assert_simulation_withEquationIndexes;
 
 #[unsafe(no_mangle)]
 pub static mut omc_assert_warning_withEquationIndexes: unsafe extern "C" fn(
@@ -300,26 +360,43 @@ fn throw_prints_message(stage: c_int) -> bool {
 /// buffer `getBestJumpBuffer` picks for the stage. Unlike `omc_assert_simulation`
 /// the message is a debug one, and `ERROR_OPTIMIZE` takes the simulation buffer.
 pub(crate) fn throw_stream(threadData: *mut threadData_t, msg: &str) -> ! {
-    let stage = if threadData.is_null() {
-        error_stage::SIMULATION
-    } else {
-        unsafe { (*threadData).currentErrorStage }
-    };
-    let target = {
-        if throw_prints_message(stage) {
-            omclog::debug(omclog::ASSERT, false, msg);
-        }
-        match stage {
-            error_stage::EVENTSEARCH
-            | error_stage::SIMULATION
-            | error_stage::NONLINEARSOLVER
-            | error_stage::INTEGRATOR
-            | error_stage::OPTIMIZE => jump::SIMULATION,
-            _ => jump::GLOBAL,
-        }
+    if throw_prints_message(current_stage(threadData)) {
+        omclog::debug(omclog::ASSERT, false, msg);
+    }
+    rethrow(threadData)
+}
+
+/// C's `raiseStreamPrint`: report as [`throw_stream`] does and raise the error
+/// for the caller's check.
+pub(crate) fn raise_stream(threadData: *mut threadData_t, msg: &str) {
+    if throw_prints_message(current_stage(threadData)) {
+        omclog::debug(omclog::ASSERT, false, msg);
+    }
+    if !threadData.is_null() {
+        unsafe { omc_error_raise(threadData) };
+    }
+}
+
+/// [`throw_stream`] for an error that has already been reported.
+pub(crate) fn rethrow(threadData: *mut threadData_t) -> ! {
+    let target = match current_stage(threadData) {
+        error_stage::EVENTSEARCH
+        | error_stage::SIMULATION
+        | error_stage::NONLINEARSOLVER
+        | error_stage::INTEGRATOR
+        | error_stage::OPTIMIZE => jump::SIMULATION,
+        _ => jump::GLOBAL,
     };
     unsafe { omr_jump(threadData, target) };
     unreachable!("omr_jump returned")
+}
+
+fn current_stage(threadData: *mut threadData_t) -> c_int {
+    if threadData.is_null() {
+        error_stage::SIMULATION
+    } else {
+        unsafe { (*threadData).currentErrorStage }
+    }
 }
 
 /// The shim's last resort: nothing can catch this, so say why and stop.
@@ -416,6 +493,49 @@ pub extern "C" fn initJacobian(
     j.csrToCscMap = ptr::null_mut();
 }
 
+/// C's `initBidirectionalRecovery`: which of the forward (CSC) and adjoint (CSR)
+/// nonzeros each direction recovers alone, and each CSR entry's CSC position.
+#[unsafe(no_mangle)]
+pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
+    let fwd = unsafe { &mut *fwd };
+    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else { return };
+    let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe { adj.sparsePattern.as_ref() })
+    else {
+        return;
+    };
+    let nnz = f.nnz as usize;
+    fwd.recoverMask = calloc_bytes(nnz) as *mut u8;
+    adj.recoverMask = calloc_bytes(nnz) as *mut u8;
+    adj.csrToCscMap = calloc_bytes(nnz * 4) as *mut c_uint;
+    let at = |p: *mut c_uint, k: usize| unsafe { *p.add(k) as usize };
+    // The nonzeros of one lead index, and the leads they point at.
+    let span = |sp: &SPARSE_PATTERN, k: usize| at(sp.leadindex, k)..at(sp.leadindex, k + 1);
+    for j in 0..fwd.sizeCols {
+        let cj = at(f.colorCols, j);
+        for nz in span(f, j) {
+            let i = at(f.index, nz);
+            let unique = span(a, i).all(|k| {
+                let j2 = at(a.index, k);
+                j2 == j || at(f.colorCols, j2) != cj
+            });
+            unsafe { *fwd.recoverMask.add(nz) = unique as u8 };
+        }
+    }
+    for i in 0..fwd.sizeRows {
+        let ri = at(a.colorCols, i);
+        for nz in span(a, i) {
+            let j = at(a.index, nz);
+            let unique = span(f, j).all(|k| {
+                let i2 = at(f.index, k);
+                i2 == i || at(a.colorCols, i2) != ri
+            });
+            unsafe { *adj.recoverMask.add(nz) = unique as u8 };
+            let csc = span(f, j).find(|&k| at(f.index, k) == i).unwrap_or(0);
+            unsafe { *adj.csrToCscMap.add(nz) = csc as c_uint };
+        }
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn allocSparsePattern(
     n_leadIndex: c_uint,
@@ -484,10 +604,15 @@ unsafe extern "C" fn omr_message_text(
     indent_next: c_int,
     msg: *mut c_char,
     _subline: c_int,
-    _indexes: *const c_int,
+    indexes: *const c_int,
 ) {
     let text = with_position(&info, &cstr(msg));
-    omclog::message_text(ty as omclog::LogType, stream as omclog::Stream, indent_next != 0, &text);
+    // C's equation index list: the count, then the indexes.
+    let used = match unsafe { indexes.as_ref() } {
+        Some(&n) if n > 0 => unsafe { core::slice::from_raw_parts(indexes.add(1), n as usize) },
+        _ => &[],
+    };
+    omclog::message_text_used(ty as omclog::LogType, stream as omclog::Stream, indent_next != 0, &text, used);
 }
 
 unsafe extern "C" fn omr_message_close(stream: c_int) {
@@ -496,6 +621,35 @@ unsafe extern "C" fn omr_message_close(stream: c_int) {
 
 unsafe extern "C" fn omr_message_close_warning(stream: c_int) {
     omclog::close_warning(stream as omclog::Stream);
+}
+
+/// C's `deactivateLogging` over the solve of a system `-lv_system` left out.
+pub struct QuietSystem(bool);
+
+impl QuietSystem {
+    pub fn new(log_active: modelica_boolean) -> Self {
+        let quiet = log_active == 0;
+        if quiet {
+            omclog::deactivate();
+            publish_log_streams();
+        }
+        QuietSystem(quiet)
+    }
+}
+
+impl Drop for QuietSystem {
+    fn drop(&mut self) {
+        if self.0 {
+            omclog::reactivate();
+            publish_log_streams();
+        }
+    }
+}
+
+/// C's `omc_useStream[OMC_LOG_ASSERT]`, which the generated code's held-assert
+/// note is printed under.
+pub fn set_c_assert_stream(on: bool) {
+    unsafe { omc_useStream[openmodelica_sim_meta::omclog::ASSERT as usize] = on as c_int };
 }
 
 pub fn publish_log_streams() {
@@ -556,6 +710,27 @@ pub extern "C" fn cscToCsr(
     csr
 }
 
+/// C's `sortUniqueSparsePattern`: the resizable NBackend pattern can have unsorted
+/// and duplicate row indices per column, which KLU does not accept.
+fn sort_unique_sparse_pattern(sp: &mut SPARSE_PATTERN, cols: usize) {
+    let ap = unsafe { core::slice::from_raw_parts_mut(sp.leadindex, cols + 1) };
+    let index = unsafe { core::slice::from_raw_parts_mut(sp.index, sp.nnz as usize) };
+    let mut out = 0usize;
+    for c in 0..cols {
+        let (start, end) = (ap[c] as usize, ap[c + 1] as usize);
+        index[start..end].sort_unstable();
+        ap[c] = out as c_uint;
+        for nz in start..end {
+            if nz == start || index[nz] != index[nz - 1] {
+                index[out] = index[nz];
+                out += 1;
+            }
+        }
+    }
+    ap[cols] = out as c_uint;
+    sp.nnz = out as c_uint;
+}
+
 /// C's `computeColumnColoring`: a greedy distance-2 column coloring of the CSC
 /// pattern, which the NBackend's resizable Jacobian needs because its runtime
 /// pattern over-approximates the symbolic one. Colors are 1-based.
@@ -570,6 +745,7 @@ pub extern "C" fn computeColumnColoring(sp: *mut SPARSE_PATTERN, nRows: c_uint, 
         sp.maxColors = 0;
         return;
     }
+    sort_unique_sparse_pattern(sp, cols);
     let color_cols = unsafe { core::slice::from_raw_parts_mut(sp.colorCols, cols) };
     let csr = cscToCsr(sp, nRows, nCols);
     if csr.is_null() {

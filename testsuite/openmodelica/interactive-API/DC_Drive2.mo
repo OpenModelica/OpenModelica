@@ -370,5 +370,5 @@ Machine parameters of a real 48 W / 1 kW DCPM machine.
 </html>"));
     end M48V;
   end DCPM_Utilities;
-  annotation (uses(Modelica(version="3.2.3")));
+  annotation (uses(Modelica(version="4.1.0")));
 end DC_Drive2;

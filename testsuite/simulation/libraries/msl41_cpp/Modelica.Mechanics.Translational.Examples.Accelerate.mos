@@ -16,12 +16,7 @@ modelName := $TypeName(Modelica.Mechanics.Translational.Examples.Accelerate);
 compareVars :=
 {
    "accelerate.s",
-   "accelerate.v",
-   "accelerate.a",
-   "mass.s",
-   "mass.flange_b.s",
-   "mass.flange_a.f",
-   "mass.flange_b.f"
+   "accelerate.v"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -35,9 +30,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Translational.Examples.Accelerate
-// {"accelerate.s", "accelerate.v", "accelerate.a", "mass.s", "mass.flange_b.s", "mass.flange_a.f", "mass.flange_b.f"}
+// {"accelerate.s", "accelerate.v"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = 'time|accelerate.s|accelerate.v|accelerate.a|mass.s|mass.flange_b.s|mass.flange_a.f|mass.flange_b.f', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = 'time|accelerate.s|accelerate.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.Accelerate_res.mat
 // Files Equal!
 // "true

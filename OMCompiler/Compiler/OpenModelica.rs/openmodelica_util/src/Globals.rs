@@ -77,7 +77,7 @@ thread_local! {
     /// `SimCodeUtil.initFunctionListIndex`.
     /// Source: `SimCodeUtil.mo`.
     pub static codegenFunctionList: RefCell<DoubleEnded::MutableList<ArcStr>> =
-        RefCell::new(DoubleEnded::fromList(metamodelica::nil()).expect("DoubleEnded::fromList(nil) is infallible"));
+        RefCell::new(DoubleEnded::fromList(&metamodelica::nil()).expect("DoubleEnded::fromList(nil) is infallible"));
 
     // Index 3 — symbolTable
     // Declared in openmodelica_backend::Globals (type metamodelica::Ref<SymbolTable::SymbolTable>
@@ -211,7 +211,7 @@ thread_local! {
     //        metamodelica::Ref<OperatorOverloading::AvlTreePathOperatorTypes::Tree>)
 
     // Index 25 — optionSimCode
-    // Declared in openmodelica_backend::Globals.
+    // Declared in openmodelica_codegen_util::Globals.
     // Type: Option<SimCode::SimCode> — from openmodelica_simcode_types::SimCode.
 
     // Index 26 — interactiveCache
@@ -254,7 +254,7 @@ thread_local! {
 
     /// Index 33 — the FMI index -> value reference table an FMI 3.0
     /// `<ModelStructure>` is written through. Live only while one is being
-    /// written; source: `SimCodeUtil.cacheFMI3ValueReferences`.
+    /// written; source: `SimCodeCodegenUtil.cacheFMI3ValueReferences`.
     pub static fmi3ValueReferenceCache: RefCell<Option<metamodelica::Array<ArcStr>>> =
         const { RefCell::new(None) };
 
@@ -271,4 +271,9 @@ thread_local! {
     /// Source: `Uncertainties.mo`, read by `BackendDAEUtil.isDataReconciliationEnabled`.
     pub static uncertaintyExtraction: RefCell<Option<bool>> =
         const { RefCell::new(None) };
+
+    /// Index 42 — C names of the records whose members own nothing.
+    /// Source: `SimCodeFunctionUtil.setTrivialRecords`.
+    pub static trivialRecords: RefCell<metamodelica::List<ArcStr>> =
+        RefCell::new(metamodelica::nil());
 }

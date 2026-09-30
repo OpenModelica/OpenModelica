@@ -12,7 +12,18 @@
 runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody);
-compareVars := {"body.v_0[1]","body.v_0[2]","body.v_0[3]","body.body.frame_a.r_0[1]","body.body.frame_a.r_0[2]","body.body.frame_a.r_0[3]","body.body.w_a[1]","body.body.w_a[2]","body.body.w_a[3]"};
+compareVars :=
+{
+   "body.body.frame_a.r_0[1]",
+   "body.body.frame_a.r_0[2]",
+   "body.body.frame_a.r_0[3]",
+   "body.body.w_a[1]",
+   "body.body.w_a[2]",
+   "body.body.w_a[3]",
+   "body.v_0[1]",
+   "body.v_0[2]",
+   "body.v_0[3]"
+};
 runScript(modelTesting);
 getErrorString();
 

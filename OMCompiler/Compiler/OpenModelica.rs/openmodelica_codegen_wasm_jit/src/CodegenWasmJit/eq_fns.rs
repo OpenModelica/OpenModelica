@@ -272,7 +272,7 @@ pub(super) fn eq_segments(
     alg: &[metamodelica::Ref<SimCode::SimEqSystem>],
     all: &[metamodelica::Ref<SimCode::SimEqSystem>],
 ) -> Option<Vec<EqSegment>> {
-    let mut own: HashMap<i32, (EqOwner, usize)> = HashMap::new();
+    let mut own: HashMap<i32, (EqOwner, usize)> = HashMap::default();
     for (owner, eqs) in [(EqOwner::Ode, ode), (EqOwner::Alg, alg)] {
         for (pos, e) in eqs.iter().enumerate() {
             if own.insert(eq_id_of(e), (owner, pos)).is_some() {

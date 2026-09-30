@@ -3,6 +3,7 @@
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv
 // depends: ./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv
+// teardown_command: rm -rf NewDataReconciliationSimpleTests.VDI2048Example_Corrected NewDataReconciliationSimpleTests.VDI2048Example_Corrected.* NewDataReconciliationSimpleTests.VDI2048Example_Corrected_* Reconciled_NewDataReconciliationSimpleTests_VDI2048Example_Corrected.mo
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
@@ -21,10 +22,10 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
 // ModelInfo: NewDataReconciliationSimpleTests.VDI2048Example_Corrected

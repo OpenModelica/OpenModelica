@@ -40,7 +40,7 @@
 
 extern crate alloc;
 
-mod delay;
+pub mod delay;
 mod files;
 /// The run's model and `SimData`, for the analyses the nonlinear solver runs from
 /// inside a solve.
@@ -52,7 +52,7 @@ mod omclog;
 pub use nls::{
     rt_context_addr, rt_error_stage_addr, rt_nls_clean_history, rt_no_throw_div_zero_addr, rt_set_step_size,
 };
-mod spatial;
+pub mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.
@@ -108,6 +108,12 @@ pub extern "C" fn rt_set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f64) {
     openmodelica_solvers::solverflags::set_newton_tuning(ftol, xtol, max_step_factor);
+}
+
+/// `-newton` / `-noScaling` / `-stopAtSystem`, as `simflags::nls_option_codes`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_nls_options(newton_strategy: u32, no_scaling: u32, stop_at_system: i32) {
+    openmodelica_solvers::solverflags::set_nls_options(newton_strategy, no_scaling, stop_at_system);
 }
 
 /// `-lvMaxWarn`, which caps warnings printed in-wasm.
@@ -728,6 +734,12 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
             return head + HEADER as u32;
         }
     }
+    alloc_fresh(total, size)
+}
+
+/// Out of line so the recycling path above stays small enough to inline.
+#[inline(never)]
+fn alloc_fresh(total: usize, size: u32) -> u32 {
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     // Off the recycling path: the first allocation of a size class comes through
     // here, so the reserve is armed long before the heap can fill.
@@ -778,6 +790,11 @@ pub extern "C" fn rt_free(obj: u32) {
         lists[class] = raw;
         return;
     }
+    free_uncached(raw, total);
+}
+
+#[inline(never)]
+fn free_uncached(raw: u32, total: usize) {
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
 }
@@ -900,27 +917,40 @@ fn arr_data(obj: u32) -> u32 {
 /// partially filled array is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_new(elem_kind: u32, ndims: u32, total: u32) -> u32 {
+    let obj = array_new_uninit(elem_kind, ndims, total);
+    // Zero the dim words and the element area (rt_alloc does not zero).
+    let size = arr_data_off(ndims) + total * elem_stride(elem_kind);
+    unsafe { core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize) };
+    obj
+}
+
+/// [`rt_array_new`] with the dim words and elements left for the caller to fill.
+fn array_new_uninit(elem_kind: u32, ndims: u32, total: u32) -> u32 {
     stat_inc(STAT_ARRAY_NEW);
     let data_off = arr_data_off(ndims);
     let bytes = data_off as u64 + total as u64 * elem_stride(elem_kind) as u64;
     if bytes > MAX_ARRAY_BYTES {
-        // Otherwise `size` wraps, or the allocator traps with no message.
-        note_runtime_error(&alloc::format!(
-            "wasm-jit: cannot allocate an array of {total} elements ({bytes} bytes); a dimension was computed from a value that is not a valid size."
-        ));
-        trap();
+        array_too_large(total, bytes);
     }
-    let size = bytes as u32;
-    let obj = rt_alloc(size);
+    let obj = rt_alloc(bytes as u32);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + ARR_KIND_OFF, elem_kind);
         store_u32(obj + ARR_NDIMS_OFF, ndims);
         store_u32(obj + ARR_TOTAL_OFF, total);
-        // Zero the dim words and the element area (rt_alloc does not zero).
-        core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize);
     }
     obj
+}
+
+/// Out of line: formatting the message would give every allocation a stack frame.
+#[cold]
+#[inline(never)]
+fn array_too_large(total: u32, bytes: u64) -> ! {
+    // Otherwise `size` wraps, or the allocator traps with no message.
+    note_runtime_error(&alloc::format!(
+        "wasm-jit: cannot allocate an array of {total} elements ({bytes} bytes); a dimension was computed from a value that is not a valid size."
+    ));
+    trap();
 }
 
 /// Set the size of dimension `axis` (0-based) of an array.
@@ -1044,7 +1074,7 @@ pub extern "C" fn rt_array_copy(obj: u32) -> u32 {
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     let ndims = rt_array_ndims(obj);
     let total = rt_array_total(obj);
-    let dup = rt_array_new(kind, ndims, total);
+    let dup = array_new_uninit(kind, ndims, total);
     for axis in 0..ndims {
         unsafe { store_u32(dup + ARR_DIMS_OFF + axis * 4, load_u32(obj + ARR_DIMS_OFF + axis * 4)) };
     }
@@ -2009,21 +2039,12 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
     }
 }
 
-fn ew_f64(x: f64, y: f64, op: u32) -> f64 {
-    match op {
-        OP_ADD => x + y,
-        OP_SUB => x - y,
-        OP_MUL => x * y,
-        OP_DIV => x / y,
-        _ => libm::pow(x, y),
-    }
-}
-
-/// A fresh array with the same kind and dimensions as `obj`, zeroed data.
+/// A fresh array with the same kind and dimensions as `obj`, every element for
+/// the caller to write.
 fn array_like(obj: u32) -> u32 {
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     let ndims = rt_array_ndims(obj);
-    let res = rt_array_new(kind, ndims, rt_array_total(obj));
+    let res = array_new_uninit(kind, ndims, rt_array_total(obj));
     for axis in 0..ndims {
         unsafe { store_u32(res + ARR_DIMS_OFF + axis * 4, load_u32(obj + ARR_DIMS_OFF + axis * 4)) };
     }
@@ -2046,12 +2067,40 @@ pub extern "C" fn rt_array_ew_i32(a: u32, b: u32, op: u32) -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_ew_f64(a: u32, b: u32, op: u32) -> u32 {
     let res = array_like(a);
-    let (da, db, dr) = (arr_data(a), arr_data(b), arr_data(res));
-    for i in 0..rt_array_total(a) {
-        let v = ew_f64(unsafe { load_f64(da + i * 8) }, unsafe { load_f64(db + i * 8) }, op);
-        unsafe { store_f64(dr + i * 8, v) };
+    let (x, y, r) = unsafe { (f64s(a), f64s(b), f64s_mut(res)) };
+    // One loop per operator, so each one vectorizes.
+    match op {
+        OP_ADD => map2(x, y, r, |p, q| p + q),
+        OP_SUB => map2(x, y, r, |p, q| p - q),
+        OP_MUL => map2(x, y, r, |p, q| p * q),
+        OP_DIV => map2(x, y, r, |p, q| p / q),
+        _ => map2(x, y, r, libm::pow),
     }
     res
+}
+
+/// The f64 elements of array `obj`.
+unsafe fn f64s<'a>(obj: u32) -> &'a [f64] {
+    unsafe { core::slice::from_raw_parts(arr_data(obj) as *const f64, rt_array_total(obj) as usize) }
+}
+
+/// [`f64s`] of an array nothing else refers to.
+unsafe fn f64s_mut<'a>(obj: u32) -> &'a mut [f64] {
+    unsafe { core::slice::from_raw_parts_mut(arr_data(obj) as *mut f64, rt_array_total(obj) as usize) }
+}
+
+#[inline(always)]
+fn map1(x: &[f64], r: &mut [f64], f: impl Fn(f64) -> f64) {
+    for (r, x) in r.iter_mut().zip(x) {
+        *r = f(*x);
+    }
+}
+
+#[inline(always)]
+fn map2(x: &[f64], y: &[f64], r: &mut [f64], f: impl Fn(f64, f64) -> f64) {
+    for ((r, x), y) in r.iter_mut().zip(x).zip(y) {
+        *r = f(*x, *y);
+    }
 }
 
 /// Broadcast a scalar over an i32-element array: `rev ? (s op a[i]) : (a[i] op s)`.
@@ -2071,10 +2120,32 @@ pub extern "C" fn rt_array_scalar_i32(a: u32, s: i32, op: u32, rev: u32) -> u32 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_scalar_f64(a: u32, s: f64, op: u32, rev: u32) -> u32 {
     let res = array_like(a);
+    let (x, r) = unsafe { (f64s(a), f64s_mut(res)) };
+    match (op, rev != 0) {
+        (OP_ADD, false) => map1(x, r, |p| p + s),
+        (OP_ADD, true) => map1(x, r, |p| s + p),
+        (OP_SUB, false) => map1(x, r, |p| p - s),
+        (OP_SUB, true) => map1(x, r, |p| s - p),
+        (OP_MUL, false) => map1(x, r, |p| p * s),
+        (OP_MUL, true) => map1(x, r, |p| s * p),
+        (OP_DIV, false) => map1(x, r, |p| p / s),
+        (OP_DIV, true) => map1(x, r, |p| s / p),
+        (_, false) => map1(x, r, |p| libm::pow(p, s)),
+        (_, true) => map1(x, r, |p| libm::pow(s, p)),
+    }
+    res
+}
+
+/// `a ./ s` in an equation: C's `division_alloc_real_array_scalar_sim`, the checks of
+/// `rt_div_sim` for every element (e.g. 0/0 is 0 during initialization).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_div_sim_f64(a: u32, s: f64, msg: u32, time: f64, initial: i32) -> u32 {
+    let res = array_like(a);
     let (da, dr) = (arr_data(a), arr_data(res));
     for i in 0..rt_array_total(a) {
         let x = unsafe { load_f64(da + i * 8) };
-        let v = if rev != 0 { ew_f64(s, x, op) } else { ew_f64(x, s, op) };
+        let q = x / s;
+        let v = if s == 0.0 || !q.is_finite() { nls::rt_div_sim(x, s, msg, time, initial) } else { q };
         unsafe { store_f64(dr + i * 8, v) };
     }
     res
@@ -2106,10 +2177,8 @@ pub extern "C" fn rt_array_not_i32(a: u32) -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_neg_f64(a: u32) -> u32 {
     let res = array_like(a);
-    let (da, dr) = (arr_data(a), arr_data(res));
-    for i in 0..rt_array_total(a) {
-        unsafe { store_f64(dr + i * 8, -load_f64(da + i * 8)) };
-    }
+    let (x, r) = unsafe { (f64s(a), f64s_mut(res)) };
+    map1(x, r, |p| -p);
     res
 }
 
@@ -3354,7 +3423,7 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
 
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
-    {
+    if inwasm_rsparse() {
         let a = rsparse::data::Sprs {
             nzmax: nnz,
             m: n,
@@ -3364,26 +3433,31 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
             x: vals.to_vec(),
         };
         // order 2 = AMD on A'A (CSparse's LU ordering); tol 1.0 = partial pivoting.
-        match rsparse::lusol(&a, b, 2, 1.0) {
+        return match rsparse::lusol(&a, b, 2, 1.0) {
             Ok(()) => 0,
             Err(_) => 1,
+        };
+    }
+    // Densify + dense LU.
+    let mut dense = alloc::vec![0.0f64; n * n];
+    for col in 0..n {
+        for k in colp[col] as usize..colp[col + 1] as usize {
+            dense[col * n + rowi[k] as usize] = vals[k];
         }
     }
-    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
-    {
-        // No in-wasm rsparse (native interactive / no_std): densify + dense LU.
-        let mut dense = alloc::vec![0.0f64; n * n];
-        for col in 0..n {
-            for k in colp[col] as usize..colp[col + 1] as usize {
-                dense[col * n + rowi[k] as usize] = vals[k];
-            }
-        }
-        if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
-            0
-        } else {
-            1
-        }
+    if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
+        0
+    } else {
+        1
     }
+}
+
+/// Whether the uncached solves use in-wasm rsparse. A runtime that also links the
+/// host solver follows `rt_set_host_lin_solve`, and while that picks the host they
+/// keep the lean build's dense LU.
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+fn inwasm_rsparse() -> bool {
+    !(cfg!(feature = "host_lin_solve") && openmodelica_solvers::solverflags::host_lin_solve())
 }
 
 /// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64) with the
@@ -3411,9 +3485,9 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
-    {
-        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    if inwasm_rsparse() {
         let mut p = alloc::vec![0isize; n + 1];
         let mut i = alloc::vec::Vec::new();
         let mut x = alloc::vec::Vec::new();
@@ -3428,20 +3502,16 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
             p[col + 1] = i.len() as isize;
         }
         let sp = rsparse::data::Sprs { nzmax: i.len(), m: n, n, p, i, x };
-        match rsparse::lusol(&sp, b, 2, 1.0) {
+        return match rsparse::lusol(&sp, b, 2, 1.0) {
             Ok(()) => 0,
             Err(_) => 1,
-        }
+        };
     }
-    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
-    {
-        // No in-wasm rsparse: A is already dense column-major, solve directly.
-        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
-        if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
-            0
-        } else {
-            1
-        }
+    // A is already dense column-major: solve directly.
+    if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+        0
+    } else {
+        1
     }
 }
 

@@ -52,6 +52,7 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     // emitter always exports them, so the stub must too or the merge leaves
     // unresolved `model.*` imports. Taken from the canonical list rather than
     // copied, so adding an entry point cannot leave this stub behind.
+    // The adjoint pair is not in that list (no in-wasm slot) but is imported too.
     // `simulate` aside, the entry points that are not `fn(SimData*)`.
     let two_arg = [
         openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC,
@@ -63,6 +64,7 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
         .iter()
         .copied()
         .filter(|n| *n != "simulate" && !two_arg.contains(n))
+        .chain(["functionJacADJ_constantEqns", "functionJacADJ_column"])
         .collect();
 
     let mut funcs = we::FunctionSection::new();

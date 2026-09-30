@@ -4,7 +4,7 @@
 # is the Rust port) libOpenModelicaCompiler need the same hand-off.
 #
 # Included from OMCompiler/CMakeLists.txt after 3rdParty and before Compiler, so
-# that `--simCodeTarget=C+Rust` gets CVODE/IDA and `method="optimization"` in a
+# that `--simCodeTarget=C` gets CVODE/IDA and `method="optimization"` in a
 # build of the bootstrapped C omc as well.
 
 # The archives are the C runtime's own (3rdParty), not a second build: they are

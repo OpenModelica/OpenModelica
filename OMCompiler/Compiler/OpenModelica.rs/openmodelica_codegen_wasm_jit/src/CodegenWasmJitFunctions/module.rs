@@ -91,7 +91,7 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
 
     // The `external "C"` functions reached from here, as `ext.<extName>` imports.
     let mut ext_imports: Vec<ExtCallSig> = Vec::new();
-    let mut ext_seen: HashSet<String> = HashSet::new();
+    let mut ext_seen: HashSet<String> = HashSet::default();
     for f in &funcs {
         if external_general_why(f).is_ok() {
             let sig = external_import_sig(f)?;
@@ -107,7 +107,7 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     let ext_base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
     let base = ext_base + ext_imports.len() as u32;
     // Map mangled function name -> (local id, signature) so CALLs can resolve.
-    let mut by_name: HashMap<String, FnInfo> = HashMap::new();
+    let mut by_name: HashMap<String, FnInfo> = HashMap::default();
     for (i, sig) in ext_imports.iter().enumerate() {
         by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: sig.wasm_sig() });
     }
@@ -116,6 +116,11 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
         let (name, sig) = function_signature(f)?;
         by_name.insert(name, FnInfo { index: base + id as u32, sig: sig.clone() });
         sigs.push(sig);
+    }
+    let flat_base = base + funcs.len() as u32;
+    let flats = flat_variants(&funcs)?;
+    for (k, (_, key, sig)) in flats.iter().enumerate() {
+        by_name.insert(key.clone(), FnInfo { index: flat_base + k as u32, sig: sig.clone() });
     }
 
     // Type section: one type per env builtin, per rt builtin, then per
@@ -136,7 +141,7 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
             sig.wasm_results().iter().map(|s| s.wty().val()),
         );
     }
-    for sig in &sigs {
+    for sig in sigs.iter().chain(flats.iter().map(|(_, _, s)| s)) {
         types.ty().function(sig.params.iter().map(|s| s.wty().val()), sig.results.iter().map(|s| s.wty().val()));
     }
 
@@ -173,16 +178,25 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     let mut functions = we::FunctionSection::new();
     let mut bodies: Vec<we::Function> = Vec::with_capacity(funcs.len());
     let mut literals = Literals::default();
+    let mut flat_bodies = Vec::with_capacity(flats.len());
     for (id, f) in funcs.iter().enumerate() {
         functions.function(base + id as u32); // type index = base + id
-        bodies.push(compile_function(f, &by_name, &mut literals)?);
+        match flats.iter().position(|(i, ..)| *i == id) {
+            Some(k) => {
+                let (boxed, flat) =
+                    compile_function_variants(f, &by_name, &mut literals, base + id as u32, flat_base + k as u32)?;
+                bodies.push(boxed);
+                flat_bodies.push(flat);
+            }
+            None => bodies.push(compile_function(f, &by_name, &mut literals)?),
+        }
+    }
+    for (k, body) in flat_bodies.into_iter().enumerate() {
+        functions.function(flat_base + k as u32);
+        bodies.push(body);
     }
     let lits = shared_lits::take();
-    let lit_init = lits
-        .iter()
-        .any(|s| s.is_some())
-        .then(|| shared_lits::build_init_fn(&lits, lit_base_global(false), &by_name, &mut literals))
-        .transpose()?;
+    let lit_init = shared_lits::build_init_fns(&lits, lit_base_global(false), &by_name, &mut literals)?;
     // Closure thunks, then the `start` that builds the literals and appends the
     // thunks to the shared table.
     let closure_wiring = closures::take();
@@ -195,20 +209,20 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_idx = if thunk_indices.is_empty() && lit_init.is_none() {
+    let start_idx = if thunk_indices.is_empty() && lit_init.is_empty() {
         None
     } else {
         let void_type = types.len();
         types.ty().function([], []);
-        let lit_init_idx = lit_init.map(|f| {
-            let idx = base + bodies.len() as u32;
+        let lit_init_base = base + bodies.len() as u32;
+        let n_lit_init = lit_init.len() as u32;
+        for f in lit_init {
             functions.function(void_type);
             bodies.push(f);
-            idx
-        });
+        }
         let idx = base + bodies.len() as u32;
         let mut f = we::Function::new([]);
-        if let Some(i) = lit_init_idx {
+        for i in lit_init_base..lit_init_base + n_lit_init {
             f.instruction(&we::Instruction::Call(i));
         }
         if !thunk_indices.is_empty() {

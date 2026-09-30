@@ -333,7 +333,7 @@ fn gen_rust_wrapper(s: &mut String, f: &Func) {
     for (i, (n, ty)) in f.inputs.iter().enumerate() {
         let local = format!("__a{i}");
         writeln!(&mut conv, "        let {local} = {};", abi_in(ty, &arg_ident(n), 0)).unwrap();
-        call_args.push(local);
+        call_args.push(format!("{}{local}", borrow_amp(f, i)));
     }
     let call = format!(
         "openmodelica_backend_main::OpenModelicaScriptingAPI::{}({})",
@@ -379,6 +379,13 @@ fn default_ret(ty: &Ty) -> String {
     }
 }
 
+/// `&` when the API function takes input `i` by reference.
+fn borrow_amp(f: &Func, i: usize) -> &'static str {
+    let borrowed = crate::borrow_params::mask(&format!("OpenModelicaScriptingAPI.{}", f.name))
+        .is_some_and(|m| m.get(i) == Some(&true));
+    if borrowed { "&" } else { "" }
+}
+
 // ── wasm worker-side ABI dispatch generation ───────────────────────────────
 // Emits `omc_abi_dispatch`, which decodes the JSON request `{fn, args}` the
 // main-side bridge posts, calls the matching `OpenModelicaScriptingAPI` function,
@@ -401,7 +408,7 @@ fn gen_dispatch_arm(s: &mut String, f: &Func) {
     let mut call_args: Vec<String> = Vec::new();
     for (i, (_n, ty)) in f.inputs.iter().enumerate() {
         writeln!(s, "                let __a{i} = {};", json_arg(ty, i)).unwrap();
-        call_args.push(format!("__a{i}"));
+        call_args.push(format!("{}__a{i}", borrow_amp(f, i)));
     }
     writeln!(
         s,

@@ -3,12 +3,7 @@ bootstrapping.log \
 msl40simulation.log \
 msl41simulation.log \
 msl41simulation_cpp_mini.log \
-siemens_nosim.log \
-siemens_simulation.log \
-SiemensPower.log \
-hummod.log \
 ThermoSysPro_simulation.log \
-flatteningExercises.log \
 flatteningPlanarMechanics.log \
 TestMedia.log \
 cppruntime.log \
@@ -92,8 +87,6 @@ simulationBuiltin_delay.log \
 simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 msl41simulation.log \
-flatteningExercises.log \
-simulationExercises.log \
 simulation-start-value-selection.log \
 simulationinitialization.log \
 simulationqss.log \
@@ -101,7 +94,6 @@ simulationunitcheck.log \
 simulationtearing.log \
 simulationDrModelica.log \
 simulationPlanarMechanics.log \
-simulationExercises.log \
 simulation-start-value-selection.log \
 TestMediaFrancesco.log \
 ThermoPower.log \
@@ -112,8 +104,7 @@ parameters.log \
 simoptions.log \
 annex60.log \
 frontEndUnitCheck.log \
-newFrontEndUnitCheck.log \
-gitlibraries.log
+newFrontEndUnitCheck.log
 
 # Sorted by time it takes to run the tests...
 # DO NOT ADD ANYTHING HERE THAT YOU EXPECT WILL TAKE MORE THAN 5 SECONDS TO RUN IN THE NEXT 18 YEARS
@@ -164,7 +155,6 @@ parser.log \
 meta.log \
 biochem.log \
 flatteningmodelicamsl.log \
-mmdev.log \
 flatteningmosfiles.log \
 interactive-API.log \
 instance-API.log \
@@ -210,8 +200,19 @@ threaded :
 	$(MAKE) -j5 clean
 	$(MAKE) -j5 test
 
+# omc-diff is built and installed by the CMake build (testsuite/difftool/
+# CMakeLists.txt); build it with 'cmake --build <build_dir> --target omc-diff',
+# or --target testsuite-depends for everything the testsuite needs. The *.log
+# targets keep it as a prerequisite so a missing binary is reported once, here,
+# instead of once per test inside rtest. The locations searched are the ones
+# rtest itself looks in - keep the two in sync.
 omc-diff :
-	$(MAKE) -C difftool
+	@for d in ../build ../build/install_cmake ../build_cmake/install_cmake; do \
+	   test -x "$$d/bin/omc-diff" && exit 0; \
+	 done; \
+	 echo "omc-diff not found. Build it with:"; \
+	 echo "  cmake --build <build_dir> --target omc-diff"; \
+	 exit 1
 test : slow.logs fast.logs
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
 	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
@@ -484,9 +485,6 @@ flatteningmosfiles.log: omc-diff
 meta.log: omc-diff
 	$(MAKE) -C metamodelica/meta -f Makefile test > $@
 	@echo $@ done
-mmdev.log: omc-diff
-	$(MAKE) -C metamodelica/MetaModelicaDev -f Makefile test > $@
-	@echo $@ done
 records.log: omc-diff
 	$(MAKE) -C flattening/modelica/records -f Makefile test > $@
 	@echo $@ done
@@ -565,15 +563,6 @@ msl41simulation_cpp.log: omc-diff
 msl41simulation_cpp_mini.log: omc-diff
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl41 -f Makefile test > $@
 	@echo $@ done
-siemens_nosim.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile test > $@
-	@echo $@ done
-siemens_simulation.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile test > $@
-	@echo $@ done
-SiemensPower.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile test > $@
-	@echo $@ done
 ThermoSysPro_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/ThermoSysPro -f Makefile test > $@
 	@echo $@ done
@@ -612,12 +601,6 @@ flatteningPlanarMechanics.log: omc-diff
 	@echo $@ done
 simulationPlanarMechanics.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile test > $@
-	@echo $@ done
-flatteningExercises.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/Exercises -f Makefile test > $@
-	@echo $@ done
-simulationExercises.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/Exercises -f Makefile test > $@
 	@echo $@ done
 simulation-start-value-selection.log: omc-diff
 	$(MAKE) -C simulation/modelica/start_value_selection -f Makefile test > $@
@@ -695,14 +678,8 @@ buildings.log: omc-diff
 annex60.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/Annex60 -f Makefile test > $@
 	@echo $@ done
-gitlibraries.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/GitLibraries -f Makefile test > $@
-	@echo $@ done
 cse.log: omc-diff
 	$(MAKE) -C simulation/modelica/commonSubExp -f Makefile test > $@
-	@echo $@ done
-hummod.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/HumMod -f Makefile test > $@
 	@echo $@ done
 openmodelicadiff.log: omc-diff
 	$(MAKE) -C openmodelica/diff -f Makefile test > $@
@@ -827,8 +804,6 @@ clean_g_3 :
 
 clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
-	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile clean
-	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl41 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/3.0 -f Makefile clean
@@ -838,7 +813,6 @@ clean_g_4:
 	$(MAKE) -C openmodelica/fmi/ModelExchange/3.0 -f Makefile clean
 	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
-	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile clean
 
 git-sanity-check: git-clean
 	find -name "*.cpp" > invalid-files.log

@@ -87,6 +87,7 @@ set(_xwin_inc
 set(_xwin_flags "--target=${_xwin_arch}-pc-windows-msvc -fuse-ld=lld-link -Wno-unused-command-line-argument /DWIN32_LEAN_AND_MEAN ${_xwin_inc}")
 set(CMAKE_C_FLAGS_INIT "${_xwin_flags}")
 set(CMAKE_CXX_FLAGS_INIT "${_xwin_flags}")
+set(CMAKE_ASM_FLAGS_INIT "${_xwin_flags}")
 
 # llvm-rc needs the SDK headers via its own -I (e.g. winver.h). /C 1252 sets the
 # input codepage so Latin-1 bytes in .rc files (e.g. xerces's © in LegalCopyright)

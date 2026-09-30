@@ -46,6 +46,8 @@ extern "C" {
 double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax);
 void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax);
 double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayTime);
+size_t delayStateWords(DATA* data, double* out);
+long setDelayStateWords(DATA* data, const double* w, size_t len);
 
 #ifdef __cplusplus
 }

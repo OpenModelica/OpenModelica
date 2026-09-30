@@ -57,8 +57,8 @@
 
 // =============================================================================
 // In order to compile the XMLDump module (XMLDump.mo package)
-// XMLDump.mo text in the Compiler/Makefile.common file (SRCMO
-// variable) has been added.
+// XMLDump.mo has been added to the MetaModelica source list in
+// Compiler/.cmake/meta_modelica_source_list.cmake.
 // =============================================================================
 
 

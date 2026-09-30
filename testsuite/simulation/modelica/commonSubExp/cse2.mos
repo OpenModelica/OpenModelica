@@ -91,10 +91,10 @@ simulate(Tearing3); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (4)
 // ========================================
-// 1: R1:PARAM()  = 1.0  type: Real
-// 2: R2:PARAM()  = 2.0  type: Real
-// 3: L:PARAM()  = 0.5  type: Real
-// 4: C:PARAM()  = 3.0  type: Real
+// 1: C:PARAM()  = 3.0  type: Real
+// 2: L:PARAM()  = 0.5  type: Real
+// 3: R2:PARAM()  = 2.0  type: Real
+// 4: R1:PARAM()  = 1.0  type: Real
 //
 //
 // ########### CSE Replacements (2/57)

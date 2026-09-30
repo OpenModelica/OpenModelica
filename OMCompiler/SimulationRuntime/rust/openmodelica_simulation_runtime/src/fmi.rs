@@ -37,6 +37,8 @@ struct Instance {
     engine: CEngine,
     meta: SimMeta,
     sel: driver::StateSelection,
+    /// C's `intvlTimers`, set up by `initialization` for a model with clocks.
+    sync: Option<openmodelica_sim_meta::sync::Sync>,
 }
 
 /// The flat address the region map starts the model at. A C model has one block,
@@ -47,16 +49,25 @@ fn instance_for(data: *mut DATA, thread_data: *mut threadData_t) -> &'static mut
     if let Some(i) = instances().iter().position(|i| i.data == data) {
         return &mut instances()[i];
     }
+    let (engine, meta) = engine_and_meta(data, thread_data);
+    let sel = driver::StateSelection::new(&meta);
+    instances().push(Box::new(Instance { data, engine, meta, sel, sync: None }));
+    instances().last_mut().expect("just pushed")
+}
+
+/// The engine over an instance's `DATA` and the model description it runs, once
+/// the generated `read_input_fmu` has put the attributes in place.
+pub(crate) fn engine_and_meta(data: *mut DATA, thread_data: *mut threadData_t) -> (CEngine, SimMeta) {
     let rt = crate::data::build_rt(data, thread_data);
     let layout = rt.layout;
-    let mut meta = crate::meta::build(data, &crate::model_data::InitXml::default(), &layout, &model_prefix(data));
+    let mut meta =
+        crate::meta::build(data, thread_data, &crate::model_data::InitXml::default(), &layout, &model_prefix(data));
     (meta.fmi_vrs, meta.fmi_dae_enable_vr) = crate::fmi_vrs::build(data, &layout);
     let mut engine = CEngine::new(rt);
+    engine.keep_params = true;
     engine.sync_attributes();
     engine.seed_string_vars();
-    let sel = driver::StateSelection::new(&meta);
-    instances().push(Box::new(Instance { data, engine, meta, sel }));
-    instances().last_mut().expect("just pushed")
+    (engine, meta)
 }
 
 struct Instances(core::cell::UnsafeCell<Vec<Box<Instance>>>);
@@ -64,6 +75,13 @@ struct Instances(core::cell::UnsafeCell<Vec<Box<Instance>>>);
 // assumption C's own runtime makes of its globals.
 unsafe impl Sync for Instances {}
 static INSTANCES: Instances = Instances(core::cell::UnsafeCell::new(Vec::new()));
+
+/// `CEngine` publishes the driver's mode into `solveContinuous`, which C only
+/// sets inside a nonlinear solve; the event-triggering math functions refresh
+/// their held values only when it is clear.
+fn leave_driver(data: *mut DATA) {
+    unsafe { (*(*data).simulationInfo).solveContinuous = 0 };
+}
 
 fn instances() -> &'static mut Vec<Box<Instance>> {
     unsafe { &mut *INSTANCES.0.get() }
@@ -114,11 +132,12 @@ pub extern "C" fn allocModelDataVars(
 
 /// The one element `<Model>_read_input_fmu`'s `put_real_element` writes into.
 fn alloc_scalar_real_array(a: &mut real_array) {
-    a.ndims = 1;
-    a.dim_size = alloc(1);
-    unsafe { *a.dim_size = 1 };
-    a.data = alloc::<f64>(1).cast();
-    a.flexible = 0;
+    unsafe { crate::model_data::simple_alloc_1d_real_array(a, 1) };
+}
+
+/// The one element `<Model>_read_input_fmu`'s `put_<type>_element` writes into.
+fn alloc_scalar_array(a: &mut base_array_t, alloc: crate::model_data::AllocArray) {
+    unsafe { alloc(a, 1) };
 }
 
 #[unsafe(no_mangle)]
@@ -134,6 +153,33 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
             alloc_scalar_real_array(&mut a.nominal);
             alloc_scalar_real_array(&mut a.min);
             alloc_scalar_real_array(&mut a.max);
+        }
+    }
+    for (base, count) in [
+        (md.integerVarsData, md.nVariablesIntegerArray),
+        (md.integerParameterData, md.nParametersIntegerArray),
+    ] {
+        for i in 0..count as usize {
+            let a = unsafe { &mut (*base.add(i)).attribute };
+            alloc_scalar_array(&mut a.start, crate::model_data::simple_alloc_1d_integer_array);
+            alloc_scalar_array(&mut a.min, crate::model_data::simple_alloc_1d_integer_array);
+            alloc_scalar_array(&mut a.max, crate::model_data::simple_alloc_1d_integer_array);
+        }
+    }
+    for (base, count) in [
+        (md.booleanVarsData, md.nVariablesBooleanArray),
+        (md.booleanParameterData, md.nParametersBooleanArray),
+    ] {
+        for i in 0..count as usize {
+            alloc_scalar_array(unsafe { &mut (*base.add(i)).attribute.start }, crate::model_data::simple_alloc_1d_boolean_array);
+        }
+    }
+    for (base, count) in [
+        (md.stringVarsData, md.nVariablesStringArray),
+        (md.stringParameterData, md.nParametersStringArray),
+    ] {
+        for i in 0..count as usize {
+            alloc_scalar_array(unsafe { &mut (*base.add(i)).attribute.start }, crate::model_data::simple_alloc_1d_string_array);
         }
     }
 }
@@ -181,15 +227,27 @@ pub extern "C" fn setAllVarsToStart(
             unsafe { *sd.realVars.add(base + k) = attr.start.real_at(k, 0.0) };
         }
     }
-    for a in 0..md.nVariablesInteger as usize {
-        unsafe { *sd.integerVars.add(a) = (*md.integerVarsData.add(a)).attribute.start };
+    for a in 0..md.nVariablesIntegerArray as usize {
+        let v = unsafe { &*md.integerVarsData.add(a) };
+        let base = unsafe { *si.integerVarsIndex.add(a) };
+        for k in 0..v.dimension.scalar_length {
+            unsafe { *sd.integerVars.add(base + k) = v.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nVariablesBoolean as usize {
-        unsafe { *sd.booleanVars.add(a) = (*md.booleanVarsData.add(a)).attribute.start };
+    for a in 0..md.nVariablesBooleanArray as usize {
+        let v = unsafe { &*md.booleanVarsData.add(a) };
+        let base = unsafe { *si.booleanVarsIndex.add(a) };
+        for k in 0..v.dimension.scalar_length {
+            unsafe { *sd.booleanVars.add(base + k) = v.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nVariablesString as usize {
-        let start = unsafe { (*md.stringVarsData.add(a)).attribute.start };
-        unsafe { *sd.stringVars.add(a) = persist_string(start) };
+    for a in 0..md.nVariablesStringArray as usize {
+        let v = unsafe { &*md.stringVarsData.add(a) };
+        let base = unsafe { *si.stringVarsIndex.add(a) };
+        for k in 0..v.dimension.scalar_length {
+            let start = v.attribute.start.elem_at(k, core::ptr::null_mut());
+            unsafe { crate::model_data::string_store(sd.stringVars.add(base + k), start) };
+        }
     }
 }
 
@@ -207,14 +265,27 @@ pub extern "C" fn setAllParamsToStart(
             unsafe { *si.realParameter.add(base + k) = attr.start.real_at(k, 0.0) };
         }
     }
-    for a in 0..md.nParametersInteger as usize {
-        unsafe { *si.integerParameter.add(a) = (*md.integerParameterData.add(a)).attribute.start };
+    for a in 0..md.nParametersIntegerArray as usize {
+        let p = unsafe { &*md.integerParameterData.add(a) };
+        let base = unsafe { *si.integerParamsIndex.add(a) };
+        for k in 0..p.dimension.scalar_length {
+            unsafe { *si.integerParameter.add(base + k) = p.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nParametersBoolean as usize {
-        unsafe { *si.booleanParameter.add(a) = (*md.booleanParameterData.add(a)).attribute.start };
+    for a in 0..md.nParametersBooleanArray as usize {
+        let p = unsafe { &*md.booleanParameterData.add(a) };
+        let base = unsafe { *si.booleanParamsIndex.add(a) };
+        for k in 0..p.dimension.scalar_length {
+            unsafe { *si.booleanParameter.add(base + k) = p.attribute.start.elem_at(k, 0) };
+        }
     }
-    for a in 0..md.nParametersString as usize {
-        unsafe { *si.stringParameter.add(a) = (*md.stringParameterData.add(a)).attribute.start };
+    for a in 0..md.nParametersStringArray as usize {
+        let p = unsafe { &*md.stringParameterData.add(a) };
+        let base = unsafe { *si.stringParamsIndex.add(a) };
+        for k in 0..p.dimension.scalar_length {
+            let start = p.attribute.start.elem_at(k, core::ptr::null_mut());
+            unsafe { crate::model_data::string_store(si.stringParameter.add(base + k), start) };
+        }
     }
 }
 
@@ -237,7 +308,7 @@ pub extern "C" fn storePreValues(data: *mut DATA) {
         copy(sd.realVars, si.realVarsPre, md.nVariablesReal);
         copy(sd.integerVars, si.integerVarsPre, md.nVariablesInteger);
         copy(sd.booleanVars, si.booleanVarsPre, md.nVariablesBoolean);
-        copy(sd.stringVars, si.stringVarsPre, md.nVariablesString);
+        crate::model_data::string_slots_store(si.stringVarsPre, sd.stringVars, md.nVariablesString.max(0) as usize);
     }
 }
 
@@ -252,7 +323,7 @@ pub extern "C" fn overwriteOldSimulationData(data: *mut DATA) {
             copy(src.realVars, dst.realVars, md.nVariablesReal);
             copy(src.integerVars, dst.integerVars, md.nVariablesInteger);
             copy(src.booleanVars, dst.booleanVars, md.nVariablesBoolean);
-            copy(src.stringVars, dst.stringVars, md.nVariablesString);
+            crate::model_data::string_slots_store(dst.stringVars, src.stringVars, md.nVariablesString.max(0) as usize);
         }
     }
 }
@@ -512,18 +583,33 @@ pub extern "C" fn getNextSampleTimeFMU(data: *mut DATA, next_sample_event: *mut 
     1
 }
 
-/// Clocked partitions are not served by this runtime, as on the executable path,
-/// so `intvlTimers` is always null and no timer ever fires.
+/// Fires the clocks due at `current_time`; 1 (`TIMER_FIRED`) if any did.
 #[unsafe(no_mangle)]
 pub extern "C" fn handleTimersFMI(
-    _data: *mut DATA,
-    _thread_data: *mut threadData_t,
-    _current_time: c_double,
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    current_time: c_double,
     next_timer_defined: *mut modelica_boolean,
-    _next_timer_activation_time: *mut c_double,
+    next_timer_activation_time: *mut c_double,
 ) -> c_int {
     unsafe { *next_timer_defined = 0 };
-    0
+    let Some(inst) = instance(data) else { return 0 };
+    let Some(sync) = inst.sync.as_mut() else { return 0 };
+    let r = driver::fmi_handle_timers(&mut inst.engine, sync, &inst.meta, SIM_DATA, current_time);
+    leave_driver(data);
+    let fired = match r {
+        Ok(fired) => fired,
+        Err(e) if driver::is_model_throw(e) => crate::support::rethrow(thread_data),
+        Err(e) => crate::throw(thread_data, e),
+    };
+    let next = sync.next_time();
+    if next.is_finite() {
+        unsafe {
+            *next_timer_defined = 1;
+            *next_timer_activation_time = next;
+        }
+    }
+    fired as c_int
 }
 
 // ---------------------------------------------------------------------------
@@ -595,6 +681,7 @@ pub extern "C" fn stateSelection(
     } else {
         inst.sel.would_change(&mut inst.engine, SIM_DATA, &inst.meta)
     };
+    leave_driver(data);
     match r {
         Ok(changed) => changed as c_int,
         Err(e) => {
@@ -621,6 +708,11 @@ pub extern "C" fn initialization(
     _init_time: c_double,
 ) -> c_int {
     let inst = instance_for(data, thread_data);
+    // The discrete starts the driver seeds from; the importer may have set them
+    // since the instance was built (`fmi2Reset`).
+    inst.meta.soti = unsafe { crate::meta::soti_vars(&*(*data).modelData, &*(*data).simulationInfo) };
+    // `fmi2SetupExperiment`'s start time.
+    inst.meta.start_time = unsafe { (**(*data).localData).timeValue };
     unsafe { (*(*data).simulationInfo).homotopySteps = 0 };
     omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
     let r = driver::run_initialization_model(&mut inst.engine, SIM_DATA, &inst.meta)
@@ -629,6 +721,17 @@ pub extern "C" fn initialization(
         // selected states.
         .and_then(|()| driver::StateSelection::initial(&mut inst.engine, SIM_DATA, &inst.meta));
     omclog::info(omclog::INIT, false, "### END INITIALIZATION ###");
+    // C's `initialization` ends with `initSynchronous`.
+    let r = r.and_then(|sel| {
+        inst.sync = None;
+        if !inst.meta.clocks.is_empty() {
+            let mut sync = openmodelica_sim_meta::sync::Sync::new(&mut inst.engine, &inst.meta, SIM_DATA)?;
+            sync.take_fired(&mut inst.engine, inst.meta.start_time)?;
+            inst.sync = Some(sync);
+        }
+        Ok(sel)
+    });
+    leave_driver(data);
     match r {
         Ok(sel) => {
             inst.sel = sel;
@@ -662,6 +765,27 @@ pub extern "C" fn setZCtol(relative_tol: c_double) {
 #[unsafe(no_mangle)]
 pub extern "C" fn modelInfoInit(_xml: *mut MODEL_DATA_XML) {}
 
+unsafe extern "C" {
+    fn OpenModelica_uriToFilename_impl(
+        threadData: *mut threadData_t,
+        uri: modelica_string,
+        resourcesDir: *const c_char,
+    ) -> modelica_string;
+    fn OpenModelica_decode_uri_inplace(uri: *mut c_char);
+}
+
+/// `loadResource` in an FMU resolves against its `resources` directory.
+#[unsafe(no_mangle)]
+pub extern "C" fn OpenModelica_fmuLoadResource(
+    threadData: *mut threadData_t,
+    path: modelica_string,
+) -> modelica_string {
+    unsafe {
+        let data = (*threadData).localRoots[LOCAL_ROOT_SIMULATION_DATA] as *mut DATA;
+        OpenModelica_uriToFilename_impl(threadData, path, (*(*data).modelData).resourcesDir)
+    }
+}
+
 /// `fmi2Instantiate` is handed a URI and wants a path. Returns a `malloc`ed string
 /// the caller frees, or null for a scheme that names no local directory.
 #[unsafe(no_mangle)]
@@ -691,7 +815,10 @@ pub extern "C" fn OpenModelica_parseFmuResourcePath(path: *const c_char) -> *con
     if p.is_null() {
         return core::ptr::null();
     }
-    unsafe { core::ptr::copy_nonoverlapping(bytes.as_ptr(), p, bytes.len()) };
+    unsafe {
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), p, bytes.len());
+        OpenModelica_decode_uri_inplace(p as *mut c_char);
+    }
     p as *const c_char
 }
 
@@ -722,10 +849,6 @@ fn cstr(p: *const c_char) -> String {
 
 fn string_value(p: modelica_string) -> String {
     crate::model_data::string_value(p as *mut c_void)
-}
-
-fn persist_string(s: modelica_string) -> modelica_string {
-    crate::model_data::mk_scon_persist(&string_value(s)) as modelica_string
 }
 
 /// The prefix `<Model>_info.json` and the log lines are named after.

@@ -81,12 +81,30 @@ struct Event {
     sign: f64,
 }
 
-fn f(v: f64) -> alloc::string::String {
-    format!("{v:.6}")
+/// A value for a log message, formatted only if the message is written: the
+/// logging calls below run on every evaluation.
+struct F(f64);
+
+impl core::fmt::Display for F {
+    fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(out, "{:.6}", self.0)
+    }
 }
 
-fn e(v: f64) -> alloc::string::String {
-    omclog::e(v, 0, 6)
+struct E(f64);
+
+impl core::fmt::Display for E {
+    fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        out.write_str(&omclog::e(self.0, 0, 6))
+    }
+}
+
+fn f(v: f64) -> F {
+    F(v)
+}
+
+fn e(v: f64) -> E {
+    E(v)
 }
 
 /// C's `errorStreamPrint(OMC_LOG_STDOUT, ...)` + `omc_throw_function`.
@@ -116,6 +134,30 @@ fn extrapolate(left: Node, right: Node, at: f64) -> f64 {
     left.val + (right.val - left.val) / d * (at - left.pos)
 }
 
+/// C's `warnStepSizeTooBig`: the warning and its subline, `-lvMaxWarn` times.
+fn warn_step_size_too_big(n_displayed: &mut u64, what: &str, time: f64, index: u32, events: i32) {
+    let max_displayed = crate::solverflags::max_warn_displays();
+    *n_displayed += 1;
+    if *n_displayed > max_displayed {
+        return;
+    }
+    omclog::warning(
+        omclog::STDOUT,
+        true,
+        &format!("{what} more then one event from spatialDistribution. Step size to big!"),
+    );
+    omclog::warning!(
+        omclog::STDOUT,
+        false,
+        "time: {}, spatialDistribution index: {index}, number of events: {events}",
+        f(time),
+    );
+    omclog::close_warning(omclog::STDOUT);
+    if *n_displayed == max_displayed {
+        omclog::warning_limit_reached(omclog::STDOUT, max_displayed);
+    }
+}
+
 /// What [`Spatial::read_output`] found at the output edge.
 struct Read {
     out: f64,
@@ -142,6 +184,8 @@ struct Spatial {
     last_event_sign: f64,
     /// Second output of the last [`Spatial::eval`], for [`SpatialState::out1`].
     out1: f64,
+    n_warnings_removed_events: u64,
+    n_warnings_output_events: u64,
 }
 
 impl Spatial {
@@ -154,6 +198,8 @@ impl Spatial {
             old_pos_x: 0.0,
             last_event_sign: 0.0,
             out1: 0.0,
+            n_warnings_removed_events: 0,
+            n_warnings_output_events: 0,
         }
     }
 
@@ -331,18 +377,7 @@ impl Spatial {
 
         let walked = self.prune(positive);
         if walked > 1 {
-            omclog::warning(
-                omclog::STDOUT,
-                true,
-                "Removed more then one event from spatialDistribution. Step size to big!",
-            );
-            omclog::warning!(
-                omclog::STDOUT,
-                false,
-                "time: {}, spatialDistribution index: {index}, number of events: {walked}",
-                f(time),
-            );
-            omclog::close_warning(omclog::STDOUT);
+            warn_step_size_too_big(&mut self.n_warnings_removed_events, "Removed", time, index, walked);
         }
         self.old_pos_x = pos_x;
         omclog::close(omclog::SPATIALDISTR);
@@ -615,19 +650,13 @@ impl Spatial {
         } else {
             let read = self.read_output(in0, in1, pos_x, positive);
             if read.events > 1 {
-                omclog::warning(
-                    omclog::STDOUT,
-                    true,
-                    "Need to output more then one event from spatialDistribution. Step size to big!",
-                );
-                omclog::warning!(
-                    omclog::STDOUT,
-                    false,
-                    "time: {}, spatialDistribution index: {index}, number of events: {}",
-                    f(time),
+                warn_step_size_too_big(
+                    &mut self.n_warnings_output_events,
+                    "Need to output",
+                    time,
+                    index,
                     read.events,
                 );
-                omclog::close_warning(omclog::STDOUT);
             }
             // A discontinuity reached the output edge: a continuous call reports the
             // value in front of it so the zero crossing has something to bracket; the
@@ -725,6 +754,57 @@ pub struct SpatialState {
 }
 
 impl SpatialState {
+    /// Every operator as flat words, for an FMU state.
+    pub fn to_words(&self, out: &mut Vec<f64>) {
+        out.push(self.ops.len() as f64);
+        for s in &self.ops {
+            out.push(s.profile.len() as f64);
+            for n in &s.profile {
+                out.extend([n.pos, n.val]);
+            }
+            out.push(s.events.len() as f64);
+            for ev in &s.events {
+                out.extend([ev.pos, ev.sign]);
+            }
+            out.extend([
+                s.initialized as u8 as f64,
+                s.start_pos_x.is_some() as u8 as f64,
+                s.start_pos_x.unwrap_or(0.0),
+                s.old_pos_x,
+                s.last_event_sign,
+                s.out1,
+                s.n_warnings_removed_events as f64,
+                s.n_warnings_output_events as f64,
+            ]);
+        }
+    }
+
+    /// [`SpatialState::to_words`]'s inverse.
+    pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
+        let n = w.next()? as usize;
+        let mut ops = Vec::with_capacity(n);
+        for _ in 0..n {
+            let mut s = Spatial::new();
+            for _ in 0..w.next()? as usize {
+                s.profile.push_back(Node { pos: w.next()?, val: w.next()? });
+            }
+            for _ in 0..w.next()? as usize {
+                s.events.push_back(Event { pos: w.next()?, sign: w.next()? });
+            }
+            s.initialized = w.next()? != 0.0;
+            let has_start = w.next()? != 0.0;
+            let start = w.next()?;
+            s.start_pos_x = has_start.then_some(start);
+            s.old_pos_x = w.next()?;
+            s.last_event_sign = w.next()?;
+            s.out1 = w.next()?;
+            s.n_warnings_removed_events = w.next()? as u64;
+            s.n_warnings_output_events = w.next()? as u64;
+            ops.push(s);
+        }
+        Some(SpatialState { ops })
+    }
+
     /// C `allocSpatialDistribution`: `n` uninitialized operators for a fresh run.
     pub fn new(n: usize) -> Self {
         omclog::info!(

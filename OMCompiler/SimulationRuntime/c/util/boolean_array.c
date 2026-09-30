@@ -317,19 +317,17 @@ void indexed_assign_boolean_array(const boolean_array source, boolean_array* des
                                   const index_spec_t* dest_spec)
 {
     _index_t *idx_vec1, *idx_size;
-    int j;
+    _index_t j, n;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
-    j = 0;
-    do {
+    n = base_array_nr_of_elements(source);
+    for (j = 0; j < n; j++) {
         boolean_set(dest,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  boolean_get(source, j));
-        j++;
+        next_index(dest_spec->ndims, idx_vec1, idx_size);
+    }
 
-    } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    omc_assert_macro(j == base_array_nr_of_elements(source));
     omc_rc_release_inline(idx_vec1);
     omc_rc_release_inline(idx_size);
 }
@@ -367,6 +365,9 @@ void index_boolean_array(const boolean_array* source,
         }
     }
     assert(j == dest->ndims);
+    if (base_array_nr_of_elements(*dest) == 0) {
+        return;
+    }
 
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
@@ -376,7 +377,7 @@ void index_boolean_array(const boolean_array* source,
         idx_vec1[i] = 0;
     }
     for(i = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->index[i]) {
+        if(source_spec->index_type[i] != 'W') {
             idx_size[i] = imax(source_spec->dim_size[i],1);
         } else {
             idx_size[i] = source->dim_size[i];
@@ -947,4 +948,47 @@ modelica_boolean max_boolean_array(const boolean_array a)
   }
 
   return 0;
+}
+
+static int boolean_element_to_string(char *buffer, size_t bufsize, const void *data, _index_t i)
+{
+    return snprintf(buffer, bufsize, "%s", ((const modelica_boolean *)data)[i] ? "true" : "false");
+}
+
+/**
+ * @brief Write boolean vector into null-terminated string.
+ *
+ * @param source    Boolean vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
+ */
+void boolean_vector_to_string(const boolean_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
+{
+    base_vector_to_string(source, isScalar, boolean_element_to_string, buffer, bufsize);
+}
+
+/**
+ * @brief Resize a start attribute array to n elements, repeating its values.
+ *
+ * The start attribute of an array variable can hold a single broadcast value
+ * or the values of an inner dimension only. Writing the start values of the
+ * whole array needs one element per array element. If the array has more than
+ * n elements, the first n are kept. Nothing is reallocated if the array
+ * already has n elements.
+ */
+void boolean_array_ensure_size(boolean_array *a, int n)
+{
+    int m = (int) base_array_nr_of_elements(*a);
+    boolean_array tmp;
+    int i;
+    if (m == n) {
+        return;
+    }
+    simple_alloc_1d_boolean_array(&tmp, n);
+    for (i = 0; i < n; ++i) {
+        ((modelica_boolean*) tmp.data)[i] = m > 0 ? ((modelica_boolean*) a->data)[i % m] : 0;
+    }
+    omc_array_release(a);
+    *a = tmp;
 }

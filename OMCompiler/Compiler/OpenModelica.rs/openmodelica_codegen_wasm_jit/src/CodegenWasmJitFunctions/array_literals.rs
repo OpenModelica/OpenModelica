@@ -35,7 +35,7 @@ pub(super) fn emit_elem_ptr_ranked(ctx: &mut FnCtx, elem: &SigTy, rank: Option<u
     ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
     ctx.emit(I::I32GtS);
     ctx.emit(I::I32Or);
-    ctx.emit(I::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     ctx.emit(I::LocalGet(ot));
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::Call(rt_index("rt_elem_ptr_oob")?));

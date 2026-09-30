@@ -44,7 +44,7 @@ pub(super) fn build_state_set_infos(
             .ok_or("CodegenWasmJit: state-set Jacobian seed columns are not a permutation")?;
 
         let mut result_offs = vec![u32::MAX; n_dummy as usize];
-        for sv in &jac_column_vars(jm) {
+        for sv in jac_column_vars(jm).iter() {
             let off = register(var_map, sv, &mut cursor)?;
             if matches!(sv.varKind, VarKind::JAC_VAR) {
                 let row = jac_result_row(sv)
@@ -68,7 +68,7 @@ pub(super) fn build_state_set_infos(
 
         // `$STATESET.A` is an `nStates × nCandidates` integer selection matrix.
         // a_offs is row-major (the driver reads `a_offs[row*nc+col]`).
-        let a_base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(set.crA.clone())?;
+        let a_base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(&set.crA)?;
         let a_base = sim_cref_key(&a_base_cref)?;
         let mut a_offs = Vec::new();
         for row in 1..=n_states {
@@ -147,7 +147,7 @@ pub(super) fn stateset_diag_offsets(
     let mut offs = Vec::new();
     for set in lst(state_sets) {
         // `crA` names the first `A` element; strip its subscripts to the base `A`.
-        let base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(set.crA.clone())?;
+        let base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(&set.crA)?;
         let base = sim_cref_key(&base_cref)?;
         let n_candidates = set.nCandidates.max(0) as u32;
         for n in 1..=set.nStates.max(0) as u32 {

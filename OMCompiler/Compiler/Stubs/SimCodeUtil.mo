@@ -74,8 +74,16 @@ algorithm
   assert(false, getInstanceName());
 end cref2simvar;
 
-function isContiguousArrayCref<A>
+function isJacobianColumnCref<A>
+  input A cr;
+  output Boolean b;
+algorithm
+  assert(false, getInstanceName());
+end isJacobianColumnCref;
+
+function isContiguousArrayCref<A,B>
   input A inCref;
+  input B context;
   output Boolean outContiguous;
 algorithm
   assert(false, getInstanceName());

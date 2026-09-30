@@ -946,9 +946,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true), daeSchedule as LEVELSCHEDULE(useFixedAssignments=true), zeroFuncSchedule as LEVELSCHEDULE(useFixedAssignments=true))) then
       match type
         case ("openmp") then
-          let odeEqs = HpcOmScheduler.convertFixedLevelScheduleToLevelThreadLists(odeSchedule, getConfigInt(NUM_PROC)) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
-          let daeEqs = HpcOmScheduler.convertFixedLevelScheduleToLevelThreadLists(daeSchedule, getConfigInt(NUM_PROC)) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
-          let zeroFuncEqs = HpcOmScheduler.convertFixedLevelScheduleToLevelThreadLists(zeroFuncSchedule, getConfigInt(NUM_PROC)) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
+          let odeEqs = HpcOmCodegenUtil.convertFixedLevelScheduleToLevelThreadLists(odeSchedule, getConfigInt(NUM_PROC)) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
+          let daeEqs = HpcOmCodegenUtil.convertFixedLevelScheduleToLevelThreadLists(daeSchedule, getConfigInt(NUM_PROC)) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
+          let zeroFuncEqs = HpcOmCodegenUtil.convertFixedLevelScheduleToLevelThreadLists(zeroFuncSchedule, getConfigInt(NUM_PROC)) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
 
           let &extraFuncsDecl +=
             <<
@@ -1005,7 +1005,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           >>
         case ("pthreads")
         case ("pthreads_spin") then
-          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(odeSchedule, daeSchedule, zeroFuncSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
+          let eqsFuncs = arrayList(HpcOmCodegenUtil.convertFixedLevelScheduleToTaskLists(odeSchedule, daeSchedule, zeroFuncSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
           let threadLocks = List.intRange(getConfigInt(NUM_PROC)) |> tt => createLockByLockName('threadLock<%tt%>', "", type); separator="\n"
           <<
           <%eqsFuncs%>

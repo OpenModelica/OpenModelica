@@ -548,10 +548,6 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 
   for(i = 0; i < nx; ++i){
 
-    if(data->modelData->realVarsData[i].dimension.numberOfDimensions > 0){
-      throwStreamPrint(NULL, "Support for array variables not yet implemented!");
-    }
-
     if (xmin[i] > -1e20) {
       sprintf(buffer, ", min = %g", real_get(data->modelData->realVarsData[i].attribute.min, 0));
     }

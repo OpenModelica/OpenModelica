@@ -567,6 +567,12 @@ public
         (solved_eqn, status) := solveMultiRecordStrongComponent(eqn, var_slices, funcMap);
       then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), status);
 
+      // for-equation of a tuple, e.g. (a[i], b[i]) = f(x[i]), solved for all elements of the tuple
+      case Equation.FOR_EQUATION(body = {solved_eqn as Equation.RECORD_EQUATION()}) algorithm
+        (solved_eqn, status) := solveMultiRecordStrongComponent(solved_eqn, var_slices, funcMap, true);
+        eqn.body := {solved_eqn};
+      then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), status);
+
       // dummy equation implies removed equation (occurs only in simulation systems)
       case Equation.DUMMY_EQUATION() then (eqn_slice, Status.EXPLICIT);
 
@@ -582,6 +588,7 @@ public
     output Equation solved_eqn = eqn;
     input UnorderedMap<Path, Function> funcMap;
     output Status status = Status.UNPROCESSED;
+    input Boolean inFor = false "true if the equation is the body of a for-equation, its tuple elements are iterated slices of the vars";
   protected
     list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
     Expression lhs = Util.getOption(Equation.getLHS(eqn));
@@ -594,8 +601,8 @@ public
         Expression exp;
 
       // handle tuples
-      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (solved_eqn, Status.EXPLICIT);
-      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) algorithm
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars, inFor)) then (solved_eqn, Status.EXPLICIT);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars, inFor)) algorithm
         solved_eqn := Equation.setRHS(solved_eqn, lhs);
         solved_eqn := Equation.setLHS(solved_eqn, rhs);
       then (solved_eqn, Status.EXPLICIT);
@@ -725,6 +732,28 @@ public
     end match;
   end scalarElementEquation;
 
+  function arrayElementEquation
+    "the element equation x[k] = e[k] of an array equation x = e"
+    input Equation eqn;
+    input ComponentRef cref;
+    output Equation result = eqn;
+  protected
+    ComponentRef name = ComponentRef.stripSubscriptsAll(cref);
+    list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref);
+  algorithm
+    result := match eqn
+      local
+        ComponentRef side;
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = side)) guard(ComponentRef.isEqual(side, name))
+      then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.fromCref(cref), Expression.applySubscripts(subs, eqn.rhs, true), eqn.source, eqn.attr);
+      case Equation.ARRAY_EQUATION(rhs = Expression.CREF(cref = side)) guard(ComponentRef.isEqual(side, name))
+      then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.applySubscripts(subs, eqn.lhs, true), Expression.fromCref(cref), eqn.source, eqn.attr);
+      // expanding the equation for every element is quadratic, only do it for small arrays
+      case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= 64) then scalarElementEquation(eqn, cref);
+      else eqn;
+    end match;
+  end arrayElementEquation;
+
   function solveBody
     input output Equation eqn;
     input ComponentRef cref;
@@ -756,6 +785,9 @@ public
         // a scalar solved from a bigger array equation, e.g. {v, i} = if c then {a, b} else {d, e}
         case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ty) and Type.sizeOf(eqn.ty) > 1)
         then scalarElementEquation(eqn, cref);
+        // an array element solved from an equation for the whole array, e.g. S[2] from S = v .* i
+        case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ComponentRef.getSubscriptedType(cref, true)))
+        then arrayElementEquation(eqn, cref);
         else eqn;
       end match;
     end if;
@@ -774,12 +806,20 @@ public
         invertRelation := RelationInversion.UNKNOWN; // TODO: make me depend on the derivative
       else
         diffArgs := Differentiate.DifferentiationArguments.simpleCref(fixed_cref, funcMap);
-        (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-        derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
+        try
+          (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+          derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
+        else
+          // not everything can be differentiated, e.g. functions with function inputs
+          derivative := Expression.fromCref(fixed_cref);
+        end try;
 
         if Expression.isZero(derivative) then
           invertRelation := RelationInversion.FALSE;
-          status := Status.UNSOLVABLE;
+          // an array that only occurs element wise, e.g. f({x[1], x[2]}), has to be solved implicitly
+          status := if Type.isArray(ComponentRef.getSubscriptedType(fixed_cref, true)) and not Expression.containsCref(residual, fixed_cref)
+            and not listEmpty(Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(fixed_cref))))
+            then Status.IMPLICIT else Status.UNSOLVABLE;
         elseif not Expression.containsCref(derivative, fixed_cref) then
           // If eqn is linear in cref:
           eqn := solveLinear(eqn, residual, derivative, diffArgs, fixed_cref);
@@ -1661,6 +1701,7 @@ protected
     "checks if the tuple expression exactly represents the variables we need to solve for"
     input list<Expression> tuple_exps;
     input list<Pointer<Variable>> vars;
+    input Boolean inFor = false "elements are one iteration of the (sliced) variables";
     output Boolean b = false;
   protected
     list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
@@ -1686,7 +1727,7 @@ protected
           // a subscripted element that covers the whole variable, e.g. x[1] for Real[1] x
           case Expression.CREF() algorithm
             stripped := ComponentRef.stripSubscriptsAll(exp.cref);
-            if UnorderedMap.contains(stripped, map) and UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp)) then
+            if UnorderedMap.contains(stripped, map) and (inFor or UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp))) then
               UnorderedMap.add(stripped, true, map);
             else
               return;

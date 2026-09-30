@@ -17,10 +17,13 @@ project(OMModelicaExternalC)
 # These shared libraries link no OpenModelica runtime: ModelicaUtilities.h is
 # the tool's side of the interface, and whoever dlopens the library resolves it
 # out of its own process. ELF is happy to leave the symbols undefined; Mach-O
-# has to be told to defer them.
+# has to be told to defer them. A Windows DLL cannot leave them undefined, so
+# there it links the runtime omc itself links, the one copy in the process.
 function(omc_defer_modelica_utilities tgt)
   if(APPLE)
     target_link_options(${tgt} PRIVATE -Wl,-undefined,dynamic_lookup)
+  elseif(WIN32)
+    target_link_libraries(${tgt} PRIVATE omc::mmc::runtime)
   endif()
 endfunction()
 
@@ -204,6 +207,15 @@ set_target_properties(ModelicaExternalC_shared
                       ModelicaIO_shared
                       ModelicaStandardTables_shared
                       PROPERTIES INSTALL_RPATH "${OMC_MEC_FFI_RPATH}")
+
+# MSVC names a DLL's import library like the static library of the same name.
+if(MSVC)
+  set_target_properties(ModelicaExternalC_shared
+                        ModelicaMatIO_shared
+                        ModelicaIO_shared
+                        ModelicaStandardTables_shared
+                        PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ffi)
+endif()
 
 install(TARGETS ModelicaExternalC_shared
                 ModelicaMatIO_shared

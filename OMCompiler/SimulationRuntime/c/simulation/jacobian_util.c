@@ -818,6 +818,7 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  * @brief Distance-1 column coloring of a CSC sparse pattern.
  *
  * Two columns may share a color only if they have no non-zero row in common.
+ * The rows of every column are sorted and made unique first.
  * Uses ColPack's partial distance-two column coloring when available, with
  * a greedy C-only fallback.
  * The fallback uses the existing cscToCsr helper to build the row→columns map, then
@@ -833,6 +834,36 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  * @param nRows  Number of rows in the Jacobian.
  * @param nCols  Number of columns (== size of sp->colorCols).
  */
+static int compareUnsigned(const void* a, const void* b)
+{
+  const unsigned int x = *(const unsigned int*) a, y = *(const unsigned int*) b;
+  return (x > y) - (x < y);
+}
+
+/**
+ * @brief Sorts the rows of every column and removes duplicates in place.
+ *
+ * Runtime built patterns can contain the same entry twice, e.g. an array seed
+ * over a whole dimension and one of its elements in the same row.
+ */
+static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols)
+{
+  unsigned int col, nz, start, end, out = 0;
+  for (col = 0; col < nCols; col++) {
+    start = sp->leadindex[col];
+    end = sp->leadindex[col + 1];
+    qsort(sp->index + start, end - start, sizeof(unsigned int), compareUnsigned);
+    sp->leadindex[col] = out;
+    for (nz = start; nz < end; nz++) {
+      if (nz == start || sp->index[nz] != sp->index[nz - 1]) {
+        sp->index[out++] = sp->index[nz];
+      }
+    }
+  }
+  sp->leadindex[nCols] = out;
+  sp->nnz = out;
+}
+
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
 {
   if (!sp || !sp->colorCols) return;
@@ -840,6 +871,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
     sp->maxColors = 0;
     return;
   }
+  sortUniqueSparsePattern(sp, nCols);
 
 #if defined(OMC_HAVE_COLPACK)
   if (computeColPackColumnColoring(

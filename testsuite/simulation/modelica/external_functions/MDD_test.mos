@@ -7,8 +7,7 @@
 //  Checks that external object aliases are recognized properly. Otherwise the system has too many equations.
 //
 
-loadModel(Modelica, {"3.2.2"});getErrorString();
-loadModel(Modelica_Synchronous); getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadModel(Modelica_DeviceDrivers); getErrorString();
 loadFile("MDD_test.mo"); getErrorString();
 buildModel(MDD_test); getErrorString();
@@ -16,15 +15,17 @@ buildModel(MDD_test); getErrorString();
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
-// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// "[Modelica_DeviceDrivers 2.2.0/EmbeddedTargets/STM32F4/Functions/HAL.mo:5:3-11:14:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 2.2.0/Incubate/OperatingSystem/DynamicArray.mo:6:3-94:18:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1041:3-1062:27:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // "
 // true
-// "Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
-// Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// "[Modelica_DeviceDrivers 2.2.0/EmbeddedTargets/STM32F4/Functions/HAL.mo:5:3-11:14:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 2.2.0/Incubate/OperatingSystem/DynamicArray.mo:6:3-94:18:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1041:3-1062:27:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // "
-// true
-// ""
 // {"MDD_test", "MDD_test_init.xml"}
 // "Warning: Alias equations of external objects are not Modelica compliant as in:
 //     getInteger.pkgIn.pkg = resetPointer.pkgOut[1].pkg

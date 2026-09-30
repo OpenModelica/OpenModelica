@@ -81,6 +81,8 @@ extern void put_string_matrix_element(modelica_string value, int r, int c,
 
 extern void print_string_matrix(const string_array * source);
 extern void print_string_array(const string_array * source);
+
+void string_vector_to_string(const string_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize);
 /*
 
  a[1:3] := b;

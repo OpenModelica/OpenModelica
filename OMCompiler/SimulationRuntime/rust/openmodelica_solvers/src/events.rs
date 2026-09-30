@@ -58,32 +58,38 @@ impl Bracket {
 
     /// The step's right end, `y` being the states it reached. `Some(t)` = an
     /// indicator flipped and this is where; [`Bracket::right`] then holds the
-    /// states at the located point.
+    /// states at the located point. The flag says [`Ode::accept`] evaluated the
+    /// model at the right end and left `yp` there, still valid when that is where
+    /// the step ends.
     pub fn close(
         &mut self,
         ode: &mut dyn Ode,
         t_left: f64,
         t_right: f64,
         y: &[f64],
-    ) -> Result<Option<f64>> {
+        yp: &mut [f64],
+    ) -> Result<(Option<f64>, bool)> {
         self.y_right.copy_from_slice(y);
         if self.zc.is_empty() {
-            return Ok(None);
+            return Ok((None, false));
         }
         self.zc_pre.copy_from_slice(&self.zc);
-        ode.eval_zc(t_right, &self.y_right, &mut self.zc)?;
+        let accepted = ode.accept(t_right, &self.y_right, yp, &mut self.zc)?;
+        if !accepted {
+            ode.eval_zc(t_right, &self.y_right, &mut self.zc)?;
+        }
         self.event_ids =
             (0..self.zc.len()).filter(|&i| sign(self.zc[i]) != sign(self.zc_pre[i])).collect();
         if self.event_ids.is_empty() {
-            return Ok(None);
+            return Ok((None, accepted));
         }
         if no_root_finding() {
             // No bracket: the pre-event history belongs at the root itself.
             self.t_left = t_right;
             self.y_left.copy_from_slice(&self.y_right);
-            return Ok(Some(t_right));
+            return Ok((Some(t_right), accepted));
         }
-        Ok(Some(self.find_root(ode, t_left, t_right)?))
+        Ok((Some(self.find_root(ode, t_left, t_right)?), false))
     }
 
     pub fn right(&self) -> &[f64] {

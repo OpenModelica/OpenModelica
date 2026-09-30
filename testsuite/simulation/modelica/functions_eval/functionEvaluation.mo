@@ -50,5 +50,5 @@ end collisionDetection;
   Real normals_b[maxContacts, 3];
 equation
   (numberOfContactPoints,cp_a,cp_b,depth_a,depth_b,normals_a,normals_b) = collisionDetection(maxContacts,r_a,Q_a,id_a,r_b,Q_b,id_b);
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end functionEvaluation;

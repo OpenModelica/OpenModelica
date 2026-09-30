@@ -67,6 +67,10 @@ pub use openmodelica_solvers::sundials;
 pub const CVODE: bool = cfg!(sundials);
 pub const IDA: bool = cfg!(sundials);
 
+/// Chattering: this many state events in a row within less than the step size and
+/// this fraction of the simulation interval (C's `chatteringLimits`).
+pub const CHATTER_LIMITS: [(usize, f64); 2] = [(1000, 1e-6), (100, 1e-9)];
+
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;
 /// Byte offset of the first real variable within `SimData`:
@@ -262,6 +266,8 @@ pub struct Layout {
     /// Base of the per-state `max` attribute, written the same way; C's
     /// `functionJacAC_num` flips its difference quotient at the bound.
     pub state_max_off: u32,
+    /// Base of the per-state `min` attribute, for gbode's KINSOL sign constraints.
+    pub state_min_off: u32,
     /// Base of the linearization scratch (f64): the symbolic `A|B|C|D` the
     /// `linearJac*` fill (column-major), then their seed/`$pDER` slots.
     pub linz_off: u32,
@@ -327,7 +333,15 @@ pub struct Layout {
     pub removed_init_res_off: u32,
     pub removed_init_idx_off: u32,
     pub total: u32,
+    /// `-cpu` / `-steps` ([`EXTRA_CPU_TIME`], [`EXTRA_SOLVER_STEPS`]): result
+    /// columns after the String block. Set per run by [`SimMeta::apply_flags`].
+    pub extra_cols: u32,
 }
+
+/// `$cpuTime` in [`Layout::extra_cols`].
+pub const EXTRA_CPU_TIME: u32 = 1;
+/// `$solverSteps` in [`Layout::extra_cols`].
+pub const EXTRA_SOLVER_STEPS: u32 = 2;
 
 impl Layout {
     /// Compute the `SimData` layout from a model's variable/solver counts. The
@@ -408,7 +422,8 @@ impl Layout {
         let real_nom_off = start_off + n_real * 8;
         let state_nom_off = real_nom_off + n_real * 8;
         let state_max_off = state_nom_off + n_states * 8;
-        let sens_off = state_max_off + n_states * 8;
+        let state_min_off = state_max_off + n_states * 8;
+        let sens_off = state_min_off + n_states * 8;
         let dae_res_off = sens_off + n_sens * 8;
         let dae_aux_off = dae_res_off + n_dae_res * 8;
         let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
@@ -431,13 +446,14 @@ impl Layout {
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off, zc_probe_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
+            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, state_min_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
             n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
             n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
             n_attr_log, attr_log_off,
             n_removed_init, removed_init_res_off, removed_init_idx_off,
             sym_solver, inline_dt_off, alg_old_off, total,
+            extra_cols: 0,
         }
     }
 
@@ -503,10 +519,14 @@ impl Layout {
         (self.sparam_off - self.str_off) / 4
     }
     /// Total f64 columns in a result row: the real part, the integer and boolean
-    /// algebraics (captured per row as f64), the sensitivities, then the String
-    /// algebraics as interned ids ([`crate::strings`]).
+    /// algebraics (captured per row as f64), the sensitivities, the String
+    /// algebraics as interned ids ([`crate::strings`]), then the extra columns.
     pub fn n_row_total(&self) -> u32 {
-        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens + self.n_str_alg()
+        self.extra_col0() + self.extra_cols.count_ones()
+    }
+    /// First result-row column of the `-cpu` / `-steps` block.
+    pub fn extra_col0(&self) -> u32 {
+        self.str_col0() + self.n_str_alg()
     }
     /// First result-row column of the String block.
     pub fn str_col0(&self) -> u32 {
@@ -1013,6 +1033,9 @@ pub struct OptInfo {
     pub jac_b: Option<OptJac>,
     pub jac_c: Option<OptJac>,
     pub jac_d: Option<OptJac>,
+    /// What C's `runOptimizer` throws before it optimizes anything: a variable
+    /// that is not scalarized, or goal functions the model was compiled without.
+    pub setup_error: Option<String>,
 }
 
 /// Solver statistics filled by the driver and rendered into the simulation log by
@@ -1321,8 +1344,11 @@ impl SimMeta {
             .vars
             .iter()
             .map(|v| {
-                if matches!(v.kind, MetaKind::Time) {
-                    return true; // never filtered
+                let extra = |col: u32| self.layout.extra_cols != 0 && col >= self.layout.extra_col0();
+                match v.kind {
+                    MetaKind::Time => return true, // never filtered
+                    MetaKind::Column { col, .. } if extra(col) => return true,
+                    _ => {}
                 }
                 // C's `shouldFilterOutput`: either flag *clears* the verdict both
                 // reasons set, so `-emit_protected` alone emits a variable that is
@@ -1390,6 +1416,18 @@ impl SimMeta {
         self.translated_step_size()
     }
 
+    /// C's `chatteringTimeLimit`: the step size, and `fraction` of the simulation
+    /// interval when there is one.
+    pub fn chatter_time_limit(&self, fraction: f64) -> f64 {
+        let step_size = self.step_size();
+        let interval = self.stop_time - self.start_time;
+        if interval > 0.0 && interval.is_finite() {
+            fmath::fmin(step_size, fraction * interval)
+        } else {
+            step_size
+        }
+    }
+
     /// [`step_size`](Self::step_size) as the model was translated, ignoring
     /// `-stepSize`: what C reads out of the init XML.
     fn translated_step_size(&self) -> f64 {
@@ -1403,6 +1441,42 @@ impl SimMeta {
     /// `numSteps`, which the output grid is cut from, so a moved step size lands there.
     ///
     /// Called once per run by whichever entry point owns the driver.
+    /// C's `$cpuTime` / `$solverSteps` result signals, right after `time`.
+    fn add_extra_columns(&mut self, f: &crate::simflags::SimFlags) {
+        let want = if f.cpu_time { EXTRA_CPU_TIME } else { 0 }
+            | if f.solver_steps { EXTRA_SOLVER_STEPS } else { 0 };
+        if want == 0 || self.layout.extra_cols != 0 {
+            return;
+        }
+        self.layout.extra_cols = want;
+        let mut col = self.layout.extra_col0();
+        let at = self.vars.iter().position(|v| matches!(v.kind, MetaKind::Time)).map_or(0, |i| i + 1);
+        let mut added = Vec::new();
+        for (bit, name, comment, unit) in [
+            (EXTRA_CPU_TIME, "$cpuTime", "cpu time", "s"),
+            (EXTRA_SOLVER_STEPS, "$solverSteps", "number of steps taken by the integrator", ""),
+        ] {
+            if want & bit == 0 {
+                continue;
+            }
+            added.push(MetaVar {
+                name: String::from(name),
+                comment: String::from(comment),
+                unit: String::from(unit),
+                display_unit: String::new(),
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: MetaKind::Column { col, negate: Neg::None },
+                filter: 0,
+                unvarying: false,
+                enumeration: None,
+            });
+            col += 1;
+        }
+        self.vars.splice(at..at, added);
+    }
+
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
         use crate::omclog::{self, STDOUT};
         let translated = self.translated_step_size();
@@ -1463,6 +1537,7 @@ impl SimMeta {
         if let Some(t) = f.tolerance {
             self.tolerance = t;
         }
+        self.add_extra_columns(f);
         if let Some(fmt) = &f.output_format {
             self.output_format = fmt.clone();
         }
@@ -1524,7 +1599,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.zc_probe_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.real_nom_off, l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
+        l.real_nom_off, l.state_nom_off, l.state_max_off, l.state_min_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
         l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
         l.linz_off, l.n_linz,
@@ -1829,6 +1904,13 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
                     }
                 }
             }
+            match &t.setup_error {
+                None => o.push(0),
+                Some(msg) => {
+                    o.push(1);
+                    put_str(&mut o, msg);
+                }
+            }
         }
     }
     put_u32(&mut o, m.inputs.len() as u32);
@@ -2055,6 +2137,7 @@ impl<'a> Reader<'a> {
             real_nom_off: self.u32()?,
             state_nom_off: self.u32()?,
             state_max_off: self.u32()?,
+            state_min_off: self.u32()?,
             n_sens: self.u32()?,
             sens_off: self.u32()?,
             n_dae_res: self.u32()?,
@@ -2090,6 +2173,7 @@ impl<'a> Reader<'a> {
             has_init_lambda0: false,
             has_history_ops: false,
             has_old_real: false,
+            extra_cols: 0,
         };
         l.sym_solver = self.u8()?;
         l.has_when = self.u8()? != 0;
@@ -2375,9 +2459,13 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             let jac_b = jac()?;
             let jac_c = jac()?;
             let jac_d = jac()?;
+            let setup_error = match r.u8()? {
+                0 => None,
+                _ => Some(r.string()?),
+            };
             Some(OptInfo {
                 n_con, n_final_con, inputs, loop_inputs, mayer, lagrange, real_names, tgrid,
-                start_time_opt, jac_b, jac_c, jac_d,
+                start_time_opt, jac_b, jac_c, jac_d, setup_error,
             })
         }
     };
@@ -2637,6 +2725,7 @@ mod tests {
                 }),
                 jac_c: None,
                 jac_d: None,
+                setup_error: Some("x is an array".to_string()),
             }),
             inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
             recon: Some(ReconInfo {

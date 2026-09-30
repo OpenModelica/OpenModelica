@@ -354,7 +354,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
 const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "unknown",
   /* FLAG_ABORT_SLOW */
-  "  Aborts if the simulation chatters.",
+  "  Aborts if the simulation chatters: 1000 state events in a row within 1e-6 times\n"
+  "  the simulation interval, or 100 within 1e-9 times it, and within the step size.",
   /* FLAG_ALARM */
   "  Aborts after the given number of seconds (default=0 disables the alarm).",
   /* FLAG_CLOCK */

@@ -1,0 +1,57 @@
+// name: functionAliasStartLoop
+// keywords: NewBackend
+// status: correct
+//
+// The outputs of a function called in a for equation start at the call evaluated at the
+// start values of its arguments, also through aliases (they started at zero, the
+// initialization failed).
+
+loadString("
+package FunctionAliasStartLoop
+  function h
+    input Real T;
+    output Real y[2];
+  protected
+    Real a = 0;
+  algorithm
+    for k in 1:2 loop
+      a := a + T;
+    end for;
+    y := {1e6 + a, 2e6 - a};
+    annotation(Inline = false);
+  end h;
+  model Sub
+    Real T(start = 500);
+    Real T2;
+  equation
+    T2 = T;
+    T = 400 + 1e-7 * h(T2) * {1, 2} + time;
+  end Sub;
+  model Top
+    Sub s[3];
+  end Top;
+end FunctionAliasStartLoop;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(FunctionAliasStartLoop.Top, stopTime = 0, simflags = "-lv=-LOG_STDOUT"); getErrorString();
+val(s[1].T, 0);
+val(s[2].T, 0);
+val(s[3].T, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionAliasStartLoop.Top_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionAliasStartLoop.Top', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_STDOUT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 400.49991990001604
+// 400.49991990001604
+// 400.49991990001604
+// endResult

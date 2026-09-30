@@ -3711,9 +3711,8 @@ case exp as UNBOX(__) then
 end daeExpUnboxXml;
 
 template daeExpSharedLiteralXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
- "Generates code for a match expression."
 ::=
-match exp case exp as SHARED_LITERAL(__) then ''
+match exp case exp as SHARED_LITERAL(__) then daeExpXml(exp.exp, context, &preExp, &varDecls)
 end daeExpSharedLiteralXml;
 
 // TODO: Optimize as in Codegen

@@ -390,6 +390,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("SystemImpl__alarm", Infallible);
         m.insert("SystemImpl__chdir", Infallible);             // returns int status
         m.insert("SystemImpl__copyFile", Infallible);          // returns int status
+        m.insert("SystemImpl__copyPath", Infallible);          // returns int status
         m.insert("SystemImpl__covertTextFileToCLiteral", Infallible);
         m.insert("SystemImpl__createDirectory", Infallible);
         m.insert("SystemImpl__createTemporaryDirectory", Fallible); // mkdtemp failure throws

@@ -2398,6 +2398,11 @@ protected
   list<InstNode> enclosing = {};
   InstNodeType ty;
 algorithm
+  // Only a redeclared class lowers the confidence.
+  if not (hasRedeclaredScope(clsNode) or List.any(prefixes, isRedeclaredClass)) then
+    return;
+  end if;
+
   // Redeclares of the scopes enclosing the component did not determine its type.
   while not (InstNode.isEmpty(node) or InstNode.isTopScope(node)) loop
     enclosing := node :: enclosing;
@@ -2438,19 +2443,47 @@ algorithm
   end for;
 end classConfidence;
 
+function isRedeclaredClass
+  input InstNode node;
+  output Boolean res;
+algorithm
+  res := match node
+    case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS()) then true;
+    else false;
+  end match;
+end isRedeclaredClass;
+
+function hasRedeclaredScope
+  "Whether a redeclared class is on the instance scope chain of a node."
+  input InstNode node;
+  output Boolean res = false;
+protected
+  InstNode scope = node;
+algorithm
+  while not (InstNode.isEmpty(scope) or InstNode.isTopScope(scope)) loop
+    if isRedeclaredClass(scope) then
+      res := true;
+      return;
+    end if;
+
+    scope := instanceScope(scope);
+  end while;
+end hasRedeclaredScope;
+
 function instanceScope
   "Returns the scope a node was instantiated in, for a redeclared class the
-   scope of the class it replaced."
+   scope of the class it replaced. The scope is borrowed: it is only for
+   inspecting and comparing."
   input InstNode node;
   output InstNode scope;
 algorithm
   scope := match node
     local NFInstNode.ScopeRef ext_scope;
     case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = ext_scope))
-      then InstNode.fromCell(ext_scope);
+      then InstNode.borrow(ext_scope);
     case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = ext_scope))
-      then InstNode.fromCell(ext_scope);
-    else InstNode.parent(node);
+      then InstNode.borrow(ext_scope);
+    else InstNode.borrowParent(node);
   end match;
 end instanceScope;
 

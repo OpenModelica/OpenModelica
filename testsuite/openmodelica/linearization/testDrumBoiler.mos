@@ -4,7 +4,7 @@
 // teardown_command: rm -rf testDrumBoilerLin* output.log
 //
 
-loadModel(Modelica, {"3.2.3"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadString("
 model testDrumBoilerLin
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs=true);

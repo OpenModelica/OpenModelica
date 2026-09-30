@@ -166,7 +166,7 @@ fn collect_class(
             .map(|s| s.to_string())
             .unwrap_or_default(),
         comment: openmodelica_util::System::unescapedString(
-            AbsynUtil::classDefStringComment(class.body.clone()),
+            AbsynUtil::classDefStringComment(&class.body),
         )
         .to_string(),
         info,
@@ -206,7 +206,7 @@ fn collect_class(
 /// Paired with whether the declaration sits in a protected section.
 fn nested_classes(class: &Ref<Absyn::Class>) -> Vec<(Ref<Absyn::Class>, bool)> {
     let mut out = Vec::new();
-    for part in &AbsynUtil::getClassPartsInClass(class.clone()) {
+    for part in &AbsynUtil::getClassPartsInClass(&class) {
         let (items, protected) = match &**part {
             Absyn::ClassPart::PUBLIC { contents } => (contents, false),
             Absyn::ClassPart::PROTECTED { contents } => (contents, true),
@@ -229,7 +229,7 @@ fn nested_classes(class: &Ref<Absyn::Class>) -> Vec<(Ref<Absyn::Class>, bool)> {
 
 fn has_annotation(class: &Ref<Absyn::Class>, name: &str) -> bool {
     matches!(
-        AbsynUtil::lookupClassAnnotation(class.clone(), arcstr::ArcStr::from(name)),
+        AbsynUtil::lookupClassAnnotation(&class, &arcstr::ArcStr::from(name)),
         Ok(Some(_))
     )
 }
@@ -237,7 +237,7 @@ fn has_annotation(class: &Ref<Absyn::Class>, name: &str) -> bool {
 /// `annotation(Documentation(info=…, revisions=…, __OpenModelica_infoHeader=…))`.
 fn documentation(class: &Ref<Absyn::Class>) -> (String, String, String) {
     let Ok(Some(modification)) =
-        AbsynUtil::lookupClassAnnotation(class.clone(), arcstr::literal!("Documentation"))
+        AbsynUtil::lookupClassAnnotation(&class, &arcstr::literal!("Documentation"))
     else {
         return (String::new(), String::new(), String::new());
     };
@@ -263,7 +263,7 @@ fn documentation(class: &Ref<Absyn::Class>) -> (String, String, String) {
 
 /// A top-level string annotation such as `annotation(version="4.1.0")`.
 fn string_annotation(class: &Ref<Absyn::Class>, name: &str) -> String {
-    let Ok(Some(annotation)) = AbsynUtil::getClassAnnotation(class.clone()) else {
+    let Ok(Some(annotation)) = AbsynUtil::getClassAnnotation(&class) else {
         return String::new();
     };
     for arg in &annotation.elementArgs {
@@ -315,7 +315,7 @@ fn declarations(class: &Ref<Absyn::Class>) -> (Vec<Component>, Vec<Extends>, Vec
     let mut components = Vec::new();
     let mut extends = Vec::new();
     let mut imports = Vec::new();
-    for part in &AbsynUtil::getClassPartsInClass(class.clone()) {
+    for part in &AbsynUtil::getClassPartsInClass(&class) {
         let (items, protected) = match &**part {
             Absyn::ClassPart::PUBLIC { contents } => (contents, false),
             Absyn::ClassPart::PROTECTED { contents } => (contents, true),
@@ -600,7 +600,7 @@ pub fn uses_of(class: &Ref<Absyn::Class>) -> Vec<(String, String)> {
 
 fn uses(class: &Ref<Absyn::Class>) -> Vec<(String, String)> {
     let Ok(Some(modification)) =
-        AbsynUtil::lookupClassAnnotation(class.clone(), arcstr::literal!("uses"))
+        AbsynUtil::lookupClassAnnotation(&class, &arcstr::literal!("uses"))
     else {
         return Vec::new();
     };

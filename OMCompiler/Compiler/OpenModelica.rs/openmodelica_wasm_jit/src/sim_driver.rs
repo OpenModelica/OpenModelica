@@ -31,9 +31,9 @@ fn report_assert(info: &AssertInfo) {
         lastModification: metamodelica::OrderedFloat(0.0),
     };
     let _ = openmodelica_util::Error::addSourceMessage(
-        openmodelica_util::Error::COMPILER_ERROR.clone(),
+        &openmodelica_util::Error::COMPILER_ERROR,
         metamodelica::cons(arcstr::ArcStr::from(info.msg.as_str()), metamodelica::nil()),
-        src,
+        &src,
     );
 }
 

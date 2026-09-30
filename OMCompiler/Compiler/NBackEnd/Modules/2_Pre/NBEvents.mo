@@ -447,6 +447,7 @@ public
             Call call;
             Expression trigger, new_exp;
             TimeEvent timeEvent;
+            Operator time_op;
             Pointer<Boolean> containsTime = Pointer.create(false);
 
         // check for "sample" call
@@ -467,36 +468,39 @@ public
               if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
                 SOME(trigger) := Equation.getRHS(tmpEqn);
                 // only cases for RelationInversion == TRUE or FALSE can be present
-                exp.operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(exp.operator) else exp.operator;
+                time_op := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(exp.operator) else exp.operator;
                 if Equation.isWhenEquation(eqn) then
                   // if it is a when equation check if it can even trigger
-                  can_trigger := match exp.operator.op
+                  can_trigger := match time_op.op
                     case NFOperator.Op.GREATER    then true;
                     case NFOperator.Op.GREATEREQ  then true;
                     else false;
                   end match;
                   // if it can trigger replace it by the sample call, otherwise just make the trigger false
-                  new_exp := if can_trigger then Expression.CALL(Call.makeTypedCall(
+                  // an equal time event that already exists has to be reused with its index
+                  if can_trigger then
+                    timeEvent := getOrAdd(SINGLE(UnorderedSet.size(bucket.time_set), trigger, iter), bucket.time_set);
+                    new_exp := Expression.CALL(Call.makeTypedCall(
                       fn          = NFBuiltinFuncs.SAMPLE,
-                      args        = {Expression.INTEGER(UnorderedSet.size(bucket.time_set) + 1), trigger, Expression.makeMaxValue(Type.REAL())},
+                      args        = {Expression.INTEGER(getIndex(timeEvent) + 1), trigger, Expression.makeMaxValue(Type.REAL())},
                       variability = NFPrefixes.Variability.DISCRETE,
                       purity      = NFPrefixes.Purity.PURE
-                    )) else Expression.BOOLEAN(false);
+                    ));
+                  else
+                    new_exp := Expression.BOOLEAN(false);
+                  end if;
+                  failed := false;
+                elseif Equation.isAlgorithm(eqn) then
+                  // algorithms keep the relation (e.g. conditions of when statements)
+                  timeEvent := getOrAdd(SINGLE(UnorderedSet.size(bucket.time_set), trigger, iter), bucket.time_set);
+                  failed := false;
+                  new_exp := exp;
                 else
-                  // inside if can always trigger, keep the expression as is
-                  can_trigger := true;
+                  // outside of when equations the relation has to keep its value between events, which only
+                  // the relations of state events do. A plain time comparison would change during integration.
+                  failed := true;
                   new_exp := exp;
                 end if;
-
-                // create and add the time event
-                if can_trigger then
-                  timeEvent := SINGLE(UnorderedSet.size(bucket.time_set), trigger, iter);
-                  if not UnorderedSet.contains(timeEvent, bucket.time_set) then
-                    UnorderedSet.add(timeEvent, bucket.time_set);
-                  end if;
-                end if;
-
-                failed := false;
               else
                 failed := true;
                 new_exp := exp;
@@ -527,10 +531,7 @@ public
         case ("sample", {_, clock})    guard(Type.isClock(Expression.typeOf(clock))) then (false, true);
 
         case ("sample", {start, interval}) algorithm
-          timeEvent := SAMPLE(UnorderedSet.size(bucket.time_set), start, interval, iter);
-          if not UnorderedSet.contains(timeEvent, bucket.time_set) then
-            UnorderedSet.add(timeEvent, bucket.time_set);
-          end if;
+          timeEvent := getOrAdd(SAMPLE(UnorderedSet.size(bucket.time_set), start, interval, iter), bucket.time_set);
           // add index to sample interface
           call := Call.setArguments(call, {Expression.INTEGER(getIndex(timeEvent) + 1), start, interval});
         then (false, false);
@@ -565,6 +566,20 @@ public
         else exp;
       end match;
     end createSampleTraverse;
+
+    function getOrAdd
+      "returns an equal time event if it already exists, otherwise adds and returns the new one"
+      input TimeEvent timeEvent;
+      input UnorderedSet<TimeEvent> time_set;
+      output TimeEvent result;
+    algorithm
+      result := match UnorderedSet.get(timeEvent, time_set)
+        case SOME(result) then result;
+        else algorithm
+          UnorderedSet.add(timeEvent, time_set);
+        then timeEvent;
+      end match;
+    end getOrAdd;
 
     function getIndex
       input TimeEvent timeEvent;
@@ -1174,6 +1189,7 @@ protected
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
+    Pointer<Integer> wc_cnt = Pointer.create(0);
     list<Pointer<Variable>> wc_vars;
     list<Pointer<Equation>> wc_eqns;
     Pointer<list<SpatialDistribution>> spatial_lst = Pointer.create({});
@@ -1195,10 +1211,14 @@ protected
         // into plain discrete CREFs so that getBodyAttributes can process them.
         // This handles boolean expressions like (not x.u) that were not turned into
         // zero-crossings (e.g. purely discrete conditions).
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
-        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex, wc_cnt);
+        auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
+        auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
+        // also for the removed equations, e.g. when equations that only have reinit
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.removed, eqData.uniqueIndex, wc_cnt);
         auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
         auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
 
@@ -1426,10 +1446,10 @@ protected
     involved zero-crossings or was a purely discrete boolean like (not x.u)."
     input EquationPointers equations;
     input Pointer<Integer> idx;
+    input Pointer<Integer> cnt "shared by all calls, the names of the auxiliary variables have to be unique";
     output list<Pointer<Variable>> new_vars = {};
     output list<Pointer<Equation>> new_eqns = {};
   protected
-    Pointer<Integer> cnt = Pointer.create(0);
     Pointer<list<Pointer<Variable>>> vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Equation>>> eqns_ptr = Pointer.create({});
   algorithm
@@ -1449,6 +1469,7 @@ protected
   protected
     Equation eqn = Pointer.access(eqn_ptr);
     Equation body_eqn;
+    Algorithm alg;
   algorithm
     eqn := match eqn
       case Equation.WHEN_EQUATION() algorithm
@@ -1460,6 +1481,12 @@ protected
         eqn.body := {body_eqn};
       then eqn;
 
+      // when statements of algorithms need a plain condition variable for the edge detection
+      case Equation.ALGORITHM(alg = alg) algorithm
+        alg.statements := list(simplifyWhenConditionStmt(stmt, idx, cnt, vars_ptr, eqns_ptr) for stmt in alg.statements);
+        eqn.alg := Algorithm.setInputsOutputs(alg);
+      then eqn;
+
       else eqn;
     end match;
 
@@ -1467,6 +1494,43 @@ protected
       Pointer.update(eqn_ptr, eqn);
     end if;
   end simplifyWhenConditionEqn;
+
+  function simplifyWhenConditionStmt
+    "Replaces the non-CREF conditions of when statements, also the ones nested in if statements.
+    Loops are skipped, since the condition can depend on the iterator."
+    input output Statement stmt;
+    input Pointer<Integer> idx;
+    input Pointer<Integer> cnt;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+  algorithm
+    stmt := match stmt
+      local
+        list<tuple<Expression, list<Statement>>> branches = {};
+        Expression cond;
+        list<Statement> body;
+
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          (cond, body) := branch;
+          cond := simplifyWhenConditionExp(cond, idx, cnt, vars_ptr, eqns_ptr);
+          branches := (cond, body) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          (cond, body) := branch;
+          body := list(simplifyWhenConditionStmt(s, idx, cnt, vars_ptr, eqns_ptr) for s in body);
+          branches := (cond, body) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      else stmt;
+    end match;
+  end simplifyWhenConditionStmt;
 
   function simplifyWhenConditionBody
     "Recursively walks a WhenEquationBody chain and extracts any non-CREF condition."

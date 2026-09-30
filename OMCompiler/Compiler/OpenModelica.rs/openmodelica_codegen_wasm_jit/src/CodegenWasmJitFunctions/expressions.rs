@@ -49,6 +49,10 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             if let Some(wty) = compile_sim_cref_read(ctx, componentRef)? {
                 return Ok(wty);
             }
+            if let Some((v, i)) = flat_field_ref(ctx, componentRef) {
+                ctx.emit(we::Instruction::LocalGet(v.locals[i]));
+                return Ok(v.fields[i].1.wty());
+            }
             // A qualified cref `base[..].f1[..].….fn[..]`: descend through nested
             // records (and arrays of records) to the final field.
             if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
@@ -59,6 +63,10 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 return Err("CodegenWasmJit: unsupported component reference");
             };
             let name = ident.to_string();
+            if let Some(v) = flat_cref(ctx, componentRef).cloned() {
+                box_flat(ctx, &v.fields, &v.locals)?;
+                return Ok(WTy::I32);
+            }
             let (idx, sty) = ctx
                 .locals
                 .get(&name)
@@ -413,7 +421,7 @@ pub(super) fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
 /// which matters where the frontend left the call itself untyped.
 fn identity_builtin_arg(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Exp>> {
     let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
-    let name = AbsynUtil::pathLastIdent(path.clone());
+    let name = AbsynUtil::pathLastIdent(&path);
     let args: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expLst).into_iter().collect();
     match (name.as_str(), args.len()) {
         ("smooth", 2) => Some(args[1].clone()),
@@ -613,13 +621,13 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
             ctx.emit(we::Instruction::LocalTee(bt));
             ctx.emit(we::Instruction::F64Const(0.0f64.into()));
             ctx.emit(we::Instruction::F64Lt);
-            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            emit_unlikely_if(ctx, we::BlockType::Empty);
             ctx.emit(we::Instruction::LocalGet(bt));
             ctx.emit(we::Instruction::F64Const(0.5f64.into()));
             emit_src_loc(ctx);
             ctx.emit(we::Instruction::Call(rt_index("rt_invalid_root")?));
             release_heap_locals(ctx)?;
-            push_outputs(ctx);
+            push_outputs(ctx)?;
             ctx.emit(we::Instruction::Return);
             ctx.emit(we::Instruction::End);
             ctx.emit(we::Instruction::LocalGet(bt));
@@ -739,7 +747,7 @@ fn emit_div_zero_guard(
         ctx.emit(I::I32Const(0));
         ctx.emit(I::I32Eq);
     }
-    ctx.emit(I::If(we::BlockType::Empty));
+    emit_unlikely_if(ctx, we::BlockType::Empty);
     let exp = metamodelica::Ref::new(DAE::Exp::BINARY {
         exp1: metamodelica::Ref::new(e1.clone()),
         operator: op.clone(),
@@ -748,7 +756,7 @@ fn emit_div_zero_guard(
     emit_shared_str(ctx, &format!("Division by zero {} in function context", dumped_exp(&exp)?));
     ctx.emit(I::Call(rt_index("rt_throw_stream")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(I::Return);
     ctx.emit(I::End);
     ctx.emit(I::LocalGet(t));
@@ -776,10 +784,10 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     ctx.emit(I::F64Const(0.0f64.into()));
     ctx.emit(I::F64Eq);
     ctx.emit(I::I32Or);
-    ctx.emit(I::If(we::BlockType::Result(we::ValType::F64)));
+    emit_unlikely_if(ctx, we::BlockType::Result(we::ValType::F64));
     ctx.emit(I::LocalGet(ta));
     ctx.emit(I::LocalGet(tb));
-    emit_shared_str(ctx, &dumped_exp(&metamodelica::Ref::new(e2.clone()))?);
+    emit_shared_str(ctx, &dumped_exp(e2)?);
     let data = ctx.sim()?.data_local;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0

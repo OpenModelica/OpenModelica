@@ -164,20 +164,73 @@ pub(crate) fn strdup(s: &str) -> *const c_char {
     unsafe { libc::strdup(c.as_ptr()) }
 }
 
+/// A one-dimensional attribute array holding `values`.
+/// Allocated by C's `simple_alloc_1d_<type>_array`, so that the generated code
+/// can release and reallocate it, e.g. when it evaluates a bound attribute.
+pub(crate) fn fill_array<T: Copy>(out: &mut base_array_t, values: &[T], alloc: AllocArray) {
+    unsafe { alloc(out, values.len() as c_int) };
+    let data = out.data as *mut T;
+    for (i, v) in values.iter().enumerate() {
+        unsafe { *data.add(i) = *v };
+    }
+}
+
 /// `read_array_var_real`: a whitespace-separated value list, or one default.
 fn read_array_real(out: &mut real_array, s: &str, default: f64) {
     let values: Vec<f64> = s.split_whitespace().map(|t| read_real(t, default)).collect();
     let values = if values.is_empty() { vec![default] } else { values };
-    let data: *mut f64 = calloc(values.len());
-    for (i, v) in values.iter().enumerate() {
-        unsafe { *data.add(i) = *v };
+    fill_array(out, &values, simple_alloc_1d_real_array);
+}
+
+/// `read_array_var_integer`: a whitespace-separated value list, or one default.
+fn read_array_integer(out: &mut integer_array, s: &str, default: modelica_integer) {
+    let values: Vec<modelica_integer> = s.split_whitespace().map(|t| read_long(t, default)).collect();
+    let values = if values.is_empty() { vec![default] } else { values };
+    fill_array(out, &values, simple_alloc_1d_integer_array);
+}
+
+/// `read_array_var_boolean`: a whitespace-separated value list, or `false`.
+fn read_array_boolean(out: &mut boolean_array, s: &str) {
+    let values: Vec<modelica_boolean> = s.split_whitespace().map(read_bool).collect();
+    let values = if values.is_empty() { vec![0] } else { values };
+    fill_array(out, &values, simple_alloc_1d_boolean_array);
+}
+
+/// `read_quoted_str`: the values of `"a" "b c"`, `None` unless `s` is such a
+/// list. A quote only closes a value at the end of `s` or before the next
+/// opening quote, as quotes inside a value aren't escaped.
+fn read_quoted(s: &str) -> Option<Vec<&str>> {
+    let b = s.as_bytes();
+    let skip = |mut i: usize| {
+        while i < b.len() && b[i] == b' ' {
+            i += 1;
+        }
+        i
+    };
+    let mut values = Vec::new();
+    let mut pos = skip(0);
+    while pos < b.len() {
+        if b[pos] != b'"' {
+            return None;
+        }
+        let begin = pos + 1;
+        let end = (begin..b.len()).find(|&j| {
+            let after = skip(j + 1);
+            b[j] == b'"' && (after == b.len() || (b[after] == b'"' && after > j + 1))
+        })?;
+        values.push(&s[begin..end]);
+        pos = skip(end + 1);
     }
-    let dim: *mut _index_t = calloc(1);
-    unsafe { *dim = values.len() as _index_t };
-    out.ndims = 1;
-    out.dim_size = dim;
-    out.data = data as *mut c_void;
-    out.flexible = 0;
+    Some(values)
+}
+
+/// `read_array_var_string`: a scalar's value is `s` itself, an array's a list
+/// of quoted values or one unquoted value for all elements.
+fn read_array_string(out: &mut string_array, s: &str, is_scalar: bool) {
+    let values = if is_scalar { None } else { read_quoted(s).filter(|v| !v.is_empty()) };
+    let values: Vec<modelica_string> =
+        values.unwrap_or_else(|| vec![s]).into_iter().map(mk_scon_persist).collect();
+    fill_array(out, &values, simple_alloc_1d_string_array);
 }
 
 fn read_var_info(v: &XmlVar, info: &mut VAR_INFO) {
@@ -254,10 +307,56 @@ pub struct AliasMaps {
     pub params: HashMap<String, i64>,
 }
 
+/// C's `simple_alloc_1d_<type>_array`.
+pub(crate) type AllocArray = unsafe extern "C" fn(*mut base_array_t, c_int);
+
+unsafe extern "C" {
+    pub(crate) fn simple_alloc_1d_real_array(dest: *mut base_array_t, n: c_int);
+    pub(crate) fn simple_alloc_1d_integer_array(dest: *mut base_array_t, n: c_int);
+    pub(crate) fn simple_alloc_1d_boolean_array(dest: *mut base_array_t, n: c_int);
+    pub(crate) fn simple_alloc_1d_string_array(dest: *mut base_array_t, n: c_int);
+    /// Resize a start attribute to `n` elements, repeating its values.
+    pub(crate) fn real_array_ensure_size(a: *mut base_array_t, n: c_int);
+    pub(crate) fn integer_array_ensure_size(a: *mut base_array_t, n: c_int);
+    pub(crate) fn boolean_array_ensure_size(a: *mut base_array_t, n: c_int);
+}
+
 unsafe extern "C" {
     /// `util/omc_string.h`. Immortal, so the attribute slots this fills can be
     /// released by the runtime like any other without freeing anything.
     fn omc_string_new_persist(str: *const c_char) -> *mut c_void;
+    fn omc_string_new(str: *const c_char) -> *mut c_void;
+    fn omc_string_slots_store(dst: *mut *mut c_void, src: *const *mut c_void, n: usize);
+    fn omc_string_slots_release(slots: *mut *mut c_void, n: usize);
+}
+
+/// C's `omc_string_store`: the slot takes its own reference and drops the old one.
+pub(crate) unsafe fn string_store(slot: *mut modelica_string, s: modelica_string) {
+    unsafe { omc_string_slots_store(slot, &s, 1) };
+}
+
+/// [`string_store`] for `n` slots at once.
+pub(crate) unsafe fn string_slots_store(dst: *mut modelica_string, src: *const modelica_string, n: usize) {
+    if n > 0 && !dst.is_null() && !src.is_null() {
+        unsafe { omc_string_slots_store(dst, src, n) };
+    }
+}
+
+#[cfg(feature = "fmi")]
+pub(crate) unsafe fn string_slots_release(slots: *mut modelica_string, n: usize) {
+    if n > 0 && !slots.is_null() {
+        unsafe { omc_string_slots_release(slots, n) };
+    }
+}
+
+/// C's `omc_string_move` of a fresh `omc_string_new`: the slot owns the only
+/// reference.
+pub(crate) unsafe fn string_set_new(slot: *mut modelica_string, s: &[u8]) {
+    let bytes = &s[..s.iter().position(|&b| b == 0).unwrap_or(s.len())];
+    let c = std::ffi::CString::new(bytes).expect("no interior NUL left");
+    let new = unsafe { omc_string_new(c.as_ptr()) };
+    let old = unsafe { core::ptr::replace(slot, new) };
+    unsafe { omc_string_slots_release(&mut { old }, 1) };
 }
 
 /// The byte offset of an `omc_string`'s data: it points at `struct omc_string_s`,
@@ -279,6 +378,15 @@ pub fn string_value(p: *mut c_void) -> String {
     }
     let data = unsafe { (p as *mut u8).add(OMC_STRING_DATA) };
     unsafe { core::ffi::CStr::from_ptr(data as *const c_char) }.to_string_lossy().into_owned()
+}
+
+#[cfg(feature = "fmi")]
+/// [`string_value`] without the UTF-8 round trip.
+pub fn string_bytes<'a>(p: *mut c_void) -> &'a [u8] {
+    if p.is_null() {
+        return &[];
+    }
+    unsafe { core::ffi::CStr::from_ptr((p as *mut u8).add(OMC_STRING_DATA) as *const c_char) }.to_bytes()
 }
 
 pub fn mk_scon_persist(s: &str) -> *mut c_void {
@@ -473,17 +581,18 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
         slot.attribute.displayUnit = mk_scon_persist(v.get("displayUnit"));
     };
     let int_attr = |v: &XmlVar, slot: &mut STATIC_INTEGER_DATA| {
-        slot.attribute.start = read_long(v.get("start"), 0);
+        read_array_integer(&mut slot.attribute.start, v.get("start"), 0);
         slot.attribute.fixed = read_bool(v.get("fixed"));
-        slot.attribute.min = read_long(v.get("min"), INTEGER_MIN);
-        slot.attribute.max = read_long(v.get("max"), INTEGER_MAX);
+        read_array_integer(&mut slot.attribute.min, v.get("min"), INTEGER_MIN);
+        read_array_integer(&mut slot.attribute.max, v.get("max"), INTEGER_MAX);
     };
     let bool_attr = |v: &XmlVar, slot: &mut STATIC_BOOLEAN_DATA| {
-        slot.attribute.start = read_bool(v.get("start"));
+        read_array_boolean(&mut slot.attribute.start, v.get("start"));
         slot.attribute.fixed = read_bool(v.get("fixed"));
     };
     let str_attr = |v: &XmlVar, slot: &mut STATIC_STRING_DATA| {
-        slot.attribute.start = mk_scon_persist(v.get("start"));
+        let is_scalar = slot.dimension.numberOfDimensions == 0;
+        read_array_string(&mut slot.attribute.start, v.get("start"), is_scalar);
     };
 
     let n_states = md.nStatesArray as usize;

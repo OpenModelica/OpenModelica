@@ -389,7 +389,7 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
         return 0;
     }
     for(i = 0; i < s->ndims; ++i) {
-        if(s->dim_size[i] == 0) {
+        if(s->index_type[i] == 'S') {
             if (s->index[i] != NULL)
             {
               if((s->index[i][0] < 0) || (s->index[i][0] > a->dim_size[i])) {
@@ -415,6 +415,28 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
     }
 
     return 1;
+}
+
+/**
+ * @brief Number of elements an index specification selects.
+ *
+ * @param s  Index specification, fitting a.
+ * @param a  Array that s indexes.
+ * @return   The product of the sizes of the dimensions s keeps.
+ */
+_index_t index_spec_nr_of_elements(const index_spec_t *s, const base_array_t *a)
+{
+    int i;
+    _index_t n = 1;
+
+    for(i = 0; i < s->ndims; ++i) {
+        switch(s->index_type[i]) {
+        case 'W': n *= a->dim_size[i]; break;
+        case 'A': n *= s->dim_size[i]; break;
+        default: break;
+        }
+    }
+    return n;
 }
 
 /**
@@ -556,15 +578,15 @@ size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
     int d2;
     size_t index = 0;
 
+    /* index_spec_fit_base_array is O(size of spec); the callers check it once */
     assert(base_array_ok(arr));
     assert(index_spec_ok(spec));
-    assert(index_spec_fit_base_array(spec, arr));
     assert((ndims == arr->ndims) && (ndims == spec->ndims));
 
     index = 0;
     for(i = 0; i < ndims; ++i) {
         int d = idx_vec[i];
-        if(spec->index[i] != NULL) {
+        if(spec->index_type[i] != 'W') {
             d2 = spec->index[i][d] - 1;
         } else {
             d2 = d;
@@ -641,6 +663,7 @@ size_t calc_base_index_dims_subs(int ndims,...)
     for(i = 0; i < ndims; ++i) {
         if (subs[i] < 0 || subs[i] >= dims[i]) {
           omc_assert(NULL, omc_dummyFileInfo, "Dimension %d has bounds 1..%d, got array subscript %d", i+1, dims[i], subs[i]+1);
+          return 0;
         }
         index = (index * dims[i]) + subs[i];
     }
@@ -676,6 +699,7 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
         int sub_i = va_arg(ap, _index_t) - 1;
         if (sub_i < 0 || sub_i >= source->dim_size[i]) {
           omc_assert(NULL, omc_dummyFileInfo, "Dimension %d has bounds 1..%d, got array subscript %d", i+1, source->dim_size[i], sub_i+1);
+          return 0;
         }
         index = (index * source->dim_size[i]) + sub_i;
     }
@@ -764,7 +788,7 @@ void index_alloc_base_array_size(const real_array * source,
     omc_assert_macro(index_spec_fit_base_array(source_spec, source));
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
-         if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
+         if(source_spec->index_type[i] != 'S') {
            ++j;
          }
     }
@@ -777,8 +801,8 @@ void index_alloc_base_array_size(const real_array * source,
     }
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
-        if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
-            if(source_spec->index[i] != NULL) { /* is 'A' */
+        if(source_spec->index_type[i] != 'S') {
+            if(source_spec->index_type[i] == 'A') {
                 dest->dim_size[j] = source_spec->dim_size[i];
             } else { /* is 'W' */
                 dest->dim_size[j] = source->dim_size[i];
@@ -821,11 +845,12 @@ void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array
     omc_assert_macro(index_spec_ok(dest_spec));
     omc_assert_macro(index_spec_fit_base_array(dest_spec, dest));
     for(i = 0,j = 0; i < dest_spec->ndims; ++i) {
-        if(dest_spec->dim_size[i] != 0) {
+        if(dest_spec->index_type[i] != 'S') {
             ++j;
         }
     }
     omc_assert_macro(j == source->ndims);
+    omc_assert_macro(index_spec_nr_of_elements(dest_spec, dest) == base_array_nr_of_elements(*source));
 
     idx_vec1 = size_alloc(dest->ndims);
     idx_size = size_alloc(dest_spec->ndims);
@@ -833,7 +858,7 @@ void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array
     for(i = 0; i < dest_spec->ndims; ++i) {
         idx_vec1[i] = 0;
 
-        if(dest_spec->index[i] != NULL) { /* is 'S' or 'A' */
+        if(dest_spec->index_type[i] != 'W') {
             idx_size[i] = imax(dest_spec->dim_size[i],1);
         } else { /* is 'W' */
             idx_size[i] = dest->dim_size[i];
@@ -893,3 +918,81 @@ void omc_string_array_release(base_array_t *a)
     omc_array_release(a);
 }
 
+/**
+ * @brief Write vector into null-terminated string.
+ *
+ * Scalars are written as `v`, vectors as `{v1, v2, ...}`. If `buffer` is too
+ * small the output is truncated with `"...}"`.
+ *
+ * @param source          Vector to write to `buffer`.
+ * @param isScalar        Treat vector of length one as scalar.
+ * @param format_element  Writes element `i` of `data` into a buffer, like `snprintf`.
+ * @param buffer          Buffer to write into.
+ * @param bufsize         Length of `buffer`.
+ */
+void base_vector_to_string(const base_array_t *source,
+                           modelica_boolean isScalar,
+                           base_array_format_element_t format_element,
+                           char *buffer,
+                           size_t bufsize)
+{
+    _index_t i;
+    size_t pos = 0;
+    int ret;
+    size_t remaining;
+
+    /* Validate input parameters */
+    if (buffer == NULL || bufsize == 0) {
+        return;
+    }
+    buffer[0] = '\0';
+
+    omc_assert_macro(base_array_ok(source));
+    assert(source->ndims == 1);
+
+    if (isScalar && source->ndims == 1 && source->dim_size[0] == 1)
+    {
+        /* Write scalar into buffer */
+        format_element(buffer + pos, bufsize - pos, source->data, 0);
+        return;
+    }
+
+    /* Start brace */
+    ret = snprintf(buffer + pos, (bufsize > pos) ? bufsize - pos : 0, "{");
+    if (ret < 0) ret = 0;
+    if ((size_t)ret >= bufsize - pos) {
+        return;
+    }
+    pos += (size_t)ret;
+
+    for (i = 0; i < source->dim_size[0]; i++)
+    {
+        remaining = (bufsize > pos) ? bufsize - pos : 0;
+
+        /* If not enough room to write an element, try to append "...}" and stop */
+        if (remaining <= 5) {
+            snprintf(buffer + pos, remaining, "...}");
+            return;
+        }
+
+        /* Format element, use comma+space for non-last elements */
+        ret = format_element(buffer + pos, remaining, source->data, i);
+        if (ret >= 0 && (size_t)ret < remaining && i < source->dim_size[0] - 1) {
+            ret += snprintf(buffer + pos + ret, remaining - ret, ", ");
+        }
+
+        if (ret < 0) ret = 0;
+        if (ret >= remaining - 5) {
+            /* Not enough space for more elements; try to write "...}" instead */
+            snprintf(buffer + pos, remaining, "...}");
+            return;
+        }
+        pos += (size_t)ret;
+    }
+
+    /* Append closing brace */
+    remaining = (bufsize > pos) ? bufsize - pos : 0;
+    if (remaining > 0) {
+        snprintf(buffer + pos, remaining, "}");
+    }
+}

@@ -77,6 +77,12 @@ fn host_libm() -> bool {
     !matches!(std::env::var("OMC_WASM_HOST_LIBM").as_deref(), Ok("0"))
 }
 
+/// `OMC_WASM_HOST_LIN_SOLVE=0`: solve the linear systems in-wasm, as the browser
+/// does, in a runtime that links both solvers.
+fn host_lin_solve() -> bool {
+    !matches!(std::env::var("OMC_WASM_HOST_LIN_SOLVE").as_deref(), Ok("0"))
+}
+
 fn shadow_math_with_host_libm(
     linker: &mut wasmtime::Linker<HostState>,
     store: &mut wasmtime::Store<HostState>,
@@ -216,6 +222,8 @@ fn build_engine_cfg(inlining: bool, extra: impl FnOnce(&mut wasmtime::Config)) -
     // A model with external "C" carries the `model_error` tag its `ext` call sites
     // catch, so the module does not validate without this.
     cfg.wasm_exceptions(true);
+    // Lays the model's error paths out of line (`emit_unlikely_if`).
+    cfg.wasm_branch_hinting(true);
     // Compile module functions across threads (off by default with
     // default-features=false) — ~4x faster module compilation here.
     cfg.parallel_compilation(!crate::model::single_threaded());
@@ -385,8 +393,9 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         ("lib-libc.so".to_string(), crate::LIBC_PIC()),
         ("lib-usertab".to_string(), crate::USERTAB_DYLINK()),
     ];
+    // Tagged with the file name, as `library_module` is called with it.
     for (file, bytes) in crate::EXT_FAMILY {
-        blobs.push((format!("lib-{}", file.trim_end_matches(".wasm")), bytes()));
+        blobs.push((format!("lib-{file}"), bytes()));
     }
     blobs.retain(|(_, b)| !b.is_empty());
     // Every engine a run can land on: the inliner is off for a model with one
@@ -2245,6 +2254,11 @@ fn push_runtime_flags(
         });
         wts(set.call(&mut *store, t))?;
     }
+    // `-newton` / `-noScaling` / `-stopAtSystem`: the solvers they tune run in-wasm.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, i32), ()>(&mut *store, "rt_set_nls_options") {
+        let codes = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::nls_option_codes);
+        wts(set.call(&mut *store, codes))?;
+    }
     // `-lvMaxWarn`: the warnings it caps are printed in-wasm.
     if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut *store, "rt_set_max_warn") {
         let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
@@ -2301,7 +2315,7 @@ fn push_runtime_flags(
     // solver on ScalableTestSuite's large sparse systems. A host without it (the
     // browser) leaves this unset and the module solves in-wasm.
     if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut *store, "rt_set_host_lin_solve") {
-        wts(set.call(&mut *store, 1))?;
+        wts(set.call(&mut *store, host_lin_solve() as u32))?;
     }
     // Same for `-lv`: the nonlinear solver logs from inside the module. The
     // effective mask, which `-lv_time` may hold shut until its window.
@@ -2638,6 +2652,7 @@ impl DylinkFmu {
     /// generated code has to change.
     pub fn load_fused(
         model: &[u8],
+        compiled: Option<wasmtime::Module>,
         ext: &[ArtifactLib],
         external_c: bool,
         lapack: bool,
@@ -2676,14 +2691,21 @@ impl DylinkFmu {
             }
             let cell = model_cell.clone();
             let want = name.clone();
+            let target = std::sync::OnceLock::<wasmtime::Func>::new();
             let f = wasmtime::Func::new(&mut store, ty, move |mut caller, args, rets| {
-                let inst = cell
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .ok_or_else(|| wasmtime::Error::msg("the artifact's model is not instantiated"))?;
-                let f = inst.get_func(&mut caller, &want).ok_or_else(|| {
-                    wasmtime::Error::msg(format!("the artifact's model has no `{want}`"))
-                })?;
+                let f = match target.get() {
+                    Some(f) => *f,
+                    None => {
+                        let inst = cell
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .ok_or_else(|| wasmtime::Error::msg("the artifact's model is not instantiated"))?;
+                        let f = inst.get_func(&mut caller, &want).ok_or_else(|| {
+                            wasmtime::Error::msg(format!("the artifact's model has no `{want}`"))
+                        })?;
+                        *target.get_or_init(|| f)
+                    }
+                };
                 f.call(&mut caller, args, rets)
             });
             wts(linker.define(&store, &module, &name, f))?;
@@ -2730,7 +2752,10 @@ impl DylinkFmu {
         // one the driver runs on, so the run's flags reach both at once.
         push_runtime_flags(&mut store, fused_inst, memory, &alloc)?;
 
-        let model_module = wts(wasmtime::Module::new(engine, model))?;
+        let model_module = match compiled.filter(|m| wasmtime::Engine::same(m.engine(), engine)) {
+            Some(m) => m,
+            None => wts(wasmtime::Module::new(engine, model))?,
+        };
         // The model's `external "C"`: PIC side libraries relocated into this
         // module's memory, the same set and order the dylink path loads.
         if external_c || !ext.is_empty() || (lapack && !crate::LAPACK_DYLINK().is_empty()) {
@@ -2844,6 +2869,57 @@ impl DylinkFmu {
         let mut b = [0u8; 8];
         self.read(addr, &mut b)?;
         Ok(f64::from_le_bytes(b))
+    }
+
+    pub fn read_f64s(&mut self, addr: u32, out: &mut [f64]) -> std::result::Result<(), String> {
+        let data = self.memory.data(&self.store);
+        let src = data
+            .get(addr as usize..addr as usize + out.len() * 8)
+            .ok_or_else(|| format!("artifact: read of {} values at {addr} is out of bounds", out.len()))?;
+        for (o, b) in out.iter_mut().zip(src.chunks_exact(8)) {
+            *o = f64::from_le_bytes(b.try_into().unwrap());
+        }
+        Ok(())
+    }
+
+    pub fn write_f64s(&mut self, addr: u32, values: &[f64]) -> std::result::Result<(), String> {
+        let data = self.memory.data_mut(&mut self.store);
+        let dst = data
+            .get_mut(addr as usize..addr as usize + values.len() * 8)
+            .ok_or_else(|| format!("artifact: write of {} values at {addr} is out of bounds", values.len()))?;
+        for (b, v) in dst.chunks_exact_mut(8).zip(values) {
+            b.copy_from_slice(&v.to_le_bytes());
+        }
+        Ok(())
+    }
+
+    pub fn write_u32s(&mut self, addr: u32, values: &[u32]) -> std::result::Result<(), String> {
+        let data = self.memory.data_mut(&mut self.store);
+        let dst = data
+            .get_mut(addr as usize..addr as usize + values.len() * 4)
+            .ok_or_else(|| format!("artifact: write of {} values at {addr} is out of bounds", values.len()))?;
+        for (b, v) in dst.chunks_exact_mut(4).zip(values) {
+            b.copy_from_slice(&v.to_le_bytes());
+        }
+        Ok(())
+    }
+
+    /// An entry point for the calls a master makes per step: [`call`](Self::call)
+    /// looks the export up and checks its arguments every time.
+    pub fn typed<P: wasmtime::WasmParams, R: wasmtime::WasmResults>(
+        &mut self,
+        name: &str,
+    ) -> std::result::Result<wasmtime::TypedFunc<P, R>, String> {
+        let f = self.entry(name)?;
+        f.typed(&self.store).map_err(|e| format!("{name}: {e:#}"))
+    }
+
+    pub fn call_typed<P: wasmtime::WasmParams, R: wasmtime::WasmResults>(
+        &mut self,
+        f: &wasmtime::TypedFunc<P, R>,
+        args: P,
+    ) -> std::result::Result<R, String> {
+        f.call(&mut self.store, args).map_err(|e| format!("{e:#}"))
     }
 
     /// Call one of the adapter's exports. The FMI 3.0 entry points all take and

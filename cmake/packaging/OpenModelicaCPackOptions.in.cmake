@@ -108,14 +108,8 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # Simulating a model means generating C and building it, so omc needs a compiler, a make
   # and a cmake at *run* time. dpkg-shlibdeps cannot find these -- omc executes them, it
   # does not link them -- so they are named here.
-  #
-  # gfortran is here for its libgfortran.so *symlink*, not for the compiler: the generated
-  # makefile links -lgfortran (the reference LAPACK needs it) and the linker will not take
-  # the libgfortran.so.5 that libgfortran5 ships. dpkg-shlibdeps only ever finds the
-  # runtime library, so the -dev half has to be asked for by name. The RPM spec has
-  # required gcc-gfortran for the same reason.
   set(CPACK_DEBIAN_OMC_PACKAGE_DEPENDS
-      "clang, cmake, build-essential, gfortran, libexpat1-dev, liblapack-dev, zip, unzip")
+      "clang, cmake, build-essential, libexpat1-dev, liblapack-dev, zip, unzip")
 
   # What omc can use but runs without, as the Autoconf packaging recommended them from this same
   # package. A Recommends rather than a Depends because none of it is needed to compile and

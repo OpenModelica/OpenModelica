@@ -11,7 +11,13 @@
 runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum);
-compareVars := {"revolute1.phi","revolute1.w","revolute2.phi","revolute2.w"};
+compareVars :=
+{
+   "revolute1.phi",
+   "revolute1.w",
+   "revolute2.phi",
+   "revolute2.w"
+};
 runScript(modelTesting);
 getErrorString();
 

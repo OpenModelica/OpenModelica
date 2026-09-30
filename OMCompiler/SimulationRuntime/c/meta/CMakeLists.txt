@@ -36,6 +36,8 @@ if(MINGW)
 elseif(MSVC)
   target_link_libraries(OpenModelicaRuntimeMMC PUBLIC omc::3rd::regex)
   set_target_properties(OpenModelicaRuntimeMMC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # Its users take its globals as dllimport (DLLDataDirection).
+  target_compile_definitions(OpenModelicaRuntimeMMC INTERFACE IMPORT_INTO=1)
 endif()
 
 target_compile_definitions(OpenModelicaRuntimeMMC PUBLIC OMC_METAMODELICA_RUNTIME=1)

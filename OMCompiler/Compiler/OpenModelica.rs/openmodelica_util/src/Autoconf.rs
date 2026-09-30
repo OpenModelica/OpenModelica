@@ -195,7 +195,7 @@ pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
     } else if cfg!(target_os = "macos") {
         " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
     } else {
-        " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
+        " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
     },
 };
 
@@ -217,7 +217,7 @@ pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GEN
     } else if cfg!(target_os = "macos") {
         " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
     } else {
-        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
+        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
     },
 };
 
@@ -236,24 +236,16 @@ pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
     },
 };
 
-/// `@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC@` (CMake-configured via
-/// OMC_RT_LDFLAGS_*; the fallback matches the C runtime build per platform).
-pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC") {
-    Some(s) => s,
-    None => if msvc_is_target {
-        "SimulationRuntimeFMI.lib libopenblas.lib pthreadVC3.lib"
-    } else if cfg!(windows) {
-        const_str::concat!(" -lSimulationRuntimeFMI ", win_ldflags_runtime_fmu)
-    } else if cfg!(target_os = "macos") {
-        " -lSimulationRuntimeFMI -llapack -lblas -lm"
-    } else {
-        "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
-    },
-};
-
 /// `@OMC_HDF5_LDFLAGS@`: the HDF5 a link line naming ModelicaMatIO needs, empty
 /// unless CMake found HDF5 (`OM_ENABLE_HDF5`).
 pub const hdf5Libs: &str = match option_env!("OMC_HDF5_LDFLAGS") {
+    Some(s) => s,
+    None => "",
+};
+
+/// `@OMC_FMILIB_LDFLAGS@`: what a link line naming fmilib needs besides it, space-separated --
+/// the system expat and minizip, empty unless OM_USE_SYSTEM_EXPAT/OM_USE_SYSTEM_MINIZIP.
+pub const fmilibLibs: &str = match option_env!("OMC_FMILIB_LDFLAGS") {
     Some(s) => s,
     None => "",
 };

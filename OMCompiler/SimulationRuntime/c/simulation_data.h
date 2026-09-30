@@ -109,11 +109,10 @@ typedef struct SAMPLE_INFO
 
 typedef struct CHATTERING_INFO
 {
-  int numEventLimit;
-  int *lastSteps;
-  double *lastTimes;
+  int numEventLimit;          /* size of lastTimes */
+  double *lastTimes;          /* ring of the last state event times */
   int currentIndex;
-  int lastStepsNumStateEvents;
+  int stateEventsInARow;
   int messageEmitted;
 } CHATTERING_INFO;
 
@@ -301,21 +300,21 @@ typedef struct REAL_ATTRIBUTE
 
 typedef struct INTEGER_ATTRIBUTE
 {
-  modelica_integer min;                /* = -Inf */
-  modelica_integer max;                /* = +Inf */
+  integer_array min;                   /* = {-Inf} */
+  integer_array max;                   /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
-  modelica_integer start;              /* = 0 */
+  integer_array start;                 /* = {0} */
 } INTEGER_ATTRIBUTE;
 
 typedef struct BOOLEAN_ATTRIBUTE
 {
   modelica_boolean fixed;              /* depends on the type */
-  modelica_boolean start;              /* = false */
+  boolean_array start;                 /* = {false} */
 } BOOLEAN_ATTRIBUTE;
 
 typedef struct STRING_ATTRIBUTE
 {
-  modelica_string start;               /* = "" */
+  string_array start;                  /* = {""} */
 } STRING_ATTRIBUTE;
 
 /* Model dimension structures */
@@ -797,6 +796,9 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;
   int lastStoredEventValue;
+
+  unsigned long nWarningsRemovedEvents;
+  unsigned long nWarningsOutputEvents;
 } SPATIAL_DISTRIBUTION_DATA;
 
 typedef struct SIMULATION_INFO

@@ -163,8 +163,9 @@ pub(crate) fn emit_nls_residual_body(
         }
     };
     lower_inner(ctx)?;
+    let all_scalar = nls_residuals_all_scalar(residuals);
     for i in 0..residuals.len() {
-        emit_nls_residual_store(ctx, residuals, i)?;
+        emit_nls_residual_store(ctx, residuals, all_scalar, i)?;
     }
     emit_nls_residual_epilogue(ctx, eq_index)
 }
@@ -205,16 +206,20 @@ pub(crate) fn emit_nls_residual_epilogue(ctx: &mut FnCtx, eq_index: i32) -> Resu
     Ok(())
 }
 
-/// Store the `i`-th residual into `r` (wasm local 2). All-scalar systems keep
-/// sequential `r[i]` addressing; a for- or generic residual forces
-/// `res_index`-based addressing throughout.
+pub(crate) fn nls_residuals_all_scalar(residuals: &[NlsResidual]) -> bool {
+    residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }))
+}
+
+/// Store the `i`-th residual into `r` (wasm local 2). All-scalar systems
+/// ([`nls_residuals_all_scalar`]) keep sequential `r[i]` addressing; a for- or
+/// generic residual forces `res_index`-based addressing throughout.
 pub(crate) fn emit_nls_residual_store(
     ctx: &mut FnCtx,
     residuals: &[NlsResidual],
+    all_scalar: bool,
     i: usize,
 ) -> Result<()> {
     use we::Instruction as I;
-    let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
     match &residuals[i] {
         NlsResidual::Scalar { exp, res_index } => {
             let dest = if all_scalar { i as u32 } else { *res_index as u32 };
@@ -971,7 +976,7 @@ fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32, base: u32) -> Result<()> {
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::Call(rt_index("rt_free")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(I::Return);
     ctx.emit(I::End);
     Ok(())
@@ -2263,7 +2268,7 @@ pub(crate) fn emit_dt_local_constraint(ctx: &mut FnCtx, cond: &metamodelica::Ref
     emit_shared_str(ctx, &dumped_exp(cond)?);
     ctx.emit(I::Call(rt_index("rt_dt_local_violated")?));
     release_heap_locals(ctx)?;
-    push_outputs(ctx);
+    push_outputs(ctx)?;
     ctx.emit(I::Return);
     ctx.emit(I::End);
     Ok(())

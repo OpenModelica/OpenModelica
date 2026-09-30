@@ -75,7 +75,7 @@ pub(super) fn exp_array_rows(exp: &metamodelica::Ref<DAE::Exp>) -> Option<usize>
 /// Dynamic tearing: each casual tearing set's equation index -> its strict set's.
 pub(super) fn nls_strict_map(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]]) -> HashMap<i32, i32> {
     use SimCode::SimEqSystem as E;
-    let mut out = HashMap::new();
+    let mut out = HashMap::default();
     for list in eq_lists {
         for e in *list {
             if let E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } = &**e {
@@ -108,7 +108,7 @@ pub(super) fn collect_nls_jobs(
     let mut systems: Vec<metamodelica::Ref<SimCode::NonlinearSystem>> = Vec::new();
     // Numbered and ordered by `indexNonLinearSystem`, as C's `sysNum` loop is.
     let mut warnings: Vec<(i32, String)> = Vec::new();
-    let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
+    let mut jobs: HashMap<i32, NlsJob> = HashMap::default();
     let mut hist_off = 0u32;
     let mut nominal_off = 0u32;
     let mut pat_off = 0u32;
@@ -228,17 +228,17 @@ pub(crate) const OPT_JAC_FNS: [&str; 6] = [
 /// `nVariablesReal` counts those last, which is what the optimizer's
 /// `index_con = nReal - (nc + ncf)` relies on).
 pub(super) fn real_alg_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimVar> {
-    lst(&vars.algVars)
-        .chain(lst(&vars.discreteAlgVars))
-        .chain(lst(&vars.realOptimizeConstraintsVars))
-        .chain(lst(&vars.realOptimizeFinalConstraintsVars))
+    svs(&vars.algVars)
+        .chain(svs(&vars.discreteAlgVars))
+        .chain(svs(&vars.realOptimizeConstraintsVars))
+        .chain(svs(&vars.realOptimizeFinalConstraintsVars))
         .collect()
 }
 
 /// Map each scalar Real (and Integer) variable's cref key to its `(nominal, min, max)` attributes,
 /// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
 pub(super) fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f64, f64)> {
-    let mut map = HashMap::new();
+    let mut map = HashMap::default();
     // `derivativeVars`: a `$DER.x` iteration variable otherwise scales at nominal 1.
     let all = lst(&vars.stateVars)
         .chain(lst(&vars.derivativeVars))

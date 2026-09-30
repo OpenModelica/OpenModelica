@@ -13,6 +13,7 @@ openmodelica_backend.workspace=true
 openmodelica_backend_tools.workspace=true
 openmodelica_backend_types.workspace=true
 openmodelica_simcode_util.workspace=true
+openmodelica_codegen_util.workspace=true
 openmodelica_nbackend.workspace=true
 openmodelica_simcode_types.workspace=true
 openmodelica_codegen.workspace=true

@@ -53,6 +53,14 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap);
 /* Number of elements in array. */
 _index_t base_array_nr_of_elements(const base_array_t a);
 
+/* Writes element `i` of `data` into `buffer`, returns like snprintf. */
+typedef int (*base_array_format_element_t)(char *buffer, size_t bufsize, const void *data, _index_t i);
+
+/* Write vector into null-terminated string, e.g. "{1, 2, 3}". */
+void base_vector_to_string(const base_array_t *source, modelica_boolean isScalar,
+                           base_array_format_element_t format_element,
+                           char *buffer, size_t bufsize);
+
 
 /* Clones fields */
 void clone_base_array_spec(const base_array_t *source, base_array_t *dest);
@@ -83,6 +91,7 @@ size_t omc_array_bounds_error(int dim, _index_t dim_size, _index_t sub);
 size_t calc_base_index_dims_subs(int ndims,...);
 
 int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a);
+_index_t index_spec_nr_of_elements(const index_spec_t *s, const base_array_t *a);
 
 /* Helper function for index_alloc_TYPE_array; allocates the ndims and dim_size */
 void index_alloc_base_array_size(const base_array_t * source, const index_spec_t* source_spec, base_array_t* dest);

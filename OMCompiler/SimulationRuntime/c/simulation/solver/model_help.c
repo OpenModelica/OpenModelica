@@ -114,6 +114,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    return;
+  }
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
@@ -142,6 +145,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     printZeroCrossings(data, OMC_LOG_EVENTS_V);
 
     data->callback->functionDAE(data, threadData);
+    if (OMC_ERROR_RAISED()) {
+      return;
+    }
 
     numEventIterations++;
     if(numEventIterations > maxEventIterations) {
@@ -185,6 +191,27 @@ void copyStartValuestoInitValues(DATA *data)
   overwriteOldSimulationData(data);
 }
 
+/**
+ * @brief Print real variables `first` to `last`-1, one line per scalar element.
+ */
+static void printRealVars(DATA *data, int ringSegment, int stream, long first, long last)
+{
+  long i;
+  size_t k, idx;
+  SIMULATION_INFO *sInfo = data->simulationInfo;
+  SIMULATION_DATA *sData = data->localData[ringSegment];
+  char name[2048];
+
+  for(i=first; i<last; ++i) {
+    STATIC_REAL_DATA *var = &data->modelData->realVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->realVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = %g (pre: %g)", idx+1, name, sData->realVars[idx], sInfo->realVarsPre[idx]);
+    }
+  }
+}
+
 /*! \fn printAllVars
  *
  *  prints all variable values
@@ -198,45 +225,62 @@ void copyStartValuestoInitValues(DATA *data)
 void printAllVars(DATA *data, int ringSegment, int stream)
 {
   long i;
+  size_t k, idx;
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
+  SIMULATION_DATA *sData = data->localData[ringSegment];
+  char name[2048];
 
   if (!OMC_ACTIVE_STREAM(stream)) return;
 
-  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, data->localData[ringSegment]->timeValue);
+  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, sData->timeValue);
 
   infoStreamPrint(stream, 1, "states variables");
-  for(i=0; i<mData->nStates; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  printRealVars(data, ringSegment, stream, 0, mData->nStatesArray);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  printRealVars(data, ringSegment, stream, mData->nStatesArray, 2*mData->nStatesArray);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "other real values");
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  printRealVars(data, ringSegment, stream, 2*mData->nStatesArray, mData->nVariablesRealArray);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+  for(i=0; i<mData->nVariablesIntegerArray; ++i) {
+    STATIC_INTEGER_DATA *var = &mData->integerVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->integerVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", idx+1, name, sData->integerVars[idx], sInfo->integerVarsPre[idx]);
+    }
+  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
+  for(i=0; i<mData->nVariablesBooleanArray; ++i) {
+    STATIC_BOOLEAN_DATA *var = &mData->booleanVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->booleanVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = %s (pre: %s)", idx+1, name, sData->booleanVars[idx] ? "true" : "false", sInfo->booleanVarsPre[idx] ? "true" : "false");
+    }
+  }
   messageClose(stream);
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   infoStreamPrint(stream, 1, "string variables");
-  for(i=0; i<mData->nVariablesString; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1,
-        mData->stringVarsData[i].info.name,
-        omc_string_data(data->localData[ringSegment]->stringVars[i]),
-        omc_string_data(sInfo->stringVarsPre[i]));
+  for(i=0; i<mData->nVariablesStringArray; ++i) {
+    STATIC_STRING_DATA *var = &mData->stringVarsData[i];
+    for (k = 0; k < var->dimension.scalar_length; ++k) {
+      idx = sInfo->stringVarsIndex[i] + k;
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+      infoStreamPrint(stream, 0, "%zu: %s = %s (pre: %s)", idx+1, name,
+          omc_string_data(sData->stringVars[idx]),
+          omc_string_data(sInfo->stringVarsPre[idx]));
+    }
+  }
   messageClose(stream);
 #endif
   messageClose(stream);
@@ -254,10 +298,11 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 void printParameters(DATA *data, int stream)
 {
   long i;
+  size_t k, idx;
   MODEL_DATA *mData = data->modelData;
+  SIMULATION_INFO *sInfo = data->simulationInfo;
 
-  const size_t buff_size = 2048;
-  char *start_buffer;
+  char name[2048];
 
   if (!OMC_ACTIVE_STREAM(stream)) {
     return;
@@ -265,56 +310,71 @@ void printParameters(DATA *data, int stream)
 
   infoStreamPrint(stream, 1, "parameter values");
 
-  if (0 < mData->nParametersReal)
+  if (0 < mData->nParametersRealArray)
   {
-    start_buffer = (char*) malloc(buff_size * sizeof(char));
-    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
-
     infoStreamPrint(stream, 1, "real parameters");
-    for(i=0; i<mData->nParametersReal; ++i) {
-      real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
-      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%s, fixed=%s) = %g", i+1,
-                                 mData->realParameterData[i].info.name,
-                                 start_buffer,
-                                 mData->realParameterData[i].attribute.fixed ? "true" : "false",
-                                 data->simulationInfo->realParameter[i]);
+    for(i=0; i<mData->nParametersRealArray; ++i) {
+      STATIC_REAL_DATA *var = &mData->realParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->realParamsIndex[i] + k;
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+        infoStreamPrint(stream, 0, "[%zu] parameter Real %s(start=%g, fixed=%s) = %g", idx+1, name,
+                        real_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        var->attribute.fixed ? "true" : "false",
+                        sInfo->realParameter[idx]);
+      }
     }
     messageClose(stream);
-    free(start_buffer);
   }
 
-  if (0 < mData->nParametersInteger)
+  if (0 < mData->nParametersIntegerArray)
   {
     infoStreamPrint(stream, 1, "integer parameters");
-    for(i=0; i<mData->nParametersInteger; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, i+1,
-                                 mData->integerParameterData[i].info.name,
-                                 mData->integerParameterData[i].attribute.start,
-                                 mData->integerParameterData[i].attribute.fixed ? "true" : "false",
-                                 data->simulationInfo->integerParameter[i]);
+    for(i=0; i<mData->nParametersIntegerArray; ++i) {
+      STATIC_INTEGER_DATA *var = &mData->integerParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->integerParamsIndex[i] + k;
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+        infoStreamPrint(stream, 0, "[%zu] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, idx+1, name,
+                        integer_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)),
+                        var->attribute.fixed ? "true" : "false",
+                        sInfo->integerParameter[idx]);
+      }
+    }
     messageClose(stream);
   }
 
-  if (0 < mData->nParametersBoolean)
+  if (0 < mData->nParametersBooleanArray)
   {
     infoStreamPrint(stream, 1, "boolean parameters");
-    for(i=0; i<mData->nParametersBoolean; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Boolean %s(start=%s, fixed=%s) = %s", i+1,
-                                 mData->booleanParameterData[i].info.name,
-                                 mData->booleanParameterData[i].attribute.start ? "true" : "false",
-                                 mData->booleanParameterData[i].attribute.fixed ? "true" : "false",
-                                 data->simulationInfo->booleanParameter[i] ? "true" : "false");
+    for(i=0; i<mData->nParametersBooleanArray; ++i) {
+      STATIC_BOOLEAN_DATA *var = &mData->booleanParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        idx = sInfo->booleanParamsIndex[i] + k;
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+        infoStreamPrint(stream, 0, "[%zu] parameter Boolean %s(start=%s, fixed=%s) = %s", idx+1, name,
+                        boolean_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k)) ? "true" : "false",
+                        var->attribute.fixed ? "true" : "false",
+                        sInfo->booleanParameter[idx] ? "true" : "false");
+      }
+    }
     messageClose(stream);
   }
 
-  if (0 < mData->nParametersString)
+  if (0 < mData->nParametersStringArray)
   {
     infoStreamPrint(stream, 1, "string parameters");
-    for(i=0; i<mData->nParametersString; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter String %s(start=\"%s\") = \"%s\"", i+1,
-                                 mData->stringParameterData[i].info.name,
-                                 omc_string_data(mData->stringParameterData[i].attribute.start),
-                                 omc_string_data(data->simulationInfo->stringParameter[i]));
+    for(i=0; i<mData->nParametersStringArray; ++i) {
+      STATIC_STRING_DATA *var = &mData->stringParameterData[i];
+      for (k = 0; k < var->dimension.scalar_length; ++k) {
+        modelica_string start = string_get(var->attribute.start, attributeElementIndex(&var->attribute.start, k));
+        idx = sInfo->stringParamsIndex[i] + k;
+        printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, k, FALSE);
+        infoStreamPrint(stream, 0, "[%zu] parameter String %s(start=\"%s\") = \"%s\"", idx+1, name,
+                        start ? omc_string_data(start) : "",
+                        omc_string_data(sInfo->stringParameter[idx]));
+      }
+    }
     messageClose(stream);
   }
 
@@ -638,6 +698,48 @@ void restoreExtrapolationDataOld(DATA *data)
   }
 }
 
+/* A start attribute with a single element (`each` start value) holds the
+   start value of every element of the array variable. */
+static void copyRealStart(const real_array start, modelica_real *dest, size_t scalar_length)
+{
+  size_t k;
+  if (base_array_nr_of_elements(start) == 1) {
+    for (k = 0; k < scalar_length; k++) dest[k] = real_get(start, 0);
+  } else {
+    copy_real_array_data_mem(start, dest);
+  }
+}
+
+static void copyIntegerStart(const integer_array start, modelica_integer *dest, size_t scalar_length)
+{
+  size_t k;
+  if (base_array_nr_of_elements(start) == 1) {
+    for (k = 0; k < scalar_length; k++) dest[k] = integer_get(start, 0);
+  } else {
+    copy_integer_array_data_mem(start, dest);
+  }
+}
+
+static void copyBooleanStart(const boolean_array start, modelica_boolean *dest, size_t scalar_length)
+{
+  size_t k;
+  if (base_array_nr_of_elements(start) == 1) {
+    for (k = 0; k < scalar_length; k++) dest[k] = boolean_get(start, 0);
+  } else {
+    copy_boolean_array_data_mem(start, dest);
+  }
+}
+
+static void copyStringStart(const string_array start, modelica_string *dest, size_t scalar_length)
+{
+  size_t k;
+  if (base_array_nr_of_elements(start) == 1) {
+    for (k = 0; k < scalar_length; k++) omc_string_store(dest + k, string_get(start, 0));
+  } else {
+    copy_string_array_data_mem(start, dest);
+  }
+}
+
  /**
   * @brief Set all variables to their start attribute.
   *
@@ -652,25 +754,35 @@ void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *s
 
   for (array_idx = 0; array_idx < modelData->nVariablesRealArray; ++array_idx)
   {
-    copy_real_array_data_mem(
+    copyRealStart(
       modelData->realVarsData[array_idx].attribute.start,
-      &simulationData->realVars[simulationInfo->realVarsIndex[array_idx]]);
+      &simulationData->realVars[simulationInfo->realVarsIndex[array_idx]],
+      modelData->realVarsData[array_idx].dimension.scalar_length);
   }
 
-  for (array_idx = 0; array_idx < modelData->nVariablesInteger; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nVariablesIntegerArray; ++array_idx)
   {
-    simulationData->integerVars[array_idx] = modelData->integerVarsData[array_idx].attribute.start;
+    copyIntegerStart(
+      modelData->integerVarsData[array_idx].attribute.start,
+      &simulationData->integerVars[simulationInfo->integerVarsIndex[array_idx]],
+      modelData->integerVarsData[array_idx].dimension.scalar_length);
   }
 
-  for (array_idx = 0; array_idx < modelData->nVariablesBoolean; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nVariablesBooleanArray; ++array_idx)
   {
-    simulationData->booleanVars[array_idx] = modelData->booleanVarsData[array_idx].attribute.start;
+    copyBooleanStart(
+      modelData->booleanVarsData[array_idx].attribute.start,
+      &simulationData->booleanVars[simulationInfo->booleanVarsIndex[array_idx]],
+      modelData->booleanVarsData[array_idx].dimension.scalar_length);
   }
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
-  for (array_idx = 0; array_idx < modelData->nVariablesString; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nVariablesStringArray; ++array_idx)
   {
-    omc_string_store(&simulationData->stringVars[array_idx], modelData->stringVarsData[array_idx].attribute.start);
+    copyStringStart(
+      modelData->stringVarsData[array_idx].attribute.start,
+      &simulationData->stringVars[simulationInfo->stringVarsIndex[array_idx]],
+      modelData->stringVarsData[array_idx].dimension.scalar_length);
   }
 #endif
 }
@@ -688,24 +800,34 @@ void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *mode
 
   for (array_idx = 0; array_idx < modelData->nParametersRealArray; ++array_idx)
   {
-    copy_real_array_data_mem(
+    copyRealStart(
       modelData->realParameterData[array_idx].attribute.start,
-      &simulationInfo->realParameter[simulationInfo->realParamsIndex[array_idx]]);
+      &simulationInfo->realParameter[simulationInfo->realParamsIndex[array_idx]],
+      modelData->realParameterData[array_idx].dimension.scalar_length);
   }
 
-  for (array_idx = 0; array_idx < modelData->nParametersInteger; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersIntegerArray; ++array_idx)
   {
-    simulationInfo->integerParameter[array_idx] = modelData->integerParameterData[array_idx].attribute.start;
+    copyIntegerStart(
+      modelData->integerParameterData[array_idx].attribute.start,
+      &simulationInfo->integerParameter[simulationInfo->integerParamsIndex[array_idx]],
+      modelData->integerParameterData[array_idx].dimension.scalar_length);
   }
 
-  for (array_idx = 0; array_idx < modelData->nParametersBoolean; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersBooleanArray; ++array_idx)
   {
-    simulationInfo->booleanParameter[array_idx] = modelData->booleanParameterData[array_idx].attribute.start;
+    copyBooleanStart(
+      modelData->booleanParameterData[array_idx].attribute.start,
+      &simulationInfo->booleanParameter[simulationInfo->booleanParamsIndex[array_idx]],
+      modelData->booleanParameterData[array_idx].dimension.scalar_length);
   }
 
-  for (array_idx = 0; array_idx < modelData->nParametersString; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersStringArray; ++array_idx)
   {
-    omc_string_store(&simulationInfo->stringParameter[array_idx], modelData->stringParameterData[array_idx].attribute.start);
+    copyStringStart(
+      modelData->stringParameterData[array_idx].attribute.start,
+      &simulationInfo->stringParameter[simulationInfo->stringParamsIndex[array_idx]],
+      modelData->stringParameterData[array_idx].dimension.scalar_length);
   }
 }
 
@@ -1024,6 +1146,32 @@ static void freeRealVarAttributes(STATIC_REAL_DATA *vars, long n)
   }
 }
 
+static void freeIntegerVarAttributes(STATIC_INTEGER_DATA *vars, long n)
+{
+  long i;
+
+  if (!vars) {
+    return;
+  }
+  for (i = 0; i < n; i++) {
+    omc_array_release(&vars[i].attribute.start);
+    omc_array_release(&vars[i].attribute.min);
+    omc_array_release(&vars[i].attribute.max);
+  }
+}
+
+static void freeBooleanVarAttributes(STATIC_BOOLEAN_DATA *vars, long n)
+{
+  long i;
+
+  if (!vars) {
+    return;
+  }
+  for (i = 0; i < n; i++) {
+    omc_array_release(&vars[i].attribute.start);
+  }
+}
+
 static void freeStringVarAttributes(STATIC_STRING_DATA *vars, long n)
 {
   long i;
@@ -1032,7 +1180,7 @@ static void freeStringVarAttributes(STATIC_STRING_DATA *vars, long n)
     return;
   }
   for (i = 0; i < n; i++) {
-    omc_string_move(&vars[i].attribute.start, NULL);
+    omc_string_array_release(&vars[i].attribute.start);
   }
 }
 
@@ -1055,6 +1203,10 @@ void freeModelDataVarArrays(MODEL_DATA* modelData)
   freeRealVarAttributes(modelData->realVarsData, modelData->nVariablesRealArray);
   freeRealVarAttributes(modelData->realParameterData, modelData->nParametersRealArray);
   freeRealVarAttributes(modelData->realSensitivityData, modelData->nSensitivityVars);
+  freeIntegerVarAttributes(modelData->integerVarsData, modelData->nVariablesIntegerArray);
+  freeIntegerVarAttributes(modelData->integerParameterData, modelData->nParametersIntegerArray);
+  freeBooleanVarAttributes(modelData->booleanVarsData, modelData->nVariablesBooleanArray);
+  freeBooleanVarAttributes(modelData->booleanParameterData, modelData->nParametersBooleanArray);
   freeStringVarAttributes(modelData->stringVarsData, modelData->nVariablesStringArray);
   freeStringVarAttributes(modelData->stringParameterData, modelData->nParametersStringArray);
   freeAliasAttributes(modelData->realAlias, modelData->nAliasRealArray);
@@ -1107,12 +1259,37 @@ void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
     simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.max, 1);
   }
 
+  for(i = 0; i < modelData->nVariablesIntegerArray; i++) {
+    simple_alloc_1d_integer_array(&modelData->integerVarsData[i].attribute.start, 1);
+    simple_alloc_1d_integer_array(&modelData->integerVarsData[i].attribute.min, 1);
+    simple_alloc_1d_integer_array(&modelData->integerVarsData[i].attribute.max, 1);
+  }
+  for(i = 0; i < modelData->nVariablesBooleanArray; i++) {
+    simple_alloc_1d_boolean_array(&modelData->booleanVarsData[i].attribute.start, 1);
+  }
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  for(i = 0; i < modelData->nVariablesStringArray; i++) {
+    simple_alloc_1d_string_array(&modelData->stringVarsData[i].attribute.start, 1);
+  }
+#endif
+
   // Parameter
   for(i = 0; i < modelData->nParametersRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.nominal, 1);
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.min, 1);
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.max, 1);
+  }
+  for(i = 0; i < modelData->nParametersIntegerArray; i++) {
+    simple_alloc_1d_integer_array(&modelData->integerParameterData[i].attribute.start, 1);
+    simple_alloc_1d_integer_array(&modelData->integerParameterData[i].attribute.min, 1);
+    simple_alloc_1d_integer_array(&modelData->integerParameterData[i].attribute.max, 1);
+  }
+  for(i = 0; i < modelData->nParametersBooleanArray; i++) {
+    simple_alloc_1d_boolean_array(&modelData->booleanParameterData[i].attribute.start, 1);
+  }
+  for(i = 0; i < modelData->nParametersStringArray; i++) {
+    simple_alloc_1d_string_array(&modelData->stringParameterData[i].attribute.start, 1);
   }
 }
 
@@ -1342,11 +1519,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
 #if !defined(OMC_MINIMAL_LOGGING)
   /* initial chattering info */
-  data->simulationInfo->chatteringInfo.numEventLimit = 100;
-  data->simulationInfo->chatteringInfo.lastSteps = (int*) calloc(data->simulationInfo->chatteringInfo.numEventLimit, sizeof(int));
+  data->simulationInfo->chatteringInfo.numEventLimit = 1000;
   data->simulationInfo->chatteringInfo.lastTimes = (modelica_real*) calloc(data->simulationInfo->chatteringInfo.numEventLimit, sizeof(double));
   data->simulationInfo->chatteringInfo.currentIndex = 0;
-  data->simulationInfo->chatteringInfo.lastStepsNumStateEvents = 0;
+  data->simulationInfo->chatteringInfo.stateEventsInARow = 0;
   data->simulationInfo->chatteringInfo.messageEmitted = 0;
 #endif
 
@@ -1523,7 +1699,6 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->extObjs);
 
   /* free chattering info */
-  free(data->simulationInfo->chatteringInfo.lastSteps);
   free(data->simulationInfo->chatteringInfo.lastTimes);
 
   /* free delay structure */
@@ -1600,26 +1775,6 @@ modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nomina
 modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
   return !LessZC(a, b, a_nominal, b_nominal, !direction);
-}
-
-modelica_boolean Less(double a, double b)
-{
-  return a < b;
-}
-
-modelica_boolean LessEq(double a, double b)
-{
-  return a <= b;
-}
-
-modelica_boolean Greater(double a, double b)
-{
-  return a > b;
-}
-
-modelica_boolean GreaterEq(double a, double b)
-{
-  return a >= b;
 }
 
 

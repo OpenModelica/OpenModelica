@@ -53,6 +53,7 @@ encapsulated package Autoconf
   constant String ldflags_runtime_sim_rust = "";
   constant String ldflags_runtime_fmu = "";
   constant String hdf5Libs = "";
+  constant String fmilibLibs = "";
 
   constant String parModelicaAutoLibs = "";
 

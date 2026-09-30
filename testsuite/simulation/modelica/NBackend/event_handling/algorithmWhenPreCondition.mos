@@ -1,0 +1,32 @@
+// name: algorithmWhenPreCondition
+// keywords: NewBackend when algorithm pre condition
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -f AlgorithmWhenPre*
+//
+// The condition of a when statement in an algorithm that is not a plain variable has to be
+// replaced by a condition variable. Before, the code generation created the edge detection
+// for the pre variable in the condition and failed with "Got $PRE for something that is
+// already pre".
+
+loadString("
+model AlgorithmWhenPre
+  Boolean iA(start = false);
+  Integer st(start = 0, fixed = true);
+algorithm
+  when st == 0 and pre(iA) then
+    st := 1;
+  end when;
+equation
+  iA = time > 0.5;
+end AlgorithmWhenPre;
+"); getErrorString();
+
+translateModel(AlgorithmWhenPre); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// endResult

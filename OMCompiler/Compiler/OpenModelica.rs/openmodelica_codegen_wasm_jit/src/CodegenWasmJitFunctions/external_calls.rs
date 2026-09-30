@@ -256,7 +256,7 @@ pub(super) fn emit_shared_external_call(
             }
         }
         release_heap_locals(ctx)?;
-        push_outputs(ctx);
+        push_outputs(ctx)?;
         ctx.emit(we::Instruction::Return);
         ctx.emit(we::Instruction::End); // if
         // Not inside a residual: a `ModelicaError` ends the run, as in C.
@@ -454,7 +454,7 @@ pub(crate) fn with_shared_externals<T>(f: impl FnOnce() -> T) -> T {
 thread_local! {
     /// The shared-memory externals a host serves (`om:ext/native`); their stub
     /// marshals from runtime handles, so a String or array passes as the handle.
-    static NATIVE_EXTERNALS: std::cell::RefCell<HashSet<String>> = std::cell::RefCell::new(HashSet::new());
+    static NATIVE_EXTERNALS: std::cell::RefCell<HashSet<String>> = std::cell::RefCell::new(HashSet::default());
 }
 
 pub(crate) fn set_native_externals(names: impl IntoIterator<Item = String>) {
@@ -563,7 +563,7 @@ pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: 
         ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
         release_args(ctx)?;
         release_heap_locals(ctx)?;
-        push_outputs(ctx);
+        push_outputs(ctx)?;
         ctx.emit(we::Instruction::Return);
         ctx.emit(we::Instruction::End); // if
         // Not inside a residual: a `ModelicaError` ends the run, as in C.

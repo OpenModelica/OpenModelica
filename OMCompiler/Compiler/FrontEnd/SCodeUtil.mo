@@ -1536,6 +1536,7 @@ algorithm
 
     case SCode.EQ_WHEN()
       algorithm
+        outArg := inFunc(inEquation.condition, outArg);
         outArg := List.fold1(inEquation.eEquationLst, foldEquationsExps, inFunc, outArg);
 
         for branch in inEquation.elseBranches loop
@@ -1606,6 +1607,8 @@ algorithm
           outArg := inFunc(exp, outArg);
           outArg := List.fold1(stmts, foldStatementsExps, inFunc, outArg);
         end for;
+
+        outArg := List.fold1(inStatement.elseBranch, foldStatementsExps, inFunc, outArg);
       then
         outArg;
 

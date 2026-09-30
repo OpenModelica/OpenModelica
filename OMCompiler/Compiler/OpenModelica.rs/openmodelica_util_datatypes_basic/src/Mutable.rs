@@ -1,6 +1,6 @@
 // Manually written
 #![allow(non_snake_case)]
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex};
 
 use metamodelica::gc::{MMTrace, MMVisitor, TraceableCell};
 
@@ -32,14 +32,17 @@ impl<T: MMTrace> TraceableCell for CellInner<T> {
     }
 }
 
-/// Allocate a cell and register it with the cycle collector. Every cell —
-/// `Mutable` or `Pointer::Mutable`, explicit or `Default`-synthesized — must
-/// go through here: an unregistered cell is never a collection candidate, so
-/// cycles through it would silently leak.
+/// Allocate a cell and, when the cycle collector is built, register it.
+/// Every cell — `Mutable` or `Pointer::Mutable`, explicit or
+/// `Default`-synthesized — must go through here: an unregistered cell is never
+/// a collection candidate, so cycles through it would silently leak.
 pub(crate) fn new_cell<T: Clone + MMTrace + 'static>(data: T) -> Arc<CellInner<T>> {
     let inner = Arc::new(CellInner { content: Mutex::new(Some(data)) });
-    let weak: Weak<dyn TraceableCell> = Arc::downgrade(&inner) as _;
-    metamodelica::gc::register_cell(weak);
+    #[cfg(any(test, feature = "cycle-collect"))]
+    {
+        let weak: std::sync::Weak<dyn TraceableCell> = Arc::downgrade(&inner) as _;
+        metamodelica::gc::register_cell(weak);
+    }
     inner
 }
 

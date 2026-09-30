@@ -1,7 +1,7 @@
 // Installs just the Modelica Standard Library version the Windows testsuite
 // smoke set needs (see .CI/common.groovy's installWindowsSmokeLibrary() and
-// testsuite/openmodelica/fmi/CoSimulation/2.0/issue10523.mos, the one '//
-// win: yes' test that calls loadModel(Modelica)). Everything else in the
+// testsuite/openmodelica/fmi/CoSimulation/2.0/issue10523.mos, the one test in
+// the smoke suite that calls loadModel(Modelica)). Everything else in the
 // smoke set runs against nothing but omc itself.
 //
 // Unlike libraries/index.mos and install-index.mos, this does not build the

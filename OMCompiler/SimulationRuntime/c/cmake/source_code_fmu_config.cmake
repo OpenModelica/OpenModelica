@@ -10,7 +10,7 @@
 set(SOURCE_FMU_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/c)
 
 ## Where SimulationRuntime/rust/CMakeLists.txt installs the crates a
-## --simCodeTarget=C+Rust source FMU carries.
+## --simCodeTarget=C source FMU carries.
 set(SOURCE_FMU_RUST_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
 
 
@@ -21,7 +21,7 @@ set(SOURCE_FMU_RUST_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
 # Two lists, split along the same line the two runtime libraries are split along:
 # what libOpenModelicaRuntimeC covers (gc/, meta/, util/) and what
 # libSimulationRuntimeC covers (simulation/, math-support/). A source FMU built
-# with --simCodeTarget=C+Rust ships only the first, and links the Rust runtime for
+# with --simCodeTarget=C ships only the first, and links the Rust runtime for
 # the second. See Compiler/SimCode/SimCodeMain.mo.
 set(SOURCE_FMU_RUNTIME_C_FILES_LIST "gc/omc_alloc.c"
                                     "gc/omc_rc.c"

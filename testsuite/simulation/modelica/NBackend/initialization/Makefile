@@ -2,6 +2,10 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 experimental_initialSimplified.mos \
+discreteCallArgument.mos \
+functionOutputStart.mos \
+functionOutputStartAlias.mos \
+functionAliasStartLoop.mos \
 primaryParameterFor.mos \
 primaryParameterRecord.mos \
 resizableParameterBinding.mos \

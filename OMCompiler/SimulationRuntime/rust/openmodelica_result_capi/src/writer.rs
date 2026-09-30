@@ -1,8 +1,7 @@
 //! `omc_result_writer_*`: the result-file writers of the Rust runtime
 //! (`.mat`, `.arrow`, `.csv`, `.plt`) for a C simulation runtime, which
 //! describes its signals once and then pushes one row of doubles per output
-//! point. The C runtime's own writers are replaced by this under
-//! `OM_RUST_RESULT_WRITERS` (simulation_result_rust.cpp).
+//! point (simulation_result_rust.cpp).
 
 #![allow(non_camel_case_types)]
 

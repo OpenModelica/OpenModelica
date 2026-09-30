@@ -153,6 +153,7 @@ CevalFuncArray3.mo \
 CevalFuncArray4.mo \
 CevalFuncArray5.mo \
 CevalFuncArray6.mo \
+CevalFuncArray7.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
@@ -634,6 +635,8 @@ FuncBuiltinSqrt.mo \
 FuncBuiltinSubSample1.mo \
 FuncBuiltinSubSample2.mo \
 FuncBuiltinSum.mo \
+FuncBuiltinSum2.mo \
+FuncBuiltinSum3.mo \
 FuncBuiltinSuperSample1.mo \
 FuncBuiltinSuperSample2.mo \
 FuncBuiltinSymmetric.mo \
@@ -738,6 +741,8 @@ FunctionUnitialized1.mo \
 FunctionUnitialized2.mo \
 FunctionUnitialized3.mo \
 FunctionUnitialized4.mo \
+FunctionUnitialized5.mo \
+FunctionUnitialized6.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \

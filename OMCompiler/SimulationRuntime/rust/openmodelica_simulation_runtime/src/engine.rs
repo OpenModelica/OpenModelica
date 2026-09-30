@@ -7,6 +7,7 @@
 use core::ffi::{c_char, c_int, c_long};
 
 use openmodelica_sim_meta::driver::{self, AssertHold, Result, SimEngine};
+use openmodelica_sim_meta::omclog;
 
 use crate::abi::*;
 use crate::data::RtData;
@@ -76,11 +77,30 @@ pub struct CEngine {
     /// C's `omc_assert_simulation` does for that phase. Republished from the
     /// driver's own stage word on every call (see [`CEngine::publish`]).
     pub stage: c_int,
+    /// C's `initialization(…, "fmi", …)`: the parameters are what the FMI
+    /// interface set, not the start attributes.
+    pub keep_params: bool,
 }
 
 impl CEngine {
     pub fn new(rt: RtData) -> Self {
-        CEngine { rt, stage: error_stage::SIMULATION }
+        CEngine { rt, stage: error_stage::SIMULATION, keep_params: false }
+    }
+
+    /// The `modelica_string` behind a string slot (`str_off`/`sparam_off` region).
+    fn string_slot(&self, addr: u32) -> Result<*mut modelica_string> {
+        let l = &self.rt.layout;
+        let md = unsafe { &*(*self.rt.data).modelData };
+        let (base, count, arr) = if addr >= l.sparam_off {
+            (l.sparam_off, md.nParametersString, unsafe { (*(*self.rt.data).simulationInfo).stringParameter })
+        } else {
+            (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
+        };
+        let i = ((addr - base) / 4) as c_long;
+        if i >= count || arr.is_null() {
+            return Err("string slot out of range");
+        }
+        Ok(unsafe { arr.add(i as usize) })
     }
 
     /// Flat address of the driver's `[stage, hit]` pair.
@@ -103,15 +123,11 @@ impl CEngine {
 
     /// Whether a model error raised now is one of the open region's to absorb.
     /// Outside every region it is what C's outermost `MMC_TRY_INTERNAL` would not
-    /// catch either, and ends the run.
+    /// catch either, and ends the run. So does one in event handling, which has
+    /// nothing left to retry from.
     fn error_absorbed(stage: i32) -> bool {
         use openmodelica_nls as nls;
-        [
-            nls::ERROR_INTEGRATOR,
-            nls::ERROR_NONLINEARSOLVER,
-            nls::ERROR_SIMULATION_STEP,
-            nls::ERROR_EVENTHANDLING,
-        ]
+        [nls::ERROR_INTEGRATOR, nls::ERROR_NONLINEARSOLVER, nls::ERROR_SIMULATION_STEP]
         .contains(&(stage as u32))
     }
 
@@ -135,6 +151,9 @@ impl CEngine {
         };
         let si = self.rt.info();
         si.noThrowAsserts = (driver::assert_hold() != AssertHold::Throw) as modelica_boolean;
+        crate::support::set_c_assert_stream(
+            omclog::active(omclog::ASSERT) && !(si.noThrowAsserts != 0 && driver::assert_quiet()),
+        );
         // 0 held, 1 event, 2 initialization -- C reaches the held branch through
         // `discreteCall == 0 || solveContinuous`, and the fresh one through neither.
         si.discreteCall = if mode == 0 { 0 } else { 1 };
@@ -167,7 +186,7 @@ impl CEngine {
             si.needToReThrow = 0;
             driver::note_no_throw_assert();
         }
-        if rc != -1 {
+        if rc != -1 && !crate::support::error_raised(self.rt.thread_data) {
             return Ok(());
         }
         if Self::error_absorbed(self.driver_stage()) {
@@ -200,6 +219,10 @@ impl SimEngine for CEngine {
 
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.rt.write(addr, buf)
+    }
+
+    fn copy_bytes(&mut self, from: u32, to: u32, len: usize) -> Result<()> {
+        self.rt.copy(from, to, len)
     }
 
     /// C's `currentContext`, mapped past the layout's end (`data::CONTEXT_OFF`).
@@ -279,6 +302,14 @@ impl SimEngine for CEngine {
                 self.store_pre_values();
                 Ok(())
             }
+            // What the FMI getters evaluate: C's `updateIfNeeded` after `functionODE`.
+            "functionOutputs" => {
+                self.rt.info().callStatistics.functionAlgebraics += 1;
+                self.call_cb(cb.functionAlgebraics)?;
+                self.call_cb(cb.output_function)?;
+                self.store_pre_values();
+                Ok(())
+            }
             "functionDAE" => {
                 self.rt.info().callStatistics.updateDiscreteSystem += 1;
                 self.call_cb(cb.functionDAE)
@@ -312,7 +343,7 @@ impl SimEngine for CEngine {
             // fills; the driver calls this on every initialization attempt, so the
             // allocation belongs with it.
             "functionInitSpatialDistribution" => {
-                crate::spatial::init(self.rt.model().nSpatialDistributions as usize);
+                crate::spatial::init(self.rt.data, self.rt.model().nSpatialDistributions as usize);
                 self.call_cb(cb.function_initSpatialDistribution)
             }
             "functionZeroCrossingsEquations" => {
@@ -330,7 +361,7 @@ impl SimEngine for CEngine {
             // already ran it once. A real call moves `baseClocks`, so the region
             // map is re-pointed after it.
             "functionInitSynchronous" => {
-                if crate::sync::take_fresh() {
+                if crate::sync::take_fresh(self.rt.data) {
                     return Ok(());
                 }
                 self.publish();
@@ -367,22 +398,28 @@ impl SimEngine for CEngine {
             // A C model has no generated function for either: the start values
             // come from the init XML, which this runtime read into `modelData`.
             "functionParameters" => {
-                self.set_all_params_to_start();
+                if !self.keep_params {
+                    self.set_all_params_to_start();
+                }
                 Ok(())
             }
             "functionInitStartValues" => Ok(()),
             "functionInitDelay" => {
                 let md = self.rt.model();
                 let start = self.rt.info().startTime;
-                crate::operators::init(md.nDelayExpressions as usize, start);
+                crate::operators::init(self.rt.data, md.nDelayExpressions as usize, start);
                 Ok(())
             }
             // C's `analyticJacobians[INDEX_JAC_A]` column evaluation; the driver
             // seeds and reads it through the flat window `build_regions` maps.
-            "functionJacA_column" | "functionJacA_constantEqns" => {
-                let jac = crate::data::jac_a_ptr(self.rt.data);
+            "functionJacA_column" | "functionJacA_constantEqns" | "functionJacADJ_column"
+            | "functionJacADJ_constantEqns" => {
+                let jac = match name.starts_with("functionJacADJ") {
+                    true => crate::data::jac_adj_ptr(self.rt.data),
+                    false => crate::data::jac_a_ptr(self.rt.data),
+                };
                 let Some(j) = (unsafe { jac.as_ref() }) else { return Ok(()) };
-                let f = if name == "functionJacA_column" { j.evalColumn } else { j.constantEqns };
+                let f = if name.ends_with("_column") { j.evalColumn } else { j.constantEqns };
                 let Some(f) = f else { return Ok(()) };
                 self.publish();
                 let ok = crate::support::protected(self.rt.thread_data, self.stage, || {
@@ -550,18 +587,13 @@ impl SimEngine for CEngine {
     /// The string slots are opaque to the region map (a `modelica_string` is a
     /// pointer here); the value is read from the array C keeps it in.
     fn string_at(&self, addr: u32) -> Result<String> {
-        let l = &self.rt.layout;
-        let md = unsafe { &*(*self.rt.data).modelData };
-        let (base, count, arr) = if addr >= l.sparam_off {
-            (l.sparam_off, md.nParametersString, unsafe { (*(*self.rt.data).simulationInfo).stringParameter })
-        } else {
-            (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
-        };
-        let i = ((addr - base) / 4) as c_long;
-        if i >= count || arr.is_null() {
-            return Err("string slot out of range");
-        }
-        Ok(crate::model_data::string_value(unsafe { *arr.add(i as usize) }))
+        Ok(crate::model_data::string_value(unsafe { *self.string_slot(addr)? }))
+    }
+
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> Result<()> {
+        let slot = self.string_slot(addr)?;
+        unsafe { crate::model_data::string_set_new(slot, bytes) };
+        Ok(())
     }
 
     /// C's `rt_init` in `initRuntimeAndSimulation`: the function, equation and
@@ -622,7 +654,59 @@ impl SimEngine for CEngine {
 
     fn store_pre_strings(&mut self) {
         let n = self.rt.model().nVariablesString.max(0) as usize;
-        unsafe { core::ptr::copy_nonoverlapping(self.rt.local(0).stringVars, self.rt.info().stringVarsPre, n) };
+        unsafe { crate::model_data::string_slots_store(self.rt.info().stringVarsPre, self.rt.local(0).stringVars, n) };
+    }
+
+    fn set_imported_start(&mut self, group: usize, i: usize, value: f64) {
+        use crate::model_data::{boolean_array_ensure_size, integer_array_ensure_size, real_array_ensure_size};
+        let md = self.rt.model();
+        let si = self.rt.info();
+        // The scalar index maps and variable data of each group of `IMPORT_GROUP`.
+        let (n, rev) = match group {
+            0 => (md.nVariablesReal, si.realVarsReverseIndex),
+            1 => (md.nVariablesInteger, si.integerVarsReverseIndex),
+            2 => (md.nVariablesBoolean, si.booleanVarsReverseIndex),
+            3 => (md.nParametersReal, si.realParamsReverseIndex),
+            4 => (md.nParametersInteger, si.integerParamsReverseIndex),
+            5 => (md.nParametersBoolean, si.booleanParamsReverseIndex),
+            _ => return,
+        };
+        if i >= n.max(0) as usize || rev.is_null() {
+            return;
+        }
+        let ix = unsafe { &*rev.add(i) };
+        macro_rules! start_of {
+            ($data:expr) => {{
+                let v = unsafe { &mut *$data.add(ix.array_idx) };
+                (&mut v.attribute.start, v.dimension.scalar_length)
+            }};
+        }
+        let (start, len): (&mut base_array_t, usize) = match group {
+            0 => start_of!(md.realVarsData),
+            1 => start_of!(md.integerVarsData),
+            2 => start_of!(md.booleanVarsData),
+            3 => start_of!(md.realParameterData),
+            4 => start_of!(md.integerParameterData),
+            _ => start_of!(md.booleanParameterData),
+        };
+        // A start attribute holding a single value (`each`) gets one per element.
+        unsafe {
+            if start.n_elements() != len {
+                match group % 3 {
+                    0 => real_array_ensure_size(start, len as c_int),
+                    1 => integer_array_ensure_size(start, len as c_int),
+                    _ => boolean_array_ensure_size(start, len as c_int),
+                }
+            }
+            if ix.dim_idx >= start.n_elements() {
+                return;
+            }
+            match group % 3 {
+                0 => *(start.data as *mut modelica_real).add(ix.dim_idx) = value,
+                1 => *(start.data as *mut modelica_integer).add(ix.dim_idx) = value as modelica_integer,
+                _ => *(start.data as *mut modelica_boolean).add(ix.dim_idx) = (value != 0.0) as modelica_boolean,
+            }
+        }
     }
 
     fn update_static_system_data(&mut self, linear: bool) {
@@ -690,21 +774,22 @@ impl CEngine {
                 let p = &*md.integerParameterData.add(a);
                 let base = *si.integerParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.integerParameter.add(base + k) = p.attribute.start;
+                    *si.integerParameter.add(base + k) = p.attribute.start.elem_at(k, 0);
                 }
             }
             for a in 0..md.nParametersBooleanArray as usize {
                 let p = &*md.booleanParameterData.add(a);
                 let base = *si.booleanParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.booleanParameter.add(base + k) = p.attribute.start;
+                    *si.booleanParameter.add(base + k) = p.attribute.start.elem_at(k, 0);
                 }
             }
             for a in 0..md.nParametersStringArray as usize {
                 let p = &*md.stringParameterData.add(a);
                 let base = *si.stringParamsIndex.add(a);
                 for k in 0..p.dimension.scalar_length {
-                    *si.stringParameter.add(base + k) = p.attribute.start;
+                    let start = p.attribute.start.elem_at(k, core::ptr::null_mut());
+                    crate::model_data::string_store(si.stringParameter.add(base + k), start);
                 }
             }
         }
@@ -722,7 +807,8 @@ impl CEngine {
                 let v = &*md.stringVarsData.add(a);
                 let base = *si.stringVarsIndex.add(a);
                 for k in 0..v.dimension.scalar_length {
-                    *sd.stringVars.add(base + k) = v.attribute.start;
+                    let start = v.attribute.start.elem_at(k, core::ptr::null_mut());
+                    crate::model_data::string_store(sd.stringVars.add(base + k), start);
                 }
             }
         }
@@ -757,6 +843,7 @@ impl CEngine {
             nominal[..n_states].iter().flat_map(|v| v.abs().max(1e-32).to_ne_bytes()).collect();
         let _ = self.rt.write(l.state_nom_off, &clamped);
         let mut maxs = vec![f64::MAX; n_states];
+        let mut mins = vec![-f64::MAX; n_states];
         unsafe {
             for a in 0..md.nVariablesRealArray as usize {
                 let v = &*md.realVarsData.add(a);
@@ -764,12 +851,15 @@ impl CEngine {
                 for k in 0..v.dimension.scalar_length {
                     if base + k < n_states {
                         maxs[base + k] = v.attribute.max.real_at(k, f64::MAX);
+                        mins[base + k] = v.attribute.min.real_at(k, -f64::MAX);
                     }
                 }
             }
         }
         let bytes: Vec<u8> = maxs.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.state_max_off, &bytes);
+        let bytes: Vec<u8> = mins.iter().flat_map(|v| v.to_ne_bytes()).collect();
+        let _ = self.rt.write(l.state_min_off, &bytes);
         // The optimizer reads `min`/`max`/`nominal`/`useNominal` of every real
         // variable, not just the states'; C reaches them through
         // `getMinFromScalarIdx` and friends, which is this scalarization.

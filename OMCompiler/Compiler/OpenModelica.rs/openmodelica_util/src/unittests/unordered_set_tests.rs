@@ -248,7 +248,7 @@ fn test_copy_contains_same_elements() -> Result<()> {
 #[test]
 fn test_from_list_basic() -> Result<()> {
     let lst = list![literal!("p"), literal!("q"), literal!("r")];
-    let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
+    let s = US::fromList(&lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert_eq!(to_sorted_vec(s), vec!["p", "q", "r"]);
     Ok(())
 }
@@ -256,7 +256,7 @@ fn test_from_list_basic() -> Result<()> {
 #[test]
 fn test_from_list_deduplicates() -> Result<()> {
     let lst = list![literal!("x"), literal!("x"), literal!("y")];
-    let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
+    let s = US::fromList(&lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert_eq!(US::size(s.clone()), 2);
     assert_eq!(to_sorted_vec(s), vec!["x", "y"]);
     Ok(())
@@ -265,7 +265,7 @@ fn test_from_list_deduplicates() -> Result<()> {
 #[test]
 fn test_from_list_empty() -> Result<()> {
     let lst: metamodelica::List<ArcStr> = metamodelica::nil();
-    let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
+    let s = US::fromList(&lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert!(US::isEmpty(s));
     Ok(())
 }
@@ -363,7 +363,7 @@ fn test_rehash_preserves_all_keys() -> Result<()> {
 fn test_all_true_when_all_match() -> Result<()> {
     // All keys start with "aa" – pred is always true.
     let s = set_of(&["aaa", "aab", "aac"])?;
-    let result = US::all(s, Arc::new(|k: ArcStr| Ok(k.starts_with("aa")))).unwrap();
+    let result = US::all(s, &|k: ArcStr| Ok(k.starts_with("aa"))).unwrap();
     assert!(result);
     Ok(())
 }
@@ -371,7 +371,7 @@ fn test_all_true_when_all_match() -> Result<()> {
 #[test]
 fn test_all_false_when_one_does_not_match() -> Result<()> {
     let s = set_of(&["aaa", "bbb"])?;
-    let result = US::all(s, Arc::new(|k: ArcStr| Ok(k.starts_with("aa")))).unwrap();
+    let result = US::all(s, &|k: ArcStr| Ok(k.starts_with("aa"))).unwrap();
     assert!(!result);
     Ok(())
 }
@@ -379,14 +379,14 @@ fn test_all_false_when_one_does_not_match() -> Result<()> {
 #[test]
 fn test_all_empty_set_returns_true() {
     let s = empty_set();
-    let result = US::all(s, Arc::new(|_: ArcStr| Ok(false))).unwrap();
+    let result = US::all(s, &|_: ArcStr| Ok(false)).unwrap();
     assert!(result);
 }
 
 #[test]
 fn test_any_true_when_one_matches() -> Result<()> {
     let s = set_of(&["no_match", "yes_match"])?;
-    let result = US::any(s, Arc::new(|k: ArcStr| Ok(k.starts_with("yes")))).unwrap();
+    let result = US::any(s, &|k: ArcStr| Ok(k.starts_with("yes"))).unwrap();
     assert!(result);
     Ok(())
 }
@@ -394,7 +394,7 @@ fn test_any_true_when_one_matches() -> Result<()> {
 #[test]
 fn test_any_false_when_none_match() -> Result<()> {
     let s = set_of(&["a", "b"])?;
-    let result = US::any(s, Arc::new(|k: ArcStr| Ok(k.starts_with("z")))).unwrap();
+    let result = US::any(s, &|k: ArcStr| Ok(k.starts_with("z"))).unwrap();
     assert!(!result);
     Ok(())
 }
@@ -402,14 +402,14 @@ fn test_any_false_when_none_match() -> Result<()> {
 #[test]
 fn test_any_empty_set_returns_false() {
     let s = empty_set();
-    let result = US::any(s, Arc::new(|_: ArcStr| Ok(true))).unwrap();
+    let result = US::any(s, &|_: ArcStr| Ok(true)).unwrap();
     assert!(!result);
 }
 
 #[test]
 fn test_none_when_no_element_matches() -> Result<()> {
     let s = set_of(&["a", "b"])?;
-    let result = US::none(s, Arc::new(|k: ArcStr| Ok(k.starts_with("z")))).unwrap();
+    let result = US::none(s, &|k: ArcStr| Ok(k.starts_with("z"))).unwrap();
     assert!(result);
     Ok(())
 }
@@ -417,7 +417,7 @@ fn test_none_when_no_element_matches() -> Result<()> {
 #[test]
 fn test_none_false_when_one_matches() -> Result<()> {
     let s = set_of(&["a", "z_key"])?;
-    let result = US::none(s, Arc::new(|k: ArcStr| Ok(k.starts_with("z")))).unwrap();
+    let result = US::none(s, &|k: ArcStr| Ok(k.starts_with("z"))).unwrap();
     assert!(!result);
     Ok(())
 }

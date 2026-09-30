@@ -205,6 +205,18 @@ algorithm
   end match;
 end buildCrefExpFromSubs;
 
+public function padAsubSubscripts
+"Used by templates: the subscripts of an ASUB of exp, with a whole-dimension
+ subscript for each trailing dimension they leave out."
+  input DAE.Exp exp;
+  input list<DAE.Subscript> subs;
+  output list<DAE.Subscript> outSubs;
+protected
+  Integer n = listLength(Expression.arrayDimension(Expression.typeof(exp))) - listLength(subs);
+algorithm
+  outSubs := if n > 0 then listAppend(subs, List.fill(DAE.WHOLEDIM(), n)) else subs;
+end padAsubSubscripts;
+
 public function incrementInt
 "Used by templates to create new integers that are increments of another."
   input Integer inInt;
@@ -527,6 +539,7 @@ algorithm
 
   collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);
   collectRecDeclsFromTypes(metarecordTypes, recDeclsMap);
+  addRecordDeclsForExtraConstructors(recDeclsMap);
 
   recordDecls := UnorderedMap.valueList(recDeclsMap);
   recordDecls := List.sort(recordDecls, orderRecordDecls);
@@ -537,6 +550,37 @@ algorithm
   g := Graph.buildGraph(recordDecls, getRecordDependencies, recordDecls);
   (recordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
 end elaborateFunctions;
+
+protected function addRecordDeclsForExtraConstructors
+  "An extra constructor builds a struct of its record type, which is otherwise
+   only declared where the record is used with its own defaults. Added after
+   collecting, so that such a use always provides the declaration."
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+algorithm
+  for decl in UnorderedMap.valueList(recDeclsMap) loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() guard not UnorderedMap.contains(decl.name, recDeclsMap)
+        algorithm
+          UnorderedMap.add(decl.name, SimCodeFunction.RECORD_DECL_FULL(decl.name, NONE(), decl.defPath,
+            list(variableWithoutBinding(v) for v in decl.variables), decl.usedExternally), recDeclsMap);
+        then ();
+      else ();
+    end match;
+  end for;
+end addRecordDeclsForExtraConstructors;
+
+protected function variableWithoutBinding
+  input output SimCodeFunction.Variable var;
+algorithm
+  () := match var
+    case SimCodeFunction.VARIABLE()
+      algorithm
+        var.value := NONE();
+        var.bind_from_outside := false;
+      then ();
+    else ();
+  end match;
+end variableWithoutBinding;
 
 protected function getRecordDependencies
   input SimCodeFunction.RecordDeclaration decl;
@@ -586,6 +630,59 @@ algorithm
   name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
   decl := List.find1(allDecls, recordDeclHasName, name);
 end getRecordDependenciesFromType;
+
+public function setTrivialRecords
+  "Registers the records whose members are all scalars without references, or
+   such records. The declarations come sorted by their dependencies."
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
+protected
+  list<String> trivial = {};
+algorithm
+  for decl in recordDecls loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_FULL()
+        guard List.all(decl.variables, function isTrivialRecordMember(allDecls = recordDecls, trivial = trivial))
+        algorithm
+          trivial := decl.name :: trivial;
+        then ();
+      else ();
+    end match;
+  end for;
+  setGlobalRoot(Global.trivialRecords, trivial);
+end setTrivialRecords;
+
+public function isTrivialRecord
+  input String name;
+  output Boolean b;
+algorithm
+  b := listMember(name, getGlobalRoot(Global.trivialRecords));
+end isTrivialRecord;
+
+protected function isTrivialRecordMember
+  input SimCodeFunction.Variable var;
+  input list<SimCodeFunction.RecordDeclaration> allDecls;
+  input list<String> trivial;
+  output Boolean b;
+protected
+  String name;
+algorithm
+  b := match getVarType(var)
+    case DAE.T_REAL() then true;
+    case DAE.T_INTEGER() then true;
+    case DAE.T_BOOL() then true;
+    case DAE.T_ENUMERATION() then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
+      algorithm
+        try
+          SimCodeFunction.RECORD_DECL_FULL(name = name) := getRecordDependenciesFromType(getVarType(var), allDecls);
+          b := listMember(name, trivial);
+        else
+          b := false;
+        end try;
+      then b;
+    else false;
+  end match;
+end isTrivialRecordMember;
 
 protected function recordDeclHasName
   input SimCodeFunction.RecordDeclaration decl;
@@ -1236,7 +1333,102 @@ algorithm
   (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
 end findLiteralsHelper;
 
+function findLiteralsHelperKeepSingle
+  "findLiteralsHelper, except that a string used once (per uses) that is not
+   a literal yet stays in place."
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable uses;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp exp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+algorithm
+  (exp, tpl) := Expression.traverseExpBottomUp(inExp,
+    function Patternm.traverseConstantPatternsHelper(func=function replaceLiteralExpKeepSingle(uses=uses)),
+    inTpl);
+  (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
+end findLiteralsHelperKeepSingle;
+
+function countStringUses
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable inUses;
+  output DAE.Exp exp = inExp;
+  output HashTableExpToIndex.HashTable uses;
+algorithm
+  (_, uses) := Expression.traverseExpBottomUp(inExp, countStringUse, inUses);
+end countStringUses;
+
 protected
+
+function isSconst
+  input DAE.Exp e;
+  output Boolean b;
+algorithm
+  b := match e case DAE.SCONST() then true; else false; end match;
+end isSconst;
+
+function countStringUse
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable inUses;
+  output DAE.Exp exp = inExp;
+  output HashTableExpToIndex.HashTable uses = inUses;
+algorithm
+  if isSconst(inExp) then
+    uses := addStringUse(inExp, uses);
+  else
+    // A lifted literal array cannot hold an unlifted string
+    for e in literalElements(inExp) loop
+      if isSconst(e) then
+        uses := addStringUse(e, uses);
+      end if;
+    end for;
+  end if;
+end countStringUse;
+
+function addStringUse
+  input DAE.Exp e;
+  input output HashTableExpToIndex.HashTable uses;
+algorithm
+  uses := BaseHashTable.add((e, if BaseHashTable.hasKey(e, uses) then BaseHashTable.get(e, uses) + 1 else 1), uses);
+end addStringUse;
+
+function literalElements
+  input DAE.Exp e;
+  output list<DAE.Exp> elts;
+algorithm
+  elts := match e
+    local
+      DAE.Exp e1, e2;
+    case DAE.ARRAY() then e.array;
+    case DAE.MATRIX() then List.flatten(e.matrix);
+    case DAE.BOX(e1) then {e1};
+    case DAE.META_OPTION(SOME(e1)) then {e1};
+    case DAE.CONS(e1, e2) then {e1, e2};
+    case DAE.LIST() then e.valList;
+    case DAE.META_TUPLE() then e.listExp;
+    case DAE.METARECORDCALL() then e.args;
+    case DAE.CALL(path = Absyn.IDENT("listArrayLiteral")) then e.expLst;
+    else {};
+  end match;
+end literalElements;
+
+function replaceLiteralExpKeepSingle
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable uses;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+protected
+  HashTableExpToIndex.HashTable ht;
+algorithm
+  (_, ht, _) := inTpl;
+  if isSconst(inExp) and BaseHashTable.hasKey(inExp, uses) and BaseHashTable.get(inExp, uses) == 1 and not BaseHashTable.hasKey(inExp, ht) then
+    outExp := inExp;
+    outTpl := inTpl;
+  else
+    (outExp, outTpl) := replaceLiteralExp(inExp, inTpl);
+  end if;
+end replaceLiteralExpKeepSingle;
+
 
 function replaceLiteralArrayExp
   "The tuples contain:
@@ -1620,7 +1812,7 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
-      Boolean is_default, usedExternally, bool1;
+      Boolean is_default, usedExternally, bool1, changed;
 
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, usedExternally = usedExternally)
       algorithm
@@ -1633,9 +1825,10 @@ algorithm
           // If it already exists check if we need to update it.
           if isSome(optRecDecl) then
             SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
+            (vars, changed) := addMissingDefaults(vars, varlst);
 
-            if usedExternally and not bool1 then
-              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, true);
+            if changed or (usedExternally and not bool1) then
+              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally or bool1);
               UnorderedMap.add(sname, recDecl, recDeclsMap);
             end if;
           // Add it if it does not exist.
@@ -1652,16 +1845,8 @@ algorithm
           // Add it if does not exist. Otherwise do nothing.
           if isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars, path, usedExternally);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
-          end if;
-          // Also ensure the struct type itself is declared. Without this, sizeof(name) and
-          // function return types using 'name' produce "unknown type name" C errors, because
-          // RECORD_DECL_ADD_CONSTRCTOR does not emit a typedef or struct for the base record.
-          if Flags.getConfigBool(Flags.NEW_BACKEND) and isNone(UnorderedMap.get(name, recDeclsMap)) then
-            vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars, usedExternally);
-            UnorderedMap.add(name, recDecl, recDeclsMap);
             collectRecDeclsFromTypesVars(varlst, recDeclsMap);
           end if;
         end if;
@@ -1683,6 +1868,40 @@ algorithm
 
   end match;
 end collectRecDeclsFromType;
+
+protected function addMissingDefaults
+  "Not every type of a record carries the defaults of its fields, so the
+   declaration takes each missing default from the next type that has it."
+  input list<SimCodeFunction.Variable> inVars;
+  input list<DAE.Var> typeVars;
+  output list<SimCodeFunction.Variable> vars = {};
+  output Boolean changed = false;
+protected
+  Option<DAE.Exp> value;
+  SimCodeFunction.Variable var;
+algorithm
+  for v in inVars loop
+    var := v;
+    () := match var
+      case SimCodeFunction.VARIABLE(value = NONE())
+        algorithm
+          for tv in typeVars loop
+            if stringEq(tv.name, ComponentReferenceBasics.crefFirstIdent(var.name)) then
+              value := checkSourceAndGetBindingExp(tv.binding);
+              if isSome(value) then
+                var.value := value;
+                changed := true;
+              end if;
+              break;
+            end if;
+          end for;
+        then ();
+      else ();
+    end match;
+    vars := var :: vars;
+  end for;
+  vars := listReverse(vars);
+end addMissingDefaults;
 
 protected function typesVarNoBinding
   input DAE.Var inTypesVar;
@@ -1825,9 +2044,11 @@ protected function collectRecDeclsFromTypesVars
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for recTyVar in inRecordTypeVars loop
-    () := match recTyVar
-      case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
-        collectRecDeclsFromType(recTyVar.ty, recDeclsMap);
+    () := match Types.arrayElementType(recTyVar.ty)
+      local
+        DAE.Type ty;
+      case ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) algorithm
+        collectRecDeclsFromType(ty, recDeclsMap);
       then ();
 
       else ();
@@ -2317,10 +2538,11 @@ algorithm
     case Absyn.STRING("fmilib")
       then ({"fmilib.lib","shlwapi.lib"},{});
 
-    // If the string starts with a -, it's probably -l or -L gcc flags
+    // A file is passed as it is, and if the string starts with a -, it's
+    // probably a linker flag
     case Absyn.STRING(str)
       algorithm
-        true := "-" == stringGetStringChar(str, 1);
+        true := System.regularFileExists(str) or "-" == stringGetStringChar(str, 1);
       then ({str},{});
 
     case Absyn.STRING(str)
@@ -2406,8 +2628,11 @@ algorithm
         end if;
       then  (strs,{});
 
+    // One element per library, which the wasm-jit loads one by one.
     case Absyn.STRING("fmilib")
-      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});
+      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"}
+            elseif Autoconf.fmilibLibs == "" then {"-lfmilib"}
+            else "-lfmilib" :: Util.stringSplitAtChar(Autoconf.fmilibLibs, " "),{});
 
     case Absyn.STRING(str)
       algorithm
@@ -2828,6 +3053,8 @@ algorithm
 end aliasRecordDeclarations2;
 
 protected function variableString
+  "The member as it is laid out in the struct: an array member is an array
+   descriptor whatever its dimension sizes."
   input SimCodeFunction.Variable var;
   output String str;
 algorithm
@@ -2836,7 +3063,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
+      then TypesDump.unparseType(Types.arrayElementType(ty)) + "[" + intString(Types.numberOfDimensions(ty)) + "] " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;

@@ -177,6 +177,7 @@ extern void va_warningStreamPrint(int stream, int indentNext, const char *format
 extern void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
 extern void va_warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap);
 extern void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, unsigned long maxWarnDisplays, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
+extern void warningStreamPrintLimitReached(int stream, int indentNext, unsigned long maxWarnDisplays);
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap);
 extern void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap);
@@ -189,6 +190,7 @@ static inline void va_warningStreamPrint(int stream, int indentNext, const char 
 static inline void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...) {}
 static inline void va_warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap) {}
 static inline void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, unsigned long maxWarnDisplays, const char *format, ...) {}
+static inline void warningStreamPrintLimitReached(int stream, int indentNext, unsigned long maxWarnDisplays) {}
 static inline void errorStreamPrint(int stream, int indentNext, const char *format, ...) {}
 static inline void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap) {}
 static inline void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap) {}
@@ -205,7 +207,9 @@ extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_I
 /* OMC_ERROR_RAISED and OMC_ERROR_CLEAR in one, for a caller that cannot see the
    field: the Rust simulation runtime mirrors threadData_t only as far as
    `parent`, because what follows depends on build options. */
+extern void omc_error_raise(threadData_t *threadData);
 extern int omc_error_take(threadData_t *threadData);
+extern jmp_buf *omc_external_jump_buffer(threadData_t *threadData);
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else

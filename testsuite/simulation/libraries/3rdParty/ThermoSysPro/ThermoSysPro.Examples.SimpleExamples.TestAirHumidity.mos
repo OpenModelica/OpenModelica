@@ -3,12 +3,12 @@
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.* ThermoSysPro.Examples.SimpleExamples.TestAirHumidity_* ThermoSysPro.Examples.SimpleExamples.TestAirHumidity ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.exe ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.cpp ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.makefile ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.libs ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.log ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.c ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadModel(ThermoSysPro); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestAirHumidity, stopTime=1000);  getErrorString();
 
@@ -21,7 +21,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
  "singularPressureLoss.T",
  "singularPressureLoss.deltaPf"});
 getErrorString();
- 
+
 
 // Result:
 // true
@@ -35,12 +35,12 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:18:3-19:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/AirHumidity.mo:33:3-35:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/AirHumidity.mo:42:3-43:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Sink.mo:15:3-17:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// "[ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:15:3-16:78:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/AirHumidity.mo:22:3-23:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/AirHumidity.mo:26:3-27:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/Sink.mo:12:3-13:80:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

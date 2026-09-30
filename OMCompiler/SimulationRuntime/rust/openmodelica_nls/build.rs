@@ -10,7 +10,7 @@ fn main() {
     // `system-lapack` names `dgetrf_`/`dgetrs_`; an executable already links
     // liblapack, but a plain `cargo test` of this crate does not.
     if std::env::var_os("CARGO_FEATURE_SYSTEM_LAPACK").is_some() {
-        println!("cargo:rustc-link-lib=dylib=lapack");
+        link_lapack(&["lapack"]);
     }
     println!("cargo::rustc-check-cfg=cfg(sundials)");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
@@ -67,7 +67,37 @@ fn primme() {
     println!("cargo:rustc-link-search=native={}", std::path::Path::new(&lib).display());
     println!("cargo:rustc-link-lib=static=primme");
     // PRIMME's dense algebra, in all four precisions.
-    println!("cargo:rustc-link-lib=dylib=lapack");
-    println!("cargo:rustc-link-lib=dylib=blas");
+    link_lapack(&["lapack", "blas"]);
     println!("cargo:rustc-cfg=primme");
+}
+
+/// Windows has no system `lapack`/`blas` (MSVC has no `lapack.lib`, MSYS2 only
+/// OpenBLAS), so CMake names the LAPACK/BLAS it found in `OMC_LAPACK_LINK`,
+/// `|`-separated. `openmodelica_sim_meta`'s script does the same for Ipopt.
+fn link_lapack(system: &[&str]) {
+    println!("cargo:rerun-if-env-changed=OMC_LAPACK_LINK");
+    let Ok(libs) = std::env::var("OMC_LAPACK_LINK") else {
+        for l in system {
+            println!("cargo:rustc-link-lib=dylib={l}");
+        }
+        return;
+    };
+    let gnu = std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu");
+    for lib in libs.split('|').map(std::path::Path::new) {
+        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else { continue };
+        println!("cargo:rustc-link-search=native={}", dir.display());
+        println!("cargo:rustc-link-lib=dylib={name}");
+    }
+}
+
+/// The name to link a library file by: `openblas.lib` on MSVC, and on MinGW the
+/// import library `libopenblas.dll.a` (or `libopenblas.a`) is `-lopenblas`.
+fn link_name(lib: &std::path::Path, gnu: bool) -> Option<String> {
+    let file = lib.file_name()?.to_str()?;
+    if !gnu {
+        return Some(lib.file_stem()?.to_string_lossy().into_owned());
+    }
+    let stem = file.strip_suffix(".dll.a").or_else(|| file.strip_suffix(".a"))
+        .or_else(|| file.strip_suffix(".dll"))?;
+    Some(stem.strip_prefix("lib").unwrap_or(stem).to_string())
 }
