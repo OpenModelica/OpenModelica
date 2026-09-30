@@ -107,16 +107,20 @@ namespace IAEX
    */
   void MyTextBrowser::contextMenuEvent(QContextMenuEvent *event)
   {
-    const QString scheme = QUrl( anchorAt( event->pos() ) ).scheme().toLower();
+    const QString href = anchorAt( event->pos() );
+    const QString scheme = QUrl( href ).scheme().toLower();
     if( scheme != QLatin1String("http") && scheme != QLatin1String("https") )
     {
       QTextBrowser::contextMenuEvent( event );
       return;
     }
 
-    // put the cursor into the link, unless the user right-clicked a selection
-    if( !textCursor().hasSelection() )
-      setTextCursor( cursorForPosition( event->pos() ) );
+    // Cursor inside the clicked link. The current selection is not touched
+    // before the menu is shown (Copy etc. still work on it), but "Edit web
+    // link..." always works on the clicked link, never on another selection.
+    QTextCursor linkCursor = cursorForPosition( event->pos() );
+    if( linkCursor.charFormat().anchorHref() != href )
+      linkCursor.movePosition( QTextCursor::NextCharacter ); // click was at the link's left border
 
     QMenu *menu = createStandardContextMenu( event->pos() );
     menu->addSeparator();
@@ -126,9 +130,16 @@ namespace IAEX
     QAction *chosen = menu->exec( event->globalPos() );
     delete menu;
 
-    // the notebook window owns the dialog
     if( chosen == editAction )
+    {
+      // drop the other selection, move the cursor into the link and make sure
+      // this cell is the current one (a press on a selection doesn't do that)
+      setTextCursor( linkCursor );
+      emit clickOnCell();
+
+      // the notebook window owns the dialog
       QMetaObject::invokeMethod( window(), "insertWebLink", Qt::QueuedConnection );
+    }
   }
 
   /*!
