@@ -10,20 +10,20 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter);
 compareVars :=
 {
-   "aimc.i_0_s",
+   "aimc.is[1]",
+   "aimc.is[2]",
    "aimc.idq_rr[1]",
    "aimc.idq_rr[2]",
-   "aimc.lssigma.i_[1]",
-   "vfController.x",
+   "aimc.idq_sr[1]",
+   "aimc.idq_sr[2]",
    "loadInertia.phi",
-   "loadInertia.w"
+   "loadInertia.w",
+   "vfController.x"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -35,12 +35,11 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter
-// {"aimc.i_0_s", "aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.lssigma.i_[1]", "vfController.x", "loadInertia.phi", "loadInertia.w"}
+// {"aimc.is[1]", "aimc.is[2]", "aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.idq_sr[1]", "aimc.idq_sr[2]", "loadInertia.phi", "loadInertia.w", "vfController.x"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.i_0_s|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.lssigma.i_.1.|vfController.x|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 15000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.is.1.|aimc.is.2.|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|loadInertia.phi|loadInertia.w|vfController.x', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter_res.mat
 // Files Equal!
 // "true

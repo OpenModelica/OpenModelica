@@ -4,7 +4,7 @@
 // cflags:   +d=backenddaeinfo -d=-newInst
 
 
-loadModel(Modelica,{"3.2.2"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 loadFile("Tearing10.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
@@ -25,7 +25,7 @@ val(R1.v,0.2); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Tearing10_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Tearing10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -78,6 +78,6 @@ val(R1.v,0.2); getErrorString();
 // "
 // -2.880022175007437e-14
 // ""
-// -2.880022175007437e-13
+// -2.8800221750074367e-13
 // ""
 // endResult

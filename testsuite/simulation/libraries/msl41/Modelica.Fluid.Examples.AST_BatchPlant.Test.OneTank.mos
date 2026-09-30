@@ -12,10 +12,16 @@ packageVersion := "4.1.0";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank);
+// Not compared, it differs from the official MSL reference: tank.aboveLevel[1]
 compareVars :=
 {
    "tank.level",
-   "tank.medium.T"
+   "tank.medium.T",
+   "tank.ports_m_flow_out[1]",
+   "timeTable.a",
+   "timeTable.b",
+   "timeTable.last",
+   "timeTable.nextEvent"
 };
 
 runScript(modelTesting);getErrorString();
@@ -27,8 +33,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank
-// {"tank.level", "tank.medium.T"}
-// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank', options = '', outputFormat = 'mat', variableFilter = 'time|tank.level|tank.medium.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"tank.level", "tank.medium.T", "tank.ports_m_flow_out[1]", "timeTable.a", "timeTable.b", "timeTable.last", "timeTable.nextEvent"}
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank', options = '', outputFormat = 'mat', variableFilter = 'time|tank.level|tank.medium.T|tank.ports_m_flow_out.1.|timeTable.a|timeTable.b|timeTable.last|timeTable.nextEvent', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

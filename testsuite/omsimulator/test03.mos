@@ -4,7 +4,7 @@
 // suite: disabled
 
 setCommandLineOptions("-g=MetaModelica");
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 buildModelFMU(Modelica.Blocks.Sources.Constant, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Blocks.Sources.Constant", platforms={"static"});
 getErrorString();

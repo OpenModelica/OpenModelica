@@ -6,17 +6,17 @@
 //
 
 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 
 loadString("
 model FourBarLinkage
   constant Real pi = Modelica.Constants.pi;
-  parameter Modelica.SIunits.Thickness thick = 0.008;
-  parameter Modelica.SIunits.Diameter diam = 0.075;
-  parameter Modelica.SIunits.RotationalDampingConstant bd = 0.0;
-  parameter Modelica.SIunits.Length len1 = 0.15, len3 = 0.25, len4 = 0.3;
-  parameter Modelica.SIunits.Breadth beamWidth = 0.01;
+  parameter Modelica.Units.SI.Thickness thick = 0.008;
+  parameter Modelica.Units.SI.Diameter diam = 0.075;
+  parameter Modelica.Units.SI.RotationalDampingConstant bd = 0.0;
+  parameter Modelica.Units.SI.Length len1 = 0.15, len3 = 0.25, len4 = 0.3;
+  parameter Modelica.Units.SI.Breadth beamWidth = 0.01;
   Modelica.Mechanics.MultiBody.Parts.Fixed fixed1 annotation(Placement(visible = true, transformation(origin = {-80, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   Modelica.Mechanics.MultiBody.Joints.Revolute revolute1(phi(fixed = true), w(fixed = true, start = 1.5)) annotation(Placement(visible = true, transformation(origin = {-52, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   Modelica.Mechanics.MultiBody.Parts.BodyBox bodyBox1(r = {0, len1, 0}, widthDirection = {1, 0, 0}, width = beamWidth) annotation(Placement(visible = true, transformation(origin = {-24, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
@@ -57,20 +57,20 @@ val(revolute1.angle, 100);
 // ""
 // record SimulationResult
 //     resultFile = "FourBarLinkage_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 674.2415492543812
+// 674.0417059832985
 // record SimulationResult
 //     resultFile = "FourBarLinkage_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-stepSize=0.02'",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-stepSize=0.02'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 674.2853013251839
+// 674.0998217947817
 // endResult

@@ -15,15 +15,20 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Digital.Examples.FullAdder);
 compareVars :=
 {
-   "Enable.y",
-   "CLK.y",
-   "Counter.q0",
-   "Counter.q1",
-   "Counter.q2",
-   "Adder1.s",
-   "Adder1.c_out",
-   "s.y[1]",
-   "c_out.y[1]"
+   "Adder1.Adder1.AND.G2.x",
+   "Adder1.Adder1.AND.G2.y",
+   "Adder1.Adder1.XOR.G2.x",
+   "Adder1.Adder1.XOR.G2.y",
+   "Adder1.Adder2.AND.G2.x",
+   "Adder1.Adder2.AND.G2.y",
+   "Adder1.Adder2.XOR.G2.x",
+   "Adder1.Adder2.XOR.G2.y",
+   "Counter.FF1.RS1.TD1.x",
+   "Counter.FF1.RS2.TD1.x",
+   "Counter.FF2.RS1.TD1.x",
+   "Counter.FF2.RS2.TD1.x",
+   "Counter.FF3.RS1.TD1.x",
+   "Counter.FF3.RS2.TD1.x"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -37,9 +42,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Digital.Examples.FullAdder
-// {"Enable.y", "CLK.y", "Counter.q0", "Counter.q1", "Counter.q2", "Adder1.s", "Adder1.c_out", "s.y[1]", "c_out.y[1]"}
+// {"Adder1.Adder1.AND.G2.x", "Adder1.Adder1.AND.G2.y", "Adder1.Adder1.XOR.G2.x", "Adder1.Adder1.XOR.G2.y", "Adder1.Adder2.AND.G2.x", "Adder1.Adder2.AND.G2.y", "Adder1.Adder2.XOR.G2.x", "Adder1.Adder2.XOR.G2.y", "Counter.FF1.RS1.TD1.x", "Counter.FF1.RS2.TD1.x", "Counter.FF2.RS1.TD1.x", "Counter.FF2.RS2.TD1.x", "Counter.FF3.RS1.TD1.x", "Counter.FF3.RS2.TD1.x"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.FullAdder', options = '', outputFormat = 'mat', variableFilter = 'time|Enable.y|CLK.y|Counter.q0|Counter.q1|Counter.q2|Adder1.s|Adder1.c_out|s.y.1.|c_out.y.1.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.FullAdder', options = '', outputFormat = 'mat', variableFilter = 'time|Adder1.Adder1.AND.G2.x|Adder1.Adder1.AND.G2.y|Adder1.Adder1.XOR.G2.x|Adder1.Adder1.XOR.G2.y|Adder1.Adder2.AND.G2.x|Adder1.Adder2.AND.G2.y|Adder1.Adder2.XOR.G2.x|Adder1.Adder2.XOR.G2.y|Counter.FF1.RS1.TD1.x|Counter.FF1.RS2.TD1.x|Counter.FF2.RS1.TD1.x|Counter.FF2.RS2.TD1.x|Counter.FF3.RS1.TD1.x|Counter.FF3.RS2.TD1.x', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Digital.Examples.FullAdder_res.mat
 // Files Equal!
 // "true

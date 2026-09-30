@@ -16,9 +16,9 @@ modelName := $TypeName(Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling);
 compareVars :=
 {
    "heatCapacitor.T",
-   "pipe1.T",
+   "innerPipe.T",
    "outerPipe.T",
-   "innerPipe.T"
+   "pipe1.T"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -32,9 +32,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling
-// {"heatCapacitor.T", "pipe1.T", "outerPipe.T", "innerPipe.T"}
+// {"heatCapacitor.T", "innerPipe.T", "outerPipe.T", "pipe1.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|pipe1.T|outerPipe.T|innerPipe.T', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|innerPipe.T|outerPipe.T|pipe1.T', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling_res.mat
 // Files Equal!
 // "true

@@ -14,20 +14,9 @@ simulate(Modelica.Blocks.Examples.Filter, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.Filter_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.Filter.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl41/Modelica.Blocks.Examples.Filter.mat",
   "Modelica.Blocks.Examples.Filter_diff.csv",0.01,0.0001,
-  {"CriticalDamping.x[1]",
-   "CriticalDamping.x[2]",
-   "CriticalDamping.x[3]",
-   "Bessel.x[1]",
-   "Bessel.x[2]",
-   "Bessel.x[3]",
-   "Butterworth.x[1]",
-   "Butterworth.x[2]",
-   "Butterworth.x[3]",
-   "ChebyshevI.x[1]",
-   "ChebyshevI.x[2]",
-   "ChebyshevI.x[3]"});
+  {"Bessel.x[1]", "Bessel.x[2]", "Bessel.x[3]", "Butterworth.x[1]", "Butterworth.x[2]", "Butterworth.x[3]", "ChebyshevI.x[1]", "ChebyshevI.x[2]", "ChebyshevI.x[3]", "CriticalDamping.x[1]", "CriticalDamping.x[2]", "CriticalDamping.x[3]"});
 
 // Result:
 // true

@@ -20,7 +20,18 @@ compareVars :=
    "massWithStopAndFriction.s",
    "massWithStopAndFriction.v",
    "springDamper.s_rel",
-   "springDamper.v_rel"
+   "springDamper.v_rel",
+   "springDamper1.s_rel",
+   "springDamper1.v_rel",
+   "brake.mode",
+   "brake.startBackward",
+   "brake.startForward",
+   "massWithStopAndFriction.mode",
+   "massWithStopAndFriction.startBackward",
+   "massWithStopAndFriction.startForward",
+   "supportFriction.mode",
+   "supportFriction.startBackward",
+   "supportFriction.startForward"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -34,9 +45,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Translational.Examples.HeatLosses
-// {"damper.s_rel", "damper.v_rel", "massWithStopAndFriction.s", "massWithStopAndFriction.v", "springDamper.s_rel", "springDamper.v_rel"}
+// {"damper.s_rel", "damper.v_rel", "massWithStopAndFriction.s", "massWithStopAndFriction.v", "springDamper.s_rel", "springDamper.v_rel", "springDamper1.s_rel", "springDamper1.v_rel", "brake.mode", "brake.startBackward", "brake.startForward", "massWithStopAndFriction.mode", "massWithStopAndFriction.startBackward", "massWithStopAndFriction.startForward", "supportFriction.mode", "supportFriction.startBackward", "supportFriction.startForward"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = 'time|damper.s_rel|damper.v_rel|massWithStopAndFriction.s|massWithStopAndFriction.v|springDamper.s_rel|springDamper.v_rel', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = 'time|damper.s_rel|damper.v_rel|massWithStopAndFriction.s|massWithStopAndFriction.v|springDamper.s_rel|springDamper.v_rel|springDamper1.s_rel|springDamper1.v_rel|brake.mode|brake.startBackward|brake.startForward|massWithStopAndFriction.mode|massWithStopAndFriction.startBackward|massWithStopAndFriction.startForward|supportFriction.mode|supportFriction.startBackward|supportFriction.startForward', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.HeatLosses_res.mat
 // Files Equal!
 // "true

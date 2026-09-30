@@ -4,7 +4,7 @@
 
 // use new inline method
 setCommandLineOptions("+inlineMethod=append");
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 loadString("
 model A

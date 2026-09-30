@@ -1,4 +1,3 @@
-./AVM/runAll.sh
 ./fix-tests.sh
 ./flattening/modelica/external-functions/addReal1_.c
 ./flattening/modelica/external-functions/ExternalFunction1_f.c
@@ -152,7 +151,6 @@
 ./simulation/libraries/3rdParty/DrModelica/ReferenceFiles/Xpowers1_ref.mat
 ./simulation/libraries/3rdParty/DrModelica/ReferenceFiles/Xpowers2_ref.mat
 ./simulation/libraries/3rdParty/DrModelica/ReferenceFiles/Xpowers3_ref.mat
-./simulation/libraries/3rdParty/GitLibraries/ReferenceFiles/WasteWater.ASM1.Examples.SmallPlant.mat
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/AlgebraicLoopBoolean2.mat
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/BouncingBall1.mat
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/BouncingBall2.mat
@@ -174,7 +172,6 @@
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/Test3PhaseSystemsStateSelect.mat
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/TestSwitch1.mat
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/TestSwitch2.mat
-./simulation/libraries/3rdParty/Modelica_Synchronous/simulateAll.sh
 ./simulation/libraries/3rdParty/Modelica_DeviceDrivers/simulateAll.sh
 ./simulation/libraries/3rdParty/PNlib/ReferenceFiles/PNlib.Examples.Test10.mat
 ./simulation/libraries/3rdParty/PNlib/ReferenceFiles/PNlib.Examples.Test11.mat

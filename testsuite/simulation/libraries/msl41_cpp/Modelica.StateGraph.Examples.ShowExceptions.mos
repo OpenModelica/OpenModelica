@@ -15,9 +15,16 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.StateGraph.Examples.ShowExceptions);
 compareVars :=
 {
-   "initialStep.active",
-   "compositeStep.active",
-   "step1.active"
+   "compositeStep.compositeStep11.transition.enableFire",
+   "compositeStep.compositeStep12.transition.enableFire",
+   "compositeStep.transition1.enableFire",
+   "compositeStep.transition2.enableFire",
+   "compositeStep.transition3.enableFire",
+   "compositeStep.transition4.enableFire",
+   "transition1.enableFire",
+   "transition2.enableFire",
+   "transition3.enableFire",
+   "transition4.enableFire"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -31,9 +38,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.StateGraph.Examples.ShowExceptions
-// {"initialStep.active", "compositeStep.active", "step1.active"}
+// {"compositeStep.compositeStep11.transition.enableFire", "compositeStep.compositeStep12.transition.enableFire", "compositeStep.transition1.enableFire", "compositeStep.transition2.enableFire", "compositeStep.transition3.enableFire", "compositeStep.transition4.enableFire", "transition1.enableFire", "transition2.enableFire", "transition3.enableFire", "transition4.enableFire"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.ShowExceptions', options = '', outputFormat = 'mat', variableFilter = 'time|initialStep.active|compositeStep.active|step1.active', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.ShowExceptions', options = '', outputFormat = 'mat', variableFilter = 'time|compositeStep.compositeStep11.transition.enableFire|compositeStep.compositeStep12.transition.enableFire|compositeStep.transition1.enableFire|compositeStep.transition2.enableFire|compositeStep.transition3.enableFire|compositeStep.transition4.enableFire|transition1.enableFire|transition2.enableFire|transition3.enableFire|transition4.enableFire', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.StateGraph.Examples.ShowExceptions_res.mat
 // Files Equal!
 // "true

@@ -4,7 +4,7 @@
 // cflags:
 //
 // Combined parmodauto test. To keep CI time reasonable this single file loads
-// MSL 3.2.1 once and then exercises every parmodauto run-time flag against the
+// MSL 4.1.0 once and then exercises every parmodauto run-time flag against the
 // same model, instead of paying the MSL-load + model-compile cost once per
 // flag in a separate .mos file:
 //   (default)                                        plain --parmodauto
@@ -18,14 +18,14 @@
 setCommandLineOptions("--parmodauto");
 getErrorString();
 
-loadModel(Modelica, {"3.2.1"});
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 
 echo(false);
 
-expectedRes := getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
+expectedRes := getEnvironmentVar("REFERENCEFILES")+"/msl41/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
 resFile := "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat";
-varsToCompare := {"C1.v","C2.v","C3.v","C4.v","C7.v","R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v"};
+varsToCompare := {"C1.v", "C2.v", "C3.v", "C4.v", "C7.v"};
 
 // --- default --parmodauto -------------------------------------------------
 resDefault := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC);

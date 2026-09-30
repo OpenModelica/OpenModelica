@@ -63,6 +63,6 @@ equation
       color={95,95,95},
       thickness=0.5,
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end crane;

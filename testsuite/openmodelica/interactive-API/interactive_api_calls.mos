@@ -110,7 +110,7 @@ codeToString($Code(=1+2)); getErrorString();
 
 // test MSL 3.2 Code issues [from Chris Paredis and Axel Reichwein at Georgia Institute of Technology]
 deleteClass(ModelicaServices);
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
 getClassInformation(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
 list(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
@@ -600,17 +600,16 @@ getMessagesStringInternal(unique = false); // not unique
 // "
 // Evaluating: deleteClass(ModelicaServices)
 // true
-// Evaluating: loadModel(Modelica, {"3.2.1"})
+// Evaluating: loadModel(Modelica, {"4.1.0"})
 // true
 // Evaluating: getErrorString()
-// "Notification: Modelica requested package Complex of version 3.2.1. Complex 4.1.0 is used instead which states that it is fully compatible without conversion script needed.
-// "
+// ""
 // Evaluating: getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
 // "class"
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getClassInformation(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
-// ("class", "Code", false, false, false, "Modelica 3.2.1+maint.om/package.mo", false, 572, 9, 625, 17, {}, false, false, "", "", false, "", "", "", "", "")
+// ("class", "Code", false, false, false, "Modelica 4.1.0+maint.om/UsersGuide/Conventions.mo", false, 92, 7, 149, 15, {}, false, false, "", "", false, "", "", "", "", "")
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
@@ -625,47 +624,51 @@ getMessagesStringInternal(unique = false); // not unique
 // </p>
 //
 // <ol>
-// <li> For constants, parameters and variables in code segments <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>
-//      should to be used, e.g., <br>
-//      <code><b>parameter</b> Modelica.SIunits.Time tStart \\\"Start time\\\"</code></li>
-// <li> Write multi or single line code segments using <code>&lt;pre&gt;</code> and <code>&lt;/pre&gt;</code>.</li>
-// <li> Multi line or single line code shall not be indented.</li>
+// <li> For constants, parameters and variables in code segments <code>&lt;code&gt;</code>
+//      and <code>&lt;/code&gt;</code> should to be used, e.g.,<br>
+//      <code><strong>parameter</strong> Modelica.Units.SI.Time tStart &quot;Start time&quot;</code></li>
+// <li> Write multi or single line code segments as quoted preformatted text, i.e., embedded within
+//      <code>&lt;blockquote&gt;&lt;pre&gt;</code> and <code>&lt;/pre&gt;&lt;/blockquote&gt;</code> tags.</li>
+// <li> Multi line or single line code shall not be additionally indented.</li>
 // <li> Inline code segments may be typeset with <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>.</li>
 // <li> In code segments use bold to emphasize Modelica keywords.</li>
 // </ol>
 //
+// <h4>Examples</h4>
+//
 // <h5>Example 1</h5>
 //
-// <pre>
-// &lt;pre&gt;
-// &lt;b&gt;connector&lt;/b&gt; Frame
+// <blockquote><pre>
+// &lt;blockquote&gt;&lt;pre&gt;
+// &lt;strong&gt;connector&lt;/strong&gt; Frame
 //    ...
-//    &lt;b&gt;flow&lt;/b&gt; SI.Force f[Woehrnschimmel1998] &lt;b&gt;annotation&lt;/b&gt;(unassignedMessage=\\\"...\\\");
-// &lt;b&gt;end&lt;/b&gt; Frame;
-// &lt;/pre&gt;</pre>
+//    &lt;strong&gt;flow&lt;/strong&gt; SI.Force f[3] &lt;strong&gt;annotation&lt;/strong&gt;(unassignedMessage=&quot;...&quot;);
+// &lt;strong&gt;end&lt;/strong&gt; Frame;
+// &lt;/pre&gt;&lt;/blockquote&gt;
+// </pre></blockquote>
 //
 // <p>appears as</p>
 //
-// <pre>
-// <b>connector</b> Frame
+// <blockquote><pre>
+// <strong>connector</strong> Frame
 //    ...
-//    <b>flow</b> SI.Force f[Woehrnschimmel1998] <b>annotation</b>(unassignedMessage=\\\"...\\\");
-// <b>end</b> Frame;
-// </pre>
+//    <strong>flow</strong> SI.Force f[3] <strong>annotation</strong>(unassignedMessage=&quot;...&quot;);
+// <strong>end</strong> Frame;
+// </pre></blockquote>
 //
 // <h5>Example 2</h5>
 //
-// <pre>
-// &lt;pre&gt;
-// &lt;b&gt;parameter&lt;/b&gt; Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
-// &lt;/pre&gt;
-// </pre>
+// <blockquote><pre>
+// &lt;blockquote&gt;&lt;pre&gt;
+// &lt;strong&gt;parameter&lt;/strong&gt; Modelica.Units.SI.Conductance G=1 &quot;Conductance&quot;;
+// &lt;/pre&gt;&lt;/blockquote&gt;
+// </pre></blockquote>
 //
 // <p>appears as</p>
 //
-// <pre>
-// <b>parameter</b> Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
-// </pre>
+// <blockquote><pre>
+// <strong>parameter</strong> Modelica.Units.SI.Conductance G=1 &quot;Conductance&quot;;
+// </pre></blockquote>
 // </html>\"));
 // end Code;"
 // Evaluating: getErrorString()
