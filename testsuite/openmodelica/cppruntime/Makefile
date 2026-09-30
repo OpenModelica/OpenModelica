@@ -31,6 +31,7 @@ recordTupleReturnTest.mos \
 RefArrayDim2.mos \
 solveTest.mos \
 solveOneNonlinearEquationTest.mos \
+stringArrayLiteralTest.mos \
 testArrayEquations.mos \
 testDAE.mos \
 testMatrixIO.mos \
