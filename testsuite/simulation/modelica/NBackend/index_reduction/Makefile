@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+derivativeDummyState.mos \
 basic_IR.mos\
 overdeterminedIndexReduction.mos\
 static_IR.mos\
