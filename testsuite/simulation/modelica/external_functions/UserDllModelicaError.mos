@@ -1,16 +1,22 @@
 // name: UserDllModelicaError
 // keywords: external functions, ModelicaUtilities, ModelicaError, shared library
 // status: correct
-// setup_command: case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) $OMC_NATIVE_CC -shared -o libUserDllModelicaError.dll UserDllModelicaError-lib.c -lpsapi;; *) $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -shared -o libUserDllModelicaError.so UserDllModelicaError-lib.c;; esac
-// teardown_command: rm -rf libUserDllModelicaError.dll libUserDllModelicaError.so UserDllModelicaError.Test* output.log
+// setup_command: mkdir -p Resources/Library && case "$OMC_NATIVE_CC" in *cl|*cl.exe) $OMC_NATIVE_CC -nologo -LD $OMC_NATIVE_CFLAGS UserDllModelicaError-lib.c -FeResources/Library/UserDllModelicaError.dll;; *) case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) $OMC_NATIVE_CC -shared -o Resources/Library/libUserDllModelicaError.dll UserDllModelicaError-lib.c;; *) $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -shared -o Resources/Library/libUserDllModelicaError.so UserDllModelicaError-lib.c;; esac;; esac
+// teardown_command: rm -rf Resources UserDllModelicaError-lib.obj UserDllModelicaError.Test* output.log
+// depends: UserDllModelicaError.mo
 // depends: UserDllModelicaError-lib.c
 // suite: smoke
 //
 // Issue #14581: ModelicaError called at run time from a shared library must
 // report its message and end the simulation, not crash it.
 //
+// The library is built per toolchain: cl/clang-cl (MSVC, also under wine),
+// MinGW gcc, or a Unix cc. The model is loaded from a string, so its default
+// LibraryDirectory is ./Resources/Library in the test's own directory: loadFile
+// would resolve it next to the symlinked .mo, where the library is not.
+//
 
-loadFile("UserDllModelicaError.mo"); getErrorString();
+loadString(readFile("UserDllModelicaError.mo")); getErrorString();
 simulate(UserDllModelicaError.Test); getErrorString();
 
 // Result:

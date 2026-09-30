@@ -4,7 +4,6 @@ package UserDllModelicaError
     output Real y;
     external "C" y = userdll_bar(t) annotation(
       Library = "UserDllModelicaError",
-      LibraryDirectory = "modelica://UserDllModelicaError",
       Include = "double userdll_bar(double t);");
   end bar;
 

@@ -6,6 +6,8 @@
 typedef void (*ModelicaError_t)(const char *);
 
 #if defined(_WIN32)
+/* EnumProcessModules from kernel32 (K32EnumProcessModules): no psapi.lib to link. */
+#define PSAPI_VERSION 2
 #include <windows.h>
 #include <psapi.h>
 
