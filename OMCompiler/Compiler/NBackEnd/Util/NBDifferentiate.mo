@@ -50,6 +50,7 @@ public
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
   import Class = NFClass;
+  import Restriction = NFRestriction;
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
@@ -1106,14 +1107,15 @@ public
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
         else
-          res     := Expression.makeZero(exp.ty);
+          res     := makeZero(exp.ty);
         end if;
       then (res, diffArguments);
 
-      // Types: (SIMPLE)
+      // Types: (SIMPLE, TIME)
       // a record variable is differentiated fieldwise, D(r)/dr.x => R(1, 0, ...)
-      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
-        guard(Type.isRecord(exp.ty) and not ComponentRef.isEqual(exp.cref, diffArguments.diffCref)
+      case (Expression.CREF(), _, _)
+        guard((diffArguments.diffType == DifferentiationType.SIMPLE or diffArguments.diffType == DifferentiationType.TIME)
+          and Type.isRecord(exp.ty) and not ComponentRef.isEqual(exp.cref, diffArguments.diffCref)
           and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo()))
       then differentiateRecordCref(exp, diffArguments);
 
@@ -1443,6 +1445,29 @@ public
     output String root = listHead(Util.stringSplitAtChar(ComponentRef.toString(cref), "."));
   end crefRoot;
 
+  function makeZero
+    "Expression.makeZero, but records without a '0' operator are zero field by field"
+    input Type ty;
+    output Expression zero;
+  protected
+    InstNode node;
+    list<Expression> fields = {};
+  algorithm
+    zero := match ty
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+        node := Type.complexNode(ty);
+        for comp in Class.getComponents(InstNode.getClass(node)) loop
+          fields := makeZero(InstNode.getType(comp)) :: fields;
+        end for;
+      then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
+      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
+      then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
+      // strings of a record have no derivative
+      case Type.STRING() then Expression.STRING("");
+      else Expression.makeZero(ty);
+    end match;
+  end makeZero;
+
   function differentiateRecordCref
     "A record variable whose fields are differentiated on their own: Record(der(field1), ...)."
     input output Expression exp;
@@ -1462,7 +1487,12 @@ public
       children := BVariable.getRecordChildrenCref(cref);
       if List.compareLength(children, Type.recordFields(ty)) == 0 then
         for child in children loop
-          (elem, diffArguments) := differentiateComponentRef(Expression.fromCref(child), diffArguments);
+          // strings have no derivative, keep them
+          if Type.isString(ComponentRef.getSubscriptedType(child)) then
+            elem := Expression.fromCref(child);
+          else
+            (elem, diffArguments) := differentiateComponentRef(Expression.fromCref(child), diffArguments);
+          end if;
           elements := elem :: elements;
         end for;
       end if;
@@ -1580,7 +1610,7 @@ public
         list<Expression> arguments = {};
         list<tuple<Expression, InstNode>> arguments_inputs;
         InstNode inp;
-        Boolean isCont, isReal, isFunc, isSkipped;
+        Boolean isCont, isReal, isFunc, isSkipped, skippedVarying = false;
         // interface map. If the map contains a variable it has a zero derivative
         // if the value is "true" it has to be stripped from the interface
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
@@ -1656,13 +1686,15 @@ public
             // only keep the arguments which are not in the map or have value false
             if not (isSkipped or UnorderedMap.getOrDefault(InstNode.name(inp), interface_map, false)) then
               arguments := arg :: arguments;
-            else
+            elseif isSkipped and diffArguments.diffType <> DifferentiationType.FUNCTION and BackendUtil.containsContinuousVar(arg) then
+              // inputs of a derivative function are not differentiated again, but it still depends on them
+              skippedVarying := true;
             end if;
           end for;
 
           // differentiate type arguments and append to original ones
           (arguments, diffArguments) := List.mapFold(arguments, differentiateExpression, diffArguments);
-          if diffArguments.diffType <> DifferentiationType.FUNCTION and List.all(arguments, isZeroDerivative)
+          if diffArguments.diffType <> DifferentiationType.FUNCTION and not skippedVarying and List.all(arguments, isZeroDerivative)
              and not Type.isTuple(Expression.typeOf(exp)) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)))
              and (not Type.isArray(Expression.typeOf(exp)) or Type.hasKnownSize(Expression.typeOf(exp))) then
             // no argument depends on the differentiation variable (keeps the arguments out of the derivative)
