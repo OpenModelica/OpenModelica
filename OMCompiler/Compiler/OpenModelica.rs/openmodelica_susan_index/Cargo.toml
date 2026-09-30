@@ -1,0 +1,19 @@
+[package]
+name = "openmodelica_susan_index"
+version = "0.1.0"
+edition = "2024"
+
+# `susan-index`: extracts what the Susan templates may call and match on from
+# the Rust sources, as Susan interface files plus a JSON index for Susan's Rust
+# backend. Replaces the hand-written Template/*TV.mo files.
+[[bin]]
+name = "susan-index"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde_json.workspace = true
+syn = { version = "3", features = ["full", "parsing", "printing"] }
+quote = "1"

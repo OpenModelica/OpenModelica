@@ -81,6 +81,13 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool, mc_report_path: Op
     let t0 = std::time::Instant::now();
     let info = fallibility::analyze(&hier);
     hier.fallible_functions = info.fallible_functions.clone();
+    let susan_pkgs = codegen::susan_packages(&hier.top_level);
+    if !susan_pkgs.is_empty() {
+        let mut fns = Vec::new();
+        codegen::collect_all_function_nodes(&hier.top_level, "", &mut fns);
+        let susan_fns: Vec<String> = fns.iter().filter(|(q, _)| q.split('.').next().is_some_and(|t| susan_pkgs.contains(t))).map(|(q, _)| q.clone()).collect();
+        hier.fallible_functions.extend(susan_fns);
+    }
     let infallible_count = info.total_functions.saturating_sub(info.fallible_functions.len());
     println!(
         "Fallibility analysis: {} functions ({} fallible, {} infallible), {} externals; {} ext registry entries; {:.2}s",

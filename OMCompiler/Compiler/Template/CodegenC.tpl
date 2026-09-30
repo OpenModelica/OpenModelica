@@ -173,7 +173,7 @@ end translateModel;
 
     #include "<%fileNamePrefix%>_functions.h"
 
-    <%variableDefinitions(modelInfo, timeEvents)%><%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
+    <%variableDefinitions(modelInfo, timeEvents)%><%functions |> fn hasindex i0 => '#define <%CodegenCFunctions.functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
 
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>(DATA *_data, threadData_t *threadData);
     #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -376,12 +376,12 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   >>
 end functionInitSynchronous;
 
-template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartition> subPartitions, Text &varDecls, Text &varFrees, Text &auxFunction)
+template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SimCode.SubPartition> subPartitions, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
   let &preExp = buffer ""
   let intervalCounter = match baseClock
     case RATIONAL_CLOCK() then
-      if isConst(intervalCounter) then
+      if Expression.isConst(intervalCounter) then
         daeExp(intervalCounter, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
@@ -401,7 +401,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
       '0'
   let interval = match baseClock
     case REAL_CLOCK() then
-      if isConst(interval) then
+      if Expression.isConst(interval) then
         daeExp(interval, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
@@ -411,7 +411,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
       '-1'
   let computeInterval = match baseClock
     case RATIONAL_CLOCK() then
-      if isConst(intervalCounter) then
+      if Expression.isConst(intervalCounter) then
         <<
         data->simulationInfo->baseClocks[<%baseClockIdx%>].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[<%baseClockIdx%>].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[<%baseClockIdx%>].resolution, "base-clock[<%baseClockIdx%>].interval = intervalCounter/resolution");
         >>
@@ -442,7 +442,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   >>
 end baseClockInit;
 
-template subPartitionStr(SubPartition subPartition, Integer baseClockIdx, Integer subClockIdx)
+template subPartitionStr(SimCode.SubPartition subPartition, Integer baseClockIdx, Integer subClockIdx)
 ::=
 match subPartition
   case SUBPARTITION(subClock = SUBCLOCK(__), holdEvents=holdEvents) then
@@ -506,7 +506,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
 
   match baseClock
     case RATIONAL_CLOCK() then
-      if isConst(intervalCounter) then
+      if Expression.isConst(intervalCounter) then
         <<
         /* Nothing to do */
         >>
@@ -518,7 +518,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
         data->simulationInfo->baseClocks[base_idx].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[base_idx].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[base_idx].resolution, "intervalCounter/resolution");
         >>
     case REAL_CLOCK() then
-      if isConst(interval) then
+      if Expression.isConst(interval) then
         <<
         /* Nothing to do */
         >>
@@ -538,7 +538,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
 end updatePartition;
 
 
-template functionSystemsSynchronousSubClocks(list<SubPartition> subPartitions, Integer base_idx, String modelNamePrefix)
+template functionSystemsSynchronousSubClocks(list<SimCode.SubPartition> subPartitions, Integer base_idx, String modelNamePrefix)
 ::=
   let subCases = subPartitions |> subPartition hasindex sub_idx =>
     match subPartition
@@ -2099,7 +2099,7 @@ let &sub = buffer ""
             data->simulationInfo->inputVars[<%offset%> + k] = <%ty%>_get(<%start%>, base_array_nr_of_elements(<%start%>) == 1 ? 0 : k);
           }
           >>
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2121,7 +2121,7 @@ let &sub = buffer ""
           }
           >>
         else
-          error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+          error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2138,7 +2138,7 @@ let &sub = buffer ""
           ;separator="\n")
         case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%offset%>] = (char *) <%inputData(simVar)%>[<%index%>].info.name;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2198,7 +2198,7 @@ let &sub = buffer ""
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2211,7 +2211,7 @@ let &sub = buffer ""
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -3582,7 +3582,7 @@ template generateStaticEmptyNonlinearData(String indexName, String systemType)
   >>
 end generateStaticEmptyNonlinearData;
 
-template generateStaticNonlinearData(String indexName, String systemType, NonlinearPattern nonlinearpattern, NonlinearPattern nonlinearpatternT)
+template generateStaticNonlinearData(String indexName, String systemType, SimCode.NonlinearPattern nonlinearpattern, SimCode.NonlinearPattern nonlinearpatternT)
 "template generateStaticNonlinearData
   This template generates source code for functions that initialize the nonlinear-pattern."
 ::=
@@ -3725,7 +3725,7 @@ end getIterationVars;
 //   - void initializeStateSets(int nStateSets, STATE_SET_DATA* statesetData, DATA *data)
 // =============================================================================
 
-template functionInitialStateSets(SimCode simCode, list<StateSet> stateSets, String modelNamePrefix)
+template functionInitialStateSets(SimCode simCode, list<SimCode.StateSet> stateSets, String modelNamePrefix)
   "Generates functions in simulation file to initialize the stateset data."
 ::=
   let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -3943,7 +3943,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
           'data->modelData-><%expTypeShort(type_)%>ParameterData[<%index%>].time_unvarying = 1;'
         case SIMVAR(aliasvar=NOALIAS()) then
           'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].time_unvarying = 1;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
     <%extObjsSub%>
     <%fncalls%>
@@ -5668,7 +5668,7 @@ template crefToPrintfArg(ComponentRef cr)
   case "modelica_integer" then "\"OMC_INT_FORMAT\""
   case "modelica_boolean" then "%d"
   case "modelica_string" then "%s"
-  else error(sourceInfo(), 'Do not know what printf argument to give <%crefStr(cr)%>')
+  else error(sourceInfo(), 'Do not know what printf argument to give <%CodegenUtil.crefStr(cr)%>')
   end match
 end crefToPrintfArg;
 
@@ -7185,7 +7185,7 @@ match context
     else 'NOT FOUND'
 end seedSizeAssignments;
 
-template dimensionSizeAssignment(Dimension dim, Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template dimensionSizeAssignment(Dimension dim, DAE.Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
   let tmp_name = 's<%var_index%>_<%dim_index%>'
   let dim_exp = dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -8416,7 +8416,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
-      FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
+      FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
       omc_terminate(info, omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
@@ -8522,7 +8522,7 @@ end equationIfEquationAssign;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions, list<SimGenericCall> genericCalls)
+/* public */ template simulationFunctionsFile(String filePrefix, list<SimCodeFunction.Function> functions, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -8557,7 +8557,7 @@ end simulationLiteralsFile;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationFunctionsFile;
 
-template simulationParModelicaKernelsFile(String filePrefix, list<Function> functions)
+template simulationParModelicaKernelsFile(String filePrefix, list<SimCodeFunction.Function> functions)
  "Generates the content of the C file for functions in the simulation case."
 ::=
 
@@ -8579,7 +8579,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
 
 end simulationParModelicaKernelsFile;
 
-/* public */ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls, list<SimGenericCall> genericCalls)
+/* public */ template simulationFunctionsHeaderFile(String filePrefix, list<SimCodeFunction.Function> functions, list<RecordDeclaration> recordDecls, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -8750,7 +8750,7 @@ template crefM(ComponentRef cr)
  "Generates Modelica equivalent name for component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
   else "P" + crefToMStr(cr)
 end crefM;
@@ -9025,7 +9025,7 @@ template functionXXX_systemPartial(list<SimEqSystem> derivativEquations, String 
 ::=
     let code =  match modelInfo
     case MODELINFO(vars=SIMVARS(derivativeVars=ders)) then
-    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeCodegenUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
+    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeCodegenUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,CodegenUtil.crefStr(name)) ; separator="\n")
 <<
 static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_t *threadData, int i)
 {

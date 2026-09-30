@@ -597,11 +597,13 @@ fn scan_fn<'a>(
     })
 }
 
-/// `excluded` names the functions whose signature must stay by value.
+/// `excluded` names the functions whose signature must stay by value, unless
+/// `forced` fixes their mask.
 pub(crate) fn analyze<'a>(
     top_level: &'a BTreeMap<String, NameNode<'a>>,
     types: &Types<'_>,
     excluded: &HashSet<String>,
+    forced: &BorrowMasks,
 ) -> BorrowMasks {
     let mut all_fns: Vec<(String, &'a NameNode<'a>)> = Vec::new();
     crate::codegen::collect_all_function_nodes(top_level, "", &mut all_fns);
@@ -621,9 +623,12 @@ pub(crate) fn analyze<'a>(
                 if !borrowed[q].contains(param) {
                     continue;
                 }
-                let ok = scans.get(callee)
-                    .and_then(|cs| cs.inputs.get(*idx))
-                    .is_some_and(|formal| borrowed[callee].contains(formal));
+                let ok = match forced.get(callee) {
+                    Some(m) => m.get(*idx).copied().unwrap_or(false),
+                    None => scans.get(callee)
+                        .and_then(|cs| cs.inputs.get(*idx))
+                        .is_some_and(|formal| borrowed[callee].contains(formal)),
+                };
                 if !ok {
                     if trace.as_deref().is_some_and(|t| q.ends_with(t)) {
                         eprintln!("[borrow] {q}: `{param}` by value: passed to {callee} #{idx}");
@@ -638,8 +643,10 @@ pub(crate) fn analyze<'a>(
         }
     }
 
-    scans.iter()
+    let mut masks: BorrowMasks = scans.iter()
         .filter(|(q, _)| !borrowed[*q].is_empty())
         .map(|(q, s)| (q.clone(), s.inputs.iter().map(|i| borrowed[q].contains(i)).collect()))
-        .collect()
+        .collect();
+    masks.extend(forced.iter().filter(|(_, m)| m.contains(&true)).map(|(q, m)| (q.clone(), m.clone())));
+    masks
 }

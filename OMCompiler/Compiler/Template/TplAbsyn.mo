@@ -289,7 +289,8 @@ public
 uniontype ASTDef
   record AST_DEF
     PathIdent importPackage;
-    Boolean isDefault;
+    Boolean isDefault "names can be used unqualified";
+    Boolean isInterface "from an interface file, always imported publicly";
     list<tuple<Ident, TypeInfo>> types;
   end AST_DEF;
 end ASTDef;
@@ -633,13 +634,9 @@ end fullyQualifyTemplatePackage;
 public function importDeclarations
   input list<ASTDef> inASTDefs;
   output list<MMDeclaration> outMMDecls = {};
-protected
-  PathIdent importPackage;
-  Boolean isDefault;
 algorithm
   for astDef in inASTDefs loop
-    AST_DEF(importPackage = importPackage, isDefault = isDefault) := astDef;
-    outMMDecls := MM_IMPORT(isDefault, importPackage) :: outMMDecls;
+    outMMDecls := MM_IMPORT(astDef.isDefault or astDef.isInterface, astDef.importPackage) :: outMMDecls;
   end for;
 end importDeclarations;
 
@@ -5617,6 +5614,20 @@ public function getTypeInfo
   output PathIdent outTypePackage;
   output TypeInfo outTypeInfo;
 algorithm
+  (outTypePackage, outTypeInfo) := lookupTypeInfo(inTypePackageOpt, inTypeIdent, inASTDefs);
+  if isNone(inTypePackageOpt) then
+    checkUnqualifiedAmbiguity(inTypeIdent, outTypePackage, inASTDefs);
+  end if;
+end getTypeInfo;
+
+protected function lookupTypeInfo
+  input Option<PathIdent> inTypePackageOpt;
+  input Ident inTypeIdent;
+  input list<ASTDef> inASTDefs;
+
+  output PathIdent outTypePackage;
+  output TypeInfo outTypeInfo;
+algorithm
   (outTypePackage,outTypeInfo )
     := matchcontinue (inTypePackageOpt, inTypeIdent, inASTDefs)
     local
@@ -5662,7 +5673,7 @@ algorithm
 
     case ( typepckgOpt, typeident, ( _ :: astDefs) )
       algorithm
-        (typepckg, typeinfo) := getTypeInfo(typepckgOpt, typeident, astDefs);
+        (typepckg, typeinfo) := lookupTypeInfo(typepckgOpt, typeident, astDefs);
       then
         (typepckg, typeinfo);
 
@@ -5677,8 +5688,54 @@ algorithm
       then fail();
 
   end matchcontinue;
-end getTypeInfo;
+end lookupTypeInfo;
 
+
+protected function checkUnqualifiedAmbiguity
+  "Reports an error when an unqualified name is found in more than one
+  default-imported package and the two do not denote the same entity."
+  input Ident inIdent;
+  input PathIdent inPackage;
+  input list<ASTDef> inASTDefs;
+protected
+  String canonical = canonicalTypeName(inPackage, inIdent, inASTDefs), other;
+  list<String> clashes = {};
+algorithm
+  for astDef in inASTDefs loop
+    if astDef.isDefault then
+      try
+        lookupTupleList(astDef.types, inIdent);
+        other := canonicalTypeName(astDef.importPackage, inIdent, inASTDefs);
+        if other <> canonical and not listMember(other, clashes) then
+          clashes := other :: clashes;
+        end if;
+      else
+      end try;
+    end if;
+  end for;
+  if not listEmpty(clashes) then
+    addSusanError("Ambiguous unqualified name '" + inIdent + "': it denotes " + canonical
+      + " and " + stringDelimitList(listReverse(clashes), ", ") + ". Qualify it.", dummySourceInfo);
+  end if;
+end checkUnqualifiedAmbiguity;
+
+protected function canonicalTypeName
+  "What an entity of a package resolves to after following aliases."
+  input PathIdent inPackage;
+  input Ident inIdent;
+  input list<ASTDef> inASTDefs;
+  output String outName;
+protected
+  TypeSignature ty;
+algorithm
+  ty := deAliasedType(NAMED_TYPE(makePathIdent(inPackage, inIdent)), inASTDefs);
+  outName := match ty
+    local
+      PathIdent path;
+    case NAMED_TYPE(name = path) then pathIdentString(path);
+    else typeSignatureString(ty);
+  end match;
+end canonicalTypeName;
 
 protected function deAliasedType
   input TypeSignature inType;
@@ -5744,6 +5801,15 @@ algorithm
     case ( TUPLE_TYPE(ofTypes = otaLst), TUPLE_TYPE(ofTypes = otbLst), tyVars, setTyVars, astDefs )
       then
         typesEqualList(otaLst, otbLst, tyVars, setTyVars, astDefs);
+
+    // a structural type against an alias of one
+    case ( ty, tyConcrete as NAMED_TYPE(), tyVars, setTyVars, astDefs )
+      algorithm
+        failure(NAMED_TYPE() := ty);
+        tyConcreteDA := deAliasedType(tyConcrete, astDefs);
+        false := valueEq(tyConcreteDA, tyConcrete);
+      then
+        typesEqual(ty, tyConcreteDA, tyVars, setTyVars, astDefs);
 
     //concrete named type with PathIdent that is not a type variable
     case ( NAMED_TYPE(name = PATH_IDENT()), tyConcrete, _, setTyVars, astDefs )
@@ -6134,19 +6200,20 @@ algorithm
       list<tuple<Ident, TypeInfo>> typeLst;
       PathIdent importckg;
       list<ASTDef> restAstDefs;
-      Boolean isdefault;
+      Boolean isdefault, isinterface;
 
     case {} then {};
 
     case AST_DEF(
             importPackage = importckg,
             isDefault     = isdefault,
+            isInterface   = isinterface,
             types         = typeLst) :: restAstDefs
       algorithm
         typeLst := listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg);
         restAstDefs := fullyQualifyASTDefs(restAstDefs);
       then
-        (AST_DEF(importckg, isdefault, typeLst) :: restAstDefs);
+        (AST_DEF(importckg, isdefault, isinterface, typeLst) :: restAstDefs);
 
     case AST_DEF(
             importPackage = importckg,

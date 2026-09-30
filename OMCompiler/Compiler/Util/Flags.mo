@@ -1454,6 +1454,9 @@ constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(170, "tplOutputDir",
 constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(171, "fmuDirectory",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
+constant ConfigFlag TPL_INTERFACE_DIR = CONFIG_FLAG(172, "tplInterfaceDir",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  "Directory searched before the current one for the interface files a Susan\n.tpl imports with 'import interface'.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

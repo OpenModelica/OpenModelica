@@ -249,7 +249,7 @@ template fmuModelCppFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,T
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVars)), modelStructure=modelStructure) then
-  let modelName = dotPath(modelInfo.name)
+  let modelName = CodegenUtil.dotPath(modelInfo.name)
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
   let algloopfiles = (listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
@@ -419,9 +419,9 @@ template DefineVariables(SimVar simVar, Boolean useFlatArrayNotation)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else
   <<
@@ -429,12 +429,12 @@ match simVar
   >>
 end DefineVariables;
 
-template defineExternalFunction(Function fn)
+template defineExternalFunction(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
-      let fname = extFunctionName(extName, language)
+      let fname = CodegenUtil.extFunctionName(extName, language)
       <<
       #define $P<%fname%> <%System.tmpTick()%>
       >>
@@ -494,9 +494,9 @@ end setStartValues;
 template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(__) then
-    if stringEq(crefStr(name),"$dummy") then
+    if stringEq(CodegenUtil.crefStr(name),"$dummy") then
     <<>>
-    else if stringEq(crefStr(name),"der($dummy)") then
+    else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
     <<>>
     else
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
@@ -546,7 +546,7 @@ template initVal(Exp initialValue)
   case RCONST(__) then real
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "1" else "0"
-  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%CodegenUtil.dotPath(name)%>*/'
   else "*ERROR* initial value of unknown type"
 end initVal;
 
@@ -572,18 +572,18 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end setExternalFunction;
 
-template setExternalFunctionsSwitch(list<Function> functions)
+template setExternalFunctionsSwitch(list<SimCodeFunction.Function> functions)
  "Generates external function definitions."
 ::=
   (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
 end setExternalFunctionsSwitch;
 
-template setExternalFunctionSwitch(Function fn)
+template setExternalFunctionSwitch(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
-      let fname = extFunctionName(extName, language)
+      let fname = CodegenUtil.extFunctionName(extName, language)
       <<
       case $P<%fname%> : ptr_<%fname%>=(ptrT_<%fname%>)value; break;
       >>

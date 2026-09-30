@@ -2380,7 +2380,7 @@ package Tpl
 end Tpl;
 
 
-package Absyn
+protected package Absyn
 
   type Ident = String;
 
@@ -2423,12 +2423,13 @@ package Absyn
   constant builtin.SourceInfo dummyInfo;
 end Absyn;
 
-package AbsynUtil
+protected package AbsynUtil
 
   function pathString
     input Absyn.Path path;
     input String delimiter;
     input Boolean usefq;
+    input Boolean reverse;
     output String outString;
   end pathString;
 
@@ -3406,7 +3407,7 @@ package ClassInfUtil
   end getStateName;
 end ClassInfUtil;
 
-package SCode
+protected package SCode
 
   type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'";
 
@@ -3885,7 +3886,7 @@ package SCode
 
 end SCode;
 
-package SCodeDump
+protected package SCodeDump
   constant SCodeDumpOptions defaultOptions;
 end SCodeDump;
 
@@ -4408,7 +4409,7 @@ package Expression
   end makeCrefExp;
 end Expression;
 
-package ExpressionDump
+protected package ExpressionDump
   function binopSymbol
     input DAE.Operator inOperator;
     output String outString;
@@ -4627,10 +4628,10 @@ package Values
 end Values;
 
 package ValuesUtil
-  function valueExp
+  function valueExpNoOriginal
     input Values.Value inValue;
     output DAE.Exp outExp;
-  end valueExp;
+  end valueExpNoOriginal;
 end ValuesUtil;
 
 package DAEDump
@@ -4650,7 +4651,7 @@ package Algorithm
   end getStatementSource;
 end Algorithm;
 
-package ElementSource
+protected package ElementSource
   function getElementSourceFileInfo
     input DAE.ElementSource source;
     output builtin.SourceInfo info;

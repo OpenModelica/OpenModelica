@@ -434,6 +434,11 @@ openmodelica_simcode_types/Cargo.toml
 openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml
 openmodelica_susan/src/main.rs
+openmodelica_susan/src/rust_backend.rs
+openmodelica_susan_index/Cargo.toml
+openmodelica_susan_index/src/extract.rs
+openmodelica_susan_index/src/lib.rs
+openmodelica_susan_index/src/main.rs
 openmodelica_tpl/Cargo.toml
 openmodelica_tpl/src/Tpl.handwritten.rs
 openmodelica_util/Cargo.toml
