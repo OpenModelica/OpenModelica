@@ -487,8 +487,8 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
-  // sortSparseColumns(fwdsp, nCols);
-  // sortSparseColumns(adjsp, nRows);
+  sortSparseColumns(fwdsp, nCols);
+  sortSparseColumns(adjsp, nRows);
 
   if(computeStarBicoloring(fwdsp, adjsp, nRows, nCols) == 1) {
     // handle failure, e.g., print a warning or return
