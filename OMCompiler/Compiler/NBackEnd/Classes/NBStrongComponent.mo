@@ -408,9 +408,11 @@ public
       eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in eqn_scal_indices));
     end if;
 
-    // check if it is a resizable component
+    // check if it is a resizable component. a whole dimension in the cref to solve (e.g. x[i, :] for x[i, j]
+    // inside a reduction over j) does not determine which element is solved, so it can only be solved as a slice
     order := Resizable.detect(Pointer.access(eqn_ptr), cref_to_solve);
-    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size then
+    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size
+       and not List.any(ComponentRef.subscriptsAllFlat(cref_to_solve), Subscript.isWhole) then
       comp := RESIZABLE_COMPONENT(
         var_cref  = cref_to_solve,
         var       = var_slice,
