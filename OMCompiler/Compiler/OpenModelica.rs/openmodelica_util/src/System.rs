@@ -417,7 +417,7 @@ const DEFAULT_CFLAGS: &str = if cfg!(windows) {
     )
 };
 const DEFAULT_LDFLAGS: &str = if cfg!(windows) {
-    "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
+    "-fopenmp -lpthread -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
 } else {
     ""
 };

@@ -1,0 +1,27 @@
+// name: UserDllModelicaError
+// keywords: external functions, ModelicaUtilities, ModelicaError, shared library
+// status: correct
+// setup_command: case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) $OMC_NATIVE_CC -shared -o libUserDllModelicaError.dll UserDllModelicaError-lib.c -lpsapi;; *) $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -shared -o libUserDllModelicaError.so UserDllModelicaError-lib.c;; esac
+// teardown_command: rm -rf libUserDllModelicaError.dll libUserDllModelicaError.so UserDllModelicaError.Test* output.log
+// depends: UserDllModelicaError-lib.c
+// suite: smoke
+//
+// Issue #14581: ModelicaError called at run time from a shared library must
+// report its message and end the simulation, not crash it.
+//
+
+loadFile("UserDllModelicaError.mo"); getErrorString();
+simulate(UserDllModelicaError.Test); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "UserDllModelicaError.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'UserDllModelicaError.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | debug   | ModelicaError from a shared library at t=0.6
+// "
+// end SimulationResult;
+// ""
+// endResult
