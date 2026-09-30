@@ -53,6 +53,7 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QDesktopServices>
 
 //IAEX Headers
 #include "celldocument.h"
@@ -641,6 +642,17 @@ namespace IAEX
   }
 
   /*!
+   * \brief Insert (or change) a link to a web page (http/https)
+   *
+   * \param url The web address
+   * \param text The link text, if empty the selected text (or the url) is used
+   */
+  void CellDocument::textcursorInsertWebLink( QString url, QString text, QTextCursor& cursor )
+  {
+    executeCommand(std::make_unique<TextCursorInsertWebLink>( url, text, cursor ));
+  }
+
+  /*!
    * \author Ingemar Axelsson and Anders Fernström
    */
   bool CellDocument::hasChanged() const
@@ -996,6 +1008,22 @@ namespace IAEX
     // 2006-02-10 AF, check if path is empty
     //fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
     //fflush(stderr); fflush(stdout);
+
+    // Web links (http/https) are opened in the default browser instead of
+    // being treated as a local notebook file.
+    const QString scheme = link->scheme().toLower();
+    if( scheme == QLatin1String("http") || scheme == QLatin1String("https") )
+    {
+      if( !QDesktopServices::openUrl( *link ) )
+      {
+        // e.g. no default browser configured
+        QMessageBox::warning( QApplication::activeWindow(), tr("Error"),
+          tr("Could not open the link in the default web browser:\n%1")
+            .arg( link->toString() ) );
+      }
+      return;
+    }
+
     if( !link->path().isEmpty() )
     {
       // 2005-12-05 AF, check if filename exists, otherwise use work dir

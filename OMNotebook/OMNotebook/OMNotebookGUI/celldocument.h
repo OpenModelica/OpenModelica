@@ -122,6 +122,7 @@ namespace IAEX
 
     // Link operations
     virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor) override;
+    virtual void textcursorInsertWebLink( QString url, QString text, QTextCursor& cursor) override;
 
     //State operations
     virtual bool hasChanged() const override;

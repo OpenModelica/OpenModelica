@@ -250,6 +250,21 @@ namespace IAEX
     QString filepath_;
     QTextCursor cursor;
   };
+
+  class TextCursorInsertWebLink : public Command
+  {
+  public:
+    TextCursorInsertWebLink( QString url, QString text, QTextCursor& cursor_ )
+      : url_(url), text_(text), cursor(cursor_){}
+    virtual ~TextCursorInsertWebLink(){}
+    virtual QString commandName() override { return QString("TextCursorInsertWebLink"); }
+    void execute() override;
+
+  private:
+    QString url_;
+    QString text_;
+    QTextCursor cursor;
+  };
 }
 
 #endif
