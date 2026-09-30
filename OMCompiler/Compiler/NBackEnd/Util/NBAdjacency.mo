@@ -3212,7 +3212,11 @@ public
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
-        Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
+        // discrete arguments cannot be iterated on, so they are unsolvable
+        for cref in UnorderedSet.toList(set) loop
+          Solvability.update(cref, if BVariable.checkCref(cref, function BVariable.isContinuous(staticAsContinuous = true), sourceInfo())
+            then Solvability.IMPLICIT() else Solvability.UNSOLVABLE(), sol_map);
+        end for;
         addRepetitions(set, rep_set);
         // if the return type has to be skipped - add empty skip
         if isTuple then
