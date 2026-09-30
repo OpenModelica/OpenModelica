@@ -1147,7 +1147,7 @@ public
       //  D(x)/dx => 1
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
         guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
-      then (Expression.makeOne(exp.ty), diffArguments);
+      then (makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
@@ -1219,7 +1219,10 @@ public
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(diff_map))
         guard(diffArguments.scalarized)
       algorithm
-        if UnorderedMap.contains(exp.cref, diff_map) then
+        if Type.isRecord(exp.ty) and isMixedRecordDerivative(ComponentRef.stripSubscriptsAll(exp.cref), diff_map) then
+          // a record with a seed of its own whose fields are not all seeds is differentiated fieldwise
+          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+        elseif UnorderedMap.contains(exp.cref, diff_map) then
           res := Expression.fromCref(UnorderedMap.getOrFail(exp.cref, diff_map));
 
           // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
@@ -1265,7 +1268,9 @@ public
         dbg("[dCREF:JAC] cref=" + ComponentRef.toString(exp.cref)
             + " | stripped=" + ComponentRef.toString(strippedCref)
             + " | subs=" + Subscript.toStringList(expCrefSubscripts));
-        if UnorderedMap.contains(exp.cref, diff_map) then
+        if Type.isRecord(exp.ty) and isMixedRecordDerivative(strippedCref, diff_map) then
+          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+        elseif UnorderedMap.contains(exp.cref, diff_map) then
           // exp.cref is itself one of this Jacobian's own registered unknowns:
           // use it directly rather than falling through to the base-cref template,
           // which may belong to an unrelated element sharing the same base cref.
@@ -1281,8 +1286,6 @@ public
             end if;
             UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
-        elseif Type.isRecord(exp.ty) and isMixedRecordDerivative(strippedCref, diff_map) then
-          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
         elseif UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
@@ -1467,6 +1470,29 @@ public
       else Expression.makeZero(ty);
     end match;
   end makeZero;
+
+  function makeOne
+    "Expression.makeOne, but records without a '1' operator are one field by field"
+    input Type ty;
+    output Expression one;
+  protected
+    InstNode node;
+    list<Expression> fields = {};
+  algorithm
+    one := match ty
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+        node := Type.complexNode(ty);
+        for comp in Class.getComponents(InstNode.getClass(node)) loop
+          fields := makeOne(InstNode.getType(comp)) :: fields;
+        end for;
+      then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
+      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
+      then Expression.fillType(ty, makeOne(Type.arrayElementType(ty)));
+      // strings of a record have no derivative
+      case Type.STRING() then Expression.STRING("");
+      else Expression.makeOne(ty);
+    end match;
+  end makeOne;
 
   function differentiateRecordCref
     "A record variable whose fields are differentiated on their own: Record(der(field1), ...)."

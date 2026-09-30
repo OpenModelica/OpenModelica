@@ -25,6 +25,7 @@ ModelicaTest.MultiBody.Parts.Bodies.mos \
 ModelicaTest.MultiBody.Joints.JointUPS.mos \
 ModelicaTest.Media.TestOnly.DryAirNasa.mos \
 ModelicaTest.Tables.CombiTimeTable.Test35.mos \
+ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.HeatExchanger.kc_flatTube_KC.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
