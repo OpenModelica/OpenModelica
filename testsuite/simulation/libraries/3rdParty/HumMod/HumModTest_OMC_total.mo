@@ -1291,9 +1291,9 @@ end TorsoHydrostatics;
 
 model Hydrostatics
 parameter Real TiltTable_Degrees(final quantity = "Angle", final unit = "Deg") = 0;
-TorsoHydrostatics UpperTorsoHydrostatics(TorsoCM = -10, artyFractGz = {0, 1, 1, sin(Modelica.SIunits.Conversions.from_deg(TiltTable_Degrees)), 1.76947}, veinFractGz = {0, 1, 1, sin(Modelica.SIunits.Conversions.from_deg(TiltTable_Degrees)), 1.76947});
-TorsoHydrostatics LowerTorsoHydrostatics(TorsoCM = 50.0, artyFractGz = {0, 0.7, 1, sin(Modelica.SIunits.Conversions.from_deg(TiltTable_Degrees)), 0.0190301}, veinFractGz = {0.2, 0.7, 1, 0.2 + sin(Modelica.SIunits.Conversions.from_deg(TiltTable_Degrees)), 0.0190301});
-TorsoHydrostatics MiddleTorsoHydrostatics(TorsoCM = 4, artyFractGz = {0, 1, 1, sin(Modelica.SIunits.Conversions.from_deg(TiltTable_Degrees)), -0.00024891}, veinFractGz = {0, 1, 1, sin(Modelica.SIunits.Conversions.from_deg(TiltTable_Degrees)), -0.00024891});
+TorsoHydrostatics UpperTorsoHydrostatics(TorsoCM = -10, artyFractGz = {0, 1, 1, sin(Modelica.Units.Conversions.from_deg(TiltTable_Degrees)), 1.76947}, veinFractGz = {0, 1, 1, sin(Modelica.Units.Conversions.from_deg(TiltTable_Degrees)), 1.76947});
+TorsoHydrostatics LowerTorsoHydrostatics(TorsoCM = 50.0, artyFractGz = {0, 0.7, 1, sin(Modelica.Units.Conversions.from_deg(TiltTable_Degrees)), 0.0190301}, veinFractGz = {0.2, 0.7, 1, 0.2 + sin(Modelica.Units.Conversions.from_deg(TiltTable_Degrees)), 0.0190301});
+TorsoHydrostatics MiddleTorsoHydrostatics(TorsoCM = 4, artyFractGz = {0, 1, 1, sin(Modelica.Units.Conversions.from_deg(TiltTable_Degrees)), -0.00024891}, veinFractGz = {0, 1, 1, sin(Modelica.Units.Conversions.from_deg(TiltTable_Degrees)), -0.00024891});
 Physiolibrary.Blocks.Constant PumpEffect(k = 1);
 Physiolibrary.Interfaces.RealInput SystemicArtys_Pressure(final quantity = "Pressure", final unit = "mmHg");
 Physiolibrary.Interfaces.RealInput RightAtrium_Pressure(final quantity = "Pressure", final unit = "mmHg");
@@ -4730,7 +4730,7 @@ HumMod.Gases.RespiratoryRegulations.CentralChemoreceptors centralChemoreceptors;
 RespiratoryCenterEfferent efferentPath;
 Physiolibrary.Blocks.Constant Constant(k = 1);
 Physiolibrary.Blocks.deprecated_HomotopyStrongComponentBreaker homotopyBreak(defaultSlope = 0.1, defaultValue = 1.02);
-Modelica.Blocks.Sources.Clock clock(offset = 0.9, startTime = 0.9);
+Modelica.Blocks.Sources.ContinuousClock clock(offset = 0.9, startTime = 0.9);
 Modelica.Blocks.Logical.Switch switch1;
 Modelica.Blocks.Sources.BooleanConstant booleanConstant(k = true);
 equation
@@ -9783,5 +9783,5 @@ end Physiolibrary;
 model HumModTest
 extends HumMod.Main.test.HumMod_GolemEdition2;
 inner Modelica.StateGraph.Interfaces.CompositeStepState stateGraphRoot;
-annotation(uses(Modelica(version="3.2.1")), experiment(StartTime = 0, StopTime = 86400, Tolerance = 0.01, Interval = 1));
+annotation(uses(Modelica(version="4.1.0")), experiment(StartTime = 0, StopTime = 86400, Tolerance = 0.01, Interval = 1));
 end HumModTest;

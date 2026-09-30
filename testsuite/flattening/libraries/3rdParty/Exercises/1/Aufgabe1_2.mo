@@ -2,7 +2,7 @@ within ;
 model Aufgabe1_2
 /*
 parameter Real controller_k=30 "Verstaerkung vom PI Regler";
-parameter Modelica.SIunits.Time controller_T=0.005
+parameter Modelica.Units.SI.Time controller_T=0.005
     "Zeitkonstante vom PI Regler";
 */
   Modelica.Electrical.Analog.Basic.Resistor resistor(R=13.8)
@@ -17,7 +17,7 @@ parameter Modelica.SIunits.Time controller_T=0.005
         origin={-40,10},
         extent={{-10,10},{10,-10}},
         rotation=270)));
-  Modelica.Electrical.Analog.Basic.EMF emf(k=1.016)
+  Modelica.Electrical.Analog.Basic.RotationalEMF emf(k=1.016)
                                            annotation (Placement(transformation(
           extent={{20,0},{40,20}}, rotation=0)));
   Modelica.Mechanics.Rotational.Components.Inertia motorInertia(
@@ -87,7 +87,7 @@ equation
                                                  color={0,0,127}));
   connect(fixed.flange,idealGear.support)
     annotation (Line(points={{84,-16},{84,0}}, color={0,0,0}));
-  annotation (uses(Modelica(version="3.2.1")),   Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")),   Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-180,-100},{180,100}}), graphics),
     experiment(StopTime=0.2),
     __Dymola_Commands(file="Plot feedback.u1 und u2.mos"

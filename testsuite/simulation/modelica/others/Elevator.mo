@@ -4,20 +4,20 @@ package Elevator "Test for ticket #3656 provided by Christian Kral"
   model Elevator
     extends Modelica.Icons.Example;
     parameter Integer nPas = 2 "Number of passengers";
-    parameter Modelica.SIunits.Mass mPas = 80 "Mass of one passenger";
-    parameter Modelica.SIunits.Mass mCab = 250 "Mass of cabin";
-    parameter Modelica.SIunits.Mass mCou = 410 "Mass of counterweight";
-    parameter Modelica.SIunits.Length DP = 0.8 "Diameter of drive pulley";
-    parameter Modelica.SIunits.Inertia JP = 15 "Inertia of drive pulley";
+    parameter Modelica.Units.SI.Mass mPas = 80 "Mass of one passenger";
+    parameter Modelica.Units.SI.Mass mCab = 250 "Mass of cabin";
+    parameter Modelica.Units.SI.Mass mCou = 410 "Mass of counterweight";
+    parameter Modelica.Units.SI.Length DP = 0.8 "Diameter of drive pulley";
+    parameter Modelica.Units.SI.Inertia JP = 15 "Inertia of drive pulley";
     parameter Real EtaP = 0.96 "Efficiency of drive pulley";
     parameter Real iG = 55 "Ratio of gearbox";
     parameter Real EtaG = 0.80 "Efficiency of gearbox";
-    parameter Modelica.SIunits.Inertia JMG = 0.03 "Inertia of gearbox + motor";
-    parameter Modelica.SIunits.Velocity vMax = 2 "Max. speed of cabin";
-    final parameter Modelica.SIunits.Length R2T=(DP/2)/iG
+    parameter Modelica.Units.SI.Inertia JMG = 0.03 "Inertia of gearbox + motor";
+    parameter Modelica.Units.SI.Velocity vMax = 2 "Max. speed of cabin";
+    final parameter Modelica.Units.SI.Length R2T=(DP/2)/iG
       "Transmission rotational -> translational";
-    parameter Modelica.SIunits.Length s0 = 0 "Initial position of cabin";
-    parameter Modelica.SIunits.Velocity v0 = 0 "Initial velocity of cabin";
+    parameter Modelica.Units.SI.Length s0 = 0 "Initial position of cabin";
+    parameter Modelica.Units.SI.Velocity v0 = 0 "Initial velocity of cabin";
     Modelica.Blocks.Sources.Trapezoid trapezoid(
       rising=2.5,
       width=5,
@@ -77,25 +77,25 @@ This results in lifting the cabin by 14 m and in turn lowering the counterweight
 
   model IdealDrivePulley "1-dim. model of ideal drive pulley"
     import Modelica.Constants.eps;
-    parameter Modelica.SIunits.Distance radius(final min = eps) "Wheel radius";
+    parameter Modelica.Units.SI.Distance radius(final min = eps) "Wheel radius";
     parameter Boolean useTranslationalSupport = false
       "= true, if Translational support flange enabled, otherwise implicitly grounded"
       annotation(Evaluate = true, HideResult = true, choices(checkBox = true));
-    Modelica.SIunits.Torque tau "Torque at rotational flange";
-    Modelica.SIunits.Force f_a "Force at translational flange a";
-    Modelica.SIunits.Force f_b "Force at translational flange b";
+    Modelica.Units.SI.Torque tau "Torque at rotational flange";
+    Modelica.Units.SI.Force f_a "Force at translational flange a";
+    Modelica.Units.SI.Force f_b "Force at translational flange b";
     Modelica.Mechanics.Rotational.Interfaces.Flange_a flange "Flange of shaft" annotation(Placement(transformation(extent = {{-10, -110}, {10, -90}}, rotation = 0)));
     Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a annotation(Placement(transformation(extent = {{90, -110}, {110, -90}}), iconTransformation(extent = {{90, -110}, {110, -90}})));
     Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b annotation(Placement(transformation(extent = {{90, 110}, {110, 90}}), iconTransformation(extent = {{90, 90}, {110, 110}})));
     Modelica.Mechanics.Translational.Interfaces.Support translationalSupport(s = s_support, f = -(f_a + f_b)) if useTranslationalSupport
       "Translational support  of component"                                                                                                     annotation(Placement(transformation(extent = {{-110, -10}, {-90, 10}})));
   protected
-    Modelica.SIunits.Angle phi "Angle of rotational flange";
-    Modelica.SIunits.Position s_a
+    Modelica.Units.SI.Angle phi "Angle of rotational flange";
+    Modelica.Units.SI.Position s_a
       "Relative position of translational flange a w.r.t. support";
-    Modelica.SIunits.Position s_b
+    Modelica.Units.SI.Position s_b
       "Relative position of translational flange b w.r.t. support";
-    Modelica.SIunits.Position s_support
+    Modelica.Units.SI.Position s_support
       "Absolute position of translational support flange";
   equation
     if not useTranslationalSupport then
@@ -156,12 +156,12 @@ The sum of the two forces appears at the optional translational support.
   end IdealDrivePulley;
 
   model MassGravitation "Mass with gravitational force"
-    parameter Modelica.SIunits.Mass m(final min = 0) "Mass";
-    parameter Modelica.SIunits.Acceleration g = Modelica.Constants.g_n
+    parameter Modelica.Units.SI.Mass m(final min = 0) "Mass";
+    parameter Modelica.Units.SI.Acceleration g = Modelica.Constants.g_n
       "Gravitation";
-    Modelica.SIunits.Position s(start = 0) "Position of flange";
-    Modelica.SIunits.Velocity v(start = 0) "Velocity of flange";
-    Modelica.SIunits.Acceleration a(start = 0) "Acceleration of flange";
+    Modelica.Units.SI.Position s(start = 0) "Position of flange";
+    Modelica.Units.SI.Velocity v(start = 0) "Velocity of flange";
+    Modelica.Units.SI.Acceleration a(start = 0) "Acceleration of flange";
     Modelica.Mechanics.Translational.Interfaces.Flange_a flange annotation(Placement(transformation(extent = {{-10, 110}, {10, 90}})));
   equation
     s = flange.s;

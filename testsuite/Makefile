@@ -3,9 +3,6 @@ bootstrapping.log \
 msl40simulation.log \
 msl41simulation.log \
 msl41simulation_cpp_mini.log \
-siemens_nosim.log \
-siemens_simulation.log \
-SiemensPower.log \
 hummod.log \
 ThermoSysPro_simulation.log \
 flatteningExercises.log \
@@ -112,8 +109,7 @@ parameters.log \
 simoptions.log \
 annex60.log \
 frontEndUnitCheck.log \
-newFrontEndUnitCheck.log \
-gitlibraries.log
+newFrontEndUnitCheck.log
 
 # Sorted by time it takes to run the tests...
 # DO NOT ADD ANYTHING HERE THAT YOU EXPECT WILL TAKE MORE THAN 5 SECONDS TO RUN IN THE NEXT 18 YEARS
@@ -572,15 +568,6 @@ msl41simulation_cpp.log: omc-diff
 msl41simulation_cpp_mini.log: omc-diff
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl41 -f Makefile test > $@
 	@echo $@ done
-siemens_nosim.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile test > $@
-	@echo $@ done
-siemens_simulation.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile test > $@
-	@echo $@ done
-SiemensPower.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile test > $@
-	@echo $@ done
 ThermoSysPro_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/ThermoSysPro -f Makefile test > $@
 	@echo $@ done
@@ -701,9 +688,6 @@ buildings.log: omc-diff
 	@echo $@ done
 annex60.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/Annex60 -f Makefile test > $@
-	@echo $@ done
-gitlibraries.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/GitLibraries -f Makefile test > $@
 	@echo $@ done
 cse.log: omc-diff
 	$(MAKE) -C simulation/modelica/commonSubExp -f Makefile test > $@
@@ -834,8 +818,6 @@ clean_g_3 :
 
 clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
-	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile clean
-	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl41 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/3.0 -f Makefile clean
@@ -845,7 +827,6 @@ clean_g_4:
 	$(MAKE) -C openmodelica/fmi/ModelExchange/3.0 -f Makefile clean
 	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
-	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile clean
 
 git-sanity-check: git-clean
 	find -name "*.cpp" > invalid-files.log

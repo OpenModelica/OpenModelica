@@ -15,18 +15,21 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.Translational.Examples.Friction);
 compareVars :=
 {
+   "mass.s",
+   "mass.v",
    "stop1.s",
    "stop1.v",
    "stop2.s",
    "stop2.v",
-   "mass.s",
-   "mass.v",
-   "der(stop1.s)",
-   "der(stop1.v)",
-   "der(stop2.s)",
-   "der(stop2.v)",
-   "der(mass.s)",
-   "der(mass.v)"
+   "stop1.mode",
+   "stop1.startBackward",
+   "stop1.startForward",
+   "stop2.mode",
+   "stop2.startBackward",
+   "stop2.startForward",
+   "supportFriction.mode",
+   "supportFriction.startBackward",
+   "supportFriction.startForward"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -40,9 +43,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Translational.Examples.Friction
-// {"stop1.s", "stop1.v", "stop2.s", "stop2.v", "mass.s", "mass.v", "der(stop1.s)", "der(stop1.v)", "der(stop2.s)", "der(stop2.v)", "der(mass.s)", "der(mass.v)"}
+// {"mass.s", "mass.v", "stop1.s", "stop1.v", "stop2.s", "stop2.v", "stop1.mode", "stop1.startBackward", "stop1.startForward", "stop2.mode", "stop2.startBackward", "stop2.startForward", "supportFriction.mode", "supportFriction.startBackward", "supportFriction.startForward"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = 'time|stop1.s|stop1.v|stop2.s|stop2.v|mass.s|mass.v|der[(]stop1.s[)]|der[(]stop1.v[)]|der[(]stop2.s[)]|der[(]stop2.v[)]|der[(]mass.s[)]|der[(]mass.v[)]', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = 'time|mass.s|mass.v|stop1.s|stop1.v|stop2.s|stop2.v|stop1.mode|stop1.startBackward|stop1.startForward|stop2.mode|stop2.startBackward|stop2.startForward|supportFriction.mode|supportFriction.startBackward|supportFriction.startForward', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.Friction_res.mat
 // Files Equal!
 // "true

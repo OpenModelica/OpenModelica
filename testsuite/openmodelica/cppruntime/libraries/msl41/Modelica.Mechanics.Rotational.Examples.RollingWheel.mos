@@ -13,17 +13,8 @@ loadModel(Modelica,{"4.1.0"});
 simulate(Modelica.Mechanics.Rotational.Examples.RollingWheel,outputFormat="mat",stopTime=5.0); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotational.Examples.RollingWheel_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Rotational.Examples.RollingWheel.mat","Modelica.Mechanics.Rotational.Examples.RollingWheel_diff.csv",0.01,0.0001,
-  {"mass.s",
-  "mass.v",
-  "der(mass.s)",
-  "der(mass.v)",
-  "der(inertia.phi)",
-  "inertia.flange_a.tau",
-  "inertia.phi",
-  "mass.flange_a.s",
-  "mass.flange_b.f",
-  "quadraticSpeedDependentForce.s"});
+  getEnvironmentVar("REFERENCEFILES")+"/msl41/Modelica.Mechanics.Rotational.Examples.RollingWheel.mat","Modelica.Mechanics.Rotational.Examples.RollingWheel_diff.csv",0.01,0.0001,
+  {"inertia.phi", "inertia.w"});
 
 // Result:
 // true

@@ -15,10 +15,10 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.Rectifier);
 compareVars :=
 {
-   "Inductor1.i",
-   "Inductor3.i",
    "Capacitor1.v",
-   "Capacitor2.v"
+   "Capacitor2.v",
+   "Inductor2.i",
+   "Inductor3.i"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -32,9 +32,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Analog.Examples.Rectifier
-// {"Inductor1.i", "Inductor3.i", "Capacitor1.v", "Capacitor2.v"}
+// {"Capacitor1.v", "Capacitor2.v", "Inductor2.i", "Inductor3.i"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|Inductor1.i|Inductor3.i|Capacitor1.v|Capacitor2.v', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|Capacitor1.v|Capacitor2.v|Inductor2.i|Inductor3.i', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.Rectifier_res.mat
 // Files Equal!
 // "true

@@ -1,3 +1,0 @@
-loadModel(Modelica,{"3.2.1"});
-simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a);
-

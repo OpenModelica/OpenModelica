@@ -10,14 +10,15 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStatic);
 compareVars :=
 {
-   "dcpm1.la.i",
+   "dcpm1.ia",
+   "dcpm1.tauElectrical",
+   "dcpm2.ia",
+   "dcpm2.tauElectrical",
    "loadInertia1.phi",
    "loadInertia1.w",
    "loadInertia2.phi",
@@ -33,12 +34,11 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStatic
-// {"dcpm1.la.i", "loadInertia1.phi", "loadInertia1.w", "loadInertia2.phi", "loadInertia2.w"}
+// {"dcpm1.ia", "dcpm1.tauElectrical", "dcpm2.ia", "dcpm2.tauElectrical", "loadInertia1.phi", "loadInertia1.w", "loadInertia2.phi", "loadInertia2.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStatic', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm1.la.i|loadInertia1.phi|loadInertia1.w|loadInertia2.phi|loadInertia2.w', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStatic', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm1.ia|dcpm1.tauElectrical|dcpm2.ia|dcpm2.tauElectrical|loadInertia1.phi|loadInertia1.w|loadInertia2.phi|loadInertia2.w', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStatic_res.mat
 // Files Equal!
 // "true

@@ -35,6 +35,7 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// Note: Reference file /home/andreas/workdir/OM/OpenModelicaMaster/testsuite/ReferenceFiles/msl41/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip.mat does not exist. Cannot determine if the result improved!
 // "true
 // "
 // ""

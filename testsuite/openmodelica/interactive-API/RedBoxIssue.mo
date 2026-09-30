@@ -314,7 +314,7 @@ encapsulated package RedBoxIssue
       __OpenModelica_commandLineOptions = "");
   end MyModel;
   annotation(
-    uses(Modelica(version = "3.2.3"), PowerSystems(version = "0.6.0")),
+    uses(Modelica(version = "4.1.0"), PowerSystems(version = "0.6.0")),
     Documentation(info = "<html><head></head><body><p><font size=\"4\">Inverter reference data:</font></p>
 <p><font size=\"4\">Total DC voltage 100 V</font></p>
 <p><font size=\"4\">When a passive load is fed: resistance 1 ohm, inductance 5mH</font></p>

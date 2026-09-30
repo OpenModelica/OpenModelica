@@ -14,7 +14,7 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start);
 compareVars :=
 {
-   "dcse.lesigma.i",
+   "dcse.la.i",
    "loadInertia.phi",
    "loadInertia.w"
 };
@@ -28,8 +28,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start
-// {"dcse.lesigma.i", "loadInertia.phi", "loadInertia.w"}
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.lesigma.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"dcse.la.i", "loadInertia.phi", "loadInertia.w"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.la.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

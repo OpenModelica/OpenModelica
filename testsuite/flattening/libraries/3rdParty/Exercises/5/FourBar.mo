@@ -1,7 +1,7 @@
 within ;
 package FourBar
   partial model PartialPlanarLoop "Basic elements of a planar loop"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter SI.Length rh1[3]={0.5,0,0} "Position vector from r1 to r4";
     parameter SI.Length rv1[3]={0,0.5,0} "Position vector from r1 to r2";
     parameter SI.Length rv2[3]={0.1,0.5,0} "Position vector from r4 to r2";
@@ -241,7 +241,7 @@ package FourBar
             true))
       annotation (Placement(transformation(extent={{-40,0},{-20,20}}, rotation=
               0)));
-    Modelica.Blocks.Sources.Sine sine(amplitude=0.7, freqHz=1)
+    Modelica.Blocks.Sources.Sine sine(amplitude=0.7, f=1)
       annotation (Placement(transformation(extent={{-80,0},{-60,20}}, rotation=
               0)));
     replaceable PlanarLoop3 planarLoop constrainedby PartialPlanarLoop
@@ -260,5 +260,5 @@ package FourBar
       experiment(StopTime=5),
       experimentSetupOutput);
   end TestPlanarLoops;
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end FourBar;

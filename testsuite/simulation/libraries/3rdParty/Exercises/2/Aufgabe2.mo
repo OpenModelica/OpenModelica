@@ -2,7 +2,7 @@ within ;
 package Aufgabe2
   model NonlinearSpring
     "Nonlinear 1D rotational spring (= gear characteristic)"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter SI.RotationalSpringConstant c_min = 1.95e5
       "Spring constant for small angles";
     parameter SI.RotationalSpringConstant c_max = 5.84e5
@@ -112,7 +112,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
   end Test1;
 
   model Test2
-    parameter Modelica.SIunits.Angle phi0=0.0016;
+    parameter Modelica.Units.SI.Angle phi0=0.0016;
     Modelica.Mechanics.Rotational.Components.Inertia inertia1(
                                                    J=5,
       a(fixed=false),
@@ -170,5 +170,5 @@ gearbox characteristic is approximated by a polynomial of degree 3.
       experiment(StopTime=0.1),
       __Dymola_Commands(file="Plot speeds.mos" "Plot speeds"));
   end Test2;
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end Aufgabe2;

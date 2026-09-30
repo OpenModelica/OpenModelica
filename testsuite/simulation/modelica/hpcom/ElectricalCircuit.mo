@@ -1,5 +1,5 @@
 model ElectricalCircuit
-  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=220, freqHz=50)
+  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=220, f=50)
     annotation (Placement(transformation(
         extent={{-10,-10},{10,10}},
         rotation=90,

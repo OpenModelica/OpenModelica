@@ -28,21 +28,21 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation from Aufgabe1_1.
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from Aufgabe1_1.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // "Check of Aufgabe1_1 completed successfully.
-// Class Aufgabe1_1 has 52 equation(s) and 52 variable(s).
-// 39 of these are trivial equation(s)."
+// Class Aufgabe1_1 has 54 equation(s) and 54 variable(s).
+// 41 of these are trivial equation(s)."
 // ""
 // "Check of Aufgabe1_2 completed successfully.
-// Class Aufgabe1_2 has 89 equation(s) and 89 variable(s).
-// 61 of these are trivial equation(s)."
+// Class Aufgabe1_2 has 91 equation(s) and 91 variable(s).
+// 63 of these are trivial equation(s)."
 // ""
 // "Check of Aufgabe2.Test1 completed successfully.
-// Class Aufgabe2.Test1 has 22 equation(s) and 22 variable(s).
-// 14 of these are trivial equation(s)."
+// Class Aufgabe2.Test1 has 24 equation(s) and 24 variable(s).
+// 15 of these are trivial equation(s)."
 // ""
 // "Check of Aufgabe2.Test2 completed successfully.
 // Class Aufgabe2.Test2 has 46 equation(s) and 46 variable(s).
@@ -69,27 +69,27 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 // 271 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_2 completed successfully.
-// Class ServoSystem3.Aufgabe4_2 has 1867 equation(s) and 1867 variable(s).
-// 1423 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_2 has 1870 equation(s) and 1870 variable(s).
+// 1426 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_3a completed successfully.
-// Class ServoSystem3.Aufgabe4_3a has 1867 equation(s) and 1867 variable(s).
-// 1423 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_3a has 1870 equation(s) and 1870 variable(s).
+// 1426 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_3b completed successfully.
-// Class ServoSystem3.Aufgabe4_3b has 1867 equation(s) and 1867 variable(s).
-// 1423 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_3b has 1870 equation(s) and 1870 variable(s).
+// 1426 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_4a completed successfully.
-// Class ServoSystem3.Aufgabe4_4a has 1867 equation(s) and 1867 variable(s).
-// 1423 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_4a has 1870 equation(s) and 1870 variable(s).
+// 1426 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_4b completed successfully.
-// Class ServoSystem3.Aufgabe4_4b has 1888 equation(s) and 1888 variable(s).
-// 1441 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_4b has 1891 equation(s) and 1891 variable(s).
+// 1444 of these are trivial equation(s)."
 // ""
 // "Check of FourBar.TestPlanarLoops completed successfully.
-// Class FourBar.TestPlanarLoops has 1912 equation(s) and 1912 variable(s).
-// 1433 of these are trivial equation(s)."
+// Class FourBar.TestPlanarLoops has 1915 equation(s) and 1915 variable(s).
+// 1436 of these are trivial equation(s)."
 // ""
 // endResult

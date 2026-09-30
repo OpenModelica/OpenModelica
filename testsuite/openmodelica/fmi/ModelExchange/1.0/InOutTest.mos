@@ -7,7 +7,7 @@
 // Simulation Results
 //
 
-loadModel(Modelica, {"3.2.1"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadFile("InOutTest.mo");getErrorString();
 buildModelFMU(InOutTest, version="1.0");getErrorString();
 importFMU("InOutTest.fmu");getErrorString();

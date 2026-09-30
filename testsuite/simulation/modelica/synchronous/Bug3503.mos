@@ -6,7 +6,7 @@
 
 setCommandLineOptions("+std=3.3"); getErrorString();
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("ClockedSource.mo"); getErrorString();
 loadFile("ClockedModel.mo"); getErrorString();
 instantiateModel(ClockedSource); getErrorString();

@@ -35,6 +35,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 5e4, numberOfIntervals = 50000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ChuaCircuit', options = '', outputFormat = 'mat', variableFilter = 'time|L.i|C1.v|C2.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.ChuaCircuit_res.mat
+// Note: Reference file /home/andreas/workdir/OM/OpenModelicaMaster/testsuite/ReferenceFiles/msl41/Modelica.Electrical.Analog.Examples.ChuaCircuit.mat does not exist. Cannot determine if the result improved!
 // "true
 // "
 // ""

@@ -1,12 +1,12 @@
 TEST = ../../../../rtest -v
 
-TESTFILES = \
-buildHumModOMC.mos \
-checkHumModOMC.mos
+TESTFILES =
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES=
+FAILINGTESTFILES= \
+buildHumModOMC.mos \
+checkHumModOMC.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

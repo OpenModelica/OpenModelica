@@ -7,22 +7,19 @@
 // Modelica Standard Library
 //
 
-// The MSL 4.1.0 results no longer match the MSL 3.2.1 reference file. Simulate the
-// model without verifying it.
-
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 setCommandLineOptions("-d=backenddaeinfo,stateselection --maxSizeLinearTearing=4000"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6);
 compareVars :=
 {
-   "load.phi",
-   "load.w",
    "filter.x[1]",
-   "filter.x[2]"
+   "filter.x[2]",
+   "load.phi",
+   "load.w"
 };
 
 runScript(modelTesting);getErrorString();

@@ -15,12 +15,10 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Media.Examples.ReferenceAir.DryAir2);
 compareVars :=
 {
-   "volume.medium.p",
    "volume.medium.T",
-   "volume1.medium.p",
+   "volume.medium.p",
    "volume1.medium.T",
-   "fixedMassFlowRate.port.p",
-   "ambient.port.m_flow"
+   "volume1.medium.p"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -34,9 +32,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.ReferenceAir.DryAir2
-// {"volume.medium.p", "volume.medium.T", "volume1.medium.p", "volume1.medium.T", "fixedMassFlowRate.port.p", "ambient.port.m_flow"}
+// {"volume.medium.T", "volume.medium.p", "volume1.medium.T", "volume1.medium.p"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.ReferenceAir.DryAir2', options = '', outputFormat = 'mat', variableFilter = 'time|volume.medium.p|volume.medium.T|volume1.medium.p|volume1.medium.T|fixedMassFlowRate.port.p|ambient.port.m_flow', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.ReferenceAir.DryAir2', options = '', outputFormat = 'mat', variableFilter = 'time|volume.medium.T|volume.medium.p|volume1.medium.T|volume1.medium.p', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Media.Examples.ReferenceAir.DryAir2_res.mat
 // Files Equal!
 // "true

@@ -9,7 +9,7 @@ end ControlBus;
 
   model NonlinearSpring
   "Nonlinear 1D rotational spring (= gear characteristic)"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter SI.RotationalSpringConstant c_min = 1.95e5
     "Spring constant for small angles";
     parameter SI.RotationalSpringConstant c_max = 5.84e5
@@ -181,7 +181,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
 
 model ControlledMotor "Current controlled DC motor"
   parameter Real k=30 "Gain of PI current controller";
-  parameter Modelica.SIunits.Time T=0.005
+  parameter Modelica.Units.SI.Time T=0.005
     "Time Constant of PI current controller (T>0 required)";
   Modelica.Electrical.Machines.BasicMachines.DCMachines.DC_PermanentMagnet DCPM(
     Ra=13.8,
@@ -276,7 +276,7 @@ end ControlledMotor;
 
 model ControlledMotorWithBus "Current controlled DC motor with bus"
   parameter Real k=30 "Gain of PI current controller";
-  parameter Modelica.SIunits.Time T=0.005
+  parameter Modelica.Units.SI.Time T=0.005
     "Time Constant of PI current controller (T>0 required)";
   Modelica.Electrical.Machines.BasicMachines.DCMachines.DC_PermanentMagnet DCPM(
     Ra=13.8,
@@ -410,7 +410,7 @@ end ControlledMotorWithBus;
 
 
   model Controller1 "PI Geschwindigkeits-Regler (Aufgabe 3)"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     parameter Real ks "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts "Zeitkonstante vom PI Geschwindigkeitsregler";
     parameter Real ratio=105 "Getriebe-Uebersetzung";
@@ -492,7 +492,7 @@ end ControlledMotorWithBus;
 
 
   model Controller2 "P-PI Kaskadenregler"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     parameter Real kp=1 "Verstaerkung vom Positionsregler";
     parameter Real ks=1 "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts=1 "Zeitkonstante vom PI Geschwindigkeitsregler";
@@ -646,7 +646,7 @@ end ControlledMotorWithBus;
 
 
   model Servo1 "Drehzahlgeregelter Motor mit Getriebe"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     parameter Real ks "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts "Zeitkonstante vom PI Geschwindigkeitsregler";
     parameter Real km=30 "Verstaerkung vom PI Motorregler";
@@ -743,7 +743,7 @@ end ControlledMotorWithBus;
 
 
   model Servo2 "Positionsgeregelter Motor mit Getriebe"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter Real kp "Verstaerkung vom Positionsregler";
     parameter Real ks = 0.8 "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts = 0.1 "Zeitkonstante vom PI Geschwindigkeitsregler";
@@ -955,7 +955,7 @@ end Servo3;
 
   model PathPlanning
   "Generierung von Sollwinkel (controlBus.referenceAngle) und Solldrehzahl (controlBus.referenceSpeed)"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter SI.Angle angleBeg "Start angle";
     parameter SI.Angle angleEnd "End angle";
     parameter SI.AngularVelocity speedMax "Maximum axis speed";
@@ -1062,7 +1062,7 @@ reference speed as function of time.
 
 
   model OneArmRobot "Einfacher Roboter mit einem Arm (= einfaches Pendel)"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter SI.Mass loadMass=100 "Load mass";
     Modelica.Mechanics.Rotational.Interfaces.Flange_a axis2
       annotation (Placement(transformation(extent={{-110,-10},{-90,10}},
@@ -1209,7 +1209,7 @@ reference speed as function of time.
 
 
   model Aufgabe3_2 "Musterloesung von Aufgabe 3.2"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     extends Modelica.Icons.Example;
     parameter Real ks = 0.8 "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts= 0.08 "Zeitkonstante vom PI Geschwindigkeitsregler";
@@ -1253,7 +1253,7 @@ reference speed as function of time.
 
 
 model Aufgabe3_3 "Musterloesung von Aufgabe 3.2"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
   extends Modelica.Icons.Example;
   parameter Real ks = 0.8 "Verstaerkung vom PI Geschwindigkeitsregler";
   parameter SI.Time Ts= 0.08 "Zeitkonstante vom PI Geschwindigkeitsregler";
@@ -1293,7 +1293,7 @@ end Aufgabe3_3;
 
   model Aufgabe4_1
   "Einstellung von Positionsregler fuer Servomotor mit Getriebe und Last (Aufgabe 4.1)"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     extends Modelica.Icons.Example;
 
     ServoSystem3.Servo2 servo(kp=5)
@@ -1428,5 +1428,5 @@ end Aufgabe3_3;
   end Aufgabe4_4b;
 
 
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end ServoSystem3;

@@ -1,2 +1,0 @@
-simulateModel("Modelica.Electrical.Analog.Examples.CauerLowPassSC"); 
-exit();

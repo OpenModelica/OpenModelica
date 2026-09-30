@@ -13,7 +13,7 @@ model Aufgabe1_1
         origin={-40,10},
         extent={{-10,10},{10,-10}},
         rotation=270)));
-  Modelica.Electrical.Analog.Basic.EMF emf(k=1.016)
+  Modelica.Electrical.Analog.Basic.RotationalEMF emf(k=1.016)
                                            annotation (Placement(transformation(
           extent={{30,0},{50,20}}, rotation=0)));
   Modelica.Blocks.Sources.Ramp ramp(duration=0.1, height=100)
@@ -43,7 +43,7 @@ equation
           {-40,-20},{-40,0}}, color={0,0,255}));
   connect(currentSensor.p, ground.p)
     annotation (Line(points={{8,-20},{40,-20}}, color={0,0,255}));
-  annotation (uses(Modelica(version="3.2.1")),   Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")),   Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}),
                                                        graphics),
     experiment(StopTime=0.2),

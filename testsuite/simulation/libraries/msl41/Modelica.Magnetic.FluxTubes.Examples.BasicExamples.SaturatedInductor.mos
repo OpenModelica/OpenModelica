@@ -9,8 +9,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor";
 
 modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Magnetic.FluxTubes.Examples.BasicExamples.SaturatedInductor);
@@ -27,7 +25,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor"
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Magnetic.FluxTubes.Examples.BasicExamples.SaturatedInductor
 // {"coil.Phi", "coil.v"}
@@ -36,6 +33,7 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// Note: Reference file /home/andreas/workdir/OM/OpenModelicaMaster/testsuite/ReferenceFiles/msl41/Modelica.Magnetic.FluxTubes.Examples.BasicExamples.SaturatedInductor.mat does not exist. Cannot determine if the result improved!
 // "true
 // "
 // ""

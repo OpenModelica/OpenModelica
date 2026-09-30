@@ -9,8 +9,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start";
 
 modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start);
@@ -33,7 +31,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start"
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start
 // {"aims.idq_rr[1]", "aims.idq_rr[2]", "aims.lssigma.i_[1]", "aims.lssigma.i_[2]", "aims.lszero.i", "aims.lrzero.i", "loadInertia.phi", "loadInertia.w"}
@@ -42,6 +39,7 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// Note: Reference file /home/andreas/workdir/OM/OpenModelicaMaster/testsuite/ReferenceFiles/msl41/Modelica.Electrical.Machines.Examples.InductionMachines.IMS_Start.mat does not exist. Cannot determine if the result improved!
 // "true
 // "
 // ""

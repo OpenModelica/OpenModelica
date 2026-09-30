@@ -4,7 +4,7 @@ package drumBoiler
     parameter Boolean use_inputs = false "use external inputs instead of test data contained internally" annotation(Evaluate = true);
     Modelica.Fluid.Examples.DrumBoiler.BaseClasses.EquilibriumDrumBoiler evaporator(m_D = 300000.0, cp_D = 500, V_t = 100, V_l_start = 67, redeclare package Medium = Modelica.Media.Water.StandardWater, energyDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial, massDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial, p_start = 100000) annotation(Placement(transformation(extent = {{-46, -30}, {-26, -10}}, rotation = 0)));
     Modelica.Thermal.HeatTransfer.Sources.PrescribedHeatFlow furnace annotation(Placement(transformation(origin = {-36, -53}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
-    Modelica.Fluid.Sources.FixedBoundary sink(nPorts = 1, p = Modelica.SIunits.Conversions.from_bar(0.5), redeclare package Medium = Modelica.Media.Water.StandardWaterOnePhase, T = 500) annotation(Placement(transformation(origin = {90, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
+    Modelica.Fluid.Sources.FixedBoundary sink(nPorts = 1, p = Modelica.Units.Conversions.from_bar(0.5), redeclare package Medium = Modelica.Media.Water.StandardWaterOnePhase, T = 500) annotation(Placement(transformation(origin = {90, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
     Modelica.Fluid.Sensors.MassFlowRate massFlowRate(redeclare package Medium = Modelica.Media.Water.StandardWater) annotation(Placement(transformation(origin = {30, -20}, extent = {{10, 10}, {-10, -10}}, rotation = 180)));
     Modelica.Fluid.Sensors.Temperature temperature(redeclare package Medium = Modelica.Media.Water.StandardWater) annotation(Placement(transformation(origin = {-3, -1}, extent = {{10, 10}, {-10, -10}}, rotation = 180)));
     Modelica.Fluid.Sensors.Pressure pressure(redeclare package Medium = Modelica.Media.Water.StandardWater) annotation(Placement(transformation(extent = {{10, 18}, {30, 38}}, rotation = 0)));
@@ -130,7 +130,7 @@ package drumBoiler
          150 kg/s &LT;= qm_S    &LT;= 200 kg/s
          100 bar  &LT;= p_S     &LT;= 120 bar</pre>
        <p>The solution can be found at q_F = 328 MW, Y_Valve = 0.63 with the states evaporator.p = 120 bar, evaporator.V_liquid = 67 m3, and controller.x = 15.</p>
-       </html>"), uses(Modelica(version = "3.2.1")));
+       </html>"), uses(Modelica(version = "4.1.0")));
   end DrumBoiler;
 
   model optDrumBoiler "

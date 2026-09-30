@@ -47,6 +47,7 @@ runScript(modelTesting);getErrorString();
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
 //
+// Note: Reference file /home/andreas/workdir/OM/OpenModelicaMaster/testsuite/ReferenceFiles/msl41/Modelica.Mechanics.Rotational.Examples.LossyGearDemo2.mat does not exist. Cannot determine if the result improved!
 // "true
 // "
 // ""

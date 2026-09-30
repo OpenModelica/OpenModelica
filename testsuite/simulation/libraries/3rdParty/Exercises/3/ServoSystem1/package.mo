@@ -4,7 +4,7 @@ package ServoSystem1
 
   model NonlinearSpring
   "Nonlinear 1D rotational spring (= gear characteristic)"
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     parameter SI.RotationalSpringConstant c_min = 1.95e5
     "Spring constant for small angles";
     parameter SI.RotationalSpringConstant c_max = 5.84e5
@@ -176,7 +176,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
 
 
   model Controller1 "PI Geschwindigkeits-Regler (Aufgabe 3)"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     parameter Real ks "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts "Zeitkonstante vom PI Geschwindigkeitsregler";
     parameter Real ratio=105 "Getriebe-Uebersetzung";
@@ -259,7 +259,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
 
   model ControlledMotor "Current controlled DC motor"
     parameter Real k=30 "Gain of PI current controller";
-    parameter Modelica.SIunits.Time T=0.005
+    parameter Modelica.Units.SI.Time T=0.005
     "Time Constant of PI current controller (T>0 required)";
     Modelica.Electrical.Machines.BasicMachines.DCMachines.DC_PermanentMagnet
     DCPM(
@@ -354,7 +354,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
 
 
   model Servo1 "Drehzahlgeregelter Motor mit Getriebe"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     parameter Real ks "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts "Zeitkonstante vom PI Geschwindigkeitsregler";
     parameter Real km=30 "Verstaerkung vom PI Motorregler";
@@ -444,7 +444,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
 
 
   model Aufgabe3_2 "Musterloesung von Aufgabe 3.2"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
     extends Modelica.Icons.Example;
     parameter Real ks = 0.8 "Verstaerkung vom PI Geschwindigkeitsregler";
     parameter SI.Time Ts= 0.08 "Zeitkonstante vom PI Geschwindigkeitsregler";
@@ -484,7 +484,7 @@ gearbox characteristic is approximated by a polynomial of degree 3.
 
 
 model Aufgabe3_3 "Musterloesung von Aufgabe 3.2"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
   extends Modelica.Icons.Example;
   parameter Real ks = 0.8 "Verstaerkung vom PI Geschwindigkeitsregler";
   parameter SI.Time Ts= 0.08 "Zeitkonstante vom PI Geschwindigkeitsregler";
@@ -521,5 +521,5 @@ equation
 end Aufgabe3_3;
 
 
-  annotation (uses(Modelica(version="3.2.2")));
+  annotation (uses(Modelica(version="4.1.0")));
 end ServoSystem1;

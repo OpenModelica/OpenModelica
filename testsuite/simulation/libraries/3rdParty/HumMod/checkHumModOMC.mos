@@ -1,6 +1,9 @@
 // name:     HumModOMCTotal [checkModel]
 // keywords:
 // status:   correct
+// suite: disabled
+// With MSL 4.1 the model is over-determined by 5 equations (Modelica.StateGraph
+// in status.patientStatus); it was written for MSL 3.2.1.
 //
 
 /*

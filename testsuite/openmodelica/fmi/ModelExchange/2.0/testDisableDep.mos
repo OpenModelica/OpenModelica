@@ -6,7 +6,7 @@
 // cflags: -d=-newInst --fmiSources=true
 //
 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 setCommandLineOptions("--std=3.3 -d=disableFMIDependency");
 setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
 

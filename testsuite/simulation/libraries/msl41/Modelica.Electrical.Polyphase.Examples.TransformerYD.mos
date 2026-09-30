@@ -9,8 +9,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.MultiPhase.Examples.TransformerYD";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Polyphase.Examples.TransformerYD);
@@ -28,7 +26,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.MultiPhase.Examples.TransformerYD"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Polyphase.Examples.TransformerYD
 // {"transformerL.inductor[1].i", "transformerL.inductor[2].i", "transformerL.inductor[3].i"}

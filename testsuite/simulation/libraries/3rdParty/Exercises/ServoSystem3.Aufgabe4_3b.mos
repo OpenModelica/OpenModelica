@@ -3,7 +3,7 @@
 // provided by Martin Otter
 //
 
-loadModel(Modelica, {"3.2.2"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("4/ServoSystem3/package.mo"); getErrorString();
 simulate(ServoSystem3.Aufgabe4_3b);  getErrorString();
 
