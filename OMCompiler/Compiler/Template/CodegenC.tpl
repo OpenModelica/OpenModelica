@@ -629,16 +629,19 @@ end functionSystemsSynchronous;
 
 template functionEquationsSynchronous(Integer base_idx, Integer sub_idx, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(equations, modelNamePrefix, contextSimulationDiscrete, '', true, &chunks)
   <<
   <%equations |> eq => equation_impl(base_idx, sub_idx, eq, contextOther, modelNamePrefix, false) ; separator="\n"%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>')%>(DATA *data, threadData_t *threadData)
   {
     int i;
 
     <%addRootsTempArray()%>
 
-    <%equations_call(equations, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -2056,16 +2059,27 @@ let &sub = buffer ""
 end functionCallExternalObjectDestructors;
 
 template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
-  "Generates function in simulation file."
+  "Generates function in simulation file.
+  data->simulationInfo->inputVars holds one value per scalar input, the
+  elements of an array input are stored consecutively."
 ::=
 let &sub = buffer ""
   match modelInfo
-  case MODELINFO(vars=SIMVARS(__)) then
+  case MODELINFO(vars=SIMVARS(inputVars=inputVars)) then
     <<
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
-        '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
+      <%inputVars |> var as SIMVAR(name=name) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
+        match cref2simvar(name, simCode)
+        case v as SIMVAR(type_=T_ARRAY()) then
+          <<
+          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+            <%inputValue(v, 'k')%> = data->simulationInfo->inputVars[<%offset%> + k];
+          }
+          >>
+        else
+          '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%offset%>];'
         ;separator="\n"
       %>
 
@@ -2074,20 +2088,16 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
+      <%inputVars |> SIMVAR(name=name) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
         match cref2simvar(name, simCode)
-        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
-          let kind = match varKind
-            case PARAM() then 'VAR_KIND_PARAMETER'
-            else 'VAR_KIND_VARIABLE'
-          end match
+        case v as SIMVAR(aliasvar=NOALIAS()) then
+          let ty = expTypeShort(type_)
+          let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          data->simulationInfo->inputVars[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%index%>);
-          >>
-        case SIMVAR(aliasvar=NOALIAS()) then
-          <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
-          data->simulationInfo->inputVars[<%i0%>] = <%expTypeShort(type_)%>_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
+          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+            data->simulationInfo->inputVars[<%offset%> + k] = <%ty%>_get(<%start%>, base_array_nr_of_elements(<%start%>) == 1 ? 0 : k);
+          }
           >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
@@ -2098,18 +2108,17 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
+      <%inputVars |> SIMVAR(name=name) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
         match cref2simvar(name, simCode)
-
-        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
+        case v as SIMVAR(aliasvar=NOALIAS()) then
+          let ty = expTypeShort(type_)
+          let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
-          put_real_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
-          >>
-        case SIMVAR(aliasvar=NOALIAS()) then
-          <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
-          put_<%expTypeShort(type_)%>_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
+          <%ensureSizeFunction(ty)%>(&<%start%>, <%numScalarElemsVar(v)%>);
+          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+            put_<%ty%>_element(data->simulationInfo->inputVars[<%offset%> + k], k, &<%start%>);
+          }
           >>
         else
           error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
@@ -2120,10 +2129,15 @@ let &sub = buffer ""
     }
 
     int <%symbolName(modelNamePrefix,"inputNames")%>(DATA *data, char ** names){
-      <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+      <%inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+        let offset = numScalarElemsBefore(inputVars, i0)
         match cref2simvar(name, simCode)
+        case v as SIMVAR(aliasvar=NOALIAS(), type_=T_ARRAY()) then
+          (arrayElementSubscripts(v) |> subscript hasindex k =>
+            'names[<%intAdd(numScalarElemsBefore(inputVars, i0), k)%>] = (char *) "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>[<%subscript%>]";'
+          ;separator="\n")
         case SIMVAR(aliasvar=NOALIAS()) then
-        'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
+        'names[<%offset%>] = (char *) <%inputData(simVar)%>[<%index%>].info.name;'
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
@@ -2133,6 +2147,35 @@ let &sub = buffer ""
     >>
   end match
 end functionInput;
+
+template inputData(SimVar var)
+  "Static data array of an input variable."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then 'data->modelData-><%expTypeShort(type_)%>ParameterData'
+    case SIMVAR(__) then 'data->modelData-><%expTypeShort(type_)%>VarsData'
+end inputData;
+
+template inputValue(SimVar var, String k)
+  "Value of element k of an array input variable."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then
+      let ty = expTypeShort(type_)
+      'data->simulationInfo-><%ty%>Parameter[data->simulationInfo-><%ty%>ParamsIndex[<%index%>] + <%k%>]'
+    case SIMVAR(__) then
+      let ty = expTypeShort(type_)
+      'data->localData[0]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>] + <%k%>]'
+end inputValue;
+
+template ensureSizeFunction(String ty)
+::=
+  match ty
+    case "real"
+    case "integer"
+    case "boolean" then '<%ty%>_array_ensure_size'
+    else error(sourceInfo(), 'Inputs of type <%ty%> are not supported.')
+end ensureSizeFunction;
 
 template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
@@ -3929,14 +3972,17 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   #endif<%\n%>
                   >>)) +
                   (eqs |> eq => equation_impl2(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt, init) ; separator="\n") +
+                  (let &chunks = buffer ""
+                  let calls = equations_call(eqs, modelNamePrefix, contextOther, '', false, &chunks)
                   <<
                   <%\n%>
+                  <%chunks%>
                   OMC_DISABLE_OPT
                   void <%name%>(DATA *data, threadData_t *threadData)
                   {
-                    <%equations_call(eqs, modelNamePrefix, contextOther, '')%>
+                    <%calls%>
                   }
-                  >>
+                  >>)
                   +
                   (if multiFile then
                   (<<
@@ -3993,13 +4039,16 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
     let () = System.tmpTickReset(0)
     let eqfuncs = (initalEquations_lambda0 |> eq =>
       equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, true) ;separator="\n")
+    let &chunks = buffer ""
+    let calls = equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete, '', false, &chunks)
     <<
     <%eqfuncs%>
 
+    <%chunks%>
     int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
     {
       data->simulationInfo->discreteCall = 1;
-      <%equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete, '')%>
+      <%calls%>
       data->simulationInfo->discreteCall = 0;
 
       return 0;
@@ -4785,13 +4834,16 @@ end functionXXX_DAG;
 
 template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, String modelNamePrefix)
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(eqs, modelNamePrefix, contextSimulationNonDiscrete, 'data->simulationInfo->evalSelection', true, &chunks)
   <<
   /* forwarded equations */
   <%eqs |> eq => equationForward_(eq, contextSimulationNonDiscrete, modelNamePrefix); separator="\n"%>
 
+  <%chunks%>
   static void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(eqs, modelNamePrefix, contextSimulationNonDiscrete, 'data->simulationInfo->evalSelection')%>
+    <%calls%>
   }
   >>
 end functionXXX_system;
@@ -5208,10 +5260,13 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(allEquationsPlusWhen, modelNamePrefix, contextSimulationDiscrete, '', false, &chunks)
   <<
   <%(allEquationsPlusWhen |> eq =>
     equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false); separator="\n")%>
 
+  <%chunks%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data, threadData_t *threadData)
   {
@@ -5224,7 +5279,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
-    <%equations_call(allEquationsPlusWhen, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%calls%>
     data->simulationInfo->discreteCall = 0;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -5239,14 +5294,17 @@ template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNa
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete, '', true, &chunks)
   <<
   <%(localKnownVars |> eq =>
                     equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
                     ;separator="\n")%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -5291,17 +5349,20 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
                }
                >>
 
+  let &chunks = buffer ""
+  let calls = equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross, '', true, &chunks)
   <<
   <%desc%>
 
   /* forwarded equations */
   <%forwardEqs%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData)
   {
     data->simulationInfo->callStatistics.functionZeroCrossingsEquations++;
 
-    <%equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -5658,15 +5719,78 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
     equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
     ;separator="\n")%>
   /* function to check assert after a step is done */
-  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(algAndEqAssertsEquations, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%match algAndEqAssertsEquations
+    case {} then ''
+    else
+    <<
+    static const struct {long var; modelica_real lo, hi; void (*eq)(DATA*, threadData_t*);} asserts[<%listLength(algAndEqAssertsEquations)%>] = {
+      <%algAndEqAssertsEquations |> eq => assertTableEntry(eq, modelNamePrefix); separator=",\n"%>
+    };
+    for (int i = 0; i < <%listLength(algAndEqAssertsEquations)%>; i++) {
+      if (asserts[i].var >= 0) {
+        const modelica_real v = data->localData[0]->realVars[<%simVarIndex("real", "Vars", "asserts[i].var")%>];
+        if (v >= asserts[i].lo && v <= asserts[i].hi) continue;
+      }
+      asserts[i].eq(data, threadData);
+      if (OMC_ERROR_RAISED()) break;
+    }
+    >>%>
 
     return 0;
   }
   >>
 end functionAssertsforCheck;
+
+template assertTableEntry(SimEqSystem eq, String modelNamePrefix)
+  "A checkForAsserts entry; the equation runs whenever the bounds do not hold."
+::=
+  let fn = '<%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndexGeneral(eq)%>'
+  let bounds = match eq
+    case SES_ALGORITHM(statements={STMT_ASSERT(cond=cond)}) then
+      if boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))) then ''
+      else match cond
+        case r as RELATION(exp1=e as CREF(__), operator=GREATEREQ(__)) then
+          if intEq(r.index, -1) then assertTableBounds(e, assertTableLiteral(r.exp2), 'INFINITY')
+        case r as RELATION(exp1=e as CREF(__), operator=LESSEQ(__)) then
+          if intEq(r.index, -1) then assertTableBounds(e, '-INFINITY', assertTableLiteral(r.exp2))
+        case LBINARY(exp1=r1 as RELATION(exp1=e1 as CREF(__), operator=GREATEREQ(__)), operator=AND(__),
+                     exp2=r2 as RELATION(exp1=e2 as CREF(__), operator=LESSEQ(__))) then
+          if boolAnd(intEq(r1.index, -1), boolAnd(intEq(r2.index, -1), stringEq(crefToIndex(e1.componentRef), crefToIndex(e2.componentRef)))) then
+            assertTableBounds(e1, assertTableLiteral(r1.exp2), assertTableLiteral(r2.exp2))
+        else ''
+    else ''
+  if bounds then '{<%bounds%>, <%fn%>}' else '{-1, 0.0, 0.0, <%fn%>}'
+end assertTableEntry;
+
+template assertTableBounds(DAE.Exp e, String lo, String hi)
+  "var, lo, hi if the assert reads the variable as the table does."
+::=
+  if boolAnd(boolNot(stringEq(lo, "")), boolNot(stringEq(hi, ""))) then
+    match e
+    case CREF(ty=T_REAL(__)) then
+      match cref2simvar(componentRef, getSimCode())
+      case SIMVAR(aliasvar=NOALIAS(), index=index) then
+        let &preExp = buffer ""
+        let &varDecls = buffer ""
+        let &varFrees = buffer ""
+        let &auxFunction = buffer ""
+        let &sub = buffer ""
+        let access = contextCref(componentRef, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+        if boolAnd(intGt(index, -1), boolAnd(stringEq(&sub, ""), intEq(System.stringFind(access, '(data->localData[0]->realVars[<%simVarIndex("real", "Vars", '<%index%>')%>]'), 0))) then
+          '<%index%>, <%lo%>, <%hi%>'
+      else ''
+    else ''
+end assertTableBounds;
+
+template assertTableLiteral(DAE.Exp e)
+::=
+  match e
+  case RCONST(__) then real
+  case UNARY(operator=UMINUS(__), exp=RCONST(real=r)) then '(-<%r%>)'
+  else ''
+end assertTableLiteral;
 
 template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "template functionlinearmodel
   Generates function in simulation file."
@@ -7157,13 +7281,16 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String modelNamePr
 ::=
 match context
 case JACOBIAN_CONTEXT() then
+  let &chunks = buffer ""
+  let calls = equations_call(constantEqns, modelNamePrefix, context, '', false, &chunks)
   <<
+  <%chunks%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_constantEqns(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(constantEqns, modelNamePrefix, context, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -7176,6 +7303,8 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 ::=
 match context
 case JACOBIAN_CONTEXT() then
+  let &chunks = buffer ""
+  let calls = equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelectionCol', true, &chunks)
   <<
   /* constant equations */
   <%(constantEqns |> eq hasindex sub_idx =>
@@ -7186,11 +7315,12 @@ case JACOBIAN_CONTEXT() then
 
   <%generateConstantEqns(constantEqns, modelNamePrefix, context)%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelectionCol')%>
+    <%calls%>
 
     return 0;
   }
@@ -7559,8 +7689,8 @@ template equation_call(SimEqSystem eq, String modelNamePrefix, Context context)
     >>
 end equation_call;
 
-template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context context, String selection)
-  "Generates sequence of equation calls"
+template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context context, String selection, Boolean optimize, Text &chunks)
+  "Generates sequence of equation calls, in chunk functions of at most 500."
 ::=
   match eqs
   case {} then ''
@@ -7573,38 +7703,49 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
     let argsType = match context
       case JACOBIAN_CONTEXT() then 'DATA*, threadData_t*, JACOBIAN*, JACOBIAN*'
       else 'DATA*, threadData_t*'
+    let params = match context
+      case JACOBIAN_CONTEXT() then 'DATA *data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian'
+      else 'DATA *data, threadData_t *threadData'
     // Stop at an equation that raised: the ones after it must not run and
-    // report asserts of their own.
-    let body = match selection
-      case "" then
-        <<
-        for (int id = 0; id < <%nFuncs%>; id++) {
-          eqFunctions[id](<%args%>);
-          if (OMC_ERROR_RAISED()) break;
-        }
-        >>
+    // report asserts of their own. Direct calls, since one indirect call site
+    // with thousands of targets mispredicts; the cap bounds inlining.
+    let calls = (List.partition(eqs, 500) |> part =>
+        let chunk = '<%symbolName(modelNamePrefix, "eqChunk")%>_<%System.tmpTickIndex(2)%>'
+        let &chunks +=
+          <<
+          <%if optimize then "" else "OMC_DISABLE_OPT\n"%>static void <%chunk%>(<%params%>)
+          {
+            do {
+              <%part |> eq => '<%name%>_<%equationIndexGeneral(eq)%>(<%args%>); if (OMC_ERROR_RAISED()) break;'; separator="\n"%>
+            } while (0);
+          }
+
+          >>
+        '<%chunk%>(<%args%>); if (OMC_ERROR_RAISED()) break;'
+      ; separator="\n")
+    let seq =
+      <<
+      do {
+        <%calls%>
+      } while (0);
+      >>
+    match selection
+      case "" then seq
       else
         <<
         if (<%selection%>) {
+          static void (*const eqFunctions[<%nFuncs%>])(<%argsType%>) = {
+            <%eqs |> eq => '<%name%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
+          };
           for (int i = 0; i < <%selection%>->n; i++) {
             int id = <%selection%>->idx[i];
             eqFunctions[id](<%args%>);
             if (OMC_ERROR_RAISED()) break;
           }
         } else {
-          for (int id = 0; id < <%nFuncs%>; id++) {
-            eqFunctions[id](<%args%>);
-            if (OMC_ERROR_RAISED()) break;
-          }
+          <%seq%>
         }
         >>
-    <<
-    static void (*const eqFunctions[<%nFuncs%>])(<%argsType%>) = {
-      <%eqs |> eq => '<%name%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
-    };
-
-    <%body%>
-    >>
 end equations_call;
 
 template equation_withProfile(String index, String body)
@@ -7771,22 +7912,22 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       case "boolean" then
       <<
       <%preExp%>
-      boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "integer" then
       <<
       <%preExp%>
-      integer_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) integer_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "real" then
       <<
       <%preExp%>
-      real_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) real_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "string" then
       <<
       <%preExp%>
-      string_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) string_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
   else
@@ -7985,7 +8126,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
      'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = jacobian;'
   %>
 
-  retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
+  retValue = <%if intEq(listLength(ls.vars), 1) then "solve_linear_system_small" else "solve_linear_system"%>(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
 
   /* check if solution process was successful */
   if (retValue > 0){
@@ -8313,7 +8454,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     <<
     <%conditionline%>
     {
-      <%equations_call(eqns, modelNamePrefixStr, context, '')%>
+      <%equations_call(eqns, modelNamePrefixStr, context, '', true, &eqnsDecls)%>
     }
     >>
     ;separator="\n")
@@ -8322,7 +8463,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   <%preExp%>
   <%IfEquation%>else
   {
-    <%equations_call(elsebranch, modelNamePrefixStr, context, '')%>
+    <%equations_call(elsebranch, modelNamePrefixStr, context, '', true, &eqnsDecls)%>
   }
   >>
 end equationIfEquationAssign;
@@ -8516,7 +8657,6 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   # Makefile generated by OpenModelica
   # Platform: <%makefileParams.platform%>
 
-  # Simulations use -O3 by default
   CC=<%if acceptParModelicaGrammar() then 'g++' else '<%makefileParams.ccompiler%>'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
@@ -8524,7 +8664,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
-  OMC_CFLAGS_OPTIMIZATION=-Os
+  OMC_CFLAGS_OPTIMIZATION=-O2
   DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/emcc/pre.js<%\n%>'

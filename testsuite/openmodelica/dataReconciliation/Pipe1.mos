@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe1_Inputs.csv
+// teardown_command: rm -rf NewDataReconciliationSimpleTests.Pipe1 NewDataReconciliationSimpleTests.Pipe1.* NewDataReconciliationSimpleTests.Pipe1_* Reconciled_NewDataReconciliationSimpleTests_Pipe1.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,10 +20,10 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
 // ModelInfo: NewDataReconciliationSimpleTests.Pipe1

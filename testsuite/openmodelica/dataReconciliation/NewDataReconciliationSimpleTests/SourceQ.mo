@@ -1,14 +1,14 @@
 within NewDataReconciliationSimpleTests;
 model SourceQ "Water/steam source with fixed mass flow rate"
-  parameter Modelica.SIunits.MassFlowRate Q0=100
+  parameter Modelica.Units.SI.MassFlowRate Q0=100
     "Mass flow (active if IMassFlow connector is not connected)"  annotation(__OpenModelica_BoundaryCondition = true);
-  parameter Modelica.SIunits.SpecificEnthalpy h0=100000
+  parameter Modelica.Units.SI.SpecificEnthalpy h0=100000
     "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" annotation(__OpenModelica_BoundaryCondition = true);
 
 protected
-  Modelica.SIunits.AbsolutePressure P "Fluid pressure";
-  Modelica.SIunits.MassFlowRate Q "Mass flow rate";
-  Modelica.SIunits.SpecificEnthalpy h "Fluid specific enthalpy";
+  Modelica.Units.SI.AbsolutePressure P "Fluid pressure";
+  Modelica.Units.SI.MassFlowRate Q "Mass flow rate";
+  Modelica.Units.SI.SpecificEnthalpy h "Fluid specific enthalpy";
 
 public
   ThermoSysPro.InstrumentationAndControl.Connectors.InputReal IMassFlow

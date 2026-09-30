@@ -548,6 +548,34 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     omclog::close(omclog::NLS);
 }
 
+#[cfg(feature = "fmi")]
+/// What [`initialize_nonlinear_systems`] allocated per system.
+pub fn free_nonlinear_systems(data: *mut DATA) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    if si.nonlinearSystemData.is_null() {
+        return;
+    }
+    for i in 0..md.nNonLinearSystems.max(0) as usize {
+        let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
+        for p in [
+            &mut sys.nlsx,
+            &mut sys.nlsxExtrapolation,
+            &mut sys.nlsxOld,
+            &mut sys.resValues,
+            &mut sys.nominal,
+            &mut sys.min,
+            &mut sys.max,
+        ] {
+            unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+        }
+        let scratch = core::mem::replace(&mut sys.solverData, core::ptr::null_mut());
+        if !scratch.is_null() {
+            drop(unsafe { Box::from_raw(scratch as *mut Scratch) });
+        }
+    }
+}
+
 /// The per-system metadata the shared solver's reports need, from
 /// `<Model>_info.json` and the system's `NONLINEAR_PATTERN`. The iteration-variable
 /// names come from the same file, but lazily (`nls::host::set_var_names_lookup`):

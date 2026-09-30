@@ -240,12 +240,12 @@ if not installPackage(ThermoPower, "3.1.0-master", exactMatch=true) then
 else
   print("Installed: ThermoPower 3.1.0-master\n");
 end if;
-if not installPackage(ThermoSysPro, "3.2.0", exactMatch=true) then
-  print("ThermoSysPro 3.2.0 failed.\n");
+if not installPackage(ThermoSysPro, "4.2.0", exactMatch=true) then
+  print("ThermoSysPro 4.2.0 failed.\n");
   print(getErrorString());
   exit(1);
 else
-  print("Installed: ThermoSysPro 3.2.0\n");
+  print("Installed: ThermoSysPro 4.2.0\n");
 end if;
 if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
   print("WasteWater 2.1.0 failed.\n");
@@ -254,4 +254,4 @@ if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
 else
   print("Installed: WasteWater 2.1.0\n");
 end if;
-system("touch .openmodelica/20260917192201.stamp")
+system("touch .openmodelica/20260928161548.stamp")

@@ -1263,7 +1263,7 @@ pub(crate) fn res2file(data: &mut OptData) -> Result<()> {
         1 => vec![1.0],
         n => {
             omclog::error!(omclog::STDOUT, false, "Not support np = {n}");
-            return Err("CodegenWasmJit: unsupported number of collocation points");
+            return Err("unsupported number of collocation points");
         }
     };
     let vopt = core::mem::take(&mut data.ipop.vopt);

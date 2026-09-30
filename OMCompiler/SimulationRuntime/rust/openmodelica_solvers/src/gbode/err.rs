@@ -160,7 +160,7 @@ impl Gbode {
         let (time, step_size) = (self.time, self.step_size);
         let (k, y_old) = (self.k.clone(), self.y_old.clone());
         let Some(nls) = self.nls.as_mut() else {
-            return Err("CodegenWasmJit: gbode: contractive defect without an internal NLS");
+            return Err("Selected contractive defect error estimator is only available with -gbnls=internal.");
         };
         nls.contractive_defect(
             ode,

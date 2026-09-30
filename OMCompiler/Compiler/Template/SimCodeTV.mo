@@ -557,6 +557,7 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
       Option<OMSIData> omsiData;
+      Boolean scalarized;
       list<FmiFigure> fmiFigures;
     end SIMCODE;
   end SimCode;
@@ -1532,6 +1533,22 @@ package SimCodeCodegenUtil
     output Integer n;
   end numScalarElems;
 
+  function numScalarElemsBefore
+    input list<SimCodeVar.SimVar> vars;
+    input Integer n;
+    output Integer numScalars;
+  end numScalarElemsBefore;
+
+  function numScalarElemsVar
+    input SimCodeVar.SimVar var;
+    output Integer n;
+  end numScalarElemsVar;
+
+  function arrayElementSubscripts
+    input SimCodeVar.SimVar var;
+    output list<String> subscripts;
+  end arrayElementSubscripts;
+
   function getFMIScalarVRs
     input SimCodeVar.SimVar var;
     input SimCode.SimCode simCode;
@@ -1708,6 +1725,24 @@ package SimCodeCodegenUtil
     input SimCodeFunction.Context context;
     output Boolean outContiguous;
   end isContiguousArrayCref;
+
+  function contiguousSliceStart
+    input list<DAE.Subscript> subs;
+    input list<DAE.Dimension> dims;
+    output list<DAE.Subscript> start;
+  end contiguousSliceStart;
+
+  function contiguousSliceDims
+    input list<DAE.Subscript> subs;
+    input list<DAE.Dimension> dims;
+    output list<Integer> sliceDims;
+  end contiguousSliceDims;
+
+  function stackArrayLength
+    input SimCodeFunction.Variable var;
+    input SimCodeFunction.Function fn;
+    output Integer n;
+  end stackArrayLength;
 
   function simVarExactFromHT
     input DAE.ComponentRef inCref;
@@ -3854,6 +3889,14 @@ package SCodeDump
   constant SCodeDumpOptions defaultOptions;
 end SCodeDump;
 
+package StringUtil
+  function endsWith
+    input String str;
+    input String suffix;
+    output Boolean endsWith;
+  end endsWith;
+end StringUtil;
+
 package Util
 
   uniontype DateTime
@@ -3898,12 +3941,6 @@ package Util
     input String delim;
     output Integer i;
   end mulStringDelimit2Int;
-
-  function endsWith
-    input String str;
-    input String suffix;
-    output Boolean b;
-  end endsWith;
 
   function isCIdentifier
     input String str;

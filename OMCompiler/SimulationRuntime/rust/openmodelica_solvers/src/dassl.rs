@@ -159,6 +159,8 @@ impl Dassl {
         // without it DASKR differences the matrix itself, one state at a time.
         let coloured = !ode.jac_colors().is_empty();
         self.info[4] = coloured as i32; // INFO(5)=1: a dense user Jacobian routine
+        // DASKR counts from zero again when it is restarted.
+        let counted = if self.info[0] == 0 { 0 } else { self.iwork[10] as u64 };
         let mut ctx = Context {
             ode,
             n_states: y.len(),
@@ -221,7 +223,7 @@ impl Dassl {
         }
         self.quota_retries = 0;
         self.jacobians += ctx.jacobians;
-        self.steps = self.iwork[10] as u64; // IWORK(11) = number of steps taken
+        self.steps += (self.iwork[10] as u64).saturating_sub(counted); // IWORK(11): steps taken
         match self.idid {
             5 => Ok(DasslStep::Root(*t)),
             1 => Ok(DasslStep::Stepped),

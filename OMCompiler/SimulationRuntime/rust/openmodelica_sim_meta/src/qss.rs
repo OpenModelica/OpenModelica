@@ -21,8 +21,8 @@ use crate::{JacAInfo, Layout as SimLayout, REAL_OFF, SimMeta as SimModel, SolveS
 
 /// C's `enum error_msg` as this runtime's error strings. `OO_MEMORY` has no
 /// counterpart: allocation failure aborts here.
-const ISNAN: &str = "CodegenWasmJit: qss: the time of next change is NaN";
-const UNKNOWN: &str = "CodegenWasmJit: qss: no ODE Jacobian sparse pattern";
+const ISNAN: &str = "qss: the time of next change is NaN";
+const UNKNOWN: &str = "qss: no ODE Jacobian sparse pattern";
 
 const EPS: f64 = 1e-15;
 

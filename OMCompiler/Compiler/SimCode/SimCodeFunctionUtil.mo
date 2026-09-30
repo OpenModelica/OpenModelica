@@ -1333,7 +1333,102 @@ algorithm
   (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
 end findLiteralsHelper;
 
+function findLiteralsHelperKeepSingle
+  "findLiteralsHelper, except that a string used once (per uses) that is not
+   a literal yet stays in place."
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable uses;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp exp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+algorithm
+  (exp, tpl) := Expression.traverseExpBottomUp(inExp,
+    function Patternm.traverseConstantPatternsHelper(func=function replaceLiteralExpKeepSingle(uses=uses)),
+    inTpl);
+  (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
+end findLiteralsHelperKeepSingle;
+
+function countStringUses
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable inUses;
+  output DAE.Exp exp = inExp;
+  output HashTableExpToIndex.HashTable uses;
+algorithm
+  (_, uses) := Expression.traverseExpBottomUp(inExp, countStringUse, inUses);
+end countStringUses;
+
 protected
+
+function isSconst
+  input DAE.Exp e;
+  output Boolean b;
+algorithm
+  b := match e case DAE.SCONST() then true; else false; end match;
+end isSconst;
+
+function countStringUse
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable inUses;
+  output DAE.Exp exp = inExp;
+  output HashTableExpToIndex.HashTable uses = inUses;
+algorithm
+  if isSconst(inExp) then
+    uses := addStringUse(inExp, uses);
+  else
+    // A lifted literal array cannot hold an unlifted string
+    for e in literalElements(inExp) loop
+      if isSconst(e) then
+        uses := addStringUse(e, uses);
+      end if;
+    end for;
+  end if;
+end countStringUse;
+
+function addStringUse
+  input DAE.Exp e;
+  input output HashTableExpToIndex.HashTable uses;
+algorithm
+  uses := BaseHashTable.add((e, if BaseHashTable.hasKey(e, uses) then BaseHashTable.get(e, uses) + 1 else 1), uses);
+end addStringUse;
+
+function literalElements
+  input DAE.Exp e;
+  output list<DAE.Exp> elts;
+algorithm
+  elts := match e
+    local
+      DAE.Exp e1, e2;
+    case DAE.ARRAY() then e.array;
+    case DAE.MATRIX() then List.flatten(e.matrix);
+    case DAE.BOX(e1) then {e1};
+    case DAE.META_OPTION(SOME(e1)) then {e1};
+    case DAE.CONS(e1, e2) then {e1, e2};
+    case DAE.LIST() then e.valList;
+    case DAE.META_TUPLE() then e.listExp;
+    case DAE.METARECORDCALL() then e.args;
+    case DAE.CALL(path = Absyn.IDENT("listArrayLiteral")) then e.expLst;
+    else {};
+  end match;
+end literalElements;
+
+function replaceLiteralExpKeepSingle
+  input DAE.Exp inExp;
+  input HashTableExpToIndex.HashTable uses;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+protected
+  HashTableExpToIndex.HashTable ht;
+algorithm
+  (_, ht, _) := inTpl;
+  if isSconst(inExp) and BaseHashTable.hasKey(inExp, uses) and BaseHashTable.get(inExp, uses) == 1 and not BaseHashTable.hasKey(inExp, ht) then
+    outExp := inExp;
+    outTpl := inTpl;
+  else
+    (outExp, outTpl) := replaceLiteralExp(inExp, inTpl);
+  end if;
+end replaceLiteralExpKeepSingle;
+
 
 function replaceLiteralArrayExp
   "The tuples contain:

@@ -90,6 +90,9 @@ pub const IDA: bool = cfg!(sundials);
 /// Solver errors are the C runtime's messages, which are all static.
 pub type Result<T> = core::result::Result<T, &'static str>;
 
+/// C's `retValIntegrator != 0`: the solver has logged why it gave up.
+pub const SOLVER_FAILED_ERR: &str = "integrator failed";
+
 /// C's `MINIMAL_STEP_SIZE` (`simulation/solver/epsilon.h`), the bisection's
 /// absolute tolerance.
 pub const MINIMAL_STEP_SIZE: f64 = 1e-12;
@@ -109,6 +112,14 @@ pub trait Ode {
     /// on is current.
     fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> Result<()>;
 
+    /// C's `updateContinuousSystem` then `saveZeroCrossings` at the accepted end of
+    /// a step: `f` and `zc` there, after the model recorded the point (`delay`,
+    /// `spatialDistribution`), which the crossings then see. `false`: nothing was
+    /// done, and the caller evaluates both itself.
+    fn accept(&mut self, _t: f64, _y: &[f64], _f: &mut [f64], _zc: &mut [f64]) -> Result<bool> {
+        Ok(false)
+    }
+
     /// State nominals, for the error norm and the finite-difference step. One
     /// per state; an empty slice means "one".
     fn nominals(&self) -> &[f64] {
@@ -123,6 +134,12 @@ pub trait Ode {
     /// State `max` attributes, for the finite-difference step's sign choice.
     /// Empty ⇒ unbounded.
     fn maxs(&self) -> &[f64] {
+        &[]
+    }
+
+    /// State `min` attributes, which KINSOL's sign constraints read. Empty ⇒
+    /// unbounded.
+    fn mins(&self) -> &[f64] {
         &[]
     }
 

@@ -38,7 +38,7 @@ use openmodelica_sim_meta::driver::{
 use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
 #[cfg(feature = "wasm")]
 use openmodelica_sim_meta::decode;
-use openmodelica_sim_meta::{omclog, simflags, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
+use openmodelica_sim_meta::{clock_field, omclog, simflags, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
@@ -307,6 +307,16 @@ fn report_ext_error(msg: &str) {
     fmi_log(Status::Error, CAT_ERROR, msg);
 }
 
+/// C's `omc_assert_fmi`, for a native host whose runtime raises the assert.
+pub fn log_status_error(msg: &str) {
+    fmi_log(Status::Error, CAT_ERROR, msg);
+}
+
+/// C's `omc_assert_fmi_warning`.
+pub fn log_status_warning(msg: &str) {
+    fmi_log(Status::Warning, CAT_WARNING, msg);
+}
+
 /// C's `FILTERED_LOG` / `isCategoryLogged`. The reason a call fails is not
 /// filtered: the status alone tells the importer nothing.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
@@ -323,9 +333,35 @@ fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
     stdio::print(s.as_bytes());
 }
 
+/// One instance's logging, which [`init_logging`] and `set_debug_logging` leave
+/// in the statics. A host driving several instances puts its own back before each
+/// call.
+#[derive(Clone)]
+pub struct LogState {
+    name: String,
+    cats: u32,
+    mask: omclog::Mask,
+}
+
+pub fn save_logging() -> LogState {
+    let l = logger();
+    LogState { name: l.name.clone(), cats: l.cats, mask: omclog::mask() }
+}
+
+pub fn restore_logging(s: &LogState) {
+    let l = logger();
+    if l.name != s.name {
+        l.name.clone_from(&s.name);
+    }
+    l.cats = s.cats;
+    if omclog::mask() != s.mask {
+        omclog::set_mask(s.mask);
+    }
+}
+
 /// C's `omcInstantiate`: every category follows `loggingOn` until
 /// `set-debug-logging` picks specific ones.
-fn init_logging(name: String, logging_on: bool) {
+pub fn init_logging(name: String, logging_on: bool) {
     let l = logger();
     l.name = name;
     l.cats = if logging_on { !0 } else { 0 };
@@ -460,6 +496,16 @@ pub trait FmiHost: SimEngine {
     /// Release the model's `SimData` block. A native host owns it elsewhere (the
     /// region map is over `DATA`), so the default does nothing.
     fn free_sim_data(&mut self, _sim_data: u32) {}
+    /// What an FMU state needs beyond `SimData`: records the model keeps where
+    /// the layout does not reach (the `delay`/`spatialDistribution` histories).
+    /// The string variables are here too: a slot holds a handle, not the string.
+    fn opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout) -> Vec<u8> {
+        Vec::new()
+    }
+    /// [`FmiHost::opaque_state`]'s inverse; `false` for bytes it did not write.
+    fn set_opaque_state(&mut self, _sim_data: u32, _layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
+        state.is_empty()
+    }
 }
 
 // ── SimEngine over the merged module's shared linear memory ──────────────────
@@ -476,6 +522,56 @@ impl FmiHost for Engine {
     }
     fn free_sim_data(&mut self, sim_data: u32) {
         openmodelica_codegen_wasm_jit_runtime::rt_free(sim_data);
+    }
+    /// The string variables' bytes, then the runtime's `delay`/`spatialDistribution`
+    /// histories.
+    fn opaque_state(&mut self, sim_data: u32, layout: &openmodelica_sim_meta::Layout) -> Vec<u8> {
+        use openmodelica_codegen_wasm_jit_runtime as rt;
+        let mut out = Vec::new();
+        for k in 0..layout.n_str_alg() {
+            let h = unsafe { *((sim_data + layout.str_off + 4 * k) as *const u32) };
+            let len = if h == 0 { 0 } else { rt::rt_str_len(h) as usize };
+            out.extend((len as u64).to_le_bytes());
+            if len > 0 {
+                out.extend(unsafe { core::slice::from_raw_parts(rt::rt_str_data(h) as *const u8, len) });
+            }
+        }
+        let mut words = Vec::new();
+        rt::delay::to_words(&mut words);
+        rt::spatial::to_words(&mut words);
+        out.extend(words.iter().flat_map(|w| w.to_le_bytes()));
+        out
+    }
+    fn set_opaque_state(&mut self, sim_data: u32, layout: &openmodelica_sim_meta::Layout, state: &[u8]) -> bool {
+        use openmodelica_codegen_wasm_jit_runtime as rt;
+        let mut strings = Vec::new();
+        let mut at = 0;
+        for _ in 0..layout.n_str_alg() {
+            let Some(len) = state.get(at..at + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize) else {
+                return false;
+            };
+            let Some(s) = state.get(at + 8..at + 8 + len) else { return false };
+            strings.push(s);
+            at += 8 + len;
+        }
+        let rest = &state[at..];
+        if rest.len() % 8 != 0 {
+            return false;
+        }
+        let mut words = rest.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap()));
+        if !(rt::delay::set_from_words(&mut words) && rt::spatial::set_from_words(&mut words) && words.next().is_none()) {
+            return false;
+        }
+        for (k, s) in strings.into_iter().enumerate() {
+            let slot = (sim_data + layout.str_off + 4 * k as u32) as *mut u32;
+            let h = rt::rt_str_new(s.len() as u32);
+            unsafe {
+                core::ptr::copy_nonoverlapping(s.as_ptr(), rt::rt_str_data(h) as *mut u8, s.len());
+                rt::rt_release(*slot);
+                *slot = h;
+            }
+        }
+        true
     }
 }
 
@@ -696,6 +792,10 @@ struct MeState<E: FmiHost + 'static> {
     dae_current: bool,
     /// C's `_need_update`, consumed by `update_if_needed`.
     need_update: bool,
+    /// `set-input-derivatives`: the first-order derivative of each Real input slot,
+    /// which `do-step` extrapolates the input with, as C's `fmi2DoStep` does.
+    #[cfg(feature = "cs")]
+    input_ders: Vec<(u32, f64)>,
     /// The destructors ran (`fmi3Terminate`); free must not run them again.
     terminated: bool,
     /// Event Mode, where asserts are live.
@@ -728,6 +828,35 @@ struct MeState<E: FmiHost + 'static> {
 }
 
 impl<E: FmiHost + 'static> MeState<E> {
+    /// The time-event schedule outside `SimData`, whichever of the ME state and
+    /// the CS driver holds it.
+    fn schedule_words(&self) -> Vec<f64> {
+        #[cfg(feature = "cs")]
+        if let Some(d) = &self.cs {
+            return d.schedule_words();
+        }
+        openmodelica_sim_meta::driver::schedule_words(self.samples.as_ref(), self.sync.as_ref())
+    }
+
+    fn set_schedule_words(&mut self, w: &[f64]) -> bool {
+        #[cfg(feature = "cs")]
+        if let Some(d) = &mut self.cs {
+            return d.set_schedule_words(w);
+        }
+        openmodelica_sim_meta::driver::set_schedule_words(self.samples.as_mut(), self.sync.as_mut(), w)
+    }
+
+    /// The base clock a Clock value reference names: they sit just before `time`'s.
+    fn clock_index(&self, vr: u32) -> Option<u32> {
+        let time_vr = self.vrs.by_vr.iter().position(|e| e.is_some_and(|e| e.off == TIME_OFF))? as u32;
+        let first = time_vr.checked_sub(self.layout.n_base_clocks)?;
+        (vr >= first && vr < time_vr).then(|| vr - first)
+    }
+    fn clock_indices(&self, call: &str, vrs: &[u32]) -> Result<Vec<u32>, Status> {
+        vrs.iter()
+            .map(|&vr| self.clock_index(vr).ok_or_else(|| bad_vr(call, vr, "a Clock")))
+            .collect()
+    }
     fn read_f64(&self, off: u32) -> f64 {
         driver::read_f64(&self.engine, self.sim_data + off).unwrap_or(0.0)
     }
@@ -815,10 +944,12 @@ impl<E: FmiHost + 'static> MeState<E> {
             self.continuous_time.then(|| driver::open_fmi_call_region(&mut self.engine));
         let hold = self.mode != Mode::Init && !self.event_mode;
         if hold {
+            driver::set_assert_quiet(self.assert_logged);
             driver::open_assert_window();
         }
         let run = f(self);
         if hold {
+            driver::set_assert_quiet(false);
             let held =
                 driver::take_suppressed_assert(&mut self.engine, self.sim_data, !self.assert_logged)
                     .map_err(err_status)?;
@@ -1052,9 +1183,9 @@ pub mod fmi_types {
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub enum IntervalQualifier {
-        NotYetKnown,
-        Unchanged,
-        Changed,
+        IntervalNotYetKnown,
+        IntervalUnchanged,
+        IntervalChanged,
     }
 
     #[derive(Clone, Copy, Debug)]
@@ -1188,6 +1319,8 @@ fn new_state() -> Option<MeState<Engine>> {
         configuring: false,
         dae_current: false,
         need_update: true,
+        #[cfg(feature = "cs")]
+        input_ders: Vec::new(),
         terminated: false,
         event_mode: false,
         assert_held: false,
@@ -1354,10 +1487,14 @@ macro_rules! cs_instance_methods {
                 Err(e) => return Err(err_status(e)),
             }
         }
+        let inputs: Vec<(u32, f64, f64)> = st.input_ders.iter().map(|&(off, d)| (off, st.read_f64(off), d)).collect();
         let Some(driver) = st.cs.as_mut() else { return Err(Status::Error) };
         st.event_mode = false;
         let outcome = driver.step_to(&mut st.engine, &st.meta, target, defer, &mut st.dss);
         let last = driver.time();
+        for (off, u0, d) in inputs {
+            st.write_f64(off, u0 + d * (last - t));
+        }
         // C's `fmi2DoStep`: the getters now report the new time's values. The step
         // ended on `functionAlgebraics`, so a DAE model's unknowns are current and
         // the refresh must not solve for them a second time.
@@ -1399,8 +1536,23 @@ macro_rules! cs_instance_methods {
         }
     }
 
-    $($vis)? fn set_input_derivatives(&self, _: Vec<(u32, u32)>, _: Vec<f64>) -> Status {
-        Status::Error
+    /// First order only, as C's `fmi2SetRealInputDerivatives`.
+    $($vis)? fn set_input_derivatives(&self, requests: Vec<(u32, u32)>, values: Vec<f64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        if requests.len() != values.len() {
+            return Status::Error;
+        }
+        for ((vr, order), v) in requests.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if order == 1 && e.wty == WTy::F64 && !e.is_string => {
+                    st.input_ders.retain(|(o, _)| *o != e.off);
+                    st.input_ders.push((e.off, v));
+                }
+                _ => return bad_vr("fmi3SetInputDerivatives", vr, "a Real input with a first-order derivative"),
+            }
+        }
+        st.need_update = true;
+        Status::Ok
     }
     };
 }
@@ -1530,8 +1682,10 @@ macro_rules! shared_instance_methods {
             Ok(b) => b,
             Err(err) => return Err(failed(&mut st.engine, sim_data, err)),
         };
+        driver::set_assert_quiet(st.assert_logged);
         driver::open_assert_window();
         let updated = st.run_event_update(time);
+        driver::set_assert_quiet(false);
         // Copied out: `st.engine` is borrowed by the calls that want this flag.
         let logged = st.assert_logged;
         let settled = match &updated {
@@ -1599,6 +1753,7 @@ macro_rules! shared_instance_methods {
         #[cfg(feature = "cs")]
         {
             st.cs = None;
+            st.input_ders.clear();
         }
         st.seed_start_state();
         Status::Ok
@@ -1735,8 +1890,19 @@ macro_rules! shared_instance_methods {
     $($vis)? fn get_binary(&self, _: Vec<u32>) -> Result<Vec<Vec<u8>>, Status> {
         Err(Status::Error)
     }
-    $($vis)? fn get_clock(&self, _: Vec<u32>) -> Result<Vec<bool>, Status> {
-        Err(Status::Error)
+    /// Active when the clock last ticked at the current time.
+    $($vis)? fn get_clock(&self, vrs: Vec<u32>) -> Result<Vec<bool>, Status> {
+        let st = self.st.borrow();
+        let t = st.read_f64(TIME_OFF);
+        Ok(st
+            .clock_indices("fmi3GetClock", &vrs)?
+            .into_iter()
+            .map(|b| {
+                let off = st.layout.base_clock_off(b);
+                st.read_i32(off + clock_field::COUNT) > 0
+                    && (st.read_f64(off + clock_field::LAST_ACTIVATION) - t).abs() <= 1e-10
+            })
+            .collect())
     }
 
     // ── Setters ───────────────────────────────────────────────────────────────
@@ -1898,8 +2064,8 @@ macro_rules! shared_instance_methods {
     $($vis)? fn set_binary(&self, _: Vec<u32>, _: Vec<Vec<u8>>) -> Status {
         Status::Error
     }
-    $($vis)? fn set_clock(&self, _: Vec<u32>, _: Vec<bool>) -> Status {
-        Status::Error
+    $($vis)? fn set_clock(&self, vrs: Vec<u32>, _: Vec<bool>) -> Status {
+        if vrs.is_empty() { Status::Ok } else { Status::Error }
     }
 
     $($vis)? fn get_number_of_variable_dependencies(&self, _: u32) -> Result<u64, Status> {
@@ -1909,19 +2075,70 @@ macro_rules! shared_instance_methods {
         Err(Status::Error)
     }
 
+    /// `SimData`, the engine's [`FmiHost::opaque_state`], then the schedule; the
+    /// lengths of those two and of `SimData` close it.
     $($vis)? fn get_fmu_state(&self) -> Result<Vec<u8>, Status> {
-        let st = self.st.borrow();
-        let mut bytes = vec![0u8; st.layout.total as usize];
-        let _ = st.engine.read_bytes(st.sim_data, &mut bytes);
+        let mut st = self.st.borrow_mut();
+        let flat = st.layout.total as usize;
+        let mut bytes = vec![0u8; flat];
+        if st.engine.read_bytes(st.sim_data, &mut bytes).is_err() {
+            return Err(Status::Error);
+        }
+        let (sim_data, layout) = (st.sim_data, st.layout);
+        let opaque = st.engine.opaque_state(sim_data, &layout);
+        let schedule: Vec<u8> = st.schedule_words().iter().flat_map(|w| w.to_le_bytes()).collect();
+        bytes.extend_from_slice(&opaque);
+        bytes.extend_from_slice(&schedule);
+        for n in [opaque.len(), schedule.len(), flat] {
+            bytes.extend_from_slice(&(n as u64).to_le_bytes());
+        }
         Ok(bytes)
     }
+    /// The parameters keep their current values, as C's since #15915: an importer
+    /// sets new ones on a fresh instance and then restores a state saved earlier.
     $($vis)? fn set_fmu_state(&self, state: Vec<u8>) -> Status {
         let mut st = self.st.borrow_mut();
-        if state.len() != st.layout.total as usize {
+        let l = st.layout;
+        let n = state.len();
+        let word = |k: usize| {
+            n.checked_sub(24 - 8 * k)
+                .and_then(|at| state.get(at..at + 8))
+                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
+        };
+        let (Some(n_opaque), Some(n_schedule), Some(flat)) = (word(0), word(1), word(2)) else {
+            return Status::Error;
+        };
+        if flat != l.total as usize || flat.checked_add(n_opaque).and_then(|v| v.checked_add(n_schedule)) != Some(n - 24) {
             return Status::Error;
         }
+        let (opaque, schedule) = (&state[flat..flat + n_opaque], &state[flat + n_opaque..n - 24]);
+        let schedule: Vec<f64> = schedule.chunks_exact(8).map(|b| f64::from_le_bytes(b.try_into().unwrap())).collect();
+        let mut state = state[..flat].to_vec();
         let sim_data = st.sim_data;
-        let _ = st.engine.write_bytes(sim_data, &state);
+        // The string and external-object slots hold handles, which only the
+        // current state owns: the engine puts the saved strings back itself.
+        let pre_real = l.pre_real_off.min(flat as u32);
+        for (from, to) in [(l.rparam_off, l.int_off), (l.iparam_off, l.bool_off), (l.bparam_off, pre_real)] {
+            let _ = st.engine.read_bytes(sim_data + from, &mut state[from as usize..to as usize]);
+        }
+        if st.engine.write_bytes(sim_data, &state).is_err() || !st.engine.set_opaque_state(sim_data, &l, opaque) {
+            return Status::Error;
+        }
+        st.need_update = true;
+        // C's `fmi2SetFMUstate` sets the internal solver up again: its history
+        // belongs to the state left behind.
+        #[cfg(feature = "cs")]
+        if let Some(d) = st.cs.take() {
+            let (t, defer) = (st.read_f64(TIME_OFF), st.defer);
+            let st = &mut *st;
+            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, defer, Some(d.into_sync())) {
+                Ok(d) => st.cs = Some(d),
+                Err(e) => return err_status(e),
+            }
+        }
+        if !st.set_schedule_words(&schedule) {
+            return Status::Error;
+        }
         Status::Ok
     }
 
@@ -1967,32 +2184,62 @@ macro_rules! shared_instance_methods {
         Err(Status::Error)
     }
 
-    $($vis)? fn get_interval_decimal(&self, _: Vec<u32>) -> Result<Vec<(f64, IntervalQualifier)>, Status> {
-        Err(Status::Error)
+    /// A periodic clock's period; an event clock's last interval once it ticked.
+    $($vis)? fn get_interval_decimal(&self, vrs: Vec<u32>) -> Result<Vec<(f64, IntervalQualifier)>, Status> {
+        let st = self.st.borrow();
+        Ok(st
+            .clock_indices("fmi3GetIntervalDecimal", &vrs)?
+            .into_iter()
+            .map(|b| {
+                let off = st.layout.base_clock_off(b);
+                if st.meta.clocks[b as usize].is_event_clock {
+                    if st.read_i32(off + clock_field::COUNT) > 0 {
+                        (st.read_f64(off + clock_field::PREV_INTERVAL), IntervalQualifier::IntervalChanged)
+                    } else {
+                        (0.0, IntervalQualifier::IntervalNotYetKnown)
+                    }
+                } else {
+                    (st.read_f64(off + clock_field::INTERVAL), IntervalQualifier::IntervalUnchanged)
+                }
+            })
+            .collect())
     }
     $($vis)? fn get_interval_fraction(
         &self,
-        _: Vec<u32>,
+        vrs: Vec<u32>,
     ) -> Result<Vec<(IntervalFraction, IntervalQualifier)>, Status> {
-        Err(Status::Error)
+        let st = self.st.borrow();
+        Ok(st
+            .clock_indices("fmi3GetIntervalFraction", &vrs)?
+            .into_iter()
+            .map(|b| {
+                let off = st.layout.base_clock_off(b);
+                let f = IntervalFraction {
+                    counter: st.read_i32(off + clock_field::INTERVAL_COUNTER) as u64,
+                    resolution: st.read_i32(off + clock_field::RESOLUTION) as u64,
+                };
+                (f, IntervalQualifier::IntervalUnchanged)
+            })
+            .collect())
     }
-    $($vis)? fn get_shift_decimal(&self, _: Vec<u32>) -> Result<Vec<f64>, Status> {
-        Err(Status::Error)
+    // No clock has a shift, and the importer sets none of them.
+    $($vis)? fn get_shift_decimal(&self, vrs: Vec<u32>) -> Result<Vec<f64>, Status> {
+        if vrs.is_empty() { Ok(Vec::new()) } else { Err(Status::Error) }
     }
-    $($vis)? fn get_shift_fraction(&self, _: Vec<u32>) -> Result<Vec<IntervalFraction>, Status> {
-        Err(Status::Error)
+    $($vis)? fn get_shift_fraction(&self, vrs: Vec<u32>) -> Result<Vec<IntervalFraction>, Status> {
+        if vrs.is_empty() { Ok(Vec::new()) } else { Err(Status::Error) }
     }
-    $($vis)? fn set_interval_decimal(&self, _: Vec<u32>, _: Vec<f64>) -> Status {
-        Status::Error
+    $($vis)? fn set_interval_decimal(&self, vrs: Vec<u32>, _: Vec<f64>) -> Status {
+        if vrs.is_empty() { Status::Ok } else { Status::Error }
     }
-    $($vis)? fn set_interval_fraction(&self, _: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
-        Status::Error
+    $($vis)? fn set_interval_fraction(&self, vrs: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
+        if vrs.is_empty() { Status::Ok } else { Status::Error }
     }
-    $($vis)? fn set_shift_decimal(&self, _: Vec<u32>, _: Vec<f64>) -> Status {
-        Status::Error
+    $($vis)? fn set_shift_decimal(&self, vrs: Vec<u32>, _: Vec<f64>) -> Status {
+        if vrs.is_empty() { Status::Ok } else { Status::Error }
     }
-    $($vis)? fn set_shift_fraction(&self, _: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
-        Status::Error
+    $($vis)? fn set_shift_fraction(&self, vrs: Vec<u32>, _: Vec<IntervalFraction>) -> Status {
+        if vrs.is_empty() { Status::Ok } else { Status::Error }
     }
     $($vis)? fn evaluate_discrete_states(&self) -> Status {
         Status::Ok
@@ -2155,6 +2402,8 @@ impl<E: FmiHost + 'static> Instance<E> {
             configuring: false,
             dae_current: false,
             need_update: true,
+            #[cfg(feature = "cs")]
+            input_ders: Vec::new(),
             terminated: false,
             event_mode: false,
             assert_held: false,
@@ -2169,6 +2418,78 @@ impl<E: FmiHost + 'static> Instance<E> {
         };
         st.seed_start_state();
         Some(Instance { st: RefCell::new(st) })
+    }
+
+    /// [`Instance::new`] for Co-Simulation, with the internal solver set up as
+    /// `instantiate-co-simulation` does.
+    #[cfg(feature = "cs")]
+    pub fn new_co_simulation(
+        engine: E,
+        meta: openmodelica_sim_meta::SimMeta,
+        sim_data: u32,
+        event_mode_used: bool,
+        early_return_allowed: bool,
+    ) -> Option<Self> {
+        let inst = Self::new(engine, meta, sim_data)?;
+        {
+            let mut st = inst.st.borrow_mut();
+            st.defer = match (event_mode_used, early_return_allowed) {
+                (false, _) => CsDefer::None,
+                (true, false) => CsDefer::AtTarget,
+                (true, true) => CsDefer::Any,
+            };
+            driver::log_cs_solver_setup(&st.meta, st.defer);
+        }
+        Some(inst)
+    }
+
+    /// C's `fmi3ActivateModelPartition`: the importer owns the schedule, so the
+    /// base clock's partition runs at `activation_time` without the timer list.
+    pub fn activate_model_partition(&self, clock_vr: u32, activation_time: f64) -> Status {
+        let mut st = self.st.borrow_mut();
+        let Some(b) = st.clock_index(clock_vr) else {
+            return bad_vr("fmi3ActivateModelPartition", clock_vr, "a Clock");
+        };
+        if let Err(s) = st.update_if_needed() {
+            return s;
+        }
+        let clock = st.meta.clocks[b as usize].clone();
+        let off = st.layout.base_clock_off(b);
+        st.write_f64(TIME_OFF, activation_time);
+        let count = st.read_i32(off + clock_field::COUNT) + 1;
+        st.write_i32(off + clock_field::COUNT, count);
+        if !clock.is_event_clock {
+            let interval = st.read_f64(off + clock_field::INTERVAL);
+            st.write_f64(off + clock_field::PREV_INTERVAL, interval);
+        } else if count > 1 {
+            let last = st.read_f64(off + clock_field::LAST_ACTIVATION);
+            st.write_f64(off + clock_field::PREV_INTERVAL, activation_time - last);
+        }
+        st.write_f64(off + clock_field::LAST_ACTIVATION, activation_time);
+        if !clock.sub.is_empty() {
+            let s_off = st.layout.sub_clock_off(clock.sub_base);
+            let n = st.read_i32(s_off + clock_field::SUB_COUNT) + 1;
+            st.write_i32(s_off + clock_field::SUB_COUNT, n);
+            let prev = st.read_f64(off + clock_field::PREV_INTERVAL);
+            st.write_f64(s_off + clock_field::SUB_PREV_INTERVAL, prev);
+            st.write_f64(s_off + clock_field::SUB_LAST_ACTIVATION, activation_time);
+        }
+        let sim_data = st.sim_data;
+        let ran = st.evaluate(|m| {
+            m.engine.call2(driver::MODEL_FN_EQS_SYNC, sim_data, clock.sub_base)?;
+            if !clock.is_event_clock {
+                m.engine.call2(driver::MODEL_FN_UPDATE_SYNC, sim_data, b)?;
+            }
+            Ok(())
+        });
+        match ran {
+            // The clocked outputs are current; a refresh would overwrite them.
+            Ok(()) => {
+                st.need_update = false;
+                Status::Ok
+            }
+            Err(s) => s,
+        }
     }
 
     shared_instance_methods!(pub);

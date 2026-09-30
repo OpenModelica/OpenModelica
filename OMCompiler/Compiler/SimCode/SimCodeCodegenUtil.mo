@@ -1095,6 +1095,44 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function numScalarElemsBefore
+  "Total number of scalar elements of the first n SimVars of a list. The
+   scalar offset of the n-th variable (zero-based) when rolling out arrays."
+  input list<SimCodeVar.SimVar> vars;
+  input Integer n;
+  output Integer numScalars = 0;
+algorithm
+  for v in List.firstN(vars, n) loop
+    numScalars := numScalars + SimCodeUtilShared.getNumElems(v);
+  end for;
+end numScalarElemsBefore;
+
+public function numScalarElemsVar
+  "Number of scalar elements of a SimVar, rolling out arrays."
+  input SimCodeVar.SimVar var;
+  output Integer n = SimCodeUtilShared.getNumElems(var);
+end numScalarElemsVar;
+
+public function arrayElementSubscripts
+  "Subscripts of all elements of an array SimVar in row-major order, e.g.
+   {\"1,1\", \"1,2\", \"2,1\", \"2,2\"} for a 2x2 matrix. Empty for scalars."
+  input SimCodeVar.SimVar var;
+  output list<String> subscripts = {};
+protected
+  list<Integer> dims;
+  list<list<String>> acc = {{}};
+algorithm
+  subscripts := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
+      dims := list(stringInt(d) for d in var.numArrayElement);
+      for d in listReverse(dims) loop
+        acc := List.flatten(list(list(intString(i) :: rest for rest in acc) for i in 1:d));
+      end for;
+    then list(stringDelimitList(sub, ",") for sub in acc);
+    else {};
+  end match;
+end arrayElementSubscripts;
+
 public function getFMI3ArrayStart
   "Space separated list of scalar start values for an FMI 3.0 array variable
    (length = number of scalar elements). Element-wise start values (e.g.
@@ -1875,6 +1913,137 @@ algorithm
     next := v.index + 1;
   end for;
 end isContiguousArrayCref;
+
+public function contiguousSliceStart
+  "The subscripts of the first element of a slice that is one block of its
+   variable's storage, {} for any other slice. Such a slice has scalar
+   subscripts, then optionally one literal range with step 1, then whole
+   dimensions, over constant dimensions."
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output list<DAE.Subscript> start;
+algorithm
+  (start, _) := contiguousSlice(subs, dims);
+end contiguousSliceStart;
+
+public function contiguousSliceDims
+  "The dimensions of a slice accepted by contiguousSliceStart."
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output list<Integer> sliceDims;
+algorithm
+  (_, sliceDims) := contiguousSlice(subs, dims);
+end contiguousSliceDims;
+
+protected function contiguousSlice
+  input list<DAE.Subscript> subs;
+  input list<DAE.Dimension> dims;
+  output list<DAE.Subscript> start = {};
+  output list<Integer> sliceDims = {};
+protected
+  Integer i, j, d;
+  Option<DAE.Exp> step;
+  DAE.Exp e;
+  DAE.Subscript sub;
+  list<DAE.Subscript> rest = subs;
+  Boolean inBlock = false, sliced = false, ok;
+algorithm
+  for dim in dims loop
+    d := match dim case DAE.DIM_INTEGER() then dim.integer; else -1; end match;
+    if listEmpty(rest) then
+      sub := DAE.WHOLEDIM();
+    else
+      sub :: rest := rest;
+    end if;
+    ok := if d < 1 then false else match sub
+      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and i <= d
+        algorithm
+          start := sub :: start;
+        then true;
+      case DAE.INDEX(exp = e) guard not inBlock and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
+        algorithm
+          start := sub :: start;
+        then true;
+      case DAE.SLICE(exp = DAE.RANGE(start = DAE.ICONST(integer = i), step = step, stop = DAE.ICONST(integer = j)))
+        guard not inBlock and i >= 1 and j >= i and j <= d and Util.applyOptionOrDefault(step, Expression.isConstOne, true)
+        algorithm
+          inBlock := true;
+          sliced := true;
+          start := DAE.INDEX(DAE.ICONST(i)) :: start;
+          sliceDims := (j - i + 1) :: sliceDims;
+        then true;
+      case DAE.WHOLEDIM()
+        algorithm
+          inBlock := true;
+          start := DAE.INDEX(DAE.ICONST(1)) :: start;
+          sliceDims := d :: sliceDims;
+        then true;
+      else false;
+    end match;
+    if not ok then
+      start := {};
+      sliceDims := {};
+      return;
+    end if;
+    sliced := sliced or not inBlock;
+  end for;
+  if not listEmpty(rest) or not sliced or listEmpty(sliceDims) then
+    start := {};
+    sliceDims := {};
+  else
+    start := listReverse(start);
+    sliceDims := listReverse(sliceDims);
+  end if;
+end contiguousSlice;
+
+public function stackArrayLength
+  "The number of elements of a function's array variable that can be stored on
+   the stack: not an output, not bound from outside or to a shared literal,
+   Real, Integer or Boolean elements, constant dimensions and at most 256
+   elements. 0 for any other variable."
+  input SimCodeFunction.Variable var;
+  input SimCodeFunction.Function fn;
+  output Integer n = 0;
+protected
+  list<SimCodeFunction.Variable> outVars = match fn case SimCodeFunction.FUNCTION() then fn.outVars; else {}; end match;
+algorithm
+  _ := match var
+    case SimCodeFunction.VARIABLE(parallelism = DAE.NON_PARALLEL(), bind_from_outside = false)
+      algorithm
+        if listEmpty(var.instDims) then
+          return;
+        end if;
+        _ := match var.value
+          case SOME(DAE.SHARED_LITERAL()) algorithm return; then ();
+          else ();
+        end match;
+        _ := match Types.arrayElementType(var.ty)
+          case DAE.T_REAL() then ();
+          case DAE.T_INTEGER() then ();
+          case DAE.T_BOOL() then ();
+          else algorithm return; then ();
+        end match;
+        for v in outVars loop
+          _ := match v
+            case SimCodeFunction.VARIABLE() guard ComponentReferenceBasics.crefEqual(v.name, var.name)
+              algorithm return; then ();
+            else ();
+          end match;
+        end for;
+        n := 1;
+        for d in var.instDims loop
+          n := match d
+            case DAE.DIM_INTEGER() guard d.integer > 0 then n * d.integer;
+            else 0;
+          end match;
+        end for;
+        if n > 256 then
+          n := 0;
+        end if;
+      then ();
+    else ();
+  end match;
+end stackArrayLength;
 
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The

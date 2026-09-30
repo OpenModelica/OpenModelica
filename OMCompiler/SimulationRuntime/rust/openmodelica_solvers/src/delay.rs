@@ -116,6 +116,35 @@ impl DelayState {
         DelayState { buffers, start_time }
     }
 
+    /// The buffers as flat words, for an FMU state.
+    pub fn to_words(&self, out: &mut Vec<f64>) {
+        out.push(self.start_time);
+        out.push(self.buffers.len() as f64);
+        for b in &self.buffers {
+            out.push(b.len() as f64);
+            for &(t, v) in b {
+                out.push(t);
+                out.push(v);
+            }
+        }
+    }
+
+    /// [`DelayState::to_words`]'s inverse.
+    pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
+        let start_time = w.next()?;
+        let n = w.next()? as usize;
+        let mut buffers = Vec::with_capacity(n);
+        for _ in 0..n {
+            let len = w.next()? as usize;
+            let mut b = VecDeque::with_capacity(len);
+            for _ in 0..len {
+                b.push_back((w.next()?, w.next()?));
+            }
+            buffers.push(b);
+        }
+        Some(DelayState { buffers, start_time })
+    }
+
     /// C `storeDelayedExpression`: append `(time, value)`, dropping stale tail rows
     /// and dequeuing rows older than `time - delay_time` (unless an event sits on
     /// that boundary).

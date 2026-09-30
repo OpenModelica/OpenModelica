@@ -2,6 +2,7 @@
 //! rejects and resizes steps (C's `gbode_main`).
 
 use alloc::vec;
+use alloc::vec::Vec;
 
 use super::conf::CtrlMethod;
 use super::tableau::{GmType, SvpType};
@@ -92,17 +93,12 @@ impl Gbode {
                     fac,
                     c_scale: 1.0,
                     res_const: &res_const,
+                    last_f: Vec::new(),
                 };
                 let mut x = vec![0.0; n];
                 let gnls = self.gnls.as_mut().expect("implicit stage without an NLS");
-                let solved = gnls.solve(
-                    ode,
-                    &mut resid,
-                    stage_time,
-                    &[&y_old, &guess],
-                    &nominals,
-                    &mut x,
-                )?;
+                let starts = super::nls_generic::Starts { extrapolation: &y_old, old: &guess, nlsx: &y_old };
+                let solved = gnls.solve(ode, &mut resid, stage_time, &starts, &nominals, &mut x)?;
                 if solved != super::Solved::Ok {
                     omclog::info!(
                         omclog::SOLVER,
@@ -114,9 +110,7 @@ impl Gbode {
                     return Ok(false);
                 }
                 self.x[stage * n..(stage + 1) * n].copy_from_slice(&x);
-                let mut f = vec![0.0; n];
-                ode.eval(stage_time, &x, &mut f)?;
-                self.k[stage * n..(stage + 1) * n].copy_from_slice(&f);
+                self.k[stage * n..(stage + 1) * n].copy_from_slice(&resid.last_f);
             }
         }
         // y = yOld + h*sum(b[stage]*k[stage])
@@ -291,7 +285,8 @@ impl Gbode {
                 k: &mut k,
             };
             let gnls = self.gnls.as_mut().expect("implicit method without an NLS");
-            gnls.solve(ode, &mut resid, time, &[&z0, &z1], &nominals, &mut z)
+            let starts = super::nls_generic::Starts { extrapolation: &z0, old: &z1, nlsx: &z1 };
+            gnls.solve(ode, &mut resid, time, &starts, &nominals, &mut z)
         };
         self.k = k;
         if solved? != super::Solved::Ok {
@@ -345,6 +340,7 @@ impl Gbode {
         let res_const = self.res_const.clone();
         let y_old = self.y_old.clone();
         let nominals = self.nominals.clone();
+        let mut last_f = None;
         let solved = if let Some(nls) = self.nls.as_mut() {
             nls.solve_multistep(
                 ode,
@@ -365,9 +361,13 @@ impl Gbode {
                 fac: step_size * self.tableau.b[last],
                 c_scale: self.tableau.c[last],
                 res_const: &res_const,
+                last_f: Vec::new(),
             };
             let gnls = self.gnls.as_mut().expect("multi-step method without an NLS");
-            gnls.solve(ode, &mut resid, time + step_size, &[&start], &nominals, &mut guess)?
+            let starts = super::nls_generic::Starts { extrapolation: &start, old: &start, nlsx: &start };
+            let solved = gnls.solve(ode, &mut resid, time + step_size, &starts, &nominals, &mut guess)?;
+            last_f = Some(resid.last_f);
+            solved
         };
         if solved != super::Solved::Ok {
             omclog::info!(
@@ -378,8 +378,14 @@ impl Gbode {
             );
             return Ok(false);
         }
-        let mut f = vec![0.0; n];
-        ode.eval(time + step_size, &guess, &mut f)?;
+        let f = match last_f {
+            Some(f) => f,
+            None => {
+                let mut f = vec![0.0; n];
+                ode.eval(time + step_size, &guess, &mut f)?;
+                f
+            }
+        };
         self.kv[last * n..(last + 1) * n].copy_from_slice(&f);
         for i in 0..n {
             let mut v = 0.0;
@@ -622,11 +628,11 @@ impl Gbode {
                         omclog::g(self.step_size, 0, 6),
                     );
                     if const_step {
-                        return Err(GBODE_CONST_STEP_FAILED);
+                        return Err(const_step_failed(self.time, self.step_size));
                     }
                     self.step_size *= if self.event_happened { 0.1 } else { 0.5 };
                     if self.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(GBODE_MIN_STEP_ERROR);
+                        return Err(min_step_failed("error still to large"));
                     }
                     continue;
                 }
@@ -635,11 +641,11 @@ impl Gbode {
                 if est_order.is_none() {
                     self.stats.convergence_test_failures += 1;
                     if const_step {
-                        return Err(GBODE_CONST_STEP_FAILED);
+                        return Err(const_step_failed(self.time, self.step_size));
                     }
                     self.step_size *= 0.5;
                     if self.step_size < GB_MINIMAL_STEP_SIZE {
-                        return Err(GBODE_MIN_STEP_ERROR);
+                        return Err(min_step_failed("error still to large"));
                     }
                     continue;
                 }
@@ -715,7 +721,7 @@ impl Gbode {
                         self.stats.err_test_failures += 1;
                         self.step_size *= 0.5;
                         if self.step_size < GB_MINIMAL_STEP_SIZE {
-                            return Err(GBODE_MIN_INTERP_ERROR);
+                            return Err(min_step_failed("interpolation error still too large"));
                         }
                         if omclog::active(omclog::SOLVER) {
                             omclog::info!(
@@ -902,12 +908,26 @@ impl Gbode {
     }
 }
 
-const GBODE_CONST_STEP_FAILED: &str = "CodegenWasmJit: gbode is running with a fixed step size and \
-                                       the step calculation failed";
-pub(super) const GBODE_MIN_STEP_ERROR: &str =
-    "CodegenWasmJit: gbode reached the minimum step size, but the error is still too large";
-const GBODE_MIN_INTERP_ERROR: &str = "CodegenWasmJit: gbode reached the minimum step size, but the \
-                                      interpolation error is still too large";
+fn const_step_failed(time: f64, step_size: f64) -> &'static str {
+    omclog::error!(
+        omclog::STDOUT,
+        false,
+        "Simulation aborted since gbode is running with fixed step size and step calculation has failed at time = {} with step size h = {}.",
+        omclog::g(time, 5, 6),
+        omclog::g(step_size, 5, 6),
+    );
+    crate::SOLVER_FAILED_ERR
+}
+
+pub(super) fn min_step_failed(what: &str) -> &'static str {
+    omclog::error!(
+        omclog::STDOUT,
+        false,
+        "Simulation aborted! Minimum step size {} reached, but {what}.",
+        omclog::g(GB_MINIMAL_STEP_SIZE, 0, 6),
+    );
+    crate::SOLVER_FAILED_ERR
+}
 
 #[cfg(test)]
 mod tests {
