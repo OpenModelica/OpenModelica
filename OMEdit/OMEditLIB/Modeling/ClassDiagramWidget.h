@@ -51,6 +51,7 @@ class QCheckBox;
 class QComboBox;
 class QToolButton;
 class QDockWidget;
+class QVBoxLayout;
 
 /*!
  * \brief The page of the class diagram. Hands the links clicked in the diagram to
@@ -86,6 +87,9 @@ private:
   QToolButton *mpSaveAsToolButton;
   QToolButton *mpDockToolButton;
   QWebEngineView *mpClassDiagramView;
+  QVBoxLayout *mpMainLayout;
+  QWebEngineView* createClassDiagramView();
+  QString pageFileName() const;
   QString htmlPage(const QString &diagram) const;
   QDockWidget* dockWidget() const;
 public slots:
