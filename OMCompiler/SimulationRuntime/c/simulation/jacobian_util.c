@@ -1327,14 +1327,6 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian
   const modelica_boolean hasSparseT = jacobian->sparsePatternT != NULL;
   const modelica_boolean hasAnySparse = hasSparse || hasSparseT;
 
-  printf("Jacobian availability: %s%s%s%s%s",
-                   hasColumn ? "column" : "",
-                   hasColumn && hasRow ? ", " : "",
-                   hasRow ? "row" : "",
-                   hasSparse ? ", sparse" : "",
-                   hasSparseT ? ", sparseT" : "");
-  printf("\n");
-
   /* Choose the best method that is actually backed by generated data. */
   if (jacobianMethod == JAC_UNKNOWN) {
     if (hasColumn && hasSparse) {

@@ -9,7 +9,7 @@ loadFile("NPendulum.mo");
 getErrorString();
 
 setCommandLineOptions("--maxSizeLinearTearing=0");
-setCommandLineOptions("--generateDynamicJacobian=symbolic");
+setCommandLineOptions("--generateDynamicJacobian=symbolic +simCodeTarget=C.old");
 buildModel(NPendulum.pendulum40); getErrorString();
 simulate(NPendulum.pendulum40, simflags="-lss umfpack -jacobian=coloredSymbolical", resimulateExecutable="NPendulum.pendulum40");
 res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res.mat",

@@ -59,7 +59,7 @@ equation
 end jacobianEntryPermutation;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional +simCodeTarget=C.old"); getErrorString();
 
 buildModel(jacobianEntryPermutation, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6); getErrorString();
 
