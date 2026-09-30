@@ -732,6 +732,28 @@ public
     end match;
   end scalarElementEquation;
 
+  function arrayElementEquation
+    "the element equation x[k] = e[k] of an array equation x = e"
+    input Equation eqn;
+    input ComponentRef cref;
+    output Equation result = eqn;
+  protected
+    ComponentRef name = ComponentRef.stripSubscriptsAll(cref);
+    list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref);
+  algorithm
+    result := match eqn
+      local
+        ComponentRef side;
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = side)) guard(ComponentRef.isEqual(side, name))
+      then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.fromCref(cref), Expression.applySubscripts(subs, eqn.rhs, true), eqn.source, eqn.attr);
+      case Equation.ARRAY_EQUATION(rhs = Expression.CREF(cref = side)) guard(ComponentRef.isEqual(side, name))
+      then Equation.SCALAR_EQUATION(Type.arrayElementType(eqn.ty), Expression.applySubscripts(subs, eqn.lhs, true), Expression.fromCref(cref), eqn.source, eqn.attr);
+      // expanding the equation for every element is quadratic, only do it for small arrays
+      case Equation.ARRAY_EQUATION() guard(Type.sizeOf(eqn.ty) <= 64) then scalarElementEquation(eqn, cref);
+      else eqn;
+    end match;
+  end arrayElementEquation;
+
   function solveBody
     input output Equation eqn;
     input ComponentRef cref;
@@ -763,6 +785,9 @@ public
         // a scalar solved from a bigger array equation, e.g. {v, i} = if c then {a, b} else {d, e}
         case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ty) and Type.sizeOf(eqn.ty) > 1)
         then scalarElementEquation(eqn, cref);
+        // an array element solved from an equation for the whole array, e.g. S[2] from S = v .* i
+        case Equation.ARRAY_EQUATION(recordSize = NONE()) guard(not Type.isArray(ComponentRef.getSubscriptedType(cref, true)))
+        then arrayElementEquation(eqn, cref);
         else eqn;
       end match;
     end if;
@@ -791,7 +816,10 @@ public
 
         if Expression.isZero(derivative) then
           invertRelation := RelationInversion.FALSE;
-          status := Status.UNSOLVABLE;
+          // an array that only occurs element wise, e.g. f({x[1], x[2]}), has to be solved implicitly
+          status := if Type.isArray(ComponentRef.getSubscriptedType(fixed_cref, true)) and not Expression.containsCref(residual, fixed_cref)
+            and not listEmpty(Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(fixed_cref))))
+            then Status.IMPLICIT else Status.UNSOLVABLE;
         elseif not Expression.containsCref(derivative, fixed_cref) then
           // If eqn is linear in cref:
           eqn := solveLinear(eqn, residual, derivative, diffArgs, fixed_cref);
