@@ -21,7 +21,6 @@ Modelica.Electrical.Analog.Examples.CauerLowPassOPV.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos \
 Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes.mos \
 Modelica.Electrical.Analog.Examples.CharacteristicThyristors.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 Modelica.Electrical.Analog.Examples.CompareTransformers.mos \
 Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc.mos \
 Modelica.Electrical.Analog.Examples.DifferenceAmplifier.mos \
