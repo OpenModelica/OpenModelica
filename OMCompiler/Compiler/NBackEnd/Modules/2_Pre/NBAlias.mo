@@ -1273,7 +1273,11 @@ protected
       call_args := list(if Expression.hasArrayType(a) then Expression.applySubscript(sub, a) else a for a in call_args);
     end for;
 
-    exp := Expression.CALL(Call.makeTypedCall(fn, call_args, Variability.PARAMETER, NFPrefixes.Purity.PURE));
+    // the scalar min and max take two arguments, nest them for more
+    exp :: call_args := listReverse(call_args);
+    for arg in call_args loop
+      exp := Expression.CALL(Call.makeTypedCall(fn, {arg, exp}, Variability.PARAMETER, NFPrefixes.Purity.PURE));
+    end for;
     if not listEmpty(dims) then
       exp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.liftArrayLeftList(Expression.typeOf(exp), dims),
         Variability.PARAMETER, NFPrefixes.Purity.PURE, exp, iters));
