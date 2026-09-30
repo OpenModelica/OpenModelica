@@ -1373,9 +1373,43 @@ function countStringUse
   output HashTableExpToIndex.HashTable uses = inUses;
 algorithm
   if isSconst(inExp) then
-    uses := BaseHashTable.add((inExp, if BaseHashTable.hasKey(inExp, uses) then BaseHashTable.get(inExp, uses) + 1 else 1), uses);
+    uses := addStringUse(inExp, uses);
+  else
+    // A lifted literal array cannot hold an unlifted string
+    for e in literalElements(inExp) loop
+      if isSconst(e) then
+        uses := addStringUse(e, uses);
+      end if;
+    end for;
   end if;
 end countStringUse;
+
+function addStringUse
+  input DAE.Exp e;
+  input output HashTableExpToIndex.HashTable uses;
+algorithm
+  uses := BaseHashTable.add((e, if BaseHashTable.hasKey(e, uses) then BaseHashTable.get(e, uses) + 1 else 1), uses);
+end addStringUse;
+
+function literalElements
+  input DAE.Exp e;
+  output list<DAE.Exp> elts;
+algorithm
+  elts := match e
+    local
+      DAE.Exp e1, e2;
+    case DAE.ARRAY() then e.array;
+    case DAE.MATRIX() then List.flatten(e.matrix);
+    case DAE.BOX(e1) then {e1};
+    case DAE.META_OPTION(SOME(e1)) then {e1};
+    case DAE.CONS(e1, e2) then {e1, e2};
+    case DAE.LIST() then e.valList;
+    case DAE.META_TUPLE() then e.listExp;
+    case DAE.METARECORDCALL() then e.args;
+    case DAE.CALL(path = Absyn.IDENT("listArrayLiteral")) then e.expLst;
+    else {};
+  end match;
+end literalElements;
 
 function replaceLiteralExpKeepSingle
   input DAE.Exp inExp;
