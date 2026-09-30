@@ -316,6 +316,13 @@ pub fn take_capture() -> String {
     capture_store::with(|b| b.take()).unwrap_or_default()
 }
 
+/// What `f` logs, diverted into a string; a capture already open is kept.
+pub fn capture(f: impl FnOnce()) -> String {
+    let outer = capture_store::with(|b| b.replace(String::new()));
+    f();
+    capture_store::with(|b| core::mem::replace(b, outer)).unwrap_or_default()
+}
+
 /// `true` when the line was captured and must not reach the sink.
 pub(crate) fn capture_line(s: &str) -> bool {
     capture_store::with(|b| match b {
