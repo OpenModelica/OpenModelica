@@ -60,9 +60,11 @@ protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import Global;
 protected import List;
 protected import RemoveSimpleEquations;
 protected import Types;
+protected import UnorderedMap;
 protected import Util;
 
 
@@ -92,44 +94,40 @@ public uniontype Variability
     record VARIABLE end VARIABLE;
 end Variability;
 
-public uniontype CallSignature
-  record SIGNATURE
-    Absyn.Path path;
-    list<Variability> inputsVari;//not scalar, take records, arrays, calls as a single input variability
-    Boolean canBeEvaluated;
-  end SIGNATURE;
-end CallSignature;
-
 // =============================================================================
 // caching of already evaluated functions
 //
 // =============================================================================
 
+protected function newCallSignatures
+  "Maps callSignature to whether such a call can be evaluated."
+  output UnorderedMap<String, Boolean> signatures = UnorderedMap.new<Boolean>(stringHashDjb2, stringEq);
+end newCallSignatures;
+
+public function resetCallSignatures
+  "Starts the call signatures kept for the Jacobians of a model."
+algorithm
+  setGlobalRoot(Global.evalFuncCallSignatures, SOME(newCallSignatures()));
+end resetCallSignatures;
+
 protected function checkCallSignatureForExp
   input DAE.Exp expIn;
-  input list<CallSignature> signLst;
-  output Boolean continueEval;
-protected
-  CallSignature signature;
-algorithm
-  continueEval := true;
-  signature := getCallSignatureForCall(expIn);
-  if List.isMemberOnTrue(signature,signLst,callSignatureIsEqual) then
-    SIGNATURE(canBeEvaluated = continueEval) := List.getMemberOnTrue(signature,signLst,callSignatureIsEqual);
-  end if;
+  input UnorderedMap<String, Boolean> signatures;
+  output Boolean continueEval = UnorderedMap.getOrDefault(callSignature(expIn), signatures, true);
 end checkCallSignatureForExp;
 
-protected function callSignatureStr "outputs a string representation for the CallSignature"
-  input CallSignature signat;
-  output String str;
+protected function callSignature
+  "The function and the variability of its inputs (records, arrays and calls
+   count as one input)."
+  input DAE.Exp callExpIn;
+  output String signature;
 protected
-   Absyn.Path path;
-   list<Variability> varis;
-   Boolean b;
+  Absyn.Path path;
+  list<DAE.Exp> expLst;
 algorithm
-  SIGNATURE(path=path,inputsVari=varis, canBeEvaluated=b) := signat;
-  str := AbsynUtil.pathString(path)+"[ "+stringDelimitList(List.map(varis,VariabilityString)," | ")+" ] "+boolString(b);
-end callSignatureStr;
+  DAE.CALL(path=path, expLst=expLst) := callExpIn;
+  signature := AbsynUtil.pathString(path) + "[ " + stringDelimitList(list(VariabilityString(getVariabilityForExp(e)) for e in expLst), " | ") + " ]";
+end callSignature;
 
 protected function VariabilityString "outputs a string representation for the Variability"
   input Variability var;
@@ -141,57 +139,6 @@ algorithm
     else "VARIABLE";
     end match;
 end VariabilityString;
-
-protected function callSignatureIsEqual"outputs true if 2 CallSignatures are equal"
-  input CallSignature signat1;
-  input CallSignature signat2;
-  output Boolean isEqual;
-protected
-  Absyn.Path path1,path2;
-  list<Variability> vari1,vari2;
-algorithm
-  SIGNATURE(path=path1, inputsVari=vari1) := signat1;
-  SIGNATURE(path=path2, inputsVari=vari2) := signat2;
-  isEqual := false;
-  if AbsynUtil.pathEqual(path1,path2) then
-    if List.isEqualOnTrue(vari1,vari2,VariabilityIsEqual) then
-      isEqual := true;
-    end if;
-  end if;
-end callSignatureIsEqual;
-
-protected function VariabilityIsEqual"outputs true if 2 Variabilites are equal"
-  input Variability vari1;
-  input Variability vari2;
-  output Boolean isEqual;
-algorithm
-  isEqual := match(vari1,vari2)
-    case(CONST(),CONST())
-      then true;
-    case(VARIABLE(),VARIABLE())
-      then true;
-    else
-      then false;
-   end match;
-end VariabilityIsEqual;
-
-protected function getCallSignatureForCall"determines the callSignature for a function call expression"
-  input DAE.Exp callExpIn;
-  output CallSignature signatureOut;
-protected
-  Absyn.Path path;
-  list<DAE.Exp> expLst;
-  list<Variability> vari;
-algorithm
-  try
-    DAE.CALL(path=path, expLst=expLst) := callExpIn;
-    vari := List.map(expLst,getVariabilityForExp);
-    signatureOut := SIGNATURE(path,vari,true);
-  else
-    print("evalFunc.getCallSignatureForCall failed for :\n"+ExpressionBasics.printExpStr(callExpIn)+"\n");
-    fail();
-  end try;
-end getCallSignatureForCall;
 
 protected function getVariabilityForExp"determines if the exp is either constant or variable"
   input DAE.Exp expIn;
@@ -316,10 +263,14 @@ protected
   Boolean changed;
   BackendDAE.EqSystems eqSysts;
   BackendDAE.Shared shared;
+  Option<UnorderedMap<String, Boolean>> optCallSign;
+  UnorderedMap<String, Boolean> callSign;
 algorithm
   try
     BackendDAE.DAE(eqs=eqSysts, shared=shared) := inDAE;
-    (eqSysts, (shared, _, changed, _)) := List.mapFold(eqSysts, evalFunctions_main, (shared, 1, false, {}));
+    optCallSign := getGlobalRoot(Global.evalFuncCallSignatures);
+    callSign := Util.getOptionOrDefault(optCallSign, newCallSignatures());
+    (eqSysts, (shared, _, changed, _)) := List.mapFold(eqSysts, evalFunctions_main, (shared, 1, false, callSign));
 
     if changed then
       outDAE := updateVarKinds(RemoveSimpleEquations.fastAcausal(BackendDAE.DAE(eqSysts, shared)));
@@ -333,16 +284,16 @@ end evalFunctions;
 
 protected function evalFunctions_main "traverses the eqSystems for function calls and tries to evaluate them"
   input BackendDAE.EqSystem eqSysIn;
-  input tuple<BackendDAE.Shared,Integer,Boolean, list<CallSignature>> tplIn;
+  input tuple<BackendDAE.Shared,Integer,Boolean, UnorderedMap<String, Boolean>> tplIn;
   output BackendDAE.EqSystem eqSysOut;
-  output tuple<BackendDAE.Shared,Integer,Boolean, list<CallSignature>> tplOut;
+  output tuple<BackendDAE.Shared,Integer,Boolean, UnorderedMap<String, Boolean>> tplOut;
 protected
   Boolean changed;
   Integer sysIdx;
   BackendDAE.Shared sharedIn, shared;
   BackendDAE.EquationArray eqs;
   list<BackendDAE.Equation> eqLst, addEqs;
-  list<CallSignature> callSign;
+  UnorderedMap<String, Boolean> callSign;
   Integer recursion_limit;
 algorithm
   (sharedIn,sysIdx,changed,callSign) := tplIn;
@@ -364,7 +315,7 @@ protected function evalFunctions_findFuncs "traverses the lhs and rhs exps of an
   input output list<BackendDAE.Equation> addEqs;
   input output Integer idx;
   input output Boolean changed;
-  input output list<CallSignature> callSign;
+  input output UnorderedMap<String, Boolean> callSign;
   input Integer recursionLimit;
 algorithm
   eqIn := matchcontinue eqIn
@@ -652,7 +603,7 @@ author: Waurich TUD 2014-04"
   input DAE.Exp lhsExpIn;
   input AvlTreePathFunction.Tree funcsIn;
   input Integer eqIdx;
-  input list<CallSignature> callSignLstIn;
+  input UnorderedMap<String, Boolean> callSignLstIn;
   input Integer recursionLimit;
   output DAE.Exp rhsExpOut;
   output DAE.Exp lhsExpOut;
@@ -660,7 +611,7 @@ author: Waurich TUD 2014-04"
   output AvlTreePathFunction.Tree funcsOut;
   output Integer eqIdxOut;
   output Boolean changed;
-  output list<CallSignature> callSignLstOut;
+  output UnorderedMap<String, Boolean> callSignLstOut;
 protected
   Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort, isUnknownType, isNDimArray;
   Integer idx;
@@ -681,8 +632,7 @@ protected
   list<DAE.Type> outputVarTypes;
   list<String> outputVarNames;
   list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
-  CallSignature signature;
-  list<CallSignature> callSignLst;
+  UnorderedMap<String, Boolean> callSignLst;
   Boolean continueEval;
 algorithm
   // The recursion limit decreases when calling functions recursively.
@@ -701,7 +651,6 @@ algorithm
         //------------------------------------------------
         //Check if this particular call signature has been analysed before
         //------------------------------------------------
-          //print(stringDelimitList(List.map(callSignLst,callSignatureStr),"\n"));
         continueEval := checkCallSignatureForExp(rhsExpIn,callSignLst);
         isUnknownType := hasUnknownType(lhsExpIn);
         isNDimArray := hasMultipleArrayDimensions(lhsExpIn);
@@ -832,9 +781,6 @@ algorithm
 
         true :=  funcIsPartConst or funcIsConst;
 
-        signature := getCallSignatureForCall(rhsExpIn);
-        signature.canBeEvaluated := true;
-        callSignLst := signature::callSignLst;
         changed := funcIsPartConst or funcIsConst;
 
         // build the new lhs, the new statements for the function, the constant parts...
@@ -897,6 +843,7 @@ algorithm
             BackendDump.dumpEquationList(constEqs,"including the additional equations:\n");
           end if;
         end if;
+        UnorderedMap.add(callSignature(rhsExpIn), true, callSignLst);
       then
         (exp,outputExp,constEqs,funcs,idx,changed,callSignLst);
 
@@ -925,11 +872,7 @@ algorithm
         callSignLst := callSignLstIn;
         if Expression.isCall(rhsExpIn) then
           //Add a call signature for the call that could not been evaluated
-          signature := getCallSignatureForCall(rhsExpIn);
-          signature.canBeEvaluated := false;
-          if not List.isMemberOnTrue(signature,callSignLstIn,callSignatureIsEqual) then
-            callSignLst := signature::callSignLst;
-          end if;
+          UnorderedMap.tryAdd(callSignature(rhsExpIn), false, callSignLst);
         end if;
       then (rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false,callSignLst);
   end matchcontinue;
@@ -2162,7 +2105,7 @@ algorithm
           (exp1,_) := BackendVarTransform.replaceExp(exp0,repl,NONE());
 
           exp2 := DAE.TUPLE(expLst);
-          (exp1,exp2,addEqs,funcTree,idx) := evaluateConstantFunction(exp1,exp2,funcTree,idx,{},recursionLimit);
+          (exp1,exp2,addEqs,funcTree,idx) := evaluateConstantFunction(exp1,exp2,funcTree,idx,newCallSignatures(),recursionLimit);
           isCon := Expression.isConst(exp1);
           exp1 := if isCon then exp1 else exp0;
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
@@ -2761,7 +2704,7 @@ algorithm
       tuple<DAE.Exp, AvlTreePathFunction.Tree,Integer,list<DAE.Statement>> tpl;
   case (DAE.CALL(),(lhs,funcs,idx,stmtsIn))
     algorithm
-      (rhs,lhs,addEqs,funcs,idx) := evaluateConstantFunction(inExp,lhs,funcs,idx,{},recursionLimit);
+      (rhs,lhs,addEqs,funcs,idx) := evaluateConstantFunction(inExp,lhs,funcs,idx,newCallSignatures(),recursionLimit);
       stmts := List.map(addEqs,equationToStmt);
     then (rhs,true,(lhs,funcs,idx,listAppend(stmts, stmtsIn)));
 

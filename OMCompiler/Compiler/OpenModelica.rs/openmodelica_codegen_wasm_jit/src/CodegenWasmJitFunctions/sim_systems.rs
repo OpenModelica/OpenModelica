@@ -930,7 +930,7 @@ pub(crate) fn compile_linear_system(
 
     // --- solve, scatter, recover the torn variables, free the scratch. `res0` is
     // spent by now, so the step check reuses it. ---
-    let m1 = method1.then_some(Method1 { res_off: res0_off, residuals });
+    let m1 = if method1 { Some(Method1 { res_off: res0_off, residuals, nominal_norm: nominal_norm(ctx, iter_vars)? }) } else { None };
     emit_lin_solve_scatter(ctx, base, b_off, aux_off, n, &slots, use_sparse, m1, index, lower_inner, None)
 }
 
@@ -1069,6 +1069,20 @@ fn emit_scatter_recover_free(
 struct Method1<'a> {
     res_off: u32,
     residuals: &'a [NlsResidual],
+    /// `‖nominal‖` of the unknowns, which scales the step test with `‖A‖`.
+    nominal_norm: f64,
+}
+
+/// C's `linearSystemData->nominal`: the unknowns' nominal, 1 for a derivative.
+fn nominal_norm(ctx: &FnCtx, iter_vars: &[metamodelica::Ref<DAE::ComponentRef>]) -> Result<f64> {
+    let sim = ctx.sim()?;
+    let mut sum = 0.0;
+    for cr in iter_vars {
+        let key = sim_cref_key(cr)?;
+        let nom = if key.starts_with("$DER") { 1.0 } else { sim.nominals.get(&key).copied().unwrap_or(1.0) };
+        sum += nom * nom;
+    }
+    Ok(sum.sqrt())
 }
 
 /// Take the step `dx` at `base+b_off`, recover the torn variables there, and hold
@@ -1127,6 +1141,7 @@ fn emit_lin_step(
     emit_linsolve_context(ctx, index)?;
     ctx.emit(I::I32Const(!use_sparse as i32)); // `dense`: a rejected step can retry
     ctx.emit(I::I32Const(ctx.dt_casual() as i32));
+    ctx.emit(I::F64Const(m1.nominal_norm.into()));
     ctx.emit(I::Call(rt_index("rt_ls_check_step")?));
     match retry {
         Some(retry) => {
@@ -1290,7 +1305,7 @@ pub(crate) fn compile_linear_system_analytic(
         ctx.emit(I::F64Store(mem_arg(b_off + i * 8, 3)));
     }
 
-    let m1 = Method1 { res_off, residuals };
+    let m1 = Method1 { res_off, residuals, nominal_norm: nominal_norm(ctx, iter_vars)? };
     let mut reassemble =
         |c: &mut FnCtx| emit_lin_jac(c, base, n, seed_tab_off, res_tab_off, lower_constant, lower_column);
     // A method-1 system probes at the previous solution, so `xold` is C's `aux_x`.
@@ -1742,7 +1757,7 @@ pub(crate) fn compile_linear_system_analytic_csc(
     emit_sim_time(ctx)?;
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     emit_lin_unsolved(ctx, handle, base)?;
-    let m1 = Method1 { res_off, residuals };
+    let m1 = Method1 { res_off, residuals, nominal_norm: nominal_norm(ctx, iter_vars)? };
     emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner, None)
 }
 

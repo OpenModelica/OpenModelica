@@ -1935,6 +1935,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         data_local: 0,
         vars: SlotMap::new(var_map.vars.clone()),
         starts: var_map.starts.clone(),
+        nominals: var_map.nominals.clone(),
         start_slots: var_map.start_slots.clone(),
         start_aliases: var_map.start_aliases.clone(),
         array_groups: var_map.array_groups.clone(),

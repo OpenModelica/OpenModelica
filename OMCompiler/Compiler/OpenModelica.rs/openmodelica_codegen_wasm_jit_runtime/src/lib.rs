@@ -3134,6 +3134,9 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
+    if method1 != 0 {
+        ls_record_solve(eq_index, a_ptr, n * n, b_ptr, x_ptr, n);
+    }
     // C prints this from the solver it dispatched to; `solveTotalPivot` prints its own.
     match openmodelica_solvers::solverflags::ls() {
         openmodelica_solvers::solverflags::Ls::TotalPivot => {}
@@ -3312,7 +3315,7 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
 /// all leave a rejected step unsolved.
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32, casual: i32) -> i32 {
+pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32, casual: i32, nominal_norm: f64) -> i32 {
     // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
     if dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot) {
         return 0;
@@ -3323,7 +3326,7 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
     let n = n as usize;
     let res = unsafe { core::slice::from_raw_parts(res_ptr as *const f64, n) };
     let norm = nls::enorm(res);
-    if !(norm.is_nan() || norm > 1e-4) {
+    if ls_step_accepted(eq_index, norm, b_ptr, n, nominal_norm) {
         ls_solved(eq_index);
         return 0;
     }
@@ -3346,6 +3349,26 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
     2
 }
 
+/// C's `_omc_linearSolutionAccepted`: the normwise backward error of the step
+/// `dx` (`b_ptr`), with the Frobenius norm of `A`. `‖A‖` is only needed when the
+/// residual is not already small against `‖b‖`.
+fn ls_step_accepted(eq_index: i32, norm: f64, b_ptr: u32, n: usize, nominal_norm: f64) -> bool {
+    let e = ls_failure_entry(eq_index);
+    let dx = unsafe { core::slice::from_raw_parts(b_ptr as *const f64, n) };
+    let norm_x = e.x_old.iter().zip(dx).map(|(x, d)| (x + d) * (x + d)).sum::<f64>().sqrt();
+    let norm_x_old = nls::enorm(&e.x_old);
+    if !norm_x.is_finite() || !norm_x_old.is_finite() {
+        return false;
+    }
+    let finite = |v: f64| if v.is_finite() { v } else { 0.0 };
+    let norm_b = finite(e.norm_b);
+    if norm <= 1e-8 * norm_b {
+        return true;
+    }
+    let norm_a = if e.a_ptr == 0 { 0.0 } else { nls::enorm(unsafe { core::slice::from_raw_parts(e.a_ptr as *const f64, e.a_len) }) };
+    norm <= 1e-8 * (finite(norm_a) * (norm_x + norm_x_old + nominal_norm) + norm_b)
+}
+
 /// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after
 /// a success warns on stdout, a run of them only on `LOG_LS`.
 #[derive(Default)]
@@ -3354,6 +3377,26 @@ struct LsFailure {
     failures: u64,
     /// The last solve was the total-pivot fallback, whose step C takes unchecked.
     fell_back: bool,
+    /// What [`rt_ls_check_step`] scales the residual by: the values of the last
+    /// solve's `A` (dense or CSC, still intact), `‖b‖` and the unknowns before the step.
+    a_ptr: u32,
+    a_len: usize,
+    norm_b: f64,
+    x_old: alloc::vec::Vec<f64>,
+}
+
+/// Keep what the step test of this solve needs before `b` becomes the step.
+fn ls_record_solve(eq_index: i32, a_ptr: u32, a_len: usize, b_ptr: u32, x_ptr: u32, n: usize) {
+    let e = ls_failure_entry(eq_index);
+    e.a_ptr = a_ptr;
+    e.a_len = a_len;
+    e.norm_b = nls::enorm(unsafe { core::slice::from_raw_parts(b_ptr as *const f64, n) });
+    e.x_old.clear();
+    if x_ptr != 0 {
+        e.x_old.extend_from_slice(unsafe { core::slice::from_raw_parts(x_ptr as *const f64, n) });
+    } else {
+        e.x_old.resize(n, 0.0);
+    }
 }
 /// Keyed, not scanned: [`ls_solved`] runs per solve, and a model can solve O(n)
 /// systems per `functionODE`.
@@ -3469,6 +3512,7 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
+    ls_record_solve(eq_index, a_ptr, n * n, b_ptr, x_ptr, n);
     #[cfg(sundials)]
     if matches!(openmodelica_solvers::solverflags::lss(), openmodelica_solvers::solverflags::Lss::Lis) {
         let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
@@ -3554,6 +3598,7 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
+    ls_record_solve(handle as i32, values, nnz as usize, b_ptr, x_ptr, n as usize);
     #[cfg(sundials)]
     if matches!(openmodelica_solvers::solverflags::lss(), openmodelica_solvers::solverflags::Lss::Lis) {
         ls_start_log(handle as i32, n as usize, time, "Lis");

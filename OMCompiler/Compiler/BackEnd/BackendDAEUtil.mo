@@ -6744,8 +6744,10 @@ algorithm
       BackendDAE.Variables vars;
       Boolean b,b1;
       Absyn.Path path;
-      list<DAE.Exp> expLst;
+      list<DAE.Exp> expLst, dexpLst;
       Option<AvlTreePathFunction.Tree> funcs;
+      AvlTreePathFunction.Tree ft;
+      DAE.CallAttributes attr;
       tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<AvlTreePathFunction.Tree>,Boolean> tpl;
     case (e as DAE.CREF(),(repl,_,_,_))
       algorithm
@@ -6781,6 +6783,13 @@ algorithm
         (exp, tpl) := Expression.traverseExpTopDown(exp, getEqnsysRhsExp1, inTpl);
       then (exp,false,tpl);
 
+    case (DAE.CALL(path=path, expLst=expLst, attr=attr),(repl,vars,funcs as SOME(ft),b))
+      guard onlyInDerivativeInputs(path, expLst, vars, ft)
+      algorithm
+        (expLst, dexpLst) := List.split(expLst, Differentiate.derivedFunctionInputCount(path, ft));
+        (dexpLst,(_,_,_,b)) := Expression.traverseExpListTopDown(dexpLst, getEqnsysRhsExp1, (repl,vars,funcs,b));
+      then (DAE.CALL(path, listAppend(expLst, dexpLst), attr),false,(repl,vars,funcs,b));
+
     case (e as DAE.CALL(expLst=expLst),(repl,vars,funcs,b))
       algorithm
         // check if vars not in expList
@@ -6791,6 +6800,27 @@ algorithm
     case (e,(_,_,_,b)) then (e,b,inTpl);
   end match;
 end getEqnsysRhsExp1;
+
+public function onlyInDerivativeInputs
+  "Returns true if the function is a derivative function and the variables
+   only occur in its derivative inputs, in which it is linear."
+  input Absyn.Path path;
+  input list<DAE.Exp> args;
+  input BackendDAE.Variables vars;
+  input AvlTreePathFunction.Tree functions;
+  output Boolean b = false;
+protected
+  Boolean noVars;
+  Integer n;
+algorithm
+  (_,(_,noVars)) := Expression.traverseExpListTopDown(args, getEqnsysRhsExp2, (vars,true));
+  if not noVars then
+    n := Differentiate.derivedFunctionInputCount(path, functions);
+    if n >= 0 and n <= listLength(args) then
+      (_,(_,b)) := Expression.traverseExpListTopDown(List.firstN(args, n), getEqnsysRhsExp2, (vars,true));
+    end if;
+  end if;
+end onlyInDerivativeInputs;
 
 protected function getEqnsysRhsExp3
   input Boolean b;
@@ -7718,6 +7748,7 @@ algorithm
   try
   StackOverflow.clearStacktraceMessages();
   setGlobalRoot(Global.adjacencyIfCondCache, NONE());
+  EvaluateFunctions.resetCallSignatures();
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);

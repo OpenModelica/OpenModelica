@@ -185,7 +185,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
   DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData[0];
-  _omc_scalar residualNorm = 0;
+  _omc_scalar residualNorm = 0, normXOld = 0;
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
@@ -289,6 +289,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   /* print solution */
   if (1 == success){
     if (1 == systemData->method){
+      normXOld = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
       /* take the solution */
       for(i = 0; i < solverData->n_row; ++i)
         aux_x[i] += solverData->work[i];
@@ -297,7 +298,10 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       wrapper_fvec_umfpack(aux_x, solverData->work, &resUserData, sysNumber);
       residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
 
-      if ((isnan(residualNorm)) || (residualNorm>1e-4)){
+      if (!_omc_linearSolutionAccepted(residualNorm, _omc_gen_euclideanVectorNorm(solverData->Ax, solverData->nnz),
+                                       _omc_gen_euclideanVectorNorm(aux_x, solverData->n_row), normXOld,
+                                       _omc_nominalVectorNorm(systemData->nominal, solverData->n_row),
+                                       _omc_gen_euclideanVectorNorm(systemData->b, solverData->n_row))){
         warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);

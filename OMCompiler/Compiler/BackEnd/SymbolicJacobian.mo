@@ -72,6 +72,7 @@ protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import Error;
+import ErrorExt;
 import Flags;
 import FlagsUtil;
 import GCExt;
@@ -82,6 +83,7 @@ import IndexReduction;
 import List;
 import StringUtil;
 import System;
+import Types;
 import UnorderedMap;
 import UnorderedSet;
 import Util;
@@ -2839,17 +2841,32 @@ algorithm
       // generate symbolic jacobian for a torn system
       case BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem)
         algorithm
-          // generate generic jacobian backend dae
-          (jacobian, shared) := calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);
-          strictTearingset.jac := jacobian;
+          ErrorExt.setCheckpoint(getInstanceName());
+          try
+            // generate generic jacobian backend dae
+            (jacobian, shared) := calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);
+            true := not linear or isUsableLinearJacobian(jacobian);
+            strictTearingset.jac := jacobian;
 
-          if isSome(optCasualTearingSet) then
-            casualTearingSet := Util.getOption(optCasualTearingSet);
-            (jacobianCausal, shared) := calculateTearingSetJacobian(inVars, inEqns, casualTearingSet, shared, linear);
-            casualTearingSet.jac := jacobianCausal;
-            optCasualTearingSet := SOME(casualTearingSet);
-          end if;
-      then (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), shared);
+            if isSome(optCasualTearingSet) then
+              casualTearingSet := Util.getOption(optCasualTearingSet);
+              (jacobianCausal, shared) := calculateTearingSetJacobian(inVars, inEqns, casualTearingSet, shared, linear);
+              true := not linear or isUsableLinearJacobian(jacobianCausal);
+              casualTearingSet.jac := jacobianCausal;
+              optCasualTearingSet := SOME(casualTearingSet);
+            end if;
+            comp := BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem);
+            ErrorExt.delCheckpoint(getInstanceName());
+          else
+            if not linear then
+              ErrorExt.delCheckpoint(getInstanceName());
+              fail();
+            end if;
+            // a torn linear system cannot be solved without its symbolic jacobian, a nonlinear one can
+            ErrorExt.rollBack(getInstanceName());
+            (comp, shared) := calculateJacobianComponent(BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, false, mixedSystem), inVars, inEqns, inShared);
+          end try;
+      then (comp, shared);
 
       // do not touch constant systems for now
       case comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()) then (comp, inShared);
@@ -3307,6 +3324,36 @@ algorithm
     outShared := inShared;
   end try;
 end getSymbolicJacobian;
+
+protected function isUsableLinearJacobian
+  "The symbolic Jacobian of a torn linear system; its inner variables are
+   generated as Real, so a discrete scalar makes it unusable."
+  input BackendDAE.Jacobian inJacobian;
+  output Boolean b;
+algorithm
+  b := match inJacobian
+    local
+      BackendDAE.BackendDAE dae;
+    case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((dae, _, _, _, _, _)))
+      then not List.any(BackendDAEUtil.getAllVarLst(dae), isDiscreteTypeVar);
+    else false;
+  end match;
+end isUsableLinearJacobian;
+
+protected function isDiscreteTypeVar
+  "Discrete record fields are passed on with their record; parameters are
+   read from the model."
+  input BackendDAE.Var inVar;
+  output Boolean b;
+algorithm
+  b := match inVar.varName
+    local
+      DAE.Type ty;
+    case DAE.CREF_QUAL(identType = ty) guard Types.isRecord(ty) then false;
+    case _ guard BackendVariable.isParamOrConstant(inVar) then false;
+    else Types.isDiscreteType(Types.arrayElementType(BackendVariable.varType(inVar)));
+  end match;
+end isDiscreteTypeVar;
 
 public function hasGenericSymbolicJacobian
   input BackendDAE.Jacobian inJacobian;
@@ -3837,6 +3884,7 @@ public function analyzeJacobian "author: PA
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
+  input AvlTreePathFunction.Tree functions;
   output BackendDAE.JacobianType outJacobianType;
   output Boolean jacConstant "true if jac is constant, does not check rhs";
 algorithm
@@ -3852,7 +3900,7 @@ algorithm
         //print("analyze Jacobian: \n" + str + "\n");
         b := jacobianNonlinear(vars, jac);
         // check also if variables occur in if expressions
-        (_,false) := if not b then BackendDAEUtil.traverseBackendDAEExpsEqnsWithStop(eqns,varsNotInRelations,(vars,true)) else (vars,false);
+        (_,false) := if not b then BackendDAEUtil.traverseBackendDAEExpsEqnsWithStop(eqns,function varsNotInRelations(functions = functions),(vars,true)) else (vars,false);
         //print("jac type: JAC_NONLINEAR() \n");
       then
         (BackendDAE.JAC_NONLINEAR(),false);
@@ -3989,6 +4037,7 @@ protected function varsNotInRelations
   input output DAE.Exp exp;
   output Boolean cont;
   input output tuple<BackendDAE.Variables,Boolean> tpl;
+  input AvlTreePathFunction.Tree functions;
 algorithm
   (exp,cont,tpl) := match (exp,tpl)
     local
@@ -4003,8 +4052,8 @@ algorithm
       algorithm
         // check if vars not in condition
         (_,(_,b)) := Expression.traverseExpTopDown(cond, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
-        (t,(_,b)) := Expression.traverseExpTopDown(t, varsNotInRelations, (vars,b));
-        (f,(_,b)) := Expression.traverseExpTopDown(f, varsNotInRelations, (vars,b));
+        (t,(_,b)) := Expression.traverseExpTopDown(t, function varsNotInRelations(functions = functions), (vars,b));
+        (f,(_,b)) := Expression.traverseExpTopDown(f, function varsNotInRelations(functions = functions), (vars,b));
       then (DAE.IFEXP(cond,t,f),false,(vars,b));
 
     case (DAE.CALL(path=Absyn.IDENT(name = "der")),_)
@@ -4012,6 +4061,12 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "pre")),_)
       then (exp,false,tpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "previous")),_)
+      then (exp,false,tpl);
+    case (DAE.CALL(path=path, expLst=expLst),(vars,_))
+      guard BackendDAEUtil.onlyInDerivativeInputs(path, expLst, vars, functions)
+      algorithm
+        (_, expLst) := List.split(expLst, Differentiate.derivedFunctionInputCount(path, functions));
+        (_,tpl) := Expression.traverseExpListTopDown(expLst, function varsNotInRelations(functions = functions), tpl);
       then (exp,false,tpl);
     case (DAE.CALL(expLst=expLst),_)
       algorithm
@@ -4037,7 +4092,7 @@ algorithm
       algorithm
         expLst := list(Expression.getSubscriptExp(sub) for sub in subs);
         // check if vars not in condition
-        (_,tpl as (_,b)) := Expression.traverseExpTopDown(e1, varsNotInRelations, tpl);
+        (_,tpl as (_,b)) := Expression.traverseExpTopDown(e1, function varsNotInRelations(functions = functions), tpl);
         if b then
           (_,tpl) := Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, tpl);
         end if;

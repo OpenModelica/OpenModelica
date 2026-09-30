@@ -34,6 +34,12 @@ thread_local! {
     pub static rewriteRulesIndex: RefCell<Option<metamodelica::List<crate::RewriteRules::Rule>>> =
         const { RefCell::new(None) };
 
+    // Index 43 — evalFuncCallSignatures
+    //
+    // Whether evalFunc can evaluate a call signature. Source: EvaluateFunctions.mo.
+    pub static evalFuncCallSignatures: RefCell<Option<metamodelica::Ref<openmodelica_util::UnorderedMap::UnorderedMap<arcstr::ArcStr, bool>>>> =
+        const { RefCell::new(None) };
+
     // Index 26 — interactiveCache
     //
     // Declared in `openmodelica_backend_main/src/Globals.rs`: its value type

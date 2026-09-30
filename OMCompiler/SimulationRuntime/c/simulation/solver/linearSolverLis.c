@@ -204,7 +204,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
   char *lis_returncode[] = {"LIS_SUCCESS", "LIS_ILL_OPTION", "LIS_BREAKDOWN", "LIS_OUT_OF_MEMORY", "LIS_MAXITER", "LIS_NOT_IMPLEMENTED", "LIS_ERR_FILE_IO"};
   LIS_INT err;
-  _omc_scalar residualNorm = 0;
+  _omc_scalar residualNorm = 0, normXOld = 0;
 
   int indexes[2] = {1,eqSystemNumber};
   double tmpJacEvalTime;
@@ -286,6 +286,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     if (1 == systemData->method){ /* Case calculate jacobian -> matrix A*/
       /* take the solution */
       lis_vector_get_values(solverData->x, 0, solverData->n_row, aux_x);
+      normXOld = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
       for(i = 0; i < solverData->n_row; ++i)
         aux_x[i] += solverData->work[i];
 
@@ -293,7 +294,10 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       wrapper_fvec_lis(aux_x, solverData->work, &resUserData, sysNumber);
       residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
 
-      if ((isnan(residualNorm)) || (residualNorm>1e-4)){
+      if (!_omc_linearSolutionAccepted(residualNorm, _omc_gen_euclideanVectorNorm(solverData->A->value, solverData->A->nnz),
+                                       _omc_gen_euclideanVectorNorm(aux_x, solverData->n_row), normXOld,
+                                       _omc_nominalVectorNorm(systemData->nominal, solverData->n_row),
+                                       _omc_gen_euclideanVectorNorm(systemData->b, solverData->n_row))){
         warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);

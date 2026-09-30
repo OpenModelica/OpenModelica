@@ -1,0 +1,66 @@
+// name:     DerivativeFunctionLinear
+// keywords: derivative annotation, linear system, jacobian
+// status:   correct
+//
+// A derivative function is linear in its derivative inputs, so the loop
+// created by index reduction is a linear system.
+
+loadString("
+package DerivativeFunctionLinear
+  function f
+    input Real x;
+    output Real y;
+  algorithm
+    y := x^3 + sin(x);
+    annotation(derivative=f_der, Inline=false);
+  end f;
+
+  function f_der
+    input Real x;
+    input Real dx;
+    output Real dy;
+  algorithm
+    dy := (3*x^2 + cos(x))*dx;
+    annotation(Inline=false);
+  end f_der;
+
+  model M
+    Real x1(start=1, fixed=true), x2, v1, v2;
+  equation
+    der(x1) = v1;
+    der(x2) = v2;
+    f(x1) + x2 = sin(time);
+    v1 + 2*v2 = -x1;
+  end M;
+end DerivativeFunctionLinear;
+"); getErrorString();
+
+setCommandLineOptions("-d=backenddaeinfo"); getErrorString();
+echo(false);
+simulate(DerivativeFunctionLinear.M, stopTime=2);
+messages := getErrorString();
+tornSystems := "";
+for line in strtok(messages, "\n") loop
+  if regexBool(line, "torn systems") then
+    tornSystems := tornSystems + line + "\n";
+  end if;
+end for;
+echo(true);
+tornSystems;
+val(x2, 2.0);
+val(v1, 1.3);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// " * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
+// "
+// -3.4053791651870027
+// 0.1722392338632873
+// endResult

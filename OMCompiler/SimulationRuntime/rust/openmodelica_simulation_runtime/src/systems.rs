@@ -477,6 +477,26 @@ fn warn_once_unsupported_lss(method: c_int) {
     );
 }
 
+fn norm2(v: &[f64]) -> f64 {
+    v.iter().map(|v| v * v).sum::<f64>().sqrt()
+}
+
+/// C's `_omc_nominalVectorNorm`: 1 stands in for a nonpositive nominal.
+fn nominal_norm(nominal: *const f64, size: usize) -> f64 {
+    let v = unsafe { core::slice::from_raw_parts(nominal, size) };
+    v.iter().map(|v| if v.abs() > 0.0 && v.is_finite() { v * v } else { 1.0 }).sum::<f64>().sqrt()
+}
+
+/// C's `_omc_linearSolutionAccepted`: the normwise backward error of the
+/// torn system's solve, with the Frobenius norm of A and the unknowns' nominals.
+fn solution_accepted(residual: f64, norm_a: f64, norm_x: f64, norm_x_old: f64, norm_nominal: f64, norm_b: f64) -> bool {
+    if !norm_x.is_finite() || !norm_x_old.is_finite() {
+        return false;
+    }
+    let finite = |v: f64| if v.is_finite() { v } else { 0.0 };
+    residual <= 1e-8 * (finite(norm_a) * (norm_x + norm_x_old + norm_nominal) + finite(norm_b))
+}
+
 /// C's `solveKlu` (`linearSolverKlu.c`). A `method == 0` system arrives as the
 /// CSR the generated `setA` builds and is solved transposed; a torn one as the
 /// CSC of its negated Jacobian.
@@ -539,6 +559,7 @@ fn solve_klu(
         residual(data, thread_data, ls, d.work.as_ptr(), b);
     }
     sysstat::mark_assembly_done();
+    let norm_b = norm2(b);
 
     if d.fact.is_none() {
         d.fact = klu::Factorization::analyze(size, &mut d.ap, &mut d.ai);
@@ -562,12 +583,15 @@ fn solve_klu(
     }
 
     if ls.method == 1 {
+        let norm_x_old = norm2(&d.work);
         for i in 0..size {
             unsafe { *aux_x.add(i) += b[i] };
         }
         residual(data, thread_data, ls, aux_x, &mut d.work);
-        let norm = d.work.iter().map(|v| v * v).sum::<f64>().sqrt();
-        if norm.is_nan() || norm > 1e-4 {
+        let norm = norm2(&d.work);
+        let norm_x = norm2(unsafe { core::slice::from_raw_parts(aux_x, size) });
+        let norm_nominal = nominal_norm(ls.nominal, size);
+        if !solution_accepted(norm, norm2(&d.ax[..nnz]), norm_x, norm_x_old, norm_nominal, norm_b) {
             ls.numberOfFailures += 1;
             omclog::warning_with_limit!(
                 omclog::LS,
@@ -753,6 +777,9 @@ fn solve_lapack(
         return false;
     }
 
+    let norm_b = norm2(&sd.b);
+    let norm_x_old = norm2(&sd.work);
+
     let info = if reuse {
         openmodelica_lapack::lu::dgetrs("N", size, 1, &sd.lu, size, &sd.ipiv, &mut sd.b, size);
         0
@@ -786,8 +813,10 @@ fn solve_lapack(
         if let Some(f) = residual {
             unsafe { f(&mut user, aux_x as *const f64, sd.work.as_mut_ptr(), &flag) };
         }
-        let norm = sd.work.iter().map(|v| v * v).sum::<f64>().sqrt();
-        if norm.is_nan() || norm > 1e-4 {
+        let norm = norm2(&sd.work);
+        let norm_x = norm2(unsafe { core::slice::from_raw_parts(aux_x, size) });
+        let norm_nominal = nominal_norm(ls.nominal, size);
+        if !solution_accepted(norm, norm2(&sd.jac), norm_x, norm_x_old, norm_nominal, norm_b) {
             ls.numberOfFailures += 1;
             omclog::warning_with_limit!(
                 omclog::LS,

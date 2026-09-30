@@ -17,6 +17,8 @@ pub(crate) struct SimVarMap {
     /// filled through `Arc::make_mut` (single owner until emission starts).
     pub(crate) vars: Arc<HashMap<String, SimSlot>>,
     pub(super) starts: Arc<HashMap<String, Option<metamodelica::Ref<DAE::Exp>>>>,
+    /// Cref key -> its constant `nominal` attribute, 1 where unset.
+    pub(super) nominals: Arc<HashMap<String, f64>>,
     /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
     /// slot instead of the inline expression.
     pub(super) start_slots: Arc<HashMap<String, u32>>,
@@ -550,6 +552,7 @@ pub(super) fn build_var_map(
     let mut map = SimVarMap {
         vars: Arc::default(),
         starts: Arc::default(),
+        nominals: Arc::default(),
         start_slots: Arc::default(),
         start_aliases: Arc::default(),
         array_groups: Arc::default(),
@@ -942,6 +945,8 @@ pub(super) fn build_var_map(
 pub(super) fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool) -> Result<()> {
     let key = sim_cref_key(&sv.name)?;
     Arc::make_mut(&mut map.vars).insert(key.clone(), SimSlot { off, wty, negate: Neg::None, heap });
+    let nominal = const_value(&sv.nominalValue).map(f64::abs).filter(|v| *v > 0.0).unwrap_or(1.0);
+    Arc::make_mut(&mut map.nominals).insert(key.clone(), nominal);
     Arc::make_mut(&mut map.starts).insert(key, sv.initialValue.clone());
     for g in array_element_keys(&sv.name)? {
         map.array_acc.entry(g.base).or_default().push(AccElem {

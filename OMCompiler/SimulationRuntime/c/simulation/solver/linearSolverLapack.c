@@ -141,7 +141,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
    * We want to look it up among all equations. */
   int eqSystemNumber = systemData->equationIndex;
   int indexes[2] = {1,eqSystemNumber};
-  _omc_scalar residualNorm = 0;
+  _omc_scalar residualNorm = 0, normB = 0, normXOld = 0;
   double tmpJacEvalTime;
   int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
@@ -192,6 +192,14 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   }
 
   rt_ext_tp_tick(&(solverData->timeClock));
+
+  if (1 == systemData->method) {
+    if (!reuseMatrixJac) {
+      solverData->normA = _omc_gen_euclideanVectorNorm(solverData->A->data, systemData->size*systemData->size);
+    }
+    normB = _omc_euclideanVectorNorm(solverData->b);
+    normXOld = _omc_euclideanVectorNorm(solverData->work);
+  }
 
   /* if reuseMatrixJac use also previous factorization */
   if (!reuseMatrixJac)
@@ -256,7 +264,8 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
       wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, &resUserData, sysNumber);
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
 
-      if ((isnan(residualNorm)) || (residualNorm>1e-4)){
+      if (!_omc_linearSolutionAccepted(residualNorm, solverData->normA, _omc_euclideanVectorNorm(solverData->x), normXOld,
+                                       _omc_nominalVectorNorm(systemData->nominal, systemData->size), normB)){
         warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
