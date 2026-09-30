@@ -3,7 +3,6 @@ bootstrapping.log \
 msl40simulation.log \
 msl41simulation.log \
 msl41simulation_cpp_mini.log \
-hummod.log \
 ThermoSysPro_simulation.log \
 flatteningPlanarMechanics.log \
 TestMedia.log \
@@ -681,9 +680,6 @@ annex60.log: omc-diff
 	@echo $@ done
 cse.log: omc-diff
 	$(MAKE) -C simulation/modelica/commonSubExp -f Makefile test > $@
-	@echo $@ done
-hummod.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/HumMod -f Makefile test > $@
 	@echo $@ done
 openmodelicadiff.log: omc-diff
 	$(MAKE) -C openmodelica/diff -f Makefile test > $@
