@@ -938,7 +938,13 @@ protected
         b := false;
       else
         b := match AbsynUtil.pathFirstIdent(path)
+          // functions that trigger events, an alias would lose a surrounding noEvent()
           case "integer" then true;
+          case "floor" then true;
+          case "ceil" then true;
+          case "div" then true;
+          case "mod" then true;
+          case "rem" then true;
           case "String" then true;
           case "$OMC$PositiveMax" then true;
           case "$OMC$inStreamDiv" then true;
