@@ -23,21 +23,23 @@ pub(super) fn emit_elem_ptr_ranked(ctx: &mut FnCtx, elem: &SigTy, rank: Option<u
         WTy::F64 => 3,
         WTy::I32 => 2,
     };
+    // `it` holds the 0-based index.
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Sub);
     ctx.emit(I::LocalSet(it));
     ctx.emit(I::LocalSet(ot));
     ctx.emit(I::Block(we::BlockType::Result(we::ValType::I32)));
-    // index < 1 || index > total -> the runtime's out-of-range arm.
-    ctx.emit(I::LocalGet(it));
-    ctx.emit(I::I32Const(1));
-    ctx.emit(I::I32LtS);
+    // index < 1 || index > total, as one unsigned compare -> the runtime's
+    // out-of-range arm.
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(ot));
     ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
-    ctx.emit(I::I32GtS);
-    ctx.emit(I::I32Or);
+    ctx.emit(I::I32GeU);
     emit_unlikely_if(ctx, we::BlockType::Empty);
     ctx.emit(I::LocalGet(ot));
     ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
     ctx.emit(I::Call(rt_index("rt_elem_ptr_oob")?));
     ctx.emit(I::Br(1));
     ctx.emit(I::End);
@@ -58,8 +60,6 @@ pub(super) fn emit_elem_ptr_ranked(ctx: &mut FnCtx, elem: &SigTy, rank: Option<u
     }
     ctx.emit(I::I32Add);
     ctx.emit(I::LocalGet(it));
-    ctx.emit(I::I32Const(1));
-    ctx.emit(I::I32Sub);
     ctx.emit(I::I32Const(shift));
     ctx.emit(I::I32Shl);
     ctx.emit(I::I32Add);
