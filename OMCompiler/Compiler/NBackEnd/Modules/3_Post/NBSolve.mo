@@ -336,8 +336,7 @@ public
 
         // a whole dimension in the cref to solve (e.g. x[i, :] for x[i, j] inside a reduction over j)
         // does not determine the solved elements, solve each matched element separately
-        case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))
-          and List.any(ComponentRef.subscriptsAllFlat(comp.var_cref), Subscript.isWhole)) algorithm
+        case StrongComponent.SLICED_COMPONENT() guard(StrongComponent.solvesInsideReduction(Slice.getT(comp.eqn), comp.var_cref)) algorithm
           (tmp, solve_status) := solveSliceElementwise(comp.var, comp.eqn, funcMap);
         then (tmp, solve_status);
 
