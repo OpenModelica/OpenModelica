@@ -1722,14 +1722,16 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   }
 #if defined(__EMSCRIPTEN__)
   // A browser omc has no C code generator, so the model always goes into a wasm
-  // FMU. "static"/"dynamic" name the C link modes and mean nothing here; every
-  // other entry is a native platform the FMU should also serve, which is what an
-  // FMI 2.0 FMU needs to be loadable at all.
-  platforms.removeAll("static");
-  platforms.removeAll("dynamic");
-  if (!platforms.contains("wasm")) {
-    platforms.append("wasm");
+  // FMU, and it can add only the native platforms it has a precompiled driver for.
+  const QStringList fmuPlatforms = omcWorkerFmuPlatforms();
+  QList<QString> nativePlatforms;
+  foreach (QString platform, platforms) {
+    if (fmuPlatforms.contains(platform)) {
+      nativePlatforms.append(platform);
+    }
   }
+  platforms = nativePlatforms;
+  platforms.append("wasm");
 #endif
   if (platforms.empty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),

@@ -251,14 +251,20 @@ namespace OptionsDefaults
   }
 
   namespace FMI {
+#if defined(__EMSCRIPTEN__)
+    QString version = "3.0";
+    QString solver = "";
+    bool includeSourceCode = false;
+#else
     QString version = "2.0";
+    QString solver = "cvode";
+    bool includeSourceCode = true;
+#endif
     QString type = "me_cs";
     QString FMUName = "";
     QString moveFMU = "";
-    QString solver = "";
     QString modelDescriptionFilter = "protected";
     bool includeResources = false;
-    bool includeSourceCode = true;
     bool generateDebugSymbols = false;
     bool deleteFMUDirectoyAndModel = false;
   }

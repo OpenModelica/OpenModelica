@@ -133,6 +133,13 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
       const cbuf = new SharedArrayBuffer(16);
       Module.__omcControlView = new Int32Array(cbuf);
       w.postMessage({ cmd: "controlBuf", buf: cbuf });
+      // The FMU native-platform compiler is a sibling worker; see wasm/fmu-aot.js.
+      const aotUrl = new URL("../fmu-aot-worker.js", document.baseURI);
+      aotUrl.search = url.search;
+      const aot = new Worker(aotUrl, { type: "module" });
+      const channel = new MessageChannel();
+      aot.postMessage({ port: channel.port1 }, [channel.port1]);
+      w.postMessage({ cmd: "fmuAotPort", port: channel.port2 }, [channel.port2]);
     }
   } catch (e) { Module.__omcControlView = null; }
   Module.__omcPending = null;
@@ -224,9 +231,36 @@ EM_JS(char *, omedit_take_init_result, (int id), {
   const r = Module.__omcReplies[id] || {};
   delete Module.__omcReplies[id];
   delete Module.__omcCallPromises[id];
+  Module.__omcFmuPlatforms = (r && r.fmuPlatforms) || [];
+  Module.__omcFmuCsSolvers = (r && r.fmuCsSolvers) || [];
   if (r && r.ok) return stringToNewUTF8("");
   return stringToNewUTF8((r && (r.error || r.__bridgeError)) || "omc worker init failed");
 });
+EM_JS(char *, omedit_fmu_platforms, (), {
+  return stringToNewUTF8((Module.__omcFmuPlatforms || []).join("\n"));
+});
+EM_JS(char *, omedit_fmu_cs_solvers, (), {
+  return stringToNewUTF8((Module.__omcFmuCsSolvers || []).join("\n"));
+});
+
+static QStringList takeLines(char *p)
+{
+  QStringList out = QString::fromUtf8(p).split('\n', Qt::SkipEmptyParts);
+  free(p);
+  return out;
+}
+
+// Those with a precompiled driver in the bundle, and none unless the page is
+// cross-origin isolated.
+QStringList omcWorkerFmuPlatforms()
+{
+  return takeLines(omedit_fmu_platforms());
+}
+
+QStringList omcWorkerFmuCsSolvers()
+{
+  return takeLines(omedit_fmu_cs_solvers());
+}
 EM_JS(int, omedit_post_eval, (const char *src), {
   // keepErrors: OMEdit reads diagnostics itself (printMessagesStringInternal),
   // so the worker must not drain omc's Error buffer into the reply.
