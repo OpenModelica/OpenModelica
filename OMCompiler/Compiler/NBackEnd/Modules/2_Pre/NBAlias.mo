@@ -393,8 +393,11 @@ protected
           repl := UnorderedMap.fromLists(names, list(Expression.INTEGER(v) for v in listReverse(vs)), ComponentRef.hash, ComponentRef.isEqual);
           // start value of the source element
           elem_exp := SimplifyExp.simplify(Expression.map(Expression.fromCref(source), function Replacements.applySimpleExp(replacements = repl)));
+          // the start value can have less dimensions than the variable, e.g. {1.0 for i in 1:2}
+          // for each start = 1.0 of x[2, 3]
           elem_exp := match elem_exp
-            case Expression.CREF() then SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(elem_exp.cref), start_exp, true));
+            case Expression.CREF() guard(listLength(ComponentRef.subscriptsAllFlat(elem_exp.cref)) <= Type.dimensionCount(Expression.typeOf(start_exp)))
+              then SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(elem_exp.cref), start_exp, true));
             else Expression.EMPTY(Type.UNKNOWN());
           end match;
           if not Expression.isLiteral(elem_exp) then return; end if;
