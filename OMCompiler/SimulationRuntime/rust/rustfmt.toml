@@ -1,0 +1,16 @@
+# Formatting rules for every Rust file of the omc port: the hand-written sources
+# (checked by .github/workflows/rust-format.yml via
+# OMCompiler/Compiler/OpenModelica.rs/format.sh) and the sources
+# mmtorust and susan generate (piped through rustfmt before they are written,
+# see mmtorust/src/rustfmt.rs).
+#
+# There is one copy per cargo workspace root (OMCompiler/Compiler/OpenModelica.rs
+# and OMCompiler/SimulationRuntime/rust); they must stay identical, which
+# format.sh checks.
+#
+# Stable options only, so any rustfmt (editor, rust-analyzer, cargo fmt) agrees.
+edition = "2024"
+style_edition = "2024"
+# MetaModelica-derived names and the generated generic bounds are long; 120
+# keeps signatures readable without wrapping nearly every call.
+max_width = 120

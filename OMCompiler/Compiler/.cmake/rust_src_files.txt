@@ -518,6 +518,7 @@ openmodelica_wasm_jit/src/sim_runtime_wasmer.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmtime.rs
 openmodelica_wasm_jit/src/wasi_shim.rs
 rust-toolchain.toml
+rustfmt.toml
 susanSources.txt
 wasm/anim/OrbitControls.js
 wasm/anim/anim-core.js

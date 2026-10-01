@@ -188,3 +188,4 @@ openmodelica_solvers/src/sundials_ode.rs
 openmodelica_solvers/src/symsolver.rs
 openmodelica_solvers/src/sysstat.rs
 src/lib.rs
+rustfmt.toml

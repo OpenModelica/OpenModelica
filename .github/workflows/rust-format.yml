@@ -1,0 +1,58 @@
+name: Rust Format
+
+# rustfmt + taplo over the Rust parts of OMCompiler (both cargo workspaces).
+# Check only: a failing run prints the diff; fix it locally with
+#   OMCompiler/Compiler/OpenModelica.rs/format.sh
+# Generated sources are not in git; mmtorust and susan format those themselves.
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'OMCompiler/Compiler/OpenModelica.rs/**'
+      - 'OMCompiler/SimulationRuntime/rust/**'
+      - '.taplo.toml'
+      - '.github/workflows/rust-format.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'OMCompiler/Compiler/OpenModelica.rs/**'
+      - 'OMCompiler/SimulationRuntime/rust/**'
+      - '.taplo.toml'
+      - '.github/workflows/rust-format.yml'
+
+permissions:
+  contents: read
+
+env:
+  TAPLO_VERSION: '0.10.0'
+
+jobs:
+  rust-format:
+    name: rustfmt and taplo
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Only rustfmt of the pinned nightly; format.sh selects it through
+      # RUSTUP_TOOLCHAIN, so the full rust-toolchain.toml (cranelift, wasm
+      # targets) is never installed.
+      - name: Install rustfmt
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' OMCompiler/Compiler/OpenModelica.rs/rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rustfmt
+          echo "RUSTUP_TOOLCHAIN=$channel" >> "$GITHUB_ENV"
+
+      - name: Install taplo
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-linux-x86_64.gz" \
+            | gunzip > "$HOME/.local/bin/taplo"
+          chmod +x "$HOME/.local/bin/taplo"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check formatting
+        run: OMCompiler/Compiler/OpenModelica.rs/format.sh --check
