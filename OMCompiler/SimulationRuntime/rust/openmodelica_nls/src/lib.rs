@@ -965,17 +965,21 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
     } else {
         n_pivot = n + 1;
     }
+    // `ind_row` and `ind_col` stay permutations of `0..n` and `0..m`, so every
+    // `ind_row[_] + ind_col[_] * n` below is in bounds.
+    assert!(a.len() >= n * m);
     for i in 0..n {
         // Total pivot over rows [i,n) and columns [i,n_pivot).
         let mut abs_max = a[ind_row[i] + ind_col[i] * n].abs();
         let (mut p_row, mut p_col) = (i, i);
         for r in i..n {
-            for c in i..n_pivot {
-                let v = a[ind_row[r] + ind_col[c] * n].abs();
+            let row = ind_row[r];
+            for (c, &col) in ind_col[i..n_pivot].iter().enumerate() {
+                let v = unsafe { a.get_unchecked(row + col * n) }.abs();
                 if v > abs_max {
                     abs_max = v;
                     p_row = r;
-                    p_col = c;
+                    p_col = i + c;
                 }
             }
         }
@@ -987,13 +991,16 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
         }
         ind_row.swap(i, p_row);
         ind_col.swap(i, p_col);
-        let piv = a[ind_row[i] + ind_col[i] * n];
+        let (ri, ci) = (ind_row[i], ind_col[i] * n);
+        let piv = a[ri + ci];
         for k in (i + 1)..n {
-            let h = -a[ind_row[k] + ind_col[i] * n] / piv;
-            for j in (i + 1)..m {
-                a[ind_row[k] + ind_col[j] * n] += h * a[ind_row[i] + ind_col[j] * n];
+            let rk = ind_row[k];
+            let h = -a[rk + ci] / piv;
+            for &col in &ind_col[i + 1..m] {
+                let cj = col * n;
+                unsafe { *a.get_unchecked_mut(rk + cj) += h * *a.get_unchecked(ri + cj) };
             }
-            a[ind_row[k] + ind_col[i] * n] = 0.0;
+            a[rk + ci] = 0.0;
         }
     }
     let mut det = 1.0;
