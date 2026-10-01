@@ -522,10 +522,13 @@ public
             res_lst  := sortByStateIndex(res_lst, simcode_map);
           end if;
 
-          // column and seed var indices always start at 0
-          seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
-          resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
-          tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
+          // column and seed var indices always start at 0. Without scalarization the
+          // Jacobian has no index map like the simulation variables, so the index of an
+          // array variable is the position of its first element in seedVars, resultVars
+          // and tmpVars, and in the columns and rows of the sparsity pattern
+          seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+          resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+          tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
