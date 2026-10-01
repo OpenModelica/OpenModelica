@@ -157,6 +157,7 @@ pub fn load(
         modules.push(module);
     }
     let mut deferred: HashMap<String, DeferredTarget> = HashMap::new();
+    let host_first = HashMap::from([("strtod", host_strtod(store))]);
 
     let mut weak: std::collections::HashSet<String> = std::collections::HashSet::new();
     for (lib, module) in libs.iter().zip(&modules) {
@@ -178,6 +179,7 @@ pub fn load(
             rt_alloc,
             &stack_pointer,
             &wasi,
+            &host_first,
             host_imports,
             &defined,
             &mut deferred,
@@ -187,6 +189,7 @@ pub fn load(
         )?;
         if lib.name == "libc.so" {
             store.data_mut().vsnprintf = loaded.funcs.get("vsnprintf").and_then(|f| f.typed(&*store).ok());
+            store.data_mut().strtod = loaded.funcs.get("strtod").and_then(|f| f.typed(&*store).ok());
         }
     }
     for (sym, target) in &deferred {
@@ -332,6 +335,7 @@ fn place(
     rt_alloc: &wasmtime::TypedFunc<u32, u32>,
     stack_pointer: &Global,
     wasi: &wasmtime::Linker<HostState>,
+    host_first: &HashMap<&str, Func>,
     host_imports: &HashMap<String, Func>,
     defined: &std::collections::HashSet<String>,
     deferred: &mut HashMap<String, DeferredTarget>,
@@ -367,7 +371,8 @@ fn place(
                     .func()
                     .cloned()
                     .ok_or_else(|| format!("external \"C\" library `{lib_name}` imports env.{sym}, which is not a function"))?;
-                match loaded.funcs.get(sym).or_else(|| host_imports.get(sym)) {
+                let found = host_first.get(sym).or_else(|| loaded.funcs.get(sym)).or_else(|| host_imports.get(sym));
+                match found {
                     Some(f) => Extern::Func(*f),
                     None if defined.contains(sym) => Extern::Func(deferred_import(store, &ty, deferred, sym)),
                     None => Extern::Func(missing_symbol_stub(store, &ty, lib_name, sym)),
@@ -428,6 +433,64 @@ fn place(
         loaded.funcs.insert(init_key(lib_name), f);
     }
     Ok(())
+}
+
+/// `strtod` for the plain decimals a table file is made of. wasi-libc's computes
+/// in `long double`, which is soft-float in wasm: ~0.6 us a number, seconds for
+/// a large text table. Any other syntax, and a result that sets `errno`, goes to
+/// libc's own.
+fn host_strtod(store: &mut wasmtime::Store<HostState>) -> Func {
+    Func::wrap(
+        store,
+        |mut caller: wasmtime::Caller<'_, HostState>, s: i32, end: i32| -> std::result::Result<f64, wasmtime::Error> {
+            let memory = caller.data().memory.expect("the libraries' memory is set before they load");
+            if let Some((len, v)) = memory.data(&caller).get(s as u32 as usize..).and_then(parse_decimal) {
+                if end != 0 {
+                    memory.write(&mut caller, end as u32 as usize, &(s as u32 + len as u32).to_le_bytes())?;
+                }
+                return Ok(v);
+            }
+            match caller.data().strtod.clone() {
+                Some(libc) => libc.call(&mut caller, (s, end)),
+                None => Err(wasmtime::Error::msg("external \"C\" library calls strtod, but no libc.so is loaded")),
+            }
+        },
+    )
+}
+
+/// C-locale `strtod` over `[space][sign]digits[.digits][(e|E)[sign]digits]`, as
+/// (bytes consumed, value); `None` for anything else, an overflow or an underflow.
+fn parse_decimal(b: &[u8]) -> Option<(usize, f64)> {
+    let digits = |i: usize| b[i..].iter().take_while(|c| c.is_ascii_digit()).count();
+    let mut i = b.iter().take_while(|&&c| matches!(c, b' ' | b'\t' | b'\n' | b'\x0b' | b'\x0c' | b'\r')).count();
+    let start = i;
+    if matches!(b.get(i), Some(b'+' | b'-')) {
+        i += 1;
+    }
+    let int = digits(i);
+    i += int;
+    let mut frac = 0;
+    if b.get(i) == Some(&b'.') {
+        frac = digits(i + 1);
+        i += 1 + frac;
+    }
+    // Hexadecimal, `inf` and `nan` have a syntax of their own.
+    if int + frac == 0 || matches!(b.get(i), Some(b'x' | b'X')) {
+        return None;
+    }
+    if matches!(b.get(i), Some(b'e' | b'E')) {
+        let sign = matches!(b.get(i + 1), Some(b'+' | b'-')) as usize;
+        let exp = digits(i + 1 + sign);
+        if exp > 0 {
+            i += 1 + sign + exp;
+        }
+    }
+    let v: f64 = std::str::from_utf8(&b[start..i]).ok()?.parse().ok()?;
+    let nonzero = b[start..i].iter().take_while(|c| !matches!(c, b'e' | b'E')).any(|c| matches!(c, b'1'..=b'9'));
+    if !v.is_finite() || (nonzero && v.abs() < f64::MIN_POSITIVE) {
+        return None;
+    }
+    Some((i, v))
 }
 
 fn const_i32(store: &mut wasmtime::Store<HostState>, value: u32) -> Result<Global> {
@@ -751,6 +814,19 @@ mod tests {
     }
 
     /// The mistake to expect, reported as such rather than as unresolved imports.
+    #[test]
+    fn plain_decimals_parse_like_strtod() {
+        assert_eq!(super::parse_decimal(b" 233.5521974 1"), Some((12, 233.5521974)));
+        assert_eq!(super::parse_decimal(b"-1.5e-3x"), Some((7, -1.5e-3)));
+        assert_eq!(super::parse_decimal(b"+.5"), Some((3, 0.5)));
+        assert_eq!(super::parse_decimal(b"7.e"), Some((2, 7.0)));
+        assert_eq!(super::parse_decimal(b"1e+"), Some((1, 1.0)));
+        assert_eq!(super::parse_decimal(b"0e999"), Some((5, 0.0)));
+        for libc_only in [&b"0x1p3"[..], b"inf", b"nan", b".", b"-", b"1e999", b"1e-999", b"4e-320", b""] {
+            assert_eq!(super::parse_decimal(libc_only), None, "{:?}", std::str::from_utf8(libc_only));
+        }
+    }
+
     #[test]
     fn an_object_file_is_rejected_with_a_useful_message() {
         let Some(sysroot) = option_env!("OMC_WASI_PIC_SYSROOT") else { return };
