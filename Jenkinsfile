@@ -636,7 +636,7 @@ pipeline {
         stage('19 testsuite-wasm-jit') {
           agent {
             node {
-              label 'linux'
+              label 'linux && !slow'
               customWorkspace 'ws/OpenModelica'
             }
           }
