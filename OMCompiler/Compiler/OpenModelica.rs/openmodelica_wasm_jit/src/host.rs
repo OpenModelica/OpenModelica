@@ -202,12 +202,14 @@ pub struct HostState {
     pub ext_error_report: Option<wasmtime::TypedFunc<u32, ()>>,
     /// The libraries' `vsnprintf`, for `ModelicaFormat*` messages.
     pub vsnprintf: Option<wasmtime::TypedFunc<(i32, i32, i32, i32), i32>>,
+    /// The libraries' `strtod`, for what [`crate::dylink_wasmtime`]'s does not parse.
+    pub strtod: Option<wasmtime::TypedFunc<(i32, i32), f64>>,
 }
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 impl HostState {
     pub fn new(wasi: openmodelica_wasi::wasi::WasiCtx) -> Self {
-        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None }
+        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None, strtod: None }
     }
 }
 
