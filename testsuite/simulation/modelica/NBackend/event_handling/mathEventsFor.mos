@@ -1,0 +1,78 @@
+// name: mathEventsFor
+// keywords: NewBackend
+// status: correct
+// suite: cSources
+//
+// Math events in for-equations and for-statements stay loops: the calls get one block
+// of event slots and an index that depends on the iterators. No events for a math
+// function inside a reduction. The wasm targets need a constant index and have no
+// math events in loops.
+
+loadString("
+  model mathEventsFor
+    parameter Integer n = 3;
+    Real x[n](each start = 0, each fixed = true);
+    Real f[n], h[n], g[2, 2], a[n], s;
+    Integer k[n];
+  equation
+    for i in 1:n loop
+      der(x[i]) = 0.3*i;
+      f[i] = floor(x[i]);
+      h[i] = mod(x[i], 0.7);
+      k[i] = integer(2*x[i]);
+    end for;
+    for i in 1:2, j in 1:2 loop
+      g[i, j] = ceil(x[i] + 0.5*j);
+    end for;
+    s = sum(x[i] - noEvent(floor(x[i])) for i in 1:n);
+  algorithm
+    for i in 1:n loop
+      a[i] := floor(3*x[i]);
+    end for;
+  end mathEventsFor;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(mathEventsFor, stopTime = 9.5, numberOfIntervals = 10); getErrorString();
+readSimulationResultSize("mathEventsFor_res.mat");
+val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5);
+
+setCommandLineOptions("--simCodeScalarize=false");
+simulate(mathEventsFor, stopTime = 9.5, numberOfIntervals = 10); getErrorString();
+readSimulationResultSize("mathEventsFor_res.mat");
+val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "mathEventsFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 122
+// 8.0
+// 0.10000000000000053
+// 17.0
+// 7.0
+// 17.0
+// true
+// record SimulationResult
+//     resultFile = "mathEventsFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 122
+// 8.0
+// 0.10000000000000053
+// 17.0
+// 7.0
+// 17.0
+// endResult

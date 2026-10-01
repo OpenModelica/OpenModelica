@@ -13,6 +13,7 @@ AssertNoEvent.mos\
 integerIteratorNoEvent.mos\
 algorithmWhenForLoop.mos\
 mathEvents.mos\
+mathEventsFor.mos\
 relationSlotsFor.mos\
 compositeRelationEvents.mos\
 
