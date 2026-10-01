@@ -771,6 +771,14 @@ public
           elements  := list(NFExpression.applySubscripts({Subscript.nth(dim, i)}, rhs, true) for i in 1:arrayLength(lhs.elements));
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
+        // {...} = exp array equation, if exp can be subscripted (e.g. if-expression of arrays)
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs) guard(not Expression.isCref(rhs))
+        then inlineArrayEquation(eqn, lhs.elements, subscriptElements(rhs, arrayLength(lhs.elements)), eqn.attr, iter, variables, new_eqns, set, index);
+
+        // exp = {...} array equation
+        case Equation.ARRAY_EQUATION(lhs = lhs, rhs = rhs as Expression.ARRAY()) guard(not Expression.isCref(lhs))
+        then inlineArrayEquation(eqn, subscriptElements(lhs, arrayLength(rhs.elements)), rhs.elements, eqn.attr, iter, variables, new_eqns, set, index);
+
         // CREF = {... for i in []} array constructor equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()))
         then inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index);
@@ -971,6 +979,33 @@ protected
     Pointer.update(new_eqns, eqns);
     eqn := Equation.DUMMY_EQUATION();
   end inlineArrayEquation;
+
+  function subscriptElements
+    "subscripts the outermost dimension of an array expression element by element.
+    fails if a subscript cannot be pushed into the expression."
+    input Expression exp;
+    input Integer n;
+    output array<Expression> elements;
+  protected
+    Dimension dim = listHead(Type.arrayDims(Expression.typeOf(exp)));
+  algorithm
+    elements := listArray(list(Expression.applySubscripts({Subscript.nth(dim, i)}, exp, true) for i in 1:n));
+    for e in elements loop
+      if Expression.contains(e, isSubscriptedExp) then
+        fail();
+      end if;
+    end for;
+  end subscriptElements;
+
+  function isSubscriptedExp
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.SUBSCRIPTED_EXP() then true;
+      else false;
+    end match;
+  end isSubscriptedExp;
 
   function inlineArrayConstructor
     input output Equation eqn;
