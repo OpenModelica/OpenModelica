@@ -24,6 +24,7 @@ BreakComponentMod1.mo \
 BreakComponentMod2.mo \
 BreakComponentMod3.mo \
 BreakComponentMod4.mo \
+BreakComponentOuter1.mo \
 BreakConnect1.mo \
 BreakConnect2.mo \
 BreakConnect3.mo \
