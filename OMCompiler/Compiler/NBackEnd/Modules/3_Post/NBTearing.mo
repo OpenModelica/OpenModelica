@@ -1614,8 +1614,10 @@ protected
         vars := list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);
       then vars;
 
+      // skip the placeholders of omitted outputs, e.g. (_, y) = f(x)
       case Equation.RECORD_EQUATION(lhs = tpl as Expression.TUPLE()) algorithm
-      then list(BVariable.getVarPointer(tpl_cr, sourceInfo()) for tpl_cr in UnorderedSet.toList(Expression.extractCrefs(tpl)));
+      then list(BVariable.getVarPointer(tpl_cr, sourceInfo()) for tpl_cr guard(not (ComponentRef.isWild(tpl_cr) or ComponentRef.isEmpty(tpl_cr)))
+        in UnorderedSet.toList(Expression.extractCrefs(tpl)));
 
       case Equation.RECORD_EQUATION(lhs = Expression.CREF()) algorithm
         // ToDo: if vars contains any child of cref add all children of cref
