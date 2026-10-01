@@ -1,0 +1,46 @@
+// name: algorithmWhenForLoop
+// keywords: NewBackend
+// status: correct
+// The auxiliary of a when condition in an algorithm inside a for-loop has to be
+// computed before the when statement (IDA DistrictsBenchmark PipeBIFD.FlowDir).
+
+loadString("
+  model P
+    input Real m;
+    Real v;
+    discrete Real d;
+  initial equation
+    d = sign(v);
+  algorithm
+    v := m/2;
+  algorithm
+    when abs(v) > 1e-5 and sign(v)*pre(d) <= 0 then
+      d := sign(v);
+    end when;
+  end P;
+
+  model algorithmWhenForLoop
+    P p[2](m = {time, -time});
+  end algorithmWhenForLoop;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(algorithmWhenForLoop); getErrorString();
+val(p[1].d, 0.5);
+val(p[2].d, 0.5);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "algorithmWhenForLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'algorithmWhenForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// -1.0
+// endResult

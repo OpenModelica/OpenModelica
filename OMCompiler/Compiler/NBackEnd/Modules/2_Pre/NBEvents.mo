@@ -690,8 +690,9 @@ public
           new_frames := (name, range, NONE()) :: frames;
           for elem in stmt.body loop
             new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcMap, new_frames);
-            new_stmts := new_stmt :: new_stmts;
+            // the auxiliaries of the conditions have to be computed before the statement
             new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
+            new_stmts := new_stmt :: new_stmts;
           end for;
           stmt.body := listReverse(new_stmts);
         then stmt;
