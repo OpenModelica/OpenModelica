@@ -50,6 +50,8 @@ protected
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import DAE;
+  import DAEUtil;
+  import OldExpression = Expression;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -179,7 +181,7 @@ public
         index     = call.index,
         iters     = list(SimIterator.convert(iter) for iter in call.iters),
         lhs       = Expression.toDAE(call.lhs),
-        rhs       = Expression.toDAE(call.rhs),
+        rhs       = setRelationAsub(Expression.toDAE(call.rhs), relationAsub(call.iters)),
         resizable = call.resizable);
       case IF_GENERIC_CALL() then OldSimCode.IF_GENERIC_CALL(
         index     = call.index,
@@ -196,6 +198,89 @@ public
       then fail();
      end match;
   end convert;
+
+  function relationAsub
+    "The relations of an event condition in a loop have one storedRelations[] slot per
+    iteration. For a single iterator with a literal range the slot of the current iteration
+    is index + (iterator - start)/step, see DAE.RELATION.optionExpisASUB."
+    input list<SimIterator> iters;
+    output Option<tuple<DAE.Exp, Integer, Integer>> asub;
+  algorithm
+    asub := match iters
+      local
+        ComponentRef name;
+        Integer start, step;
+      case {SimIterator.SIM_ITERATOR_RANGE(name = name, start = Expression.INTEGER(start), step = Expression.INTEGER(step))}
+        then SOME((DAE.CREF(ComponentRef.toDAE(name), DAE.T_INTEGER_DEFAULT), start, step));
+      else NONE();
+    end match;
+  end relationAsub;
+
+  function setRelationAsub
+    "sets the iteration offset of the relations with a storedRelations[] slot"
+    input output DAE.Exp exp;
+    input Option<tuple<DAE.Exp, Integer, Integer>> asub;
+  algorithm
+    if isSome(asub) then
+      (exp, _) := OldExpression.traverseExpBottomUp(exp, setRelationAsubExp, asub);
+    end if;
+  end setRelationAsub;
+
+  function setRelationAsubExp
+    input output DAE.Exp exp;
+    input output Option<tuple<DAE.Exp, Integer, Integer>> asub;
+  algorithm
+    exp := match exp
+      case DAE.RELATION(optionExpisASUB = NONE()) guard(exp.index >= 0)
+        then DAE.RELATION(exp.exp1, exp.operator, exp.exp2, exp.index, asub);
+      else exp;
+    end match;
+  end setRelationAsubExp;
+
+  function setRelationAsubStatements
+    "sets the iteration offset of the relations in for-statements, see relationAsub"
+    input output list<DAE.Statement> stmts;
+    input Option<tuple<DAE.Exp, Integer, Integer>> asub = NONE();
+  protected
+    list<DAE.Statement> acc = {};
+    Option<tuple<DAE.Exp, Integer, Integer>> for_asub;
+  algorithm
+    for stmt in stmts loop
+      stmt := match stmt
+        local
+          DAE.Statement new_stmt;
+        case new_stmt as DAE.STMT_FOR() algorithm
+          for_asub := match new_stmt.range
+            local
+              Integer start, step;
+            case DAE.RANGE(start = DAE.ICONST(start), step = NONE())
+              then SOME((DAE.CREF(DAE.CREF_IDENT(new_stmt.iter, new_stmt.type_, {}), new_stmt.type_), start, 1));
+            case DAE.RANGE(start = DAE.ICONST(start), step = SOME(DAE.ICONST(step)))
+              then SOME((DAE.CREF(DAE.CREF_IDENT(new_stmt.iter, new_stmt.type_, {}), new_stmt.type_), start, step));
+            else NONE();
+          end match;
+          new_stmt.statementLst := setRelationAsubStatements(new_stmt.statementLst, for_asub);
+        then new_stmt;
+        else algorithm
+          if isSome(asub) then
+            ({new_stmt}, _) := DAEUtil.traverseDAEStmts({stmt}, setRelationAsubStmtExp, asub);
+          else
+            new_stmt := stmt;
+          end if;
+        then new_stmt;
+      end match;
+      acc := stmt :: acc;
+    end for;
+    stmts := listReverse(acc);
+  end setRelationAsubStatements;
+
+  function setRelationAsubStmtExp
+    input output DAE.Exp exp;
+    input DAE.Statement stmt;
+    input output Option<tuple<DAE.Exp, Integer, Integer>> asub;
+  algorithm
+    exp := setRelationAsub(exp, asub);
+  end setRelationAsubStmtExp;
 
   uniontype SimIterator
     record SIM_ITERATOR_RANGE
