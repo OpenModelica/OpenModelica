@@ -1632,7 +1632,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     }
 #endif
     /* away from any solution: no 1% improvement for long, or only heavily damped steps */
-    if (countNegativeSteps > 20 || countCycles > 20 || ((countStalls > 200 || countCreeps > 100) && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6))
+    if (countNegativeSteps > 20 || countCycles > 20 || ((countStalls > 400 || countCreeps > 400) && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6))
     {
       debugInt(OMC_LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;

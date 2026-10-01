@@ -3362,7 +3362,7 @@ fn newton_c(
         // Away from any solution: no 1% improvement for long, or only heavily damped steps.
         if neg_steps > 20
             || cycles > 20
-            || ((stalls > 200 || creeps > 100) && error_f_sqrd >= ftol_sq * 1e6 && error_f_sqrd_scaled >= ftol_sq * 1e6)
+            || ((stalls > 400 || creeps > 400) && error_f_sqrd >= ftol_sq * 1e6 && error_f_sqrd_scaled >= ftol_sq * 1e6)
         {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
