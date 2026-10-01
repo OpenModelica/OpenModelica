@@ -3062,9 +3062,15 @@ fn newton_c(
     let mut iter = 0i32;
     let mut neg_steps = 0i32;
     let mut cycles = 0i32;
+    let mut stalls = 0i32;
+    let mut hovers = 0i32;
+    let mut creeps = 0i32;
+    let mut error_f_best = 1e100f64;
+    let mut error_f_hover = 1e100f64;
     let mut err_hist = [0.0f64; 4];
     let mut n_hist = 0usize;
     let mut small_steps = 0i32;
+    let mut small_steps_at_hover = 0i32;
     // C's `lambda` as `-nlsInfo` reports it: only the no-damping and cubic
     // branches set it.
     let mut info_lambda = 1.0f64;
@@ -3116,6 +3122,7 @@ fn newton_c(
         }
         let error_f1_sqrd = nsq(&fvec);
         let error_f1_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
+        let mut step_lambda = lambda1;
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             d("Need to damp, grad_f = ", grad_f);
@@ -3134,6 +3141,7 @@ fn newton_c(
             let lambda2 = (-lambda1 * lambda1 * grad_f
                 / (2.0 * (error_f1_sqrd - error_f_sqrd - lambda1 * grad_f)))
                 .max(LAMBDA_MIN_C);
+            step_lambda = lambda2;
             if trace.is_some() {
                 omclog::debug_double(omclog::NLS_V, "Need to damp this!! lambda2 = ", lambda2);
             }
@@ -3178,6 +3186,7 @@ fn newton_c(
                 }
                 lam = lam.max(LAMBDA_MIN_C);
                 info_lambda = lam;
+                step_lambda = lam;
                 if trace.is_some() {
                     omclog::debug_double(omclog::NLS_V, "Need to damp this!! lambda = ", lam);
                 }
@@ -3232,6 +3241,21 @@ fn newton_c(
         } else {
             0
         };
+        if error_f_sqrd < 0.99 * error_f_best {
+            error_f_best = error_f_sqrd;
+            stalls = 0;
+            hovers = 0;
+        } else if error_f_sqrd < 10.0 * error_f_hover {
+            stalls += 1;
+            hovers += 1;
+        } else {
+            stalls += 1;
+            hovers = 0;
+        }
+        if hovers == 0 || error_f_sqrd < error_f_hover {
+            error_f_hover = error_f_sqrd;
+        }
+        creeps = if step_lambda < 1e-3 { creeps + 1 } else { 0 };
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             omclog::debug_string(omclog::NLS_V, "error measurements:");
@@ -3252,7 +3276,11 @@ fn newton_c(
             error_f_sqrd_scaled,
             lambda: info_lambda,
         });
-        if neg_steps > 20 || cycles > 20 {
+        // Away from any solution: no 1% improvement for long, or only heavily damped steps.
+        if neg_steps > 20
+            || cycles > 20
+            || ((stalls > 200 || creeps > 100) && error_f_sqrd >= ftol_sq * 1e6 && error_f_sqrd_scaled >= ftol_sq * 1e6)
+        {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
                 omclog::debug_int(omclog::NLS_V, "UPS! Something happened, NegativeSteps = ", neg_steps);
@@ -3313,10 +3341,20 @@ fn newton_c(
             return (false, false);
         }
         small_steps += (delta_x_sqrd < xtol_sq * 1e4 || delta_x_sqrd_scaled < xtol_sq * 1e4) as i32;
-        if delta_x_sqrd < xtol_sq || delta_x_sqrd_scaled < xtol_sq || small_steps > 20 {
-            let less_accurate = error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6;
+        if hovers == 0 {
+            small_steps_at_hover = small_steps;
+        }
+        // The bottom of a stationary cycle without small steps, which are left to their own exit.
+        let at_cycle_bottom = hovers > 20
+            && small_steps == small_steps_at_hover
+            && err_hist[1..].iter().all(|&e| error_f_sqrd <= e);
+        let less_accurate = error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6;
+        // A stationary residual within the less accuracy band is round-off, like small steps.
+        if delta_x_sqrd < xtol_sq || delta_x_sqrd_scaled < xtol_sq || small_steps > 20 || (less_accurate && at_cycle_bottom) {
             if !less_accurate {
                 stat_inc(STAT_NEWTON_STUCK);
+            } else if at_cycle_bottom {
+                x.copy_from_slice(&x1);
             }
             if let Some(t) = trace {
                 if less_accurate {
@@ -3331,7 +3369,7 @@ fn newton_c(
                 }
                 omclog::debug_string(omclog::NLS_V, BAR);
             }
-            return (less_accurate, false);
+            return (less_accurate, less_accurate && at_cycle_bottom);
         }
 
         x.copy_from_slice(&x1);
