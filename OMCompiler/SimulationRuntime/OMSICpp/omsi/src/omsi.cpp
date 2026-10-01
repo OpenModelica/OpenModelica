@@ -70,9 +70,8 @@ extern "C" void handle_segmentaion_faults(int signal_number)
 #include <omsi.h>
 
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-namespace fs = boost::filesystem;
+#include <filesystem>
+namespace fs = std::filesystem;
 
 
 

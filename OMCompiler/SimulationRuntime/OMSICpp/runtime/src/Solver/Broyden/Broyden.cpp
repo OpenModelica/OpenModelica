@@ -37,8 +37,6 @@
 #include <Core/Math/IBlas.h>        // use BLAS routines
 #include <Core/Math/Constants.h>        // definitializeion of constants like uround
 
-#include <Core/Utils/numeric/bindings/ublas.hpp>
-#include <Core/Utils/numeric/utils.h>
 #include <Core/System/INonLinearAlgLoop.h>               // Interface to AlgLoo
 #include <Core/Solver/INonLinearAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/INonLinSolverSettings.h>

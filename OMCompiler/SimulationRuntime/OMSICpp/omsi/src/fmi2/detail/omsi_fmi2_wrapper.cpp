@@ -50,11 +50,9 @@
 #include "omsi_factory.h"
 
 
-//3rdparty includes
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 static fmi2String const _LogCategoryFMUNames[] = {
     "logEvents",

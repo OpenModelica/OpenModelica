@@ -11,8 +11,6 @@ target_sources(OMCppOMCFactory PRIVATE ${OMC_SIMRT_CPP_SIMCOREFACTORY_OMCFACTORY
 
 target_link_libraries(OMCppOMCFactory PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppOMCFactory PUBLIC omc::simrt::cpp::core::utils::extension)
-target_link_libraries(OMCppOMCFactory PUBLIC Boost::program_options)
-target_link_libraries(OMCppOMCFactory PUBLIC Boost::filesystem)
 target_link_libraries(OMCppOMCFactory PUBLIC Threads::Threads)
 target_link_libraries(OMCppOMCFactory PUBLIC ${CMAKE_DL_LIBS})
 

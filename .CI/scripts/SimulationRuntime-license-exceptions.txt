@@ -155,28 +155,16 @@ OMCompiler/SimulationRuntime/cpp/FMU3/fmi3FunctionTypes.h
 OMCompiler/SimulationRuntime/cpp/FMU3/fmi3Functions.h
 OMCompiler/SimulationRuntime/cpp/FMU3/fmi3PlatformTypes.h
 
-# [3rd-party] Si-Lab / Toon Knapen — Boost numeric bindings (BLAS/LAPACK)
-OMCompiler/SimulationRuntime/cpp/Core/Utils/numeric/bindings/
-
 # [3rd-party] Various Boost contributors — Boost Software License
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/adaptable_factory.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/common.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/convenience.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/extension.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/factory_map.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/factory.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/filesystem.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/parameter_map.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/parameter.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/registry.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/shared_library.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/type_map.hpp
 
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/impl/
-
-# [3rd-party] Linda R. Petzold, Peter N. Brown, Alan C. Hindmarsh / LLNL — DDASKR (f2c-translated Fortran DAE solver)
-OMCompiler/SimulationRuntime/cpp/Solver/CppDASSL/ddaskr.cpp
-OMCompiler/SimulationRuntime/cpp/Solver/CppDASSL/dasslaux.h
 
 # =============================================================================
 # SimulationRuntime/OMSI/

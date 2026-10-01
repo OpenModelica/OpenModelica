@@ -91,7 +91,7 @@ protected:
   SimSettings readSimulationParameter(int argc, const char* argv[]);
 
   /**
-   * This helper-function is invoked by the boost program option library and will handle options in the c-runtime
+   * This helper-function is invoked by the command line parser and will handle options in the c-runtime
    * format, replacing them with correcponding cpp options.
    * @param The argument that should be handled.
    * @return The pair of category and value that should be used for the given argument.

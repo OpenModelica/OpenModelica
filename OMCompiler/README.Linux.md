@@ -80,7 +80,6 @@ Install the following dependencies with your package manager:
 - ccache (optional, but _highly recommended_) and flex (for `omc-diff`, used by the test
   suite)
 - Java Development Kit (for the parser generator)
-- boost (C++ simulation runtime and ParModelica)
 - Lapack/BLAS
 - libcurl (libcurl4-gnutls-dev), libuuid, gettext
 - libhdf5 (optional, MAT v7.3 result files, see `OM_ENABLE_HDF5`)

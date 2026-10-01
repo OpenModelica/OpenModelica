@@ -34,8 +34,6 @@
 
 #include <Core/System/FactoryExport.h>
 #include <Core/System/ExtendedSimVars.h>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
 
 /**
 * Constructor for ExtendedSimVars, stores all model variable in continuous block of memory

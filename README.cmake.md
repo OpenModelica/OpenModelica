@@ -113,7 +113,6 @@ OM_OMC_ENABLE_OPTIMIZATION=ON
 OM_OMC_ENABLE_MOO=ON
 OM_OMC_ENABLE_PRIMME=ON
 OM_OMC_ENABLE_COLPACK=ON
-OM_FETCH_BOOST=OFF                 # ON when cross-compiling
 OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
 OM_OMEDIT_ENABLE_TESTS=OFF
 OM_OMEDIT_ANIMATION_QUICK3D=OFF
@@ -160,17 +159,13 @@ default. It needs a pinned nightly toolchain; see
 #### 4.1.2. OpenModelica/OMCompiler Options
 
 `OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based
-simulation runtime. This requires multiple Boost library components (filesystem,
-program_options, ...)
+simulation runtime.
 
 `OM_OMC_ENABLE_C_OLD_RUNTIME` allows you to enable/disable the building of
 `libSimulationRuntimeC`, the C simulation runtime `--simCodeTarget=C.old` links.
 
 `OM_OMC_ENABLE_PARMODELICA` allows you to enable/disable the ParModelica (`--parmodauto`)
-runtime. It needs the Boost components graph and chrono.
-
-`OM_FETCH_BOOST` downloads and builds Boost as part of OpenModelica instead of using an
-installed one. It is `ON` by default only when cross-compiling.
+runtime.
 
 `OM_OMC_ENABLE_COMPILER` set to `OFF` builds only the simulation runtime, not `omc` itself.
 

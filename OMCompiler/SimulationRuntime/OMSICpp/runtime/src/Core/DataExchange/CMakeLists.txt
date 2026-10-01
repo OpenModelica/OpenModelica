@@ -12,10 +12,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-if(NOT BOOST_STATIC_LINKING)
-  target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName}  ${ModelicaName})
-
-endif(NOT BOOST_STATIC_LINKING)
+target_link_libraries (${DataExchangeName} ${ExtensionUtilitiesName}  ${ModelicaName} omc::3rd::FMIL::expat)
 
 add_precompiled_header(${DataExchangeName} runtime/include/Core/Modelica.h)
 
