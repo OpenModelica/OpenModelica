@@ -53,6 +53,7 @@ protected
   import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import ExpandExp = NFExpandExp;
   import NFFunction.Function;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
@@ -1321,9 +1322,10 @@ protected
       local
         Bucket bucket;
         ClockKind clk;
-        Expression condition;
+        Expression condition, expanded;
         Call call;
         list<Frame> new_frames;
+        Boolean success;
 
       // logical unarys: e.g. not a
       // FIXME this is wrong for `not initial()`
@@ -1349,6 +1351,17 @@ protected
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
+
+      // samples in an array constructor, e.g. {sample(t0 + ts[i], p) for i in 1:n}, are expanded to have one
+      // time event each, their start can depend on the iterator
+      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) guard(Expression.contains(exp, isSampleCall)) algorithm
+        (expanded, success) := ExpandExp.expand(exp);
+        if success then
+          expanded := collectEventsTraverse(expanded, bucket_ptr, iter, eqn, funcMap, createEqn);
+        else
+          expanded := Expression.mapShallow(exp, function collectEventsTraverse(bucket_ptr = bucket_ptr, iter = iter, eqn = eqn, funcMap = funcMap, createEqn = createEqn));
+        end if;
+      then expanded;
 
       // event clocks
       case Expression.CLKCONST(clk = clk as ClockKind.EVENT_CLOCK(condition = condition)) algorithm
@@ -1391,6 +1404,16 @@ protected
         createEqn   = createEqn));
     end match;
   end collectEventsTraverse;
+
+  function isSampleCall
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CALL() then Call.isNamed(exp.call, "sample");
+      else false;
+    end match;
+  end isSampleCall;
 
   function collectEventsCondition
     "collects an expression as a zero crossing.
