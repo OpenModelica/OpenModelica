@@ -1354,47 +1354,46 @@ pub extern "C" fn rt_array_cat(dim: u32, n: u32, handles: u32) -> u32 {
         rt_array_set_dim(result, a, d);
     }
 
-    let scratch = rt_alloc(ndims * 4); // per-axis source coordinate
+    // Row-major: each input is, per index over the axes before `axis`, one
+    // contiguous block, and the result lays those blocks side by side.
     let stride = elem_stride(kind);
     let heap = matches!(kind, EK_STR | EK_ARRAY | EK_RECORD);
+    let mut outer = 1u32;
+    for a in 0..axis {
+        outer *= rt_array_dim(first, a as i32 + 1);
+    }
     let dst_base = arr_data(result);
-    let mut off = 0u32; // running offset of this input along `axis`
+    // (source data, block bytes) per input.
+    let blocks = rt_alloc(n * 8);
     for c in 0..n {
         let src = unsafe { load_u32(hdata + c * 4) };
-        let src_total = rt_array_total(src);
-        let src_base = arr_data(src);
-        for e in 0..src_total {
-            // Decompose `e` into per-axis source coordinates (row-major).
-            let mut rem = e;
-            let mut a = ndims;
-            while a > 0 {
-                a -= 1;
-                let d = rt_array_dim(src, a as i32 + 1);
-                unsafe { store_u32(scratch + a * 4, rem % d) };
-                rem /= d;
-            }
-            // Shift the concatenation axis by this input's running offset.
-            let shifted = unsafe { load_u32(scratch + axis * 4) } + off;
-            unsafe { store_u32(scratch + axis * 4, shifted) };
-            // Recompose into the result linear index (row-major over result dims).
-            let mut r = 0u32;
-            for a in 0..ndims {
-                let rd = unsafe { load_u32(result + ARR_DIMS_OFF + a * 4) };
-                r = r * rd + unsafe { load_u32(scratch + a * 4) };
-            }
-            let sp = src_base + e * stride;
-            let dp = dst_base + r * stride;
+        unsafe {
+            store_u32(blocks + c * 8, arr_data(src));
+            store_u32(blocks + c * 8 + 4, if outer == 0 { 0 } else { rt_array_total(src) / outer * stride });
+        }
+    }
+    let mut dp = dst_base;
+    for o in 0..outer {
+        for c in 0..n {
+            let (sp, block) = unsafe { (load_u32(blocks + c * 8), load_u32(blocks + c * 8 + 4)) };
+            let sp = sp + o * block;
             unsafe {
-                core::ptr::copy_nonoverlapping(sp as *const u8, dp as *mut u8, stride as usize);
-                if heap {
-                    store_u32(dp, copy_kind(kind, load_u32(dp)));
+                if block == 8 {
+                    store_f64(dp, load_f64(sp));
+                } else {
+                    core::ptr::copy_nonoverlapping(sp as *const u8, dp as *mut u8, block as usize);
                 }
             }
+            dp += block;
         }
-        off += rt_array_dim(src, dim as i32);
     }
-
-    rt_free(scratch);
+    rt_free(blocks);
+    if heap {
+        for e in 0..total {
+            let p = dst_base + e * stride;
+            unsafe { store_u32(p, copy_kind(kind, load_u32(p))) };
+        }
+    }
     result
 }
 
