@@ -209,7 +209,7 @@ match class
   /*PDER. Should not occur. Derived Enumeration and Overload might?*/
 end dumpClassElement;
 
-template dumpClassHeader(ClassDef classDef, Absyn.Restriction restriction)
+template dumpClassHeader(Absyn.ClassDef classDef, Absyn.Restriction restriction)
 ::=
 match classDef
   case CLASS_EXTENDS(__) then AbsynDumpTpl.errorMsg("Extend  not supported")
@@ -235,7 +235,7 @@ match restriction
   else ""
 end dumpClassTypeTypeVars;
 
-template dumpClassFooter(ClassDef classDef, String cdefStr, String name, String cmt, String ann)
+template dumpClassFooter(Absyn.ClassDef classDef, String cdefStr, String name, String cmt, String ann)
 ::=
 match classDef
   case DERIVED(__) then AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassFooter: Derived not yet supported.")
@@ -880,7 +880,7 @@ template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context contex
 ::= match arraydim case SOME(ad) then dumpSubscriptsTypeSpec(ad, context)
 end dumpArrayDimOptTypeSpec;
 
-template dumpSubscriptsTypeSpec(list<Subscript> subscripts, Context context)
+template dumpSubscriptsTypeSpec(list<Absyn.Subscript> subscripts, Context context)
 "Not in use"
 ::=
   if subscripts then
@@ -892,7 +892,7 @@ template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim, Context context)
 ::= match arraydim case SOME(ad) then dumpSubscripts(ad, context)
 end dumpArrayDimOpt;
 
-template dumpSubscripts(list<Subscript> subscripts, Context context)
+template dumpSubscripts(list<Absyn.Subscript> subscripts, Context context)
 ::=
   if subscripts then
     let sub_str = (subscripts |> s => dumpSubscript(s, context) ;separator=", ")

@@ -70,7 +70,7 @@ template localCref(ComponentRef cr, Boolean useFlatArrayNotation)
   else crefToCStr(cr,useFlatArrayNotation)
 end localCref;
 
-template subscriptsToCStr(list<Subscript> subscripts, Boolean useFlatArrayNotation)
+template subscriptsToCStr(list<DAE.Subscript> subscripts, Boolean useFlatArrayNotation)
 ::=
   if subscripts then
 
@@ -80,7 +80,7 @@ template subscriptsToCStr(list<Subscript> subscripts, Boolean useFlatArrayNotati
         '(<%subscripts |> s => subscriptToCStr(s) ;separator=","%>)'
 end subscriptsToCStr;
 
-template subscriptToCStr(Subscript subscript)
+template subscriptToCStr(DAE.Subscript subscript)
 ::=
   match subscript
   case SLICE(exp=ICONST(integer=i)) then i
@@ -118,7 +118,7 @@ template crefToCStr1(ComponentRef cr, Boolean useFlatArrayNotation)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
 
-template subscriptsToCStrForArray(list<Subscript> subscripts)
+template subscriptsToCStrForArray(list<DAE.Subscript> subscripts)
 ::=
   if subscripts then
     '<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>'
@@ -145,7 +145,7 @@ template crefStrForSetVariables(ComponentRef cr, Boolean useFlatArrayNotation)
   else cref(cr,useFlatArrayNotation)
 end crefStrForSetVariables;
 
-template subscriptsStrForWriteOutput(list<Subscript> subscripts)
+template subscriptsStrForWriteOutput(list<DAE.Subscript> subscripts)
  "Generares subscript part of the name."
 ::=
   if subscripts then
@@ -162,14 +162,14 @@ template crefStr(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
 
-template subscriptsStr(list<Subscript> subscripts)
+template subscriptsStr(list<DAE.Subscript> subscripts)
  "Generares subscript part of the name."
 ::=
   if subscripts then
     '(<%subscripts |> s => subscriptStr(s) ;separator=","%>)'
 end subscriptsStr;
 
-template subscriptStr(Subscript subscript)
+template subscriptStr(DAE.Subscript subscript)
  "Generates a single subscript."
 ::=
   match subscript
@@ -419,7 +419,7 @@ case component as CREF(componentRef=cr, ty=ty) then
 end daeExpCref;
 
 
-template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
+template daeExpCrefIndexSpec(list<DAE.Subscript> subs, Context context,
   Text &preExp, Text &varDecls, SimCode simCode,
   Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
   Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -1092,7 +1092,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let defaultValue = (match ri.path
     case IDENT(name="array") then ""
     else (match ri.defaultValue
-          case SOME(v) then daeExp(valueExp(v), context, &preDefault, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)))
+          case SOME(v) then daeExp(ValuesUtil.valueExpNoOriginal(v), context, &preDefault, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)))
   let reductionBodyExpr = contextCref(makeUntypedCrefIdent(ri.foldName), context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let bodyExprType = expTypeArrayIf(typeof(r.expr))
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -1569,7 +1569,7 @@ let &preExp +=
 params
 end daeExpArray2;
 
-template daeSubscript(Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+template daeSubscript(DAE.Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match sub
@@ -1640,7 +1640,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
     error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpAsub;
 
-template daeSubscriptASubIndex(Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+template daeSubscriptASubIndex(DAE.Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                          Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match sub
@@ -1658,7 +1658,7 @@ match exp
 end daeExpASubIndex;
 
 
-template arrayScalarRhs(Type ty, list<Subscript> subs, String arrName, Context context,
+template arrayScalarRhs(Type ty, list<DAE.Subscript> subs, String arrName, Context context,
                Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to daeExpAsub."
 ::=
@@ -1706,7 +1706,7 @@ case CAST(__) then
 end daeExpCast;
 
 
-template structParams(String structName,String varName,list<Var>  exps)
+template structParams(String structName,String varName,list<DAE.Var>  exps)
 ::=
    let  params = (exps |> e => match e
     case TYPES_VAR(__) then
@@ -1925,7 +1925,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
         let &preExp +=
           <<
           <%tmp%> = <%argStr%>;
-          <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) should be >= 0"', context, &varDecls, dummyInfo)%>
+          <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) should be >= 0"', context, &varDecls, Absyn.dummyInfo)%>
           >>
        'sqrt(<%tmp%>)')
 
@@ -2444,7 +2444,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case EQUAL(__) then "daeExpBinary:ERR EQUAL not supported"
   case NEQUAL(__) then "daeExpBinary:ERR NEQUAL not supported"
   case USERDEFINED(__) then "daeExpBinary:ERR POW_ARR not supported"
-  case _   then 'daeExpBinary:ERR <%ExpressionDumpTpl.dumpExp(exp1,"\"")%> <%binopSymbol(it)%> <%ExpressionDumpTpl.dumpExp(exp2,"\"")%>'
+  case _   then 'daeExpBinary:ERR <%ExpressionDumpTpl.dumpExp(exp1,"\"")%> <%ExpressionDump.binopSymbol(it)%> <%ExpressionDumpTpl.dumpExp(exp2,"\"")%>'
 end daeExpBinary;
 
 

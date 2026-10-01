@@ -1857,8 +1857,16 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
             borrow_excluded.insert(q.clone());
         }
     }
+    let susan_pkgs = susan_packages(&hier.top_level);
+    let mut forced: crate::borrow_params::BorrowMasks = BTreeMap::new();
+    for (q, node) in &all_fns {
+        if q.split('.').next().is_some_and(|top| susan_pkgs.contains(top)) {
+            borrow_excluded.insert(q.clone());
+            forced.insert(q.clone(), susan_mask(node));
+        }
+    }
     let types = crate::borrow_params::Types { recursive: &hier.recursive_types, copy: &copy_type_qnames };
-    let masks = crate::borrow_params::analyze(&hier.top_level, &types, &borrow_excluded);
+    let masks = crate::borrow_params::analyze(&hier.top_level, &types, &borrow_excluded, &forced);
     let n_params: usize = masks.values().map(|m| m.iter().filter(|b| **b).count()).sum();
     println!("Borrowed parameters: {n_params} in {} functions", masks.len());
     crate::borrow_params::install(masks);
@@ -1881,6 +1889,9 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
             None
         };
         let file_path = format!("{dir}/{name}.rs");
+        if susan_pkgs.contains(&**name) {
+            return Ok(());
+        }
         if trace_codegen {
             eprintln!("[mmtorust] codegen start {file_path}");
         }
@@ -23517,6 +23528,28 @@ fn ever_assigned_for_fn(node: &NameNode<'_>, stmts: &[typedexp::TypedStmt]) -> s
     }
     collect_assigned_vars_in_stmts(stmts, &mut ever_assigned);
     ever_assigned
+}
+
+/// The packages named in `MMTORUST_SUSAN_RUST` (comma separated) are written
+/// by Susan's Rust backend; mmtorust only compiles their callers, against
+/// Susan's calling convention.
+pub(crate) fn susan_packages(top_level: &BTreeMap<String, NameNode<'_>>) -> BTreeSet<String> {
+    let Ok(list) = std::env::var("MMTORUST_SUSAN_RUST") else { return BTreeSet::new() };
+    list.split(',').map(str::trim).filter(|p| top_level.contains_key(*p)).map(String::from).collect()
+}
+
+/// Susan's convention: `Tpl.Text` by value, Integer/Real/Boolean by copy, the
+/// rest borrowed.
+pub(crate) fn susan_mask(node: &NameNode<'_>) -> Vec<bool> {
+    let Ty::Function { inputs, .. } = &node.ty else { return vec![] };
+    inputs
+        .iter()
+        .map(|i| match &i.ty {
+            Ty::I32 | Ty::F64 | Ty::Bool => false,
+            Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if n == "Tpl.Text" => false,
+            _ => true,
+        })
+        .collect()
 }
 
 pub(crate) fn collect_all_function_nodes<'a>(

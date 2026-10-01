@@ -267,7 +267,7 @@ pub(crate) fn dumped_exp(e: &DAE::Exp) -> Result<String> {
             return Ok(s);
         }
     }
-    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e, arcstr::literal!("\""))?)?.to_string())
+    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), &e, &arcstr::literal!("\""))?)?.to_string())
 }
 
 /// `ExpressionDumpTpl.dumpExp` for literals, crefs, scalar arithmetic and calls

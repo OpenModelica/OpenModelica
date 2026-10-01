@@ -1106,10 +1106,14 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
 # later build compiles the templates with the `susan` of the first one.
 # ---------------------------------------------------------------------------
 file(GLOB_RECURSE SUSAN_TOOL_SOURCES CONFIGURE_DEPENDS ${RUST_OMC_DIR}/mmtorust/src/*.rs)
+file(GLOB SUSAN_INDEX_SOURCES CONFIGURE_DEPENDS ${RUST_OMC_DIR}/openmodelica_susan_index/src/*.rs)
 list(APPEND SUSAN_TOOL_SOURCES
      ${RUST_OMC_DIR}/mmtorust/Cargo.toml
      ${RUST_OMC_DIR}/openmodelica_susan/Cargo.toml
-     ${RUST_OMC_DIR}/openmodelica_susan/src/main.rs)
+     ${RUST_OMC_DIR}/openmodelica_susan/src/main.rs
+     ${RUST_OMC_DIR}/openmodelica_susan/src/rust_backend.rs
+     ${RUST_OMC_DIR}/openmodelica_susan_index/Cargo.toml
+     ${SUSAN_INDEX_SOURCES})
 # The subset's *.mo: the rest of openmodelica_susan/src is transpiled from them.
 file(STRINGS ${RUST_SUSAN_SOURCES} SUSAN_SUBSET_MO REGEX "\\.mo$")
 set(SUSAN_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_susan.stamp)
@@ -1124,7 +1128,7 @@ add_custom_command(
   # only picks that default list); pass the build-tree list so Autoconf.mo
   # resolves to its build-tree copy rather than the in-source path.
   COMMAND ${MMTORUST_BIN} --sources ${RUST_SUSAN_SOURCES}
-  COMMAND ${CARGO_BUILD} --release -p openmodelica_susan --bin susan
+  COMMAND ${CARGO_BUILD} --release -p openmodelica_susan -p openmodelica_susan_index --bin susan --bin susan-index
   COMMAND ${CMAKE_COMMAND} -E touch ${SUSAN_STAMP}
   DEPENDS ${SUSAN_TOOL_SOURCES} ${SUSAN_SUBSET_MO} ${RUST_SUSAN_SOURCES}
   COMMENT "Rust: building mmtorust + Susan template compiler (release)"
@@ -1238,6 +1242,25 @@ function(omc_rust_setup_codegen)
       COMMENT "Rust: reusing prebuilt generated sources (RUST_OMC_PREBUILT_GENERATED_SRC)"
       VERBATIM)
   else()
+  # Susan writes the templates' *.rs against what susan-index extracts from the
+  # Rust mmtorust just wrote; mmtorust only compiles their callers (it still
+  # reads the templates' *.mo for their signatures).
+  file(GLOB SUSAN_INTERFACES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/*TV.mo)
+  set(SUSAN_IFACE_DIR ${CMAKE_CURRENT_BINARY_DIR}/susan-interfaces)
+  set(SUSAN_RUST_PACKAGES)
+  set(SUSAN_RUST_COMMANDS)
+  foreach(_mo ${TPL_OUTPUT_MO_FILES})
+    get_filename_component(_dir ${_mo} DIRECTORY)
+    get_filename_component(_sub ${_dir} NAME)
+    if(_sub STREQUAL "Template")
+      get_filename_component(_pkg ${_mo} NAME_WE)
+      list(APPEND SUSAN_RUST_PACKAGES ${_pkg})
+      list(APPEND SUSAN_RUST_COMMANDS COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_SOURCE_DIR}/Template
+           ${SUSAN_BIN} --tplOutputDir=${RUST_OMC_DIR} --tplInterfaceDir=${SUSAN_IFACE_DIR}
+           --tplRustIndex=${SUSAN_IFACE_DIR}/susan-index.json ${_pkg}.tpl)
+    endif()
+  endforeach()
+  string(REPLACE ";" "," SUSAN_RUST_LIST "${SUSAN_RUST_PACKAGES}")
   add_custom_command(
     OUTPUT ${CODEGEN_STAMP}
     WORKING_DIRECTORY ${RUST_OMC_DIR}
@@ -1251,9 +1274,13 @@ function(omc_rust_setup_codegen)
     # non-zero when it removes something, so `; true` keeps the build going.
     COMMAND bash -c "\"$0\" \"$@\" ; true" ${CMAKE_CURRENT_SOURCE_DIR}/boot/find-unused-import.sh ${TPL_OUTPUT_MO_FILES}
     COMMAND ${CMAKE_COMMAND} -E env OMC_SCRIPTING_API_QT_OUT=${OMC_SCRIPTING_API_QT_DIR}
+            MMTORUST_SUSAN_RUST=${SUSAN_RUST_LIST}
             ${MMTORUST_BIN} --sources ${RUST_SOURCES_FILE}
+    COMMAND ${RUST_TARGET_DIR}/release/susan-index --rust-src ${RUST_OMC_DIR} --out-dir ${SUSAN_IFACE_DIR}
+            --report ${SUSAN_IFACE_DIR}/report.txt ${SUSAN_INTERFACES}
+    ${SUSAN_RUST_COMMANDS}
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
-    DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
+    DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE} ${SUSAN_INTERFACES}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
             ${RUST_MO_SOURCES} ${RUST_MO_OVERRIDES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"

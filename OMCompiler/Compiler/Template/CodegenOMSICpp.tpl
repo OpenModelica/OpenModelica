@@ -98,7 +98,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
 
-  let()= textFile(simulationOMSUCPPMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%dotPath(modelInfo.name)%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
+  let()= textFile(simulationOMSUCPPMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%CodegenUtil.dotPath(modelInfo.name)%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
 
  ""
 end translateModel;
@@ -118,7 +118,7 @@ template simulationOMSUCPPMainRunScript(SimCode simCode ,Text& extraFuncs,Text& 
     let moLib     =  makefileParams.compileDir
     let home      = makefileParams.omhome
     let outputformat = settings.outputFormat
-    let modelName =  dotPath(modelInfo.name)
+    let modelName =  CodegenUtil.dotPath(modelInfo.name)
     let fileNamePrefixx = fileNamePrefix
     let platformstr = match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>'
     let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -a <%moLib%> -o <%fileNamePrefixx%>.fmu'

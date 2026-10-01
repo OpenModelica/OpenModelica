@@ -190,9 +190,9 @@ case SIMVAR(type_ = T_ARRAY()) then
     ScalarVariable(var, simCode, stateVars, FMUVersion)
     ;separator="\n"%>'
 case SIMVAR(__) then
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else if isFMIVersion20(FMUVersion) then
     if isSome(exportVar) then
@@ -244,7 +244,7 @@ match c
   else "internal" // needed to support for FMI 1.0 since causality= PARAMETER, CALCULATED__PARAMETER and LOCAL are not handled
 end getCausality;
 
-template getVariability(Option<Variability> variability_)
+template getVariability(Option<SimCodeVar.Variability> variability_)
  "Returns the variability Attribute of ScalarVariable."
 ::=
 match variability_
@@ -255,7 +255,7 @@ match variability_
   else "continuous"
 end getVariability;
 
-template getVariabilityFMI1(Option<Variability> variability_, DAE.Type type_)
+template getVariabilityFMI1(Option<SimCodeVar.Variability> variability_, DAE.Type type_)
  "getVariability of an FMI 1.0 ScalarVariable: continuous is for Real only, as
   in FMI 2.0 (see getVariabilityFMI2)."
 ::=
@@ -291,7 +291,7 @@ case SIMVAR(__) then
     case T_REAL(__) then '<Real<%StartString(simvar)/*%><%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
     case T_BOOL(__) then '<Boolean<%StartString(simvar)%>/>'
     case T_STRING(__) then '<String<%StartString(simvar)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString(simvar)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%StartString(simvar)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
@@ -329,7 +329,7 @@ case MODELINFO(__) then
   (functions |> fn => externalFunction(fn) ; separator="\n")
 end externalFunctions;
 
-template externalFunction(Function fn)
+template externalFunction(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
@@ -548,7 +548,7 @@ match simVar
   >>
 end ScalarVariableAttribute2;
 
-template getVariability2(Option<Variability> variability)
+template getVariability2(Option<SimCodeVar.Variability> variability)
  "Returns the variability Attribute of ScalarVariable."
 ::=
 match variability
@@ -560,7 +560,7 @@ match variability
   else ""
 end getVariability2;
 
-template getVariabilityFMI2(Option<Variability> variability, DAE.Type type_)
+template getVariabilityFMI2(Option<SimCodeVar.Variability> variability, DAE.Type type_)
  "Returns the variability Attribute of an FMI 2.0 ScalarVariable.
 
   FMI 2.0 allows variability='continuous' only for Real (FMI 2.0 specification,
@@ -618,7 +618,7 @@ case SIMVAR(__) then
     case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType2;
 
@@ -779,7 +779,7 @@ end relativeQuantity;
 template statesnumwithDummy(list<SimVar> vars)
 " return number of states without dummy vars"
 ::=
- (vars |> var =>  match var case SIMVAR(__) then if stringEq(crefStr(name),"$dummy") then '0' else '1' ;separator="\n")
+ (vars |> var =>  match var case SIMVAR(__) then if stringEq(CodegenUtil.crefStr(name),"$dummy") then '0' else '1' ;separator="\n")
 end statesnumwithDummy;
 
 template xsdateTime(DateTime dt)
@@ -925,7 +925,7 @@ match type_
   case T_ENUMERATION(__) then
   if isFMIVersion20(FMUVersion) then
   <<
-  <SimpleType name="<%AbsynUtil.pathString(path, ".", false)%>">
+  <SimpleType name="<%AbsynUtil.pathString(path, ".", false, false)%>">
     <Enumeration>
       <%names |> name hasindex i0 fromindex 1 => '<Item name="<%name%>" value="<%i0%>"/>' ;separator="\n"%>
     </Enumeration>
@@ -933,7 +933,7 @@ match type_
   >>
   else
   <<
-  <Type name="<%AbsynUtil.pathString(path, ".", false)%>">
+  <Type name="<%AbsynUtil.pathString(path, ".", false, false)%>">
     <EnumerationType>
       <%names |> name => '<Item name="<%name%>"/>' ;separator="\n"%>
     </EnumerationType>

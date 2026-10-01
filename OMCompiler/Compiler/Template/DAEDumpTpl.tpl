@@ -161,7 +161,7 @@ match functions
     >>
 end dumpFunctionDefinition;
 
-template dumpExternalDecl(ExternalDecl externalDecl)
+template dumpExternalDecl(DAE.ExternalDecl externalDecl)
 ::=
 match externalDecl
   case EXTERNALDECL(__) then
@@ -195,7 +195,7 @@ match type_
    case T_FUNCTION(__) then '<%dumpRecordInputVarStr(funcResultType)%>'
 end dumpRecordInputVarStr;
 
-template dumpRecordVars(list<Var> varLst)
+template dumpRecordVars(list<DAE.Var> varLst)
 ::=
 (varLst |> v => dumpRecordVar(v) ;separator="\n")
 end dumpRecordVars;
@@ -328,7 +328,7 @@ match parallelism
   case PARLOCAL(__) then ' parlocal'
 end dumpVarParallelism;
 
-template dumpVarKind(VarKind kind)
+template dumpVarKind(DAE.VarKind kind)
 ::=
 match kind
   case CONST(__) then ' constant'
@@ -456,7 +456,7 @@ match p
   case PARLOCAL() then "parlocal "
 end dumpParallelism;
 
-template dumpVarAttributes(list<Var> literalVarLst)
+template dumpVarAttributes(list<DAE.Var> literalVarLst)
 ::= if literalVarLst then '(<%(literalVarLst |> var => dumpVarAttribute(var) ;separator=", ")%>)'
 end dumpVarAttributes;
 
