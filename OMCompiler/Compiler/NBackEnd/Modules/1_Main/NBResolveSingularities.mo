@@ -222,8 +222,9 @@ public
         ("1. StateSelect.NEVER",    function BVariable.isStateSelect(stateSelect = StateSelect.NEVER)),
         ("2. StateSelect.AVOID",    function BVariable.isStateSelect(stateSelect = StateSelect.AVOID)),
         ("3. Artificial Variables", BVariable.isArtificial),
-        ("4. StateSelect.DEFAULT",  function BVariable.isStateSelect(stateSelect = StateSelect.DEFAULT)),
-        ("5. StateSelect.PREFER",   function BVariable.isStateSelect(stateSelect = StateSelect.PREFER))
+        ("4. StateSelect.DEFAULT without state order", function isDefaultWithoutStateOrder(state_order = VarData.getStateOrder(varData))),
+        ("5. StateSelect.DEFAULT",  function BVariable.isStateSelect(stateSelect = StateSelect.DEFAULT)),
+        ("6. StateSelect.PREFER",   function BVariable.isStateSelect(stateSelect = StateSelect.PREFER))
       };
 
       for stage in stages loop
@@ -739,6 +740,19 @@ protected
       getStateCandidateVar(var, acc);
     end if;
   end getStateCandidate;
+
+  function isDefaultWithoutStateOrder
+    "StateSelect.DEFAULT candidates whose derivative is not bound to a variable by an
+    equation der(x) = y. States with such an explicit derivative are kept as states if
+    possible: choosing other dummy states can make the constraint equations numerically
+    singular for them, e.g. for x1 = x2 + c*x3 and c*x3 = x2 - x4 the dummy states x2, x3
+    leave the dependent states x1 = x4."
+    extends BVariable.checkVar;
+    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+  algorithm
+    b := BVariable.isStateSelect(var_ptr, StateSelect.DEFAULT)
+      and not UnorderedMap.contains(BVariable.getVarName(var_ptr), state_order);
+  end isDefaultWithoutStateOrder;
 
   function candidatePriority
     "returns the priority of a variable for state selection.
