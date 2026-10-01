@@ -5,4 +5,4 @@ breathe
 sphinx
 sphinxcontrib-bibtex
 sphinxcontrib-programoutput
-ompython
+ompython==3.6.0
