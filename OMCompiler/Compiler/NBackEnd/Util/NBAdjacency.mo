@@ -1288,7 +1288,8 @@ public
       input UnorderedMap<ComponentRef, Expression> bindings;
       output Boolean b = false;
     algorithm
-      for sub in ComponentRef.subscriptsAllFlat(cref) loop
+      // whole dimension subscripts (:) have no expression to check
+      for sub in list(s for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)) loop
         for c in UnorderedSet.toList(Expression.extractCrefs(Subscript.toExp(sub))) loop
           if ComponentRef.isIterator(c) and not UnorderedMap.contains(c, bindings) then
             b := true;
