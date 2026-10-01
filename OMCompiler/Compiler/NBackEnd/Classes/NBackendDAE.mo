@@ -268,10 +268,102 @@ public
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
   algorithm
-    variableData := lowerVariableData(flatModel.variables);
+    variableData := lowerVariableData(continuousImplicitDiscretes(flatModel.variables, listAppend(flatModel.equations, flatModel.initialEquations),
+      listAppend(flatModel.algorithms, flatModel.initialAlgorithms)));
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
+
+  function continuousImplicitDiscretes
+    "Real variables assigned in a when-equation are implicitly discrete. The frontend marks them before
+    if-equations with parameter conditions are resolved, so a variable only assigned in a when-equation
+    of an inactive branch would lose its derivative. Those are continuous."
+    input output list<Variable> variables;
+    input list<FEquation> equations;
+    input list<Algorithm> algorithms;
+  protected
+    UnorderedSet<ComponentRef> assigned = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for eq in equations loop
+      collectWhenAssigned(eq, false, assigned);
+    end for;
+    for alg in algorithms loop
+      collectWhenAssignedStmts(alg.statements, false, assigned);
+    end for;
+    variables := list(continuousIfUnassigned(var, assigned) for var in variables);
+  end continuousImplicitDiscretes;
+
+  function continuousIfUnassigned
+    input output Variable var;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    if Variable.variability(var) == NFPrefixes.Variability.IMPLICITLY_DISCRETE and Type.isReal(Type.arrayElementType(var.ty))
+      and not UnorderedSet.contains(ComponentRef.stripSubscriptsAll(var.name), assigned) then
+      var := Variable.setVariability(var, NFPrefixes.Variability.CONTINUOUS);
+    end if;
+  end continuousIfUnassigned;
+
+  function collectWhenAssigned
+    input FEquation eq;
+    input Boolean inWhen;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    () := match eq
+      case FEquation.EQUALITY() guard(inWhen) algorithm
+        for cref in UnorderedSet.toList(Expression.extractCrefs(eq.lhs)) loop
+          UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), assigned);
+        end for;
+      then ();
+      case FEquation.FOR() algorithm
+        for e in eq.body loop collectWhenAssigned(e, inWhen, assigned); end for;
+      then ();
+      case FEquation.IF() algorithm
+        for branch in eq.branches loop collectWhenAssignedBranch(branch, inWhen, assigned); end for;
+      then ();
+      case FEquation.WHEN() algorithm
+        for branch in eq.branches loop collectWhenAssignedBranch(branch, true, assigned); end for;
+      then ();
+      else ();
+    end match;
+  end collectWhenAssigned;
+
+  function collectWhenAssignedBranch
+    input FEquation.Branch branch;
+    input Boolean inWhen;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    () := match branch
+      case FEquation.Branch.BRANCH() algorithm
+        for e in branch.body loop collectWhenAssigned(e, inWhen, assigned); end for;
+      then ();
+      else ();
+    end match;
+  end collectWhenAssignedBranch;
+
+  function collectWhenAssignedStmts
+    input list<Statement> stmts;
+    input Boolean inWhen;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    for stmt in stmts loop
+      () := match stmt
+        case Statement.ASSIGNMENT() guard(inWhen) algorithm
+          for cref in UnorderedSet.toList(Expression.extractCrefs(stmt.lhs)) loop
+            UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), assigned);
+          end for;
+        then ();
+        case Statement.FOR() algorithm collectWhenAssignedStmts(stmt.body, inWhen, assigned); then ();
+        case Statement.WHILE() algorithm collectWhenAssignedStmts(stmt.body, inWhen, assigned); then ();
+        case Statement.IF() algorithm
+          for branch in stmt.branches loop collectWhenAssignedStmts(Util.tuple22(branch), inWhen, assigned); end for;
+        then ();
+        case Statement.WHEN() algorithm
+          for branch in stmt.branches loop collectWhenAssignedStmts(Util.tuple22(branch), true, assigned); end for;
+        then ();
+        else ();
+      end match;
+    end for;
+  end collectWhenAssignedStmts;
 
   function main
     input output BackendDAE bdae;
