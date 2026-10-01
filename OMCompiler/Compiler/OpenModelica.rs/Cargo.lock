@@ -8131,6 +8131,7 @@ version = "0.1.0"
 dependencies = [
  "arcstr",
  "daskr",
+ "foldhash 0.2.0",
  "libc",
  "libffi",
  "metamodelica",

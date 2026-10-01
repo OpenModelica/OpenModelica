@@ -1748,7 +1748,16 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         wts(set.call(&mut store, (ptr, blob.len() as u32, sim_data)))?;
     }
 
-    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };
+    let engine = WasmtimeEngine {
+        store,
+        memory,
+        instance,
+        rt_inst,
+        funcs: Default::default(),
+        funcs2: Default::default(),
+        absent: Default::default(),
+        addrs: [None; 3],
+    };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -1810,11 +1819,22 @@ struct WasmtimeEngine {
     memory: wasmtime::Memory,
     instance: wasmtime::Instance,
     rt_inst: wasmtime::Instance,
-    funcs: HashMap<String, wasmtime::TypedFunc<u32, ()>>,
+    funcs: foldhash::HashMap<String, wasmtime::TypedFunc<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
     /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
     /// synchronous dispatchers), so one cached entry cannot answer for another.
-    funcs2: HashMap<String, wasmtime::TypedFunc<(u32, u32), ()>>,
+    funcs2: foldhash::HashMap<String, wasmtime::TypedFunc<(u32, u32), ()>>,
+    /// Optional entry points the model does not export.
+    absent: foldhash::HashSet<String>,
+    /// The runtime's fixed addresses, by [`RtAddr`].
+    addrs: [Option<u32>; 3],
+}
+
+#[derive(Clone, Copy)]
+enum RtAddr {
+    Context,
+    ErrorStage,
+    NoThrowDivZero,
 }
 
 impl WasmtimeEngine {
@@ -1825,6 +1845,25 @@ impl WasmtimeEngine {
         let f = wt(self.instance.get_typed_func::<u32, ()>(&mut self.store, name))?;
         self.funcs.insert(name.to_string(), f.clone());
         Ok(f)
+    }
+
+    fn rt_addr(&mut self, which: RtAddr) -> u32 {
+        if let Some(a) = self.addrs[which as usize] {
+            return a;
+        }
+        let name = match which {
+            RtAddr::Context => "rt_context_addr",
+            RtAddr::ErrorStage => "rt_error_stage_addr",
+            RtAddr::NoThrowDivZero => "rt_no_throw_div_zero_addr",
+        };
+        let a = self
+            .rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, name)
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0);
+        self.addrs[which as usize] = Some(a);
+        a
     }
 }
 
@@ -1841,24 +1880,30 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         self.memory.write(&mut self.store, addr as usize, buf).map_err(|e| "CodegenWasmJit: mem write")
     }
     fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()> {
+        if let Some(f) = self.funcs.get(name) {
+            return wt(f.call(&mut self.store, arg));
+        }
         let f = self.func(name)?;
         wt(f.call(&mut self.store, arg))
     }
     fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> Result<()> {
-        if self.instance.get_func(&mut self.store, name).is_none() {
-            return Ok(());
+        if !self.funcs.contains_key(name) {
+            if self.absent.contains(name) {
+                return Ok(());
+            }
+            if self.instance.get_func(&mut self.store, name).is_none() {
+                self.absent.insert(name.to_string());
+                return Ok(());
+            }
         }
         self.call1_raw(name, arg)
     }
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        let f = match self.funcs2.get(name) {
-            Some(f) => f.clone(),
-            None => {
-                let f = wt(self.instance.get_typed_func::<(u32, u32), ()>(&mut self.store, name))?;
-                self.funcs2.insert(name.to_string(), f.clone());
-                f
-            }
-        };
+        if let Some(f) = self.funcs2.get(name) {
+            return wt(f.call(&mut self.store, (a, b)));
+        }
+        let f = wt(self.instance.get_typed_func::<(u32, u32), ()>(&mut self.store, name))?;
+        self.funcs2.insert(name.to_string(), f.clone());
         wt(f.call(&mut self.store, (a, b)))
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32> {
@@ -1923,25 +1968,13 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         }
     }
     fn context_addr(&mut self) -> u32 {
-        self.rt_inst
-            .get_typed_func::<(), u32>(&mut self.store, "rt_context_addr")
-            .ok()
-            .and_then(|f| f.call(&mut self.store, ()).ok())
-            .unwrap_or(0)
+        self.rt_addr(RtAddr::Context)
     }
     fn error_stage_addr(&mut self) -> u32 {
-        self.rt_inst
-            .get_typed_func::<(), u32>(&mut self.store, "rt_error_stage_addr")
-            .ok()
-            .and_then(|f| f.call(&mut self.store, ()).ok())
-            .unwrap_or(0)
+        self.rt_addr(RtAddr::ErrorStage)
     }
     fn no_throw_div_zero_addr(&mut self) -> u32 {
-        self.rt_inst
-            .get_typed_func::<(), u32>(&mut self.store, "rt_no_throw_div_zero_addr")
-            .ok()
-            .and_then(|f| f.call(&mut self.store, ()).ok())
-            .unwrap_or(0)
+        self.rt_addr(RtAddr::NoThrowDivZero)
     }
     fn clean_nls_history(&mut self, time: f64) {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
