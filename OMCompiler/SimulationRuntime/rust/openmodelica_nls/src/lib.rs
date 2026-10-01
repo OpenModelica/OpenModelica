@@ -857,6 +857,23 @@ pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
     Some((0..n).map(|k| lu[k * n + k]).product())
 }
 
+/// [`lu_solve_det`] factoring `a` in place.
+fn lu_solve_det_in_place(a: &mut [f64], b: &mut [f64], n: usize) -> Option<f64> {
+    let (mut stack, mut heap) = ([0i32; 64], alloc::vec::Vec::new());
+    let ipiv = if n <= stack.len() {
+        &mut stack[..n]
+    } else {
+        heap.resize(n, 0);
+        &mut heap[..]
+    };
+    let lu = &mut a[..n * n];
+    if dense_lu::getrf(n, lu, ipiv) != 0 {
+        return None;
+    }
+    dense_lu::getrs(n, lu, ipiv, b);
+    Some((0..n).map(|k| lu[k * n + k]).product())
+}
+
 /// [`lu_solve`] reporting `dgesv`'s `info`: `None` on success, else the 0-based
 /// index of the first zero pivot, straight from `dgetrf`. `A` is copied because
 /// `dgetrf` factors in place and the caller keeps it for the total-pivot fallback.
@@ -2984,7 +3001,7 @@ fn newton_c(
     // C's `xStart`: the retries below vary off this, not off the last varied point.
     // Taken at the first retry; `x` is unchanged until then.
     let mut x_start: Option<alloc::vec::Vec<f64>> = None;
-    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 640]>::uninit(), alloc::vec::Vec::new());
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 2048]>::uninit(), alloc::vec::Vec::new());
     let mut rest = zeroed(&mut stack, &mut heap, 5 * n + n * n + n * (n + 1));
     let xscaling = carve(&mut rest, n);
     let mut fvec = carve(&mut rest, n);
@@ -3083,7 +3100,7 @@ fn newton_c(
             }
             if form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
                 row_scaling(n, &jac, res_scaling);
-                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step, casual);
+                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step, &mut aug, casual);
                 if regular {
                     if trace.is_some() {
                         omclog::debug_string(omclog::NLS_V, "regular initial point!!!");
@@ -3454,7 +3471,7 @@ fn newton_c(
         aug[n * n..].copy_from_slice(&fvec);
         scale_matrix_rows_aug(n, &mut aug);
         step.copy_from_slice(&aug[n * n..]);
-        let det = match lu_solve_det(&aug[..n * n], &mut step, n) {
+        let det = match lu_solve_det_in_place(&mut aug, &mut step, n) {
             Some(d) => d,
             None => {
                 stat_inc(STAT_NEWTON_SINGULAR);
@@ -3490,14 +3507,24 @@ fn newton_c(
 /// `solveSystemWithTotalPivotSearch` rather than the LAPACK solve its iterations
 /// use: a rank-deficient-but-consistent start point is regular there. Step comes
 /// back unscaled.
-fn total_pivot_step(n: usize, jac: &[f64], fvec: &[f64], xscaling: &[f64], step: &mut [f64], casual: bool) -> bool {
-    let mut aug = vec![0.0f64; n * (n + 1)];
+/// `aug` is scratch of `n * (n + 1)`.
+#[allow(clippy::too_many_arguments)]
+fn total_pivot_step(
+    n: usize,
+    jac: &[f64],
+    fvec: &[f64],
+    xscaling: &[f64],
+    step: &mut [f64],
+    aug: &mut [f64],
+    casual: bool,
+) -> bool {
     aug[..n * n].copy_from_slice(jac);
-    aug[n * n..].copy_from_slice(fvec);
-    scale_matrix_rows_aug(n, &mut aug);
-    let mut sol = vec![0.0f64; n + 1];
+    aug[n * n..n * (n + 1)].copy_from_slice(fvec);
+    scale_matrix_rows_aug(n, aug);
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 65]>::uninit(), alloc::vec::Vec::new());
+    let sol = zeroed(&mut stack, &mut heap, n + 1);
     let mut pos = n as i32;
-    if total_pivot_augmented(n, &mut sol, &mut aug, &mut pos, casual) != 0 {
+    if total_pivot_augmented(n, sol, aug, &mut pos, casual) != 0 {
         return false;
     }
     for i in 0..n {
@@ -4048,7 +4075,7 @@ pub fn solve_nls(
     // Warm start: the current slot values (the fallback guess, and what is
     // restored on failure).
     // The solve's vectors, carved out of one allocation.
-    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 192]>::uninit(), alloc::vec::Vec::new());
+    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 512]>::uninit(), alloc::vec::Vec::new());
     let mut rest = zeroed(&mut work_stack, &mut work_heap, 10 * n + m + mem.res_scaling.len());
     let mut warm = carve(&mut rest, n);
     let mut xbuf = carve(&mut rest, m);
@@ -4120,7 +4147,7 @@ pub fn solve_nls(
     // chose to solve sparsely, a dense column-major `n×m` for the rest.
     let jac_csc = has_jac && spec.jac_csc;
     let jac_len = if jac_csc { nnz as usize } else { n * m };
-    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 256]>::uninit(), alloc::vec::Vec::new());
+    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 1024]>::uninit(), alloc::vec::Vec::new());
     let mut jacbuf = zeroed(&mut jac_stack, &mut jac_heap, if has_jac || has_hom_jac { jac_len } else { 0 });
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.
