@@ -196,29 +196,16 @@ pub(super) fn build_lin_info(
     plan: &LinzPlan,
     vars: &SimCodeVar::SimVars,
     var_map: &SimVarMap,
-    all_reals: &[&SimCodeVar::SimVar],
 ) -> Result<Option<openmodelica_sim_meta::LinInfo>> {
     use openmodelica_sim_meta::LinVar;
     // A compile-time-constant input/output has no slot to perturb or read, so the
     // model cannot be linearized (nor can C's); `-l` reports it rather than
     // translation failing.
-    //
-    // A variable that also has a slot in `all_reals` (the REAL_OFF-indexed live
-    // simulation array) must be read/written there, not at its raw `var_map`
-    // slot: REAL_OFF is what externalInputUpdate, the solver and functionODE
-    // actually read and write, while the raw slot can be a separate location
-    // nothing keeps in sync. Mirrors the InputVar construction in model.rs,
-    // which already does this for the live extinput hook.
     let slots = |list: &List<metamodelica::Ref<SimCodeVar::SimVar>>| -> Result<Option<Vec<LinVar>>> {
         let mut out = Vec::new();
         for sv in lst(list) {
-            let key = sim_cref_key(&sv.name)?;
-            let Some(slot) = var_map.vars.get(&key) else { return Ok(None) };
-            let off = match all_reals.iter().position(|r| sim_cref_key(&r.name).ok().as_deref() == Some(key.as_str())) {
-                Some(i) => openmodelica_sim_meta::REAL_OFF + i as u32 * 8,
-                None => slot.off,
-            };
-            out.push(LinVar { off, negate: slot.negate });
+            let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else { return Ok(None) };
+            out.push(LinVar { off: slot.off, negate: slot.negate });
         }
         Ok(Some(out))
     };

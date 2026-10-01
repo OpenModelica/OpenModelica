@@ -352,17 +352,19 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     let mut cz = vec![0.0; n_z * n_x];
     let mut dz = vec![0.0; n_z * n_u];
 
+    // `-csvInput` writes the variables, not the C host's `inputVars` mirror.
+    if model.inputs.len() == n_u {
+        for (v, inp) in lin.input_vars.iter().zip(&model.inputs) {
+            if v.off != inp.off && inp.wty == crate::WTy::F64 {
+                let live = read_f64(e, sim_data + inp.off)?;
+                write_lin_var(e, sim_data, v, live)?;
+            }
+        }
+    }
+
     let x0 = read_states(e, sim_data, layout.n_states)?;
-    // `lin.input_vars` (used below for Jacobian perturbation writes) points at
-    // the engine's staging representation for inputs -- for a native model
-    // that's `simulationInfo->inputVars`, which `functionInputVars` copies into
-    // each input's live REAL_OFF slot as part of jac_bd_num's write-then-copy
-    // perturbation cycle, but nothing keeps in sync outside of that cycle.
-    // `model.inputs` already tracks the live REAL_OFF slot directly (the same
-    // one the live extinput hook and functionODE read/write), so read the
-    // initial operating point from there instead of `lin.input_vars`.
     let u0: Vec<f64> =
-        model.inputs.iter().map(|v| read_f64(e, sim_data + v.off)).collect::<Result<_>>()?;
+        lin.input_vars.iter().map(|v| read_lin_var(e, sim_data, v)).collect::<Result<_>>()?;
     // C reads z0 before anything perturbs the model.
     let z0: Vec<f64> = if datarec {
         (0..n_z as u32)
