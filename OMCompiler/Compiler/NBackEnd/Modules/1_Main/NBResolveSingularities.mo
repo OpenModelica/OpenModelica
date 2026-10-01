@@ -47,6 +47,9 @@ protected
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import SimplifyExp = NFSimplifyExp;
+  import Call = NFCall;
+  import NFFunction.Function;
   import Subscript = NFSubscript;
   import Type = NFType;
 
@@ -128,6 +131,8 @@ public
     Matching set_matching;
     UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
     list<tuple<String, BVariable.checkVar>> stages;
+    Option<list<Pointer<Variable>>> numeric_dummies;
+    UnorderedSet<ComponentRef> dummy_set;
     BVariable.checkVar stageFunc;
     String stageStr;
 
@@ -227,41 +232,55 @@ public
         ("6. StateSelect.PREFER",   function BVariable.isStateSelect(stateSelect = StateSelect.PREFER))
       };
 
-      for stage in stages loop
-        (stageStr, stageFunc) := stage;
-        // split the candidates to get all currently relevant ones
-        (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, stageFunc);
-
-        if listEmpty(current_candidates) then
-          // nothing to do, no candidates for this stage or matching is already perfect
-          if debug then
-            print(StringUtil.headline_2("Nothing done for (" + stageStr + ") Index Reduction") + "\n");
-          end if;
-        else
-          // prepare the current maps
-          vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
-          vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
-          // expand the adjacency matrix
-          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs, kind);
-          // continue matching
-          set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
-
-          if debug then
-            print(Adjacency.Matrix.toString(set_adj, "(" + stageStr + ") Index Reduction"));
-            print(Matching.toString(set_matching, "(" + stageStr + ") Index Reduction"));
-          end if;
-
-          if Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching) then
-            if debug then
-              print(StringUtil.headline_2("Finished with perfect matching in stage " + stageStr + ".") + "\n");
-            end if;
-            break;
-          end if;
+      // linear constraints with constant coefficients: choose the dummy states numerically,
+      // a structural matching can choose dummy states with a singular Jacobian
+      numeric_dummies := numericDummySelection(constraint_ptrs, candidate_ptrs, orderCandidates(rest_candidates, stages));
+      if isSome(numeric_dummies) then
+        SOME(current_candidates) := numeric_dummies;
+        dummy_set := UnorderedSet.fromList(list(BVariable.getVarName(var) for var in current_candidates), ComponentRef.hash, ComponentRef.isEqual);
+        dummy_states := list(Slice.SLICE(var, {}) for var guard(UnorderedSet.contains(BVariable.getVarName(var), dummy_set)) in VariablePointers.toList(candidate_ptrs));
+        states := list(Slice.SLICE(var, {}) for var guard(not UnorderedSet.contains(BVariable.getVarName(var), dummy_set)) in VariablePointers.toList(candidate_ptrs));
+        unmatched_eqns := {};
+        if Flags.isSet(Flags.DUMMY_SELECT) then
+          print("[dummyselect] numeric selection of dummy states for linear constraints with constant coefficients\n");
         end if;
-      end for;
+      else
+        for stage in stages loop
+          (stageStr, stageFunc) := stage;
+          // split the candidates to get all currently relevant ones
+          (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, stageFunc);
 
-      // parse the result of the matching
-      (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
+          if listEmpty(current_candidates) then
+            // nothing to do, no candidates for this stage or matching is already perfect
+            if debug then
+              print(StringUtil.headline_2("Nothing done for (" + stageStr + ") Index Reduction") + "\n");
+            end if;
+          else
+            // prepare the current maps
+            vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
+            vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
+            // expand the adjacency matrix
+            (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs, kind);
+            // continue matching
+            set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
+
+            if debug then
+              print(Adjacency.Matrix.toString(set_adj, "(" + stageStr + ") Index Reduction"));
+              print(Matching.toString(set_matching, "(" + stageStr + ") Index Reduction"));
+            end if;
+
+            if Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching) then
+              if debug then
+                print(StringUtil.headline_2("Finished with perfect matching in stage " + stageStr + ".") + "\n");
+              end if;
+              break;
+            end if;
+          end if;
+        end for;
+
+        // parse the result of the matching
+        (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
+      end if;
       unmatched_eqns := resolveSlicedUnmatched(unmatched_eqns, slice_map);
 
       // sliced state/dummy candidates have to be resolved before differentiation, so the
@@ -753,6 +772,190 @@ protected
     b := BVariable.isStateSelect(var_ptr, StateSelect.DEFAULT)
       and not UnorderedMap.contains(BVariable.getVarName(var_ptr), state_order);
   end isDefaultWithoutStateOrder;
+
+  function orderCandidates
+    "orders the candidates by the stages, the preferred dummy states first"
+    input list<Pointer<Variable>> candidates;
+    input list<tuple<String, BVariable.checkVar>> stages;
+    output list<Pointer<Variable>> ordered;
+  protected
+    list<Pointer<Variable>> rest = candidates, current;
+    list<list<Pointer<Variable>>> parts = {};
+    BVariable.checkVar stageFunc;
+  algorithm
+    for stage in stages loop
+      (_, stageFunc) := stage;
+      (current, rest) := List.splitOnTrue(rest, stageFunc);
+      parts := current :: parts;
+    end for;
+    ordered := List.flatten(listReverse(rest :: parts));
+  end orderCandidates;
+
+  function numericDummySelection
+    "Selects the dummy states for constraint equations that are linear in the candidates
+    with constant coefficients: a candidate in the given order becomes a dummy state if it
+    increases the numerical rank of the coefficients of the dummy states. Returns NONE()
+    if the constraints are not of this kind or have no full rank. The structural matching
+    can choose dummy states with a singular Jacobian, e.g. for x1 = x2 + c*x3 and
+    c*x3 = x2 - x4 the dummy states x2, x3, since the coefficients cancel."
+    input EquationPointers constraints;
+    input VariablePointers candidates;
+    input list<Pointer<Variable>> ordered "preferred dummy states first";
+    output Option<list<Pointer<Variable>>> dummies = NONE();
+  protected
+    type SparseVector = list<tuple<Integer, Real>>;
+    UnorderedMap<ComponentRef, SparseVector> cols = UnorderedMap.new<SparseVector>(ComponentRef.hash, ComponentRef.isEqual);
+    Equation eqn;
+    Expression res, diff;
+    Differentiate.DifferentiationArguments args = Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
+    Integer m = EquationPointers.size(constraints), row = 0, rank = 0, pivot;
+    Real value, scale, pivot_val, a;
+    Boolean linear = true;
+    SparseVector col;
+    array<Integer> basis_piv;
+    array<Real> basis_val;
+    array<SparseVector> basis_vec;
+    list<Pointer<Variable>> selected = {};
+  algorithm
+    if m == 0 or List.any(ordered, BVariable.isArray) then
+      return;
+    end if;
+
+    // coefficients of the candidates, column wise
+    for eqn_ptr in EquationPointers.toList(constraints) loop
+      row := row + 1;
+      eqn := Pointer.access(eqn_ptr);
+      linear := match eqn case Equation.SCALAR_EQUATION() then true; else false; end match;
+      if not linear then
+        return;
+      end if;
+      res := Equation.getResidualExp(eqn);
+      // user functions can not be differentiated here and are hardly linear
+      if Expression.contains(res, isUserFunctionCall) then
+        return;
+      end if;
+      for cref in Equation.collectCrefs(eqn, function Equation.collectFromMap(check_map = candidates.map)) loop
+        args.diffCref := cref;
+        try
+          diff := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
+        else
+          return;
+        end try;
+        (value, linear) := match diff
+          case Expression.REAL() then (diff.value, true);
+          case Expression.INTEGER() then (intReal(diff.value), true);
+          else (0.0, false);
+        end match;
+        if not linear then
+          return;
+        end if;
+        if value <> 0.0 then
+          UnorderedMap.add(cref, (row, value) :: UnorderedMap.getOrDefault(cref, cols, {}), cols);
+        end if;
+      end for;
+    end for;
+
+    // greedy selection by incremental elimination
+    basis_piv := arrayCreate(m, 0);
+    basis_val := arrayCreate(m, 0.0);
+    basis_vec := arrayCreate(m, {});
+    for var in ordered loop
+      col := listReverse(UnorderedMap.getOrDefault(BVariable.getVarName(var), cols, {}));
+      scale := List.fold(list(abs(Util.tuple22(e)) for e in col), realMax, 0.0);
+      for k in 1:rank loop
+        a := sparseGet(col, basis_piv[k]);
+        if a <> 0.0 then
+          col := sparseAxpy(col, -a / basis_val[k], basis_vec[k], basis_piv[k]);
+        end if;
+      end for;
+      // the largest remaining entry is the pivot
+      pivot := 0;
+      pivot_val := 0.0;
+      for e in col loop
+        if abs(Util.tuple22(e)) > abs(pivot_val) then
+          (pivot, pivot_val) := e;
+        end if;
+      end for;
+      if pivot > 0 and abs(pivot_val) > 1e-10 * scale then
+        rank := rank + 1;
+        basis_piv[rank] := pivot;
+        basis_val[rank] := pivot_val;
+        basis_vec[rank] := col;
+        selected := var :: selected;
+        if rank == m then
+          dummies := SOME(listReverse(selected));
+          return;
+        end if;
+      end if;
+    end for;
+  end numericDummySelection;
+
+  function isUserFunctionCall
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then not Function.isBuiltin(fn);
+      else false;
+    end match;
+  end isUserFunctionCall;
+
+  function sparseGet
+    input list<tuple<Integer, Real>> v;
+    input Integer index;
+    output Real value = 0.0;
+  algorithm
+    for e in v loop
+      if Util.tuple21(e) == index then
+        value := Util.tuple22(e);
+        return;
+      elseif Util.tuple21(e) > index then
+        return;
+      end if;
+    end for;
+  end sparseGet;
+
+  function sparseAxpy
+    "v + f*w for sparse vectors sorted by index, the entry at the eliminated index is removed"
+    input list<tuple<Integer, Real>> v;
+    input Real f;
+    input list<tuple<Integer, Real>> w;
+    input Integer eliminated;
+    output list<tuple<Integer, Real>> r = {};
+  protected
+    list<tuple<Integer, Real>> v_rest = v, w_rest = w;
+    Integer i, j;
+    Real x, y;
+  algorithm
+    while not (listEmpty(v_rest) and listEmpty(w_rest)) loop
+      if listEmpty(w_rest) then
+        r := listAppend(listReverse(v_rest), r);
+        v_rest := {};
+      elseif listEmpty(v_rest) then
+        r := listAppend(listReverse(list((Util.tuple21(e), f * Util.tuple22(e)) for e in w_rest)), r);
+        w_rest := {};
+      else
+        (i, x) := listHead(v_rest);
+        (j, y) := listHead(w_rest);
+        if i < j then
+          r := (i, x) :: r;
+          v_rest := listRest(v_rest);
+        elseif j < i then
+          r := (j, f * y) :: r;
+          w_rest := listRest(w_rest);
+        else
+          if i <> eliminated and x + f * y <> 0.0 then
+            r := (i, x + f * y) :: r;
+          end if;
+          v_rest := listRest(v_rest);
+          w_rest := listRest(w_rest);
+        end if;
+      end if;
+    end while;
+    r := listReverse(r);
+  end sparseAxpy;
 
   function candidatePriority
     "returns the priority of a variable for state selection.
