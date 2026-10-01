@@ -971,11 +971,26 @@ pub fn define_native_external(
     let sig = sig.clone();
     let rt = rt.clone();
     let prepared = prepare_cif(&sig);
-    wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
+    let params: Vec<wasmtime::ValType> = functype.params().collect();
+    let results: Vec<wasmtime::ValType> = functype.results().collect();
+    let host = move |mut caller: wasmtime::Caller<'_, HostState>, raw: &mut [std::mem::MaybeUninit<wasmtime::ValRaw>]| {
+        use crate::dylink_engine::{raw_of_val, val_of_raw};
+        // Safety: wasmtime initializes the first `params.len()` slots with this
+        // function type's parameters.
+        let args: Vec<wasmtime::Val> =
+            params.iter().zip(raw.iter()).map(|(ty, r)| val_of_raw(ty, unsafe { r.assume_init() })).collect();
+        let mut rets = vec![wasmtime::Val::I32(0); results.len()];
         // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-        unsafe { call_external(addr, &sig, prepared.as_ref(), &mut caller, memory, &rt, args, rets) }
-            .map_err(|e| wasmtime::Error::msg(format!("{e}")))
-    }))?;
+        unsafe { call_external(addr, &sig, prepared.as_ref(), &mut caller, memory, &rt, &args, &mut rets) }
+            .map_err(|e| wasmtime::Error::msg(format!("{e}")))?;
+        for (slot, v) in raw.iter_mut().zip(&rets) {
+            slot.write(raw_of_val(v));
+        }
+        Ok(())
+    };
+    // Safety: `host` reads only the parameters and writes only the results of
+    // `functype`, by their declared types.
+    wt(unsafe { linker.func_new_unchecked("ext", &name, functype, host) })?;
     Ok(())
 }
 
