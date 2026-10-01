@@ -19,7 +19,8 @@ ModelicaUtilities.mos \
 QualifiedCrefArg.mos \
 RecordMemberArguments.mos \
 TestRoots.mos \
-ts.mos
+ts.mos \
+UserDllModelicaError.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -54,6 +55,7 @@ InOutStrings_fkn2.cc \
 ModelicaUtilities.myExtFunction.c \
 QualifiedCrefArg-f.c \
 testTables.txt \
+UserDllModelicaError-lib.c \
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

@@ -76,6 +76,10 @@ void omc_set_assert_reporters(void (*err)(threadData_t*, FILE_INFO, const char*,
                               void (*warn)(FILE_INFO, const char*, va_list));
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
+/* threadData, else the calling thread's from mmc_thread_data_key. If there is
+   none, print pendingMessage (or the formatted message) and why, then exit. */
+threadData_t* omc_thread_data(threadData_t *threadData, const char *pendingMessage);
+threadData_t* omc_thread_data_va(threadData_t *threadData, const char *format, va_list args);
 
 enum OMC_LOG_STREAM
 {

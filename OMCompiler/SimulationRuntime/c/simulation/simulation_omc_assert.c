@@ -68,7 +68,7 @@ static void setTermMsg(const char *msg, va_list ap)
 
 static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, va_list args)
 {
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  threadData = omc_thread_data_va(threadData, msg, args);
   switch (threadData->currentErrorStage)
   {
   case ERROR_EVENTSEARCH:
@@ -166,6 +166,6 @@ void omc_throw_simulation(threadData_t* threadData)
      catch, not at a step that would retry it. */
   setTermMsg_empty_va_list("Assertion triggered by external C function");
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  threadData = omc_thread_data(threadData, "Assertion triggered by external C function");
   longjmp(*threadData->globalJumpBuffer, 1);
 }

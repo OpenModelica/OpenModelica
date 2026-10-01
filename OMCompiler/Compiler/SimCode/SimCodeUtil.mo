@@ -14934,8 +14934,8 @@ algorithm
              + "SET ERRORLEVEL=\n"
              + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
              + "SET RESULT=%ERRORLEVEL%\n"
-             + "endlocal\n"
-             + "EXIT /b %RESULT%\n";
+             // One line, so %RESULT% is expanded before endlocal discards it.
+             + "endlocal & EXIT /b %RESULT%\n";
         File.write(file, str);
       then fileName;
     else
@@ -14953,8 +14953,9 @@ function getDirectoriesForDLLsFromLinkLibs
        {\"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library/win64\",
         \"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library\",
          ...}
-   The function will check for strings that start with \"-L and then trims it to get the
-   corrseponding directory.
+   The function will check for strings that start with \"-L (or /LIBPATH:\" for the msvc
+   target) and then trims it to get the corrseponding directory. Libraries are -lname
+   (or name.lib for msvc).
 
    If you want something more general write another function and generalize this.
    We can also fix the creation of MakefileParams to separately list out these directories
@@ -14970,8 +14971,14 @@ algorithm
     */
     if StringUtil.startsWith(str, "\"-L") then
       outLocations := listAppend({substring(str, 4, stringLength(str)-1)}, outLocations);
+    // The msvc target spells the same directories /LIBPATH:"dir", see SimCodeFunctionUtil.
+    elseif StringUtil.startsWith(str, "/LIBPATH:\"") then
+      outLocations := listAppend({substring(str, 11, stringLength(str)-1)}, outLocations);
     elseif StringUtil.startsWith(str, "-l") then
       outLibs := listAppend({substring(str, 3, stringLength(str))}, outLibs);
+    // ... and a library name as name.lib; a path to a library file is passed as it is.
+    elseif StringUtil.endsWith(str, ".lib") and System.stringFind(str, "/") < 0 and System.stringFind(str, "\\") < 0 then
+      outLibs := listAppend({substring(str, 1, stringLength(str)-4)}, outLibs);
     end if;
   end for;
   outLocations := listReverse(outLocations);
