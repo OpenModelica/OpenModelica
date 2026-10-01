@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+zeroSizeRecordField.mos \
 simple_record.mos \
 nestedRecordBinding.mos \
 record_inlining.mos \
