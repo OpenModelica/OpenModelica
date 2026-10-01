@@ -951,7 +951,7 @@ pub(super) fn build_sim_model(
         samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars,
         mi.varInfo.numLinearSystems.max(0) as u32, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
-        build_lin_info(&linz, vars, &var_map)?,
+        build_lin_info(&linz, vars, &var_map, &all_reals)?,
         opt_info, input_vars,
         datarecon::build_recon_info(
             sim_code, vars, &recon, &recon_jac_infos, &var_map,
