@@ -958,28 +958,52 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
     let mut rank = n;
     let mut ind_row: alloc::vec::Vec<usize> = (0..n).collect();
     let mut ind_col: alloc::vec::Vec<usize> = (0..m).collect();
+    // C indexes the matrix through `ind_row`/`ind_col`; here the rows and columns
+    // are swapped in place instead, so `a[r + c * n]` is C's
+    // `a[indRow[r] + indCol[c] * n]` and every operation is C's.
+    assert!(a.len() >= n * m);
+    let swap_cols = |a: &mut [f64], c1: usize, c2: usize| {
+        if c1 != c2 {
+            let (lo, hi) = a.split_at_mut(c1.max(c2) * n);
+            lo[c1.min(c2) * n..][..n].swap_with_slice(&mut hi[..n]);
+        }
+    };
     if *pos >= 0 {
         let p = *pos as usize;
         ind_col[n] = p;
         ind_col[p] = n;
+        swap_cols(a, p, n);
     } else {
         n_pivot = n + 1;
     }
-    // `ind_row` and `ind_col` stay permutations of `0..n` and `0..m`, so every
-    // `ind_row[_] + ind_col[_] * n` below is in bounds.
-    assert!(a.len() >= n * m);
+    assert!(x.len() >= m);
     for i in 0..n {
-        // Total pivot over rows [i,n) and columns [i,n_pivot).
-        let mut abs_max = a[ind_row[i] + ind_col[i] * n].abs();
+        // Total pivot over rows [i,n) and columns [i,n_pivot): C takes the first
+        // strictly larger magnitude scanning row by row, which is the first
+        // occurrence, rows then columns, of the largest one, NaNs never winning.
+        // The largest is found column by column, each column's in `x[c]`, which is
+        // not written before the back substitution.
+        let mut abs_max = a[i + i * n].abs();
         let (mut p_row, mut p_col) = (i, i);
-        for r in i..n {
-            let row = ind_row[r];
-            for (c, &col) in ind_col[i..n_pivot].iter().enumerate() {
-                let v = unsafe { a.get_unchecked(row + col * n) }.abs();
-                if v > abs_max {
-                    abs_max = v;
-                    p_row = r;
-                    p_col = i + c;
+        if !abs_max.is_nan() {
+            let mut largest = abs_max;
+            for c in i..n_pivot {
+                let v = max_magnitude(&a[c * n + i..c * n + n]);
+                x[c] = v;
+                if v > largest {
+                    largest = v;
+                }
+            }
+            if largest > abs_max {
+                abs_max = largest;
+                p_row = n;
+                for c in i..n_pivot {
+                    if x[c] == largest {
+                        if let Some(r) = a[c * n + i..c * n + p_row].iter().position(|v| v.abs() == largest) {
+                            p_row = i + r;
+                            p_col = c;
+                        }
+                    }
                 }
             }
         }
@@ -991,21 +1015,33 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
         }
         ind_row.swap(i, p_row);
         ind_col.swap(i, p_col);
-        let (ri, ci) = (ind_row[i], ind_col[i] * n);
-        let piv = a[ri + ci];
-        for k in (i + 1)..n {
-            let rk = ind_row[k];
-            let h = -a[rk + ci] / piv;
-            for &col in &ind_col[i + 1..m] {
-                let cj = col * n;
-                unsafe { *a.get_unchecked_mut(rk + cj) += h * *a.get_unchecked(ri + cj) };
+        if p_row != i {
+            for c in 0..m {
+                unsafe { core::ptr::swap(a.as_mut_ptr().add(i + c * n), a.as_mut_ptr().add(p_row + c * n)) };
             }
-            a[rk + ci] = 0.0;
+        }
+        swap_cols(a, i, p_col);
+        // The multipliers go into column i, which is zeroed after: no update
+        // reads it, so the columns can be eliminated one after the other.
+        let ci = i * n;
+        let piv = a[i + ci];
+        for k in (i + 1)..n {
+            a[k + ci] = -a[k + ci] / piv;
+        }
+        for j in (i + 1)..m {
+            let cj = j * n;
+            let aij = a[i + cj];
+            for k in (i + 1)..n {
+                unsafe { *a.get_unchecked_mut(k + cj) += *a.get_unchecked(k + ci) * aij };
+            }
+        }
+        for k in (i + 1)..n {
+            a[k + ci] = 0.0;
         }
     }
     let mut det = 1.0;
     for k in 0..n {
-        det *= a[ind_row[k] + ind_col[k] * n];
+        det *= a[k + k * n];
     }
     omclog::debug_double(omclog::NLS_JAC, "Determinant = ", det);
     if det.is_nan() {
@@ -1021,16 +1057,16 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
     }
     for i in (0..n).rev() {
         if i >= rank {
-            if a[ind_row[i] + ind_col[n] * n].abs() > 1e-6 {
+            if a[i + n * n].abs() > 1e-6 {
                 return -1;
             }
             x[ind_col[i]] = 0.0;
         } else {
-            let mut xi = -a[ind_row[i] + ind_col[n] * n];
+            let mut xi = -a[i + n * n];
             for j in ((i + 1)..n).rev() {
-                xi -= a[ind_row[i] + ind_col[j] * n] * x[ind_col[j]];
+                xi -= a[i + j * n] * x[ind_col[j]];
             }
-            x[ind_col[i]] = xi / a[ind_row[i] + ind_col[i] * n];
+            x[ind_col[i]] = xi / a[i + i * n];
         }
     }
     x[ind_col[n]] = 1.0;
@@ -1045,6 +1081,29 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
         omclog::debug_int(omclog::NLS_V, "position of largest value = ", *pos);
     }
     0
+}
+
+/// The largest `|v|` in `col`, NaNs skipped; 0 for none. Four running maxima,
+/// so the compares do not wait on each other.
+fn max_magnitude(col: &[f64]) -> f64 {
+    let mut m = [0.0f64; 4];
+    let mut chunks = col.chunks_exact(4);
+    for c in &mut chunks {
+        for k in 0..4 {
+            let v = c[k].abs();
+            if v > m[k] {
+                m[k] = v;
+            }
+        }
+    }
+    for (k, v) in chunks.remainder().iter().enumerate() {
+        let v = v.abs();
+        if v > m[k] {
+            m[k] = v;
+        }
+    }
+    let (a, b) = (if m[1] > m[0] { m[1] } else { m[0] }, if m[3] > m[2] { m[3] } else { m[2] });
+    if b > a { b } else { a }
 }
 
 /// Row-equilibrate an `n×(n+1)` matrix (C's `scaleMatrixRows`): divide each row by
