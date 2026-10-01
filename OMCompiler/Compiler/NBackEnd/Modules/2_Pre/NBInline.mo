@@ -180,13 +180,55 @@ public
   protected
     Pointer<list<Pointer<Equation>>> record_eqns = Pointer.create({});
   algorithm
-    inlineRecordTupleArrayEquation(Pointer.access(Slice.getT(slice)), Iterator.EMPTY(), variables, record_eqns, set, index, inlineSimple);
-    // somehow split slice.indices
-    slices := list(Slice.SLICE(eqn, {}) for eqn in Pointer.access(record_eqns));
+    slices := match Pointer.access(Slice.getT(slice))
+      local
+        Equation eqn;
+      // only some rows of a record equation are part of the slice, keep only the fields with those rows
+      case eqn as Equation.RECORD_EQUATION(ty = Type.COMPLEX()) guard(not listEmpty(slice.indices))
+      then inlineRecordSliceFields(eqn, slice.indices, variables, set, index);
+      else algorithm
+        inlineRecordTupleArrayEquation(Pointer.access(Slice.getT(slice)), Iterator.EMPTY(), variables, record_eqns, set, index, inlineSimple);
+      then list(Slice.SLICE(eqn, {}) for eqn in Pointer.access(record_eqns));
+    end match;
     if listEmpty(slices) then
       slices := {slice};
     end if;
   end inlineRecordSliceEquation;
+
+  function inlineRecordSliceFields
+    "inlines the fields of a sliced record equation. A field equation gets the slice rows that are
+    within its own rows, fields without any rows of the slice are dropped."
+    input Equation eqn "has to be a RECORD_EQUATION";
+    input list<Integer> indices "zero based rows of the record equation";
+    input VariablePointers variables;
+    input UnorderedSet<VariablePointer> set "new iterators";
+    input Pointer<Integer> index;
+    output list<Slice<Pointer<Equation>>> slices = {};
+  protected
+    Expression lhs, rhs;
+    EquationAttributes attr;
+    Integer recordSize, offset = 0, size;
+    list<Pointer<Equation>> field_eqns;
+    list<Integer> field_indices;
+  algorithm
+    Equation.RECORD_EQUATION(lhs = lhs, rhs = rhs, attr = attr, recordSize = recordSize) := eqn;
+    for i in 1:recordSize loop
+      field_eqns := createInlinedEquation({}, inlineRecordConstructorExp(lhs, i, variables), inlineRecordConstructorExp(rhs, i, variables),
+        attr, Iterator.EMPTY(), variables, set, index);
+      size := sum(Equation.size(e) for e in field_eqns);
+      field_indices := list(k - offset for k guard(k >= offset and k < offset + size) in indices);
+      if not listEmpty(field_indices) then
+        if List.hasOneElement(field_eqns) and listLength(field_indices) < size then
+          slices := Slice.SLICE(listHead(field_eqns), field_indices) :: slices;
+        else
+          // nested records are kept as a whole
+          slices := listAppend(list(Slice.SLICE(e, {}) for e in field_eqns), slices);
+        end if;
+      end if;
+      offset := offset + size;
+    end for;
+    slices := listReverse(slices);
+  end inlineRecordSliceFields;
 
   function inlineArrayConstructorSingle
     input output Equation eqn;
