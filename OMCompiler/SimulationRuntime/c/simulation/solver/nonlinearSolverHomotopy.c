@@ -1360,10 +1360,11 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int  pos = solverData->n, rank;
   double error_f_sqrd, error_f1_sqrd, error_f2_sqrd, error_f_sqrd_scaled, error_f1_sqrd_scaled;
   double delta_x_sqrd, delta_x_sqrd_scaled, grad_f, grad_f_scaled;
-  int numberOfSmallSteps = 0;
+  int numberOfSmallSteps = 0, smallStepsAtHover = 0, lessAccurate, atCycleBottom;
   double error_f_old = 1e100, error_f_old_scaled = 1e100;
   int countNegativeSteps = 0;
-  int countCycles = 0, nHist = 0;
+  int countCycles = 0, nHist = 0, countStalls = 0, countHovers = 0, countCreeps = 0;
+  double error_f_best = 1e100, error_f_hover = 1e100, stepLambda;
   double errorHist[4];
   double lambda;
   double lambda1, lambda2;
@@ -1476,11 +1477,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda1 = ", lambda1);
       debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
       debugDouble(OMC_LOG_NLS_V, "Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
+      stepLambda = lambda1;
       if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f)
         && (error_f1_sqrd_scaled > error_f_sqrd_scaled + alpha*lambda1*grad_f_scaled)
         && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
       {
         lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1_sqrd-error_f_sqrd-lambda1*grad_f)),lambdaMin);
+        stepLambda = lambda2;
         debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda2 = ", lambda2);
         vecAddScal(solverData->n, x, solverData->dy0, lambda2, solverData->x1);
         assert= 1;
@@ -1529,6 +1532,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                 lambda = -grad_f/(a2+sqrt(D));
           }
           lambda = fmax(lambda, lambdaMin);
+          stepLambda = lambda;
           debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda = ", lambda);
           vecAddScal(solverData->n, x, solverData->dy0, lambda, solverData->x1);
           assert= 1;
@@ -1582,6 +1586,21 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     /* a cycle within the less accuracy band is left to the other exits */
     countCycles = newtonLimitCycleStep(errorHist, &nHist, error_f_sqrd)
       && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6 ? countCycles + 1 : 0;
+    if (error_f_sqrd < 0.99*error_f_best) {
+      error_f_best = error_f_sqrd;
+      countStalls = 0;
+      countHovers = 0;
+    } else if (error_f_sqrd < 10*error_f_hover) {
+      countStalls++;
+      countHovers++;
+    } else {
+      countStalls++;
+      countHovers = 0;
+    }
+    if (countHovers == 0 || error_f_sqrd < error_f_hover) {
+      error_f_hover = error_f_sqrd;
+    }
+    countCreeps = stepLambda < 1e-3 ? countCreeps + 1 : 0;
     lastWasGood = error_f_sqrd >= error_f_old;
 
 
@@ -1612,7 +1631,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       );
     }
 #endif
-    if (countNegativeSteps > 20 || countCycles > 20)
+    /* away from any solution: no 1% improvement for long, or only heavily damped steps */
+    if (countNegativeSteps > 20 || countCycles > 20 || ((countStalls > 200 || countCreeps > 100) && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6))
     {
       debugInt(OMC_LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
@@ -1674,12 +1694,23 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     }
 
     numberOfSmallSteps += (delta_x_sqrd < solverData->xtol_sqrd*1e4) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd*1e4);
+    if (countHovers == 0) {
+      smallStepsAtHover = numberOfSmallSteps;
+    }
+    /* the bottom of a stationary cycle without small steps, which are left to their own exit */
+    atCycleBottom = countHovers > 20 && numberOfSmallSteps == smallStepsAtHover
+      && error_f_sqrd <= errorHist[1] && error_f_sqrd <= errorHist[2] && error_f_sqrd <= errorHist[3];
     /* check changes in unknown vector */
-    if ((delta_x_sqrd < solverData->xtol_sqrd) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd) || (numberOfSmallSteps > 20))
+    lessAccurate = (error_f_sqrd < solverData->ftol_sqrd*1e6) || (error_f_sqrd_scaled < solverData->ftol_sqrd*1e6);
+    /* a stationary residual within the less accuracy band is round-off, like small steps */
+    if ((delta_x_sqrd < solverData->xtol_sqrd) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd) || (numberOfSmallSteps > 20) || (lessAccurate && atCycleBottom))
     {
-      if ((error_f_sqrd < solverData->ftol_sqrd*1e6) || (error_f_sqrd_scaled < solverData->ftol_sqrd*1e6))
+      if (lessAccurate)
       {
         solverData->info = 1;
+        if (atCycleBottom) {
+          vecCopy(solverData->n, solverData->x1, x);
+        }
 
         /* debug information */
         debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!");
