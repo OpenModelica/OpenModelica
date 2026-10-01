@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 builtin_functions.mos\
 inlineAttributes15947.mos\
+ifEquationFunctionCall.mos\
 tupleCallInForLoop.mos\
 function_annotation_der.mos\
 function_diff.mos\
