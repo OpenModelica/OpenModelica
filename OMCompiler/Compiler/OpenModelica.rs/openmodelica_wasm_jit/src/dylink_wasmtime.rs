@@ -1257,7 +1257,7 @@ impl Callee<'_> {
     }
 }
 
-fn val_of_raw(ty: &wasmtime::ValType, raw: wasmtime::ValRaw) -> wasmtime::Val {
+pub(crate) fn val_of_raw(ty: &wasmtime::ValType, raw: wasmtime::ValRaw) -> wasmtime::Val {
     match ty {
         wasmtime::ValType::I64 => wasmtime::Val::I64(raw.get_i64()),
         wasmtime::ValType::F32 => wasmtime::Val::F32(raw.get_f32()),
@@ -1266,7 +1266,7 @@ fn val_of_raw(ty: &wasmtime::ValType, raw: wasmtime::ValRaw) -> wasmtime::Val {
     }
 }
 
-fn raw_of_val(v: &wasmtime::Val) -> wasmtime::ValRaw {
+pub(crate) fn raw_of_val(v: &wasmtime::Val) -> wasmtime::ValRaw {
     match *v {
         wasmtime::Val::I64(x) => wasmtime::ValRaw::i64(x),
         wasmtime::Val::F32(x) => wasmtime::ValRaw::f32(x),
